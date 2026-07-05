@@ -25,34 +25,64 @@
             display: none;
         }
 
-        /* ----- top‑left: ultra-compact tools navigation list ----- */
-        .tools-nav {
+        /* ----- top‑left: ultra-compact tools navigation container ----- */
+        .tools-container {
             position: fixed;
             top: 1rem;
             left: 1rem;
             display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            font-size: 0.85rem;
+            flex-direction: column;
+            gap: 0.4rem;
             user-select: none;
             white-space: nowrap;
         }
 
-        .tools-nav a {
+        .main-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        /* Second-row submenu */
+        .sub-nav {
+            display: none;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            opacity: 0;
+        }
+
+        .sub-nav.show {
+            display: flex;
+            animation: fadeIn 0.15s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .tools-container a, .tools-container button {
             color: #f0f0f0;
             text-decoration: none;
             font-weight: 500;
             opacity: 0.4; /* dimmed inactive links */
             transition: opacity 0.15s ease, color 0.15s ease;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: inherit;
         }
 
-        .tools-nav a:hover {
+        .tools-container a:hover, .tools-container button:hover {
             opacity: 0.8;
         }
 
         /* Active link highlight - Solid white */
-        .tools-nav a.active {
+        .tools-container a.active, .tools-container button.active {
             color: #ffffff !important;
             opacity: 1 !important;
             font-weight: 600;
@@ -71,12 +101,14 @@
 
         /* ----- responsive scaling ----- */
         @media (max-width: 480px) {
-            .tools-nav {
+            .tools-container {
                 top: 0.8rem;
                 left: 0.8rem;
-                font-size: 0.75rem;
-                gap: 0.4rem;
+                gap: 0.3rem;
                 max-width: 100%;
+            }
+            .main-nav, .sub-nav, .separator {
+                font-size: 0.75rem;
             }
         }
     </style>
@@ -84,8 +116,17 @@
 <body>
 
     <!-- Dynamic navigation populated based on physical availability on Vercel -->
-    <nav class="tools-nav" id="toolsNav" aria-label="Tools directory navigation">
-        <a href="index.html" class="nav-item" id="homeLink">home</a>
+    <nav class="tools-container" aria-label="Tools directory navigation">
+        <div class="main-nav">
+            <a href="index.html" class="nav-item" id="homeLink">home</a>
+            <span class="separator">|</span>
+            <button id="toolsToggle" class="nav-item-btn">tools</button>
+            <span class="separator">|</span>
+            <button id="tarkovToggle" class="nav-item-btn">tarkov</button>
+        </div>
+        <!-- Submenus -->
+        <div class="sub-nav" id="toolsSubNav"></div>
+        <div class="sub-nav" id="tarkovSubNav"></div>
     </nav>
 
     <main></main>
@@ -94,23 +135,68 @@
         (function() {
             'use strict';
 
-            const navContainer = document.getElementById('toolsNav');
+            const toolsSubNav = document.getElementById('toolsSubNav');
+            const tarkovSubNav = document.getElementById('tarkovSubNav');
+            
             const homeLink = document.getElementById('homeLink');
+            const toolsToggle = document.getElementById('toolsToggle');
+            const tarkovToggle = document.getElementById('tarkovToggle');
             const currentPath = window.location.pathname;
 
+            // Detect directory context based on current path
+            const isToolsPage = currentPath.includes('/tools/');
+            const isTarkovPage = currentPath.includes('/tarkov/');
+
             // Mark home active if we are at the root index or empty path
-            if (currentPath.endsWith('index.html') && !currentPath.includes('/tools/') || 
+            if (currentPath.endsWith('index.html') && !isToolsPage && !isTarkovPage || 
                 currentPath.endsWith('/') || 
                 currentPath === '') {
                 homeLink.classList.add('active');
             }
+
+            // Highlight parent buttons and open correct lines automatically
+            if (isToolsPage) {
+                toolsToggle.classList.add('active');
+                toolsSubNav.classList.add('show');
+            } else if (isTarkovPage) {
+                tarkovToggle.classList.add('active');
+                tarkovSubNav.classList.add('show');
+            }
+
+            // Manual toggle for Tools menu
+            toolsToggle.addEventListener('click', () => {
+                const isExpanded = toolsSubNav.classList.toggle('show');
+                tarkovSubNav.classList.remove('show');
+                tarkovToggle.classList.remove('active');
+                
+                if (!isToolsPage) {
+                    toolsToggle.classList.toggle('active', isExpanded);
+                }
+                if (!isTarkovPage) {
+                    tarkovToggle.classList.remove('active');
+                }
+            });
+
+            // Manual toggle for Tarkov menu
+            tarkovToggle.addEventListener('click', () => {
+                const isExpanded = tarkovSubNav.classList.toggle('show');
+                toolsSubNav.classList.remove('show');
+                toolsToggle.classList.remove('active');
+                
+                if (!isTarkovPage) {
+                    tarkovToggle.classList.toggle('active', isExpanded);
+                }
+                if (!isToolsPage) {
+                    toolsToggle.classList.remove('active');
+                }
+            });
 
             // Normalizes paths for safe URL checking and cleans local paths
             function cleanPath(rawPath) {
                 return rawPath.replace(/\\/g, '/');
             }
 
-            // Extracts name from path (e.g. "tools/txt2json.html" -> "txt2json")
+            // Extracts name from path (e.g. "tarkov/tarkov.html" -> "tarkov")
             function getToolName(path) {
                 const parts = path.split('/');
                 const filename = parts[parts.length - 1];
@@ -141,37 +227,49 @@
                     }
                     toolPaths = await response.json();
                 } catch (error) {
-                    // Fallback to default lists when fetch fails (e.g. inside sandboxed Canvas previews)
+                    // Fallback default list if json file is unavailable
                     toolPaths = [
                         "tools/txt2json.html",
-                        "tools/tarkov.html"
+                        "tarkov/tarkov.html"
                     ];
                 }
 
-                // Safely render navigation from the loaded or fallback list
+                // Populate and divide links into sub-menus
                 toolPaths.forEach(rawPath => {
                     const targetPath = cleanPath(rawPath);
                     const toolName = getToolName(targetPath);
 
-                    // Create separator
-                    const separator = document.createElement('span');
-                    separator.className = 'separator';
-                    separator.textContent = '|';
-                    navContainer.appendChild(separator);
-
-                    // Create link
-                    const link = document.createElement('a');
-                    link.href = targetPath;
-                    link.className = 'nav-item';
-                    link.textContent = toolName;
-
-                    // Apply solid white if this link matches the browser URL path
-                    if (currentPath.endsWith(targetPath)) {
-                        link.classList.add('active');
-                        homeLink.classList.remove('active'); // Ensure home turns off
+                    // Determine appropriate sub-nav container
+                    let container = null;
+                    if (targetPath.startsWith('tarkov/')) {
+                        container = tarkovSubNav;
+                    } else if (targetPath.startsWith('tools/')) {
+                        container = toolsSubNav;
                     }
 
-                    navContainer.appendChild(link);
+                    if (container) {
+                        // Append separator if not first item in this sub-nav
+                        if (container.children.length > 0) {
+                            const separator = document.createElement('span');
+                            separator.className = 'separator';
+                            separator.textContent = '|';
+                            container.appendChild(separator);
+                        }
+
+                        // Create link item
+                        const link = document.createElement('a');
+                        link.href = targetPath;
+                        link.className = 'nav-item';
+                        link.textContent = toolName;
+
+                        // Highlight active if URL matches targetPath
+                        if (currentPath.endsWith(targetPath)) {
+                            link.classList.add('active');
+                            homeLink.classList.remove('active');
+                        }
+
+                        container.appendChild(link);
+                    }
                 });
             }
 
