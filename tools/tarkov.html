@@ -3,1008 +3,733 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tarkov Price Nexus</title>
+    <title>TARKOV // PRICE_NEXUS.terminal</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        document.documentElement.classList.add('dark');
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        tarkovGold: '#c79a24',
-                        tarkovGreen: '#a1b329',
-                        tarkovBg: '#09090b',
-                        tarkovPanel: '#121214',
+                        tkGold: '#d6a033',
+                        tkGoldDim: '#a37720',
+                        tkGreen: '#87963b',
+                        tkGreenDim: '#5b6628',
+                        tkRed: '#bf3f3f',
+                        tkBg: '#090a0c',
+                        tkPanel: '#111317',
+                        tkBorder: '#23272e',
+                        tkText: '#e2e8f0',
+                        tkMuted: '#64748b'
                     }
                 }
             }
         }
     </script>
     <style>
-        /* Force Verdana Globally for pristine, clean, and highly legible text-based reading */
-        *, body, h1, h2, h3, h4, h5, h6, input, button, select, p, span, kbd, div, table, td, th {
-            font-family: Verdana, Geneva, sans-serif !important;
+        /* Precision typography for tactical scanning */
+        *, body {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
         }
-
-        body {
-            background-color: #09090b;
-            color: #f4f4f5;
-        }
-
-        /* Subtly animated performance transitions */
-        .interactive-row {
-            transition: background-color 0.15s ease, border-color 0.15s ease;
-        }
-
-        /* Custom Scrollbar for stealth dark design */
+        /* Custom scrollbar for terminal aesthetic */
         ::-webkit-scrollbar {
-            width: 5px;
-            height: 5px;
+            width: 6px;
+            height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #09090b;
+            background: #090a0c;
         }
         ::-webkit-scrollbar-thumb {
-            background: #27272a;
-            border-radius: 9999px;
+            background: #23272e;
+            border-radius: 3px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #3f3f46;
+            background: #d6a033;
         }
     </style>
 </head>
-<body class="h-screen max-h-screen overflow-hidden flex flex-col justify-between antialiased selection:bg-zinc-800 selection:text-white">
+<body class="bg-tkBg text-tkText min-h-screen flex flex-col selection:bg-tkGold selection:text-black">
 
-    <!-- Top Status Banner -->
-    <header class="border-b border-zinc-800 bg-zinc-950/80 px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-4 select-none flex-shrink-0 z-10 backdrop-blur">
-        <div class="flex items-center space-x-4">
-            <!-- Back Button pointing back to the root portal -->
-            <a href="../index.html" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-xs font-semibold text-zinc-400 hover:text-white transition" title="Back to Portal">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                <span>Back</span>
-            </a>
-            <div class="flex items-center space-x-3">
-                <span class="text-xs font-bold tracking-widest text-zinc-400 uppercase">Tarkov Intel Engine</span>
-                <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" id="connection-indicator" title="Connecting..."></span>
-            </div>
+    <!-- TOP TELEMETRY STATUS BAR -->
+    <header class="border-b border-tkBorder bg-tkBg/80 backdrop-blur sticky top-0 z-50 px-4 py-2.5 flex flex-wrap items-center justify-between text-xs gap-3">
+        <div class="flex items-center space-x-3">
+            <span class="text-tkGold font-bold tracking-widest animate-pulse">[NEXUS_SYS_ONLINE]</span>
+            <span class="text-tkMuted">|</span>
+            <span class="font-bold tracking-tight text-zinc-100">TARKOV // INTELLIGENCE_HUB v4.2</span>
         </div>
-        
-        <!-- Navigation Tabs for the Core Modules -->
-        <nav class="flex items-center bg-zinc-900/80 border border-zinc-800 rounded-lg p-0.5">
-            <button onclick="switchTab('items')" id="tab-items" class="px-3 py-1 text-xs font-bold rounded-md bg-zinc-800 text-white transition">Items & Flea</button>
-            <button onclick="switchTab('traders')" id="tab-traders" class="px-3 py-1 text-xs font-bold rounded-md text-zinc-400 hover:text-white transition">Traders</button>
-            <button onclick="switchTab('maps')" id="tab-maps" class="px-3 py-1 text-xs font-bold rounded-md text-zinc-400 hover:text-white transition">Maps & Intel</button>
-        </nav>
-
-        <div class="flex items-center space-x-6 text-xs text-zinc-500">
-            <div id="stats-cached" class="hidden sm:block">Sync: <span class="text-zinc-300 font-semibold" id="cache-status">Checking...</span></div>
-            <div id="stats-total" class="hidden sm:block">Index: <span class="text-zinc-300 font-semibold" id="total-count">0</span></div>
-            <div id="stats-latency">Sync Latency: <span class="text-zinc-300 font-semibold" id="latency-ms">0ms</span></div>
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-1.5">
+                <span class="text-tkMuted">DB STATUS:</span>
+                <span id="conn-status" class="text-zinc-400 font-semibold uppercase">Connecting...</span>
+            </div>
+            <div class="flex items-center space-x-1.5 hidden md:flex">
+                <span class="text-tkMuted">LATENCY:</span>
+                <span id="latency-val" class="text-tkGreen">-- ms</span>
+            </div>
+            <div class="flex items-center space-x-1.5">
+                <span class="text-tkMuted">REGISTRY:</span>
+                <span id="item-count" class="text-tkGold font-semibold">0 ITEMS</span>
+            </div>
         </div>
     </header>
 
-    <!-- Content Workspace -->
-    <main class="flex-grow w-full max-w-7xl mx-auto px-4 py-4 flex flex-col overflow-hidden">
+    <!-- MAIN APP STRUCTURE -->
+    <main class="flex-1 flex flex-col lg:flex-row h-[calc(100vh-38px)] overflow-hidden">
         
-        <!-- MODULE 1: ITEMS & FLEA SYSTEM -->
-        <div id="module-items" class="w-full h-full flex flex-col lg:flex-row gap-4 items-stretch overflow-hidden">
-            <!-- Left Sidebar: Categories & Filters -->
-            <aside class="w-full lg:w-52 flex-shrink-0 select-none flex flex-col">
-                <h3 class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-3 pb-1 border-b border-zinc-800">Categories</h3>
-                <nav id="category-list" class="flex flex-wrap lg:flex-col gap-1 text-xs overflow-y-auto max-h-[120px] lg:max-h-none pr-1">
-                    <button class="w-auto lg:w-full text-left px-3 py-1.5 rounded-lg bg-zinc-900 text-white font-semibold transition" onclick="selectCategory('All', this)">All Categories</button>
-                    <button class="w-auto lg:w-full text-left px-3 py-1.5 rounded-lg text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200 transition" onclick="selectCategory('Barter', this)">Barter Items</button>
-                    <button class="w-auto lg:w-full text-left px-3 py-1.5 rounded-lg text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200 transition" onclick="selectCategory('Keys', this)">Keys & Cards</button>
-                    <button class="w-auto lg:w-full text-left px-3 py-1.5 rounded-lg text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200 transition" onclick="selectCategory('Medical', this)">Medical Supplies</button>
-                    <button class="w-auto lg:w-full text-left px-3 py-1.5 rounded-lg text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200 transition" onclick="selectCategory('Provisions', this)">Provisions & Food</button>
-                    <button class="w-auto lg:w-full text-left px-3 py-1.5 rounded-lg text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200 transition" onclick="selectCategory('Gear', this)">Equipment & Gear</button>
-                    <button class="w-auto lg:w-full text-left px-3 py-1.5 rounded-lg text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200 transition" onclick="selectCategory('Ammo', this)">Ammunition</button>
-                    <button class="w-auto lg:w-full text-left px-3 py-1.5 rounded-lg text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200 transition" onclick="selectCategory('Weapon', this)">Weapons & Mods</button>
-                </nav>
-            </aside>
-
-            <!-- Main Search & Details Area -->
-            <section class="flex-grow flex flex-col space-y-4 overflow-hidden">
-                <!-- Search Input Grid -->
-                <div class="relative w-full flex-shrink-0">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-zinc-500">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
+        <!-- LEFT CONTROL PANEL & LISTING (75% WIDTH) -->
+        <section class="flex-1 flex flex-col border-r border-tkBorder overflow-hidden">
+            
+            <!-- CONTROLS & UTILITIES -->
+            <div class="p-3 bg-tkPanel/40 border-b border-tkBorder space-y-3">
+                
+                <!-- Query Fields & Search Row -->
+                <div class="flex flex-col md:flex-row gap-2">
+                    <div class="relative flex-1">
+                        <span class="absolute left-3 top-2.5 text-tkMuted text-xs select-none">&gt;</span>
+                        <input 
+                            type="text" 
+                            id="search-input" 
+                            placeholder="SEARCH SPECIMENS (Press '/' to focus...)" 
+                            class="w-full bg-tkBg border border-tkBorder rounded px-8 py-1.5 text-xs text-tkGold placeholder-tkMuted focus:outline-none focus:border-tkGold focus:ring-1 focus:ring-tkGold transition uppercase tracking-wider"
+                            autocomplete="off"
+                        >
+                        <button 
+                            onclick="clearSearch()"
+                            class="absolute right-3 top-2 text-tkMuted hover:text-tkRed text-xs" 
+                            title="Clear search"
+                        >✕</button>
                     </div>
-                    <input
-                        type="text"
-                        id="search-box"
-                        placeholder="Search items by name, category, or shortcode (press '/' to focus)..."
-                        class="w-full bg-zinc-900/90 border border-zinc-800 rounded-xl py-3 pl-12 pr-12 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-700 transition"
-                        autocomplete="off"
-                    >
-                    <button id="clear-search-btn" class="hidden absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-
-                <!-- Responsive Split Panel: Table (Left) + Details (Right) -->
-                <div class="flex flex-col lg:flex-row gap-4 w-full items-stretch flex-grow overflow-hidden">
-                    <!-- Table results pane -->
-                    <div class="flex-grow w-full lg:w-3/5 bg-zinc-900/40 border border-zinc-800 rounded-2xl overflow-hidden backdrop-blur-sm flex flex-col justify-between">
-                        <div class="overflow-y-auto flex-grow max-h-[calc(100vh-280px)] lg:max-h-none">
-                            <table class="w-full text-left border-collapse text-xs select-none">
-                                <thead class="sticky top-0 bg-[#09090b] z-10">
-                                    <tr class="border-b border-zinc-800/80 bg-zinc-900/20 text-zinc-500 text-[10px] font-bold uppercase tracking-wider">
-                                        <th class="p-3 pl-4">Sigil</th>
-                                        <th class="p-3">Item Name</th>
-                                        <th class="p-3">Category</th>
-                                        <th class="text-right p-3 pr-4">Market Avg</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="results-table-body" class="divide-y divide-zinc-800/60">
-                                    <!-- Dynamic -->
-                                </tbody>
-                            </table>
-
-                            <!-- Fallback Empty State -->
-                            <div id="empty-state" class="p-12 text-center text-zinc-500">
-                                <svg class="w-10 h-10 mx-auto text-zinc-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                </svg>
-                                <p class="text-xs font-semibold">Start typing to inspect Tarkov database</p>
-                                <p class="text-[10px] text-zinc-600 mt-1">Search queries instantly scan live item records, classifications, and components.</p>
-                            </div>
-                        </div>
-
-                        <!-- Stats summary footer -->
-                        <div class="p-3 bg-zinc-900/30 border-t border-zinc-800 flex items-center justify-between text-[10px] text-zinc-500 font-medium flex-shrink-0">
-                            <span id="metrics-stats">Initializing...</span>
-                            <span>Press <kbd class="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-400 font-semibold text-[9px]">ESC</kbd> to reset view</span>
-                        </div>
-                    </div>
-
-                    <!-- Right Side: Item Info Inspection Pane -->
-                    <div id="details-pane" class="w-full lg:w-2/5 bg-zinc-900/40 border border-zinc-800 rounded-2xl p-5 select-none backdrop-blur-sm overflow-y-auto max-h-[300px] lg:max-h-[calc(100vh-220px)] flex flex-col justify-between">
-                        <div id="details-placeholder" class="py-16 text-center text-zinc-500 my-auto">
-                            <svg class="w-8 h-8 mx-auto text-zinc-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <h4 class="text-xs font-bold text-zinc-400">Tactical Inspection</h4>
-                            <p class="text-[10px] text-zinc-500 mt-1 max-w-[200px] mx-auto">Select an item to analyze traders, wiki guides, weight values, and live flea spreads.</p>
-                        </div>
-
-                        <div id="details-content" class="hidden space-y-4">
-                            <!-- Header Info -->
-                            <div class="flex items-start gap-4">
-                                <div class="w-14 h-14 bg-zinc-950 border border-zinc-800 rounded-xl p-1 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                    <img id="detail-icon" src="" alt="Icon" class="max-w-full max-h-full object-contain" onerror="this.src='https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=100&auto=format&fit=crop&q=80'">
-                                </div>
-                                <div class="min-w-0 flex-1">
-                                    <div class="flex items-center gap-1.5">
-                                        <span id="detail-short" class="px-1.5 py-0.5 rounded bg-zinc-800 text-[9px] font-bold text-zinc-400 tracking-wider"></span>
-                                        <span id="detail-category" class="text-[9px] uppercase tracking-wider text-zinc-500 font-semibold"></span>
-                                    </div>
-                                    <h3 id="detail-name" class="text-sm font-bold text-white tracking-tight mt-1 truncate"></h3>
-                                </div>
-                            </div>
-
-                            <!-- Description -->
-                            <div class="bg-zinc-950/40 border border-zinc-800/80 rounded-xl p-3">
-                                <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-500 block mb-1">Description</span>
-                                <p id="detail-desc" class="text-[10px] text-zinc-400 leading-normal italic"></p>
-                            </div>
-
-                            <!-- Stats -->
-                            <div class="grid grid-cols-2 gap-2 text-left">
-                                <div class="p-2.5 bg-zinc-950/20 border border-zinc-800/50 rounded-xl">
-                                    <span class="text-[9px] uppercase tracking-wider text-zinc-500 block">Base Value</span>
-                                    <span id="detail-val-base" class="text-xs font-bold text-zinc-300 mt-0.5 block">₽0</span>
-                                </div>
-                                <div class="p-2.5 bg-zinc-950/20 border border-zinc-800/50 rounded-xl">
-                                    <span class="text-[9px] uppercase tracking-wider text-zinc-500 block">Flea 24h Avg</span>
-                                    <span id="detail-val-flea" class="text-xs font-bold text-emerald-500 mt-0.5 block">₽0</span>
-                                </div>
-                                <div class="p-2.5 bg-zinc-950/20 border border-zinc-800/50 rounded-xl">
-                                    <span class="text-[9px] uppercase tracking-wider text-zinc-500 block">Item Weight</span>
-                                    <span id="detail-val-weight" class="text-xs font-semibold text-zinc-200 mt-0.5 block">0 kg</span>
-                                </div>
-                                <div class="p-2.5 bg-zinc-950/20 border border-zinc-800/50 rounded-xl">
-                                    <span class="text-[9px] uppercase tracking-wider text-zinc-500 block">EFT ID</span>
-                                    <span id="detail-val-id" class="text-[9px] font-mono text-zinc-400 mt-0.5 block truncate">--</span>
-                                </div>
-                            </div>
-
-                            <!-- Trader Valuation Tables & Barters -->
-                            <div class="bg-zinc-900/60 border border-zinc-800 rounded-xl p-3">
-                                <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-500 block mb-2">Trader Purchases (Buyback)</span>
-                                <div class="space-y-1.5" id="detail-trader-prices">
-                                    <div class="text-[10px] text-zinc-500 italic">No trader transaction records available.</div>
-                                </div>
-                            </div>
-
-                            <!-- Wiki & Extra Links -->
-                            <div class="pt-2 border-t border-zinc-800 flex justify-between items-center">
-                                <span class="text-[9px] text-zinc-500">Source: tarkov.dev API</span>
-                                <a id="detail-wiki-link" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-800 hover:bg-zinc-700 hover:text-zinc-100 text-zinc-300 transition flex items-center gap-1.5">
-                                    <span>Wiki Page</span>
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                    </svg>
-                                </a>
-                            </div>
-                        </div>
+                    
+                    <div class="flex gap-2">
+                        <select 
+                            id="sort-select" 
+                            onchange="handleSortChange()"
+                            class="bg-tkBg border border-tkBorder rounded px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-tkGold cursor-pointer"
+                        >
+                            <option value="name">SORT: ALPHABETICAL</option>
+                            <option value="price-desc">SORT: PRICE (HIGH &gt; LOW)</option>
+                            <option value="price-asc">SORT: PRICE (LOW &gt; HIGH)</option>
+                            <option value="base-desc">SORT: BASE VALUE (HIGH)</option>
+                        </select>
+                        
+                        <button 
+                            onclick="fetchMarketData()" 
+                            class="bg-tkBorder hover:bg-tkGold hover:text-black border border-transparent rounded px-4 py-1.5 text-xs font-bold transition flex items-center space-x-1.5 uppercase"
+                            id="refresh-btn"
+                        >
+                            <span>REFRESH</span>
+                        </button>
                     </div>
                 </div>
-            </section>
-        </div>
 
-        <!-- MODULE 2: TRADER HUB SYSTEM -->
-        <div id="module-traders" class="hidden w-full h-full flex flex-col gap-4 overflow-hidden">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 flex-grow overflow-hidden">
-                <!-- Trader Select Deck -->
-                <div class="md:col-span-1 bg-zinc-900/40 border border-zinc-800 rounded-2xl p-4 flex flex-col justify-between overflow-y-auto">
+                <!-- Fast Categories Filters -->
+                <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-[10px]" id="category-bar">
+                    <span class="text-tkMuted font-bold uppercase shrink-0">TAG_GROUP:</span>
+                    <button onclick="filterCategory('all')" id="cat-all" class="px-2 py-0.5 rounded bg-tkGold text-black font-bold uppercase transition">ALL</button>
+                    <button onclick="filterCategory('weapon')" id="cat-weapon" class="px-2 py-0.5 rounded bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">WEAPONS</button>
+                    <button onclick="filterCategory('ammo')" id="cat-ammo" class="px-2 py-0.5 rounded bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">AMMO</button>
+                    <button onclick="filterCategory('armor')" id="cat-armor" class="px-2 py-0.5 rounded bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">ARMOR</button>
+                    <button onclick="filterCategory('key')" id="cat-key" class="px-2 py-0.5 rounded bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">KEYS</button>
+                    <button onclick="filterCategory('barter')" id="cat-barter" class="px-2 py-0.5 rounded bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">BARTER</button>
+                    <button onclick="filterCategory('provisions')" id="cat-provisions" class="px-2 py-0.5 rounded bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">MEDS/PROV</button>
+                </div>
+            </div>
+
+            <!-- INDEX TABLE -->
+            <div class="flex-1 overflow-y-auto bg-tkBg">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="sticky top-0 bg-tkPanel border-b border-tkBorder text-tkMuted uppercase text-[10px] tracking-wider z-10 select-none">
+                            <th class="py-2.5 px-4 font-bold">SPECIMEN DESCRIPTOR</th>
+                            <th class="py-2.5 px-3 font-bold text-right hidden sm:table-cell">BASE VALUE</th>
+                            <th class="py-2.5 px-3 font-bold text-right text-tkGold">FLEA VALUE</th>
+                            <th class="py-2.5 px-3 font-bold text-right text-tkGreen">BEST TRADER</th>
+                            <th class="py-2.5 px-3 font-bold text-right hidden md:table-cell">LAST SYNC</th>
+                        </tr>
+                    </thead>
+                    <tbody id="nexus-table-body" class="divide-y divide-tkBorder/50">
+                        <tr>
+                            <td colspan="5" class="py-20 text-center text-tkMuted">
+                                <span class="inline-block animate-spin border-2 border-tkGold border-t-transparent w-5 h-5 rounded-full mr-2 align-middle"></span>
+                                COMMUNICATING WITH DEFENSE NETWORK...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- SYSTEM STATUS FOOTER -->
+            <div class="px-4 py-1.5 border-t border-tkBorder bg-tkPanel/20 text-[10px] text-tkMuted flex justify-between select-none">
+                <div>SYS_MSG: Use arrow keys to browse selection once focused. Click on any record to view telemetry.</div>
+                <div>SECURE CONNECTION // UNENCRYPTED SOURCE</div>
+            </div>
+        </section>
+
+        <!-- RIGHT DETAIL INSPECTOR (25% WIDTH - Collapsible/Adaptive) -->
+        <aside id="detail-inspector" class="w-full lg:w-96 bg-tkPanel flex flex-col border-t lg:border-t-0 border-tkBorder h-2/5 lg:h-full overflow-hidden shrink-0">
+            <div class="p-3.5 border-b border-tkBorder flex justify-between items-center bg-tkBg/40 select-none">
+                <h3 class="text-xs font-bold tracking-wider uppercase text-tkGold">&gt;&gt; SPECTRAL_TELEMETRY</h3>
+                <span id="close-inspector-btn" class="text-xs text-tkMuted hover:text-white cursor-pointer hidden lg:inline" onclick="resetTelemetrySelection()">[RESET]</span>
+            </div>
+
+            <!-- SCROLLABLE INSPECTOR PANEL -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-4" id="telemetry-inner">
+                <!-- IDLE TELEMETRY DESCRIPTOR -->
+                <div id="idle-telemetry" class="h-full flex flex-col justify-center items-center text-center space-y-3 py-12">
+                    <div class="text-tkGoldDim text-2xl font-black opacity-30 tracking-widest">[NO_TARGET]</div>
+                    <p class="text-[11px] text-tkMuted max-w-xs leading-relaxed uppercase">
+                        Select a specimen from the index node database to monitor live metrics, traders spread, and flea parameters.
+                    </p>
+                </div>
+
+                <!-- DYNAMIC TELEMETRY CONTENT -->
+                <div id="active-telemetry" class="hidden space-y-4">
+                    <!-- Heading Meta -->
                     <div>
-                        <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-4 pb-1 border-b border-zinc-800">Traders</h3>
-                        <div class="space-y-2" id="trader-deck">
-                            <!-- Populated dynamically -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Trader Intel View -->
-                <div class="md:col-span-3 bg-zinc-900/40 border border-zinc-800 rounded-2xl p-5 flex flex-col overflow-hidden">
-                    <div id="trader-profile-placeholder" class="py-24 text-center text-zinc-500 my-auto">
-                        <svg class="w-12 h-12 mx-auto text-zinc-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                        <h4 class="text-sm font-bold text-zinc-400">Select a Trader</h4>
-                        <p class="text-xs text-zinc-500 mt-1">Pick a trader on the left to review buy/sell limits, transaction margins, levels, and unlocks.</p>
+                        <div id="telemetry-category" class="text-[10px] text-tkGreen tracking-widest font-bold uppercase mb-1">WEAPON // MODIFICATION</div>
+                        <h2 id="telemetry-name" class="text-sm font-bold text-white uppercase tracking-tight leading-snug">AK-74N 5.45x39 Assault Rifle</h2>
+                        <span id="telemetry-short" class="inline-block mt-1 bg-tkBorder text-[10px] font-bold text-zinc-300 px-1.5 py-0.5 rounded select-all uppercase">AK-74N</span>
                     </div>
 
-                    <div id="trader-profile-view" class="hidden space-y-6 flex-grow overflow-y-auto pr-2">
-                        <!-- Top Profile Banner -->
-                        <div class="flex flex-col sm:flex-row items-center gap-5 pb-4 border-b border-zinc-800">
-                            <div class="w-20 h-20 bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden flex items-center justify-center p-1">
-                                <img id="trader-avatar" src="" alt="Trader" class="w-full h-full object-cover rounded-lg">
-                            </div>
-                            <div class="text-center sm:text-left">
-                                <h2 id="trader-title" class="text-lg font-bold text-white tracking-tight">--</h2>
-                                <p id="trader-desc-brief" class="text-xs text-zinc-400 italic mt-0.5">Reliable supplier of military resources.</p>
+                    <!-- Visual Asset Box (Lazy Loaded on request) -->
+                    <div class="border border-tkBorder bg-tkBg p-3 rounded flex justify-center items-center relative group min-h-[100px]">
+                        <div id="telemetry-img-loader" class="absolute inset-0 flex justify-center items-center bg-tkBg/80 hidden">
+                            <span class="animate-pulse text-tkGold text-xs font-bold">RETRIEVING FILE...</span>
+                        </div>
+                        <img id="telemetry-img" src="" alt="Specimen Visual" class="max-h-24 object-contain filter grayscale contrast-125 brightness-90 hover:grayscale-0 transition duration-300" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2364748b\' stroke-width=\'1\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><path d=\'M21 15l-5-5L5 21\'/></svg>'">
+                    </div>
+
+                    <!-- Global Value Metrics -->
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-tkBg border border-tkBorder p-2 rounded">
+                            <span class="text-[10px] text-tkMuted block uppercase">FLEA LOWEST</span>
+                            <span id="telemetry-flea" class="text-sm font-bold text-tkGold">0 ₽</span>
+                        </div>
+                        <div class="bg-tkBg border border-tkBorder p-2 rounded">
+                            <span class="text-[10px] text-tkMuted block uppercase">BASE TRADER</span>
+                            <span id="telemetry-base" class="text-sm font-bold text-zinc-300">0 ₽</span>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Spread Analytics -->
+                    <div class="space-y-2">
+                        <span class="text-[10px] text-tkMuted block font-bold uppercase border-b border-tkBorder pb-1">// MARKET SPREAD DATA</span>
+                        
+                        <!-- BUY FROM SECTION -->
+                        <div class="space-y-1">
+                            <span class="text-[9px] text-tkGold font-bold tracking-wider uppercase block">PROCUREMENT DIRECTIVES (BUY FROM)</span>
+                            <div id="buy-source-list" class="space-y-1 text-xs">
+                                <!-- Generated Dynamic Items -->
                             </div>
                         </div>
 
-                        <!-- Leveling Requirements -->
-                        <div>
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">Loyalty Level Milestones</h3>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="trader-levels-grid">
-                                <!-- Populated dynamically -->
+                        <!-- SELL TO SECTION -->
+                        <div class="space-y-1 pt-2">
+                            <span class="text-[9px] text-tkGreen font-bold tracking-wider uppercase block">LIQUIDATION DIRECTIVES (SELL TO)</span>
+                            <div id="sell-source-list" class="space-y-1 text-xs">
+                                <!-- Generated Dynamic Items -->
                             </div>
                         </div>
+                    </div>
 
-                        <!-- High Value Trade items -->
-                        <div>
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">Loyalty-Based Market Arbitrage</h3>
-                            <p class="text-[10px] text-zinc-500 mb-3">Items you can acquire or sell to this vendor for optimized profit spreads.</p>
-                            <div class="bg-zinc-950/60 border border-zinc-800 rounded-xl overflow-hidden">
-                                <table class="w-full text-left border-collapse text-xs">
-                                    <thead>
-                                        <tr class="bg-zinc-900 border-b border-zinc-800 text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
-                                            <th class="p-3">Item</th>
-                                            <th class="p-3">Category</th>
-                                            <th class="p-3 text-right">Flea Avg</th>
-                                            <th class="p-3 text-right">Trader Pays</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="trader-arbitrage-rows" class="divide-y divide-zinc-800/50">
-                                        <!-- Populated dynamically -->
-                                    </tbody>
-                                </table>
-                            </div>
+                    <!-- Meta specifications -->
+                    <div class="bg-tkBg/50 border border-tkBorder p-2.5 rounded space-y-1 text-[10px] text-tkMuted">
+                        <div class="flex justify-between">
+                            <span>REGISTRY ID:</span>
+                            <span id="telemetry-id" class="text-zinc-400 select-all font-mono">unknown</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>LAST TELEMETRY RECON:</span>
+                            <span id="telemetry-recon" class="text-zinc-400 font-mono">unknown</span>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- MODULE 3: MAPS & INTEL SYSTEM -->
-        <div id="module-maps" class="hidden w-full h-full flex flex-col gap-4 overflow-hidden">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 flex-grow overflow-hidden">
-                <!-- Map Select Deck -->
-                <div class="md:col-span-1 bg-zinc-900/40 border border-zinc-800 rounded-2xl p-4 flex flex-col justify-between overflow-y-auto">
-                    <div>
-                        <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-4 pb-1 border-b border-zinc-800">Raid Locations</h3>
-                        <div class="space-y-2" id="maps-deck">
-                            <!-- Populated dynamically -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Map Info View -->
-                <div class="md:col-span-3 bg-zinc-900/40 border border-zinc-800 rounded-2xl p-5 flex flex-col overflow-hidden">
-                    <div id="map-profile-placeholder" class="py-24 text-center text-zinc-500 my-auto">
-                        <svg class="w-12 h-12 mx-auto text-zinc-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
-                        </svg>
-                        <h4 class="text-sm font-bold text-zinc-400">Select Map Data</h4>
-                        <p class="text-xs text-zinc-500 mt-1">Review deployment times, escape tactics, access restrictions, and boss configurations.</p>
-                    </div>
-
-                    <div id="map-profile-view" class="hidden space-y-6 flex-grow overflow-y-auto pr-2">
-                        <!-- Top Map Header -->
-                        <div class="flex flex-col sm:flex-row items-start justify-between gap-4 pb-4 border-b border-zinc-800">
-                            <div>
-                                <h2 id="map-title" class="text-lg font-bold text-white tracking-tight">--</h2>
-                                <p id="map-desc" class="text-xs text-zinc-400 mt-0.5">Tactical overview of the region.</p>
-                            </div>
-                            <div class="flex gap-2">
-                                <a id="map-wiki-btn" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 text-xs font-bold bg-zinc-800 hover:bg-zinc-700 hover:text-white rounded-lg transition flex items-center gap-1.5">
-                                    <span>Wiki Intel</span>
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                    </svg>
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Map Quick Intel Grid -->
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div class="p-3 bg-zinc-950/40 border border-zinc-800/80 rounded-xl">
-                                <span class="text-[9px] uppercase tracking-wider text-zinc-500 block">Raid Duration</span>
-                                <span id="map-stat-duration" class="text-xs font-bold text-white mt-1 block">-- mins</span>
-                            </div>
-                            <div class="p-3 bg-zinc-950/40 border border-zinc-800/80 rounded-xl">
-                                <span class="text-[9px] uppercase tracking-wider text-zinc-500 block">Operator Count</span>
-                                <span id="map-stat-players" class="text-xs font-bold text-white mt-1 block">--</span>
-                            </div>
-                            <div class="p-3 bg-zinc-950/40 border border-zinc-800/80 rounded-xl">
-                                <span class="text-[9px] uppercase tracking-wider text-zinc-500 block">Enemies</span>
-                                <span id="map-stat-enemies" class="text-xs font-bold text-white mt-1 block">Scavs, Bosses</span>
-                            </div>
-                            <div class="p-3 bg-zinc-950/40 border border-zinc-800/80 rounded-xl">
-                                <span class="text-[9px] uppercase tracking-wider text-zinc-500 block">Key Required</span>
-                                <span id="map-stat-key" class="text-xs font-bold text-tarkovGold mt-1 block">None</span>
-                            </div>
-                        </div>
-
-                        <!-- Boss Intel Grid -->
-                        <div>
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">Hostile & Boss Intelligence</h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3" id="map-bosses-grid">
-                                <!-- Populated dynamically -->
-                            </div>
-                        </div>
-
-                        <!-- Extraction Zones -->
-                        <div>
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">Extraction Points</h3>
-                            <div class="bg-zinc-950/60 border border-zinc-800 rounded-xl overflow-hidden">
-                                <table class="w-full text-left border-collapse text-xs">
-                                    <thead>
-                                        <tr class="bg-zinc-900 border-b border-zinc-800 text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
-                                            <th class="p-3 pl-4">Exfiltration Location</th>
-                                            <th class="p-3">Side</th>
-                                            <th class="p-3">Required/Dynamic</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="map-exfil-rows" class="divide-y divide-zinc-800/50">
-                                        <!-- Populated dynamically -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+        </aside>
     </main>
 
-    <!-- Unified Footnote Info -->
-    <footer class="w-full text-center py-4 text-[10px] text-zinc-500 select-none border-t border-zinc-800/40 bg-zinc-950/20 flex-shrink-0">
-        This portal provides zero-latency client-side processing of live Escape from Tarkov game files & wiki indexes.
-    </footer>
+    <!-- FLOATING ERROR DIALOGUE (NO REBOOT ALERTS) -->
+    <div id="error-dialog" class="fixed bottom-6 right-6 max-w-md bg-tkPanel border-l-4 border-tkRed border-y border-r border-tkBorder p-4 shadow-2xl rounded hidden z-[100] animate-bounce">
+        <div class="flex items-start space-x-3">
+            <div class="text-tkRed font-extrabold text-sm">[ERR.API_REFUSED]</div>
+            <div class="flex-1">
+                <p class="text-xs font-bold uppercase text-white mb-1">Tarkov API Protocol Error</p>
+                <p id="error-desc" class="text-[11px] text-tkMuted leading-normal mb-2">The gateway could not authorize requests. Switched database alignment to internal mock cache registry.</p>
+                <div class="flex gap-2">
+                    <button onclick="dismissError()" class="bg-tkBorder hover:bg-zinc-800 text-[10px] font-bold px-2 py-1 rounded transition uppercase">Acknowledge</button>
+                    <button onclick="fetchMarketData()" class="bg-tkGold text-black hover:bg-yellow-600 text-[10px] font-bold px-2 py-1 rounded transition uppercase">Retry Protocol</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <!-- JavaScript Data Engine -->
+    <!-- MAIN CORE LOGIC -->
     <script>
-        // High-Speed Global Memory Cache
-        let tarkovItems = [];
-        let tarkovTraders = [];
-        let tarkovMaps = [];
-        let currentCategory = "All";
-        let activeTab = "items";
+        // Memory variables
+        let rawItems = [];
+        let filteredItems = [];
+        let selectedItem = null;
+        let activeCategory = 'all';
 
-        // Format currency helper
-        const formatPrice = (price) => {
-            return price ? '₽' + price.toLocaleString('en-US') : 'N/A';
-        };
+        // High performance local mock cache to ensure application is completely operational even during API down-time/CORS issues
+        const mockDatabaseFallback = [
+            {
+                id: "5c0a0c2986f7743d1c1b1c6d",
+                name: "TerraGroup Labs Access Keycard",
+                shortName: "Labs Key",
+                basePrice: 165000,
+                types: ["keys"],
+                updated: new Date().toISOString(),
+                buyFor: [{ price: 165000, source: "therapist", currency: "RUB" }],
+                sellFor: [{ price: 165000, source: "therapist", currency: "RUB" }, { price: 215000, source: "fleaMarket", currency: "RUB" }]
+            },
+            {
+                id: "5447a9424bdc2d61118b4567",
+                name: "M855A1 5.56x45 Ammo Round",
+                shortName: "M855A1",
+                basePrice: 420,
+                types: ["ammo"],
+                updated: new Date().toISOString(),
+                buyFor: [{ price: 1100, source: "peacekeeper", currency: "USD" }, { price: 3400, source: "fleaMarket", currency: "RUB" }],
+                sellFor: [{ price: 320, source: "peacekeeper", currency: "USD" }]
+            },
+            {
+                id: "5bf3e87d0db834001d2c4bd8",
+                name: "Slick Body Armor (Olive Drab)",
+                shortName: "Slick",
+                basePrice: 280000,
+                types: ["armor"],
+                updated: new Date().toISOString(),
+                buyFor: [{ price: 480000, source: "fleaMarket", currency: "RUB" }],
+                sellFor: [{ price: 140000, source: "ragman", currency: "RUB" }]
+            },
+            {
+                id: "57dc20df2459775a6104e76d",
+                name: "AK-74N 5.45x39 assault rifle",
+                shortName: "AK-74N",
+                basePrice: 43000,
+                types: ["weapon"],
+                updated: new Date().toISOString(),
+                buyFor: [{ price: 44000, source: "prapor", currency: "RUB" }, { price: 39000, source: "fleaMarket", currency: "RUB" }],
+                sellFor: [{ price: 28000, source: "prapor", currency: "RUB" }]
+            },
+            {
+                id: "590c621186f77421a4734892",
+                name: "Golden Star Balm",
+                shortName: "Golden Star",
+                basePrice: 22000,
+                types: ["provisions"],
+                updated: new Date().toISOString(),
+                buyFor: [{ price: 82000, source: "fleaMarket", currency: "RUB" }],
+                sellFor: [{ price: 23000, source: "therapist", currency: "RUB" }]
+            },
+            {
+                id: "5af0534c86f7743b6f35a643",
+                name: "Physical Bitcoin (0.2 BTC)",
+                shortName: "Physical BTC",
+                basePrice: 450000,
+                types: ["barter"],
+                updated: new Date().toISOString(),
+                buyFor: [{ price: 620000, source: "fleaMarket", currency: "RUB" }],
+                sellFor: [{ price: 610000, source: "therapist", currency: "RUB" }]
+            }
+        ];
 
-        // Complete Tarkov.dev GraphQL query pulling items, maps, and traders in 1 transaction
-        const gqlQuery = `
-        {
-            items(lang: en) {
+        // Format raw currency values into standardized strings
+        function formatRubles(val, currency = "RUB") {
+            if (!val && val !== 0) return '---';
+            if (currency === "USD") {
+                return `$${Math.round(val).toLocaleString()}`;
+            } else if (currency === "EUR") {
+                return `€${Math.round(val).toLocaleString()}`;
+            }
+            return `${Math.round(val).toLocaleString()} ₽`;
+        }
+
+        // Display alerts nicely without browser-blocking popups
+        function showNotification(msg, isError = false) {
+            const errDialog = document.getElementById('error-dialog');
+            const errDesc = document.getElementById('error-desc');
+            if (isError) {
+                errDesc.innerText = msg;
+                errDialog.classList.remove('hidden');
+            } else {
+                console.log("[TELEMETRY INFO]: ", msg);
+            }
+        }
+
+        function dismissError() {
+            document.getElementById('error-dialog').classList.add('hidden');
+        }
+
+        // Async API Core Fetch with Exponential Backoff
+        async function fetchMarketData() {
+            const startTime = performance.now();
+            const connStatus = document.getElementById('conn-status');
+            const refreshBtn = document.getElementById('refresh-btn');
+            
+            connStatus.innerText = "SYNCHRONIZING...";
+            connStatus.className = "text-tkGold font-bold animate-pulse uppercase";
+            refreshBtn.disabled = true;
+            refreshBtn.classList.add('opacity-50');
+
+            // GraphQL query optimized for extreme response size reduction (avoiding slow nested components and inline/b64 images)
+            const query = `
+            {
+              items {
                 id
                 name
                 shortName
                 basePrice
-                avg24hPrice
-                weight
-                wikiLink
-                category {
-                    name
+                types
+                updated
+                buyFor {
+                  price
+                  source
+                  currency
                 }
                 sellFor {
-                    price
-                    source
+                  price
+                  source
+                  currency
                 }
-            }
-            traders(lang: en) {
-                id
-                name
-                description
-                imageLink
-                levels {
-                    level
-                    requiredPlayerLevel
-                    requiredReputation
-                    requiredCommerce
-                }
-            }
-            maps(lang: en) {
-                id
-                name
-                wiki
-                description
-                raidDuration
-                players
-                enemies
-                bosses {
-                    boss {
-                        name
+              }
+            }`;
+
+            let retries = 5;
+            let delay = 1000;
+            let success = false;
+            let data = null;
+
+            while (retries > 0 && !success) {
+                try {
+                    const response = await fetch('https://api.tarkov.dev/v1/graphql', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ query: query })
+                    });
+
+                    if (response.ok) {
+                        const json = await response.json();
+                        if (json.data && json.data.items) {
+                            data = json.data.items;
+                            success = true;
+                        } else {
+                            throw new Error("Invalid API payload returned");
+                        }
+                    } else {
+                        throw new Error(`HTTP network error code: ${response.status}`);
                     }
-                    spawnChance
-                }
-                extracts {
-                    name
-                    faction
-                    customComment
-                }
-                accessKeys {
-                    name
-                    shortName
-                }
-            }
-        }
-        `;
-
-        // Tab Switching Interface
-        function switchTab(tab) {
-            activeTab = tab;
-            
-            // Hide all modules
-            document.getElementById('module-items').classList.add('hidden');
-            document.getElementById('module-traders').classList.add('hidden');
-            document.getElementById('module-maps').classList.add('hidden');
-
-            // Reset tab button visuals
-            const tabs = ['items', 'traders', 'maps'];
-            tabs.forEach(t => {
-                const btn = document.getElementById(`tab-${t}`);
-                if (btn) {
-                    btn.className = "px-3 py-1 text-xs font-bold rounded-md text-zinc-400 hover:text-white transition";
-                }
-            });
-
-            // Activate chosen module
-            document.getElementById(`module-${tab}`).classList.remove('hidden');
-            const activeBtn = document.getElementById(`tab-${tab}`);
-            if (activeBtn) {
-                activeBtn.className = "px-3 py-1 text-xs font-bold rounded-md bg-zinc-800 text-white transition";
-            }
-        }
-
-        // Master Initialization
-        async function initializeHub() {
-            const start = performance.now();
-            const indicator = document.getElementById('connection-indicator');
-            const cacheStatus = document.getElementById('cache-status');
-            const totalCount = document.getElementById('total-count');
-            
-            try {
-                // Fetch direct from GraphQL
-                const response = await fetch('https://api.tarkov.dev/graphql', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({ query: gqlQuery })
-                });
-
-                if (!response.ok) throw new Error('Network status failed');
-
-                const result = await response.json();
-                
-                if (result.data) {
-                    // 1. Process items
-                    if (result.data.items) {
-                        tarkovItems = result.data.items.map(item => ({
-                            id: item.id,
-                            name: item.name,
-                            shortName: item.shortName,
-                            basePrice: item.basePrice,
-                            marketPrice: item.avg24hPrice,
-                            category: item.category?.name || 'Other',
-                            weight: item.weight,
-                            wikiLink: item.wikiLink,
-                            icon: `https://assets.tarkov.dev/${item.id}-512.png`,
-                            description: item.name + " (" + item.shortName + ") indexed directly from official game database structures.",
-                            sellFor: item.sellFor || []
-                        }));
-                        if (totalCount) totalCount.textContent = tarkovItems.length;
-                    }
-
-                    // 2. Process Traders
-                    if (result.data.traders) {
-                        tarkovTraders = result.data.traders;
-                        renderTraderDeck();
-                    }
-
-                    // 3. Process Maps
-                    if (result.data.maps) {
-                        tarkovMaps = result.data.maps;
-                        renderMapsDeck();
-                    }
-                    
-                    // Format active timestamp cache header
-                    const now = new Date();
-                    const timestampStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-                    if (cacheStatus) cacheStatus.textContent = `Live (${timestampStr})`;
-                    
-                    // Connection Status
-                    if (indicator) {
-                        indicator.classList.remove('bg-rose-500', 'animate-pulse');
-                        indicator.classList.add('bg-emerald-500');
-                        indicator.title = "Connected to Tarkov Intel API";
+                } catch (err) {
+                    retries--;
+                    if (retries === 0) {
+                        console.error("All fetch retries exhausted.", err);
+                    } else {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2; // Exponential Backoff Rule
                     }
                 }
-                
-            } catch (error) {
-                console.error('API Error:', error);
-                if (indicator) {
-                    indicator.classList.remove('bg-emerald-500', 'animate-pulse');
-                    indicator.classList.add('bg-rose-500');
-                    indicator.title = "Local database synchronization failed.";
-                }
-                if (cacheStatus) cacheStatus.textContent = 'Offline';
             }
 
-            const end = performance.now();
-            const latencyMs = document.getElementById('latency-ms');
-            if (latencyMs) latencyMs.textContent = Math.round(end - start) + 'ms';
-            
-            filterSearch();
-        }
+            const latency = Math.round(performance.now() - startTime);
+            document.getElementById('latency-val').innerText = `${latency} ms`;
 
-        // --- MODULE 1: ITEMS ENGINE ---
-
-        // Category Selection
-        function selectCategory(category, btnElement) {
-            currentCategory = category;
-            
-            // Update UI Active State on buttons
-            const buttons = document.querySelectorAll('#category-list button');
-            buttons.forEach(btn => {
-                btn.className = "w-auto lg:w-full text-left px-3 py-1.5 rounded-lg text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200 transition";
-            });
-            
-            if (btnElement) {
-                btnElement.className = "w-auto lg:w-full text-left px-3 py-1.5 rounded-lg bg-zinc-900 text-white font-semibold transition";
-            }
-            
-            filterSearch();
-        }
-
-        // Inspect Single Item Info Panel
-        function inspectItem(itemId) {
-            const item = tarkovItems.find(i => i.id === itemId);
-            if (!item) return;
-
-            const placeholder = document.getElementById('details-placeholder');
-            const content = document.getElementById('details-content');
-            
-            if (!placeholder || !content) return;
-
-            placeholder.style.display = 'none';
-            content.classList.remove('hidden');
-
-            // Set basic details
-            document.getElementById('detail-icon').src = item.icon || '';
-            document.getElementById('detail-short').textContent = item.shortName || 'N/A';
-            document.getElementById('detail-category').textContent = item.category || 'Other';
-            document.getElementById('detail-name').textContent = item.name || 'Unnamed';
-            document.getElementById('detail-desc').textContent = item.description || 'No descriptive guide logged yet.';
-            document.getElementById('detail-val-base').textContent = formatPrice(item.basePrice);
-            document.getElementById('detail-val-flea').textContent = formatPrice(item.marketPrice);
-            document.getElementById('detail-val-weight').textContent = item.weight ? `${item.weight} kg` : '0 kg';
-            document.getElementById('detail-val-id').textContent = item.id || '--';
-
-            // Populate Traders Purchase Offers
-            const priceContainer = document.getElementById('detail-trader-prices');
-            priceContainer.innerHTML = '';
-            
-            if (item.sellFor && item.sellFor.length > 0) {
-                // Filter and sort by highest buyback price
-                const sortedOffers = [...item.sellFor].sort((a, b) => b.price - a.price);
-                sortedOffers.forEach(offer => {
-                    const traderDiv = document.createElement('div');
-                    traderDiv.className = "flex justify-between items-center text-xs py-1 border-b border-zinc-800/40 last:border-0";
-                    traderDiv.innerHTML = `
-                        <span class="text-zinc-300 font-medium">${offer.source}</span>
-                        <span class="font-bold text-emerald-500">${formatPrice(offer.price)}</span>
-                    `;
-                    priceContainer.appendChild(traderDiv);
-                });
+            if (success && data) {
+                rawItems = data;
+                connStatus.innerText = "ONLINE";
+                connStatus.className = "text-tkGreen font-bold uppercase";
+                dismissError();
             } else {
-                priceContainer.innerHTML = `<div class="text-[10px] text-zinc-500 italic">No direct trader offers available.</div>`;
+                // If API blocked by local CORS or is offline, load fallback array
+                rawItems = mockDatabaseFallback;
+                connStatus.innerText = "CACHE_OFFLINE";
+                connStatus.className = "text-tkRed font-bold uppercase";
+                showNotification("Network endpoint refused request or CORS restriction detected. Switched to offline high-speed terminal cache database.", true);
             }
 
-            // Wiki Link
-            const wikiLink = document.getElementById('detail-wiki-link');
-            if (wikiLink) {
-                if (item.wikiLink) {
-                    wikiLink.href = item.wikiLink;
-                    wikiLink.classList.remove('pointer-events-none', 'opacity-50');
-                } else {
-                    wikiLink.href = "#";
-                    wikiLink.classList.add('pointer-events-none', 'opacity-50');
-                }
-            }
+            refreshBtn.disabled = false;
+            refreshBtn.classList.remove('opacity-50');
+
+            // Apply global statistics & render
+            document.getElementById('item-count').innerText = `${rawItems.length} ITEMS`;
+            applyFilters();
         }
 
-        // Fast filtering
-        function filterSearch() {
-            const searchBox = document.getElementById('search-box');
-            const tbody = document.getElementById('results-table-body');
-            const emptyState = document.getElementById('empty-state');
-            const metrics = document.getElementById('metrics-stats');
+        // Instant Client-Side Search Engine (Runs in < 2ms)
+        function applyFilters() {
+            const searchVal = document.getElementById('search-input').value.toLowerCase().trim();
             
-            if (!searchBox || !tbody || !emptyState || !metrics) return;
-
-            const queryText = searchBox.value.toLowerCase().trim();
-            
-            // Default view state
-            if (queryText === '' && currentCategory === 'All') {
-                tbody.innerHTML = '';
-                emptyState.style.display = 'block';
-                metrics.textContent = 'Enter criteria or category to scan live database.';
-                return;
-            }
-
-            emptyState.style.display = 'none';
-
-            let matches = tarkovItems.filter(item => {
-                let catMatch = true;
-                if (currentCategory === 'Barter') catMatch = item.category.toLowerCase().includes('barter');
-                else if (currentCategory === 'Keys') catMatch = item.category.toLowerCase().includes('key');
-                else if (currentCategory === 'Medical') catMatch = item.category.toLowerCase().includes('medical') || item.category.toLowerCase().includes('stimulator');
-                else if (currentCategory === 'Provisions') catMatch = item.category.toLowerCase().includes('provision') || item.category.toLowerCase().includes('food');
-                else if (currentCategory === 'Gear') catMatch = ['armor', 'helmet', 'visor', 'headset', 'tacticalrig', 'backpack', 'glasses'].some(c => item.category.toLowerCase().includes(c));
-                else if (currentCategory === 'Ammo') catMatch = item.category.toLowerCase().includes('ammo');
-                else if (currentCategory === 'Weapon') catMatch = ['weapon', 'mod', 'gun', 'sight', 'barrel', 'stock', 'magazine'].some(c => item.category.toLowerCase().includes(c));
-                
-                if (!catMatch) return false;
-
-                if (queryText) {
-                    return item.name.toLowerCase().includes(queryText) || 
-                           item.shortName.toLowerCase().includes(queryText);
+            filteredItems = rawItems.filter(item => {
+                // Category Tag Filter
+                if (activeCategory !== 'all') {
+                    if (!item.types || !item.types.includes(activeCategory)) {
+                        return false;
+                    }
                 }
+
+                // Match Search String
+                if (searchVal) {
+                    const nameMatch = item.name && item.name.toLowerCase().includes(searchVal);
+                    const shortMatch = item.shortName && item.shortName.toLowerCase().includes(searchVal);
+                    const idMatch = item.id && item.id.toLowerCase() === searchVal;
+                    return nameMatch || shortMatch || idMatch;
+                }
+
                 return true;
             });
 
-            // Clean Sort
-            matches.sort((a, b) => a.name.length - b.name.length);
+            // Perform sorting
+            sortItems();
+            renderTable();
+        }
 
-            // Cap items at 100 max to keep DOM responsive
-            const displayLimit = 100;
-            const displayItems = matches.slice(0, displayLimit);
+        function sortItems() {
+            const sortMode = document.getElementById('sort-select').value;
+            
+            filteredItems.sort((a, b) => {
+                const getFleaPrice = (item) => {
+                    const flea = item.sellFor?.find(s => s.source === 'fleaMarket');
+                    return flea ? flea.price : 0;
+                };
 
-            if (displayItems.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-zinc-500">No matching intel detected.</td></tr>`;
-                metrics.textContent = '0 records found.';
+                if (sortMode === 'name') {
+                    return (a.name || '').localeCompare(b.name || '');
+                } else if (sortMode === 'price-desc') {
+                    return getFleaPrice(b) - getFleaPrice(a);
+                } else if (sortMode === 'price-asc') {
+                    const priceA = getFleaPrice(a) || Infinity;
+                    const priceB = getFleaPrice(b) || Infinity;
+                    return priceA - priceB;
+                } else if (sortMode === 'base-desc') {
+                    return (b.basePrice || 0) - (a.basePrice || 0);
+                }
+                return 0;
+            });
+        }
+
+        // Render index table dynamically
+        function renderTable() {
+            const tbody = document.getElementById('nexus-table-body');
+            tbody.innerHTML = '';
+
+            if (filteredItems.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="py-20 text-center text-tkMuted uppercase text-xs">
+                            No telemetry records match current query filters.
+                        </td>
+                    </tr>
+                `;
                 return;
             }
 
-            const frag = document.createDocumentFragment();
-            displayItems.forEach(item => {
+            // High efficiency document fragment creation
+            const fragment = document.createDocumentFragment();
+
+            filteredItems.forEach(item => {
                 const tr = document.createElement('tr');
-                tr.className = 'interactive-row border-b border-zinc-800/40 hover:bg-zinc-800/40 cursor-pointer';
-                tr.onclick = () => inspectItem(item.id);
+                tr.className = `cursor-pointer border-b border-tkBorder/40 hover:bg-tkPanel transition duration-100 ${selectedItem && selectedItem.id === item.id ? 'bg-tkBorder/60 border-l-2 border-l-tkGold' : ''}`;
+                tr.onclick = () => selectItem(item.id);
+
+                // Find dynamic values
+                const fleaObj = item.sellFor?.find(s => s.source === 'fleaMarket');
+                const fleaPrice = fleaObj ? formatRubles(fleaObj.price, fleaObj.currency) : 'NONE';
+
+                // Find best trader price
+                const traderOffers = item.sellFor?.filter(s => s.source !== 'fleaMarket') || [];
+                let bestTrader = null;
+                if (traderOffers.length > 0) {
+                    bestTrader = traderOffers.reduce((max, curr) => (curr.price > max.price) ? curr : max, traderOffers[0]);
+                }
+                const traderText = bestTrader ? `${formatRubles(bestTrader.price, bestTrader.currency)} (${bestTrader.source})` : 'NONE';
+
+                // Time synchronization
+                let syncTime = 'UNKNOWN';
+                if (item.updated) {
+                    const diffMs = new Date() - new Date(item.updated);
+                    const diffMins = Math.floor(diffMs / 60000);
+                    if (diffMins < 60) {
+                        syncTime = `${diffMins}M AGO`;
+                    } else {
+                        syncTime = `${Math.floor(diffMins / 60)}H AGO`;
+                    }
+                }
 
                 tr.innerHTML = `
-                    <td class="p-3 pl-4 text-zinc-500 font-bold">${item.shortName}</td>
-                    <td class="p-3 font-semibold text-zinc-200 truncate max-w-[200px]" title="${item.name}">${item.name}</td>
-                    <td class="p-3 text-zinc-400">${item.category}</td>
-                    <td class="p-3 pr-4 text-right font-bold text-emerald-500">${formatPrice(item.marketPrice)}</td>
+                    <td class="py-2 px-4 font-semibold text-white">
+                        <div class="flex flex-col">
+                            <span class="hover:text-tkGold transition uppercase truncate max-w-sm md:max-w-xl">${item.name || 'Unnamed Specimen'}</span>
+                            <span class="text-[9px] text-tkMuted font-mono select-all">${item.shortName || 'N/A'}</span>
+                        </div>
+                    </td>
+                    <td class="py-2 px-3 text-right text-zinc-400 font-mono hidden sm:table-cell">${formatRubles(item.basePrice)}</td>
+                    <td class="py-2 px-3 text-right font-bold text-tkGold font-mono">${fleaPrice}</td>
+                    <td class="py-2 px-3 text-right font-bold text-tkGreen font-mono text-[11px]">${traderText}</td>
+                    <td class="py-2 px-3 text-right text-tkMuted font-mono hidden md:table-cell text-[10px]">${syncTime}</td>
                 `;
-                frag.appendChild(tr);
+
+                fragment.appendChild(tr);
             });
 
-            tbody.innerHTML = '';
-            tbody.appendChild(frag);
-
-            metrics.textContent = `Displaying ${displayItems.length} of ${matches.length} indexed options.`;
+            tbody.appendChild(fragment);
         }
 
-        // --- MODULE 2: TRADERS ENGINE ---
+        // On-demand specimen inspection (extremely lightweight, lazy loading heavy visual assets only when clicked)
+        function selectItem(id) {
+            const item = rawItems.find(i => i.id === id);
+            if (!item) return;
 
-        function renderTraderDeck() {
-            const deck = document.getElementById('trader-deck');
-            if (!deck) return;
+            selectedItem = item;
+            
+            // Re-render table list to highlight selection
+            renderTable();
 
-            deck.innerHTML = '';
-            tarkovTraders.forEach(trader => {
-                const button = document.createElement('button');
-                button.className = "w-full text-left p-3 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 transition flex items-center gap-3";
-                button.onclick = () => selectTrader(trader.id);
+            // Setup Inspector Panels
+            document.getElementById('idle-telemetry').classList.add('hidden');
+            const activePanel = document.getElementById('active-telemetry');
+            activePanel.classList.remove('hidden');
 
-                button.innerHTML = `
-                    <div class="w-10 h-10 rounded-lg bg-zinc-950 overflow-hidden flex-shrink-0">
-                        <img src="${trader.imageLink}" alt="${trader.name}" class="w-full h-full object-cover">
-                    </div>
-                    <div>
-                        <div class="text-xs font-bold text-zinc-200">${trader.name}</div>
-                        <div class="text-[9px] text-zinc-500">Milestones: ${trader.levels?.length || 0} levels</div>
-                    </div>
-                `;
-                deck.appendChild(button);
-            });
-        }
+            // Metadata variables
+            document.getElementById('telemetry-category').innerText = `SPECIMEN // ${(item.types && item.types[0]) || 'GENERAL'}`;
+            document.getElementById('telemetry-name').innerText = item.name;
+            document.getElementById('telemetry-short').innerText = item.shortName || 'N/A';
+            document.getElementById('telemetry-id').innerText = item.id;
+            
+            const syncDate = item.updated ? new Date(item.updated).toLocaleString() : 'OFFLINE_CACHE';
+            document.getElementById('telemetry-recon').innerText = syncDate;
 
-        function selectTrader(traderId) {
-            const trader = tarkovTraders.find(t => t.id === traderId);
-            if (!trader) return;
+            // Base and flea prices
+            const fleaObj = item.sellFor?.find(s => s.source === 'fleaMarket');
+            document.getElementById('telemetry-flea').innerText = fleaObj ? formatRubles(fleaObj.price, fleaObj.currency) : 'N/A';
+            document.getElementById('telemetry-base').innerText = formatRubles(item.basePrice);
 
-            document.getElementById('trader-profile-placeholder').style.display = 'none';
-            const profileView = document.getElementById('trader-profile-view');
-            profileView.classList.remove('hidden');
+            // Lazy Load Specimen Image
+            const imgEl = document.getElementById('telemetry-img');
+            const loader = document.getElementById('telemetry-img-loader');
+            loader.classList.remove('hidden');
 
-            document.getElementById('trader-avatar').src = trader.imageLink;
-            document.getElementById('trader-title').textContent = trader.name;
-            document.getElementById('trader-desc-brief').textContent = trader.description || 'Reliable local dealer.';
+            // API allows loading of high-quality flat-vector weapon design models directly from their content delivery network:
+            imgEl.src = `https://assets.tarkov.dev/${item.id}-base-image.png`;
+            imgEl.onload = () => loader.classList.add('hidden');
+            imgEl.onerror = () => {
+                imgEl.src = `https://assets.tarkov.dev/${item.id}-icon.png`; // Fallback to icon
+                imgEl.onload = () => loader.classList.add('hidden');
+                imgEl.onerror = () => {
+                    loader.classList.add('hidden');
+                };
+            };
 
-            // Render level criteria cards
-            const levelGrid = document.getElementById('trader-levels-grid');
-            levelGrid.innerHTML = '';
-            trader.levels.forEach(lvl => {
-                const card = document.createElement('div');
-                card.className = "p-3 bg-zinc-950 border border-zinc-800 rounded-xl text-center";
-                card.innerHTML = `
-                    <div class="text-[10px] text-zinc-500 font-bold uppercase">Loyalty Level ${lvl.level}</div>
-                    <div class="text-xs font-extrabold text-tarkovGold mt-1.5">Req Lvl: ${lvl.requiredPlayerLevel}</div>
-                    <div class="text-[10px] text-zinc-400 mt-1">Rep: ${lvl.requiredReputation}</div>
-                    <div class="text-[10px] text-zinc-400 mt-0.5">Spent: ${formatPrice(lvl.requiredCommerce)}</div>
-                `;
-                levelGrid.appendChild(card);
-            });
-
-            // Find high-paying items for trader arbitrage
-            const arbitrageTable = document.getElementById('trader-arbitrage-rows');
-            arbitrageTable.innerHTML = '';
-
-            // Scan our live cache to find item offers where this trader is the highest buyer
-            const highValueItems = tarkovItems.filter(item => {
-                const relevantOffer = item.sellFor?.find(offer => offer.source.toLowerCase() === trader.name.toLowerCase());
-                return relevantOffer && item.marketPrice > 0;
-            }).slice(0, 8); // Grab top 8 items for comparison
-
-            if (highValueItems.length > 0) {
-                highValueItems.forEach(item => {
-                    const traderOffer = item.sellFor.find(offer => offer.source.toLowerCase() === trader.name.toLowerCase());
-                    const margin = traderOffer.price - item.marketPrice;
-                    const row = document.createElement('tr');
-                    row.className = "border-b border-zinc-800/40 hover:bg-zinc-800/20";
+            // Purchase dynamic pricing directions
+            const buyContainer = document.getElementById('buy-source-list');
+            buyContainer.innerHTML = '';
+            if (item.buyFor && item.buyFor.length > 0) {
+                item.buyFor.forEach(b => {
+                    const row = document.createElement('div');
+                    row.className = 'flex justify-between items-center bg-tkBg p-1.5 border border-tkBorder/50 rounded';
                     row.innerHTML = `
-                        <td class="p-3 font-semibold text-zinc-300">
-                            <div>${item.name}</div>
-                            <div class="text-[9px] text-zinc-500 font-mono">${item.shortName}</div>
-                        </td>
-                        <td class="p-3 text-zinc-400">${item.category}</td>
-                        <td class="p-3 text-right font-bold text-zinc-400">${formatPrice(item.marketPrice)}</td>
-                        <td class="p-3 text-right font-bold text-emerald-500">
-                            <div>${formatPrice(traderOffer.price)}</div>
-                            <div class="text-[9px] ${margin >= 0 ? 'text-emerald-500' : 'text-zinc-500'} font-medium">
-                                ${margin >= 0 ? '+' : ''}${formatPrice(margin)} margin
-                            </div>
-                        </td>
+                        <span class="text-zinc-300 font-bold uppercase">${b.source}</span>
+                        <span class="text-tkGold font-bold font-mono">${formatRubles(b.price, b.currency)}</span>
                     `;
-                    arbitrageTable.appendChild(row);
+                    buyContainer.appendChild(row);
                 });
             } else {
-                arbitrageTable.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-zinc-500 italic">No specific buyback values cached for this vendor at this scale.</td></tr>`;
-            }
-        }
-
-
-        // --- MODULE 3: MAPS INTEL ENGINE ---
-
-        function renderMapsDeck() {
-            const deck = document.getElementById('maps-deck');
-            if (!deck) return;
-
-            deck.innerHTML = '';
-            tarkovMaps.forEach(map => {
-                const button = document.createElement('button');
-                button.className = "w-full text-left p-3 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 transition flex items-center gap-3";
-                button.onclick = () => selectMap(map.id);
-
-                button.innerHTML = `
-                    <div class="w-10 h-10 rounded-lg bg-zinc-950 flex items-center justify-center border border-zinc-800 flex-shrink-0">
-                        <svg class="w-5 h-5 text-tarkovGold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <div class="text-xs font-bold text-zinc-200">${map.name}</div>
-                        <div class="text-[9px] text-zinc-500">Duration: ${map.raidDuration || '--'} mins</div>
-                    </div>
-                `;
-                deck.appendChild(button);
-            });
-        }
-
-        function selectMap(mapId) {
-            const map = tarkovMaps.find(m => m.id === mapId);
-            if (!map) return;
-
-            document.getElementById('map-profile-placeholder').style.display = 'none';
-            const profileView = document.getElementById('map-profile-view');
-            profileView.classList.remove('hidden');
-
-            document.getElementById('map-title').textContent = map.name;
-            document.getElementById('map-desc').textContent = map.description || 'Secure area operations mapping.';
-
-            // Basic Stats
-            document.getElementById('map-stat-duration').textContent = map.raidDuration ? `${map.raidDuration} mins` : '-- mins';
-            document.getElementById('map-stat-players').textContent = map.players || 'Unknown';
-            document.getElementById('map-stat-enemies').textContent = map.enemies?.join(', ') || 'Scavs, Raiders';
-
-            // Keycard or Entry Key requirements
-            const keyElement = document.getElementById('map-stat-key');
-            if (map.accessKeys && map.accessKeys.length > 0) {
-                keyElement.textContent = map.accessKeys[0].shortName || map.accessKeys[0].name;
-                keyElement.classList.add('text-tarkovGold');
-            } else {
-                keyElement.textContent = "Open Access";
-                keyElement.classList.remove('text-tarkovGold');
+                buyContainer.innerHTML = '<div class="text-[10px] text-tkMuted uppercase">NO PROCUREMENT DIRECTIVES DETECTED</div>';
             }
 
-            // Boss Spawns
-            const bossGrid = document.getElementById('map-bosses-grid');
-            bossGrid.innerHTML = '';
-            if (map.bosses && map.bosses.length > 0) {
-                map.bosses.forEach(b => {
-                    const bCard = document.createElement('div');
-                    bCard.className = "p-3 bg-zinc-950 border border-zinc-800 rounded-xl";
-                    bCard.innerHTML = `
-                        <div class="text-xs font-bold text-zinc-300">${b.boss?.name || 'Unknown Boss'}</div>
-                        <div class="text-[10px] text-emerald-500 mt-1 font-semibold">Spawn Chance: ${Math.round(b.spawnChance * 100)}%</div>
-                        <div class="text-[9px] text-zinc-500 mt-0.5">Heavy armament patrol.</div>
-                    `;
-                    bossGrid.appendChild(bCard);
-                });
-            } else {
-                bossGrid.innerHTML = `<div class="p-4 text-xs text-zinc-500 italic col-span-3">No specialized tactical bosses confirmed spawning inside this zone.</div>`;
-            }
-
-            // Extracts (Extraction points)
-            const exfilRows = document.getElementById('map-exfil-rows');
-            exfilRows.innerHTML = '';
-            if (map.extracts && map.extracts.length > 0) {
-                map.extracts.forEach(ex => {
-                    const row = document.createElement('tr');
-                    row.className = "border-b border-zinc-800/40 hover:bg-zinc-800/20";
+            // Liquidation / sell parameters
+            const sellContainer = document.getElementById('sell-source-list');
+            sellContainer.innerHTML = '';
+            if (item.sellFor && item.sellFor.length > 0) {
+                // Sort high to low
+                const sortedSells = [...item.sellFor].sort((x, y) => y.price - x.price);
+                sortedSells.forEach(s => {
+                    const row = document.createElement('div');
+                    row.className = 'flex justify-between items-center bg-tkBg p-1.5 border border-tkBorder/50 rounded';
                     row.innerHTML = `
-                        <td class="p-3 pl-4 font-semibold text-zinc-200">${ex.name}</td>
-                        <td class="p-3 text-zinc-400 capitalize">${ex.faction?.toLowerCase() || 'All Factions'}</td>
-                        <td class="p-3 text-[10px] text-zinc-500 italic">${ex.customComment || 'No special requirements.'}</td>
+                        <span class="text-zinc-300 font-bold uppercase">${s.source}</span>
+                        <span class="text-tkGreen font-bold font-mono">${formatRubles(s.price, s.currency)}</span>
                     `;
-                    exfilRows.appendChild(row);
+                    sellContainer.appendChild(row);
                 });
             } else {
-                exfilRows.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-zinc-500 italic">No escape coordinates mapped out.</td></tr>`;
+                sellContainer.innerHTML = '<div class="text-[10px] text-tkMuted uppercase">NO LIQUIDATION PATHWAYS REGISTERED</div>';
             }
+        }
 
-            // Wiki Link
-            const wikiBtn = document.getElementById('map-wiki-btn');
-            if (wikiBtn) {
-                if (map.wiki) {
-                    wikiBtn.href = map.wiki;
-                    wikiBtn.classList.remove('pointer-events-none', 'opacity-50');
+        function resetTelemetrySelection() {
+            selectedItem = null;
+            document.getElementById('active-telemetry').classList.add('hidden');
+            document.getElementById('idle-telemetry').classList.remove('hidden');
+            renderTable();
+        }
+
+        // Category Tag Navigation
+        function filterCategory(catName) {
+            activeCategory = catName;
+            
+            // Set styles of buttons
+            const buttons = document.querySelectorAll('#category-bar button');
+            buttons.forEach(btn => {
+                if (btn.id === `cat-${catName}`) {
+                    btn.className = "px-2 py-0.5 rounded bg-tkGold text-black font-bold uppercase transition";
                 } else {
-                    wikiBtn.href = "#";
-                    wikiBtn.classList.add('pointer-events-none', 'opacity-50');
-                }
-            }
-        }
-
-        // Global keybindings & listeners
-        function setupEventListeners() {
-            const searchBox = document.getElementById('search-box');
-            const clearBtn = document.getElementById('clear-search-btn');
-
-            if (searchBox) {
-                searchBox.addEventListener('input', (e) => {
-                    if (clearBtn) clearBtn.style.display = e.target.value.trim() ? 'block' : 'none';
-                    filterSearch();
-                });
-            }
-
-            if (clearBtn) {
-                clearBtn.addEventListener('click', () => {
-                    if (searchBox) {
-                        searchBox.value = '';
-                        searchBox.focus();
-                    }
-                    clearBtn.style.display = 'none';
-                    filterSearch();
-                });
-            }
-
-            // Keyboard navigation helpers
-            document.addEventListener('keydown', (e) => {
-                // Focus search on '/'
-                if (e.key === '/') {
-                    if (searchBox && document.activeElement !== searchBox && activeTab === 'items') {
-                        e.preventDefault();
-                        searchBox.focus();
-                    }
-                }
-                // ESC to reset interface
-                if (e.key === 'Escape') {
-                    if (searchBox) {
-                        searchBox.value = '';
-                        searchBox.blur();
-                    }
-                    if (clearBtn) clearBtn.style.display = 'none';
-                    
-                    // Reset Categories
-                    currentCategory = 'All';
-                    const buttons = document.querySelectorAll('#category-list button');
-                    buttons.forEach((btn, idx) => {
-                        if (idx === 0) { 
-                            btn.className = "w-auto lg:w-full text-left px-3 py-1.5 rounded-lg bg-zinc-900 text-white font-semibold transition";
-                        } else { 
-                            btn.className = "w-auto lg:w-full text-left px-3 py-1.5 rounded-lg text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200 transition";
-                        }
-                    });
-                    
-                    // Reset inspection
-                    const placeholder = document.getElementById('details-placeholder');
-                    const content = document.getElementById('details-content');
-                    if (placeholder && content) {
-                        placeholder.style.display = 'block';
-                        content.classList.add('hidden');
-                    }
-
-                    filterSearch();
+                    btn.className = "px-2 py-0.5 rounded bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition";
                 }
             });
+
+            applyFilters();
         }
+
+        function handleSortChange() {
+            applyFilters();
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('search-input');
+            input.value = '';
+            applyFilters();
+            input.focus();
+        }
+
+        // Interactive keyboard commands
+        window.addEventListener('keydown', (e) => {
+            const searchInput = document.getElementById('search-input');
+            
+            // Focus Search Keybind
+            if (e.key === '/' && document.activeElement !== searchInput) {
+                e.preventDefault();
+                searchInput.focus();
+                searchInput.select();
+            }
+
+            // Unfocus & Dismiss keybinds
+            if (e.key === 'Escape') {
+                if (document.activeElement === searchInput) {
+                    searchInput.blur();
+                } else {
+                    clearSearch();
+                    resetTelemetrySelection();
+                }
+            }
+        });
 
         // Initialize App on DOM mount
-        function bootstrap() {
-            setupEventListeners();
-            initializeHub();
+        function initApp() {
+            // Live-Search Listener
+            document.getElementById('search-input').addEventListener('input', applyFilters);
+            
+            // Fetch live telemetry records
+            fetchMarketData();
         }
 
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', bootstrap);
+            document.addEventListener('DOMContentLoaded', initApp);
         } else {
-            bootstrap();
+            initApp();
         }
     </script>
 </body>
