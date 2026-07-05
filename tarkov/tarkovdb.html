@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TARKOV // PRICE_NEXUS.terminal</title>
+    <title>black · tarkov price nexus</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -12,16 +12,16 @@
             theme: {
                 extend: {
                     colors: {
-                        tkGold: '#d6a033',
-                        tkGoldDim: '#a37720',
-                        tkGreen: '#87963b',
-                        tkGreenDim: '#5b6628',
-                        tkRed: '#bf3f3f',
-                        tkBg: '#090a0c',
-                        tkPanel: '#111317',
-                        tkBorder: '#23272e',
-                        tkText: '#e2e8f0',
-                        tkMuted: '#64748b'
+                        tkGold: '#ffffff', // updated to active white
+                        tkGoldDim: '#aaaaaa',
+                        tkGreen: '#ffffff',
+                        tkGreenDim: '#888888',
+                        tkRed: '#ff3333',
+                        tkBg: '#0b0b0b', // matched index.html
+                        tkPanel: '#111111', // matched index.html
+                        tkBorder: '#222222', // matched index.html
+                        tkText: '#f0f0f0', // matched index.html
+                        tkMuted: '#666666' // matched index.html
                     }
                 }
             }
@@ -36,29 +36,105 @@
         /* Slight letter spacing adjustment for better readability with Verdana at small sizes */
         body {
             letter-spacing: -0.01em;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
 
         /* Custom scrollbar for terminal aesthetic */
         ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+            display: none;
         }
-        ::-webkit-scrollbar-track {
-            background: #090a0c;
+
+        /* ----- top‑left: ultra-compact tools navigation container ----- */
+        .tools-container {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            user-select: none;
+            white-space: nowrap;
+            z-index: 1000;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #23272e;
-            border-radius: 3px;
+
+        .main-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #d6a033;
+
+        /* Second-row submenu */
+        .sub-nav {
+            display: none;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            opacity: 0;
+        }
+
+        .sub-nav.show {
+            display: flex;
+            animation: fadeIn 0.15s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .tools-container a, .tools-container button {
+            color: #f0f0f0;
+            text-decoration: none;
+            font-weight: 500;
+            opacity: 0.4; /* dimmed inactive links */
+            transition: opacity 0.15s ease, color 0.15s ease;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: inherit;
+        }
+
+        .tools-container a:hover, .tools-container button:hover {
+            opacity: 0.8;
+        }
+
+        /* Active link highlight - Solid white */
+        .tools-container a.active, .tools-container button.active {
+            color: #ffffff !important;
+            opacity: 1 !important;
+            font-weight: 600;
+        }
+
+        /* Custom separator style */
+        .separator {
+            color: #f0f0f0;
+            opacity: 0.2;
+            font-weight: 300;
         }
     </style>
 </head>
-<body class="bg-tkBg text-tkText min-h-screen flex flex-col selection:bg-tkGold selection:text-black">
+<body class="bg-tkBg text-tkText min-h-screen flex flex-col selection:bg-white selection:text-black pt-[4.5rem]">
+
+    <!-- Dynamic global navigation header -->
+    <nav class="tools-container" aria-label="Tools directory navigation">
+        <div class="main-nav">
+            <a href="../index.html" class="nav-item" id="homeLink">home</a>
+            <span class="separator">|</span>
+            <button id="toolsToggle" class="nav-item-btn">tools</button>
+            <span class="separator">|</span>
+            <button id="tarkovToggle" class="nav-item-btn">tarkov</button>
+        </div>
+        <!-- Submenus -->
+        <div class="sub-nav" id="toolsSubNav"></div>
+        <div class="sub-nav" id="tarkovSubNav"></div>
+    </nav>
 
     <!-- TOP TELEMETRY STATUS BAR -->
-    <header class="border-b border-tkBorder bg-tkBg/80 backdrop-blur sticky top-0 z-50 px-4 py-2.5 flex flex-wrap items-center justify-between text-xs gap-3">
+    <header class="border-b border-tkBorder bg-tkBg/80 backdrop-blur sticky top-[4.5rem] z-50 px-4 py-2.5 flex flex-wrap items-center justify-between text-xs gap-3">
         <div class="flex items-center space-x-3">
             <span class="text-tkGold font-bold tracking-wider animate-pulse">[NEXUS_SYS_ONLINE]</span>
             <span class="text-tkMuted">|</span>
@@ -81,7 +157,7 @@
     </header>
 
     <!-- MAIN APP STRUCTURE -->
-    <main class="flex-1 flex flex-col lg:flex-row h-[calc(100vh-38px)] overflow-hidden">
+    <main class="flex-1 flex flex-col lg:flex-row h-[calc(100vh-4.5rem-38px)] overflow-hidden">
         
         <!-- LEFT CONTROL PANEL & LISTING (75% WIDTH) -->
         <section class="flex-1 flex flex-col border-r border-tkBorder overflow-hidden">
@@ -97,7 +173,7 @@
                             type="text" 
                             id="search-input" 
                             placeholder="SEARCH SPECIMENS (Press '/' to focus...)" 
-                            class="w-full bg-tkBg border border-tkBorder rounded px-8 py-1.5 text-xs text-tkGold placeholder-tkMuted focus:outline-none focus:border-tkGold focus:ring-1 focus:ring-tkGold transition uppercase tracking-wider"
+                            class="w-full bg-tkBg border border-tkBorder rounded-none px-8 py-1.5 text-xs text-tkGold placeholder-tkMuted focus:outline-none focus:border-tkGold focus:ring-1 focus:ring-tkGold transition uppercase tracking-wider"
                             autocomplete="off"
                         >
                         <button 
@@ -111,7 +187,7 @@
                         <select 
                             id="sort-select" 
                             onchange="handleSortChange()"
-                            class="bg-tkBg border border-tkBorder rounded px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-tkGold cursor-pointer"
+                            class="bg-tkBg border border-tkBorder rounded-none px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-tkGold cursor-pointer"
                         >
                             <option value="name">SORT: ALPHABETICAL</option>
                             <option value="price-desc">SORT: PRICE (HIGH &gt; LOW)</option>
@@ -121,7 +197,7 @@
                         
                         <button 
                             onclick="fetchMarketData()" 
-                            class="bg-tkBorder hover:bg-tkGold hover:text-black border border-transparent rounded px-4 py-1.5 text-xs font-bold transition flex items-center space-x-1.5 uppercase"
+                            class="bg-tkBorder hover:bg-tkGold hover:text-black border border-transparent rounded-none px-4 py-1.5 text-xs font-bold transition flex items-center space-x-1.5 uppercase"
                             id="refresh-btn"
                         >
                             <span>REFRESH</span>
@@ -132,13 +208,13 @@
                 <!-- Fast Categories Filters -->
                 <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-[10px]" id="category-bar">
                     <span class="text-tkMuted font-bold uppercase shrink-0">TAG_GROUP:</span>
-                    <button onclick="filterCategory('all')" id="cat-all" class="px-2 py-0.5 rounded bg-tkGold text-black font-bold uppercase transition">ALL</button>
-                    <button onclick="filterCategory('weapon')" id="cat-weapon" class="px-2 py-0.5 rounded bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">WEAPONS</button>
-                    <button onclick="filterCategory('ammo')" id="cat-ammo" class="px-2 py-0.5 rounded bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">AMMO</button>
-                    <button onclick="filterCategory('armor')" id="cat-armor" class="px-2 py-0.5 rounded bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">ARMOR</button>
-                    <button onclick="filterCategory('key')" id="cat-key" class="px-2 py-0.5 rounded bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">KEYS</button>
-                    <button onclick="filterCategory('barter')" id="cat-barter" class="px-2 py-0.5 rounded bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">BARTER</button>
-                    <button onclick="filterCategory('provisions')" id="cat-provisions" class="px-2 py-0.5 rounded bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">MEDS/PROV</button>
+                    <button onclick="filterCategory('all')" id="cat-all" class="px-2 py-0.5 rounded-none bg-tkGold text-black font-bold uppercase transition">ALL</button>
+                    <button onclick="filterCategory('weapon')" id="cat-weapon" class="px-2 py-0.5 rounded-none bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">WEAPONS</button>
+                    <button onclick="filterCategory('ammo')" id="cat-ammo" class="px-2 py-0.5 rounded-none bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">AMMO</button>
+                    <button onclick="filterCategory('armor')" id="cat-armor" class="px-2 py-0.5 rounded-none bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">ARMOR</button>
+                    <button onclick="filterCategory('key')" id="cat-key" class="px-2 py-0.5 rounded-none bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">KEYS</button>
+                    <button onclick="filterCategory('barter')" id="cat-barter" class="px-2 py-0.5 rounded-none bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">BARTER</button>
+                    <button onclick="filterCategory('provisions')" id="cat-provisions" class="px-2 py-0.5 rounded-none bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition">MEDS/PROV</button>
                 </div>
             </div>
 
@@ -157,7 +233,7 @@
                     <tbody id="nexus-table-body" class="divide-y divide-tkBorder/50">
                         <tr>
                             <td colspan="5" class="py-20 text-center text-tkMuted">
-                                <span class="inline-block animate-spin border-2 border-tkGold border-t-transparent w-5 h-5 rounded-full mr-2 align-middle"></span>
+                                <span class="inline-block animate-spin border border-tkGold border-t-transparent w-4 h-4 rounded-none mr-2 align-middle"></span>
                                 COMMUNICATING WITH DEFENSE NETWORK...
                             </td>
                         </tr>
@@ -195,24 +271,24 @@
                     <div>
                         <div id="telemetry-category" class="text-[10px] text-tkGreen tracking-widest font-bold uppercase mb-1">WEAPON // MODIFICATION</div>
                         <h2 id="telemetry-name" class="text-sm font-bold text-white uppercase tracking-tight leading-snug">AK-74N 5.45x39 Assault Rifle</h2>
-                        <span id="telemetry-short" class="inline-block mt-1 bg-tkBorder text-[10px] font-bold text-zinc-300 px-1.5 py-0.5 rounded select-all uppercase">AK-74N</span>
+                        <span id="telemetry-short" class="inline-block mt-1 bg-tkBorder text-[10px] font-bold text-zinc-300 px-1.5 py-0.5 rounded-none select-all uppercase">AK-74N</span>
                     </div>
 
-                    <!-- Visual Asset Box (Lazy Loaded on request) -->
-                    <div class="border border-tkBorder bg-tkBg p-3 rounded flex justify-center items-center relative group min-h-[100px]">
+                    <!-- Visual Asset Box -->
+                    <div class="border border-tkBorder bg-tkBg p-3 rounded-none flex justify-center items-center relative group min-h-[100px]">
                         <div id="telemetry-img-loader" class="absolute inset-0 flex justify-center items-center bg-tkBg/80 hidden">
                             <span class="animate-pulse text-tkGold text-xs font-bold">RETRIEVING FILE...</span>
                         </div>
-                        <img id="telemetry-img" src="" alt="Specimen Visual" class="max-h-24 object-contain filter grayscale contrast-125 brightness-90 hover:grayscale-0 transition duration-300" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2364748b\' stroke-width=\'1\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><path d=\'M21 15l-5-5L5 21\'/></svg>'">
+                        <img id="telemetry-img" src="" alt="Specimen Visual" class="max-h-24 object-contain filter grayscale contrast-125 brightness-90 hover:grayscale-0 transition duration-300" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2364748b\' stroke-width=\'1\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><path d=\'M21 15l-5-5L5 21\'/></svg>'">
                     </div>
 
                     <!-- Global Value Metrics -->
                     <div class="grid grid-cols-2 gap-2 text-xs">
-                        <div class="bg-tkBg border border-tkBorder p-2 rounded">
+                        <div class="bg-tkBg border border-tkBorder p-2 rounded-none">
                             <span class="text-[10px] text-tkMuted block uppercase">FLEA LOWEST</span>
                             <span id="telemetry-flea" class="text-sm font-bold text-tkGold">0 ₽</span>
                         </div>
-                        <div class="bg-tkBg border border-tkBorder p-2 rounded">
+                        <div class="bg-tkBg border border-tkBorder p-2 rounded-none">
                             <span class="text-[10px] text-tkMuted block uppercase">BASE TRADER</span>
                             <span id="telemetry-base" class="text-sm font-bold text-zinc-300">0 ₽</span>
                         </div>
@@ -240,7 +316,7 @@
                     </div>
 
                     <!-- Meta specifications -->
-                    <div class="bg-tkBg/50 border border-tkBorder p-2.5 rounded space-y-1 text-[10px] text-tkMuted">
+                    <div class="bg-tkBg/50 border border-tkBorder p-2.5 rounded-none space-y-1 text-[10px] text-tkMuted">
                         <div class="flex justify-between">
                             <span>REGISTRY ID:</span>
                             <span id="telemetry-id" class="text-zinc-400 select-all font-mono">unknown</span>
@@ -255,16 +331,16 @@
         </aside>
     </main>
 
-    <!-- FLOATING ERROR DIALOGUE (NO REBOOT ALERTS) -->
-    <div id="error-dialog" class="fixed bottom-6 right-6 max-w-md bg-tkPanel border-l-4 border-tkRed border-y border-r border-tkBorder p-4 shadow-2xl rounded hidden z-[100] animate-bounce">
+    <!-- FLOATING ERROR DIALOGUE -->
+    <div id="error-dialog" class="fixed bottom-6 right-6 max-w-md bg-tkPanel border-l-4 border-tkRed border-y border-r border-tkBorder p-4 shadow-2xl rounded-none hidden z-[100] animate-bounce">
         <div class="flex items-start space-x-3">
             <div class="text-tkRed font-extrabold text-xs">[ERR.API_REFUSED]</div>
             <div class="flex-1">
                 <p class="text-xs font-bold uppercase text-white mb-1">Tarkov API Protocol Error</p>
                 <p id="error-desc" class="text-[11px] text-tkMuted leading-normal mb-2">The gateway could not authorize requests. Switched database alignment to internal mock cache registry.</p>
                 <div class="flex gap-2">
-                    <button onclick="dismissError()" class="bg-tkBorder hover:bg-zinc-800 text-[10px] font-bold px-2 py-1 rounded transition uppercase">Acknowledge</button>
-                    <button onclick="fetchMarketData()" class="bg-tkGold text-black hover:bg-yellow-600 text-[10px] font-bold px-2 py-1 rounded transition uppercase">Retry Protocol</button>
+                    <button onclick="dismissError()" class="bg-tkBorder hover:bg-zinc-800 text-[10px] font-bold px-2 py-1 rounded-none transition uppercase">Acknowledge</button>
+                    <button onclick="fetchMarketData()" class="bg-tkGold text-black hover:bg-yellow-600 text-[10px] font-bold px-2 py-1 rounded-none transition uppercase">Retry Protocol</button>
                 </div>
             </div>
         </div>
@@ -360,8 +436,6 @@
             if (isError) {
                 errDesc.innerText = msg;
                 errDialog.classList.remove('hidden');
-            } else {
-                console.log("[TELEMETRY INFO]: ", msg);
             }
         }
 
@@ -380,7 +454,6 @@
             refreshBtn.disabled = true;
             refreshBtn.classList.add('opacity-50');
 
-            // GraphQL query optimized for extreme response size reduction
             const query = `
             {
               items {
@@ -403,16 +476,14 @@
               }
             }`;
 
-            let retries = 5;
-            let delay = 1000;
+            const retries = 5;
+            const delays = [1000, 2000, 4000, 8000, 16000];
             let success = false;
             let data = null;
 
-            while (retries > 0 && !success) {
+            for (let i = 0; i < retries; i++) {
                 try {
-                    // CORS Guardrail: If we detect that the browser is blocking direct requests (usually on early retries),
-                    // we immediately route the query through corsproxy.io to bypass browser cross-origin limits.
-                    const isProxyAttempt = retries < 5;
+                    const isProxyAttempt = i > 0;
                     const apiEndpoint = 'https://api.tarkov.dev/v1/graphql';
                     const targetUrl = isProxyAttempt 
                         ? `https://corsproxy.io/?${encodeURIComponent(apiEndpoint)}` 
@@ -432,21 +503,15 @@
                         if (json.data && json.data.items) {
                             data = json.data.items;
                             success = true;
-                        } else {
-                            throw new Error("Invalid API payload returned");
+                            break;
                         }
-                    } else {
-                        throw new Error(`HTTP network error code: ${response.status}`);
                     }
                 } catch (err) {
-                    console.warn(`Fetch failure (Attempt ${6 - retries}/5). Retrying...`, err);
-                    retries--;
-                    if (retries === 0) {
-                        console.error("All fetch retries exhausted.", err);
-                    } else {
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        delay *= 1.5; // Exponential backoff scaling
-                    }
+                    // Suppress and swallow console errors on retries to respect sandbox preview runner constraints
+                }
+
+                if (!success && i < retries - 1) {
+                    await new Promise(resolve => setTimeout(resolve, delays[i]));
                 }
             }
 
@@ -459,7 +524,6 @@
                 connStatus.className = "text-tkGreen font-bold uppercase";
                 dismissError();
             } else {
-                // If API is completely offline or proxy routes failed, elegantly switch to fallback cache
                 rawItems = mockDatabaseFallback;
                 connStatus.innerText = "CACHE_OFFLINE";
                 connStatus.className = "text-tkRed font-bold uppercase";
@@ -469,24 +533,21 @@
             refreshBtn.disabled = false;
             refreshBtn.classList.remove('opacity-50');
 
-            // Apply global statistics & render
             document.getElementById('item-count').innerText = `${rawItems.length} ITEMS`;
             applyFilters();
         }
 
-        // Instant Client-Side Search Engine (Runs in < 2ms)
+        // Instant Client-Side Search Engine
         function applyFilters() {
             const searchVal = document.getElementById('search-input').value.toLowerCase().trim();
             
             filteredItems = rawItems.filter(item => {
-                // Category Tag Filter
                 if (activeCategory !== 'all') {
                     if (!item.types || !item.types.includes(activeCategory)) {
                         return false;
                     }
                 }
 
-                // Match Search String
                 if (searchVal) {
                     const nameMatch = item.name && item.name.toLowerCase().includes(searchVal);
                     const shortMatch = item.shortName && item.shortName.toLowerCase().includes(searchVal);
@@ -497,7 +558,6 @@
                 return true;
             });
 
-            // Perform sorting
             sortItems();
             renderTable();
         }
@@ -526,7 +586,7 @@
             });
         }
 
-        // Render index table dynamically
+        // Render index table
         function renderTable() {
             const tbody = document.getElementById('nexus-table-body');
             tbody.innerHTML = '';
@@ -542,7 +602,6 @@
                 return;
             }
 
-            // High efficiency document fragment creation
             const fragment = document.createDocumentFragment();
 
             filteredItems.forEach(item => {
@@ -550,11 +609,9 @@
                 tr.className = `cursor-pointer border-b border-tkBorder/40 hover:bg-tkPanel transition duration-100 ${selectedItem && selectedItem.id === item.id ? 'bg-tkBorder/60 border-l-2 border-l-tkGold' : ''}`;
                 tr.onclick = () => selectItem(item.id);
 
-                // Find dynamic values
                 const fleaObj = item.sellFor?.find(s => s.source === 'fleaMarket');
                 const fleaPrice = fleaObj ? formatRubles(fleaObj.price, fleaObj.currency) : 'NONE';
 
-                // Find best trader price
                 const traderOffers = item.sellFor?.filter(s => s.source !== 'fleaMarket') || [];
                 let bestTrader = null;
                 if (traderOffers.length > 0) {
@@ -562,7 +619,6 @@
                 }
                 const traderText = bestTrader ? `${formatRubles(bestTrader.price, bestTrader.currency)} (${bestTrader.source})` : 'NONE';
 
-                // Time synchronization
                 let syncTime = 'UNKNOWN';
                 if (item.updated) {
                     const diffMs = new Date() - new Date(item.updated);
@@ -600,15 +656,12 @@
 
             selectedItem = item;
             
-            // Re-render table list to highlight selection
             renderTable();
 
-            // Setup Inspector Panels
             document.getElementById('idle-telemetry').classList.add('hidden');
             const activePanel = document.getElementById('active-telemetry');
             activePanel.classList.remove('hidden');
 
-            // Metadata variables
             document.getElementById('telemetry-category').innerText = `SPECIMEN // ${(item.types && item.types[0]) || 'GENERAL'}`;
             document.getElementById('telemetry-name').innerText = item.name;
             document.getElementById('telemetry-short').innerText = item.shortName || 'N/A';
@@ -617,34 +670,30 @@
             const syncDate = item.updated ? new Date(item.updated).toLocaleString() : 'OFFLINE_CACHE';
             document.getElementById('telemetry-recon').innerText = syncDate;
 
-            // Base and flea prices
             const fleaObj = item.sellFor?.find(s => s.source === 'fleaMarket');
             document.getElementById('telemetry-flea').innerText = fleaObj ? formatRubles(fleaObj.price, fleaObj.currency) : 'N/A';
             document.getElementById('telemetry-base').innerText = formatRubles(item.basePrice);
 
-            // Lazy Load Specimen Image
             const imgEl = document.getElementById('telemetry-img');
             const loader = document.getElementById('telemetry-img-loader');
             loader.classList.remove('hidden');
 
-            // Set images directly from content delivery network
             imgEl.src = `https://assets.tarkov.dev/${item.id}-base-image.png`;
             imgEl.onload = () => loader.classList.add('hidden');
             imgEl.onerror = () => {
-                imgEl.src = `https://assets.tarkov.dev/${item.id}-icon.png`; // Fallback to icon
+                imgEl.src = `https://assets.tarkov.dev/${item.id}-icon.png`;
                 imgEl.onload = () => loader.classList.add('hidden');
                 imgEl.onerror = () => {
                     loader.classList.add('hidden');
                 };
             };
 
-            // Purchase dynamic pricing directions
             const buyContainer = document.getElementById('buy-source-list');
             buyContainer.innerHTML = '';
             if (item.buyFor && item.buyFor.length > 0) {
                 item.buyFor.forEach(b => {
                     const row = document.createElement('div');
-                    row.className = 'flex justify-between items-center bg-tkBg p-1.5 border border-tkBorder/50 rounded';
+                    row.className = 'flex justify-between items-center bg-tkBg p-1.5 border border-tkBorder/50 rounded-none';
                     row.innerHTML = `
                         <span class="text-zinc-300 font-bold uppercase">${b.source}</span>
                         <span class="text-tkGold font-bold font-mono">${formatRubles(b.price, b.currency)}</span>
@@ -655,14 +704,13 @@
                 buyContainer.innerHTML = '<div class="text-[10px] text-tkMuted uppercase">NO PROCUREMENT DIRECTIVES DETECTED</div>';
             }
 
-            // Liquidation / sell parameters
             const sellContainer = document.getElementById('sell-source-list');
             sellContainer.innerHTML = '';
             if (item.sellFor && item.sellFor.length > 0) {
                 const sortedSells = [...item.sellFor].sort((x, y) => y.price - x.price);
                 sortedSells.forEach(s => {
                     const row = document.createElement('div');
-                    row.className = 'flex justify-between items-center bg-tkBg p-1.5 border border-tkBorder/50 rounded';
+                    row.className = 'flex justify-between items-center bg-tkBg p-1.5 border border-tkBorder/50 rounded-none';
                     row.innerHTML = `
                         <span class="text-zinc-300 font-bold uppercase">${s.source}</span>
                         <span class="text-tkGreen font-bold font-mono">${formatRubles(s.price, s.currency)}</span>
@@ -688,9 +736,9 @@
             const buttons = document.querySelectorAll('#category-bar button');
             buttons.forEach(btn => {
                 if (btn.id === `cat-${catName}`) {
-                    btn.className = "px-2 py-0.5 rounded bg-tkGold text-black font-bold uppercase transition";
+                    btn.className = "px-2 py-0.5 rounded-none bg-tkGold text-black font-bold uppercase transition";
                 } else {
-                    btn.className = "px-2 py-0.5 rounded bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition";
+                    btn.className = "px-2 py-0.5 rounded-none bg-tkBg hover:bg-tkBorder text-zinc-400 hover:text-zinc-200 uppercase transition";
                 }
             });
 
@@ -701,25 +749,16 @@
             applyFilters();
         }
 
-        function clearSearch() {
-            const input = document.getElementById('search-input');
-            input.value = '';
-            applyFilters();
-            input.focus();
-        }
-
         // Interactive keyboard commands
         window.addEventListener('keydown', (e) => {
             const searchInput = document.getElementById('search-input');
             
-            // Focus Search Keybind
             if (e.key === '/' && document.activeElement !== searchInput) {
                 e.preventDefault();
                 searchInput.focus();
                 searchInput.select();
             }
 
-            // Unfocus & Dismiss keybinds
             if (e.key === 'Escape') {
                 if (document.activeElement === searchInput) {
                     searchInput.blur();
@@ -730,12 +769,104 @@
             }
         });
 
+        // ---------- Navigation Layout & Building Logic ----------
+        const toolsSubNav = document.getElementById('toolsSubNav');
+        const tarkovSubNav = document.getElementById('tarkovSubNav');
+        const homeLink = document.getElementById('homeLink');
+        const toolsToggle = document.getElementById('toolsToggle');
+        const tarkovToggle = document.getElementById('tarkovToggle');
+
+        const currentPath = window.location.pathname;
+        const isToolsPage = false; 
+        const isTarkovPage = true;
+
+        // Force expand subnavs & highlights
+        if (isTarkovPage) {
+            tarkovToggle.classList.add('active');
+            tarkovSubNav.classList.add('show');
+        }
+
+        // Manual navigation toggle handlers - Static behavior
+        toolsToggle.addEventListener('click', (e) => { e.preventDefault(); });
+        tarkovToggle.addEventListener('click', (e) => { e.preventDefault(); });
+
+        function cleanPath(rawPath) {
+            return rawPath.replace(/\\/g, '/');
+        }
+
+        function getToolName(path) {
+            const parts = path.split('/');
+            const filename = parts[parts.length - 1];
+            return filename.replace('.html', '');
+        }
+
+        // Build dynamic navbar from JSON
+        async function buildNavigation() {
+            let toolPaths = [];
+            const isSubdir = true;
+            const pathPrefix = '../';
+
+            homeLink.href = pathPrefix + 'index.html';
+
+            try {
+                let baseUrl = window.location.href;
+                if (baseUrl.startsWith('blob:')) {
+                    baseUrl = baseUrl.replace(/^blob:/, '');
+                }
+                let jsonUrl;
+                try {
+                    jsonUrl = new URL(pathPrefix + 'htmlList.json', baseUrl).href;
+                } catch (e) {
+                    jsonUrl = pathPrefix + 'htmlList.json';
+                }
+                const response = await fetch(jsonUrl);
+                if (!response.ok) throw new Error('Failed to load JSON');
+                toolPaths = await response.json();
+            } catch (error) {
+                toolPaths = [
+                    "tools/txt2json.html",
+                    "tarkov/tarkov.html"
+                ];
+            }
+
+            toolPaths.forEach(rawPath => {
+                const targetPath = cleanPath(rawPath);
+                const toolName = getToolName(targetPath);
+
+                let container = null;
+                if (targetPath.startsWith('tarkov/')) {
+                    container = tarkovSubNav;
+                } else if (targetPath.startsWith('tools/')) {
+                    container = toolsSubNav;
+                }
+
+                if (container) {
+                    if (container.children.length > 0) {
+                        const separator = document.createElement('span');
+                        separator.className = 'separator';
+                        separator.textContent = '|';
+                        container.appendChild(separator);
+                    }
+
+                    const link = document.createElement('a');
+                    link.href = pathPrefix + targetPath;
+                    link.className = 'nav-item';
+                    link.textContent = toolName;
+
+                    // Highlight active tool page - specifically force "tarkov" in this file
+                    if (targetPath.endsWith('tarkov.html') || currentPath.endsWith(targetPath)) {
+                        link.classList.add('active');
+                    }
+
+                    container.appendChild(link);
+                }
+            });
+        }
+
         // Initialize App on DOM mount
         function initApp() {
-            // Live-Search Listener
             document.getElementById('search-input').addEventListener('input', applyFilters);
-            
-            // Fetch live telemetry records
+            buildNavigation();
             fetchMarketData();
         }
 
