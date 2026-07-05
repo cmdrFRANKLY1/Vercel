@@ -118,15 +118,15 @@
     <!-- Dynamic navigation populated based on physical availability on Vercel -->
     <nav class="tools-container" aria-label="Tools directory navigation">
         <div class="main-nav">
-            <a href="index.html" class="nav-item" id="homeLink">home</a>
+            <a href="index.html" class="nav-item active" id="homeLink">home</a>
             <span class="separator">|</span>
             <button id="toolsToggle" class="nav-item-btn">tools</button>
             <span class="separator">|</span>
             <button id="tarkovToggle" class="nav-item-btn">tarkov</button>
         </div>
-        <!-- Submenus -->
-        <div class="sub-nav" id="toolsSubNav"></div>
-        <div class="sub-nav" id="tarkovSubNav"></div>
+        <!-- Submenus (both visible and statically loaded by default) -->
+        <div class="sub-nav show" id="toolsSubNav"></div>
+        <div class="sub-nav show" id="tarkovSubNav"></div>
     </nav>
 
     <main></main>
@@ -143,52 +143,16 @@
             const tarkovToggle = document.getElementById('tarkovToggle');
             const currentPath = window.location.pathname;
 
-            // Detect directory context based on current path
-            const isToolsPage = currentPath.includes('/tools/');
-            const isTarkovPage = currentPath.includes('/tarkov/');
+            // Mark home active immediately
+            homeLink.classList.add('active');
 
-            // Mark home active if we are at the root index or empty path
-            if (currentPath.endsWith('index.html') && !isToolsPage && !isTarkovPage || 
-                currentPath.endsWith('/') || 
-                currentPath === '') {
-                homeLink.classList.add('active');
-            }
-
-            // Highlight parent buttons and open correct lines automatically
-            if (isToolsPage) {
-                toolsToggle.classList.add('active');
-                toolsSubNav.classList.add('show');
-            } else if (isTarkovPage) {
-                tarkovToggle.classList.add('active');
-                tarkovSubNav.classList.add('show');
-            }
-
-            // Manual toggle for Tools menu
-            toolsToggle.addEventListener('click', () => {
-                const isExpanded = toolsSubNav.classList.toggle('show');
-                tarkovSubNav.classList.remove('show');
-                tarkovToggle.classList.remove('active');
-                
-                if (!isToolsPage) {
-                    toolsToggle.classList.toggle('active', isExpanded);
-                }
-                if (!isTarkovPage) {
-                    tarkovToggle.classList.remove('active');
-                }
+            // Manual toggle events disabled so clicking them has absolutely no action
+            toolsToggle.addEventListener('click', (e) => {
+                e.preventDefault();
             });
 
-            // Manual toggle for Tarkov menu
-            tarkovToggle.addEventListener('click', () => {
-                const isExpanded = tarkovSubNav.classList.toggle('show');
-                toolsSubNav.classList.remove('show');
-                toolsToggle.classList.remove('active');
-                
-                if (!isTarkovPage) {
-                    tarkovToggle.classList.toggle('active', isExpanded);
-                }
-                if (!isToolsPage) {
-                    toolsToggle.classList.remove('active');
-                }
+            tarkovToggle.addEventListener('click', (e) => {
+                e.preventDefault();
             });
 
             // Normalizes paths for safe URL checking and cleans local paths
@@ -234,10 +198,23 @@
                     ];
                 }
 
+                // Clean existing subnav containers to prevent double appending during re-renders
+                toolsSubNav.innerHTML = '';
+                tarkovSubNav.innerHTML = '';
+
+                // Keep track of added paths to prevent rendering duplicates
+                const seenPaths = new Set();
+
                 // Populate and divide links into sub-menus
                 toolPaths.forEach(rawPath => {
                     const targetPath = cleanPath(rawPath);
                     const toolName = getToolName(targetPath);
+
+                    // Skip if we've already rendered this path
+                    if (seenPaths.has(targetPath)) {
+                        return;
+                    }
+                    seenPaths.add(targetPath);
 
                     // Determine appropriate sub-nav container
                     let container = null;
@@ -262,10 +239,9 @@
                         link.className = 'nav-item';
                         link.textContent = toolName;
 
-                        // Highlight active if URL matches targetPath
+                        // Highlight active if URL matches targetPath (keep home highlighted too)
                         if (currentPath.endsWith(targetPath)) {
                             link.classList.add('active');
-                            homeLink.classList.remove('active');
                         }
 
                         container.appendChild(link);
