@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DnD Legendary Codex</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        document.documentElement.classList.add('dark');
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        accentBlue: '#58a6ff',
+                        tarkovBg: '#09090b',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Force Verdana Globally to match index.html for ultimate legibility */
+        *, body, h1, h2, h3, h4, h5, h6, input, button, select, p, span, kbd, div, table, td, th {
+            font-family: Verdana, Geneva, sans-serif !important;
+        }
+
+        body {
+            background-color: #09090b;
+            color: #f4f4f5;
+        }
+
+        /* Subtle glowing shadows matching index.html aesthetics */
+        .cyber-glow {
+            box-shadow: 0 0 15px rgba(88, 166, 255, 0.08);
+        }
+
+        /* Webkit scrollbars */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #09090b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f3f46;
+        }
+    </style>
+</head>
+<body class="h-screen max-h-screen overflow-hidden flex flex-col justify-between antialiased selection:bg-zinc-850 selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-zinc-800 bg-zinc-950/80 px-6 py-3 flex items-center justify-between select-none flex-shrink-0 backdrop-blur-md z-10">
+        <div class="flex items-center space-x-4">
+            <!-- Back Button pointing back to the root control center -->
+            <a href="index.html" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-xs font-semibold text-zinc-400 hover:text-white transition" title="Back to Control Center">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                <span>Back</span>
+            </a>
+            <div>
+                <h1 class="text-sm font-bold tracking-widest text-zinc-200 uppercase">DnD Legendary Codex</h1>
+                <p class="text-[10px] text-zinc-500">Procedural Hero & Backstory Engine</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <span id="data-source-pill" class="text-[9px] px-2.5 py-1 rounded-full border border-zinc-800 bg-zinc-900 text-zinc-400 font-semibold uppercase tracking-wider flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" id="source-dot"></span>
+                <span id="source-text">Syncing Archives...</span>
+            </span>
+        </div>
+    </header>
+
+    <!-- Main Workspace Layout -->
+    <main class="flex-grow w-full max-w-7xl mx-auto px-4 py-4 flex flex-col lg:flex-row gap-6 items-stretch overflow-hidden">
+        
+        <!-- LEFT COLUMN: CHARACTER PANEL CARD -->
+        <section class="w-full lg:w-[420px] flex-shrink-0 flex flex-col gap-4 overflow-y-auto pr-1">
+            
+            <!-- Dynamic Hero Card -->
+            <div class="relative bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 flex flex-col gap-5 backdrop-blur-sm cyber-glow overflow-hidden">
+                <!-- Glowing corner elements -->
+                <div class="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-accentBlue/20 rounded-tl-xl pointer-events-none"></div>
+                <div class="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-accentBlue/20 rounded-tr-xl pointer-events-none"></div>
+
+                <!-- Avatar Box & General Info -->
+                <div class="flex items-center gap-5">
+                    <!-- Dynamic Face Generator with thispersondoesnotexist.com -->
+                    <div class="relative w-24 h-24 rounded-2xl bg-zinc-950 border border-zinc-800 p-1 flex items-center justify-center flex-shrink-0 shadow-inner overflow-hidden group">
+                        <img id="hero-avatar" src="https://thispersondoesnotexist.com/" alt="Hero Portrait" class="w-full h-full object-cover rounded-xl transition-all duration-300" onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'">
+                        <button onclick="regenerateAvatarOnly()" class="absolute inset-0 bg-zinc-950/80 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] text-accentBlue font-bold tracking-wider transition-all duration-200">
+                            Morph Face
+                        </button>
+                    </div>
+
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span id="hero-race-badge" class="px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800 text-[10px] font-bold text-accentBlue tracking-wider">Race</span>
+                            <span id="hero-profession-badge" class="px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800 text-[10px] font-bold text-zinc-400 tracking-wider truncate max-w-[120px]">Profession</span>
+                        </div>
+                        <h2 id="hero-name" class="text-lg font-bold text-white tracking-tight mt-1.5 truncate">Adventure Awaits</h2>
+                        <p class="text-[10px] text-zinc-400 mt-1 flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            Born in <span id="hero-hometown" class="font-semibold text-zinc-300">Fantasy Realm</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Ability Score Matrix -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500">Attributes & Modifiers</h3>
+                        <button onclick="rollAttributes()" class="text-[9px] font-bold text-accentBlue hover:text-white transition flex items-center gap-1">
+                            <svg class="w-3 h-3 animate-spin" id="dice-rolling-icon" style="animation-duration: 3s;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17" /></svg>
+                            Re-roll Stats
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2" id="stats-grid">
+                        <!-- Instantiated Dynamically (STR, DEX, CON, INT, WIS, CHA) -->
+                    </div>
+                </div>
+
+                <!-- Core Personality Traits from Attribute tags -->
+                <div class="bg-zinc-950/40 border border-zinc-800/80 rounded-xl p-4">
+                    <h4 class="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Inherent Virtues & Traits</h4>
+                    <div id="attribute-traits-container" class="flex flex-wrap gap-1.5">
+                        <!-- Dynamic traits injected -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Action Palette -->
+            <div class="flex gap-2">
+                <button onclick="generateRandomHero()" class="flex-1 py-3 px-4 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800 active:scale-[0.98] transition-all text-xs font-bold text-white rounded-xl shadow-lg flex items-center justify-center gap-2 tracking-wider uppercase">
+                    <svg class="w-4 h-4 text-accentBlue" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                    </svg>
+                    Summon Character
+                </button>
+                <button onclick="exportCharacterCard()" class="px-4 py-3 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white rounded-xl transition flex items-center justify-center" title="Save character layout as metadata">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                </button>
+            </div>
+
+        </section>
+
+        <!-- RIGHT COLUMN: CHRONICLES, LIFE STORY & CUSTOMIZER -->
+        <section class="flex-grow flex flex-col gap-4 overflow-hidden">
+            
+            <!-- Interactive Live Narrative View -->
+            <div class="flex-grow bg-zinc-900/20 border border-zinc-800/80 rounded-2xl p-6 flex flex-col justify-between overflow-hidden relative">
+                
+                <!-- Background Scroll Decal -->
+                <div class="absolute inset-0 bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:16px_16px] opacity-20 pointer-events-none"></div>
+
+                <div class="overflow-y-auto flex-grow space-y-5 pr-2 relative z-10">
+                    <div class="flex items-center justify-between pb-3 border-b border-zinc-850">
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-accentBlue flex items-center gap-2">
+                            <svg class="w-4 h-4 text-accentBlue animate-pulse" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                            Hero Chronicles & Destiny
+                        </h3>
+                        <span id="alignment-text" class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest bg-zinc-950 px-2 py-0.5 rounded border border-zinc-800">Neutral Good</span>
+                    </div>
+
+                    <!-- Constructed Backstory Paragraph -->
+                    <div class="space-y-4">
+                        <div class="bg-zinc-950/30 border border-zinc-800/50 rounded-xl p-5 relative">
+                            <div class="absolute -top-3 left-4 px-2 py-0.5 bg-zinc-950 border border-zinc-800 text-[9px] font-bold text-zinc-500 uppercase rounded">Legend & Reputation</div>
+                            <p id="bio-reputation-text" class="text-xs text-zinc-300 leading-relaxed italic">Select or roll a new hero to generate their initial reputation matrix.</p>
+                        </div>
+
+                        <div class="bg-zinc-950/30 border border-zinc-800/50 rounded-xl p-5 relative">
+                            <div class="absolute -top-3 left-4 px-2 py-0.5 bg-zinc-950 border border-zinc-800 text-[9px] font-bold text-zinc-500 uppercase rounded">Secrets of the Past</div>
+                            <p id="bio-secret-text" class="text-xs text-zinc-300 leading-relaxed italic">Every hero carries a truth they hide from common eyes.</p>
+                        </div>
+
+                        <!-- Mythic Connections & Places -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="p-4 bg-zinc-950/20 border border-zinc-800/50 rounded-xl">
+                                <span class="text-[9px] font-bold uppercase text-zinc-500 tracking-wider block">Destined Companion</span>
+                                <div id="companion-name" class="text-xs font-semibold text-white mt-1">None Met Yet</div>
+                                <div id="companion-origin" class="text-[10px] text-zinc-400 mt-0.5 italic">A spirit bound by prophecy.</div>
+                            </div>
+                            <div class="p-4 bg-zinc-950/20 border border-zinc-800/50 rounded-xl">
+                                <span class="text-[9px] font-bold uppercase text-zinc-500 tracking-wider block">Sacred Destination</span>
+                                <div id="destined-place" class="text-xs font-semibold text-accentBlue mt-1">Mystery Wilderness</div>
+                                <div id="destined-origin" class="text-[10px] text-zinc-400 mt-0.5 italic">A place whispered of in myths.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Quick adjustment controls -->
+                <div class="mt-4 pt-4 border-t border-zinc-800 grid grid-cols-1 sm:grid-cols-3 gap-3 relative z-10 flex-shrink-0">
+                    <div>
+                        <label class="text-[9px] font-bold uppercase text-zinc-500 block mb-1">Rename Hero</label>
+                        <input id="input-custom-name" type="text" oninput="applyCustomName(this.value)" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-1.5 px-3 text-xs text-white focus:outline-none focus:border-zinc-700 transition" placeholder="Custom name...">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold uppercase text-zinc-500 block mb-1">Change Race</label>
+                        <select id="select-custom-race" onchange="applyCustomRace(this.value)" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-1.5 px-2 text-xs text-zinc-300 focus:outline-none focus:border-zinc-700 transition">
+                            <!-- Populated with all races -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold uppercase text-zinc-500 block mb-1">Adjust Profession</label>
+                        <select id="select-custom-profession" onchange="applyCustomProfession(this.value)" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-1.5 px-2 text-xs text-zinc-300 focus:outline-none focus:border-zinc-700 transition">
+                            <!-- Populated with professions -->
+                        </select>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Saved Heroes Grid Panel -->
+            <div class="bg-zinc-900/40 border border-zinc-800 rounded-2xl p-4 flex-shrink-0 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-accentBlue"></span>
+                    <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Codex Archives</span>
+                </div>
+                <div class="flex gap-1.5 overflow-x-auto max-w-[400px] py-1" id="saved-heroes-list">
+                    <span class="text-[10px] text-zinc-600 italic">No heroes archived yet.</span>
+                </div>
+                <button onclick="saveCurrentHero()" class="px-3 py-1.5 bg-zinc-950 border border-zinc-800 hover:border-accentBlue/40 text-[10px] text-zinc-300 hover:text-accentBlue font-semibold rounded-lg transition-all flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                    Archive Hero
+                </button>
+            </div>
+
+        </section>
+    </main>
+
+    <footer class="w-full text-center py-3 text-[9px] text-zinc-600 select-none border-t border-zinc-900 bg-zinc-950/40 flex-shrink-0 uppercase tracking-widest">
+        Codex of heroes, champions, and legends of the realm. All profiles managed client-side.
+    </footer>
+
+    <!-- JS Core Engine -->
+    <script>
+        // --- DATA STRUCTURES & FALLBACKS ---
+        let rawNames = ["Aethelgard", "Vespera", "Thorin", "Rowena", "Gideon", "Mirela", "Caelum", "Elysia", "Balthazar", "Zephyr", "Lyra", "Darnius", "Valeria", "Ignis", "Kaelen"];
+        let rawProfessions = ["Paladin", "Alchemist", "Ranger", "Squire", "Arcanist", "Bard", "Blacksmith", "Herbalist", "Inquisitor", "Apothecary", "Beastmaster", "Cartographer"];
+        let rawRaces = ["Human", "High Elf", "Mountain Dwarf", "Halfling", "Dragonborn", "Tiefling", "Aasimar", "Goliath", "Firbolg"];
+        let rawAttributes = {
+            "Strength": ["Mighty", "Brutal", "Sturdy", "Heavy-Hitter", "Tenacious"],
+            "Dexterity": ["Agile", "Silent", "Stealthy", "Nimble", "Swift"],
+            "Constitution": ["Resilient", "Tough", "Indomitable", "Vigorous", "Stout"],
+            "Intelligence": ["Scholarly", "Wise", "Discerning", "Cunning", "Acute"],
+            "Wisdom": ["Insightful", "Calm", "Perceptive", "Mindful", "Tranquil"],
+            "Charisma": ["Charming", "Magnetic", "Persuasive", "Inspiring", "Diplomatic"]
+        };
+        let rawBiography = {
+            "reputation": [
+                "Known across the realm as a formidable presence,",
+                "Whispered about in hushed tones around tavern hearths,",
+                "A mysterious figure with a highly classified file,",
+                "Schooled in the ancient arts of survival,",
+                "Once celebrated in songs now mostly forgotten,"
+            ],
+            "secret": [
+                "They cannot remember the circumstances surrounding a significant scar.",
+                "They receive anonymous gifts on the same date every year.",
+                "They carry a coin that always returns after being discarded.",
+                "They inherited an object that reacts strangely in moonlight.",
+                "They once witnessed an event they have never told anyone about."
+            ]
+        };
+        let rawPopularPersons = [
+            {"name": "Miyamoto Musashi", "origin": "Historical Legends"},
+            {"name": "Albert Einstein", "origin": "Ancient Archives"},
+            {"name": "Geralt of Rivia", "origin": "The Witcher Saga"},
+            {"name": "Aslan", "origin": "The Chronicles of Narnia"},
+            {"name": "Dobby", "origin": "Arcane lore"}
+        ];
+        let rawPopularPlaces = [
+            {"name": "Novigrad", "origin": "The Continent"},
+            {"name": "The Temple of Time", "origin": "The Legend of Zelda"},
+            {"name": "Rome", "origin": "Earthly history"},
+            {"name": "The Mushroom Kingdom", "origin": "Super Mario Realm"}
+        ];
+
+        // --- ACTIVE GENERATOR STATE ---
+        let currentCharacter = {
+            name: "",
+            race: "",
+            profession: "",
+            hometown: "",
+            stats: {},
+            virtues: [],
+            bioRep: "",
+            bioSec: "",
+            companion: {},
+            place: {},
+            alignment: "",
+            seed: 0
+        };
+
+        let archivedHeroes = [];
+
+        // --- SOURCE DIRECTORY CONFIG ---
+        const DND_BASE_DIR = 'resources/dnd/';
+
+        // List of JSON files to download
+        const dndFiles = {
+            names: 'listOfNames.json',
+            professions: 'listOfProfessions.json',
+            attributes: 'listOfAttributes.json',
+            races: 'listOfRaces.json',
+            biography: 'rndBiography.json',
+            popularPersons: 'listOfPopularPersons.json',
+            popularPlaces: 'listOfPopularPlaces.json'
+        };
+
+        // --- ASYNC RESOURCE INITIALIZER ---
+        async function loadDndResources() {
+            const statusDot = document.getElementById('source-dot');
+            const statusText = document.getElementById('source-text');
+            const start = performance.now();
+
+            try {
+                // Generate relative and nested attempts
+                const fetchFile = async (fileName) => {
+                    try {
+                        let response = await fetch(`${DND_BASE_DIR}${fileName}`);
+                        if (!response.ok) {
+                            response = await fetch(fileName);
+                        }
+                        if (!response.ok) throw new Error("Could not find relative JSON asset");
+                        return await response.json();
+                    } catch (e) {
+                        console.warn(`Could not load ${fileName} via fetch. Using static fallback database.`);
+                        return null;
+                    }
+                };
+
+                const [names, professions, attributes, races, biography, popularPersons, popularPlaces] = await Promise.all([
+                    fetchFile(dndFiles.names),
+                    fetchFile(dndFiles.professions),
+                    fetchFile(dndFiles.attributes),
+                    fetchFile(dndFiles.races),
+                    fetchFile(dndFiles.biography),
+                    fetchFile(dndFiles.popularPersons),
+                    fetchFile(dndFiles.popularPlaces)
+                ]);
+
+                // Map successful loads
+                if (names) rawNames = names;
+                if (professions) rawProfessions = professions;
+                if (attributes) rawAttributes = attributes;
+                if (races) rawRaces = races;
+                if (biography) rawBiography = biography;
+                if (popularPersons) rawPopularPersons = popularPersons;
+                if (popularPlaces) rawPopularPlaces = popularPlaces;
+
+                // Update UI Pill to indicate successful sync
+                statusDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-md shadow-emerald-500/50";
+                const end = performance.now();
+                statusText.textContent = `Synced Resources (${Math.round(end - start)}ms)`;
+
+            } catch (err) {
+                console.error("Resource load error:", err);
+                statusDot.className = "w-1.5 h-1.5 rounded-full bg-amber-500 shadow-md shadow-amber-500/50";
+                statusText.textContent = `Loaded Static Archives`;
+            }
+
+            // Populate Dropdown Menus in the Customizer Area
+            populateCustomizerMenus();
+
+            // Summon first hero
+            generateRandomHero();
+        }
+
+        // --- UTILITY MATRICES ---
+        const alignments = [
+            "Lawful Good", "Neutral Good", "Chaotic Good",
+            "Lawful Neutral", "True Neutral", "Chaotic Neutral",
+            "Lawful Evil", "Neutral Evil", "Chaotic Evil"
+        ];
+
+        // --- CUSTOMIZER DECK INJECTION ---
+        function populateCustomizerMenus() {
+            const selectRace = document.getElementById('select-custom-race');
+            const selectProf = document.getElementById('select-custom-profession');
+
+            if (selectRace) {
+                selectRace.innerHTML = '';
+                rawRaces.forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r;
+                    opt.textContent = r;
+                    selectRace.appendChild(opt);
+                });
+            }
+
+            if (selectProf) {
+                selectProf.innerHTML = '';
+                rawProfessions.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p;
+                    opt.textContent = p;
+                    selectProf.appendChild(opt);
+                });
+            }
+        }
+
+        // --- D&D DICE STANDARD CALCULATIONS ---
+        function rollDndStat() {
+            // Roll 4d6, drop lowest
+            let rolls = Array.from({length: 4}, () => Math.floor(Math.random() * 6) + 1);
+            rolls.sort((a, b) => a - b);
+            return rolls.slice(1).reduce((sum, current) => sum + current, 0);
+        }
+
+        function calculateModifier(score) {
+            let mod = Math.floor((score - 10) / 2);
+            return mod >= 0 ? `+${mod}` : `${mod}`;
+        }
+
+        // --- PROCEDURAL CHARACTER BUILDER ---
+        function generateRandomHero() {
+            // Random attributes
+            const randomName = rawNames[Math.floor(Math.random() * rawNames.length)];
+            const randomRace = rawRaces[Math.floor(Math.random() * rawRaces.length)];
+            const randomProfession = rawProfessions[Math.floor(Math.random() * rawProfessions.length)];
+            const randomAlignment = alignments[Math.floor(Math.random() * alignments.length)];
+
+            // Random home & companion from popular places & names
+            const randomPlaceObj = rawPopularPlaces[Math.floor(Math.random() * rawPopularPlaces.length)];
+            const randomHometown = randomPlaceObj ? randomPlaceObj.name : "High Spire";
+
+            const randomCompanion = rawPopularPersons[Math.floor(Math.random() * rawPopularPersons.length)] || {name: "Fawkes", origin: "Harry Potter"};
+            const randomDestinedPlace = rawPopularPlaces[Math.floor(Math.random() * rawPopularPlaces.length)] || {name: "Novigrad", origin: "The Witcher"};
+
+            // Dynamic Bio strings
+            const repArray = rawBiography.reputation || rawBiography.history || ["A hero with no name"];
+            const secArray = rawBiography.secret || rawBiography.virtues || ["Carries an unspoken vow"];
+
+            const randomRep = repArray[Math.floor(Math.random() * repArray.length)];
+            const randomSec = secArray[Math.floor(Math.random() * secArray.length)];
+
+            // Build Stats
+            const stats = {
+                "STR": rollDndStat(),
+                "DEX": rollDndStat(),
+                "CON": rollDndStat(),
+                "INT": rollDndStat(),
+                "WIS": rollDndStat(),
+                "CHA": rollDndStat()
+            };
+
+            // Associate traits from rawAttributes based on dominant stats
+            const virtues = [];
+            if (stats["STR"] >= 14 && rawAttributes["Strength"]) {
+                virtues.push(rawAttributes["Strength"][Math.floor(Math.random() * rawAttributes["Strength"].length)]);
+            }
+            if (stats["DEX"] >= 14 && rawAttributes["Dexterity"]) {
+                virtues.push(rawAttributes["Dexterity"][Math.floor(Math.random() * rawAttributes["Dexterity"].length)]);
+            }
+            if (stats["CON"] >= 14 && rawAttributes["Constitution"]) {
+                virtues.push(rawAttributes["Constitution"][Math.floor(Math.random() * rawAttributes["Constitution"].length)]);
+            }
+            if (stats["INT"] >= 14 && rawAttributes["Intelligence"]) {
+                virtues.push(rawAttributes["Intelligence"][Math.floor(Math.random() * rawAttributes["Intelligence"].length)]);
+            }
+            if (stats["WIS"] >= 14 && rawAttributes["Wisdom"]) {
+                virtues.push(rawAttributes["Wisdom"][Math.floor(Math.random() * rawAttributes["Wisdom"].length)]);
+            }
+            if (stats["CHA"] >= 14 && rawAttributes["Charisma"]) {
+                virtues.push(rawAttributes["Charisma"][Math.floor(Math.random() * rawAttributes["Charisma"].length)]);
+            }
+
+            // Fallbacks for traits
+            if (virtues.length === 0) {
+                virtues.push("Resourceful", "Unpredictable");
+            }
+
+            // Assign to global state
+            currentCharacter = {
+                name: randomName,
+                race: randomRace,
+                profession: randomProfession,
+                hometown: randomHometown,
+                stats: stats,
+                virtues: virtues,
+                bioRep: randomRep,
+                bioSec: randomSec,
+                companion: randomCompanion,
+                place: randomDestinedPlace,
+                alignment: randomAlignment,
+                seed: Math.floor(Math.random() * 10000)
+            };
+
+            // Refresh UI Views
+            updateHeroInterface();
+            animateDiceIcon();
+            regenerateAvatarOnly();
+        }
+
+        // --- AVATAR MORPH ENGINE ---
+        function regenerateAvatarOnly() {
+            // Append a dynamic high-speed timestamp query string to force thispersondoesnotexist.com to return a completely new randomized photo
+            const avatarImg = document.getElementById('hero-avatar');
+            if (avatarImg) {
+                avatarImg.src = `https://thispersondoesnotexist.com/?t=${Date.now()}`;
+            }
+        }
+
+        // --- INTERFACE SYNC ENGINE ---
+        function updateHeroInterface() {
+            // General Information
+            document.getElementById('hero-name').textContent = currentCharacter.name;
+            document.getElementById('hero-race-badge').textContent = currentCharacter.race;
+            document.getElementById('hero-profession-badge').textContent = currentCharacter.profession;
+            document.getElementById('hero-hometown').textContent = currentCharacter.hometown;
+            document.getElementById('alignment-text').textContent = currentCharacter.alignment;
+
+            // Backstory Panel Elements
+            document.getElementById('bio-reputation-text').textContent = `${currentCharacter.bioRep} traveling across distant reaches to perfect their legendary mastery.`;
+            
+            // Build a vivid secret narrative linking places & persons
+            const secretFormat = `${currentCharacter.bioSec} Some say their path is destined to cross with ${currentCharacter.companion.name} (from ${currentCharacter.companion.origin || "Forgotten Tales"}), leading them to the fabled ruins of ${currentCharacter.place.name}.`;
+            document.getElementById('bio-secret-text').textContent = secretFormat;
+
+            // Mythic panels
+            document.getElementById('companion-name').textContent = currentCharacter.companion.name;
+            document.getElementById('companion-origin').textContent = `Origin: ${currentCharacter.companion.origin || "The Wild Realm"}`;
+            
+            document.getElementById('destined-place').textContent = currentCharacter.place.name;
+            document.getElementById('destined-origin').textContent = `Spotted in: ${currentCharacter.place.origin || "Historical Records"}`;
+
+            // Sync Inputs
+            document.getElementById('input-custom-name').value = currentCharacter.name;
+            document.getElementById('select-custom-race').value = currentCharacter.race;
+            document.getElementById('select-custom-profession').value = currentCharacter.profession;
+
+            // Render stats card
+            renderStatsMatrix();
+
+            // Render tags
+            renderVirtueTags();
+        }
+
+        function renderStatsMatrix() {
+            const grid = document.getElementById('stats-grid');
+            if (!grid) return;
+
+            grid.innerHTML = '';
+            Object.entries(currentCharacter.stats).forEach(([stat, score]) => {
+                const modifier = calculateModifier(score);
+                const statCard = document.createElement('div');
+                statCard.className = "p-2.5 bg-zinc-950/80 border border-zinc-800 rounded-xl text-center flex flex-col justify-between";
+                statCard.innerHTML = `
+                    <span class="text-[9px] font-extrabold text-zinc-500 uppercase block tracking-wider">${stat}</span>
+                    <span class="text-base font-bold text-white my-0.5 block">${score}</span>
+                    <span class="text-[10px] font-semibold text-accentBlue block">${modifier}</span>
+                `;
+                grid.appendChild(statCard);
+            });
+        }
+
+        function renderVirtueTags() {
+            const container = document.getElementById('attribute-traits-container');
+            if (!container) return;
+
+            container.innerHTML = '';
+            currentCharacter.virtues.forEach(trait => {
+                const tag = document.createElement('span');
+                tag.className = "px-2.5 py-1 rounded-full border border-zinc-800 bg-zinc-900 text-[10px] text-zinc-300 font-medium tracking-wide shadow-sm";
+                tag.textContent = trait;
+                container.appendChild(tag);
+            });
+        }
+
+        // --- EDIT PANEL CALLBACKS ---
+        function applyCustomName(val) {
+            if (!val.trim()) return;
+            currentCharacter.name = val;
+            document.getElementById('hero-name').textContent = val;
+        }
+
+        function applyCustomRace(val) {
+            currentCharacter.race = val;
+            updateHeroInterface();
+        }
+
+        function applyCustomProfession(val) {
+            currentCharacter.profession = val;
+            updateHeroInterface();
+        }
+
+        function rollAttributes() {
+            Object.keys(currentCharacter.stats).forEach(stat => {
+                currentCharacter.stats[stat] = rollDndStat();
+            });
+            renderStatsMatrix();
+            animateDiceIcon();
+        }
+
+        function animateDiceIcon() {
+            const icon = document.getElementById('dice-rolling-icon');
+            if (icon) {
+                icon.classList.add('rotate-180');
+                setTimeout(() => {
+                    icon.classList.remove('rotate-180');
+                }, 300);
+            }
+        }
+
+        // --- CODEX SAVING & ARCHIVES ---
+        function saveCurrentHero() {
+            // Check duplicates
+            if (archivedHeroes.some(h => h.name === currentCharacter.name)) {
+                return; // already saved
+            }
+
+            archivedHeroes.push({ ...currentCharacter });
+            updateSavedHeroesUI();
+        }
+
+        function deleteSavedHero(name) {
+            archivedHeroes = archivedHeroes.filter(h => h.name !== name);
+            updateSavedHeroesUI();
+        }
+
+        function loadSavedHero(name) {
+            const hero = archivedHeroes.find(h => h.name === name);
+            if (hero) {
+                currentCharacter = { ...hero };
+                updateHeroInterface();
+                // Fetch cached or fresh avatar img
+                const avatarImg = document.getElementById('hero-avatar');
+                if (avatarImg) {
+                    avatarImg.src = `https://thispersondoesnotexist.com/?seed=${hero.seed}`;
+                }
+            }
+        }
+
+        function updateSavedHeroesUI() {
+            const list = document.getElementById('saved-heroes-list');
+            if (!list) return;
+
+            list.innerHTML = '';
+            if (archivedHeroes.length === 0) {
+                list.innerHTML = `<span class="text-[10px] text-zinc-600 italic">No heroes archived yet.</span>`;
+                return;
+            }
+
+            archivedHeroes.forEach(hero => {
+                const chip = document.createElement('div');
+                chip.className = "flex items-center gap-1 bg-zinc-950 border border-zinc-800 px-2 py-1 rounded-lg text-xs hover:border-accentBlue/40 transition flex-shrink-0";
+                chip.innerHTML = `
+                    <span onclick="loadSavedHero('${hero.name}')" class="text-zinc-300 hover:text-white font-medium cursor-pointer max-w-[80px] truncate block">${hero.name}</span>
+                    <button onclick="deleteSavedHero('${hero.name}')" class="text-zinc-600 hover:text-red-400 transition" title="Dismiss Legend">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                `;
+                list.appendChild(chip);
+            });
+        }
+
+        // --- EXPORT METADATA ACTION ---
+        function exportCharacterCard() {
+            const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+                JSON.stringify(currentCharacter, null, 2)
+            )}`;
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", jsonString);
+            downloadAnchor.setAttribute("download", `${currentCharacter.name.replace(/\s+/g, '_')}_DnD_Hero.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        // --- BOOTSTRAPPING ENGINE ---
+        window.addEventListener('load', loadDndResources);
+    </script>
+</body>
+</html>
