@@ -28,10 +28,16 @@
         }
     </script>
     <style>
-        /* Precision typography for tactical scanning */
+        /* Precision Verdana typography for tactical scanning and legibility */
         *, body {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+            font-family: Verdana, Geneva, sans-serif !important;
         }
+        
+        /* Slight letter spacing adjustment for better readability with Verdana at small sizes */
+        body {
+            letter-spacing: -0.01em;
+        }
+
         /* Custom scrollbar for terminal aesthetic */
         ::-webkit-scrollbar {
             width: 6px;
@@ -54,9 +60,9 @@
     <!-- TOP TELEMETRY STATUS BAR -->
     <header class="border-b border-tkBorder bg-tkBg/80 backdrop-blur sticky top-0 z-50 px-4 py-2.5 flex flex-wrap items-center justify-between text-xs gap-3">
         <div class="flex items-center space-x-3">
-            <span class="text-tkGold font-bold tracking-widest animate-pulse">[NEXUS_SYS_ONLINE]</span>
+            <span class="text-tkGold font-bold tracking-wider animate-pulse">[NEXUS_SYS_ONLINE]</span>
             <span class="text-tkMuted">|</span>
-            <span class="font-bold tracking-tight text-zinc-100">TARKOV // INTELLIGENCE_HUB v4.2</span>
+            <span class="font-bold text-zinc-100">TARKOV // INTELLIGENCE_HUB v4.2</span>
         </div>
         <div class="flex items-center space-x-4">
             <div class="flex items-center space-x-1.5">
@@ -86,7 +92,7 @@
                 <!-- Query Fields & Search Row -->
                 <div class="flex flex-col md:flex-row gap-2">
                     <div class="relative flex-1">
-                        <span class="absolute left-3 top-2.5 text-tkMuted text-xs select-none">&gt;</span>
+                        <span class="absolute left-3 top-2 text-tkMuted text-xs select-none">&gt;</span>
                         <input 
                             type="text" 
                             id="search-input" 
@@ -252,7 +258,7 @@
     <!-- FLOATING ERROR DIALOGUE (NO REBOOT ALERTS) -->
     <div id="error-dialog" class="fixed bottom-6 right-6 max-w-md bg-tkPanel border-l-4 border-tkRed border-y border-r border-tkBorder p-4 shadow-2xl rounded hidden z-[100] animate-bounce">
         <div class="flex items-start space-x-3">
-            <div class="text-tkRed font-extrabold text-sm">[ERR.API_REFUSED]</div>
+            <div class="text-tkRed font-extrabold text-xs">[ERR.API_REFUSED]</div>
             <div class="flex-1">
                 <p class="text-xs font-bold uppercase text-white mb-1">Tarkov API Protocol Error</p>
                 <p id="error-desc" class="text-[11px] text-tkMuted leading-normal mb-2">The gateway could not authorize requests. Switched database alignment to internal mock cache registry.</p>
@@ -348,7 +354,6 @@
         }
 
         // Display alerts nicely without browser-blocking popups
-        // Error descriptions adjusted for readability & recovery parameters
         function showNotification(msg, isError = false) {
             const errDialog = document.getElementById('error-dialog');
             const errDesc = document.getElementById('error-desc');
@@ -573,7 +578,7 @@
                     <td class="py-2 px-4 font-semibold text-white">
                         <div class="flex flex-col">
                             <span class="hover:text-tkGold transition uppercase truncate max-w-sm md:max-w-xl">${item.name || 'Unnamed Specimen'}</span>
-                            <span class="text-[9px] text-tkMuted font-mono select-all">${item.shortName || 'N/A'}</span>
+                            <span class="text-[9px] text-tkMuted select-all">${item.shortName || 'N/A'}</span>
                         </div>
                     </td>
                     <td class="py-2 px-3 text-right text-zinc-400 font-mono hidden sm:table-cell">${formatRubles(item.basePrice)}</td>
@@ -588,7 +593,7 @@
             tbody.appendChild(fragment);
         }
 
-        // On-demand specimen inspection (extremely lightweight, lazy loading heavy visual assets only when clicked)
+        // On-demand specimen inspection
         function selectItem(id) {
             const item = rawItems.find(i => i.id === id);
             if (!item) return;
@@ -622,7 +627,7 @@
             const loader = document.getElementById('telemetry-img-loader');
             loader.classList.remove('hidden');
 
-            // API allows loading of high-quality flat-vector weapon design models directly from their content delivery network:
+            // Set images directly from content delivery network
             imgEl.src = `https://assets.tarkov.dev/${item.id}-base-image.png`;
             imgEl.onload = () => loader.classList.add('hidden');
             imgEl.onerror = () => {
@@ -654,7 +659,6 @@
             const sellContainer = document.getElementById('sell-source-list');
             sellContainer.innerHTML = '';
             if (item.sellFor && item.sellFor.length > 0) {
-                // Sort high to low
                 const sortedSells = [...item.sellFor].sort((x, y) => y.price - x.price);
                 sortedSells.forEach(s => {
                     const row = document.createElement('div');
@@ -681,7 +685,6 @@
         function filterCategory(catName) {
             activeCategory = catName;
             
-            // Set styles of buttons
             const buttons = document.querySelectorAll('#category-bar button');
             buttons.forEach(btn => {
                 if (btn.id === `cat-${catName}`) {
