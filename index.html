@@ -115,72 +115,45 @@
 </head>
 <body>
 
-    <!-- Dynamic navigation populated based on physical availability on Vercel -->
-    <nav class="tools-container" aria-label="Tools directory navigation">
-        <div class="main-nav">
+    <!-- Navigation container containing only static Home on load -->
+    <nav class="tools-container" id="navContainer" aria-label="Tools directory navigation">
+        <div class="main-nav" id="mainNav">
             <a href="index.html" class="nav-item active" id="homeLink">home</a>
-            <span class="separator">|</span>
-            <button id="toolsToggle" class="nav-item-btn">tools</button>
-            <span class="separator">|</span>
-            <button id="tarkovToggle" class="nav-item-btn">tarkov</button>
         </div>
-        <!-- Submenus (toggled dynamically on click) -->
-        <div class="sub-nav" id="toolsSubNav"></div>
-        <div class="sub-nav" id="tarkovSubNav"></div>
+        <!-- Submenus will be dynamically appended here from htmlList.json -->
     </nav>
 
     <main></main>
 
-    <script>
+    <script {nonce}>
         (function() {
             'use strict';
 
-            const toolsSubNav = document.getElementById('toolsSubNav');
-            const tarkovSubNav = document.getElementById('tarkovSubNav');
-            
+            const navContainer = document.getElementById('navContainer');
+            const mainNav = document.getElementById('mainNav');
             const homeLink = document.getElementById('homeLink');
-            const toolsToggle = document.getElementById('toolsToggle');
-            const tarkovToggle = document.getElementById('tarkovToggle');
             const currentPath = window.location.pathname;
 
             // Mark home active immediately
             homeLink.classList.add('active');
 
-            // Interactive toggles to open/close submenus on click
-            toolsToggle.addEventListener('click', (e) => {
-                e.preventDefault();
-                const isExpanded = toolsSubNav.classList.toggle('show');
-                tarkovSubNav.classList.remove('show');
-                tarkovToggle.classList.remove('active');
-                toolsToggle.classList.toggle('active', isExpanded);
-            });
-
-            tarkovToggle.addEventListener('click', (e) => {
-                e.preventDefault();
-                const isExpanded = tarkovSubNav.classList.toggle('show');
-                toolsSubNav.classList.remove('show');
-                toolsToggle.classList.remove('active');
-                tarkovToggle.classList.toggle('active', isExpanded);
-            });
-
-            // Normalizes paths for safe URL checking and cleans local paths
+            // Normalizes paths to use standard web URL slashes
             function cleanPath(rawPath) {
                 return rawPath.replace(/\\/g, '/');
             }
 
-            // Extracts name from path (e.g. "tarkov/tarkov.html" -> "tarkov")
+            // Extracts filename from path without extension (e.g. "tarkov/tarkov.html" -> "tarkov")
             function getToolName(path) {
                 const parts = path.split('/');
                 const filename = parts[parts.length - 1];
                 return filename.replace('.html', '');
             }
 
-            // Fetch and build navigation from JSON
+            // Fetch list and build category structure
             async function buildNavigation() {
                 let toolPaths = [];
 
                 try {
-                    // Normalize the base URL to strip any 'blob:' prefix.
                     let baseUrl = window.location.href;
                     if (baseUrl.startsWith('blob:')) {
                         baseUrl = baseUrl.replace(/^blob:/, '');
@@ -190,7 +163,7 @@
                     try {
                         jsonUrl = new URL('htmlList.json', baseUrl).href;
                     } catch (e) {
-                        jsonUrl = 'htmlList.json'; // Safe fallback
+                        jsonUrl = 'htmlList.json';
                     }
                     
                     const response = await fetch(jsonUrl);
@@ -199,61 +172,99 @@
                     }
                     toolPaths = await response.json();
                 } catch (error) {
-                    // Fallback default list if json file is unavailable
-                    toolPaths = [
-                        "tools/txt2json.html",
-                        "tarkov/tarkov.html"
-                    ];
+                    // Fail gracefully to an empty array (only displays home)
+                    toolPaths = [];
                 }
 
-                // Clean existing subnav containers to prevent double appending during re-renders
-                toolsSubNav.innerHTML = '';
-                tarkovSubNav.innerHTML = '';
+                // Clear any dynamic sub-nav elements if they somehow exist
+                const oldSubNavs = navContainer.querySelectorAll('.sub-nav');
+                oldSubNavs.forEach(el => el.remove());
 
-                // Keep track of added paths to prevent rendering duplicates
-                const seenPaths = new Set();
+                // Categories storage mapped as { categoryName: [ { name, path } ] }
+                const categories = {};
 
-                // Populate and divide links into sub-menus
+                // Group entries into categories based on their top-level folder prefix
                 toolPaths.forEach(rawPath => {
                     const targetPath = cleanPath(rawPath);
-                    const toolName = getToolName(targetPath);
+                    const parts = targetPath.split('/');
 
-                    // Skip if we've already rendered this path
-                    if (seenPaths.has(targetPath)) {
-                        return;
-                    }
-                    seenPaths.add(targetPath);
+                    if (parts.length > 1) {
+                        const categoryName = parts[0];
+                        const toolName = getToolName(targetPath);
 
-                    // Determine appropriate sub-nav container
-                    let container = null;
-                    if (targetPath.startsWith('tarkov/')) {
-                        container = tarkovSubNav;
-                    } else if (targetPath.startsWith('tools/')) {
-                        container = toolsSubNav;
-                    }
-
-                    if (container) {
-                        // Append separator if not first item in this sub-nav
-                        if (container.children.length > 0) {
-                            const separator = document.createElement('span');
-                            separator.className = 'separator';
-                            separator.textContent = '|';
-                            container.appendChild(separator);
+                        if (!categories[categoryName]) {
+                            categories[categoryName] = [];
                         }
 
-                        // Create link item
-                        const link = document.createElement('a');
-                        link.href = targetPath;
-                        link.className = 'nav-item';
-                        link.textContent = toolName;
+                        // Guard against duplicate paths
+                        if (!categories[categoryName].some(item => item.path === targetPath)) {
+                            categories[categoryName].push({ name: toolName, path: targetPath });
+                        }
+                    }
+                });
 
-                        // Highlight active if URL matches targetPath (keep home highlighted too)
-                        if (currentPath.endsWith(targetPath)) {
+                // Build main categories menu and associated subnav menus dynamically
+                Object.keys(categories).forEach(catName => {
+                    // Create and append the main menu separator
+                    const separator = document.createElement('span');
+                    separator.className = 'separator';
+                    separator.textContent = '|';
+                    mainNav.appendChild(separator);
+
+                    // Create and append the main category toggle button
+                    const btn = document.createElement('button');
+                    btn.className = 'nav-item-btn';
+                    btn.textContent = catName;
+                    mainNav.appendChild(btn);
+
+                    // Create and append the submenu row container
+                    const subNav = document.createElement('div');
+                    subNav.className = 'sub-nav';
+                    subNav.id = `${catName}SubNav`;
+                    navContainer.appendChild(subNav);
+
+                    // Handle dynamic interactive toggle click events
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+
+                        // Close all other open submenus and clear active statuses
+                        const allSubNavs = navContainer.querySelectorAll('.sub-nav');
+                        allSubNavs.forEach(sn => {
+                            if (sn !== subNav) sn.classList.remove('show');
+                        });
+
+                        const allButtons = mainNav.querySelectorAll('.nav-item-btn');
+                        allButtons.forEach(b => {
+                            if (b !== btn) b.classList.remove('active');
+                        });
+
+                        // Toggle current submenu visibility and highlight state
+                        const isExpanded = subNav.classList.toggle('show');
+                        btn.classList.toggle('active', isExpanded);
+                    });
+
+                    // Populate submenu items for this specific category
+                    categories[catName].forEach((tool, index) => {
+                        if (index > 0) {
+                            const subSep = document.createElement('span');
+                            subSep.className = 'separator';
+                            subSep.textContent = '|';
+                            subNav.appendChild(subSep);
+                        }
+
+                        // Create hyperlink to tool path
+                        const link = document.createElement('a');
+                        link.href = tool.path;
+                        link.className = 'nav-item';
+                        link.textContent = tool.name;
+
+                        // Highlight active link if URL matches targetPath
+                        if (currentPath.endsWith(tool.path)) {
                             link.classList.add('active');
                         }
 
-                        container.appendChild(link);
-                    }
+                        subNav.appendChild(link);
+                    });
                 });
             }
 
