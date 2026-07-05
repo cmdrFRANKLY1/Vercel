@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text file → JSON list · Dark</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+    }
+    body {
+      background: #0d1117;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Verdana', 'Geneva', 'Tahoma', sans-serif;
+      padding: 1.5rem;
+      margin: 0;
+    }
+    .card {
+      background: #161b22;
+      max-width: 780px;
+      width: 100%;
+      padding: 2rem 2rem 2.2rem;
+      border-radius: 28px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
+      transition: box-shadow 0.2s;
+      border: 1px solid #30363d;
+    }
+    h1 {
+      font-size: 1.7rem;
+      font-weight: 400;
+      letter-spacing: -0.2px;
+      color: #e6edf3;
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+      border-bottom: 2px solid #21262d;
+      padding-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    h1 small {
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: #8b949e;
+      margin-left: auto;
+      background: #21262d;
+      padding: 0.2rem 0.8rem;
+      border-radius: 30px;
+      letter-spacing: 0.3px;
+    }
+    .description {
+      font-size: 0.95rem;
+      color: #c9d1d9;
+      margin-bottom: 1.8rem;
+      background: #0d1117;
+      padding: 0.8rem 1.2rem;
+      border-radius: 18px;
+      border-left: 4px solid #58a6ff;
+      line-height: 1.5;
+    }
+    .upload-area {
+      background: #0d1117;
+      border: 2px dashed #30363d;
+      border-radius: 20px;
+      padding: 1.8rem 1.5rem;
+      text-align: center;
+      transition: background 0.15s, border-color 0.15s;
+      cursor: pointer;
+      margin-bottom: 1.8rem;
+    }
+    .upload-area:hover {
+      background: #161b22;
+      border-color: #58a6ff;
+    }
+    .upload-area input[type="file"] {
+      display: none;
+    }
+    .file-label {
+      display: inline-block;
+      background: #e6edf3;
+      color: #0d1117;
+      font-size: 0.95rem;
+      padding: 0.6rem 1.8rem;
+      border-radius: 40px;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.05s;
+      font-family: 'Verdana', sans-serif;
+      border: none;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    }
+    .file-label:hover {
+      background: #ffffff;
+    }
+    .file-label:active {
+      transform: scale(0.97);
+    }
+    .file-status {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #8b949e;
+      background: #161b22;
+      padding: 0.4rem 1rem;
+      border-radius: 30px;
+      display: inline-block;
+      max-width: 100%;
+      word-break: break-all;
+      border: 1px solid #21262d;
+    }
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem 1.2rem;
+      margin: 1.8rem 0 1.4rem;
+    }
+    .btn {
+      background: #21262d;
+      border: none;
+      padding: 0.6rem 1.6rem;
+      border-radius: 60px;
+      font-family: 'Verdana', sans-serif;
+      font-size: 0.9rem;
+      color: #c9d1d9;
+      cursor: pointer;
+      transition: background 0.12s, box-shadow 0.1s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+      border: 1px solid transparent;
+    }
+    .btn-primary {
+      background: #58a6ff;
+      color: #0d1117;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+    .btn-primary:hover {
+      background: #79c0ff;
+    }
+    .btn-primary:disabled {
+      opacity: 0.4;
+      pointer-events: none;
+      filter: grayscale(0.6);
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid #30363d;
+      color: #8b949e;
+    }
+    .btn-outline:hover {
+      background: #21262d;
+      border-color: #58a6ff;
+      color: #c9d1d9;
+    }
+    .btn:active {
+      transform: scale(0.96);
+    }
+    .output-area {
+      background: #0d1117;
+      border-radius: 20px;
+      padding: 0.2rem 0.2rem 0.2rem 0.2rem;
+      border: 1px solid #21262d;
+      margin-top: 0.6rem;
+    }
+    .output-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 1.2rem;
+      background: #161b22;
+      border-radius: 20px 20px 0 0;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: #8b949e;
+      text-transform: uppercase;
+      border-bottom: 1px solid #21262d;
+    }
+    .output-header span {
+      background: #21262d;
+      padding: 0.1rem 0.8rem;
+      border-radius: 30px;
+      font-weight: 400;
+      font-size: 0.7rem;
+      color: #8b949e;
+    }
+    #jsonOutput {
+      background: #0d1117;
+      padding: 1.2rem 1.5rem;
+      margin: 0;
+      min-height: 100px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: 'Courier New', 'Consolas', monospace;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border-radius: 0 0 20px 20px;
+      line-height: 1.5;
+      color: #e6edf3;
+    }
+    #jsonOutput:empty::before {
+      content: '📄  JSON list will appear here …';
+      color: #484f58;
+      font-style: italic;
+      font-family: 'Verdana', sans-serif;
+      font-size: 0.9rem;
+    }
+    .hint {
+      font-size: 0.8rem;
+      margin-top: 1.2rem;
+      color: #8b949e;
+      background: #161b22;
+      padding: 0.4rem 1.2rem;
+      border-radius: 40px;
+      display: inline-block;
+      border: 1px solid #21262d;
+    }
+    .hint code {
+      background: #21262d;
+      padding: 0.1rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: #c9d1d9;
+    }
+    .flex-center {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    hr {
+      border: none;
+      border-top: 2px dashed #21262d;
+      margin: 1.5rem 0 1rem;
+    }
+    .footer-note {
+      font-size: 0.75rem;
+      color: #484f58;
+      text-align: right;
+      margin-top: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>
+    📂 Word list → JSON
+    <small>dark</small>
+  </h1>
+  <div class="description">
+    ⚡ Select a <strong>.txt</strong> file containing one word per line (or space/comma separated).<br>
+    We'll parse the words and show them as a JSON list.
+  </div>
+
+  <!-- File upload area -->
+  <div class="upload-area" id="dropZone">
+    <input type="file" id="fileInput" accept=".txt,text/plain">
+    <label for="fileInput" class="file-label">📁 Choose text file</label>
+    <div style="margin-top: 0.8rem; font-size: 0.85rem; color: #484f58;">or drag & drop anywhere here</div>
+    <div id="fileStatus" class="file-status">📎 No file selected</div>
+  </div>
+
+  <!-- Actions -->
+  <div class="action-row">
+    <div class="flex-center">
+      <button class="btn btn-primary" id="convertBtn" disabled>🔄 Convert to JSON</button>
+      <button class="btn btn-outline" id="clearBtn">✕ Clear</button>
+    </div>
+    <button class="btn btn-outline" id="copyBtn" disabled>📋 Copy JSON</button>
+  </div>
+
+  <!-- Output -->
+  <div class="output-area">
+    <div class="output-header">
+      <span>📜 JSON output</span>
+      <span id="wordCount">0 words</span>
+    </div>
+    <pre id="jsonOutput"></pre>
+  </div>
+
+  <div class="hint">
+    💡 Words are split by newlines, commas, or spaces. Empty lines are ignored.
+  </div>
+  <div class="footer-note">pure client‑side</div>
+</div>
+
+<script>
+  (function() {
+    // DOM refs
+    const fileInput = document.getElementById('fileInput');
+    const fileStatus = document.getElementById('fileStatus');
+    const convertBtn = document.getElementById('convertBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const jsonOutput = document.getElementById('jsonOutput');
+    const wordCountSpan = document.getElementById('wordCount');
+    const dropZone = document.getElementById('dropZone');
+
+    // state
+    let currentFileContent = null;        // raw text content (string)
+    let currentWords = [];               // array of words (strings)
+    let lastParsedWords = [];            // for copy / display
+
+    // ---------- helpers ----------
+    function updateWordCount(count) {
+      wordCountSpan.textContent = count + ' word' + (count !== 1 ? 's' : '');
+    }
+
+    // parse text into word array (split by newline, comma, space; filter empty)
+    function parseWordsFromText(text) {
+      if (!text || typeof text !== 'string') return [];
+      const raw = text.split(/[\n,;\s]+/).map(w => w.trim()).filter(w => w.length > 0);
+      return raw;
+    }
+
+    // render JSON output from words array
+    function renderJSON(wordsArray) {
+      if (!wordsArray || wordsArray.length === 0) {
+        jsonOutput.textContent = '';
+        updateWordCount(0);
+        copyBtn.disabled = true;
+        return;
+      }
+      try {
+        const jsonStr = JSON.stringify(wordsArray, null, 2);
+        jsonOutput.textContent = jsonStr;
+        updateWordCount(wordsArray.length);
+        copyBtn.disabled = false;
+        lastParsedWords = wordsArray.slice();
+      } catch (e) {
+        jsonOutput.textContent = '⚠️ Error generating JSON: ' + e.message;
+        updateWordCount(0);
+        copyBtn.disabled = true;
+      }
+    }
+
+    // reset everything (clear file, output, state)
+    function resetAll() {
+      fileInput.value = '';
+      currentFileContent = null;
+      currentWords = [];
+      lastParsedWords = [];
+      jsonOutput.textContent = '';
+      updateWordCount(0);
+      fileStatus.textContent = '📎 No file selected';
+      convertBtn.disabled = true;
+      copyBtn.disabled = true;
+    }
+
+    // process the selected file (from input or drag)
+    function handleFile(file) {
+      if (!file) {
+        resetAll();
+        return;
+      }
+      fileStatus.textContent = `📄 ${file.name}  (${(file.size / 1024).toFixed(1)} KB)`;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target.result;
+        if (typeof content === 'string') {
+          currentFileContent = content;
+          const words = parseWordsFromText(content);
+          currentWords = words;
+          convertBtn.disabled = false;
+          if (words.length > 0) {
+            fileStatus.textContent = `📄 ${file.name}  ·  ${words.length} word(s) detected`;
+          } else {
+            fileStatus.textContent = `📄 ${file.name}  ·  (no words found)`;
+          }
+        } else {
+          alert('File could not be read as text.');
+          resetAll();
+        }
+      };
+      reader.onerror = () => {
+        alert('Error reading file.');
+        resetAll();
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    // ---------- event listeners ----------
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        handleFile(file);
+      } else {
+        resetAll();
+      }
+    });
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.style.background = '#161b22';
+      dropZone.style.borderColor = '#58a6ff';
+    });
+    dropZone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dropZone.style.background = '#0d1117';
+      dropZone.style.borderColor = '#30363d';
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.style.background = '#0d1117';
+      dropZone.style.borderColor = '#30363d';
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        const file = files[0];
+        if (file.type && !file.type.includes('text') && !file.name.toLowerCase().endsWith('.txt')) {
+          alert('Please drop a .txt or plain text file.');
+          return;
+        }
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+        handleFile(file);
+      }
+    });
+
+    convertBtn.addEventListener('click', () => {
+      if (!currentFileContent) {
+        resetAll();
+        return;
+      }
+      const words = parseWordsFromText(currentFileContent);
+      currentWords = words;
+      if (words.length === 0) {
+        jsonOutput.textContent = '⚠️ No words found. Please check the file content.';
+        updateWordCount(0);
+        copyBtn.disabled = true;
+        lastParsedWords = [];
+        return;
+      }
+      renderJSON(words);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      resetAll();
+      dropZone.style.background = '#0d1117';
+      dropZone.style.borderColor = '#30363d';
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      const jsonText = jsonOutput.textContent;
+      if (!jsonText || jsonText.trim() === '') {
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(jsonText);
+        const original = copyBtn.textContent;
+        copyBtn.textContent = '✅ Copied!';
+        setTimeout(() => {
+          copyBtn.textContent = original;
+        }, 2000);
+      } catch (err) {
+        const area = document.createElement('textarea');
+        area.value = jsonText;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand('copy');
+        document.body.removeChild(area);
+        const original = copyBtn.textContent;
+        copyBtn.textContent = '📋 Copied!';
+        setTimeout(() => {
+          copyBtn.textContent = original;
+        }, 2000);
+      }
+    });
+
+    resetAll();
+  })();
+</script>
+</body>
+</html>
