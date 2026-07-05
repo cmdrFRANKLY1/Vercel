@@ -46,9 +46,18 @@
 
     <!-- Top Status Banner -->
     <header class="border-b border-zinc-800 bg-zinc-950/40 px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-4 select-none flex-shrink-0">
-        <div class="flex items-center space-x-3">
-            <span class="text-xs font-bold tracking-widest text-zinc-400 uppercase">Tarkov.Dev Portal</span>
-            <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" id="connection-indicator" title="Connecting..."></span>
+        <div class="flex items-center space-x-4">
+            <!-- Back Button pointing back to the root portal -->
+            <a href="../index.html" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-xs font-semibold text-zinc-400 hover:text-white transition" title="Back to Portal">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                <span>Back</span>
+            </a>
+            <div class="flex items-center space-x-3">
+                <span class="text-xs font-bold tracking-widest text-zinc-400 uppercase">Tarkov.Dev Portal</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" id="connection-indicator" title="Connecting..."></span>
+            </div>
         </div>
         <div class="flex items-center space-x-6 text-xs text-zinc-500">
             <div id="stats-cached" class="hidden sm:block">Cache: <span class="text-zinc-300 font-semibold" id="cache-status">Checking...</span></div>
@@ -176,20 +185,16 @@
                                 <span id="detail-val-flea" class="text-xs font-bold text-tarkoogleGreen mt-0.5 block">₽0</span>
                             </div>
                             <div class="p-2.5 bg-zinc-950/20 border border-zinc-800/50 rounded-xl">
-                                <span class="text-[9px] uppercase tracking-wider text-zinc-500 block">Weight</span>
-                                <span id="detail-val-weight" class="text-xs font-bold text-zinc-300 mt-0.5 block">0 kg</span>
-                            </div>
-                            <div class="p-2.5 bg-zinc-950/20 border border-zinc-800/50 rounded-xl">
-                                <span class="text-[9px] uppercase tracking-wider text-zinc-500 block">ID Suffix</span>
-                                <span id="detail-val-id" class="text-[10px] text-zinc-400 mt-0.5 block truncate"></span>
+                                <span class="text-[9px] uppercase tracking-wider text-zinc-500 block">Item Weight</span>
+                                <span id="detail-val-weight" class="text-xs font-semibold text-zinc-200 mt-0.5 block">0 kg</span>
                             </div>
                         </div>
 
-                        <!-- Wiki button redirect -->
-                        <div class="pt-2 border-t border-zinc-800 flex justify-end">
-                            <a id="detail-wiki-link" href="#" target="_blank" rel="noopener noreferrer" class="px-4 py-2 text-[10px] font-bold rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition flex items-center gap-1.5 border border-zinc-700/50">
-                                Official Wiki
-                                <svg class="w-3 h-3 text-zinc-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <!-- Action buttons -->
+                        <div class="mt-6 pt-4 border-t border-zinc-800 flex justify-between items-center">
+                            <a id="modal-wiki-btn" href="#" target="_blank" rel="noopener noreferrer" class="px-4 py-2 text-xs font-semibold rounded-xl bg-zinc-800 hover:bg-zinc-700 hover:text-zinc-100 text-zinc-300 transition flex items-center gap-1.5">
+                                View Wiki
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                                 </svg>
                             </a>
@@ -218,7 +223,7 @@
             return price ? '₽' + price.toLocaleString('en-US') : 'N/A';
         };
 
-        // Tarkov.dev GraphQL Query (Including supplementary fields for detailed inspection)
+        // Tarkov.dev GraphQL Query (Clean and minimal payload)
         const gqlQuery = `
         {
             items(lang: en) {
@@ -229,8 +234,6 @@
                 avg24hPrice
                 weight
                 wikiLink
-                iconLink
-                description
                 category {
                     name
                 }
@@ -274,8 +277,8 @@
                         category: item.category?.name || 'Other',
                         weight: item.weight,
                         wikiLink: item.wikiLink,
-                        icon: item.iconLink,
-                        description: item.description || 'No database entry cataloged for this tactical item.'
+                        icon: `https://assets.tarkov.dev/${item.id}-512.png`, // high-quality verified asset URL
+                        description: item.name + " (" + item.shortName + ") indexed directly from Tarkov.dev game records."
                     }));
                     
                     if (totalCount) totalCount.textContent = tarkovItems.length;
@@ -310,18 +313,8 @@
             const latencyMs = document.getElementById('latency-ms');
             if (latencyMs) latencyMs.textContent = Math.round(end - start) + 'ms';
             
-            // Fade out the loader gracefully
-            const loadingScreen = document.getElementById('loading-screen');
-            if (loadingScreen) {
-                loadingScreen.classList.add('opacity-0');
-                setTimeout(() => {
-                    loadingScreen.style.display = 'none';
-                    // Trigger the initial render of the main UI table
-                    filterSearch();
-                }, 500);
-            } else {
-                filterSearch();
-            }
+            // Fade out loader instantly on rapid load
+            filterSearch();
         }
 
         // Category Sidebar Selection Logic
