@@ -119,9 +119,10 @@
 
             // Fetch and build navigation from JSON
             async function buildNavigation() {
+                let toolPaths = [];
+
                 try {
                     // Normalize the base URL to strip any 'blob:' prefix.
-                    // Blob schemas throw errors when parsed as base URLs in standard URL constructors.
                     let baseUrl = window.location.href;
                     if (baseUrl.startsWith('blob:')) {
                         baseUrl = baseUrl.replace(/^blob:/, '');
@@ -138,35 +139,40 @@
                     if (!response.ok) {
                         throw new Error('Failed to load htmlList.json');
                     }
-                    const toolPaths = await response.json();
-
-                    toolPaths.forEach(rawPath => {
-                        const targetPath = cleanPath(rawPath);
-                        const toolName = getToolName(targetPath);
-
-                        // Create separator
-                        const separator = document.createElement('span');
-                        separator.className = 'separator';
-                        separator.textContent = '|';
-                        navContainer.appendChild(separator);
-
-                        // Create link
-                        const link = document.createElement('a');
-                        link.href = targetPath;
-                        link.className = 'nav-item';
-                        link.textContent = toolName;
-
-                        // Apply solid white if this link matches the browser URL path
-                        if (currentPath.endsWith(targetPath)) {
-                            link.classList.add('active');
-                            homeLink.classList.remove('active'); // Ensure home turns off
-                        }
-
-                        navContainer.appendChild(link);
-                    });
+                    toolPaths = await response.json();
                 } catch (error) {
-                    console.error('Error rendering dynamic navigation:', error);
+                    // Fallback to default lists when fetch fails (e.g. inside sandboxed Canvas previews)
+                    toolPaths = [
+                        "tools/txt2json.html",
+                        "tools/tarkov.html"
+                    ];
                 }
+
+                // Safely render navigation from the loaded or fallback list
+                toolPaths.forEach(rawPath => {
+                    const targetPath = cleanPath(rawPath);
+                    const toolName = getToolName(targetPath);
+
+                    // Create separator
+                    const separator = document.createElement('span');
+                    separator.className = 'separator';
+                    separator.textContent = '|';
+                    navContainer.appendChild(separator);
+
+                    // Create link
+                    const link = document.createElement('a');
+                    link.href = targetPath;
+                    link.className = 'nav-item';
+                    link.textContent = toolName;
+
+                    // Apply solid white if this link matches the browser URL path
+                    if (currentPath.endsWith(targetPath)) {
+                        link.classList.add('active');
+                        homeLink.classList.remove('active'); // Ensure home turns off
+                    }
+
+                    navContainer.appendChild(link);
+                });
             }
 
             buildNavigation();
