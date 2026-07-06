@@ -1,306 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>launch · shortcuts</title>
-  <style>
-    /* ----- Pure Text-Based Verdana Theme ----- */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    :root {
-      --bg: #09090b;          /* Zinc 950 */
-      --fg: #f4f4f5;          /* Zinc 100 */
-      --accent: #10b981;      /* Emerald 500 (Fallback) */
-      --border: #27272a;      /* Zinc 800 */
-      --muted: #71717a;       /* Zinc 500 */
-      --hover-color: #34d399; /* Emerald 400 (Fallback) */
-      --font-sans: Verdana, Geneva, sans-serif;
-    }
-
-    body {
-      background-color: var(--bg);
-      color: var(--fg);
-      font-family: var(--font-sans);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 3rem 1.5rem;
-      line-height: 1.4;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .container {
-      max-width: 680px;
-      width: 100%;
-    }
-
-    /* ----- Category Layout ----- */
-    .category-group {
-      margin-bottom: 2rem;
-    }
-
-    .category-title {
-      color: var(--muted);
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      margin-bottom: 0.8rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      user-select: none;
-    }
-
-    .category-title::after {
-      content: '';
-      flex-grow: 1;
-      border-bottom: 1px dashed var(--border);
-    }
-
-    .category-count {
-      color: var(--accent);
-      font-size: 0.7rem;
-    }
-
-    /* ----- Minimal Text Links ----- */
-    .shortcut-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-    }
-
-    .shortcut-item {
-      display: inline-flex;
-      align-items: center;
-      text-decoration: none;
-      font-size: 0.95rem;
-      cursor: pointer;
-      user-select: none;
-      align-self: flex-start;
-      outline: none;
-      
-      /* Dynamic properties overridden via JS */
-      --item-color: var(--accent);
-      --item-hover: var(--hover-color);
-    }
-
-    .shortcut-name {
-      color: var(--item-color);
-      transition: color 0.1s ease, filter 0.1s ease;
-      padding: 0.1rem 0;
-    }
-
-    /* Focus and hover transitions targeting the text color and brightness directly */
-    .shortcut-item:hover .shortcut-name, .shortcut-item:focus .shortcut-name {
-      color: var(--item-hover);
-      filter: brightness(1.25);
-    }
-
-    /* ----- Footer Status Bar ----- */
-    .footer {
-      border-top: 1px solid var(--border);
-      margin-top: 3rem;
-      padding-top: 0.8rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.7rem;
-      color: var(--muted);
-      user-select: none;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .footer-source {
-      display: flex;
-      gap: 0.3rem;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f5;padding:2rem;line-height:1.6;color:#222}
+        h1{font-size:1.8rem;font-weight:500;margin-bottom:1.5rem}
+        .category{margin-bottom:2rem}
+        .category h2{font-size:1.2rem;font-weight:500;color:#555;margin-bottom:0.5rem;border-bottom:1px solid #ddd;padding-bottom:0.25rem}
+        .category ul{list-style:none;padding-left:0}
+        .category li{margin:0.25rem 0}
+        .category a{color:#0066cc;text-decoration:none;font-size:1rem}
+        .category a:hover{text-decoration:underline}
+        .loading{color:#888}
+        .error{color:#c00}
+        @media(max-width:600px){body{padding:1rem}}
+    </style>
 </head>
 <body>
+    <h1>📁 Index</h1>
+    <div id="root"><p class="loading">Loading...</p></div>
+    <script>
+        (async function(){
+            const root = document.getElementById('root');
+            try {
+                const res = await fetch('htmlList.json');
+                if (!res.ok) throw new Error('Failed to load list');
+                const files = await res.json();
+                if (!files || !files.length) {
+                    root.innerHTML = '<p class="error">No files found.</p>';
+                    return;
+                }
 
-<div class="container" role="main">
-  <!-- Shortcuts Container -->
-  <section id="shortcutContainer" aria-label="Shortcuts registry"></section>
+                // Group by folder (first directory)
+                const groups = {};
+                for (const path of files) {
+                    const parts = path.split('/');
+                    const folder = parts.length > 1 ? parts[0] : 'root';
+                    const filename = parts.slice(1).join('/') || parts[0];
+                    if (!groups[folder]) groups[folder] = [];
+                    groups[folder].push({ path, filename });
+                }
 
-  <!-- Terminal Footer Status Bar -->
-  <footer class="footer">
-    <div class="footer-source">
-      <span>SOURCE:</span>
-      <span id="fileSource" style="color: var(--muted);">htmlList.json</span>
-    </div>
-    <div id="totalItems">0 entries total</div>
-  </footer>
-</div>
-
-<script>
-  (function() {
-    "use strict";
-
-    const container = document.getElementById('shortcutContainer');
-    const totalItemsSpan = document.getElementById('totalItems');
-
-    // Terminal-friendly color palette (high contrast, readable on dark background)
-    const COLOR_PALETTE = [
-      { main: '#10b981', hover: '#34d399' }, // Emerald
-      { main: '#3b82f6', hover: '#60a5fa' }, // Blue
-      { main: '#f59e0b', hover: '#fbbf24' }, // Amber
-      { main: '#ec4899', hover: '#f472b6' }, // Pink
-      { main: '#8b5cf6', hover: '#a78bfa' }, // Purple
-      { main: '#06b6d4', hover: '#22d3ee' }, // Cyan
-      { main: '#ef4444', hover: '#f87171' }, // Red
-      { main: '#a855f7', hover: '#c084fc' }, // Violet
-      { main: '#f97316', hover: '#fb923c' }, // Orange
-      { main: '#84cc16', hover: '#a3e635' }  // Lime
-    ];
-
-    // ---------- Extract folder segment ----------
-    function getFolderFromPath(filePath) {
-      if (!filePath || typeof filePath !== 'string') return '';
-      const trimmed = filePath.trim();
-      if (!trimmed.includes('/')) return '';
-      const parts = trimmed.split('/');
-      const folder = parts.find(seg => seg.length > 0);
-      return folder || '';
-    }
-
-    // ---------- Parse Shortcut Object ----------
-    function parseShortcut(filePath) {
-      const fileName = filePath.includes('/') ? filePath.split('/').pop() : filePath;
-      let displayName = fileName.replace(/\.html$/i, '');
-      if (displayName === '') displayName = fileName;
-
-      const folder = getFolderFromPath(filePath);
-
-      return {
-        path: filePath,
-        displayName: displayName,
-        folder: folder
-      };
-    }
-
-    // ---------- Render static listing structure ----------
-    function renderList(fileList) {
-      container.innerHTML = '';
-
-      if (!fileList || !Array.isArray(fileList) || fileList.length === 0) {
-        totalItemsSpan.textContent = '0 entries total';
-        return;
-      }
-
-      // Sanitize paths
-      const validPaths = fileList.filter(item => typeof item === 'string' && item.trim().length > 0);
-      const shortcuts = validPaths.map(path => parseShortcut(path));
-
-      if (shortcuts.length === 0) {
-        totalItemsSpan.textContent = '0 entries total';
-        return;
-      }
-
-      // Group shortcuts by folder category
-      const groups = new Map();
-      for (const item of shortcuts) {
-        const folder = item.folder;
-        if (!groups.has(folder)) {
-          groups.set(folder, []);
-        }
-        groups.get(folder).push(item);
-      }
-
-      // Sort folders (root first, then alphabetical)
-      const sortedFolders = Array.from(groups.keys()).sort((a, b) => {
-        if (a === '') return -1;
-        if (b === '') return 1;
-        return a.localeCompare(b);
-      });
-
-      const fragment = document.createDocumentFragment();
-
-      for (const folder of sortedFolders) {
-        const items = groups.get(folder);
-        if (!items || items.length === 0) continue;
-
-        // Sort items inside folder alphabetically
-        items.sort((a, b) => a.displayName.localeCompare(b.displayName));
-
-        const groupDiv = document.createElement('div');
-        groupDiv.className = 'category-group';
-
-        // Textual Category Header
-        const headerDiv = document.createElement('div');
-        headerDiv.className = 'category-title';
-        headerDiv.textContent = folder ? folder.toUpperCase() : 'ROOT';
-        
-        const countSpan = document.createElement('span');
-        countSpan.className = 'category-count';
-        countSpan.textContent = ` (x${items.length})`;
-        headerDiv.appendChild(countSpan);
-        groupDiv.appendChild(headerDiv);
-
-        // Grid of items
-        const listDiv = document.createElement('div');
-        listDiv.className = 'shortcut-list';
-
-        for (const item of items) {
-          const anchor = document.createElement('a');
-          anchor.className = 'shortcut-item';
-          anchor.href = item.path;
-          anchor.setAttribute('aria-label', `Launch ${item.displayName}`);
-
-          // Assign a random color configuration from the palette
-          const randomColor = COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)];
-          anchor.style.setProperty('--item-color', randomColor.main);
-          anchor.style.setProperty('--item-hover', randomColor.hover);
-
-          const nameSpan = document.createElement('span');
-          nameSpan.className = 'shortcut-name';
-          nameSpan.textContent = item.displayName;
-
-          anchor.appendChild(nameSpan);
-          listDiv.appendChild(anchor);
-        }
-
-        groupDiv.appendChild(listDiv);
-        fragment.appendChild(groupDiv);
-      }
-
-      container.appendChild(fragment);
-
-      // Simple footer updates
-      totalItemsSpan.textContent = `${shortcuts.length} entries total`;
-    }
-
-    // ---------- Fetch registry (No static fallbacks) ----------
-    function fetchList() {
-      fetch('htmlList.json')
-        .then(response => {
-          if (!response.ok) throw new Error();
-          return response.json();
-        })
-        .then(data => {
-          let list = [];
-          if (Array.isArray(data)) {
-            list = data;
-          } else if (data && typeof data === 'object') {
-            const values = Object.values(data);
-            list = values.filter(v => typeof v === 'string');
-          }
-          renderList(list);
-        })
-        .catch(() => {
-          // Keep list fully empty if no file found, adhering to no fallbacks rule
-          renderList([]);
-        });
-    }
-
-    fetchList();
-  })();
-</script>
+                // Build HTML
+                let html = '';
+                const sortedFolders = Object.keys(groups).sort((a,b) => a === 'root' ? -1 : b === 'root' ? 1 : a.localeCompare(b));
+                for (const folder of sortedFolders) {
+                    const items = groups[folder];
+                    html += `<div class="category"><h2>${folder === 'root' ? '/' : folder}</h2><ul>`;
+                    items.sort((a,b) => a.filename.localeCompare(b.filename));
+                    for (const item of items) {
+                        html += `<li><a href="${item.path}">${item.filename}</a></li>`;
+                    }
+                    html += '</ul></div>';
+                }
+                root.innerHTML = html;
+            } catch (err) {
+                root.innerHTML = `<p class="error">Error: ${err.message}</p>`;
+            }
+        })();
+    </script>
 </body>
 </html>
