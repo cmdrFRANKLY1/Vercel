@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>launch · shortcuts</title>
   <style>
-    /* ----- Pure Text-Based Terminal Theme ----- */
+    /* ----- Pure Text-Based Verdana Theme ----- */
     * {
       margin: 0;
       padding: 0;
@@ -17,15 +17,15 @@
       --fg: #f4f4f5;          /* Zinc 100 */
       --accent: #10b981;      /* Emerald 500 */
       --border: #27272a;      /* Zinc 800 */
-      --muted: #52525b;       /* Zinc 600 */
+      --muted: #71717a;       /* Zinc 500 */
       --hover-color: #34d399; /* Emerald 400 */
-      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --font-sans: Verdana, Geneva, sans-serif;
     }
 
     body {
       background-color: var(--bg);
       color: var(--fg);
-      font-family: var(--font-mono);
+      font-family: var(--font-sans);
       min-height: 100vh;
       display: flex;
       justify-content: center;
@@ -38,37 +38,6 @@
     .container {
       max-width: 680px;
       width: 100%;
-    }
-
-    /* ----- Text Header ----- */
-    .terminal-header {
-      margin-bottom: 2rem;
-      user-select: none;
-    }
-
-    .sys-info-box {
-      border: 1px dashed var(--border);
-      padding: 0.5rem 0.8rem;
-      font-size: 0.75rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .sys-status {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .status-dot {
-      width: 6px;
-      height: 6px;
-      background-color: var(--accent);
-      border-radius: 50%;
-      display: inline-block;
     }
 
     /* ----- Category Layout ----- */
@@ -159,33 +128,32 @@
       padding-top: 0.8rem;
       display: flex;
       justify-content: space-between;
+      align-items: center;
       font-size: 0.7rem;
       color: var(--muted);
       user-select: none;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .footer-source {
+      display: flex;
+      gap: 0.3rem;
     }
   </style>
 </head>
 <body>
 
 <div class="container" role="main">
-  <!-- Terminal Header -->
-  <header class="terminal-header">
-    <div class="sys-info-box">
-      <div class="sys-status">
-        <span class="status-dot"></span>
-        <span>REGISTRY: ONLINE</span>
-      </div>
-      <div>ENTRIES: <span id="countBadge" style="color: var(--accent);">0</span></div>
-      <div>SOURCE: <span id="fileSource" style="color: var(--muted);">htmlList.json</span></div>
-    </div>
-  </header>
-
   <!-- Shortcuts Container -->
   <section id="shortcutContainer" aria-label="Shortcuts registry"></section>
 
   <!-- Terminal Footer Status Bar -->
   <footer class="footer">
-    <div>SYSTEM: OK</div>
+    <div class="footer-source">
+      <span>SOURCE:</span>
+      <span id="fileSource" style="color: var(--muted);">htmlList.json</span>
+    </div>
     <div id="totalItems">0 entries total</div>
   </footer>
 </div>
@@ -195,7 +163,6 @@
     "use strict";
 
     const container = document.getElementById('shortcutContainer');
-    const countBadge = document.getElementById('countBadge');
     const totalItemsSpan = document.getElementById('totalItems');
 
     // ---------- Extract folder segment ----------
@@ -228,8 +195,7 @@
       container.innerHTML = '';
 
       if (!fileList || !Array.isArray(fileList) || fileList.length === 0) {
-        countBadge.textContent = '0';
-        totalItemsSpan.textContent = '0 entries';
+        totalItemsSpan.textContent = '0 entries total';
         return;
       }
 
@@ -238,8 +204,7 @@
       const shortcuts = validPaths.map(path => parseShortcut(path));
 
       if (shortcuts.length === 0) {
-        countBadge.textContent = '0';
-        totalItemsSpan.textContent = '0 entries';
+        totalItemsSpan.textContent = '0 entries total';
         return;
       }
 
@@ -308,8 +273,7 @@
       container.appendChild(fragment);
 
       // Simple footer updates
-      countBadge.textContent = shortcuts.length;
-      totalItemsSpan.textContent = `${shortcuts.length} entries loaded`;
+      totalItemsSpan.textContent = `${shortcuts.length} entries total`;
     }
 
     // ---------- Fetch registry (No static fallbacks) ----------
