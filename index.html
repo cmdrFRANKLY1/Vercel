@@ -1,913 +1,436 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>black · txt ⇄ json</title>
-    <style>
-        /* ----- reset – no shadows, no frills ----- */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>launch · shortcuts</title>
+  <!-- Performance & readability: Verdana, minimal layout, no external fonts -->
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        body {
-            background: #0b0b0b;
-            min-height: 100vh;
-            font-family: 'Verdana', 'Geneva', sans-serif;
-            color: #e0e0e0;
-            padding: 1.2rem 1.5rem;
-            line-height: 1.5;
-        }
+    body {
+      background: #f5f7fa;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: Verdana, Geneva, sans-serif;
+      padding: 1.5rem;
+      line-height: 1.6;
+      color: #1e293b;
+    }
 
-        /* top bar: nav left, clock right */
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.8rem;
-            padding-bottom: 0.8rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        }
+    .card {
+      max-width: 780px;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 32px;
+      box-shadow: 0 20px 40px -12px rgba(0,0,0,0.12), 0 8px 24px -6px rgba(0,0,0,0.05);
+      padding: 2.5rem 2.2rem;
+      transition: box-shadow 0.2s ease;
+    }
 
-        nav {
-            display: flex;
-            flex-direction: column;
-            gap: 0.3rem;
-        }
+    h1 {
+      font-size: 1.9rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      border-bottom: 2px solid #e9edf2;
+      padding-bottom: 1.2rem;
+      margin-bottom: 1.8rem;
+      color: #0b1a2b;
+    }
 
-        .nav-row {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 0.5rem 0.9rem;
-            font-size: 0.8rem;
-        }
+    h1 small {
+      font-size: 1rem;
+      font-weight: 400;
+      color: #5b6f87;
+      margin-left: 0.4rem;
+      letter-spacing: 0;
+    }
 
-        .nav-item {
-            color: rgba(255, 255, 255, 0.3);
-            text-decoration: none;
-            transition: color 0.15s;
-            font-weight: 400;
-        }
+    .shortcut-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
 
-        .nav-item:hover {
-            color: rgba(255, 255, 255, 0.6);
-        }
+    .shortcut-item {
+      display: flex;
+      align-items: center;
+      padding: 0.7rem 1rem;
+      border-radius: 16px;
+      background: #f8faff;
+      transition: background 0.15s ease, transform 0.1s ease;
+      border: 1px solid #eef2f8;
+      text-decoration: none;
+      color: #1e293b;
+    }
 
-        .nav-item.active {
-            color: #ffffff !important;
-            font-weight: 600;
-        }
+    .shortcut-item:hover {
+      background: #eef4ff;
+      border-color: #cbd9ed;
+      transform: scale(1.01);
+    }
 
-        .separator {
-            color: rgba(255, 255, 255, 0.08);
-            user-select: none;
-        }
+    .shortcut-item:active {
+      background: #dfe8f7;
+      transform: scale(0.98);
+    }
 
-        .cat-toggle {
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.35);
-            cursor: pointer;
-            font-family: inherit;
-            font-size: inherit;
-            padding: 0;
-            transition: color 0.15s;
-        }
+    .shortcut-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.2rem;
+      height: 2.2rem;
+      background: #dce5f2;
+      border-radius: 12px;
+      margin-right: 1rem;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #1a304a;
+      flex-shrink: 0;
+      text-transform: uppercase;
+    }
 
-        .cat-toggle:hover {
-            color: rgba(255, 255, 255, 0.6);
-        }
+    .shortcut-info {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.4rem 0.8rem;
+      flex: 1;
+      min-width: 0;
+    }
 
-        .cat-toggle.active {
-            color: #ffffff !important;
-            font-weight: 600;
-        }
+    .shortcut-filename {
+      font-size: 1.05rem;
+      font-weight: 450;
+      word-break: break-word;
+    }
 
-        .sub-nav {
-            display: none;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 0.5rem 0.9rem;
-            font-size: 0.78rem;
-            padding-left: 0.3rem;
-        }
+    .shortcut-path {
+      font-size: 0.75rem;
+      background: #eef2f8;
+      padding: 0.2rem 0.7rem;
+      border-radius: 30px;
+      color: #2f405a;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      font-weight: 400;
+    }
 
-        .sub-nav.open {
-            display: flex;
-        }
+    .shortcut-arrow {
+      margin-left: auto;
+      color: #8196b3;
+      font-size: 1.2rem;
+      font-weight: 300;
+      padding-left: 0.5rem;
+      opacity: 0.7;
+      transition: opacity 0.15s;
+    }
 
-        /* clock - compact single line */
-        #clock {
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.25);
-            font-variant-numeric: tabular-nums;
-            letter-spacing: 0.03em;
-            white-space: nowrap;
-            padding-top: 0.1rem;
-        }
+    .shortcut-item:hover .shortcut-arrow {
+      opacity: 1;
+      color: #1a3a6b;
+    }
 
-        /* ----- main content ----- */
-        .card {
-            background: #0b0b0b;
-            max-width: 1000px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 1.5rem 0;
-        }
+    /* loading / empty / error states */
+    .status-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2.4rem 1rem;
+      gap: 0.8rem;
+      text-align: center;
+      color: #425570;
+      background: #f8faff;
+      border-radius: 28px;
+      border: 1px dashed #cddae9;
+    }
 
-        h1 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            letter-spacing: -0.1px;
-            color: #ffffff;
-            margin-top: 0;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid #222222;
-            padding-bottom: 0.6rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+    .status-box .emoji-big {
+      font-size: 2.4rem;
+      line-height: 1;
+    }
 
-        /* Split Layout */
-        .split-pane {
-            display: flex;
-            flex-direction: row;
-            gap: 1rem;
-            margin-top: 0.5rem;
-            min-height: 350px;
-        }
+    .status-box p {
+      font-size: 0.95rem;
+      max-width: 80%;
+      margin: 0 auto;
+    }
 
-        .pane {
-            flex: 1;
-            background: #111111;
-            border: 1px solid #222222;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
+    .badge-count {
+      background: #e9eff8;
+      border-radius: 40px;
+      padding: 0.15rem 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #1d3a5c;
+      margin-left: 0.6rem;
+    }
 
-        .pane-header {
-            font-size: 0.68rem;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            color: #666666;
-            border-bottom: 1px solid #222222;
-            padding-bottom: 0.4rem;
-            margin-bottom: 0.8rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    hr {
+      border: none;
+      border-top: 1px solid #e2e9f2;
+      margin: 1.8rem 0 0.8rem 0;
+    }
 
-        .pane-header span {
-            background: #222222;
-            padding: 0.1rem 0.5rem;
-            font-weight: 400;
-            font-size: 0.6rem;
-            color: #aaaaaa;
-        }
+    .footer-note {
+      font-size: 0.7rem;
+      color: #6e85a2;
+      text-align: right;
+      letter-spacing: 0.02em;
+      margin-top: 0.5rem;
+    }
 
-        .pane-content {
-            flex: 1;
-            overflow-y: auto;
-            font-family: 'Courier New', 'Consolas', monospace;
-            font-size: 0.8rem;
-            line-height: 1.5;
-            color: #cccccc;
-            white-space: pre-wrap;
-            word-break: break-word;
-            min-height: 180px;
-            max-height: 380px;
-        }
-
-        .pane-content:empty::before {
-            content: 'Drop a file here or use the button below...';
-            color: #444444;
-            font-style: italic;
-            font-family: 'Verdana', sans-serif;
-            font-size: 0.75rem;
-        }
-
-        .pane-content.has-content:empty::before {
-            content: '';
-        }
-
-        .upload-area-inline {
-            border: 1px dashed #333333;
-            padding: 1.2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: border-color 0.15s, background 0.15s;
-            flex-shrink: 0;
-            background: #141414;
-        }
-
-        .upload-area-inline:hover {
-            background: #181818;
-            border-color: #ffffff;
-        }
-
-        .upload-area-inline input[type="file"] {
-            display: none;
-        }
-
-        .file-label-inline {
-            display: inline-block;
-            background: #ffffff;
-            color: #0b0b0b;
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 0.4rem 1.2rem;
-            cursor: pointer;
-            transition: opacity 0.15s;
-            font-family: 'Verdana', sans-serif;
-            border: none;
-        }
-
-        .file-label-inline:hover {
-            opacity: 0.9;
-        }
-
-        .file-status-inline {
-            margin-top: 0.5rem;
-            font-size: 0.7rem;
-            color: #666666;
-        }
-
-        .action-row {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.8rem;
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid #222222;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 0.4rem;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            background: #181818;
-            border: 1px solid #333333;
-            padding: 0.4rem 1.1rem;
-            font-family: 'Verdana', sans-serif;
-            font-size: 0.75rem;
-            color: #f0f0f0;
-            cursor: pointer;
-            transition: opacity 0.12s, border-color 0.12s, background 0.12s;
-        }
-
-        .btn:hover {
-            background: #222222;
-            border-color: #555555;
-        }
-
-        .btn-primary {
-            background: #ffffff;
-            color: #0b0b0b;
-            border: 1px solid #ffffff;
-            font-weight: 600;
-        }
-
-        .btn-primary:hover {
-            background: #eeeeee;
-            border-color: #eeeeee;
-        }
-
-        .btn:disabled {
-            opacity: 0.2 !important;
-            pointer-events: none;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid #222222;
-            color: #666666;
-        }
-
-        .btn-outline:hover {
-            background: #141414;
-            border-color: #444444;
-            color: #f0f0f0;
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        .footer-note {
-            font-size: 0.7rem;
-            color: #444444;
-            text-align: right;
-            margin-top: 0.8rem;
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #0b0b0b;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #222222;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #333333;
-        }
-
-        @media (max-width: 768px) {
-            .split-pane {
-                flex-direction: column;
-            }
-            .pane {
-                min-height: 150px;
-            }
-            .pane-content {
-                max-height: 250px;
-                min-height: 100px;
-            }
-            .card {
-                padding: 1rem 0;
-            }
-        }
-
-        @media (max-width: 600px) {
-            body { padding: 0.8rem; }
-            .top-bar { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-            #clock { align-self: flex-end; font-size: 0.6rem; }
-            .nav-row { font-size: 0.7rem; gap: 0.3rem 0.6rem; }
-            .sub-nav { font-size: 0.68rem; gap: 0.3rem 0.6rem; }
-        }
-    </style>
+    /* tiny screens */
+    @media (max-width: 480px) {
+      .card {
+        padding: 1.6rem 1.2rem;
+      }
+      h1 {
+        font-size: 1.5rem;
+        flex-wrap: wrap;
+      }
+      .shortcut-item {
+        padding: 0.6rem 0.8rem;
+      }
+      .shortcut-path {
+        white-space: normal;
+        word-break: break-word;
+      }
+      .shortcut-filename {
+        font-size: 0.95rem;
+      }
+    }
+  </style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <nav id="navContainer">
-            <div class="nav-row" id="mainRow">
-                <a href="../index.html" class="nav-item" id="homeLink">home</a>
-            </div>
-        </nav>
-        <div id="clock"></div>
+<div class="card" role="main">
+  <h1>
+    ⚡ shortcuts
+    <small>· vercel</small>
+    <span class="badge-count" id="countBadge">0</span>
+  </h1>
+
+  <!-- container where items will be injected -->
+  <div id="shortcutContainer" class="shortcut-grid">
+    <!-- loading state (will be replaced) -->
+    <div class="status-box" id="loadingPlaceholder">
+      <span class="emoji-big">⏳</span>
+      <p>loading list …</p>
     </div>
+  </div>
 
-    <div class="card">
-        <h1>txt ⇄ json converter</h1>
+  <hr>
+  <div class="footer-note">
+    <span id="fileSource">htmlList.json</span> · <span id="totalItems">0</span> entries
+  </div>
+</div>
 
-        <!-- Split Pane Layout -->
-        <div class="split-pane">
-            <!-- Left Pane: Input -->
-            <div class="pane">
-                <div class="pane-header">
-                    <span>input</span>
-                    <span id="inputStatus">no file</span>
-                </div>
-                <div class="upload-area-inline" id="dropZone">
-                    <input type="file" id="fileInput" accept=".txt,text/plain">
-                    <label for="fileInput" class="file-label-inline">choose file</label>
-                    <div style="margin-top: 0.4rem; font-size: 0.65rem; color: #444444;">or drop file here</div>
-                    <div id="fileStatus" class="file-status-inline">No file selected</div>
-                </div>
-                <div class="pane-content" id="inputPreview"></div>
-            </div>
+<script>
+  (function() {
+    "use strict";
 
-            <!-- Right Pane: Output -->
-            <div class="pane">
-                <div class="pane-header">
-                    <span>json output</span>
-                    <span id="wordCount">0 words</span>
-                </div>
-                <div class="pane-content" id="jsonOutput"></div>
-            </div>
-        </div>
+    // DOM refs
+    const container = document.getElementById('shortcutContainer');
+    const countBadge = document.getElementById('countBadge');
+    const totalItemsSpan = document.getElementById('totalItems');
 
-        <!-- Action Row -->
-        <div class="action-row">
-            <div class="btn-group">
-                <button class="btn btn-primary" id="convertBtn" disabled>convert</button>
-                <button class="btn btn-outline" id="clearBtn">clear</button>
-                <button class="btn btn-outline" id="saveBtn" disabled>save (.json)</button>
-            </div>
-            <button class="btn btn-outline" id="copyBtn" disabled>copy</button>
-        </div>
+    // Helper: create a shortcut element from a file path
+    function createShortcutItem(filePath) {
+      // extract filename from path (e.g. "tools/txt2json.html" -> "txt2json.html")
+      const fileName = filePath.includes('/') ? filePath.split('/').pop() : filePath;
+      // extract folder (e.g. "tools" or "tarkov") – if none, use "root"
+      let folder = '';
+      if (filePath.includes('/')) {
+        const parts = filePath.split('/');
+        if (parts.length >= 2) {
+          folder = parts[0]; // first segment
+        }
+      }
 
-        <div class="footer-note">pure client‑side · auto‑converts on file load</div>
-    </div>
+      // build display name: remove .html and beautify
+      let displayName = fileName.replace(/\.html$/i, '');
+      // if displayName is too cryptic, keep as is; but we can also clean up
+      if (displayName === '') displayName = fileName;
 
-    <script>
-        (function() {
-            'use strict';
+      // icon: first letter (or two) of display name
+      let iconText = displayName.charAt(0).toUpperCase();
+      if (displayName.length > 1 && /[a-zA-Z]/.test(displayName.charAt(1))) {
+        iconText += displayName.charAt(1).toLowerCase();
+      }
 
-            // ----- Navigation -----
-            const navContainer = document.getElementById('navContainer');
-            const homeLink = document.getElementById('homeLink');
-            const clockEl = document.getElementById('clock');
+      const anchor = document.createElement('a');
+      anchor.className = 'shortcut-item';
+      anchor.href = filePath; // relative path, works with vercel
+      anchor.setAttribute('aria-label', `Open ${displayName}`);
 
-            // ----- clock -----
-            function updateClock() {
-                const now = new Date();
-                
-                const sample = Intl.DateTimeFormat('en-US', { 
-                    hour: 'numeric',
-                    minute: 'numeric'
-                }).format(now);
-                
-                const uses12Hour = sample.includes('AM') || sample.includes('PM');
+      // icon span
+      const iconSpan = document.createElement('span');
+      iconSpan.className = 'shortcut-icon';
+      iconSpan.textContent = iconText;
 
-                const dateOptions = {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                };
-                
-                const timeOptions = {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: uses12Hour
-                };
+      // info wrapper
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'shortcut-info';
 
-                const dateStr = new Intl.DateTimeFormat('en-US', dateOptions).format(now);
-                let timeStr = new Intl.DateTimeFormat('en-US', timeOptions).format(now);
-                
-                if (!uses12Hour) {
-                    timeStr = timeStr.replace(/\s*[AP]M\s*/i, '');
-                }
-                
-                clockEl.textContent = `${dateStr} · ${timeStr}`;
+      const filenameSpan = document.createElement('span');
+      filenameSpan.className = 'shortcut-filename';
+      filenameSpan.textContent = displayName;
+
+      const pathSpan = document.createElement('span');
+      pathSpan.className = 'shortcut-path';
+      pathSpan.textContent = folder ? `📁 ${folder}` : '📄 root';
+
+      infoDiv.appendChild(filenameSpan);
+      infoDiv.appendChild(pathSpan);
+
+      // arrow
+      const arrowSpan = document.createElement('span');
+      arrowSpan.className = 'shortcut-arrow';
+      arrowSpan.textContent = '→';
+
+      anchor.appendChild(iconSpan);
+      anchor.appendChild(infoDiv);
+      anchor.appendChild(arrowSpan);
+
+      return anchor;
+    }
+
+    // Render the list from JSON data
+    function renderList(fileList) {
+      // clear container
+      container.innerHTML = '';
+
+      if (!fileList || !Array.isArray(fileList) || fileList.length === 0) {
+        // show empty state
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'status-box';
+        emptyDiv.innerHTML = `
+          <span class="emoji-big">📭</span>
+          <p>no shortcuts found · <span style="background:#eef2f8;padding:0.1rem 0.6rem;border-radius:30px;">htmlList.json</span> is empty</p>
+        `;
+        container.appendChild(emptyDiv);
+        countBadge.textContent = '0';
+        totalItemsSpan.textContent = '0';
+        return;
+      }
+
+      // filter out any non-string or empty paths (just in case)
+      const validPaths = fileList.filter(item => typeof item === 'string' && item.trim().length > 0);
+
+      if (validPaths.length === 0) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'status-box';
+        emptyDiv.innerHTML = `
+          <span class="emoji-big">🧹</span>
+          <p>no valid entries · check <code>htmlList.json</code></p>
+        `;
+        container.appendChild(emptyDiv);
+        countBadge.textContent = '0';
+        totalItemsSpan.textContent = '0';
+        return;
+      }
+
+      // sort alphabetically by filename (optional)
+      validPaths.sort((a, b) => {
+        const nameA = a.split('/').pop() || a;
+        const nameB = b.split('/').pop() || b;
+        return nameA.localeCompare(nameB);
+      });
+
+      // build items
+      const fragment = document.createDocumentFragment();
+      for (const path of validPaths) {
+        const item = createShortcutItem(path);
+        fragment.appendChild(item);
+      }
+
+      container.appendChild(fragment);
+
+      // update counters
+      const count = validPaths.length;
+      countBadge.textContent = count;
+      totalItemsSpan.textContent = count;
+    }
+
+    // fetch and parse htmlList.json
+    function fetchList() {
+      const placeholder = document.getElementById('loadingPlaceholder');
+      if (!placeholder) {
+        // if placeholder not present (should not happen) we create a status
+        container.innerHTML = `<div class="status-box"><span class="emoji-big">⏳</span><p>loading …</p></div>`;
+      }
+
+      fetch('htmlList.json')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status} — failed to fetch htmlList.json`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          // data can be array or object; we handle array as expected
+          let list = [];
+          if (Array.isArray(data)) {
+            list = data;
+          } else if (data && typeof data === 'object') {
+            // if someone used an object with keys, try to extract values
+            // but we expect an array. however we can be tolerant:
+            const values = Object.values(data);
+            if (values.some(v => typeof v === 'string')) {
+              list = values.filter(v => typeof v === 'string');
+            } else {
+              list = [];
             }
+          }
+          renderList(list);
+        })
+        .catch(err => {
+          console.warn('Error loading htmlList.json:', err);
+          // show error state in container
+          container.innerHTML = '';
+          const errorDiv = document.createElement('div');
+          errorDiv.className = 'status-box';
+          errorDiv.innerHTML = `
+            <span class="emoji-big">⚠️</span>
+            <p><strong>could not load list</strong><br>
+            <span style="font-size:0.85rem;color:#6b4f4f;">${err.message || 'unknown error'}</span></p>
+            <p style="font-size:0.75rem;background:#f0f2f5;padding:0.3rem 1rem;border-radius:40px;margin-top:0.3rem;">
+              ensure <code>htmlList.json</code> exists
+            </p>
+          `;
+          container.appendChild(errorDiv);
+          countBadge.textContent = '✗';
+          totalItemsSpan.textContent = '0';
+        });
+    }
 
-            updateClock();
-            setInterval(updateClock, 1000);
+    // start fetching
+    fetchList();
 
-            // ----- helpers -----
-            const currentFile = window.location.pathname.split('/').pop() || 'index.html';
+    // optional: if user wants to re-fetch (not needed, but we keep it clean)
+    // we also set a small fallback: if the json is not found, the error state shows.
+  })();
+</script>
 
-            function getCategory(path) {
-                const parts = path.split('/');
-                return parts.length > 1 ? parts[0] : null;
-            }
-
-            function getToolName(path) {
-                const parts = path.split('/');
-                return parts.pop().replace('.html', '');
-            }
-
-            // ----- load and build navigation -----
-            async function buildNav() {
-                let tools = [];
-
-                try {
-                    const res = await fetch('../htmlList.json');
-                    if (!res.ok) return;
-                    tools = await res.json();
-                    tools = tools.map(p => p.replace(/\\/g, '/'));
-                } catch (_) {
-                    return;
-                }
-
-                if (!tools.length) return;
-
-                const cats = {};
-                const standalone = [];
-
-                tools.forEach(path => {
-                    const cat = getCategory(path);
-                    const name = getToolName(path);
-                    if (cat) {
-                        if (!cats[cat]) cats[cat] = [];
-                        cats[cat].push({ name, path });
-                    } else {
-                        standalone.push({ name, path });
-                    }
-                });
-
-                const catNames = Object.keys(cats).sort();
-                const mainRow = document.getElementById('mainRow');
-
-                catNames.forEach(cat => {
-                    const sep = document.createElement('span');
-                    sep.className = 'separator';
-                    sep.textContent = '|';
-                    mainRow.appendChild(sep);
-
-                    const btn = document.createElement('button');
-                    btn.className = 'cat-toggle';
-                    btn.textContent = cat;
-                    btn.dataset.cat = cat;
-                    mainRow.appendChild(btn);
-                });
-
-                catNames.forEach(cat => {
-                    const items = cats[cat];
-                    const sub = document.createElement('div');
-                    sub.className = 'sub-nav';
-                    sub.dataset.cat = cat;
-
-                    items.forEach((item, i) => {
-                        if (i > 0) {
-                            const sep = document.createElement('span');
-                            sep.className = 'separator';
-                            sep.textContent = '|';
-                            sub.appendChild(sep);
-                        }
-
-                        const a = document.createElement('a');
-                        a.href = '../' + item.path;
-                        a.className = 'nav-item';
-                        a.textContent = item.name;
-                        if (currentFile === item.path || currentFile === item.name + '.html') {
-                            a.classList.add('active');
-                        }
-                        sub.appendChild(a);
-                    });
-
-                    navContainer.appendChild(sub);
-                });
-
-                if (standalone.length) {
-                    const row = document.createElement('div');
-                    row.className = 'nav-row';
-                    standalone.forEach((item, i) => {
-                        if (i > 0) {
-                            const sep = document.createElement('span');
-                            sep.className = 'separator';
-                            sep.textContent = '|';
-                            row.appendChild(sep);
-                        }
-                        const a = document.createElement('a');
-                        a.href = '../' + item.path;
-                        a.className = 'nav-item';
-                        a.textContent = item.name;
-                        if (currentFile === item.path || currentFile === item.name + '.html') {
-                            a.classList.add('active');
-                        }
-                        row.appendChild(a);
-                    });
-                    navContainer.appendChild(row);
-                }
-
-                // ----- Toggle logic: only one category open at a time -----
-                const toggles = navContainer.querySelectorAll('.cat-toggle');
-                const subNavs = navContainer.querySelectorAll('.sub-nav');
-
-                toggles.forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const cat = this.dataset.cat;
-                        const sub = navContainer.querySelector(`.sub-nav[data-cat="${cat}"]`);
-                        
-                        if (sub) {
-                            // Check if this sub-nav is already open
-                            const isOpen = sub.classList.contains('open');
-                            
-                            // Close ALL sub-navs and remove active states
-                            subNavs.forEach(sn => sn.classList.remove('open'));
-                            toggles.forEach(t => t.classList.remove('active'));
-                            
-                            // If it wasn't open, open it and activate the toggle
-                            if (!isOpen) {
-                                sub.classList.add('open');
-                                this.classList.add('active');
-                            }
-                            // If it was open, it will now be closed (nothing to do)
-                        }
-                    });
-                });
-
-                // Auto-open category if active tool inside
-                const activeSub = navContainer.querySelector('.sub-nav .nav-item.active');
-                if (activeSub) {
-                    const sub = activeSub.closest('.sub-nav');
-                    if (sub) {
-                        sub.classList.add('open');
-                        const cat = sub.dataset.cat;
-                        const toggle = navContainer.querySelector(`.cat-toggle[data-cat="${cat}"]`);
-                        if (toggle) toggle.classList.add('active');
-                    }
-                }
-
-                const isHome = currentFile === 'index.html' || currentFile === '';
-                homeLink.classList.toggle('active', isHome);
-
-                // Force txt2json as active
-                const allNavItems = navContainer.querySelectorAll('.nav-item');
-                allNavItems.forEach(item => {
-                    if (item.textContent === 'txt2json') {
-                        item.classList.add('active');
-                        homeLink.classList.remove('active');
-                    }
-                });
-            }
-
-            buildNav();
-
-            // ----- File parsing logic (same as before) -----
-            const fileInput = document.getElementById('fileInput');
-            const fileStatus = document.getElementById('fileStatus');
-            const inputStatus = document.getElementById('inputStatus');
-            const convertBtn = document.getElementById('convertBtn');
-            const clearBtn = document.getElementById('clearBtn');
-            const copyBtn = document.getElementById('copyBtn');
-            const saveBtn = document.getElementById('saveBtn');
-            const jsonOutput = document.getElementById('jsonOutput');
-            const inputPreview = document.getElementById('inputPreview');
-            const wordCountSpan = document.getElementById('wordCount');
-            const dropZone = document.getElementById('dropZone');
-
-            let currentFileContent = null;
-            let currentFileName = null;
-            let currentFileHandle = null;
-
-            function updateWordCount(count) {
-                wordCountSpan.textContent = count + ' word' + (count !== 1 ? 's' : '');
-            }
-
-            function parseWordsFromText(text) {
-                if (!text || typeof text !== 'string') return [];
-                return text.split(/[\n,;\s]+/).map(w => w.trim()).filter(w => w.length > 0);
-            }
-
-            function renderJSON(wordsArray) {
-                if (!wordsArray || wordsArray.length === 0) {
-                    jsonOutput.textContent = '';
-                    jsonOutput.classList.remove('has-content');
-                    updateWordCount(0);
-                    copyBtn.disabled = true;
-                    saveBtn.disabled = true;
-                    return;
-                }
-                try {
-                    const jsonStr = JSON.stringify(wordsArray, null, 2);
-                    jsonOutput.textContent = jsonStr;
-                    jsonOutput.classList.add('has-content');
-                    updateWordCount(wordsArray.length);
-                    copyBtn.disabled = false;
-                    saveBtn.disabled = false;
-                } catch (e) {
-                    jsonOutput.textContent = '⚠️ Error: ' + e.message;
-                    jsonOutput.classList.add('has-content');
-                    updateWordCount(0);
-                    copyBtn.disabled = true;
-                    saveBtn.disabled = true;
-                }
-            }
-
-            function updateInputPreview(text) {
-                if (!text) {
-                    inputPreview.textContent = '';
-                    inputPreview.classList.remove('has-content');
-                    return;
-                }
-                const preview = text.length > 500 ? text.substring(0, 500) + '\n… (truncated)' : text;
-                inputPreview.textContent = preview;
-                inputPreview.classList.add('has-content');
-            }
-
-            function resetAll() {
-                fileInput.value = '';
-                currentFileContent = null;
-                currentFileName = null;
-                currentFileHandle = null;
-                jsonOutput.textContent = '';
-                jsonOutput.classList.remove('has-content');
-                inputPreview.textContent = '';
-                inputPreview.classList.remove('has-content');
-                updateWordCount(0);
-                fileStatus.textContent = 'No file selected';
-                inputStatus.textContent = 'no file';
-                convertBtn.disabled = true;
-                copyBtn.disabled = true;
-                saveBtn.disabled = true;
-            }
-
-            function processFileContent(content, fileName) {
-                currentFileContent = content;
-                currentFileName = fileName;
-                updateInputPreview(content);
-
-                const words = parseWordsFromText(content);
-                if (words.length > 0) {
-                    fileStatus.textContent = `${fileName} · ${words.length} word(s)`;
-                    inputStatus.textContent = `${fileName}`;
-                    convertBtn.disabled = false;
-                    renderJSON(words);
-                } else {
-                    fileStatus.textContent = `${fileName} (empty)`;
-                    inputStatus.textContent = `empty`;
-                    convertBtn.disabled = false;
-                    jsonOutput.textContent = '⚠️ No words found.';
-                    jsonOutput.classList.add('has-content');
-                    updateWordCount(0);
-                    copyBtn.disabled = true;
-                    saveBtn.disabled = true;
-                }
-            }
-
-            async function handleFile(file) {
-                if (!file) {
-                    resetAll();
-                    return;
-                }
-
-                try {
-                    if (window.showSaveFilePicker) {
-                        const handle = await window.showSaveFilePicker({
-                            suggestedName: file.name.replace(/\.[^.]+$/, '') + '.json',
-                            types: [{
-                                description: 'JSON Files',
-                                accept: { 'application/json': ['.json'] }
-                            }]
-                        });
-                        currentFileHandle = handle;
-                    }
-                } catch (e) {
-                    currentFileHandle = null;
-                }
-
-                fileStatus.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const content = e.target.result;
-                    if (typeof content === 'string') {
-                        processFileContent(content, file.name);
-                    } else {
-                        resetAll();
-                    }
-                };
-                reader.onerror = () => {
-                    resetAll();
-                };
-                reader.readAsText(file, 'UTF-8');
-            }
-
-            async function saveAsJson() {
-                const jsonText = jsonOutput.textContent;
-                if (!jsonText || jsonText.trim() === '' || jsonText.startsWith('⚠️')) {
-                    return;
-                }
-
-                let fileName = (currentFileName || 'output').replace(/\.[^.]+$/, '') + '.json';
-
-                try {
-                    if (window.showSaveFilePicker && currentFileHandle) {
-                        const writable = await currentFileHandle.createWritable();
-                        await writable.write(jsonText);
-                        await writable.close();
-                        fileStatus.textContent = `Saved: ${currentFileHandle.name}`;
-                        return;
-                    }
-
-                    if (window.showSaveFilePicker) {
-                        const handle = await window.showSaveFilePicker({
-                            suggestedName: fileName,
-                            types: [{
-                                description: 'JSON Files',
-                                accept: { 'application/json': ['.json'] }
-                            }]
-                        });
-                        const writable = await handle.createWritable();
-                        await writable.write(jsonText);
-                        await writable.close();
-                        fileStatus.textContent = `Saved: ${handle.name}`;
-                        currentFileHandle = handle;
-                        return;
-                    }
-
-                    const blob = new Blob([jsonText], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    fileStatus.textContent = `Downloaded: ${fileName}`;
-
-                } catch (e) {
-                    if (e.name !== 'AbortError' && e.name !== 'SecurityError') {
-                        const blob = new Blob([jsonText], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = fileName;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                    }
-                }
-            }
-
-            // ----- Event Listeners -----
-            fileInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    handleFile(file);
-                } else {
-                    resetAll();
-                }
-            });
-
-            dropZone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                dropZone.style.background = '#181818';
-                dropZone.style.borderColor = '#ffffff';
-            });
-            dropZone.addEventListener('dragleave', (e) => {
-                e.preventDefault();
-                dropZone.style.background = '';
-                dropZone.style.borderColor = '#333333';
-            });
-            dropZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropZone.style.background = '';
-                dropZone.style.borderColor = '#333333';
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    const file = files[0];
-                    if (!file.name.toLowerCase().endsWith('.txt') && !file.type.includes('text')) {
-                        return;
-                    }
-                    const dt = new DataTransfer();
-                    dt.items.add(file);
-                    fileInput.files = dt.files;
-                    handleFile(file);
-                }
-            });
-
-            convertBtn.addEventListener('click', () => {
-                if (!currentFileContent) {
-                    resetAll();
-                    return;
-                }
-                const words = parseWordsFromText(currentFileContent);
-                renderJSON(words);
-            });
-
-            clearBtn.addEventListener('click', () => {
-                resetAll();
-                dropZone.style.background = '';
-                dropZone.style.borderColor = '#333333';
-            });
-
-            copyBtn.addEventListener('click', async () => {
-                const jsonText = jsonOutput.textContent;
-                if (!jsonText || jsonText.trim() === '' || jsonText.startsWith('⚠️')) return;
-                try {
-                    await navigator.clipboard.writeText(jsonText);
-                    const original = copyBtn.textContent;
-                    copyBtn.textContent = 'copied!';
-                    setTimeout(() => { copyBtn.textContent = original; }, 2000);
-                } catch (err) {
-                    const area = document.createElement('textarea');
-                    area.value = jsonText;
-                    document.body.appendChild(area);
-                    area.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(area);
-                    const original = copyBtn.textContent;
-                    copyBtn.textContent = 'copied!';
-                    setTimeout(() => { copyBtn.textContent = original; }, 2000);
-                }
-            });
-
-            saveBtn.addEventListener('click', saveAsJson);
-
-            // Keyboard shortcuts
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    resetAll();
-                    dropZone.style.background = '';
-                    dropZone.style.borderColor = '#333333';
-                }
-                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                    e.preventDefault();
-                    if (!saveBtn.disabled) saveAsJson();
-                }
-            });
-
-            resetAll();
-
-        })();
-    </script>
-
+<!-- 
+  Performance notes:
+  - No external dependencies, no fonts besides system Verdana.
+  - Minimal DOM manipulations, uses document fragments.
+  - CSS is lean, no animations that cause layout thrashing.
+  - Fetch is async with proper error handling.
+  - Readability: clear class names, semantic HTML, accessible.
+-->
 </body>
 </html>
