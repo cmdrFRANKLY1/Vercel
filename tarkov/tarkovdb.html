@@ -1,564 +1,519 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escape from Tarkov: Database</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        bg: '#09090b',          /* Zinc 950 */
-                        fg: '#f4f4f5',          /* Zinc 100 */
-                        border: '#27272a',      /* Zinc 800 */
-                        muted: '#71717a',       /* Zinc 500 */
-                    },
-                    fontFamily: {
-                        sans: ['Verdana', 'Geneva', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
+    <title>Tarkov Database</title>
     <style>
-        /* ----- Pure Text-Based Verdana Theme ----- */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        /* Direct color codes to guarantee pure dark-mode instantly */
-        html {
-            background-color: #09090b;
-        }
-
-        body {
-            background-color: #09090b;
-            color: #f4f4f5;
-            min-height: 100vh;
-            line-height: 1.4;
-            -webkit-font-smoothing: antialiased;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
+        /* Reset & Base - Performance optimized */
+        *{margin:0;padding:0;box-sizing:border-box}
+        html{background:#0a0a0c}
+        body{background:#0a0a0c;color:#e8e8ea;font-family:Verdana,Geneva,sans-serif;font-size:14px;line-height:1.5;padding:16px;max-width:1400px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
         
-        ::-webkit-scrollbar {
-            display: none;
-        }
+        /* Scrollbar hidden for performance */
+        ::-webkit-scrollbar{display:none}
+        *{scrollbar-width:none;-ms-overflow-style:none}
 
-        /* ----- Minimal Text Links (Matching index.html) ----- */
-        .shortcut-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            text-decoration: none;
-            cursor: pointer;
-            user-select: none;
-            outline: none;
-            padding: 0.15rem 0;
-            
-            /* Dynamic properties overridden via JS */
-            --item-color: #f4f4f5;
-            --item-hover: #10b981;
-        }
-
-        .shortcut-name {
-            color: var(--item-color);
-            transition: color 0.1s ease, filter 0.1s ease;
-        }
-
-        .shortcut-item:hover .shortcut-name, .shortcut-item:focus .shortcut-name, .shortcut-item.active .shortcut-name {
-            color: var(--item-hover);
-            filter: brightness(1.25);
-        }
-
-        .shortcut-item.active::before {
-            content: "> ";
-            color: var(--item-hover);
-            position: absolute;
-            left: -1rem;
-        }
-
-        .shortcut-meta {
-            color: #71717a;
-            transition: color 0.1s ease;
-        }
-
-        .shortcut-item:hover .shortcut-meta, .shortcut-item.active .shortcut-meta {
-            color: var(--item-hover);
-            opacity: 0.7;
-        }
-
-        /* ----- Navigation & Categories ----- */
-        .nav-link {
-            color: #71717a;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.15em;
-            transition: color 0.1s ease;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .nav-link:hover, .nav-link.active {
-            color: #f4f4f5;
-        }
-
-        .dashed-border-b {
-            border-bottom: 1px dashed #27272a;
-        }
+        /* Typography - Pure text */
+        .muted{color:#666;font-size:11px;text-transform:uppercase;letter-spacing:0.08em}
+        .border-bottom{border-bottom:1px solid #1a1a1e;padding-bottom:8px;margin-bottom:12px}
+        .border-top{border-top:1px solid #1a1a1e;padding-top:12px;margin-top:12px}
         
-        .dashed-border-t {
-            border-top: 1px dashed #27272a;
-        }
+        /* Layout */
+        .flex{display:flex}
+        .flex-col{flex-direction:column}
+        .flex-1{flex:1}
+        .gap-2{gap:8px}
+        .gap-4{gap:16px}
+        .gap-6{gap:24px}
+        .items-center{align-items:center}
+        .justify-between{justify-content:space-between}
+        .shrink-0{flex-shrink:0}
+        .overflow-hidden{overflow:hidden}
+        .overflow-y-auto{overflow-y:auto}
+        .w-full{width:100%}
+        .h-full{height:100%}
+        .min-h-0{min-height:0}
+        .relative{position:relative}
+        .truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-        .dashed-border-l {
-            border-left: 1px dashed #27272a;
-        }
+        /* Header */
+        header{padding-bottom:12px;border-bottom:1px solid #1a1a1e;margin-bottom:16px;flex-shrink:0}
+        header .root-link{color:#666;text-decoration:none;font-size:13px;font-weight:400;letter-spacing:0.15em;text-transform:uppercase;transition:color 0.1s}
+        header .root-link:hover{color:#e8e8ea}
+        header .root-link .arrow{color:#444;margin-right:6px}
+
+        /* Main layout */
+        main{flex:1;display:flex;flex-direction:column;gap:16px;min-height:0}
+        @media(min-width:1024px){main{flex-direction:row}}
         
-        input::placeholder {
-            color: #71717a;
-        }
+        /* Left panel */
+        .left-panel{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+        
+        /* Search */
+        .search-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-shrink:0}
+        .search-row span{color:#666;font-size:13px;user-select:none}
+        .search-row input{background:transparent;border:none;outline:none;color:#e8e8ea;font-family:Verdana,Geneva,sans-serif;font-size:13px;width:100%;padding:4px 0}
+        .search-row input::placeholder{color:#444}
+        .search-row .refresh{color:#666;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;background:none;border:none;cursor:pointer;padding:4px 8px}
+        .search-row .refresh:hover{color:#e8e8ea}
 
-        /* Wiki link hover effect */
-        .wiki-link:hover {
-            text-decoration: underline;
-            text-decoration-style: dashed;
-            text-underline-offset: 4px;
-        }
+        /* Categories */
+        .categories{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;flex-shrink:0}
+        .categories .cat-btn{color:#666;background:none;border:none;font-family:Verdana,Geneva,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;cursor:pointer;padding:2px 6px;transition:color 0.1s}
+        .categories .cat-btn:hover,.categories .cat-btn.active{color:#e8e8ea}
+
+        /* Sort row */
+        .sort-row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1a1a1e;padding-bottom:6px;margin-bottom:10px;flex-shrink:0}
+        .sort-row span{color:#666;font-size:10px;text-transform:uppercase;letter-spacing:0.08em}
+        .sort-row select{background:transparent;border:none;outline:none;color:#666;font-family:Verdana,Geneva,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;cursor:pointer;appearance:none;padding:2px 0}
+        .sort-row select:hover{color:#e8e8ea}
+        .sort-row select option{background:#0a0a0c;color:#e8e8ea}
+
+        /* Item list */
+        #list{flex:1;overflow-y:auto;padding-right:4px}
+        .item-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;cursor:pointer;text-decoration:none;border:none;background:none;width:100%;font-family:Verdana,Geneva,sans-serif;font-size:13px;transition:color 0.08s}
+        .item-row .name{color:#e8e8ea;transition:color 0.08s}
+        .item-row .price{color:#666;font-size:12px;font-family:Verdana,Geneva,sans-serif;transition:color 0.08s;flex-shrink:0;margin-left:12px}
+        .item-row:hover .name,.item-row.active .name{color:#10b981}
+        .item-row:hover .price,.item-row.active .price{color:#10b981;opacity:0.7}
+        .item-row.active .name::before{content:"> ";color:#10b981}
+        .empty-state{padding:40px 0;text-align:center;color:#444;font-size:11px;text-transform:uppercase;letter-spacing:0.1em}
+
+        /* Right panel - Telemetry */
+        .right-panel{width:100%;flex-shrink:0;border-top:1px solid #1a1a1e;padding-top:16px;display:flex;flex-direction:column;max-height:50vh}
+        @media(min-width:1024px){.right-panel{width:340px;border-top:none;border-left:1px solid #1a1a1e;padding-top:0;padding-left:20px;max-height:none}}
+
+        .right-panel .header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1a1a1e;padding-bottom:8px;margin-bottom:14px;flex-shrink:0}
+        .right-panel .header .muted{font-size:10px}
+        .right-panel .header .reset{color:#666;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;background:none;border:none;cursor:pointer;display:none}
+        .right-panel .header .reset:hover{color:#e8e8ea}
+
+        .telemetry-content{flex:1;overflow-y:auto;padding-right:4px}
+        
+        /* Idle state */
+        .idle-state{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%;color:#444;text-align:center;padding-bottom:40px}
+        .idle-state .muted{font-size:11px;letter-spacing:0.15em;opacity:0.5}
+
+        /* Active state */
+        .active-state{display:none;flex-direction:column;gap:14px}
+        .active-state .type{color:#666;font-size:10px;text-transform:uppercase;letter-spacing:0.08em}
+        .active-state .item-name{font-size:18px;color:#e8e8ea;text-decoration:none;transition:color 0.15s;display:block}
+        .active-state .item-name:hover{text-decoration:underline;text-underline-offset:4px;text-decoration-style:dashed}
+        .active-state .item-short{color:#666;font-size:11px;text-transform:uppercase;letter-spacing:0.05em}
+        
+        .active-state .image-wrap{display:flex;justify-content:center;align-items:center;border-top:1px solid #1a1a1e;border-bottom:1px solid #1a1a1e;padding:16px 0;min-height:100px}
+        .active-state .image-wrap img{max-height:80px;object-fit:contain;filter:grayscale(1) opacity(0.6) contrast(1.2);transition:all 0.2s}
+        .active-state .image-wrap img:hover{filter:grayscale(0) opacity(1)}
+        
+        .active-state .metric{display:flex;justify-content:space-between;align-items:center}
+        .active-state .metric .label{color:#666;font-size:10px;text-transform:uppercase;letter-spacing:0.08em}
+        .active-state .metric .value{font-family:Verdana,Geneva,sans-serif;font-size:13px;transition:color 0.15s}
+        
+        .active-state .source-section{margin-top:4px}
+        .active-state .source-section .label{color:#666;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;display:block;border-bottom:1px solid #1a1a1e;padding-bottom:4px;margin-bottom:6px}
+        .active-state .source-row{display:flex;justify-content:space-between;font-size:12px;padding:1px 0}
+        .active-state .source-row .src{color:#e8e8ea;text-transform:capitalize}
+        .active-state .source-row .val{font-family:Verdana,Geneva,sans-serif}
+        
+        .active-state .meta{font-size:10px;color:#444;text-transform:uppercase;letter-spacing:0.05em;border-top:1px solid #1a1a1e;padding-top:10px;margin-top:6px}
+        .active-state .meta div{display:flex;justify-content:space-between;padding:1px 0}
+
+        /* Footer */
+        footer{flex-shrink:0;border-top:1px solid #1a1a1e;padding-top:10px;margin-top:14px;display:flex;justify-content:space-between;font-size:10px;color:#444;text-transform:uppercase;letter-spacing:0.08em}
+        footer .status{display:flex;gap:16px}
+
+        /* Utilities */
+        .hidden{display:none!important}
+        .block{display:block}
     </style>
 </head>
-<body class="bg-bg text-fg flex flex-col p-4 md:p-8 lg:p-12 max-w-7xl mx-auto h-screen overflow-hidden">
+<body>
 
-    <!-- Terminal Header -->
-    <header class="flex justify-between items-center dashed-border-b pb-3 mb-6 select-none shrink-0">
-        <div class="flex items-center gap-4">
-            <span class="text-xs text-muted uppercase tracking-widest">ESCAPE FROM TARKOV: DATABASE</span>
-        </div>
-        <nav class="flex gap-3 text-xs" id="top-nav">
-            <a href="../index.html" class="nav-link">HOME</a>
-            <span class="text-muted">|</span>
-            <button class="nav-link active">TARKOV</button>
-            <span class="text-muted">|</span>
-            <button class="nav-link">TOOLS</button>
-        </nav>
+    <!-- Header -->
+    <header>
+        <a href="../index.html" class="root-link"><span class="arrow">←</span>home</a>
     </header>
 
-    <!-- Main Application Split -->
-    <main class="flex-1 flex flex-col lg:flex-row gap-8 overflow-hidden">
-        
-        <!-- Left: Index / Search -->
-        <section class="flex-1 flex flex-col min-w-0 overflow-hidden">
-            
-            <!-- Controls -->
-            <div class="mb-4 shrink-0 space-y-4">
-                <!-- Search -->
-                <div class="flex items-center gap-3 w-full">
-                    <span class="text-muted text-sm select-none">&gt;</span>
-                    <input 
-                        type="text" 
-                        id="search-input" 
-                        placeholder="filter specimens..." 
-                        class="bg-transparent border-none outline-none text-fg w-full text-sm font-sans"
-                        autocomplete="off"
-                        spellcheck="false"
-                    >
-                    <button id="refresh-btn" onclick="fetchMarketData()" class="nav-link !text-xs shrink-0">REFRESH</button>
-                </div>
-
-                <!-- Categories -->
-                <div class="flex items-center gap-3 overflow-x-auto pb-2 text-[10px]" id="category-bar">
-                    <span class="text-muted tracking-widest uppercase">CAT:</span>
-                    <button onclick="filterCategory('all')" id="cat-all" class="nav-link active">ALL</button>
-                    <button onclick="filterCategory('weapon')" id="cat-weapon" class="nav-link">WEP</button>
-                    <button onclick="filterCategory('ammo')" id="cat-ammo" class="nav-link">AMMO</button>
-                    <button onclick="filterCategory('armor')" id="cat-armor" class="nav-link">ARM</button>
-                    <button onclick="filterCategory('key')" id="cat-key" class="nav-link">KEYS</button>
-                    <button onclick="filterCategory('barter')" id="cat-barter" class="nav-link">ITEM</button>
-                    <button onclick="filterCategory('provisions')" id="cat-provisions" class="nav-link">MED</button>
-                </div>
-
-                <div class="flex justify-between items-center dashed-border-b pb-2 text-[10px] text-muted tracking-widest uppercase select-none">
-                    <span>DESCRIPTOR</span>
-                    <select id="sort-select" onchange="handleSortChange()" class="bg-transparent border-none outline-none text-muted cursor-pointer text-right appearance-none">
-                        <option value="name">SORT: ALPHA</option>
-                        <option value="price-desc">SORT: PRICE DESC</option>
-                        <option value="price-asc">SORT: PRICE ASC</option>
-                    </select>
-                </div>
+    <!-- Main -->
+    <main>
+        <!-- Left Panel -->
+        <div class="left-panel">
+            <!-- Search -->
+            <div class="search-row">
+                <span>&gt;</span>
+                <input type="text" id="search" placeholder="filter items..." autocomplete="off" spellcheck="false">
+                <button class="refresh" id="refresh">↻</button>
             </div>
 
-            <!-- List Area -->
-            <div class="flex-1 overflow-y-auto relative pr-2" id="list-container">
-                <div id="nexus-list" class="flex flex-col gap-1 relative">
-                    <div class="py-10 text-center text-muted text-xs uppercase tracking-widest">
-                        SYNCING VIA API.TARKOV.DEV...
+            <!-- Categories -->
+            <div class="categories" id="categories">
+                <button class="cat-btn active" data-cat="all">All</button>
+                <button class="cat-btn" data-cat="weapon">Wep</button>
+                <button class="cat-btn" data-cat="ammo">Ammo</button>
+                <button class="cat-btn" data-cat="armor">Armor</button>
+                <button class="cat-btn" data-cat="key">Keys</button>
+                <button class="cat-btn" data-cat="barter">Item</button>
+                <button class="cat-btn" data-cat="provisions">Med</button>
+            </div>
+
+            <!-- Sort -->
+            <div class="sort-row">
+                <span>Descriptor</span>
+                <select id="sort">
+                    <option value="name">Sort: Alpha</option>
+                    <option value="price-desc">Sort: Price ↓</option>
+                    <option value="price-asc">Sort: Price ↑</option>
+                </select>
+            </div>
+
+            <!-- List -->
+            <div id="list">
+                <div class="empty-state">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <div class="header">
+                <span class="muted">Telemetry / Wiki</span>
+                <button class="reset" id="reset">Reset</button>
+            </div>
+            <div class="telemetry-content">
+                <!-- Idle -->
+                <div class="idle-state" id="idle">
+                    <span class="muted">[Awaiting Selection]</span>
+                </div>
+                <!-- Active -->
+                <div class="active-state" id="active">
+                    <div>
+                        <div class="type" id="t-type">Type</div>
+                        <a href="#" target="_blank" rel="noopener" class="item-name" id="t-name">Item Name</a>
+                        <div class="item-short" id="t-short">Short Name</div>
                     </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Right: Telemetry Inspector -->
-        <aside class="w-full lg:w-96 flex flex-col shrink-0 dashed-border-t lg:dashed-border-t-0 lg:dashed-border-l pt-6 lg:pt-0 lg:pl-8 h-1/2 lg:h-full overflow-hidden">
-            <div class="dashed-border-b pb-2 mb-4 flex justify-between items-center select-none shrink-0">
-                <span class="text-[10px] text-muted tracking-widest uppercase">TELEMETRY / WIKI LINK</span>
-                <button id="close-inspector-btn" class="nav-link !text-[10px] hidden" onclick="resetTelemetrySelection()">RESET</button>
-            </div>
-
-            <div class="flex-1 overflow-y-auto pr-2" id="telemetry-inner">
-                <!-- Idle State -->
-                <div id="idle-telemetry" class="h-full flex flex-col justify-center items-center text-center space-y-4 text-muted select-none pb-12">
-                    <div class="text-sm uppercase tracking-widest opacity-50">[AWAITING TARGET]</div>
-                </div>
-
-                <!-- Active State -->
-                <div id="active-telemetry" class="hidden flex flex-col space-y-6 pb-8">
                     
-                    <div class="space-y-1">
-                        <div id="telemetry-category" class="text-[10px] text-muted tracking-widest uppercase">TYPE</div>
-                        <a id="telemetry-name" href="#" target="_blank" rel="noopener noreferrer" class="text-lg text-fg transition-colors duration-200 wiki-link block" title="Open Official Wiki">
-                            Item Name
-                        </a>
-                        <div class="flex items-center justify-between">
-                            <div id="telemetry-short" class="text-xs text-muted uppercase">Short Name</div>
-                            <span class="text-[9px] text-muted tracking-widest">[WIKI ↗]</span>
+                    <div class="image-wrap">
+                        <img id="t-img" src="" alt="" onerror="this.style.display='none'">
+                    </div>
+                    
+                    <div>
+                        <div class="metric">
+                            <span class="label">Flea Market</span>
+                            <span class="value" id="t-flea">---</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Trader Base</span>
+                            <span class="value" id="t-base">---</span>
                         </div>
                     </div>
-
-                    <!-- Filtered minimalist image -->
-                    <div class="flex justify-center items-center dashed-border-b dashed-border-t py-4 min-h-[120px]">
-                        <img id="telemetry-img" src="" alt="Specimen" class="max-h-24 object-contain filter grayscale opacity-70 contrast-125 mix-blend-screen transition-all duration-300 hover:grayscale-0 hover:opacity-100 cursor-help" onerror="this.style.display='none'">
+                    
+                    <div class="source-section">
+                        <span class="label">Sell To</span>
+                        <div id="t-sell"></div>
                     </div>
-
-                    <!-- Metrics -->
-                    <div class="space-y-4 text-sm">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] text-muted uppercase tracking-widest">FLEA MARKET</span>
-                            <span id="telemetry-flea" class="text-fg font-mono transition-colors duration-200 tracking-tighter">0 ₽</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] text-muted uppercase tracking-widest">TRADER BASE</span>
-                            <span id="telemetry-base" class="text-fg font-mono tracking-tighter">0 ₽</span>
-                        </div>
+                    
+                    <div class="source-section">
+                        <span class="label">Buy From</span>
+                        <div id="t-buy"></div>
                     </div>
-
-                    <!-- Spread -->
-                    <div class="space-y-4 pt-2">
-                        <div class="space-y-2">
-                            <span class="text-[10px] text-muted uppercase tracking-widest block dashed-border-b pb-1">SELL TO</span>
-                            <div id="sell-source-list" class="space-y-1 flex flex-col text-xs"></div>
-                        </div>
-                        <div class="space-y-2">
-                            <span class="text-[10px] text-muted uppercase tracking-widest block dashed-border-b pb-1">BUY FROM</span>
-                            <div id="buy-source-list" class="space-y-1 flex flex-col text-xs"></div>
-                        </div>
-                    </div>
-
-                    <!-- Meta -->
-                    <div class="pt-4 space-y-1 text-[10px] text-muted uppercase tracking-widest">
-                        <div class="flex justify-between">
-                            <span>ID:</span>
-                            <span id="telemetry-id" class="lowercase font-mono">null</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>SYNC:</span>
-                            <span id="telemetry-recon" class="font-mono">null</span>
-                        </div>
+                    
+                    <div class="meta">
+                        <div><span>ID:</span><span id="t-id">---</span></div>
+                        <div><span>Updated:</span><span id="t-updated">---</span></div>
                     </div>
                 </div>
             </div>
-        </aside>
+        </div>
     </main>
 
-    <!-- Terminal Footer -->
-    <footer class="dashed-border-t pt-3 mt-4 flex justify-between items-center text-[10px] text-muted tracking-widest uppercase select-none shrink-0">
-        <div class="flex gap-4">
-            <span id="conn-status">STATUS: INIT</span>
-            <span id="latency-val" class="hidden md:inline">PING: --</span>
+    <!-- Footer -->
+    <footer>
+        <div class="status">
+            <span id="status">Status: Init</span>
+            <span id="ping">Ping: --</span>
         </div>
-        <div id="totalItems">0 ENTRIES</div>
+        <span id="count">0 Items</span>
     </footer>
 
-    <!-- Core Logic -->
     <script>
-        "use strict";
+    "use strict";
 
-        // Terminal-friendly color palette
-        const COLOR_PALETTE = [
-            { main: '#f4f4f5', hover: '#10b981' }, // Emerald
-            { main: '#f4f4f5', hover: '#3b82f6' }, // Blue
-            { main: '#f4f4f5', hover: '#f59e0b' }, // Amber
-            { main: '#f4f4f5', hover: '#ec4899' }, // Pink
-            { main: '#f4f4f5', hover: '#8b5cf6' }, // Purple
-            { main: '#f4f4f5', hover: '#06b6d4' }, // Cyan
-            { main: '#f4f4f5', hover: '#ef4444' }, // Red
-            { main: '#f4f4f5', hover: '#a855f7' }, // Violet
-            { main: '#f4f4f5', hover: '#f97316' }, // Orange
-            { main: '#f4f4f5', hover: '#84cc16' }  // Lime
-        ];
+    // --- State ---
+    let items = [];
+    let filtered = [];
+    let selected = null;
+    let category = 'all';
+    let sortMode = 'name';
 
-        // Memory variables
-        let rawItems = [];
-        let filteredItems = [];
-        let selectedItem = null;
-        let activeCategory = 'all';
+    // --- DOM refs ---
+    const $ = id => document.getElementById(id);
+    const listEl = $('list');
+    const searchEl = $('search');
+    const sortEl = $('sort');
+    const statusEl = $('status');
+    const pingEl = $('ping');
+    const countEl = $('count');
+    const resetBtn = $('reset');
 
-        // Mock cache registry (Includes wiki links for offline resilience)
-        const mockDatabaseFallback = [
-            { id: "5c0a0c2986f7743d1c1b1c6d", name: "TerraGroup Labs Access Keycard", shortName: "Labs Key", wikiLink: "https://escapefromtarkov.fandom.com/wiki/TerraGroup_Labs_access_keycard", basePrice: 165000, types: ["keys"], updated: new Date().toISOString(), buyFor: [{ price: 165000, source: "therapist", currency: "RUB" }], sellFor: [{ price: 165000, source: "therapist", currency: "RUB" }, { price: 215000, source: "fleaMarket", currency: "RUB" }] },
-            { id: "5447a9424bdc2d61118b4567", name: "M855A1 5.56x45 Ammo Round", shortName: "M855A1", wikiLink: "https://escapefromtarkov.fandom.com/wiki/5.56x45mm_M855A1", basePrice: 420, types: ["ammo"], updated: new Date().toISOString(), buyFor: [{ price: 1100, source: "peacekeeper", currency: "USD" }, { price: 3400, source: "fleaMarket", currency: "RUB" }], sellFor: [{ price: 320, source: "peacekeeper", currency: "USD" }] },
-            { id: "5bf3e87d0db834001d2c4bd8", name: "Slick Body Armor (Olive Drab)", shortName: "Slick", wikiLink: "https://escapefromtarkov.fandom.com/wiki/LBT-6094A_Slick_Plate_Carrier", basePrice: 280000, types: ["armor"], updated: new Date().toISOString(), buyFor: [{ price: 480000, source: "fleaMarket", currency: "RUB" }], sellFor: [{ price: 140000, source: "ragman", currency: "RUB" }] },
-            { id: "57dc20df2459775a6104e76d", name: "AK-74N 5.45x39 assault rifle", shortName: "AK-74N", wikiLink: "https://escapefromtarkov.fandom.com/wiki/AK-74N_5.45x39_assault_rifle", basePrice: 43000, types: ["weapon"], updated: new Date().toISOString(), buyFor: [{ price: 44000, source: "prapor", currency: "RUB" }, { price: 39000, source: "fleaMarket", currency: "RUB" }], sellFor: [{ price: 28000, source: "prapor", currency: "RUB" }] },
-            { id: "590c621186f77421a4734892", name: "Golden Star Balm", shortName: "Golden Star", wikiLink: "https://escapefromtarkov.fandom.com/wiki/Golden_Star_Balm", basePrice: 22000, types: ["provisions"], updated: new Date().toISOString(), buyFor: [{ price: 82000, source: "fleaMarket", currency: "RUB" }], sellFor: [{ price: 23000, source: "therapist", currency: "RUB" }] },
-            { id: "5af0534c86f7743b6f35a643", name: "Physical Bitcoin (0.2 BTC)", shortName: "Physical BTC", wikiLink: "https://escapefromtarkov.fandom.com/wiki/Physical_bitcoin", basePrice: 450000, types: ["barter"], updated: new Date().toISOString(), buyFor: [{ price: 620000, source: "fleaMarket", currency: "RUB" }], sellFor: [{ price: 610000, source: "therapist", currency: "RUB" }] }
-        ];
+    // Telemetry refs
+    const idleEl = $('idle');
+    const activeEl = $('active');
+    const tName = $('t-name');
+    const tShort = $('t-short');
+    const tType = $('t-type');
+    const tFlea = $('t-flea');
+    const tBase = $('t-base');
+    const tSell = $('t-sell');
+    const tBuy = $('t-buy');
+    const tId = $('t-id');
+    const tUpdated = $('t-updated');
+    const tImg = $('t-img');
 
-        function formatRubles(val, currency = "RUB") {
-            if (!val && val !== 0) return '---';
-            if (currency === "USD") return `$${Math.round(val).toLocaleString()}`;
-            if (currency === "EUR") return `€${Math.round(val).toLocaleString()}`;
-            return `${Math.round(val).toLocaleString()} ₽`;
-        }
+    // --- Helpers ---
+    function fmt(v, c = 'RUB') {
+        if (v == null) return '---';
+        const n = Math.round(v);
+        if (c === 'USD') return '$' + n.toLocaleString();
+        if (c === 'EUR') return '€' + n.toLocaleString();
+        return n.toLocaleString() + ' ₽';
+    }
 
-        async function fetchMarketData() {
-            const startTime = performance.now();
-            const connStatus = document.getElementById('conn-status');
-            const refreshBtn = document.getElementById('refresh-btn');
-            
-            connStatus.innerText = "STATUS: SYNCING";
-            refreshBtn.style.opacity = "0.5";
+    function getFlea(item) {
+        const f = item.sellFor?.find(s => s.source === 'fleaMarket');
+        return f ? f.price : 0;
+    }
 
-            // GraphQL Query optimized to fetch `wikiLink` directly from the API endpoint
-            const query = `{ items { id name shortName wikiLink basePrice types updated buyFor { price source currency } sellFor { price source currency } } }`;
-            const retries = 3;
-            let success = false;
-            let data = null;
+    // --- API fetch ---
+    async function fetchData() {
+        const start = performance.now();
+        statusEl.textContent = 'Status: Syncing';
+        const refreshBtn = $('refresh');
+        refreshBtn.style.opacity = '0.5';
 
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const apiEndpoint = 'https://api.tarkov.dev/v1/graphql';
-                    const targetUrl = i > 0 ? `https://corsproxy.io/?${encodeURIComponent(apiEndpoint)}` : apiEndpoint;
-                    const response = await fetch(targetUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) });
-                    if (response.ok) {
-                        const json = await response.json();
-                        if (json.data && json.data.items) {
-                            data = json.data.items;
-                            success = true;
-                            break;
-                        }
+        const query = `{ items { id name shortName wikiLink basePrice types updated buyFor { price source currency } sellFor { price source currency } } }`;
+        let data = null;
+        let ok = false;
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                const res = await fetch('https://api.tarkov.dev/v1/graphql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json?.data?.items) {
+                        data = json.data.items;
+                        ok = true;
+                        break;
                     }
-                } catch (e) {}
-                if (!success) await new Promise(r => setTimeout(r, 1000));
-            }
-
-            const latency = Math.round(performance.now() - startTime);
-            document.getElementById('latency-val').innerText = `PING: ${latency}MS`;
-
-            if (success && data) {
-                rawItems = data;
-                connStatus.innerText = "STATUS: ONLINE";
-            } else {
-                rawItems = mockDatabaseFallback;
-                connStatus.innerText = "STATUS: CACHE";
-            }
-
-            refreshBtn.style.opacity = "1";
-            document.getElementById('totalItems').innerText = `${rawItems.length} ENTRIES`;
-            applyFilters();
-        }
-
-        function applyFilters() {
-            const searchVal = document.getElementById('search-input').value.toLowerCase().trim();
-            filteredItems = rawItems.filter(item => {
-                if (activeCategory !== 'all' && (!item.types || !item.types.includes(activeCategory))) return false;
-                if (searchVal) {
-                    return (item.name && item.name.toLowerCase().includes(searchVal)) || 
-                           (item.shortName && item.shortName.toLowerCase().includes(searchVal));
                 }
-                return true;
-            });
-            sortItems();
-            renderTable();
+            } catch (_) {}
+            if (!ok) await new Promise(r => setTimeout(r, 800));
         }
 
-        function sortItems() {
-            const sortMode = document.getElementById('sort-select').value;
-            filteredItems.sort((a, b) => {
-                const getFlea = (item) => (item.sellFor?.find(s => s.source === 'fleaMarket')?.price || 0);
-                if (sortMode === 'name') return (a.name || '').localeCompare(b.name || '');
-                if (sortMode === 'price-desc') return getFlea(b) - getFlea(a);
-                if (sortMode === 'price-asc') return (getFlea(a) || Infinity) - (getFlea(b) || Infinity);
-                return 0;
-            });
+        const latency = Math.round(performance.now() - start);
+        pingEl.textContent = 'Ping: ' + latency + 'ms';
+
+        if (ok && data) {
+            items = data;
+            statusEl.textContent = 'Status: Online';
+        } else {
+            // Minimal fallback
+            items = [
+                { id: '1', name: 'Labs Keycard', shortName: 'Labs Key', wikiLink: 'https://escapefromtarkov.fandom.com/wiki/TerraGroup_Labs_access_keycard', basePrice: 165000, types: ['key'], updated: new Date().toISOString(), buyFor: [{ price: 165000, source: 'therapist', currency: 'RUB' }], sellFor: [{ price: 215000, source: 'fleaMarket', currency: 'RUB' }] },
+                { id: '2', name: 'M855A1', shortName: 'M855A1', wikiLink: 'https://escapefromtarkov.fandom.com/wiki/5.56x45mm_M855A1', basePrice: 420, types: ['ammo'], updated: new Date().toISOString(), buyFor: [{ price: 3400, source: 'fleaMarket', currency: 'RUB' }], sellFor: [{ price: 320, source: 'peacekeeper', currency: 'USD' }] },
+                { id: '3', name: 'Slick Plate Carrier', shortName: 'Slick', wikiLink: 'https://escapefromtarkov.fandom.com/wiki/LBT-6094A_Slick_Plate_Carrier', basePrice: 280000, types: ['armor'], updated: new Date().toISOString(), buyFor: [{ price: 480000, source: 'fleaMarket', currency: 'RUB' }], sellFor: [{ price: 140000, source: 'ragman', currency: 'RUB' }] },
+                { id: '4', name: 'AK-74N', shortName: 'AK-74N', wikiLink: 'https://escapefromtarkov.fandom.com/wiki/AK-74N_5.45x39_assault_rifle', basePrice: 43000, types: ['weapon'], updated: new Date().toISOString(), buyFor: [{ price: 39000, source: 'fleaMarket', currency: 'RUB' }], sellFor: [{ price: 28000, source: 'prapor', currency: 'RUB' }] }
+            ];
+            statusEl.textContent = 'Status: Cache';
         }
 
-        function renderTable() {
-            const list = document.getElementById('nexus-list');
-            list.innerHTML = '';
+        refreshBtn.style.opacity = '1';
+        countEl.textContent = items.length + ' Items';
+        filterAndRender();
+    }
 
-            if (filteredItems.length === 0) {
-                list.innerHTML = `<div class="py-10 text-center text-muted text-xs uppercase tracking-widest">NO MATCHES</div>`;
-                return;
+    // --- Filter & Sort ---
+    function filterAndRender() {
+        const q = searchEl.value.toLowerCase().trim();
+        filtered = items.filter(item => {
+            if (category !== 'all' && (!item.types || !item.types.includes(category))) return false;
+            if (q) {
+                const name = (item.name || '').toLowerCase();
+                const short = (item.shortName || '').toLowerCase();
+                return name.includes(q) || short.includes(q);
             }
-
-            const fragment = document.createDocumentFragment();
-
-            filteredItems.forEach(item => {
-                const div = document.createElement('div');
-                div.className = `shortcut-item ${selectedItem && selectedItem.id === item.id ? 'active' : ''}`;
-                div.onclick = () => selectItem(item.id, div);
-                
-                // Assign a random hover color
-                const randomColor = COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)];
-                div.style.setProperty('--item-color', randomColor.main);
-                div.style.setProperty('--item-hover', randomColor.hover);
-                
-                // Store the selected hover color in dataset to pass to telemetry
-                div.dataset.hoverColor = randomColor.hover;
-
-                const fleaObj = item.sellFor?.find(s => s.source === 'fleaMarket');
-                const fleaPrice = fleaObj ? formatRubles(fleaObj.price, fleaObj.currency) : '---';
-
-                div.innerHTML = `
-                    <div class="shortcut-name truncate text-sm mr-4">${item.name || 'Unknown'}</div>
-                    <div class="shortcut-meta text-xs shrink-0 font-mono tracking-tighter">${fleaPrice}</div>
-                `;
-                fragment.appendChild(div);
-            });
-
-            list.appendChild(fragment);
-        }
-
-        // URL Generation fallback in case API data is missing `wikiLink`
-        function generateWikiUrlFallback(name) {
-            return `https://escapefromtarkov.fandom.com/wiki/${encodeURIComponent(name.replace(/ /g, '_'))}`;
-        }
-
-        function selectItem(id, elementNode = null) {
-            const item = rawItems.find(i => i.id === id);
-            if (!item) return;
-
-            selectedItem = item;
-            
-            // Re-render list to update active state indicators
-            renderTable();
-
-            document.getElementById('idle-telemetry').classList.add('hidden');
-            const activePanel = document.getElementById('active-telemetry');
-            activePanel.classList.remove('hidden');
-            document.getElementById('close-inspector-btn').classList.remove('hidden');
-
-            document.getElementById('telemetry-category').innerText = (item.types && item.types[0]) || 'GENERAL';
-            
-            const nameEl = document.getElementById('telemetry-name');
-            const fleaEl = document.getElementById('telemetry-flea');
-            
-            // Bind text and Wiki Hyperlink (Target _blank configured in HTML structure)
-            nameEl.innerText = item.name;
-            nameEl.href = item.wikiLink || generateWikiUrlFallback(item.name);
-            
-            // Match Telemetry accent to the list item's random hover color
-            if (elementNode) {
-                const accentColor = elementNode.dataset.hoverColor;
-                nameEl.style.color = accentColor;
-                fleaEl.style.color = accentColor;
-            }
-
-            document.getElementById('telemetry-short').innerText = item.shortName || 'N/A';
-            document.getElementById('telemetry-id').innerText = item.id;
-            document.getElementById('telemetry-recon').innerText = item.updated ? new Date(item.updated).toLocaleString() : 'CACHE';
-
-            const fleaObj = item.sellFor?.find(s => s.source === 'fleaMarket');
-            fleaEl.innerText = fleaObj ? formatRubles(fleaObj.price, fleaObj.currency) : '---';
-            document.getElementById('telemetry-base').innerText = formatRubles(item.basePrice);
-
-            const imgEl = document.getElementById('telemetry-img');
-            imgEl.style.display = 'block';
-            imgEl.src = `https://assets.tarkov.dev/${item.id}-base-image.png`;
-            imgEl.onerror = () => { imgEl.style.display = 'none'; };
-
-            // Spread Listings
-            const buyContainer = document.getElementById('buy-source-list');
-            buyContainer.innerHTML = '';
-            if (item.buyFor && item.buyFor.length > 0) {
-                item.buyFor.forEach(b => {
-                    buyContainer.innerHTML += `
-                        <div class="flex justify-between items-center">
-                            <span class="text-fg capitalize">${b.source}</span>
-                            <span class="font-mono tracking-tighter">${formatRubles(b.price, b.currency)}</span>
-                        </div>
-                    `;
-                });
-            } else {
-                buyContainer.innerHTML = '<div class="text-muted">---</div>';
-            }
-
-            const sellContainer = document.getElementById('sell-source-list');
-            sellContainer.innerHTML = '';
-            if (item.sellFor && item.sellFor.length > 0) {
-                const sortedSells = [...item.sellFor].sort((x, y) => y.price - x.price);
-                sortedSells.forEach(s => {
-                    sellContainer.innerHTML += `
-                        <div class="flex justify-between items-center">
-                            <span class="text-fg capitalize">${s.source}</span>
-                            <span class="font-mono tracking-tighter">${formatRubles(s.price, s.currency)}</span>
-                        </div>
-                    `;
-                });
-            } else {
-                sellContainer.innerHTML = '<div class="text-muted">---</div>';
-            }
-        }
-
-        function resetTelemetrySelection() {
-            selectedItem = null;
-            document.getElementById('active-telemetry').classList.add('hidden');
-            document.getElementById('close-inspector-btn').classList.add('hidden');
-            document.getElementById('idle-telemetry').classList.remove('hidden');
-            renderTable();
-        }
-
-        function filterCategory(catName) {
-            activeCategory = catName;
-            document.querySelectorAll('#category-bar button').forEach(btn => {
-                btn.classList.toggle('active', btn.id === `cat-${catName}`);
-            });
-            applyFilters();
-        }
-
-        function handleSortChange() {
-            applyFilters();
-        }
-
-        // Global hotkeys
-        window.addEventListener('keydown', (e) => {
-            const searchInput = document.getElementById('search-input');
-            if (e.key === 'Escape') {
-                if (document.activeElement === searchInput) searchInput.blur();
-                else {
-                    searchInput.value = '';
-                    resetTelemetrySelection();
-                    applyFilters();
-                }
-            } else if (!e.ctrlKey && !e.metaKey && document.activeElement !== searchInput) {
-                // Auto focus search on typing
-                if (e.key.length === 1 && /[a-zA-Z0-9]/.test(e.key)) {
-                    searchInput.focus();
-                }
-            }
+            return true;
         });
 
-        // Initialize App
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('search-input').addEventListener('input', applyFilters);
-            fetchMarketData();
+        sortEl.value = sortMode;
+        const mode = sortEl.value;
+        filtered.sort((a, b) => {
+            if (mode === 'name') return (a.name || '').localeCompare(b.name || '');
+            const fa = getFlea(a);
+            const fb = getFlea(b);
+            if (mode === 'price-desc') return fb - fa;
+            return (fa || Infinity) - (fb || Infinity);
         });
+
+        renderList();
+    }
+
+    // --- Render ---
+    function renderList() {
+        if (!filtered.length) {
+            listEl.innerHTML = '<div class="empty-state">No Matches</div>';
+            return;
+        }
+
+        const frag = document.createDocumentFragment();
+        for (const item of filtered) {
+            const div = document.createElement('div');
+            div.className = 'item-row' + (selected?.id === item.id ? ' active' : '');
+            div.setAttribute('data-id', item.id);
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'name';
+            nameSpan.textContent = item.name || 'Unknown';
+            
+            const priceSpan = document.createElement('span');
+            priceSpan.className = 'price';
+            const flea = getFlea(item);
+            priceSpan.textContent = flea ? fmt(flea) : '---';
+            
+            div.appendChild(nameSpan);
+            div.appendChild(priceSpan);
+            
+            div.addEventListener('click', () => selectItem(item.id));
+            frag.appendChild(div);
+        }
+        listEl.innerHTML = '';
+        listEl.appendChild(frag);
+    }
+
+    // --- Select ---
+    function selectItem(id) {
+        const item = items.find(i => i.id === id);
+        if (!item) return;
+        selected = item;
+
+        // Update list highlights
+        document.querySelectorAll('.item-row').forEach(el => {
+            el.classList.toggle('active', el.dataset.id === id);
+        });
+
+        // Show active panel
+        idleEl.classList.add('hidden');
+        activeEl.classList.remove('hidden');
+        resetBtn.style.display = 'block';
+
+        // Populate telemetry
+        tType.textContent = (item.types?.[0] || 'General').toUpperCase();
+        tName.textContent = item.name || 'Unknown';
+        tName.href = item.wikiLink || `https://escapefromtarkov.fandom.com/wiki/${encodeURIComponent(item.name.replace(/ /g, '_'))}`;
+        tShort.textContent = item.shortName || 'N/A';
+
+        const flea = item.sellFor?.find(s => s.source === 'fleaMarket');
+        tFlea.textContent = flea ? fmt(flea.price, flea.currency) : '---';
+        tBase.textContent = fmt(item.basePrice);
+
+        // Accent color
+        const accent = '#10b981';
+        tName.style.color = accent;
+        tFlea.style.color = accent;
+
+        // Image
+        tImg.src = `https://assets.tarkov.dev/${item.id}-base-image.png`;
+        tImg.style.display = 'block';
+        tImg.onerror = () => { tImg.style.display = 'none'; };
+
+        // Sell sources
+        tSell.innerHTML = '';
+        if (item.sellFor?.length) {
+            const sorted = [...item.sellFor].sort((a, b) => b.price - a.price);
+            for (const s of sorted) {
+                const row = document.createElement('div');
+                row.className = 'source-row';
+                row.innerHTML = `<span class="src">${s.source}</span><span class="val">${fmt(s.price, s.currency)}</span>`;
+                tSell.appendChild(row);
+            }
+        } else {
+            tSell.innerHTML = '<div class="source-row"><span class="src" style="color:#444">---</span></div>';
+        }
+
+        // Buy sources
+        tBuy.innerHTML = '';
+        if (item.buyFor?.length) {
+            for (const b of item.buyFor) {
+                const row = document.createElement('div');
+                row.className = 'source-row';
+                row.innerHTML = `<span class="src">${b.source}</span><span class="val">${fmt(b.price, b.currency)}</span>`;
+                tBuy.appendChild(row);
+            }
+        } else {
+            tBuy.innerHTML = '<div class="source-row"><span class="src" style="color:#444">---</span></div>';
+        }
+
+        tId.textContent = item.id || '---';
+        tUpdated.textContent = item.updated ? new Date(item.updated).toLocaleString() : '---';
+    }
+
+    // --- Reset ---
+    function resetSelection() {
+        selected = null;
+        activeEl.classList.add('hidden');
+        idleEl.classList.remove('hidden');
+        resetBtn.style.display = 'none';
+        document.querySelectorAll('.item-row').forEach(el => el.classList.remove('active'));
+    }
+
+    // --- Events ---
+    // Category buttons
+    document.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            category = btn.dataset.cat;
+            filterAndRender();
+        });
+    });
+
+    // Search
+    searchEl.addEventListener('input', filterAndRender);
+
+    // Sort
+    sortEl.addEventListener('change', () => {
+        sortMode = sortEl.value;
+        filterAndRender();
+    });
+
+    // Refresh
+    $('refresh').addEventListener('click', fetchData);
+
+    // Reset
+    resetBtn.addEventListener('click', resetSelection);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            if (document.activeElement === searchEl) {
+                searchEl.blur();
+            } else {
+                searchEl.value = '';
+                resetSelection();
+                filterAndRender();
+            }
+        }
+        // Auto-focus search on typing
+        if (!e.ctrlKey && !e.metaKey && document.activeElement !== searchEl && e.key.length === 1 && /[a-zA-Z0-9]/.test(e.key)) {
+            searchEl.focus();
+        }
+    });
+
+    // --- Init ---
+    fetchData();
     </script>
 </body>
 </html>
