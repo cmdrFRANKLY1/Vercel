@@ -15,10 +15,10 @@
     :root {
       --bg: #09090b;          /* Zinc 950 */
       --fg: #f4f4f5;          /* Zinc 100 */
-      --accent: #10b981;      /* Emerald 500 */
+      --accent: #10b981;      /* Emerald 500 (Fallback) */
       --border: #27272a;      /* Zinc 800 */
       --muted: #71717a;       /* Zinc 500 */
-      --hover-color: #34d399; /* Emerald 400 */
+      --hover-color: #34d399; /* Emerald 400 (Fallback) */
       --font-sans: Verdana, Geneva, sans-serif;
     }
 
@@ -85,6 +85,10 @@
       user-select: none;
       align-self: flex-start;
       outline: none;
+      
+      /* Dynamic properties overridden via JS */
+      --item-color: var(--accent);
+      --item-hover: var(--hover-color);
     }
 
     /* Standard state bracket style: [ | name | ] */
@@ -104,21 +108,27 @@
 
     /* Focus and Hover states transition to active hyphens: [- name -] */
     .shortcut-item:hover, .shortcut-item:focus {
-      color: var(--hover-color);
+      color: var(--item-hover);
     }
 
     .shortcut-item:hover::before, .shortcut-item:focus::before {
       content: "[-  ";
-      color: var(--accent);
+      color: var(--item-color);
     }
 
     .shortcut-item:hover::after, .shortcut-item:focus::after {
       content: "  -]";
-      color: var(--accent);
+      color: var(--item-color);
     }
 
     .shortcut-name {
       padding: 0 0.2rem;
+      color: var(--item-color);
+      transition: filter 0.1s ease;
+    }
+
+    .shortcut-item:hover .shortcut-name, .shortcut-item:focus .shortcut-name {
+      filter: brightness(1.2);
     }
 
     /* ----- Footer Status Bar ----- */
@@ -164,6 +174,20 @@
 
     const container = document.getElementById('shortcutContainer');
     const totalItemsSpan = document.getElementById('totalItems');
+
+    // Terminal-friendly color palette (high contrast, readable on dark background)
+    const COLOR_PALETTE = [
+      { main: '#10b981', hover: '#34d399' }, // Emerald
+      { main: '#3b82f6', hover: '#60a5fa' }, // Blue
+      { main: '#f59e0b', hover: '#fbbf24' }, // Amber
+      { main: '#ec4899', hover: '#f472b6' }, // Pink
+      { main: '#8b5cf6', hover: '#a78bfa' }, // Purple
+      { main: '#06b6d4', hover: '#22d3ee' }, // Cyan
+      { main: '#ef4444', hover: '#f87171' }, // Red
+      { main: '#a855f7', hover: '#c084fc' }, // Violet
+      { main: '#f97316', hover: '#fb923c' }, // Orange
+      { main: '#84cc16', hover: '#a3e635' }  // Lime
+    ];
 
     // ---------- Extract folder segment ----------
     function getFolderFromPath(filePath) {
@@ -257,6 +281,11 @@
           anchor.className = 'shortcut-item';
           anchor.href = item.path;
           anchor.setAttribute('aria-label', `Launch ${item.displayName}`);
+
+          // Assign a random color configuration from the palette
+          const randomColor = COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)];
+          anchor.style.setProperty('--item-color', randomColor.main);
+          anchor.style.setProperty('--item-hover', randomColor.hover);
 
           const nameSpan = document.createElement('span');
           nameSpan.className = 'shortcut-name';
