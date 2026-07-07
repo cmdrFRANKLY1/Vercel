@@ -119,13 +119,9 @@
                     <div class="status-tooltip absolute left-1/2 top-full mt-3 w-48 bg-[#09090b] border border-neutral-800/90 text-neutral-300 p-2.5 rounded shadow-2xl z-50 pointer-events-none">
                         <div class="text-neutral-500 font-bold text-[7.5px] tracking-widest uppercase mb-0.5 text-center">Escape From Tarkov</div>
                         <div class="text-white border-b border-neutral-800/60 pb-1 mb-1.5 font-bold text-[9px] tracking-wider uppercase text-center">Game Status: <span id="status-game-desc" class="text-neutral-400 font-bold">Checking...</span></div>
-                        <div class="flex justify-between mt-1 text-[8.5px]">
-                            <span class="text-neutral-500">Matchmaking:</span>
+                        <div class="flex justify-between mt-1 text-[10px] text-neutral-500">
+                            <span>Matchmaking:</span>
                             <span id="status-game-ping" class="text-neutral-400">-- ms</span>
-                        </div>
-                        <div class="flex justify-between mt-0.5 text-[8.5px]">
-                            <span class="text-neutral-500">Load Factor:</span>
-                            <span class="text-neutral-400">Optimal</span>
                         </div>
                     </div>
                 </div>
@@ -202,14 +198,14 @@
                     />
                 </button>
 
-                <!-- Character Panel (Google Account Style Floating Card) -->
-                <div id="character-card" class="hidden absolute right-0 mt-3 w-80 sm:w-[440px] bg-[#09090b] border border-neutral-800/90 rounded-lg p-5 shadow-2xl z-50 flex flex-col transition-all">
+                <!-- Character Panel (Google Account Style Floating Card) - Highly Readable -->
+                <div id="character-card" class="hidden absolute right-0 mt-3 w-80 sm:w-[440px] bg-[#09090b] border border-neutral-800/90 rounded-lg p-6 shadow-2xl z-50 flex flex-col transition-all text-left">
                     
                     <div class="space-y-4">
                         <!-- Name & Profession -->
                         <div>
                             <h2 id="char-name" class="text-xl font-bold text-white tracking-wide">Initializing...</h2>
-                            <p id="char-title" class="text-xs text-neutral-500 font-mono mt-0.5 uppercase tracking-wider">Acquiring files...</p>
+                            <p id="char-title" class="text-xs text-neutral-400 font-mono mt-0.5 uppercase tracking-wider">Acquiring files...</p>
                         </div>
 
                         <!-- Attributes Lineup -->
@@ -218,9 +214,9 @@
                         </div>
 
                         <!-- Biography paragraph -->
-                        <div class="space-y-1.5 mt-2">
-                            <h4 class="text-[9px] text-neutral-600 uppercase tracking-widest font-mono select-none">Biographical Logs</h4>
-                            <p id="char-bio" class="text-xs text-neutral-400 leading-relaxed font-mono">
+                        <div class="space-y-2 mt-2">
+                            <h4 class="text-[9px] text-neutral-500 uppercase tracking-widest font-mono select-none font-semibold">Biographical Logs</h4>
+                            <p id="char-bio" class="text-xs text-neutral-300 leading-relaxed font-mono bg-neutral-950/40 border border-neutral-900/60 p-3 rounded">
                                 Loading bio profile...
                             </p>
                         </div>
@@ -584,20 +580,35 @@
                 const mapsData = result.data?.maps || [];
 
                 // Normalize all different API objects into a unified, search-optimized structure
-                const normalizedItems = itemsData.map(item => ({
-                    id: item.id,
-                    name: item.name,
-                    shortName: item.shortName,
-                    type: 'item',
-                    wikiLink: item.wikiLink,
-                    iconLink: item.iconLink,
-                    tags: [...(item.types || [])],
-                    basePrice: item.basePrice,
-                    width: item.width,
-                    height: item.height,
-                    avg24hPrice: item.avg24hPrice,
-                    lastLowPrice: item.lastLowPrice
-                }));
+                const normalizedItems = itemsData.map(item => {
+                    const itemTags = [...(item.types || [])];
+                    const lowerName = item.name.toLowerCase();
+                    
+                    // Dynamic caliber and specific item tagging extraction
+                    if (itemTags.some(t => t.toLowerCase() === 'ammo') || lowerName.includes('ammo')) {
+                        const calibers = ['9x19', '9x18', '9x21', '9x39', '5.45x39', '5.56x45', '7.62x25', '7.62x39', '7.62x51', '7.62x54', '7.62x54r', '12/70', '20/70', '23x75', '.45 acp', '.300', '.338', '.357', '5.7x28', '4.6x30', '9mm'];
+                        const foundCaliber = calibers.find(c => lowerName.includes(c));
+                        if (foundCaliber) itemTags.push(foundCaliber);
+                    }
+                    
+                    if (lowerName.includes('keycard')) itemTags.push('keycard');
+                    if (itemTags.some(t => t.toLowerCase() === 'keys')) itemTags.push('key');
+
+                    return {
+                        id: item.id,
+                        name: item.name,
+                        shortName: item.shortName,
+                        type: 'item',
+                        wikiLink: item.wikiLink,
+                        iconLink: item.iconLink,
+                        tags: itemTags,
+                        basePrice: item.basePrice,
+                        width: item.width,
+                        height: item.height,
+                        avg24hPrice: item.avg24hPrice,
+                        lastLowPrice: item.lastLowPrice
+                    };
+                });
 
                 const normalizedTraders = tradersData.map(trader => ({
                     id: trader.id,
@@ -700,28 +711,32 @@
                 if (!tags) return '';
                 // Assemble basic type tags together with custom attributes
                 const renderableTags = [...new Set([...tags])];
-                return renderableTags.slice(0, 3).map(tag => {
-                    let styleClass = 'border-neutral-800/80 text-neutral-400 bg-neutral-900/10'; // default neutral
+                return renderableTags.slice(0, 4).map(tag => {
+                    let styleClass = 'border-neutral-700 text-neutral-300 bg-neutral-800/40'; // default neutral
                     
                     const cleanTag = tag.toLowerCase().trim();
                     if (cleanTag === 'quest' || cleanTag === 'task') {
-                        styleClass = 'border-sky-950/80 text-sky-400/90 bg-sky-950/10';
+                        styleClass = 'border-sky-700/80 text-sky-300 bg-sky-900/30';
                     } else if (cleanTag === 'trader' || cleanTag.startsWith('trader:')) {
-                        styleClass = 'border-zinc-800 text-zinc-300 bg-zinc-900/15';
+                        styleClass = 'border-zinc-600 text-zinc-200 bg-zinc-800/50';
                     } else if (cleanTag === 'map') {
-                        styleClass = 'border-emerald-950/80 text-emerald-400/90 bg-emerald-950/10';
-                    } else if (cleanTag.includes('ammo') || cleanTag.includes('bullet') || cleanTag.includes('caliber')) {
-                        styleClass = 'border-amber-950/80 text-amber-400/90 bg-amber-950/10';
-                    } else if (cleanTag === 'keys' || cleanTag === 'keycard') {
-                        styleClass = 'border-purple-950/80 text-purple-400/90 bg-purple-950/10';
+                        styleClass = 'border-emerald-700/80 text-emerald-300 bg-emerald-900/30';
+                    } else if (cleanTag === 'ammo' || cleanTag.match(/\d+x\d+/) || cleanTag.includes('.')) {
+                        styleClass = 'border-amber-700/80 text-amber-300 bg-amber-900/30';
+                    } else if (cleanTag === 'keys' || cleanTag === 'keycard' || cleanTag === 'key') {
+                        styleClass = 'border-purple-700/80 text-purple-300 bg-purple-900/30';
                     } else if (cleanTag === 'armor' || cleanTag === 'helmet' || cleanTag === 'rig') {
-                        styleClass = 'border-rose-950/80 text-rose-400/90 bg-rose-950/10';
+                        styleClass = 'border-rose-700/80 text-rose-300 bg-rose-900/30';
                     } else if (cleanTag === 'medical' || cleanTag === 'meds') {
-                        styleClass = 'border-teal-950/80 text-teal-400/90 bg-teal-950/10';
+                        styleClass = 'border-teal-700/80 text-teal-300 bg-teal-900/30';
+                    } else if (cleanTag === 'gun' || cleanTag === 'weapon') {
+                        styleClass = 'border-orange-700/80 text-orange-300 bg-orange-900/30';
+                    } else if (cleanTag === 'barter') {
+                        styleClass = 'border-stone-600 text-stone-300 bg-stone-800/40';
                     }
                     
                     const displayTag = tag.includes(':') ? tag.split(':')[1] : tag;
-                    return `<span class="px-1.5 py-0.5 rounded border text-[8px] tracking-wide font-mono uppercase truncate ${styleClass}">${displayTag}</span>`;
+                    return `<span class="px-2 py-0.5 rounded border text-[9px] tracking-wide font-mono uppercase shadow-sm ${styleClass}">${displayTag}</span>`;
                 }).join('');
             };
 
@@ -737,99 +752,99 @@
                     const pvpPrice = isBanned ? 'BANNED' : (pvpRawVal ? new Intl.NumberFormat().format(pvpRawVal) + ' ₽' : 'N/A');
                     
                     detailsHtml = `
-                        <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] leading-relaxed pt-2.5 border-t border-neutral-900/40">
+                        <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs leading-relaxed pt-3 border-t border-neutral-800/80">
                             <div>
-                                <span class="text-neutral-500 block uppercase text-[8px] font-bold select-none mb-0.5">Base Value</span>
+                                <span class="text-neutral-500 block uppercase text-[10px] font-bold select-none mb-0.5">Base Value</span>
                                 <span class="text-neutral-200 font-medium">${formattedBasePrice}</span>
                             </div>
                             <div>
-                                <span class="text-neutral-500 block uppercase text-[8px] font-bold select-none mb-0.5">Grid Size</span>
+                                <span class="text-neutral-500 block uppercase text-[10px] font-bold select-none mb-0.5">Grid Size</span>
                                 <span class="text-neutral-200 font-medium">${item.width} × ${item.height}</span>
                             </div>
                             <div class="col-span-2">
-                                <span class="text-neutral-500 block uppercase text-[8px] font-bold select-none mb-0.5">Flea Price</span>
-                                <span class="${isBanned ? 'text-red-500/80 font-bold' : 'text-neutral-200 font-medium'}">${pvpPrice}</span>
+                                <span class="text-neutral-500 block uppercase text-[10px] font-bold select-none mb-0.5">Flea Price</span>
+                                <span class="${isBanned ? 'text-red-400 font-bold' : 'text-green-400 font-medium'}">${pvpPrice}</span>
                             </div>
                         </div>
                     `;
                     imageSection = `
-                        <div class="w-10 h-8 shrink-0 bg-neutral-950/40 border border-neutral-900 rounded p-0.5 flex items-center justify-center">
+                        <div class="w-12 h-12 shrink-0 bg-[#050505] border border-neutral-800 rounded p-1 flex items-center justify-center shadow-inner">
                             <img src="${item.iconLink || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23333%22 stroke-width=%222%22%3E%3Crect x=%223%22 y=%223%22 width=%2218%22 height=%2218%22 rx=%222%22/%3E%3C/svg%3E'}" 
                                  alt="${item.shortName}" 
-                                 class="max-w-full max-h-full object-contain filter brightness-90 hover:brightness-110 transition-all"
+                                 class="max-w-full max-h-full object-contain drop-shadow-md transition-all hover:scale-110"
                                  onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23333%22 stroke-width=%222%22%3E%3Crect x=%223%22 y=%223%22 width=%2218%22 height=%2218%22 rx=%222%22/%3E%3C/svg%3E'"/>
                         </div>
                     `;
                 } else if (item.type === 'trader') {
                     detailsHtml = `
-                        <div class="space-y-1 text-[10px] leading-relaxed pt-2.5 border-t border-neutral-900/40">
+                        <div class="space-y-1.5 text-xs leading-relaxed pt-3 border-t border-neutral-800/80">
                             <div class="flex justify-between">
-                                <span class="text-neutral-500 uppercase text-[8px] font-bold">Alliance:</span>
+                                <span class="text-neutral-500 uppercase text-[10px] font-bold">Alliance:</span>
                                 <span class="text-neutral-200 font-medium">Local Merchant</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-neutral-500 uppercase text-[8px] font-bold">Fidelity:</span>
+                                <span class="text-neutral-500 uppercase text-[10px] font-bold">Fidelity:</span>
                                 <span class="text-neutral-200 font-medium">Active Duty</span>
                             </div>
                         </div>
                     `;
                     imageSection = `
-                        <div class="w-10 h-8 shrink-0 bg-neutral-950/40 border border-neutral-900 rounded p-0.5 flex items-center justify-center overflow-hidden">
+                        <div class="w-12 h-12 shrink-0 bg-[#050505] border border-neutral-800 rounded p-1 flex items-center justify-center overflow-hidden shadow-inner">
                             <img src="${item.iconLink}" 
                                  alt="${item.name}" 
-                                 class="max-w-full max-h-full object-cover filter grayscale brightness-90 hover:grayscale-0 hover:brightness-100 transition-all"
+                                 class="max-w-full max-h-full object-cover filter grayscale brightness-90 hover:grayscale-0 hover:brightness-100 transition-all drop-shadow-md hover:scale-110"
                                  onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23333%22 stroke-width=%222%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%2210%22/%3E%3C/svg%3E'"/>
                         </div>
                     `;
                 } else if (item.type === 'quest') {
                     detailsHtml = `
-                        <div class="space-y-1 text-[10px] leading-relaxed pt-2.5 border-t border-neutral-900/40">
+                        <div class="space-y-1.5 text-xs leading-relaxed pt-3 border-t border-neutral-800/80">
                             <div class="flex justify-between">
-                                <span class="text-neutral-500 uppercase text-[8px] font-bold">Assignee:</span>
+                                <span class="text-neutral-500 uppercase text-[10px] font-bold">Assignee:</span>
                                 <span class="text-neutral-200 font-medium">${item.traderName}</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-neutral-500 uppercase text-[8px] font-bold">Min Level:</span>
+                                <span class="text-neutral-500 uppercase text-[10px] font-bold">Min Level:</span>
                                 <span class="text-neutral-200 font-medium">${item.minPlayerLevel || '1'}</span>
                             </div>
                         </div>
                     `;
                     imageSection = `
-                        <div class="w-10 h-8 shrink-0 bg-neutral-950/40 border border-neutral-900 rounded p-0.5 flex items-center justify-center">
-                            <span class="text-[14px]">⚔️</span>
+                        <div class="w-12 h-12 shrink-0 bg-neutral-900/40 border border-neutral-800 rounded p-1 flex items-center justify-center shadow-inner">
+                            <span class="text-[20px] drop-shadow-md">⚔️</span>
                         </div>
                     `;
                 } else if (item.type === 'map') {
                     detailsHtml = `
-                        <div class="space-y-1 text-[10px] leading-relaxed pt-2.5 border-t border-neutral-900/40">
+                        <div class="space-y-1.5 text-xs leading-relaxed pt-3 border-t border-neutral-800/80">
                             <div class="flex justify-between">
-                                <span class="text-neutral-500 uppercase text-[8px] font-bold">Tactical Area:</span>
+                                <span class="text-neutral-500 uppercase text-[10px] font-bold">Tactical Area:</span>
                                 <span class="text-neutral-200 font-medium">Map Deployment</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-neutral-500 uppercase text-[8px] font-bold">Wiki Link:</span>
-                                <span class="text-emerald-400/80 truncate max-w-[100px] font-medium">Wiki Portal</span>
+                                <span class="text-neutral-500 uppercase text-[10px] font-bold">Wiki Link:</span>
+                                <span class="text-emerald-400/80 truncate max-w-[100px] font-medium hover:text-emerald-300">Wiki Portal</span>
                             </div>
                         </div>
                     `;
                     imageSection = `
-                        <div class="w-10 h-8 shrink-0 bg-neutral-950/40 border border-neutral-900 rounded p-0.5 flex items-center justify-center">
-                            <span class="text-[14px]">🗺️</span>
+                        <div class="w-12 h-12 shrink-0 bg-neutral-900/40 border border-neutral-800 rounded p-1 flex items-center justify-center shadow-inner">
+                            <span class="text-[20px] drop-shadow-md">🗺️</span>
                         </div>
                     `;
                 }
 
                 return `
-                    <div class="bg-[#09090b]/60 border border-neutral-800/80 hover:border-neutral-700 rounded p-3.5 flex flex-col justify-between transition-all duration-300 font-verdana shadow-lg w-full text-xs text-left">
-                        <div class="space-y-2.5">
+                    <div class="bg-[#09090b] border border-neutral-800 hover:border-neutral-600 rounded-md p-4 flex flex-col justify-between transition-all duration-200 font-verdana shadow-lg w-full text-sm text-left relative overflow-hidden group">
+                        <div class="space-y-3">
                             <div class="flex items-start justify-between gap-3">
                                 <div class="flex-1 min-w-0">
-                                    <h3 class="text-xs font-bold text-white tracking-normal leading-snug line-clamp-2">
-                                        <a href="${item.wikiLink || '#'}" target="_blank" class="hover:underline hover:text-neutral-200 decoration-neutral-600 transition-colors">
+                                    <h3 class="text-sm font-bold text-neutral-100 tracking-normal leading-snug line-clamp-2 pr-2">
+                                        <a href="${item.wikiLink || '#'}" target="_blank" class="hover:text-white transition-colors">
                                             ${item.name}
                                         </a>
                                     </h3>
-                                    <div class="flex flex-wrap gap-1 mt-1.5">
+                                    <div class="flex flex-wrap gap-1.5 mt-2">
                                         ${tagsHtml}
                                     </div>
                                 </div>
@@ -1046,13 +1061,13 @@
                 charAttributes.appendChild(statDiv);
             });
 
-            // Build dynamic Biography (Combining fields)
-            const rep = getRandomElement(data.biographies.reputation) || "An adventurer,";
+            // Build dynamic Biography (Combining fields from rndBiography.json)
+            const rep = getRandomElement(data.biographies.reputation) || "An adventurer of great renown,";
             const bg = getRandomElement(data.biographies.background) || "trained under mysterious circumstances,";
-            const rumor = getRandomElement(data.biographies.rumor) || "said to seek ancient treasures.";
-            const secret = getRandomElement(data.biographies.secret) || "They carry a hidden keepsake.";
+            const motivation = getRandomElement(data.biographies.motivation) || "seeking ancient mysteries.";
+            const secret = getRandomElement(data.biographies.secrets) || "They carry a hidden keepsake.";
 
-            charBio.textContent = `${rep} ${bg} ${rumor} ${secret}`;
+            charBio.textContent = `${rep} ${bg} ${motivation} ${secret}`;
         }
 
         // ─── Random profile picture ──────────────────────────────
