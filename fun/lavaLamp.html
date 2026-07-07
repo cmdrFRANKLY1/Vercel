@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>lavalamp · min 5s fade · +30% speed</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #0b0b0b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Verdana', 'Geneva', sans-serif;
+            overflow: hidden;
+        }
+
+        #canvas-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+        }
+
+        #bg-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* ── Back Button (Top Left) ── */
+        .back-btn {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            z-index: 20;
+            background: rgba(11, 11, 11, 0.55);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 40px;
+            padding: 0.5rem 1.2rem;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.4);
+            text-decoration: none;
+            font-family: 'Verdana', 'Geneva', sans-serif;
+            transition: all 0.3s ease;
+            letter-spacing: 0.04em;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .back-btn:hover {
+            color: rgba(255, 255, 255, 0.8);
+            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(11, 11, 11, 0.8);
+        }
+
+        /* ── Info Overlay (Top Center) ── */
+        .info-overlay {
+            position: fixed;
+            top: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(11, 11, 11, 0.55);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 60px;
+            padding: 0.6rem 1.6rem;
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.25);
+            letter-spacing: 0.06em;
+            user-select: none;
+            pointer-events: none;
+            transition: opacity 1.5s ease;
+            white-space: nowrap;
+        }
+
+        .info-overlay span {
+            color: rgba(255, 255, 255, 0.45);
+        }
+
+        .info-overlay .dot {
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            margin: 0 0.2rem;
+        }
+
+        .seed-badge {
+            font-family: 'Courier New', monospace;
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 0.6rem;
+        }
+
+        @media (max-width: 600px) {
+            .info-overlay {
+                padding: 0.4rem 1rem;
+                gap: 0.6rem;
+                font-size: 0.55rem;
+                top: 1rem;
+                border-radius: 30px;
+                max-width: 90vw;
+                white-space: normal;
+            }
+            .back-btn {
+                top: 1rem;
+                left: 1rem;
+                padding: 0.4rem 0.9rem;
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Left: Back Button -->
+    <a href="/" class="back-btn" aria-label="Back to Index">← Back</a>
+
+    <!-- Top Center: Info Overlay -->
+    <div class="info-overlay" id="info-overlay">
+        <span>✦</span>
+        <span id="shape-count-label">0 active</span>
+        <span class="dot"></span>
+        <span id="palette-label">⚡</span>
+        <span class="dot"></span>
+        <span class="seed-badge" id="seed-label">min 5s · +30%</span>
+    </div>
+
+    <!-- Canvas -->
+    <div id="canvas-wrapper">
+        <canvas id="bg-canvas"></canvas>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 1. Canvas Setup
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            const canvas = document.getElementById('bg-canvas');
+            const ctx = canvas.getContext('2d');
+
+            let W = 0,
+                H = 0;
+
+            function resizeCanvas() {
+                W = window.innerWidth;
+                H = window.innerHeight;
+                canvas.width = W;
+                canvas.height = H;
+            }
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 2. Random Helpers
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            function rand(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            function randInt(min, max) {
+                return Math.floor(rand(min, max + 1));
+            }
+
+            function pick(arr) {
+                return arr[Math.floor(Math.random() * arr.length)];
+            }
+
+            function randomHsl() {
+                return {
+                    h: rand(0, 360),
+                    s: rand(70, 100),
+                    l: rand(45, 75)
+                };
+            }
+
+            function hslToString(h, s, l) {
+                return `hsl(${h}, ${s}%, ${l}%)`;
+            }
+
+            function lerp(a, b, t) {
+                return a + (b - a) * t;
+            }
+
+            function lerpHsl(hslA, hslB, t) {
+                let hDiff = hslB.h - hslA.h;
+                if (hDiff > 180) hDiff -= 360;
+                if (hDiff < -180) hDiff += 360;
+                return {
+                    h: hslA.h + hDiff * t,
+                    s: lerp(hslA.s, hslB.s, t),
+                    l: lerp(hslA.l, hslB.l, t)
+                };
+            }
+
+            function easeInOutCubic(t) {
+                return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            }
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 3. Shape Definitions (drawing functions)
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            const SHAPE_TYPES = [
+                'circle', 'square', 'triangle', 'pentagon', 'hexagon',
+                'star', 'diamond', 'blob', 'cross', 'ring', 'semicircle'
+            ];
+
+            function drawCircle(ctx, x, y, size, rot, color, opacity, glow) {
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                if (glow && glow.blur > 0) {
+                    ctx.shadowColor = glow.color;
+                    ctx.shadowBlur = glow.blur;
+                }
+                ctx.translate(x, y);
+                ctx.rotate(rot);
+                ctx.beginPath();
+                ctx.arc(0, 0, size, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function drawSquare(ctx, x, y, size, rot, color, opacity, glow) {
+                const half = size * 0.7;
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                if (glow && glow.blur > 0) {
+                    ctx.shadowColor = glow.color;
+                    ctx.shadowBlur = glow.blur;
+                }
+                ctx.translate(x, y);
+                ctx.rotate(rot);
+                ctx.fillStyle = color;
+                ctx.fillRect(-half, -half, half * 2, half * 2);
+                ctx.restore();
+            }
+
+            function drawTriangle(ctx, x, y, size, rot, color, opacity, glow) {
+                const r = size * 1.0;
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                if (glow && glow.blur > 0) {
+                    ctx.shadowColor = glow.color;
+                    ctx.shadowBlur = glow.blur;
+                }
+                ctx.translate(x, y);
+                ctx.rotate(rot);
+                ctx.beginPath();
+                for (let i = 0; i < 3; i++) {
+                    const angle = (i / 3) * Math.PI * 2 - Math.PI / 2;
+                    const px = Math.cos(angle) * r;
+                    const py = Math.sin(angle) * r;
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function drawPentagon(ctx, x, y, size, rot, color, opacity, glow) {
+                const sides = 5;
+                const r = size * 0.9;
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                if (glow && glow.blur > 0) {
+                    ctx.shadowColor = glow.color;
+                    ctx.shadowBlur = glow.blur;
+                }
+                ctx.translate(x, y);
+                ctx.rotate(rot);
+                ctx.beginPath();
+                for (let i = 0; i < sides; i++) {
+                    const angle = (i / sides) * Math.PI * 2 - Math.PI / 2;
+                    const px = Math.cos(angle) * r;
+                    const py = Math.sin(angle) * r;
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function drawHexagon(ctx, x, y, size, rot, color, opacity, glow) {
+                const sides = 6;
+                const r = size * 0.85;
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                if (glow && glow.blur > 0) {
+                    ctx.shadowColor = glow.color;
+                    ctx.shadowBlur = glow.blur;
+                }
+                ctx.translate(x, y);
+                ctx.rotate(rot);
+                ctx.beginPath();
+                for (let i = 0; i < sides; i++) {
+                    const angle = (i / sides) * Math.PI * 2 - Math.PI / 2;
+                    const px = Math.cos(angle) * r;
+                    const py = Math.sin(angle) * r;
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function drawStar(ctx, x, y, size, rot, color, opacity, glow) {
+                const points = 5;
+                const outerR = size * 0.9;
+                const innerR = size * 0.4;
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                if (glow && glow.blur > 0) {
+                    ctx.shadowColor = glow.color;
+                    ctx.shadowBlur = glow.blur;
+                }
+                ctx.translate(x, y);
+                ctx.rotate(rot);
+                ctx.beginPath();
+                for (let i = 0; i < points * 2; i++) {
+                    const radius = i % 2 === 0 ? outerR : innerR;
+                    const angle = (i / (points * 2)) * Math.PI * 2 - Math.PI / 2;
+                    const px = Math.cos(angle) * radius;
+                    const py = Math.sin(angle) * radius;
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function drawDiamond(ctx, x, y, size, rot, color, opacity, glow) {
+                const r = size * 0.8;
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                if (glow && glow.blur > 0) {
+                    ctx.shadowColor = glow.color;
+                    ctx.shadowBlur = glow.blur;
+                }
+                ctx.translate(x, y);
+                ctx.rotate(rot);
+                ctx.beginPath();
+                ctx.moveTo(0, -r);
+                ctx.lineTo(r, 0);
+                ctx.lineTo(0, r);
+                ctx.lineTo(-r, 0);
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function drawBlob(ctx, x, y, size, rot, color, opacity, glow) {
+                const points = 8;
+                const r = size * 0.85;
+                const offsets = [];
+                for (let i = 0; i < points; i++) {
+                    offsets.push(rand(0.65, 1.2));
+                }
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                if (glow && glow.blur > 0) {
+                    ctx.shadowColor = glow.color;
+                    ctx.shadowBlur = glow.blur;
+                }
+                ctx.translate(x, y);
+                ctx.rotate(rot);
+                ctx.beginPath();
+                for (let i = 0; i < points; i++) {
+                    const angle = (i / points) * Math.PI * 2 - Math.PI / 2;
+                    const radius = r * offsets[i];
+                    const px = Math.cos(angle) * radius;
+                    const py = Math.sin(angle) * radius;
+                    if (i === 0) ctx.moveTo(px, py);
+                    else {
+                        const prevAngle = ((i - 1) / points) * Math.PI * 2 - Math.PI / 2;
+                        const cpR = r * (offsets[i - 1] + offsets[i]) / 2 * 0.9;
+                        const cpx = Math.cos((prevAngle + angle) / 2) * cpR;
+                        const cpy = Math.sin((prevAngle + angle) / 2) * cpR;
+                        ctx.quadraticCurveTo(cpx, cpy, px, py);
+                    }
+                }
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function drawCross(ctx, x, y, size, rot, color, opacity, glow) {
+                const w = size * 0.35;
+                const h = size * 0.9;
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                if (glow && glow.blur > 0) {
+                    ctx.shadowColor = glow.color;
+                    ctx.shadowBlur = glow.blur;
+                }
+                ctx.translate(x, y);
+                ctx.rotate(rot);
+                ctx.fillStyle = color;
+                ctx.fillRect(-w / 2, -h, w, h * 2);
+                ctx.fillRect(-h, -w / 2, h * 2, w);
+                ctx.restore();
+            }
+
+            function drawRing(ctx, x, y, size, rot, color, opacity, glow) {
+                const r = size * 0.75;
+                const innerR = r * 0.5;
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                if (glow && glow.blur > 0) {
+                    ctx.shadowColor = glow.color;
+                    ctx.shadowBlur = glow.blur;
+                }
+                ctx.translate(x, y);
+                ctx.rotate(rot);
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 2);
+                ctx.arc(0, 0, innerR, 0, Math.PI * 2, true);
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function drawSemicircle(ctx, x, y, size, rot, color, opacity, glow) {
+                const r = size * 0.85;
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                if (glow && glow.blur > 0) {
+                    ctx.shadowColor = glow.color;
+                    ctx.shadowBlur = glow.blur;
+                }
+                ctx.translate(x, y);
+                ctx.rotate(rot);
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI);
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            const SHAPE_DRAWERS = {
+                circle: drawCircle,
+                square: drawSquare,
+                triangle: drawTriangle,
+                pentagon: drawPentagon,
+                hexagon: drawHexagon,
+                star: drawStar,
+                diamond: drawDiamond,
+                blob: drawBlob,
+                cross: drawCross,
+                ring: drawRing,
+                semicircle: drawSemicircle
+            };
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 4. Lava Shape – min 5s fade · 30% faster drift
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            class LavaShape {
+                constructor() {
+                    this.type = pick(SHAPE_TYPES);
+
+                    // ── Current State ──
+                    this.x = rand(50, W - 50);
+                    this.y = rand(50, H - 50);
+                    this.size = rand(30, Math.min(W, H) * 0.28);
+                    this.rot = rand(0, Math.PI * 2);
+                    this.hsl = randomHsl();
+                    this.glow = rand(0, 25);
+
+                    // ── Target State ──
+                    this.setNewTarget();
+
+                    // ── Morphing Timer (30% faster: 14–31 seconds instead of 18–40) ──
+                    this.morphDuration = rand(14000, 31000);
+                    this.morphStart = performance.now();
+
+                    // ── Fade Lifecycle ──
+                    this.lifespan = rand(25000, 55000);
+                    this.birthTime = performance.now();
+
+                    // ★ FIX: Minimum fade-in is ALWAYS 5 seconds ★
+                    this.fadeInDuration = Math.max(5000, this.lifespan * rand(0.08, 0.18));
+                    this.fadeOutDuration = this.lifespan * rand(0.10, 0.20);
+
+                    this.dead = false;
+                }
+
+                setNewTarget() {
+                    const angle = rand(0, Math.PI * 2);
+                    const distance = rand(30, Math.min(W, H) * 0.22);
+                    this.targetX = Math.min(W - 50, Math.max(50, this.x + Math.cos(angle) * distance));
+                    this.targetY = Math.min(H - 50, Math.max(50, this.y + Math.sin(angle) * distance));
+                    this.targetSize = rand(30, Math.min(W, H) * 0.35);
+                    this.targetRot = rand(0, Math.PI * 6);
+                    this.targetHsl = randomHsl();
+                    this.targetGlow = rand(0, 50);
+                }
+
+                draw(ctx, now) {
+                    const age = now - this.birthTime;
+                    if (age > this.lifespan) {
+                        this.dead = true;
+                        return;
+                    }
+
+                    // Fade opacity
+                    let fadeOpacity = 1.0;
+                    if (age < this.fadeInDuration) {
+                        fadeOpacity = age / this.fadeInDuration;
+                    } else if (age > this.lifespan - this.fadeOutDuration) {
+                        fadeOpacity = (this.lifespan - age) / this.fadeOutDuration;
+                    }
+                    fadeOpacity = Math.max(0, Math.min(1, fadeOpacity));
+
+                    // Morph progress
+                    let morphProgress = (now - this.morphStart) / this.morphDuration;
+                    if (morphProgress >= 1.0) {
+                        this.x = this.targetX;
+                        this.y = this.targetY;
+                        this.size = this.targetSize;
+                        this.rot = this.targetRot;
+                        this.hsl = this.targetHsl;
+                        this.glow = this.targetGlow;
+
+                        this.setNewTarget();
+                        this.morphStart = now;
+                        morphProgress = 0;
+                    }
+                    const easedProgress = easeInOutCubic(morphProgress);
+
+                    // Interpolate
+                    const x = lerp(this.x, this.targetX, easedProgress);
+                    const y = lerp(this.y, this.targetY, easedProgress);
+                    const size = lerp(this.size, this.targetSize, easedProgress);
+                    const rot = lerp(this.rot, this.targetRot, easedProgress);
+                    const hsl = lerpHsl(this.hsl, this.targetHsl, easedProgress);
+                    const glow = lerp(this.glow, this.targetGlow, easedProgress);
+
+                    const finalOpacity = fadeOpacity * 0.9;
+                    if (finalOpacity < 0.01) return;
+
+                    const color = hslToString(hsl.h, hsl.s, hsl.l);
+                    const glowColor = hslToString(hsl.h, Math.min(hsl.s + 10, 100), Math.min(hsl.l + 15, 90));
+
+                    const drawer = SHAPE_DRAWERS[this.type];
+                    if (drawer) {
+                        drawer(ctx, x, y, size, rot, color, finalOpacity, { blur: glow, color: glowColor });
+                    }
+                }
+            }
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 5. Main Loop (strictly 2-4 shapes)
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            const MIN_SHAPES = 2;
+            const MAX_SHAPES = 4;
+
+            let shapes = [];
+            let lastSpawnTime = 0;
+            const baseBgColor = 'hsl(240, 15%, 3%)';
+
+            function spawnShape() {
+                if (shapes.length < MAX_SHAPES) {
+                    shapes.push(new LavaShape());
+                }
+            }
+
+            function mainLoop(now) {
+                ctx.clearRect(0, 0, W, H);
+                ctx.fillStyle = baseBgColor;
+                ctx.fillRect(0, 0, W, H);
+
+                shapes = shapes.filter(s => !s.dead);
+
+                // Keep between 2 and 4 shapes
+                if (shapes.length < MIN_SHAPES) {
+                    if (now - lastSpawnTime > 500) {
+                        spawnShape();
+                        lastSpawnTime = now;
+                    }
+                } else if (shapes.length < MAX_SHAPES) {
+                    const spawnDelay = Math.max(800, 3000 - (shapes.length / MAX_SHAPES) * 2200);
+                    if (now - lastSpawnTime > rand(spawnDelay * 0.6, spawnDelay * 1.4)) {
+                        const count = Math.min(randInt(1, 2), MAX_SHAPES - shapes.length);
+                        for (let i = 0; i < count; i++) {
+                            spawnShape();
+                        }
+                        lastSpawnTime = now;
+                    }
+                }
+
+                shapes.forEach(s => s.draw(ctx, now));
+
+                document.getElementById('shape-count-label').textContent = `${shapes.length} active`;
+
+                requestAnimationFrame(mainLoop);
+            }
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 6. Reset / Regenerate
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            function resetScene() {
+                shapes = [];
+                lastSpawnTime = 0;
+                // Start with 3 shapes (all get the 5s minimum fade)
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(spawnShape, i * 500);
+                }
+            }
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 7. Events
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.info-overlay') || e.target.closest('.back-btn')) return;
+                resetScene();
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'r' || e.key === 'R' || e.key === ' ') {
+                    e.preventDefault();
+                    resetScene();
+                }
+            });
+
+            let resizeTimeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    resizeCanvas();
+                    resetScene();
+                }, 200);
+            });
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 8. Init
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            resizeCanvas();
+            resetScene();
+            requestAnimationFrame(mainLoop);
+
+            window.__lavaLamp = { reset: resetScene };
+        })();
+    </script>
+
+</body>
+</html>
