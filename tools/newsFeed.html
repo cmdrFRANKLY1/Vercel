@@ -150,17 +150,17 @@
                 <input id="rss-search" type="text" placeholder="FILTER HEADLINES..." oninput="filterAllFeeds()" class="bg-[#050505] text-[10px] font-mono border border-[#18181b] focus:border-neutral-500 rounded px-2.5 py-1 w-44 text-white focus:outline-none placeholder-neutral-700">
             </div>
 
-            <!-- Ingestion Speed Control -->
+            <!-- Ingestion Speed Control: default updated to 30.0s (30000ms) with matching maximum boundary -->
             <div class="flex items-center gap-2 bg-[#050505] px-2 py-1 border border-[#18181b] rounded">
                 <span class="text-[9px] text-neutral-500">INGESTION INTERVAL</span>
-                <input id="speed-slider" type="range" min="1000" max="8000" value="3000" step="500" class="w-16 h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-neutral-500">
-                <span id="speed-label" class="text-[10px] font-bold text-neutral-400 min-w-[32px]">3.0s</span>
+                <input id="speed-slider" type="range" min="1000" max="30000" value="30000" step="1000" class="w-16 h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-neutral-500">
+                <span id="speed-label" class="text-[10px] font-bold text-neutral-400 min-w-[32px]">30.0s</span>
             </div>
 
-            <!-- Sound toggle -->
+            <!-- Sound toggle: default updated to Muted (OFF) status indicators -->
             <button id="sound-btn" onclick="toggleMute()" class="flex items-center gap-1 bg-neutral-900/50 hover:bg-neutral-900 text-neutral-500 hover:text-neutral-200 px-2.5 py-1 border border-panelborder transition text-[10px] rounded">
-                <span id="sound-icon">🔊</span>
-                <span id="sound-status">AUDIO ON</span>
+                <span id="sound-icon">🔇</span>
+                <span id="sound-status">AUDIO OFF</span>
             </button>
 
             <!-- Live Clock -->
@@ -290,18 +290,22 @@
                 <button onclick="closeReader()" class="text-neutral-500 hover:text-white font-bold text-xs">[ ESC ]</button>
             </div>
             
-            <div class="space-y-2 text-xs text-neutral-400 leading-relaxed max-h-60 overflow-y-auto">
-                <div class="text-[9px] text-neutral-600 font-bold flex justify-between">
-                    <span id="modal-author">AUTHOR: SYSTEM SECURE DAEMON</span>
-                    <span id="modal-date">PUBLISHED: --:--:--</span>
+            <div class="space-y-2 text-xs text-neutral-400 leading-relaxed max-h-60 overflow-y-auto font-mono">
+                <div class="text-[9px] text-neutral-600 font-bold flex flex-wrap justify-between gap-2 border-b border-neutral-900/60 pb-1.5">
+                    <span id="modal-source">SOURCE: --</span>
+                    <span id="modal-author">AUTHOR: --</span>
+                    <span id="modal-readtime">EST. READ: --</span>
+                    <span id="modal-date">PUBLISHED: --</span>
                 </div>
-                <p id="modal-body">
+                <p id="modal-body" class="whitespace-pre-line text-neutral-300">
                     Aggregating content summary payload...
                 </p>
             </div>
 
             <div class="border-t border-neutral-900 pt-3 flex justify-between items-center text-[10px]">
-                <span class="text-neutral-600">ENCRYPTION: AES-256 SHA-2</span>
+                <a id="modal-external-link" href="#" target="_blank" class="text-cyberblue hover:underline font-bold flex items-center gap-1">
+                    VIEW SOURCE ENDPOINT ↗
+                </a>
                 <button onclick="closeReader()" class="bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-white font-bold px-3 py-1 rounded transition text-[10px]">
                     CLOSE READING PORT
                 </button>
@@ -315,7 +319,7 @@
         //  SOUND CONFIGURATION
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         let audioCtx = null;
-        let isMuted = false;
+        let isMuted = true; // Default sound to MUTED (OFF)
 
         function initAudio() {
             if (!audioCtx) {
@@ -358,7 +362,7 @@
             setTimeout(() => playChirp(220, 'square', 0.15, 0.02), 120);
         }
 
-        // Mute function
+        // Mute toggle function
         function toggleMute() {
             isMuted = !isMuted;
             document.getElementById('sound-icon').textContent = isMuted ? '🔇' : '🔊';
@@ -366,108 +370,135 @@
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  DATABASE OF SIMULATED RSS FEEDS & TEMPLATES
+        //  OFFLINE LOCAL FALLBACK ARTICLES DATABASE (Perfect schema match for newsFeed.json)
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        const HEADLINE_TEMPLATES = {
+        const FALLBACK_DB = {
             tech: [
-                "Silicon wafer yields jump 14% with extreme ultraviolet laser arrays",
-                "Aether Grid launches solar-powered server arrays in orbit",
-                "Neuromorphic architectures breach synapse scaling threshold",
-                "Open-source encryption framework releases post-quantum standard",
-                "Solid-state graphene energy cells transition to micro-scale devices"
+                {
+                    "id": "tech-001",
+                    "title": "Silicon Wafer Yields Jump 14% with Extreme Ultraviolet Laser Arrays",
+                    "source": "TechCrunch",
+                    "author": "Dr. Keith Vance",
+                    "published": "18:42:10",
+                    "snippet": "Recent advancements in ultraviolet laser cooling technology show massive optimization factors. EUV arrays now scale fabrication accuracy inside modern 2nm architectures with 99.8% precision margins.",
+                    "readTime": "3 min",
+                    "url": "https://techcrunch.com"
+                },
+                {
+                    "id": "tech-002",
+                    "title": "Aether Grid Launches Solar-Powered Server Arrays in Low Orbit",
+                    "source": "The Verge",
+                    "author": "Clara Sterling",
+                    "published": "17:15:32",
+                    "snippet": "To completely mitigate land-based energy footprint constraints, Aether Grid launches structural cubesat clusters powered by direct orbital solar energy grids, reducing routing latency factors down by 14ms globally.",
+                    "readTime": "5 min",
+                    "url": "https://www.theverge.com"
+                }
             ],
             computer: [
-                "Linux kernel update pushes multi-threaded storage I/O optimization",
-                "Optical bus pathways replace traditional copper circuit lanes",
-                "Retro-computational restoration reveals custom 8-bit pipeline hack",
-                "Quantum computing simulator operates stably at 1024 virtual qubits",
-                "Micro-architectural cache vulnerabilities resolved via physical zoning"
+                {
+                    "id": "comp-001",
+                    "title": "Linux Kernel Update Pushes Multi-Threaded Storage I/O Optimization",
+                    "source": "Hacker News",
+                    "author": "SysAdmin Core",
+                    "published": "19:02:15",
+                    "snippet": "Patch 7.42.1 resolves fundamental storage scheduler blocks, optimizing background indexing. Storage operations run parallel pipelines at double speed without context-switching costs.",
+                    "readTime": "4 min",
+                    "url": "https://news.ycombinator.com"
+                },
+                {
+                    "id": "comp-002",
+                    "title": "Optical Bus Pathways Replace Traditional Copper Circuit Lanes",
+                    "source": "Toptal Engineering",
+                    "author": "Optics Lab",
+                    "published": "16:44:11",
+                    "snippet": "Routing gigabit metrics directly via micro-LED laser tubes eliminates heat dispersion problems and elevates cache throughput constraints inside multi-socket computing architectures.",
+                    "readTime": "5 min",
+                    "url": "https://www.toptal.com/developers/blog"
+                }
             ],
             gaming: [
-                "Voxel engine achieves infinite procedural generation on mobile chips",
-                "Cozy simulation indie breakout hits 5 million unique active players",
-                "Classic tactical RPG undergoes source-code rebuild for modern accessibility",
-                "Raytraced global illumination runs at high frame rates using neural reconstruction",
-                "Esports championship integrates biometric heart rate telemetry on live broadcasts"
+                {
+                    "id": "game-001",
+                    "title": "Voxel Engine Achieves Infinite Procedural Generation on Mobile Chips",
+                    "source": "Rock Paper Shotgun",
+                    "author": "IndieDev Unit",
+                    "published": "18:22:30",
+                    "snippet": "Combining custom octree indexing structures with localized rendering shaders lets developers project expansive voxel landscapes on lightweight devices without thermal throttling.",
+                    "readTime": "3 min",
+                    "url": "https://www.rockpapershotgun.com"
+                },
+                {
+                    "id": "game-002",
+                    "title": "Cozy Simulation Indie Breakout Hits 5 Million Unique Active Players",
+                    "source": "Eurogamer",
+                    "author": "Game Tracker",
+                    "published": "15:40:12",
+                    "snippet": "Focusing on low-poly hand-painted aesthetics, calming lo-fi soundscapes, and completely non-competitive mechanics, the game captures global attention across diverse age demographics.",
+                    "readTime": "4 min",
+                    "url": "https://www.eurogamer.net"
+                }
             ],
             science: [
-                "Deep-space probe monitors active cryovolcanic eruption on Neptune moon",
-                "Sub-glacial geothermal vents reveal resilient new chemotrophic bacterial strains",
-                "James Webb telescope projects deep-field image of early cluster collision",
-                "Exoplanet atmospheric sweep reveals potential carbon-dense oceans",
-                "Newly unearthed fossil points to early dinosaur social nesting behaviors"
+                {
+                    "id": "sci-001",
+                    "title": "Deep-Space Probe Monitors Active Cryovolcanic Eruption on Neptune's Moon",
+                    "source": "NASA Breaking News",
+                    "author": "Astro Science Core",
+                    "published": "19:40:00",
+                    "snippet": "Telemetry analysis from the deep-probe shows liquid methane and ice particles erupting from geysers under extremely low planetary temperatures, proving deep interior heat vectors exist.",
+                    "readTime": "5 min",
+                    "url": "https://www.nasa.gov"
+                },
+                {
+                    "id": "sci-002",
+                    "title": "Sub-Glacial Geothermal Vents Reveal Resilient Chemotrophic Bacteria",
+                    "source": "Nature",
+                    "author": "Bio Exploration Team",
+                    "published": "16:11:45",
+                    "snippet": "Collecting samples under ice layers identifies life surviving entirely on chemical energy, providing pristine laboratory models of potential life in other Jovian oceans.",
+                    "readTime": "6 min",
+                    "url": "https://www.nature.com"
+                }
             ]
         };
 
-        const SNIPPETS = [
-            "Recent advancements in optimization technology show massive optimization factors. Modern architectures now scale processes with 99.8% precision margins.",
-            "Deploying high-efficiency components inside standard models yields massive capacity improvements. Devices operate at fully nominal bounds with lower offsets.",
-            "Testing reveals incredible logic patterns. Developers are exploring parallel scheduling algorithms to completely mitigate traditional latency blocks.",
-            "Analyzing spectral telemetry data confirms high-density composition structures, providing key baseline metrics for next-generation system modeling.",
-            "Physical micro-channels resolve baseline processing locks, elevating cache boundaries and rendering complex spatial vectors instantly in lightweight threads."
-        ];
+        // Master articles database parsed from newsFeed.json
+        let feedDatabase = FALLBACK_DB;
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  FALLBACK RSS CHANNELS DIRECT FROM NEWSFEEDLIST.JSON SCHEMA
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        let newsFeedsConfig = {
-            tech: [
-                { name: "TechCrunch", url: "" },
-                { name: "The Verge", url: "" },
-                { name: "Wired", url: "" },
-                { name: "Ars Technica", url: "" }
-            ],
-            computer: [
-                { name: "Hacker News", url: "" },
-                { name: "DEV Community", url: "" },
-                { name: "GitHub Trending", url: "" }
-            ],
-            gaming: [
-                { name: "PC Gamer", url: "" },
-                { name: "IGN", url: "" },
-                { name: "Rock Paper Shotgun", url: "" }
-            ],
-            science: [
-                { name: "Science Daily", url: "" },
-                { name: "NASA Breaking News", url: "" },
-                { name: "Nature", url: "" }
-            ]
-        };
-
-        // Track currently stored articles
+        // Tracks live visible articles inside display columns (Max 15 per category)
         let activeFeeds = { tech: [], computer: [], gaming: [], science: [] };
-        let allHeadlines = []; 
+        let allHeadlines = []; // Scrolling ticker queue
         let packetIngestionCount = 0;
         
-        // GLOBAL UPDATE CONFIGURATION
-        let UPDATE_INTERVAL_MS = 3000; 
+        // GLOBAL UPDATE CONFIGURATION: default updated to 30 seconds (30000ms)
+        let UPDATE_INTERVAL_MS = 30000; 
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  LOAD DYNAMIC NEWSFEEDLIST CONFIG
+        //  LOAD DYNAMIC ARTICLES FROM newsFeed.json
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        async function fetchNewsFeedsList() {
+        async function fetchNewsFeedDatabase() {
             try {
-                // Fetch the config file
-                const response = await fetch('newsFeedList.json');
+                // Fetch the config database file
+                const response = await fetch('newsFeed.json');
                 if (!response.ok) {
-                    throw new Error('Config file unavailable');
+                    throw new Error('newsFeed.json config file unavailable');
                 }
                 const data = await response.json();
                 
-                if (data && data.feeds) {
-                    if (data.feeds.tech) newsFeedsConfig.tech = data.feeds.tech;
-                    if (data.feeds.computer) newsFeedsConfig.computer = data.feeds.computer;
-                    if (data.feeds.gaming) newsFeedsConfig.gaming = data.feeds.gaming;
-                    if (data.feeds.science) newsFeedsConfig.science = data.feeds.science;
+                if (data && data.articles) {
+                    // Overwrite default configuration structures with verified parsed JSON content
+                    feedDatabase = data.articles;
 
-                    document.getElementById('feed-source-status').textContent = 'JSON MOUNTED';
+                    document.getElementById('feed-source-status').textContent = 'newsFeed.json ACTIVE';
                     document.getElementById('feed-source-status').className = 'text-cybergreen font-bold';
-                    addNewsItemToTerminal("SUB_DAEMON: newsFeedList.json successfully sourced. Feeds updated.", "BULL");
+                    addNewsItemToTerminal("SYSTEM: Sourced live database indexes from newsFeed.json successfully.", "BULL");
                 }
             } catch (err) {
-                console.warn('Using standard fallback feeds list config:', err);
-                document.getElementById('feed-source-status').textContent = 'LOCAL CACHE';
+                console.warn('Could not read newsFeed.json. Deploying offline database safety fallback.', err);
+                document.getElementById('feed-source-status').textContent = 'LOCAL CACHE ACTIVE';
                 document.getElementById('feed-source-status').className = 'text-neutral-500 font-bold';
+                addNewsItemToTerminal("WARNING: newsFeed.json fetch blocked/offline. Local fallback active.", "BEAR");
             }
         }
 
@@ -478,31 +509,37 @@
             const categories = ['tech', 'computer', 'gaming', 'science'];
             const cat = forcedCategory || categories[Math.floor(Math.random() * categories.length)];
             
-            const sourcePool = newsFeedsConfig[cat];
-            const source = sourcePool[Math.floor(Math.random() * sourcePool.length)];
-            const sourceName = source ? source.name : "Quant-X Node";
+            // Acquire authentic articles from parsed data pool
+            const articlesList = feedDatabase[cat];
+            if (!articlesList || articlesList.length === 0) return;
 
-            const headlines = HEADLINE_TEMPLATES[cat];
-            const rawHeadline = headlines[Math.floor(Math.random() * headlines.length)];
+            // Pick a random structured article
+            const baseArticle = articlesList[Math.floor(Math.random() * articlesList.length)];
             
+            // Create a custom clone so multiple timestamped streams don't overlap
             const item = {
-                title: `${rawHeadline}`,
-                sourceName: sourceName,
-                author: `${sourceName} Editor`,
-                snippet: SNIPPETS[Math.floor(Math.random() * SNIPPETS.length)]
+                id: `${baseArticle.id || 'gen'}-${Math.random().toString(36).substr(2, 9)}`,
+                title: baseArticle.title,
+                sourceName: baseArticle.source || "Quant-X",
+                author: baseArticle.author || "System Core",
+                snippet: baseArticle.snippet || "Transmission payload stream cleared.",
+                readTime: baseArticle.readTime || "2 min",
+                url: baseArticle.url || "https://techcrunch.com",
+                category: cat
             };
             
             const now = new Date();
             item.timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-            item.id = `${cat}-${Math.random().toString(36).substr(2, 9)}`;
-            item.category = cat;
 
+            // Prepend to active view channel
             activeFeeds[cat].unshift(item);
             
+            // Cap list counts inside bounds to maintain layout speeds
             if (activeFeeds[cat].length > 15) {
                 activeFeeds[cat].pop();
             }
 
+            // Push to scrolling breaking ticker queues
             allHeadlines.unshift(item);
             if (allHeadlines.length > 30) {
                 allHeadlines.pop();
@@ -597,8 +634,12 @@
             const now = new Date();
             const timestamp = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
             
+            let alertColor = 'text-cyberblue';
+            if (type === 'BEAR') alertColor = 'text-cyberred';
+            if (type === 'BULL') alertColor = 'text-cybergreen';
+
             const logEntry = document.createElement('div');
-            logEntry.className = 'leading-tight text-[9px] border-b border-neutral-950 pb-1 text-cyberblue font-bold';
+            logEntry.className = `leading-tight text-[9px] border-b border-neutral-950 pb-1 ${alertColor} font-bold`;
             logEntry.innerHTML = `
                 <span class="text-neutral-600 font-bold">[${timestamp}]</span> 
                 <span>${text}</span>
@@ -607,7 +648,7 @@
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  TICKER TAPE
+        //  TICKER TAPE (Scrolling)
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         function renderTicker() {
             const track = document.getElementById('ticker-track');
@@ -647,7 +688,7 @@
 
             playChirp(480, 'sine', 0.12, 0.03);
 
-            document.getElementById('modal-category-label').textContent = `${cat.toUpperCase()} // ${item.sourceName.toUpperCase()}`;
+            document.getElementById('modal-category-label').textContent = `${cat.toUpperCase()} // INGEST SYSTEM`;
             
             const tag = document.getElementById('modal-category-label');
             tag.className = "text-[8px] px-1.5 py-0.5 bg-[#050505] border rounded uppercase font-bold";
@@ -657,9 +698,19 @@
             if (cat === 'science') tag.classList.add('text-cyberamber', 'border-cyberamber/40');
 
             document.getElementById('modal-title').textContent = item.title;
-            document.getElementById('modal-author').textContent = `PUBLISHER: ${item.sourceName.toUpperCase()}`;
+            document.getElementById('modal-source').textContent = `SOURCE: ${item.sourceName.toUpperCase()}`;
+            document.getElementById('modal-author').textContent = `AUTHOR: ${item.author.toUpperCase()}`;
+            document.getElementById('modal-readtime').textContent = `EST. READ: ${item.readTime}`;
             document.getElementById('modal-date').textContent = `INGEST_TIME: ${item.timeStr}`;
             document.getElementById('modal-body').textContent = item.snippet;
+
+            const externalLink = document.getElementById('modal-external-link');
+            if (item.url) {
+                externalLink.href = item.url;
+                externalLink.classList.remove('hidden');
+            } else {
+                externalLink.classList.add('hidden');
+            }
 
             document.getElementById('article-reader-modal').classList.remove('hidden');
         }
@@ -700,7 +751,8 @@
         let ingestionInterval;
 
         async function init() {
-            await fetchNewsFeedsList();
+            // First fetch core newsFeed.json database index dynamically
+            await fetchNewsFeedDatabase();
 
             const categories = ['tech', 'computer', 'gaming', 'science'];
             categories.forEach(cat => {

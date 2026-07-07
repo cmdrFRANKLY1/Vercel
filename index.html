@@ -6,10 +6,8 @@
     <title>~ // search</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts for JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
 
     <script>
         tailwind.config = {
@@ -208,19 +206,57 @@
         const loadingText = document.getElementById('loading-text');
 
         // Fallback local constants matching requested files
-        const DEFAULT_HTML_LIST = [
-            "tools/txt2json.html",
-            "tarkov/tarkovdb.html"
-        ];
-        const DEFAULT_TOOLS_LIST = [
-            "tools/txt2json.html"
-        ];
+        const DEFAULT_HTML_LIST = ["tools/txt2json.html", "tarkov/tarkovdb.html"];
+        const DEFAULT_TOOLS_LIST = ["tools/txt2json.html"];
 
         // Global Tarkov items database memory cache
         let tarkovLocalCache = [];
 
         // Cooldown configuration (3 minutes in milliseconds)
         const COOLDOWN_DURATION = 3 * 60 * 1000;
+
+        // ─── Dynamic Font Settings Loader ───────────────────────────────
+        async function loadFontSettings() {
+            try {
+                // Fetch settings from settings/fonts/index.json
+                const response = await fetch('settings/fonts/index.json');
+                if (!response.ok) {
+                    throw new Error('Could not find settings/fonts/index.json');
+                }
+                const settings = await response.json();
+
+                // 1. Inject the Google Fonts stylesheet link dynamically if present
+                if (settings.fonts && settings.fonts.mono && settings.fonts.mono.importUrl) {
+                    const link = document.createElement('link');
+                    link.rel = 'stylesheet';
+                    link.href = settings.fonts.mono.importUrl;
+                    document.head.appendChild(link);
+                }
+
+                // 2. Build and inject a clean style override mapping Tailwind utility classes
+                const style = document.createElement('style');
+                style.textContent = `
+                    .font-mono {
+                        font-family: '${settings.fonts.mono.name}', ${settings.fonts.mono.fallback.join(', ')};
+                    }
+                    .font-verdana {
+                        font-family: '${settings.fonts.verdana.name}', ${settings.fonts.verdana.fallback.join(', ')};
+                    }
+                `;
+                document.head.appendChild(style);
+                console.log(`📡 QUANT-X Dynamic Fonts successfully loaded: ${settings.systemName}`);
+            } catch (err) {
+                console.warn('Failed to resolve settings/fonts/index.json, operating under standard web safe typography.', err);
+                
+                // Static local recovery stylesheet
+                const style = document.createElement('style');
+                style.textContent = `
+                    .font-mono { font-family: 'JetBrains Mono', monospace; }
+                    .font-verdana { font-family: 'Verdana', sans-serif; }
+                `;
+                document.head.appendChild(style);
+            }
+        }
 
         // ─── Search Form Submission & Instant Local Search Logic ──────────
         searchInput.addEventListener('input', function() {
@@ -587,19 +623,19 @@
 
             // Parallel loading of files
             const [names, birthplaces, idols, professions, attributes, biographies] = await Promise.all([
-                fetchResource('listOfNames.json', ["Aria", "Valen", "Dax", "Kaelen", "Kira", "Jorun", "Zora"]),
-                fetchResource('listOfBirthPlaces.json', [{ name: "Neverwinter" }, { name: "Waterdeep" }, { name: "Baldur's Gate" }]),
-                fetchResource('listOfIdols.json', [{ name: "The Harpers" }, { name: "Mordenkainen" }, { name: "Elminster" }]),
-                fetchResource('listOfProfessions.json', ["Fighter", "Wizard", "Ranger", "Rogue", "Paladin", "Bard"]),
+                fetchResource('listOfNames.json', ["Aria", "Valen", "Dax"]),
+                fetchResource('listOfBirthPlaces.json', ["Neverwinter", "Waterdeep"]),
+                fetchResource('listOfIdols.json', ["The Harpers", "Elminster"]),
+                fetchResource('listOfProfessions.json', ["Fighter", "Wizard", "Rogue"]),
                 fetchResource('listOfAttributes.json', { 
-                    "Strength": ["Mighty", "Robust", "Forceful"], 
-                    "Dexterity": ["Agile", "Swift", "Nimble"], 
-                    "Constitution": ["Resilient", "Sturdy", "Tough"], 
-                    "Intelligence": ["Wise", "Clever", "Analytical"], 
-                    "Wisdom": ["Insightful", "Perceptive", "Grounded"], 
-                    "Charisma": ["Charming", "Magnetic", "Leader"] 
+                    "Strength": ["Mighty"], 
+                    "Dexterity": ["Agile"], 
+                    "Constitution": ["Resilient"], 
+                    "Intelligence": ["Wise"], 
+                    "Wisdom": ["Insightful"], 
+                    "Charisma": ["Charming"] 
                 }),
-                fetchResource('rndBiography.json', { reputation: ["Known across the realm,"], background: ["Schooled in survival,"], rumor: ["Carrying detailed notes,"], secret: ["They own a map."] })
+                fetchResource('rndBiography.json', { reputation: ["Known,"], background: ["trained,"], rumor: ["searching,"], secret: ["has a key."] })
             ]);
 
             loadedCharacterData = { names, birthplaces, idols, professions, attributes, biographies };
@@ -685,6 +721,9 @@
 
         // ─── Init ──────────────────────────────────────────────────
         window.onload = async function() {
+            // First load the fonts settings dynamically
+            await loadFontSettings();
+
             // Focus on search input
             searchInput.focus();
 

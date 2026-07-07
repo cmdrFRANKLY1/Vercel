@@ -160,10 +160,10 @@
                 <span id="speed-label" class="text-[10px] font-bold text-neutral-400 min-w-[32px]">3.0s</span>
             </div>
 
-            <!-- Sound toggle -->
+            <!-- Sound toggle initialized with AUDIO OFF state parameters -->
             <button id="sound-btn" onclick="toggleMute()" class="flex items-center gap-1 bg-neutral-900/50 hover:bg-neutral-900 text-neutral-500 hover:text-neutral-200 px-2.5 py-1 border border-panelborder transition text-[10px] rounded">
-                <span id="sound-icon">🔊</span>
-                <span id="sound-status">AUDIO ON</span>
+                <span id="sound-icon">🔇</span>
+                <span id="sound-status">AUDIO OFF</span>
             </button>
 
             <!-- Manual market shock generators -->
@@ -463,7 +463,7 @@
         //  SYNTHESIZED SYNTH SOUND ENGINE (No external libraries!)
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         let audioCtx = null;
-        let isMuted = false;
+        let isMuted = true; // Default sound to MUTED (OFF)
 
         function initAudio() {
             if (!audioCtx) {
@@ -548,50 +548,69 @@
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         const SECTORS = ['Technology', 'Biotech', 'Financials', 'Energy', 'Defense', 'Consumer'];
 
-        // Custom stylized futuristic/military companies
-        const COMPANIES = {
+        // Fallback local companies in case stockMarket.json fetch is blocked or fails
+        const FALLBACK_COMPANIES = {
             'Technology': [
-                { sym: 'NVA', name: 'Nova Quantum Grid' },
-                { sym: 'HXG', name: 'Helix Cybernetics' },
-                { sym: 'ZNT', name: 'Zenith Microchips' },
-                { sym: 'STR', name: 'Stratus Cloud Net' },
-                { sym: 'QNT', name: 'Quantum Core Sys' },
-                { sym: 'VTX', name: 'Vertex Holograms' },
-                { sym: 'INF', name: 'Infinity Cryptos' }
+                { "sym": "NVA", "name": "Nova Quantum Grid", "basePrice": 45.50 },
+                { "sym": "HXG", "name": "Helix Cybernetics", "basePrice": 124.20 },
+                { "sym": "ZNT", "name": "Zenith Microchips", "basePrice": 88.00 },
+                { "sym": "STR", "name": "Stratus Cloud Net", "basePrice": 32.10 },
+                { "sym": "QNT", "name": "Quantum Core Sys", "basePrice": 142.75 },
+                { "sym": "VTX", "name": "Vertex Holograms", "basePrice": 18.50 },
+                { "sym": "INF", "name": "Infinity Cryptos", "basePrice": 5.40 }
             ],
             'Biotech': [
-                { sym: 'ATH', name: 'Aether NeuroGen' },
-                { sym: 'GLX', name: 'Galaxy Therapeutics' },
-                { sym: 'VIR', name: 'ViroTech Synths' },
-                { sym: 'GEN', name: 'Genesis Organics' },
-                { sym: 'BIO', name: 'Biocel Lab Inc.' }
+                { "sym": "ATH", "name": "Aether NeuroGen", "basePrice": 95.00 },
+                { "sym": "GLX", "name": "Galaxy Therapeutics", "basePrice": 62.40 },
+                { "sym": "VIR", "name": "ViroTech Synths", "basePrice": 112.10 },
+                { "sym": "GEN", "name": "Genesis Organics", "basePrice": 39.90 },
+                { "sym": "BIO", "name": "Biocel Lab Inc.", "basePrice": 22.80 }
             ],
             'Financials': [
-                { sym: 'VNG', name: 'Vanguard Blockcap' },
-                { sym: 'KRS', name: 'Kairos Sovereign' },
-                { sym: 'NOB', name: 'Noble Trust Capital' },
-                { sym: 'MRD', name: 'Meridian Liquidity' },
-                { sym: 'APX', name: 'Apex Clearing Corp' }
+                { "sym": "VNG", "name": "Vanguard Blockcap", "basePrice": 150.00 },
+                { "sym": "KRS", "name": "Kairos Sovereign", "basePrice": 75.30 },
+                { "sym": "NOB", "name": "Noble Trust Capital", "basePrice": 118.00 },
+                { "sym": "MRD", "name": "Meridian Liquidity", "basePrice": 44.20 },
+                { "sym": "APX", "name": "Apex Clearing Corp", "basePrice": 82.50 }
             ],
             'Energy': [
-                { sym: 'FUS', name: 'Fusion Nuclear' },
-                { sym: 'SOL', name: 'Solstice Solar Hub' },
-                { sym: 'HYD', name: 'Hydrogen Energy' },
-                { sym: 'VOL', name: 'Voltaic Grid Co' }
+                { "sym": "FUS", "name": "Fusion Nuclear", "basePrice": 165.00 },
+                { "sym": "SOL", "name": "Solstice Solar Hub", "basePrice": 28.40 },
+                { "sym": "HYD", "name": "Hydrogen Energy", "basePrice": 35.10 },
+                { "sym": "VOL", "name": "Voltaic Grid Co", "basePrice": 52.80 }
             ],
             'Defense': [
-                { sym: 'TTN', name: 'Titan Armor Mech' },
-                { sym: 'WRD', name: 'Warden Defense Net' },
-                { sym: 'XEN', name: 'Xenon Laser Corp' },
-                { sym: 'DRA', name: 'Draco Tactical' }
+                { "sym": "TTN", "name": "Titan Armor Mech", "basePrice": 135.00 },
+                { "sym": "WRD", "name": "Warden Defense Net", "basePrice": 92.40 },
+                { "sym": "XEN", "name": "Xenon Laser Corp", "basePrice": 74.00 },
+                { "sym": "DRA", "name": "Draco Tactical", "basePrice": 48.60 }
             ],
             'Consumer': [
-                { sym: 'KRM', name: 'Karma Synthetic Foods' },
-                { sym: 'YAR', name: 'Yara VR Wear' },
-                { sym: 'VES', name: 'Vesper Luxury Air' },
-                { sym: 'WIL', name: 'Willow Greenery' }
+                { "sym": "KRM", "name": "Karma Synthetic Foods", "basePrice": 15.20 },
+                { "sym": "YAR", "name": "Yara VR Wear", "basePrice": 62.00 },
+                { "sym": "VES", "name": "Vesper Luxury Air", "basePrice": 110.50 },
+                { "sym": "WIL", "name": "Willow Greenery", "basePrice": 24.15 }
             ]
         };
+
+        // Master active listing loaded dynamically
+        let COMPANIES = FALLBACK_COMPANIES;
+
+        async function fetchSecuritiesDatabase() {
+            try {
+                const response = await fetch('stockMarket.json');
+                if (!response.ok) {
+                    throw new Error('stockMarket.json config file unavailable');
+                }
+                const data = await response.json();
+                if (data && data.companies) {
+                    COMPANIES = data.companies;
+                    console.log("📡 QUANT-X Securities Directory successfully loaded from stockMarket.json");
+                }
+            } catch (err) {
+                console.warn('Using fallback local securities directory config:', err);
+            }
+        }
 
         function randomBetween(min, max) {
             return Math.random() * (max - min) + min;
@@ -605,13 +624,13 @@
         //  STOCK CLASS WITH TRENDS & CORRELATION
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         class Stock {
-            constructor(symbol, name, sector) {
+            constructor(symbol, name, sector, basePrice) {
                 this.symbol = symbol;
                 this.name = name;
                 this.sector = sector;
                 
-                // Initial price distribution
-                const base = randomBetween(12, 180);
+                // Seed with standard base valuation from JSON directory
+                const base = basePrice || randomBetween(12, 180);
                 this.price = Math.random() < 0.05 ? base * 4 : base;
                 this.volume = randomBetween(0.1, 5.0); 
                 this.history = [];
@@ -1022,9 +1041,10 @@
         function createSecurities() {
             stocks = [];
             SECTORS.forEach(sec => {
-                const list = COMPANIES[sec];
+                const list = COMPANIES[sec] || [];
                 list.forEach(co => {
-                    stocks.push(new Stock(co.sym, co.name, sec));
+                    // Seed structured basePrice values from dynamic JSON config
+                    stocks.push(new Stock(co.sym, co.name, sec, co.basePrice));
                 });
             });
             activeStock = stocks[0];
@@ -1468,7 +1488,10 @@
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         //  SYSTEM INITIALIZATION
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        function init() {
+        async function init() {
+            // Fetch configuration directory settings before loading table entries
+            await fetchSecuritiesDatabase();
+
             createSecurities();
             updateClock();
             renderTable();
