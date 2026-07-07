@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>⚡ TERMINAL // QUANT-X RSS NEWS AGGREGATOR</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&display=swap" rel="stylesheet" />
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        cyberbg: '#050505',
+                        panelbg: '#09090b',
+                        panelborder: '#18181b', // neutral-800
+                        cybergreen: '#10b981', // subtle emerald/green
+                        cyberred: '#ef4444',   // clean red
+                        cyberblue: '#3b82f6',  // matching blue
+                        cyberamber: '#f59e0b', // matching amber
+                    }
+                },
+            },
+        };
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            background: #050505;
+            color: #a1a1aa;
+            font-family: 'JetBrains Mono', monospace;
+            overflow: hidden;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Scrollbar styling matching index.html */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050505;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #18181b;
+            border-radius: 2px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #27272a;
+        }
+
+        /* Ticker tape styling */
+        .ticker-wrap {
+            width: 100%;
+            overflow: hidden;
+            background: #09090b;
+            border-bottom: 1px solid #18181b;
+            padding: 6px 0;
+            position: relative;
+            z-index: 10;
+        }
+        .ticker-wrap::before, .ticker-wrap::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 80px;
+            z-index: 2;
+            pointer-events: none;
+        }
+        .ticker-wrap::before {
+            left: 0;
+            background: linear-gradient(90deg, #050505, transparent);
+        }
+        .ticker-wrap::after {
+            right: 0;
+            background: linear-gradient(270deg, #050505, transparent);
+        }
+        .ticker {
+            display: flex;
+            gap: 3rem;
+            animation: tickerScroll 60s linear infinite;
+            white-space: nowrap;
+            will-change: transform;
+        }
+        @keyframes tickerScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .ticker:hover {
+            animation-play-state: paused;
+        }
+
+        /* Custom pulsing visualizer elements */
+        .pulse-dot-blue {
+            animation: pulse-blue 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse-blue {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.85); }
+        }
+
+        /* Highlight animation when new RSS item drops */
+        @keyframes feed-flash {
+            0% { border-color: #3b82f6; background-color: rgba(59, 130, 246, 0.08); }
+            100% { border-color: #18181b; background-color: transparent; }
+        }
+        .new-item-flash {
+            animation: feed-flash 1.2s ease-out;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen select-none selection:bg-neutral-800 selection:text-white">
+
+    <!-- ─── HEADER BAR ─── -->
+    <header class="flex-shrink-0 bg-panelbg border-b border-panelborder px-4 py-2 flex flex-wrap items-center justify-between gap-4 z-10">
+        <div class="flex items-center gap-3">
+            <!-- Back to Index Button -->
+            <a href="index.html" class="flex items-center gap-1.5 text-[10px] text-neutral-500 hover:text-white border border-neutral-800 bg-neutral-900/40 hover:bg-neutral-900 px-2.5 py-1 rounded transition font-mono focus:outline-none">
+                <span class="text-neutral-600 font-bold">&lt;</span> BACK
+            </a>
+
+            <span class="text-cyberblue font-bold text-xs tracking-wider flex items-center gap-1.5">
+                <span class="pulse-dot-blue inline-block w-2 h-2 rounded-full bg-cyberblue"></span>
+                QUANT-X // RSS HUB
+            </span>
+            <div class="hidden sm:flex items-center gap-1.5 text-[10px] bg-[#050505] px-2 py-0.5 border border-[#18181b] text-neutral-500">
+                <span>FEED STREAM: <span class="text-cybergreen" id="connection-status">CONNECTED</span></span>
+                <span class="text-neutral-800">|</span>
+                <span>DATA RATE: <span id="data-rate-label" class="text-cyberamber font-bold">0.3 pkts/s</span></span>
+            </div>
+        </div>
+
+        <!-- Controls Overload Panel -->
+        <div class="flex flex-wrap items-center gap-3 text-xs">
+            <!-- Search bar filter for headlines -->
+            <div class="relative">
+                <input id="rss-search" type="text" placeholder="FILTER HEADLINES..." oninput="filterAllFeeds()" class="bg-[#050505] text-[10px] font-mono border border-[#18181b] focus:border-neutral-500 rounded px-2.5 py-1 w-44 text-white focus:outline-none placeholder-neutral-700">
+            </div>
+
+            <!-- Ingestion Speed Control -->
+            <div class="flex items-center gap-2 bg-[#050505] px-2 py-1 border border-[#18181b] rounded">
+                <span class="text-[9px] text-neutral-500">INGESTION INTERVAL</span>
+                <input id="speed-slider" type="range" min="1000" max="8000" value="3000" step="500" class="w-16 h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-neutral-500">
+                <span id="speed-label" class="text-[10px] font-bold text-neutral-400 min-w-[32px]">3.0s</span>
+            </div>
+
+            <!-- Sound toggle -->
+            <button id="sound-btn" onclick="toggleMute()" class="flex items-center gap-1 bg-neutral-900/50 hover:bg-neutral-900 text-neutral-500 hover:text-neutral-200 px-2.5 py-1 border border-panelborder transition text-[10px] rounded">
+                <span id="sound-icon">🔊</span>
+                <span id="sound-status">AUDIO ON</span>
+            </button>
+
+            <!-- Live Clock -->
+            <div class="text-[11px] font-bold text-neutral-400 bg-neutral-950 border border-panelborder px-3 py-1 font-mono tracking-wider" id="clock-display">
+                00:00:00.00
+            </div>
+        </div>
+    </header>
+
+    <!-- ─── TICKER TAPE (Scrolling Headlines) ─── -->
+    <div class="ticker-wrap" id="ticker-wrap">
+        <div class="ticker" id="ticker-track">
+            <!-- Populated dynamically by JS -->
+        </div>
+    </div>
+
+    <!-- ─── MAIN WORKSPACE GRID (4 Feed Channels + Sidebar Console) ─── -->
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden h-full">
+
+        <!-- Feed Aggregators (Left Side - Span 9) -->
+        <section class="lg:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4 p-4 overflow-y-auto bg-cyberbg">
+            
+            <!-- Category 1: Tech Feed -->
+            <div class="flex flex-col h-[380px] bg-panelbg border border-panelborder rounded p-3 relative">
+                <div class="flex items-center justify-between border-b border-neutral-900 pb-2 mb-2">
+                    <h3 class="text-xs font-bold text-white tracking-widest uppercase flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 bg-cyberblue rounded-full"></span>
+                        TECH_INNOVATION.XML
+                    </h3>
+                    <span id="tech-count" class="text-[9px] text-neutral-500 font-mono font-bold bg-[#050505] px-1.5 py-0.5 border border-panelborder">0 ARTICLES</span>
+                </div>
+                <div id="feed-tech" class="flex-1 overflow-y-auto space-y-2 pr-1">
+                    <!-- Tech elements go here -->
+                </div>
+            </div>
+
+            <!-- Category 2: Computer Science & Systems Feed -->
+            <div class="flex flex-col h-[380px] bg-panelbg border border-panelborder rounded p-3 relative">
+                <div class="flex items-center justify-between border-b border-neutral-900 pb-2 mb-2">
+                    <h3 class="text-xs font-bold text-white tracking-widest uppercase flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 bg-cybergreen rounded-full"></span>
+                        SYSTEMS_ENGINEERING.RSS
+                    </h3>
+                    <span id="computer-count" class="text-[9px] text-neutral-500 font-mono font-bold bg-[#050505] px-1.5 py-0.5 border border-panelborder">0 ARTICLES</span>
+                </div>
+                <div id="feed-computer" class="flex-1 overflow-y-auto space-y-2 pr-1">
+                    <!-- Computer elements go here -->
+                </div>
+            </div>
+
+            <!-- Category 3: Gaming & Development Feed -->
+            <div class="flex flex-col h-[380px] bg-panelbg border border-panelborder rounded p-3 relative">
+                <div class="flex items-center justify-between border-b border-neutral-900 pb-2 mb-2">
+                    <h3 class="text-xs font-bold text-white tracking-widest uppercase flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 bg-cyberred rounded-full"></span>
+                        GAMING_DEV_NEWS.XML
+                    </h3>
+                    <span id="gaming-count" class="text-[9px] text-neutral-500 font-mono font-bold bg-[#050505] px-1.5 py-0.5 border border-panelborder">0 ARTICLES</span>
+                </div>
+                <div id="feed-gaming" class="flex-1 overflow-y-auto space-y-2 pr-1">
+                    <!-- Gaming elements go here -->
+                </div>
+            </div>
+
+            <!-- Category 4: Science & Exploration Feed -->
+            <div class="flex flex-col h-[380px] bg-panelbg border border-panelborder rounded p-3 relative">
+                <div class="flex items-center justify-between border-b border-neutral-900 pb-2 mb-2">
+                    <h3 class="text-xs font-bold text-white tracking-widest uppercase flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 bg-cyberamber rounded-full"></span>
+                        ASTROPHYSICS_SCI.RSS
+                    </h3>
+                    <span id="science-count" class="text-[9px] text-neutral-500 font-mono font-bold bg-[#050505] px-1.5 py-0.5 border border-panelborder">0 ARTICLES</span>
+                </div>
+                <div id="feed-science" class="flex-1 overflow-y-auto space-y-2 pr-1">
+                    <!-- Science elements go here -->
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Aggregator Sidebar Console (Right Side - Span 3) -->
+        <section class="lg:col-span-3 border-l border-panelborder flex flex-col overflow-y-auto bg-panelbg p-4 space-y-4">
+            
+            <!-- Diagnostics Metrics -->
+            <div class="space-y-2">
+                <h4 class="text-[10px] text-neutral-500 font-bold tracking-widest uppercase">📡 DAEMON TELEMETRY</h4>
+                <div class="bg-[#050505] border border-panelborder p-3 rounded text-[10px] font-mono space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-neutral-500">INGESTION AGENTS:</span>
+                        <span class="text-white font-bold" id="telemetry-agents-status">ACTIVE (4/4)</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-neutral-500">PACKETS PROCESSED:</span>
+                        <span id="packets-count-val" class="text-cybergreen font-bold">128 kbps</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-neutral-500">FEED CONFIG SOURCED:</span>
+                        <span class="text-cyberblue font-bold" id="feed-source-status">LOCAL FALLBACK</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-neutral-500">SOCKET STATS:</span>
+                        <span class="text-cybergreen font-bold">ESTABLISHED</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aggregator Server Connection Stream Console -->
+            <div class="flex-1 flex flex-col min-h-[250px] overflow-hidden space-y-2">
+                <h4 class="text-[10px] text-neutral-500 font-bold tracking-widest uppercase">💾 LIVE PARSER DIAGNOSTIC</h4>
+                <div id="live-parser-console" class="flex-1 overflow-y-auto bg-[#050505] border border-panelborder p-2.5 rounded font-mono text-[9px] space-y-1.5 text-neutral-600 flex flex-col-reverse">
+                    <!-- Dynamic simulated socket data logs -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ─── ARTICLE READER DETAIL MODAL TERMINAL ─── -->
+    <div id="article-reader-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div class="bg-[#09090b] border border-neutral-800 rounded max-w-lg w-full p-5 space-y-4 font-mono">
+            <div class="flex justify-between items-start border-b border-neutral-900 pb-3">
+                <div>
+                    <span id="modal-category-label" class="text-[8px] px-1.5 py-0.5 bg-neutral-900 border border-neutral-800 text-cyberblue rounded uppercase font-bold">CATEGORY</span>
+                    <h2 id="modal-title" class="text-sm font-bold text-white mt-2 leading-snug">Article Title</h2>
+                </div>
+                <button onclick="closeReader()" class="text-neutral-500 hover:text-white font-bold text-xs">[ ESC ]</button>
+            </div>
+            
+            <div class="space-y-2 text-xs text-neutral-400 leading-relaxed max-h-60 overflow-y-auto">
+                <div class="text-[9px] text-neutral-600 font-bold flex justify-between">
+                    <span id="modal-author">AUTHOR: SYSTEM SECURE DAEMON</span>
+                    <span id="modal-date">PUBLISHED: --:--:--</span>
+                </div>
+                <p id="modal-body">
+                    Aggregating content summary payload...
+                </p>
+            </div>
+
+            <div class="border-t border-neutral-900 pt-3 flex justify-between items-center text-[10px]">
+                <span class="text-neutral-600">ENCRYPTION: AES-256 SHA-2</span>
+                <button onclick="closeReader()" class="bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-white font-bold px-3 py-1 rounded transition text-[10px]">
+                    CLOSE READING PORT
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── JAVASCRIPT AGGREGATOR SYSTEM LOGIC ─── -->
+    <script>
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  SOUND CONFIGURATION
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        let audioCtx = null;
+        let isMuted = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playChirp(freq, type, duration, volume) {
+            if (isMuted) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.type = type || 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(volume || 0.05, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                // Bypass security policy silences
+            }
+        }
+
+        function playPacketArrivedBeep() {
+            playChirp(1200, 'triangle', 0.05, 0.01);
+            setTimeout(() => playChirp(1600, 'triangle', 0.04, 0.01), 30);
+        }
+
+        function playAlertBeep() {
+            playChirp(330, 'square', 0.1, 0.02);
+            setTimeout(() => playChirp(220, 'square', 0.15, 0.02), 120);
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            document.getElementById('sound-icon').textContent = isMuted ? '🔇' : '🔊';
+            document.getElementById('sound-status').textContent = isMuted ? 'AUDIO OFF' : 'AUDIO ON';
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  DATABASE OF SIMULATED RSS FEEDS & TEMPLATES
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        const HEADLINE_TEMPLATES = {
+            tech: [
+                "Silicon wafer yields jump 14% with extreme ultraviolet laser arrays",
+                "Aether Grid launches solar-powered server arrays in orbit",
+                "Neuromorphic architectures breach synapse scaling threshold",
+                "Open-source encryption framework releases post-quantum standard",
+                "Solid-state graphene energy cells transition to micro-scale devices"
+            ],
+            computer: [
+                "Linux kernel update pushes multi-threaded storage I/O optimization",
+                "Optical bus pathways replace traditional copper circuit lanes",
+                "Retro-computational restoration reveals custom 8-bit pipeline hack",
+                "Quantum computing simulator operates stably at 1024 virtual qubits",
+                "Micro-architectural cache vulnerabilities resolved via physical zoning"
+            ],
+            gaming: [
+                "Voxel engine achieves infinite procedural generation on mobile chips",
+                "Cozy simulation indie breakout hits 5 million unique active players",
+                "Classic tactical RPG undergoes source-code rebuild for modern accessibility",
+                "Raytraced global illumination runs at high frame rates using neural reconstruction",
+                "Esports championship integrates biometric heart rate telemetry on live broadcasts"
+            ],
+            science: [
+                "Deep-space probe monitors active cryovolcanic eruption on Neptune moon",
+                "Sub-glacial geothermal vents reveal resilient new chemotrophic bacterial strains",
+                "James Webb telescope projects deep-field image of early cluster collision",
+                "Exoplanet atmospheric sweep reveals potential carbon-dense oceans",
+                "Newly unearthed fossil points to early dinosaur social nesting behaviors"
+            ]
+        };
+
+        const SNIPPETS = [
+            "Recent advancements in optimization technology show massive optimization factors. Modern architectures now scale processes with 99.8% precision margins.",
+            "Deploying high-efficiency components inside standard models yields massive capacity improvements. Devices operate at fully nominal bounds with lower offsets.",
+            "Testing reveals incredible logic patterns. Developers are exploring parallel scheduling algorithms to completely mitigate traditional latency blocks.",
+            "Analyzing spectral telemetry data confirms high-density composition structures, providing key baseline metrics for next-generation system modeling.",
+            "Physical micro-channels resolve baseline processing locks, elevating cache boundaries and rendering complex spatial vectors instantly in lightweight threads."
+        ];
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  FALLBACK RSS CHANNELS DIRECT FROM NEWSFEEDLIST.JSON SCHEMA
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        let newsFeedsConfig = {
+            tech: [
+                { name: "TechCrunch", url: "" },
+                { name: "The Verge", url: "" },
+                { name: "Wired", url: "" },
+                { name: "Ars Technica", url: "" }
+            ],
+            computer: [
+                { name: "Hacker News", url: "" },
+                { name: "DEV Community", url: "" },
+                { name: "GitHub Trending", url: "" }
+            ],
+            gaming: [
+                { name: "PC Gamer", url: "" },
+                { name: "IGN", url: "" },
+                { name: "Rock Paper Shotgun", url: "" }
+            ],
+            science: [
+                { name: "Science Daily", url: "" },
+                { name: "NASA Breaking News", url: "" },
+                { name: "Nature", url: "" }
+            ]
+        };
+
+        // Track currently stored articles (Max 15 per category)
+        let activeFeeds = { tech: [], computer: [], gaming: [], science: [] };
+        let allHeadlines = []; // Ticker tape headlines list
+        let packetIngestionCount = 0;
+        
+        // GLOBAL UPDATE CONFIGURATION
+        let UPDATE_INTERVAL_MS = 3000; 
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  LOAD DYNAMIC NEWSFEEDLIST CONFIG
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        async function fetchNewsFeedsList() {
+            try {
+                // Fetch the config file
+                const response = await fetch('newsFeedList.json');
+                if (!response.ok) {
+                    throw new Error('Config file unavailable');
+                }
+                const data = await response.json();
+                
+                if (data && data.feeds) {
+                    // Update active configuration parameters securely
+                    if (data.feeds.tech) newsFeedsConfig.tech = data.feeds.tech;
+                    if (data.feeds.computer) newsFeedsConfig.computer = data.feeds.computer;
+                    if (data.feeds.gaming) newsFeedsConfig.gaming = data.feeds.gaming;
+                    if (data.feeds.science) newsFeedsConfig.science = data.feeds.science;
+
+                    document.getElementById('feed-source-status').textContent = 'JSON MOUNTED';
+                    document.getElementById('feed-source-status').className = 'text-cybergreen font-bold';
+                    addNewsItemToTerminal("SUB_DAEMON: newsFeedList.json successfully sourced. Feeds updated.", "BULL");
+                }
+            } catch (err) {
+                console.warn('Using standard fallback feeds list config:', err);
+                document.getElementById('feed-source-status').textContent = 'LOCAL CACHE';
+                document.getElementById('feed-source-status').className = 'text-neutral-500 font-bold';
+            }
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  FEED PROCESSING ENGINE
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        function ingestNewItem(forcedCategory = null) {
+            const categories = ['tech', 'computer', 'gaming', 'science'];
+            const cat = forcedCategory || categories[Math.floor(Math.random() * categories.length)];
+            
+            // Acquire source options from dynamic configuration
+            const sourcePool = newsFeedsConfig[cat];
+            const source = sourcePool[Math.floor(Math.random() * sourcePool.length)];
+            const sourceName = source ? source.name : "Quant-X Node";
+
+            // Generate structured mock headlines based on selected categories
+            const headlines = HEADLINE_TEMPLATES[cat];
+            const rawHeadline = headlines[Math.floor(Math.random() * headlines.length)];
+            
+            const item = {
+                title: `${rawHeadline}`,
+                sourceName: sourceName,
+                author: `${sourceName} Editor`,
+                snippet: SNIPPETS[Math.floor(Math.random() * SNIPPETS.length)]
+            };
+            
+            // Add unique timestamp and random ID
+            const now = new Date();
+            item.timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            item.id = `${cat}-${Math.random().toString(36).substr(2, 9)}`;
+            item.category = cat;
+
+            // Prepend to active list
+            activeFeeds[cat].unshift(item);
+            
+            // Cap to 15 items to prevent DOM bloating
+            if (activeFeeds[cat].length > 15) {
+                activeFeeds[cat].pop();
+            }
+
+            // Add to general headlines for ticker tape
+            allHeadlines.unshift(item);
+            if (allHeadlines.length > 30) {
+                allHeadlines.pop();
+            }
+
+            // Trigger packet diagnostics logs
+            packetIngestionCount++;
+            logPacketSocket(cat, item.sourceName, item.title);
+
+            // Audio blip
+            playPacketArrivedBeep();
+
+            // Render matching category feed
+            renderCategoryFeed(cat, item.id);
+            renderTicker();
+            updateDiagnosticLabels();
+        }
+
+        // Render feed columns
+        function renderCategoryFeed(cat, highlightId = null) {
+            const container = document.getElementById(`feed-${cat}`);
+            const query = document.getElementById('rss-search').value.toLowerCase();
+            
+            let html = '';
+            const list = activeFeeds[cat];
+
+            if (list.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-neutral-600 text-[10px] italic">Awaiting secure packet handshake...</div>`;
+                return;
+            }
+
+            list.forEach(item => {
+                // Search Filter Logic
+                const matchesSearch = item.title.toLowerCase().includes(query) || 
+                                      item.snippet.toLowerCase().includes(query) || 
+                                      item.sourceName.toLowerCase().includes(query);
+                if (!matchesSearch) return;
+
+                const isNew = item.id === highlightId ? 'new-item-flash' : '';
+                
+                // Color mapping for subheaders
+                let tagColor = 'text-cyberblue';
+                if (cat === 'computer') tagColor = 'text-cybergreen';
+                if (cat === 'gaming') tagColor = 'text-cyberred';
+                if (cat === 'science') tagColor = 'text-cyberamber';
+
+                html += `
+                    <div onclick="openArticleReader('${cat}', '${item.id}')" class="p-2.5 border border-neutral-900 hover:border-neutral-700 bg-neutral-950/40 rounded cursor-pointer transition duration-300 font-mono text-[11px] ${isNew}">
+                        <div class="flex justify-between items-center text-[9px] text-neutral-500 mb-1">
+                            <span class="${tagColor} font-bold">${item.sourceName.toUpperCase()}</span>
+                            <span>${item.timeStr}</span>
+                        </div>
+                        <h4 class="text-white font-bold tracking-tight mb-1 line-clamp-2 hover:underline">${item.title}</h4>
+                        <p class="text-neutral-500 text-[10px] line-clamp-2 leading-relaxed">${item.snippet}</p>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html || `<div class="text-center py-8 text-neutral-600 text-[10px] italic">No filtered results.</div>`;
+            document.getElementById(`${cat}-count`).textContent = `${list.length} ARTICLES`;
+        }
+
+        // Real-time keyword filter across all feeds
+        function filterAllFeeds() {
+            renderCategoryFeed('tech');
+            renderCategoryFeed('computer');
+            renderCategoryFeed('gaming');
+            renderCategoryFeed('science');
+        }
+
+        // Simulated dynamic socket stream logs in console
+        function logPacketSocket(cat, source, headline) {
+            const consoleBox = document.getElementById('live-parser-console');
+            const now = new Date();
+            const timestamp = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            
+            let colorCls = 'text-cyberblue';
+            if (cat === 'computer') colorCls = 'text-cybergreen';
+            if (cat === 'gaming') colorCls = 'text-cyberred';
+            if (cat === 'science') colorCls = 'text-cyberamber';
+
+            const logEntry = document.createElement('div');
+            logEntry.className = 'leading-tight text-[9px] border-b border-neutral-950 pb-1';
+            logEntry.innerHTML = `
+                <span class="text-neutral-600 font-bold">[${timestamp}]</span> 
+                <span class="${colorCls} font-bold">XML_PARSE_OK</span> 
+                <span class="text-neutral-500">→ Ingested ${source}: "${headline.substring(0, 20)}..."</span>
+            `;
+            
+            consoleBox.appendChild(logEntry);
+
+            if (consoleBox.children.length > 25) {
+                consoleBox.removeChild(consoleBox.firstChild);
+            }
+        }
+
+        function addNewsItemToTerminal(text, type) {
+            const consoleBox = document.getElementById('live-parser-console');
+            const now = new Date();
+            const timestamp = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'leading-tight text-[9px] border-b border-neutral-950 pb-1 text-cyberblue font-bold';
+            logEntry.innerHTML = `
+                <span class="text-neutral-600 font-bold">[${timestamp}]</span> 
+                <span>${text}</span>
+            `;
+            consoleBox.appendChild(logEntry);
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  TICKER TAPE (Scrolling breaking headlines)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        function renderTicker() {
+            const track = document.getElementById('ticker-track');
+            if (allHeadlines.length === 0) {
+                track.innerHTML = `<span class="text-[10px] text-neutral-600 font-mono">AWAITING LIVE RSS STREAM HANDSHAKE...</span>`;
+                return;
+            }
+
+            let elements = [];
+            const items = allHeadlines.slice(0, 10);
+            for (let repeat = 0; repeat < 4; repeat++) {
+                items.forEach(item => {
+                    let dotColor = 'bg-cyberblue';
+                    if (item.category === 'computer') dotColor = 'bg-cybergreen';
+                    if (item.category === 'gaming') dotColor = 'bg-cyberred';
+                    if (item.category === 'science') dotColor = 'bg-cyberamber';
+
+                    elements.push(`
+                        <span onclick="openArticleReader('${item.category}', '${item.id}')" class="inline-flex items-center gap-1.5 text-[10px] tracking-wide cursor-pointer hover:bg-neutral-900 px-2.5 py-1 rounded">
+                            <span class="inline-block w-1.5 h-1.5 rounded-full ${dotColor}"></span>
+                            <span class="text-neutral-400 font-bold font-mono">[${item.sourceName.toUpperCase()}]</span>
+                            <span class="text-white font-medium">${item.title}</span>
+                        </span>
+                    `);
+                });
+            }
+            track.innerHTML = elements.join('');
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  ARTICLE DETAILED MODAL TERMINAL
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        function openArticleReader(cat, id) {
+            const list = activeFeeds[cat];
+            const item = list.find(x => x.id === id);
+            if (!item) return;
+
+            playChirp(480, 'sine', 0.12, 0.03);
+
+            // Populate Modal Content
+            document.getElementById('modal-category-label').textContent = `${cat.toUpperCase()} // ${item.sourceName.toUpperCase()}`;
+            
+            // Adjust category tag border color
+            const tag = document.getElementById('modal-category-label');
+            tag.className = "text-[8px] px-1.5 py-0.5 bg-[#050505] border rounded uppercase font-bold";
+            if (cat === 'tech') tag.classList.add('text-cyberblue', 'border-cyberblue/40');
+            if (cat === 'computer') tag.classList.add('text-cybergreen', 'border-cybergreen/40');
+            if (cat === 'gaming') tag.classList.add('text-cyberred', 'border-cyberred/40');
+            if (cat === 'science') tag.classList.add('text-cyberamber', 'border-cyberamber/40');
+
+            document.getElementById('modal-title').textContent = item.title;
+            document.getElementById('modal-author').textContent = `PUBLISHER: ${item.sourceName.toUpperCase()}`;
+            document.getElementById('modal-date').textContent = `INGEST_TIME: ${item.timeStr}`;
+            document.getElementById('modal-body').textContent = item.snippet;
+
+            // Show Modal
+            document.getElementById('article-reader-modal').classList.remove('hidden');
+        }
+
+        function closeReader() {
+            playChirp(300, 'sine', 0.08, 0.02);
+            document.getElementById('article-reader-modal').classList.add('hidden');
+        }
+
+        // Handle Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeReader();
+            }
+        });
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  DIAGNOSTICS & SYSTEM UPDATORS
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        function updateDiagnosticLabels() {
+            const rateKbs = Math.floor(packetIngestionCount * 12.4 + 48);
+            document.getElementById('packets-count-val').textContent = `${rateKbs} kbps`;
+            
+            const pktsRate = (1000 / UPDATE_INTERVAL_MS).toFixed(1);
+            document.getElementById('data-rate-label').textContent = `${pktsRate} pkts/s`;
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            const ms = String(Math.floor(now.getMilliseconds() / 10)).padStart(2, '0');
+            const str = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${ms}`;
+            document.getElementById('clock-display').textContent = str;
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  SYSTEM INITIALIZATION
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        let ingestionInterval;
+
+        async function init() {
+            // First mount news feeds configuration list
+            await fetchNewsFeedsList();
+
+            // Seed initial items matching user's loaded feeds list
+            const categories = ['tech', 'computer', 'gaming', 'science'];
+            categories.forEach(cat => {
+                ingestNewItem(cat);
+                ingestNewItem(cat);
+            });
+
+            updateClock();
+            setInterval(updateClock, 30);
+
+            // Establish primary loop scheduler
+            ingestionInterval = setInterval(() => {
+                ingestNewItem();
+            }, UPDATE_INTERVAL_MS);
+
+            // Connect Speed Slider
+            const slider = document.getElementById('speed-slider');
+            slider.addEventListener('input', (e) => {
+                const speedMs = parseInt(e.target.value);
+                const relIntervalSec = (speedMs / 1000).toFixed(1);
+                document.getElementById('speed-label').textContent = `${relIntervalSec}s`;
+                
+                clearInterval(ingestionInterval);
+                UPDATE_INTERVAL_MS = speedMs;
+                ingestionInterval = setInterval(() => {
+                    ingestNewItem();
+                }, UPDATE_INTERVAL_MS);
+
+                updateDiagnosticLabels();
+            });
+
+            updateDiagnosticLabels();
+            console.log("⚡ QUANT-X RSS aggregator daemon established.");
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
