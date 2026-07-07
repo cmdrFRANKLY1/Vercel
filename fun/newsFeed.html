@@ -127,8 +127,8 @@
     <!-- ─── HEADER BAR ─── -->
     <header class="flex-shrink-0 bg-panelbg border-b border-panelborder px-4 py-2 flex flex-wrap items-center justify-between gap-4 z-10">
         <div class="flex items-center gap-3">
-            <!-- Back to Index Button -->
-            <a href="index.html" class="flex items-center gap-1.5 text-[10px] text-neutral-500 hover:text-white border border-neutral-800 bg-neutral-900/40 hover:bg-neutral-900 px-2.5 py-1 rounded transition font-mono focus:outline-none">
+            <!-- Back to Index Button pointed to root path '/' for Vercel deployment -->
+            <a href="/" class="flex items-center gap-1.5 text-[10px] text-neutral-500 hover:text-white border border-neutral-800 bg-neutral-900/40 hover:bg-neutral-900 px-2.5 py-1 rounded transition font-mono focus:outline-none">
                 <span class="text-neutral-600 font-bold">&lt;</span> BACK
             </a>
 
@@ -358,6 +358,7 @@
             setTimeout(() => playChirp(220, 'square', 0.15, 0.02), 120);
         }
 
+        // Mute function
         function toggleMute() {
             isMuted = !isMuted;
             document.getElementById('sound-icon').textContent = isMuted ? '🔇' : '🔊';
@@ -433,9 +434,9 @@
             ]
         };
 
-        // Track currently stored articles (Max 15 per category)
+        // Track currently stored articles
         let activeFeeds = { tech: [], computer: [], gaming: [], science: [] };
-        let allHeadlines = []; // Ticker tape headlines list
+        let allHeadlines = []; 
         let packetIngestionCount = 0;
         
         // GLOBAL UPDATE CONFIGURATION
@@ -454,7 +455,6 @@
                 const data = await response.json();
                 
                 if (data && data.feeds) {
-                    // Update active configuration parameters securely
                     if (data.feeds.tech) newsFeedsConfig.tech = data.feeds.tech;
                     if (data.feeds.computer) newsFeedsConfig.computer = data.feeds.computer;
                     if (data.feeds.gaming) newsFeedsConfig.gaming = data.feeds.gaming;
@@ -478,12 +478,10 @@
             const categories = ['tech', 'computer', 'gaming', 'science'];
             const cat = forcedCategory || categories[Math.floor(Math.random() * categories.length)];
             
-            // Acquire source options from dynamic configuration
             const sourcePool = newsFeedsConfig[cat];
             const source = sourcePool[Math.floor(Math.random() * sourcePool.length)];
             const sourceName = source ? source.name : "Quant-X Node";
 
-            // Generate structured mock headlines based on selected categories
             const headlines = HEADLINE_TEMPLATES[cat];
             const rawHeadline = headlines[Math.floor(Math.random() * headlines.length)];
             
@@ -494,34 +492,27 @@
                 snippet: SNIPPETS[Math.floor(Math.random() * SNIPPETS.length)]
             };
             
-            // Add unique timestamp and random ID
             const now = new Date();
             item.timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
             item.id = `${cat}-${Math.random().toString(36).substr(2, 9)}`;
             item.category = cat;
 
-            // Prepend to active list
             activeFeeds[cat].unshift(item);
             
-            // Cap to 15 items to prevent DOM bloating
             if (activeFeeds[cat].length > 15) {
                 activeFeeds[cat].pop();
             }
 
-            // Add to general headlines for ticker tape
             allHeadlines.unshift(item);
             if (allHeadlines.length > 30) {
                 allHeadlines.pop();
             }
 
-            // Trigger packet diagnostics logs
             packetIngestionCount++;
             logPacketSocket(cat, item.sourceName, item.title);
 
-            // Audio blip
             playPacketArrivedBeep();
 
-            // Render matching category feed
             renderCategoryFeed(cat, item.id);
             renderTicker();
             updateDiagnosticLabels();
@@ -541,7 +532,6 @@
             }
 
             list.forEach(item => {
-                // Search Filter Logic
                 const matchesSearch = item.title.toLowerCase().includes(query) || 
                                       item.snippet.toLowerCase().includes(query) || 
                                       item.sourceName.toLowerCase().includes(query);
@@ -549,7 +539,6 @@
 
                 const isNew = item.id === highlightId ? 'new-item-flash' : '';
                 
-                // Color mapping for subheaders
                 let tagColor = 'text-cyberblue';
                 if (cat === 'computer') tagColor = 'text-cybergreen';
                 if (cat === 'gaming') tagColor = 'text-cyberred';
@@ -571,7 +560,6 @@
             document.getElementById(`${cat}-count`).textContent = `${list.length} ARTICLES`;
         }
 
-        // Real-time keyword filter across all feeds
         function filterAllFeeds() {
             renderCategoryFeed('tech');
             renderCategoryFeed('computer');
@@ -579,7 +567,6 @@
             renderCategoryFeed('science');
         }
 
-        // Simulated dynamic socket stream logs in console
         function logPacketSocket(cat, source, headline) {
             const consoleBox = document.getElementById('live-parser-console');
             const now = new Date();
@@ -620,7 +607,7 @@
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  TICKER TAPE (Scrolling breaking headlines)
+        //  TICKER TAPE
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         function renderTicker() {
             const track = document.getElementById('ticker-track');
@@ -660,10 +647,8 @@
 
             playChirp(480, 'sine', 0.12, 0.03);
 
-            // Populate Modal Content
             document.getElementById('modal-category-label').textContent = `${cat.toUpperCase()} // ${item.sourceName.toUpperCase()}`;
             
-            // Adjust category tag border color
             const tag = document.getElementById('modal-category-label');
             tag.className = "text-[8px] px-1.5 py-0.5 bg-[#050505] border rounded uppercase font-bold";
             if (cat === 'tech') tag.classList.add('text-cyberblue', 'border-cyberblue/40');
@@ -676,7 +661,6 @@
             document.getElementById('modal-date').textContent = `INGEST_TIME: ${item.timeStr}`;
             document.getElementById('modal-body').textContent = item.snippet;
 
-            // Show Modal
             document.getElementById('article-reader-modal').classList.remove('hidden');
         }
 
@@ -685,7 +669,6 @@
             document.getElementById('article-reader-modal').classList.add('hidden');
         }
 
-        // Handle Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeReader();
@@ -717,10 +700,8 @@
         let ingestionInterval;
 
         async function init() {
-            // First mount news feeds configuration list
             await fetchNewsFeedsList();
 
-            // Seed initial items matching user's loaded feeds list
             const categories = ['tech', 'computer', 'gaming', 'science'];
             categories.forEach(cat => {
                 ingestNewItem(cat);
@@ -730,12 +711,10 @@
             updateClock();
             setInterval(updateClock, 30);
 
-            // Establish primary loop scheduler
             ingestionInterval = setInterval(() => {
                 ingestNewItem();
             }, UPDATE_INTERVAL_MS);
 
-            // Connect Speed Slider
             const slider = document.getElementById('speed-slider');
             slider.addEventListener('input', (e) => {
                 const speedMs = parseInt(e.target.value);
