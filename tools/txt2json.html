@@ -20,8 +20,36 @@
             padding: 2rem 1.5rem;
             line-height: 1.5;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
+        }
+
+        /* ----- top bar / back button navigation ----- */
+        .top-bar {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto 1.5rem auto;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .back-link {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: #525252;
+            text-decoration: none;
+            transition: all 0.2s ease-in-out;
+            background: #09090b;
+            border: 1px solid #171717;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+        }
+
+        .back-link:hover {
+            color: #e4e4e7;
+            border-color: #525252;
+            background: #171717;
         }
 
         /* ----- main content space ----- */
@@ -275,6 +303,11 @@
 </head>
 <body>
 
+    <!-- Minimal top bar structure for navigation -->
+    <div class="top-bar">
+        <a href="../index.html" class="back-link">Back</a>
+    </div>
+
     <div class="card">
         <h1>txt ⇄ json converter</h1>
 
@@ -320,6 +353,49 @@
     <script>
         (function() {
             'use strict';
+
+            // ----- Dynamic Font Settings Loader -----
+            async function loadFontSettings() {
+                try {
+                    // Fetch settings from relative settings path
+                    const response = await fetch('../settings/fonts/txt2json.json');
+                    if (!response.ok) {
+                        throw new Error('Could not find settings/fonts/txt2json.json');
+                    }
+                    const settings = await response.json();
+
+                    // 1. Inject the Google Fonts stylesheet link dynamically if present
+                    if (settings.fonts) {
+                        if (settings.fonts.mono && settings.fonts.mono.importUrl) {
+                            const link = document.createElement('link');
+                            link.rel = 'stylesheet';
+                            link.href = settings.fonts.mono.importUrl;
+                            document.head.appendChild(link);
+                        }
+                        if (settings.fonts.verdana && settings.fonts.verdana.importUrl) {
+                            const link = document.createElement('link');
+                            link.rel = 'stylesheet';
+                            link.href = settings.fonts.verdana.importUrl;
+                            document.head.appendChild(link);
+                        }
+                    }
+
+                    // 2. Build and inject dynamic styling rules using customized config overrides
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        body, .file-label-inline, .btn {
+                            font-family: '${settings.fonts.verdana.name}', ${settings.fonts.verdana.fallback.join(', ')};
+                        }
+                        .back-link, .pane-header, .pane-content, .file-status-inline, .footer-note, .upload-area-inline div {
+                            font-family: '${settings.fonts.mono.name}', ${settings.fonts.mono.fallback.join(', ')};
+                        }
+                    `;
+                    document.head.appendChild(style);
+                    console.log(`📡 QUANT-X Dynamic Fonts successfully loaded inside tools: ${settings.systemName}`);
+                } catch (err) {
+                    console.warn('Failed to resolve settings/fonts/txt2json.json, operating under local defaults.', err);
+                }
+            }
 
             // ----- DOM refs -----
             const fileInput = document.getElementById('fileInput');
@@ -608,7 +684,9 @@
                 }
             });
 
+            // Initialize app and load dynamic settings
             resetAll();
+            loadFontSettings();
 
         })();
     </script>
