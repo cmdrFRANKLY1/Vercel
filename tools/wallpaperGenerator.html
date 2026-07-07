@@ -185,7 +185,7 @@
         
         <!-- Group 1: Navigation and Title -->
         <div class="flex items-center gap-3">
-            <a href="index.html" class="flex items-center gap-1.5 text-[11px] text-neutral-500 hover:text-white border border-[#171717] bg-[#050505] px-2.5 py-1.5 rounded transition font-mono focus:outline-none">
+            <a id="back-btn" href="index.html" class="flex items-center gap-1.5 text-[11px] text-neutral-500 hover:text-white border border-[#171717] bg-[#050505] px-2.5 py-1.5 rounded transition font-mono focus:outline-none">
                 <span class="text-neutral-600 font-bold">&lt;</span> BACK
             </a>
             <div class="control-title select-none font-mono">
@@ -241,7 +241,7 @@
             'use strict';
 
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            // 0. Selection Safety Patch
+            // 0. Selection Safety Patch & Route Resolver
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             if (window.getSelection) {
                 const originalGetSelection = window.getSelection;
@@ -264,6 +264,23 @@
                     }
                     return sel;
                 };
+            }
+
+            // Resolve dynamic back button path based on deployment route environment
+            const backBtn = document.getElementById('back-btn');
+            if (backBtn) {
+                const isLocal = window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                if (isLocal) {
+                    // Check if current file lies within a nested directory subclass
+                    if (window.location.pathname.includes('/tools/') || window.location.pathname.includes('/public/')) {
+                        backBtn.href = '../index.html';
+                    } else {
+                        backBtn.href = 'index.html';
+                    }
+                } else {
+                    // Safe production Vercel/Cloud routing pointing straight to root domain landing index
+                    backBtn.href = '/';
+                }
             }
 
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -379,6 +396,7 @@
                 drawPolygon(targetCtx, x, y, size * 0.9, rot, color, opacity, 5);
             }
 
+            // Draw a high-fidelity dynamic polygon
             function drawHexagon(targetCtx, x, y, size, rot, color, opacity) {
                 drawPolygon(targetCtx, x, y, size * 0.85, rot, color, opacity, 6);
             }

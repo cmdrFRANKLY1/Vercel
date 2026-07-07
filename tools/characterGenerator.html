@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>~ // character creator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Hardcoded high-legibility Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Consolas', 'monospace'],
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #050505;
+            color: #a1a1aa;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', 'Consolas', 'Courier New', monospace !important;
+        }
+        .font-sans {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050505;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #171717;
+            border-radius: 2px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #262626;
+        }
+
+        /* Portrait Grayscale to Color Transition */
+        .portrait-img {
+            filter: grayscale(100%) brightness(0.8) contrast(1.1);
+            transition: filter 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .portrait-container:hover .portrait-img {
+            filter: grayscale(0%) brightness(1) contrast(1);
+            transform: scale(1.03);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col p-6 selection:bg-neutral-800 selection:text-white">
+
+    <!-- ─── TOP BAR CONTROLS ─── -->
+    <header class="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4 z-40 mb-6 shrink-0 font-mono">
+        <div class="flex items-center gap-3">
+            <!-- Dynamic Router Back Button -->
+            <a id="back-btn" href="index.html" class="flex items-center gap-1.5 text-[11px] text-neutral-500 hover:text-white border border-[#171717] bg-[#09090b]/50 hover:bg-[#09090b] px-3 py-2 rounded transition focus:outline-none">
+                <span class="text-neutral-600 font-bold">&lt;</span> BACK
+            </a>
+            <span class="text-white font-bold text-sm tracking-wider uppercase flex items-center gap-2 select-none">
+                <span class="inline-block w-2 h-2 rounded-sm bg-neutral-500 animate-pulse"></span>
+                Character Sheet
+            </span>
+        </div>
+
+        <!-- System Controls (Sleek Dark Mode Reload Trigger) -->
+        <div class="flex items-center gap-3">
+            <!-- Generate Profile Action via Premium Reload Icon Button -->
+            <button id="btn-generate" aria-label="Generate Dossier" class="w-10 h-10 flex items-center justify-center rounded border border-[#171717] bg-[#09090b]/50 hover:bg-[#09090b] text-neutral-500 hover:text-neutral-200 transition-all duration-300 focus:outline-none" title="Generate New Character">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 4v6h-6"></path>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- ─── DOSSIER CONTAINER WORKSPACE ─── -->
+    <main class="flex-1 w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-y-auto pb-6 items-start">
+        
+        <!-- LEFT COLUMN: Profile portrait & Quick Status (Span 4) -->
+        <section class="lg:col-span-4 flex flex-col gap-6">
+            
+            <!-- Portrait Box -->
+            <div class="bg-[#09090b] border border-[#171717] rounded-md p-5 shadow-lg flex flex-col items-center relative overflow-hidden group">
+                
+                <div class="w-full aspect-square max-w-[280px] rounded-sm border border-[#171717] bg-[#050505] p-2 mb-4 overflow-hidden portrait-container shadow-inner">
+                    <img id="profile-portrait" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Character Portrait" class="w-full h-full object-cover rounded-sm portrait-img" />
+                </div>
+
+                <div class="text-center w-full">
+                    <h2 id="char-name" class="text-xl font-bold text-white tracking-wide truncate">Initializing Name</h2>
+                    <p id="char-profession" class="text-xs text-neutral-500 font-mono mt-0.5 uppercase tracking-wider">Awaiting Stream...</p>
+                </div>
+            </div>
+
+            <!-- Vital Logs Block -->
+            <div class="bg-[#09090b] border border-[#171717] rounded-md p-5 shadow-lg space-y-4">
+                <h3 class="text-[10px] text-neutral-500 font-mono font-bold tracking-widest uppercase border-b border-[#171717] pb-1.5 select-none">🔐 CLASSIFIED Vitals</h3>
+                <div class="space-y-3 font-mono text-xs">
+                    <div class="flex justify-between border-b border-neutral-900 pb-1.5">
+                        <span class="text-neutral-500 uppercase">Birthplace</span>
+                        <span id="char-birthplace" class="text-white font-medium">Loading...</span>
+                    </div>
+                    <div class="flex justify-between border-b border-neutral-900 pb-1.5">
+                        <span class="text-neutral-500 uppercase">Patron / Idol</span>
+                        <span id="char-idol" class="text-white font-medium">Loading...</span>
+                    </div>
+                    <div class="flex justify-between border-b border-neutral-900 pb-1.5">
+                        <span class="text-neutral-500 uppercase">Status</span>
+                        <span id="char-status" class="font-bold uppercase animate-pulse">Checking...</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-neutral-500 uppercase">Registry ID</span>
+                        <span id="char-id" class="text-neutral-400 font-bold">#N/A</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- RIGHT COLUMN: Attributes, Biography & Story Logs (Span 8) -->
+        <section class="lg:col-span-8 flex flex-col gap-6">
+
+            <!-- Attributes and Stats Panel -->
+            <div class="bg-[#09090b] border border-[#171717] rounded-md p-5 shadow-lg space-y-4">
+                <h3 class="text-[10px] text-neutral-500 font-mono font-bold tracking-widest uppercase border-b border-[#171717] pb-1.5 select-none">📊 ATTRIBUTE ARRAY</h3>
+                <div id="char-attributes" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Loaded procedurally -->
+                </div>
+            </div>
+
+            <!-- Narrative Chronicle Block -->
+            <div class="bg-[#09090b] border border-[#171717] rounded-md p-5 shadow-lg space-y-4">
+                <h3 class="text-[10px] text-neutral-500 font-mono font-bold tracking-widest uppercase border-b border-[#171717] pb-1.5 select-none">📜 NARRATIVE LOGS</h3>
+                <div class="space-y-4 font-mono text-xs text-neutral-300 leading-relaxed">
+                    <div class="bg-[#050505] border border-[#171717] p-4 rounded-sm">
+                        <h4 class="text-[9px] text-neutral-500 uppercase tracking-widest font-bold mb-1.5 select-none">REPUTATION & NOBILITY</h4>
+                        <p id="char-bio-reputation" class="italic">Parsing records...</p>
+                    </div>
+                    <div class="bg-[#050505] border border-[#171717] p-4 rounded-sm">
+                        <h4 class="text-[9px] text-neutral-500 uppercase tracking-widest font-bold mb-1.5 select-none">TRAINING & EDUCATION</h4>
+                        <p id="char-bio-background">Parsing records...</p>
+                    </div>
+                    <div class="bg-[#050505] border border-[#171717] p-4 rounded-sm">
+                        <h4 class="text-[9px] text-neutral-500 uppercase tracking-widest font-bold mb-1.5 select-none">MISSION MOTIVATION</h4>
+                        <p id="char-bio-motivation">Parsing records...</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-[#050505] border border-[#171717] p-4 rounded-sm">
+                            <h4 class="text-[9px] text-neutral-500 uppercase tracking-widest font-bold mb-1.5 select-none">LOCAL RUMORS</h4>
+                            <p id="char-bio-rumor">Parsing records...</p>
+                        </div>
+                        <div class="bg-[#050505] border border-[#171717] p-4 rounded-sm text-red-400/90 border-red-950/40 bg-red-950/5">
+                            <h4 class="text-[9px] text-red-500 uppercase tracking-widest font-bold mb-1.5 select-none">CONFIDENTIAL SECRETS</h4>
+                            <p id="char-bio-secret">Parsing records...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ─── JAVASCRIPT CHARACTER PROCESSING ENGINE ─── -->
+    <script>
+        (function() {
+            'use strict';
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 0. Environment Navigation Resolver
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            const backBtn = document.getElementById('back-btn');
+            if (backBtn) {
+                const isLocal = window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                if (isLocal) {
+                    if (window.location.pathname.includes('/tools/') || window.location.pathname.includes('/public/')) {
+                        backBtn.href = '../index.html';
+                    } else {
+                        backBtn.href = 'index.html';
+                    }
+                } else {
+                    backBtn.href = '/';
+                }
+            }
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 1. Web Audio Diagnostics Engine
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            let audioCtx = null;
+            let isMuted = true; // Default mute to off/muted
+
+            function initAudio() {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            function playChirp(freq, type, duration, volume) {
+                if (isMuted) return;
+                initAudio();
+                if (!audioCtx) return;
+
+                try {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.type = type || 'sine';
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                    
+                    gain.gain.setValueAtTime(volume || 0.05, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+
+                    osc.start(audioCtx.currentTime);
+                    osc.stop(audioCtx.currentTime + duration);
+                } catch (e) {
+                    // Suppress browser audio context locks
+                }
+            }
+
+            function playDossierChirp() {
+                playChirp(880, 'sine', 0.1, 0.02);
+                setTimeout(() => playChirp(1200, 'sine', 0.08, 0.02), 60);
+            }
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 2. High-Fidelity Local Fallback Databases
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            const FALLBACK_DATABASE = {
+                names: [
+                    "Valen Vance", "Lyra Drake", "Dax Rostova", "Sylas Thorne", "Aria Vance",
+                    "Julian Mercer", "Elena Vance", "Gideon Cole", "Thalia Vance", "Xavier Kael"
+                ],
+                birthplaces: [
+                    "Innovation Ridge", "Reston Spire", "Neverwinter Citadel", "Waterdeep Outpost",
+                    "Wilmington Enclave", "Morrison Tower", "Portland Sector", "Stark Core"
+                ],
+                idols: [
+                    "The Archivist", "Sonia Chavan", "David Liang", "The Sentinel",
+                    "Elminster Core", "Veltrix Vanguard", "Bridgefall Sovereign"
+                ],
+                professions: [
+                    "Systems Architect", "Lead Segmentation Engineer", "Voxel Shading Specialist",
+                    "Database Aggregator", "EUV Laser Array Specialist", "Fighter Coordinator",
+                    "Rogue Protocol Investigator", "Astrophysicist Investigator"
+                ],
+                attributes: {
+                    "Strength": ["Mighty", "Brutish", "Athletic", "Robust", "Tenacious"],
+                    "Dexterity": ["Agile", "Nimble", "Swift", "Precise", "Evasive"],
+                    "Constitution": ["Resilient", "Sturdy", "Indomitable", "Vigorous", "Unyielding"],
+                    "Intelligence": ["Wise", "Analytical", "Logical", "Brilliant", "Calculated"],
+                    "Wisdom": ["Insightful", "Intuitive", "Perceptive", "Discerning", "Astute"],
+                    "Charisma": ["Charming", "Commanding", "Persuasive", "Magnetic", "Diplomatic"]
+                },
+                biographies: {
+                    reputation: [
+                        "Widely regarded as an expert in tactical interface designs,",
+                        "Carries a controversial reputation among high-ranking officials,",
+                        "Celebrated as a highly disciplined system coordinator,"
+                    ],
+                    background: [
+                        "trained extensively in sub-orbital signal processing arrays,",
+                        "spent years deciphering complex cryptographic payloads,",
+                        "educated under classified military-grade computer networks,"
+                    ],
+                    motivation: [
+                        "striving to unlock the limits of quantum processing speeds.",
+                        "seeking out lost coordinates of encrypted space arrays.",
+                        "driven to safeguard system communication streams at all costs."
+                    ],
+                    rumor: [
+                        "Whispers suggest they once disabled an entire mainframe with a single line of code.",
+                        "Rumor has it they hold a secret blueprint of the orbital server arrays."
+                    ],
+                    secrets: [
+                        "Carries a hidden custom keycard to an unmapped sector.",
+                        "Holds active telemetry logs from an unknown Neptunian moons probe."
+                    ]
+                }
+            };
+
+            let characterDatabase = FALLBACK_DATABASE;
+
+            // Helper to load URLs in sandboxed blob environments
+            function getAbsoluteUrl(path) {
+                try {
+                    const base = window.location.protocol === 'blob:' ? window.location.origin : window.location.href;
+                    return new URL(path, base).href;
+                } catch (e) {
+                    return path;
+                }
+            }
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 3. Resource Preloader Engine
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            async function preloadClassifiedResources() {
+                const fetchResource = async (filename, defaultValue) => {
+                    try {
+                        const response = await fetch(getAbsoluteUrl(filename));
+                        if (response.ok) return await response.json();
+                    } catch (e) {
+                        // Silent catch to rely cleanly on hardcoded assets
+                    }
+                    return defaultValue;
+                };
+
+                const [names, birthplaces, idols, professions, attributes, biographies] = await Promise.all([
+                    fetchResource('listOfNames.json', FALLBACK_DATABASE.names),
+                    fetchResource('listOfBirthPlaces.json', FALLBACK_DATABASE.birthplaces),
+                    fetchResource('listOfIdols.json', FALLBACK_DATABASE.idols),
+                    fetchResource('listOfProfessions.json', FALLBACK_DATABASE.professions),
+                    fetchResource('listOfAttributes.json', FALLBACK_DATABASE.attributes),
+                    fetchResource('rndBiography.json', FALLBACK_DATABASE.biographies)
+                ]);
+
+                characterDatabase = { names, birthplaces, idols, professions, attributes, biographies };
+                
+                generateClassifiedDossier();
+            }
+
+            function getRandomElement(arr) {
+                if (!arr || arr.length === 0) return '';
+                const item = arr[Math.floor(Math.random() * arr.length)];
+                return item.name || item; // Handle object schemas gracefully
+            }
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 4. Dossier Builder Function
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            function generateClassifiedDossier() {
+                playDossierChirp();
+
+                const db = characterDatabase;
+
+                // Set Random Portrait (Use pravatar with random index and grey fallbacks)
+                const imgIdx = Math.floor(Math.random() * 70) + 1;
+                const portraitImg = document.getElementById('profile-portrait');
+                portraitImg.src = `https://i.pravatar.cc/400?img=${imgIdx}`;
+                portraitImg.onerror = function() {
+                    portraitImg.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 fill=%22%23222222%22/%3E%3Ccircle cx=%2220%22 cy=%2216%22 r=%228%22 fill=%22%23555555%22/%3E%3Cpath d=%22M8 36c0-6.627 5.373-12 12-12s12 5.373 12 12%22 fill=%22%23555555%22/%3E%3C/svg%3E';
+                };
+
+                // Generate Name (First and Last name fusion)
+                const name1 = getRandomElement(db.names);
+                const name2 = getRandomElement(db.names);
+                const firstName = name1.split(" ")[0] || name1;
+                const lastName = name2.split(" ")[1] || name2;
+                document.getElementById('char-name').textContent = `${firstName} ${lastName}`;
+
+                // Process Class / Profession (Directly randomized class selection)
+                const chosenClass = getRandomElement(db.professions);
+                document.getElementById('char-profession').textContent = chosenClass;
+
+                // Vitals
+                document.getElementById('char-birthplace').textContent = getRandomElement(db.birthplaces);
+                document.getElementById('char-idol').textContent = getRandomElement(db.idols);
+                
+                // Secure Registry ID Generation
+                const registryHex = Math.floor(Math.random() * 16777215).toString(16).toUpperCase().padStart(6, '0');
+                document.getElementById('char-id').textContent = `Q-${registryHex}`;
+
+                // Random Status Generation matching user requirements
+                const statusPool = [
+                    { label: "Online", style: "text-emerald-500 bg-emerald-950/20 border-emerald-900/40" },
+                    { label: "Offline", style: "text-neutral-500 bg-neutral-950/20 border-neutral-900/40" },
+                    { label: "DnD", style: "text-red-500 bg-red-950/20 border-red-900/40" },
+                    { label: "zZZ", style: "text-amber-500 bg-amber-950/20 border-amber-900/40" },
+                    { label: "AFK", style: "text-purple-500 bg-purple-950/20 border-purple-900/40" },
+                    { label: "Invisible", style: "text-cyan-500 bg-cyan-950/20 border-cyan-900/40" }
+                ];
+                const activeStatus = getRandomElement(statusPool);
+                const statusEl = document.getElementById('char-status');
+                statusEl.textContent = activeStatus.label;
+                statusEl.className = `font-bold uppercase animate-pulse transition-all duration-300 ${activeStatus.style.split(' ')[0]}`;
+
+                // Compile dynamic attributes grid
+                const statsGrid = document.getElementById('char-attributes');
+                statsGrid.innerHTML = '';
+
+                const coreStats = ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"];
+                coreStats.forEach(stat => {
+                    const traits = db.attributes[stat] || ["Active"];
+                    const trait = getRandomElement(traits);
+                    const baseVal = Math.floor(Math.random() * 11) + 8; // 8-18 Typical attribute limits
+
+                    const statBlock = document.createElement('div');
+                    statBlock.className = 'bg-[#050505] border border-[#171717] p-3.5 rounded-sm font-mono';
+                    statBlock.innerHTML = `
+                        <div class="flex justify-between items-center text-[10px] text-neutral-500 font-bold uppercase select-none mb-1">
+                            <span>${stat}</span>
+                            <span class="text-neutral-600">(${trait})</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg font-bold text-white leading-none">${baseVal}</span>
+                            <div class="flex-1 h-1.5 bg-[#171717] rounded-full overflow-hidden">
+                                <div class="h-full bg-neutral-500 rounded-full" style="width: ${Math.round((baseVal/18)*100)}%"></div>
+                            </div>
+                        </div>
+                    `;
+                    statsGrid.appendChild(statBlock);
+                });
+
+                // Assemble the Bio Chronicle segments
+                document.getElementById('char-bio-reputation').textContent = getRandomElement(db.biographies.reputation);
+                document.getElementById('char-bio-background').textContent = getRandomElement(db.biographies.background);
+                document.getElementById('char-bio-motivation').textContent = getRandomElement(db.biographies.motivation);
+                document.getElementById('char-bio-rumor').textContent = getRandomElement(db.biographies.rumor);
+                document.getElementById('char-bio-secret').textContent = getRandomElement(db.biographies.secrets);
+            }
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 5. Setup Action Triggers
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            const btnGenerate = document.getElementById('btn-generate');
+            btnGenerate.addEventListener('click', generateClassifiedDossier);
+
+            // Handle keys to trigger generation cycles safely
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'r' || e.key === 'R' || e.key === ' ') {
+                    e.preventDefault();
+                    generateClassifiedDossier();
+                }
+            });
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 6. Init
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            document.addEventListener('DOMContentLoaded', () => {
+                preloadClassifiedResources();
+            });
+
+        })();
+    </script>
+</body>
+</html>
