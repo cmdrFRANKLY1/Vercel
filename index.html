@@ -32,14 +32,15 @@
             <form id="search-form" class="relative group">
                 <!-- Terminal-style command prompt symbol -->
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-neutral-500 select-none">
-                    $ &gt;
+                    $
                 </div>
                 <input type="text"
                 id="search-input"
-                placeholder="Search..."
+                placeholder="Search items (e.g., graphics card, keycard)..."
                 autocomplete="off"
                 autofocus
-                class="w-full bg-[#09090b] text-white placeholder-neutral-700 pl-10 pr-4 py-2.5 rounded border border-neutral-800/80 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 transition-all font-mono text-sm shadow-md"
+                disabled
+                class="w-full bg-[#09090b] text-white placeholder-neutral-700 pl-8 pr-4 py-2.5 rounded border border-neutral-800/80 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 transition-all font-mono text-sm shadow-md disabled:opacity-50"
                 />
             </form>
         </div>
@@ -152,9 +153,23 @@
         </div>
     </div>
 
-    <!-- Centered Placeholder / Main Workspace -->
-    <div class="flex-1 flex flex-col justify-center items-center w-full max-w-xl mx-auto">
-        <!-- Kept clear and empty for a beautiful minimal terminal aesthetic -->
+    <!-- Main Workspace: Search Results Panel -->
+    <div class="flex-1 flex flex-col items-center justify-start w-full max-w-4xl mx-auto my-8 overflow-y-auto px-2">
+        <div id="tarkov-results" class="hidden w-full space-y-4">
+            <div class="flex items-center justify-between border-b border-neutral-900 pb-2 text-xs text-neutral-500 font-mono">
+                <div>DATABASE INDEX MATCHES: <span id="results-count" class="text-white">0</span></div>
+                <button id="clear-search-btn" class="hover:text-white transition-colors">[ Reset ]</button>
+            </div>
+            
+            <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Tarkov search entries loaded dynamically -->
+            </div>
+        </div>
+
+        <div id="loading-spinner" class="hidden my-auto flex flex-col items-center gap-3">
+            <div class="w-8 h-8 border-2 border-neutral-800 border-t-neutral-400 rounded-full animate-spin"></div>
+            <span id="loading-text" class="text-xs text-neutral-600 font-mono tracking-widest uppercase">Initializing tarkov.dev offline cache...</span>
+        </div>
     </div>
 
     <script>
@@ -182,6 +197,14 @@
         const charBirthplace = document.getElementById('char-birthplace');
         const charIdol = document.getElementById('char-idol');
 
+        // Results panel
+        const tarkovResults = document.getElementById('tarkov-results');
+        const resultsCount = document.getElementById('results-count');
+        const resultsGrid = document.getElementById('results-grid');
+        const clearSearchBtn = document.getElementById('clear-search-btn');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const loadingText = document.getElementById('loading-text');
+
         // Fallback local constants matching requested files
         const DEFAULT_HTML_LIST = [
             "tools/txt2json.html",
@@ -191,15 +214,222 @@
             "tools/txt2json.html"
         ];
 
-        // ─── Search ───────────────────────────────────────────────
-        searchForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const query = searchInput.value.trim();
-            if (query) {
-                // Navigate to standard Google search query or local tool
-                window.location.href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+        // Global Tarkov items database memory cache
+        let tarkovLocalCache = [];
+
+        // Cooldown configuration (3 minutes in milliseconds)
+        const COOLDOWN_DURATION = 3 * 60 * 1000;
+
+        // ─── Search Form Submission & Instant Local Search Logic ──────────
+        searchInput.addEventListener('input', function() {
+            const query = searchInput.value.trim().toLowerCase();
+            if (query.length > 1) {
+                performLocalTarkovSearch(query);
+            } else if (query.length === 0) {
+                tarkovResults.classList.add('hidden');
             }
         });
+
+        searchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const query = searchInput.value.trim().toLowerCase();
+            if (query) {
+                performLocalTarkovSearch(query);
+            }
+        });
+
+        clearSearchBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            tarkovResults.classList.add('hidden');
+            searchInput.focus();
+        });
+
+        // ─── Pre-fetch tarkov.dev Database with Cooldown ──────────────────
+        async function prefetchTarkovDatabase() {
+            const now = Date.now();
+            const lastFetchStr = localStorage.getItem('tarkov_last_fetch_timestamp');
+            const cachedDataStr = localStorage.getItem('tarkov_offline_cache');
+
+            // 1. If we have cached data and we are still inside the 3-minute cooldown period, load immediately from local storage.
+            if (cachedDataStr && lastFetchStr) {
+                const lastFetch = parseInt(lastFetchStr, 10);
+                if (now - lastFetch < COOLDOWN_DURATION) {
+                    try {
+                        tarkovLocalCache = JSON.parse(cachedDataStr);
+                        searchInput.disabled = false;
+                        searchInput.placeholder = "Type to search instantly... (Cached)";
+                        console.log('Tarkov database loaded from local cache (under 3-min cooldown limit).');
+                        return;
+                    } catch (e) {
+                        console.warn('Failed to parse offline Tarkov cache, refetching...', e);
+                    }
+                }
+            }
+
+            // 2. Otherwise, perform the network query to tarkov.dev
+            loadingSpinner.classList.remove('hidden');
+            loadingText.textContent = "Caching tarkov.dev database...";
+
+            const graphqlQuery = {
+                query: `query {
+                    items {
+                        id
+                        name
+                        shortName
+                        basePrice
+                        width
+                        height
+                        wikiLink
+                        iconLink
+                        types
+                        fleaMarket {
+                            banned
+                        }
+                        pvpLastLowPrice
+                        pveLastLowPrice
+                    }
+                }`
+            };
+
+            try {
+                const response = await fetch('https://api.tarkov.dev/graphql', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(graphqlQuery)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Initial sync failure');
+                }
+
+                const result = await response.json();
+                tarkovLocalCache = result.data?.items || [];
+                
+                // Save loaded items and update timestamp in localStorage
+                try {
+                    localStorage.setItem('tarkov_offline_cache', JSON.stringify(tarkovLocalCache));
+                    localStorage.setItem('tarkov_last_fetch_timestamp', now.toString());
+                } catch (storageErr) {
+                    console.warn('Could not write database items to localStorage (limit exceeded or disabled):', storageErr);
+                }
+
+                // Enable search input once data is successfully cached
+                searchInput.disabled = false;
+                searchInput.placeholder = "Type to search instantly...";
+            } catch (err) {
+                console.error('Tarkov pre-fetch initialization error:', err);
+                
+                // Fallback: If network is offline/throttled but we have expired cached data, use it as fallback
+                if (cachedDataStr) {
+                    try {
+                        tarkovLocalCache = JSON.parse(cachedDataStr);
+                        searchInput.disabled = false;
+                        searchInput.placeholder = "Type to search instantly (Fallback offline cache)";
+                        console.log('Using expired cache as offline fallback.');
+                    } catch (e) {
+                        searchInput.placeholder = "Connection Offline. Reload page.";
+                    }
+                } else {
+                    searchInput.placeholder = "Connection Offline. Reload page.";
+                }
+            } finally {
+                loadingSpinner.classList.add('hidden');
+            }
+        }
+
+        // Perform fast, local searches across preloaded memory cache
+        function performLocalTarkovSearch(queryStr) {
+            tarkovResults.classList.remove('hidden');
+            
+            // Filter pre-loaded items in local memory
+            const matchedItems = tarkovLocalCache.filter(item => {
+                const name = item.name ? item.name.toLowerCase() : '';
+                const shortName = item.shortName ? item.shortName.toLowerCase() : '';
+                return name.includes(queryStr) || shortName.includes(queryStr);
+            });
+
+            // Cap visible items to top 50 matches to keep DOM light and rendering super fast
+            const limitedMatches = matchedItems.slice(0, 50);
+            renderTarkovItems(limitedMatches);
+        }
+
+        function renderTarkovItems(items) {
+            resultsCount.textContent = items.length;
+
+            if (items.length === 0) {
+                resultsGrid.innerHTML = `
+                    <div class="col-span-full border border-dashed border-neutral-900 p-6 rounded text-center select-none">
+                        <p class="text-xs text-neutral-500 font-mono">No matching items found in local cache.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            resultsGrid.innerHTML = items.map(item => {
+                const types = item.types ? item.types.slice(0, 3).join(', ') : 'unknown';
+                const formattedBasePrice = item.basePrice ? new Intl.NumberFormat().format(item.basePrice) + ' ₽' : 'N/A';
+                
+                // Check if flea market banned
+                const isBanned = item.fleaMarket?.banned;
+                
+                // Handle PVP and PVE prices safely
+                const pvpPrice = isBanned ? 'BANNED' : (item.pvpLastLowPrice ? new Intl.NumberFormat().format(item.pvpLastLowPrice) + ' ₽' : 'N/A');
+                const pvePrice = isBanned ? 'BANNED' : (item.pveLastLowPrice ? new Intl.NumberFormat().format(item.pveLastLowPrice) + ' ₽' : 'N/A');
+
+                const wikiUrl = item.wikiLink || '#';
+                
+                return `
+                    <div class="bg-[#09090b]/60 border border-neutral-800 hover:border-neutral-700 rounded p-4 flex flex-col justify-between transition-all duration-300">
+                        <div class="space-y-2">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <h3 class="text-sm font-bold text-white tracking-wide font-mono line-clamp-1">
+                                        <a href="${wikiUrl}" target="_blank" class="hover:underline hover:text-neutral-200 decoration-neutral-600 transition-colors">
+                                            ${item.name}
+                                        </a>
+                                    </h3>
+                                    <p class="text-[10px] text-neutral-500 uppercase tracking-widest mt-0.5 font-mono">${item.shortName || 'Item'}</p>
+                                </div>
+                                <div class="w-10 h-10 shrink-0 bg-neutral-950/40 border border-neutral-900 rounded p-1 flex items-center justify-center">
+                                    <a href="${wikiUrl}" target="_blank" class="w-full h-full flex items-center justify-center">
+                                        <img src="${item.iconLink || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23333%22 stroke-width=%222%22%3E%3Crect x=%223%22 y=%223%22 width=%2218%22 height=%2218%22 rx=%222%22/%3E%3C/svg%3E'}" 
+                                             alt="${item.shortName}" 
+                                             class="max-w-full max-h-full object-contain filter brightness-90 hover:brightness-110 transition-all"
+                                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23333%22 stroke-width=%222%22%3E%3Crect x=%223%22 y=%223%22 width=%2218%22 height=%2218%22 rx=%222%22/%3E%3C/svg%3E'"/>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 text-[11px] font-mono pt-2 border-t border-neutral-900/40">
+                                <div>
+                                    <span class="text-neutral-600 block uppercase text-[9px] select-none">Base Value</span>
+                                    <span class="text-neutral-300">${formattedBasePrice}</span>
+                                </div>
+                                <div>
+                                    <span class="text-neutral-600 block uppercase text-[9px] select-none">Grid Size</span>
+                                    <span class="text-neutral-300">${item.width} × ${item.height}</span>
+                                </div>
+                                <div>
+                                    <span class="text-neutral-600 block uppercase text-[9px] select-none">PvP Flea</span>
+                                    <span class="${isBanned ? 'text-red-500 font-bold' : 'text-neutral-300'}">${pvpPrice}</span>
+                                </div>
+                                <div>
+                                    <span class="text-neutral-600 block uppercase text-[9px] select-none">PvE Flea</span>
+                                    <span class="${isBanned ? 'text-red-500 font-bold' : 'text-neutral-300'}">${pvePrice}</span>
+                                </div>
+                                <div class="col-span-2">
+                                    <span class="text-neutral-600 block uppercase text-[9px] select-none">Categories</span>
+                                    <span class="text-neutral-300 truncate block" title="${types}">${types}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
 
         // ─── Dropdown Toggling ────────────────────────────────────
         menuBtn8.addEventListener('click', function(e) {
@@ -244,7 +474,6 @@
         // Helper to resolve URLs correctly in sandboxed/blob environments
         function getAbsoluteUrl(path) {
             try {
-                // Check if running on sandbox domain and try to reference original origin
                 const base = window.location.protocol === 'blob:' ? window.location.origin : window.location.href;
                 return new URL(path, base).href;
             } catch (e) {
@@ -428,18 +657,26 @@
             img.onerror = function() {
                 // Ultimate fallback: a clean gradient silhouette.
                 profilePic.src =
-                'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"%3E%3Crect width="40" height="40" fill="%23222222"/%3E%3Ccircle cx="20" cy="16" r="8" fill="%23555555"/%3E%3Cpath d="M8 36c0-6.627 5.373-12 12-12s12 5.373 12 12" fill="%23555555"/%3E%3C/svg%3E';
+                'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 fill=%22%23222222%22/%3E%3Ccircle cx=%2220%22 cy=%2216%22 r=%228%22 fill=%22%23555555%22/%3E%3Cpath d=%22M8 36c0-6.627 5.373-12 12-12s12 5.373 12 12%22 fill=%22%23555555%22/%3E%3C/svg%3E';
             };
             img.src = url;
         }
 
         // ─── Init ──────────────────────────────────────────────────
-        window.onload = function() {
+        window.onload = async function() {
+            // Focus on search input
             searchInput.focus();
+
+            // Setup profile pic exactly once on load
+            setRandomProfilePic();
+
+            // Run async calls
             preloadCharacterResources();
             fetchHtmlList();
             fetchToolsList();
-            setRandomProfilePic(); // Fetches photo exactly once when the site loads
+            
+            // Prefetch and cache the entire Tarkov database locally
+            await prefetchTarkovDatabase();
         };
     </script>
 </body>
