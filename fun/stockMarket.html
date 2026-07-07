@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>⚡ TERMINAL // QUANT-X GLOBAL TRADING SYSTEM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&display=swap" rel="stylesheet" />
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        cyberbg: '#050505',
+                        panelbg: '#09090b',
+                        panelborder: '#18181b', // neutral-800
+                        cybergreen: '#10b981', // subtle emerald/green
+                        cyberred: '#ef4444',   // clean red
+                        cyberblue: '#3b82f6',  // matching blue
+                        cyberamber: '#f59e0b', // matching amber
+                    }
+                },
+            },
+        };
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            background: #050505;
+            color: #a1a1aa;
+            font-family: 'JetBrains Mono', monospace;
+            overflow: hidden;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Scrollbar styling matching index.html */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050505;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #18181b;
+            border-radius: 2px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #27272a;
+        }
+
+        /* Flash animations on price ticks */
+        @keyframes green-flash {
+            0% { background-color: rgba(16, 185, 129, 0.15); }
+            100% { background-color: transparent; }
+        }
+        @keyframes red-flash {
+            0% { background-color: rgba(239, 68, 68, 0.15); }
+            100% { background-color: transparent; }
+        }
+        .tick-up {
+            animation: green-flash 0.5s ease-out;
+        }
+        .tick-down {
+            animation: red-flash 0.5s ease-out;
+        }
+
+        /* Ticker tape styling */
+        .ticker-wrap {
+            width: 100%;
+            overflow: hidden;
+            background: #09090b;
+            border-bottom: 1px solid #18181b;
+            padding: 4px 0;
+            position: relative;
+            z-index: 10;
+        }
+        .ticker-wrap::before, .ticker-wrap::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 80px;
+            z-index: 2;
+            pointer-events: none;
+        }
+        .ticker-wrap::before {
+            left: 0;
+            background: linear-gradient(90deg, #050505, transparent);
+        }
+        .ticker-wrap::after {
+            right: 0;
+            background: linear-gradient(270deg, #050505, transparent);
+        }
+        .ticker {
+            display: flex;
+            gap: 2.5rem;
+            animation: tickerScroll 50s linear infinite;
+            white-space: nowrap;
+            will-change: transform;
+        }
+        @keyframes tickerScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .ticker:hover {
+            animation-play-state: paused;
+        }
+
+        .matrix-glitch {
+            text-shadow: 0 0 4px rgba(16, 185, 129, 0.3);
+        }
+        
+        .pulse-dot-green {
+            animation: pulse-green 1s ease-in-out infinite;
+        }
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.85); }
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen select-none selection:bg-neutral-800 selection:text-white">
+
+    <!-- ─── HEADER BAR ─── -->
+    <header class="flex-shrink-0 bg-panelbg border-b border-panelborder px-4 py-2 flex flex-wrap items-center justify-between gap-4 z-10">
+        <div class="flex items-center gap-3">
+            <!-- Back to Index Button -->
+            <a href="index.html" class="flex items-center gap-1.5 text-[10px] text-neutral-500 hover:text-white border border-neutral-800 bg-neutral-900/40 hover:bg-neutral-900 px-2.5 py-1 rounded transition font-mono focus:outline-none">
+                <span class="text-neutral-600 font-bold">&lt;</span> BACK
+            </a>
+
+            <span class="text-cybergreen font-bold text-xs tracking-wider matrix-glitch flex items-center gap-1.5">
+                <span class="pulse-dot-green inline-block w-2 h-2 rounded-full bg-cybergreen"></span>
+                QUANT-X // CORE v1.82
+            </span>
+            <div class="hidden sm:flex items-center gap-1.5 text-[10px] bg-[#050505] px-2 py-0.5 border border-[#18181b] text-neutral-500">
+                <span>FEED: <span class="text-cybergreen">ONLINE</span></span>
+                <span class="text-neutral-800">|</span>
+                <span>REGIME: <span id="current-regime" class="text-cyberblue font-bold">NORMAL WALKS</span></span>
+            </div>
+        </div>
+
+        <!-- System Controls Overload Panel -->
+        <div class="flex flex-wrap items-center gap-3 text-xs">
+            <!-- Speed Control -->
+            <div class="flex items-center gap-2 bg-[#050505] px-2 py-1 border border-[#18181b] rounded">
+                <span class="text-[9px] text-neutral-500">TICK RATE</span>
+                <input id="speed-slider" type="range" min="300" max="3000" value="3000" step="100" class="w-16 h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-neutral-500">
+                <span id="speed-label" class="text-[10px] font-bold text-neutral-400 min-w-[32px]">3.0s</span>
+            </div>
+
+            <!-- Sound toggle -->
+            <button id="sound-btn" onclick="toggleMute()" class="flex items-center gap-1 bg-neutral-900/50 hover:bg-neutral-900 text-neutral-500 hover:text-neutral-200 px-2.5 py-1 border border-panelborder transition text-[10px] rounded">
+                <span id="sound-icon">🔊</span>
+                <span id="sound-status">AUDIO ON</span>
+            </button>
+
+            <!-- Manual market shock generators -->
+            <div class="flex gap-1">
+                <button onclick="triggerMarketShock('BULL')" class="bg-emerald-950/20 text-cybergreen border border-emerald-900/50 text-[9px] px-2 py-0.5 hover:bg-emerald-950/40 rounded transition">SHOCK BULL</button>
+                <button onclick="triggerMarketShock('BEAR')" class="bg-red-950/20 text-cyberred border border-red-900/50 text-[9px] px-2 py-0.5 hover:bg-red-950/40 rounded transition">SHOCK BEAR</button>
+                <button onclick="triggerMarketShock('CRASH')" class="bg-amber-950/20 text-cyberamber border border-amber-900/50 text-[9px] px-2 py-0.5 hover:bg-amber-950/40 rounded transition">FLASH CRASH</button>
+            </div>
+
+            <!-- Live Clock -->
+            <div class="text-[11px] font-bold text-neutral-400 bg-neutral-950 border border-panelborder px-3 py-1 font-mono tracking-wider" id="clock-display">
+                00:00:00.00
+            </div>
+        </div>
+    </header>
+
+    <!-- ─── TICKER TAPE (Scrolling) ─── -->
+    <div class="ticker-wrap" id="ticker-wrap">
+        <div class="ticker" id="ticker-track">
+            <!-- Auto populated by JS -->
+        </div>
+    </div>
+
+    <!-- ─── MAIN CONTENT GRID ─── -->
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden h-full">
+
+        <!-- ==================== LEFT COLUMN: MACRO STATS, SENTIMENT & NEWS ==================== -->
+        <section class="lg:col-span-3 border-r border-panelborder flex flex-col overflow-y-auto bg-cyberbg">
+            
+            <!-- SECTION 1: Indices Widget -->
+            <div class="p-3 border-b border-panelborder bg-panelbg/60">
+                <h3 class="text-[9px] tracking-widest text-neutral-500 font-bold mb-2 uppercase flex items-center gap-1">
+                    <span>📡</span> INDEX AGGREGATORS
+                </h3>
+                <div class="grid grid-cols-2 gap-2" id="indices-grid">
+                    <!-- filled by JS -->
+                </div>
+            </div>
+
+            <!-- SECTION 2: Market Sentiment -->
+            <div class="p-3 border-b border-panelborder">
+                <h3 class="text-[9px] tracking-widest text-neutral-500 font-bold mb-2 uppercase flex items-center justify-between">
+                    <span>📈 SENTIMENT ANALYSIS</span>
+                    <span id="sentiment-val" class="text-cybergreen">72% GREED</span>
+                </h3>
+                <div class="bg-[#09090b] border border-panelborder p-2 rounded">
+                    <div class="relative w-full h-3 bg-neutral-900 rounded overflow-hidden">
+                        <div class="absolute inset-0 flex justify-between px-2 text-[6px] text-neutral-600 font-bold items-center pointer-events-none">
+                            <span>FEAR</span>
+                            <span>CRITICAL</span>
+                            <span>GREED</span>
+                        </div>
+                        <div id="sentiment-indicator" class="absolute top-0 bottom-0 left-[72%] w-1.5 bg-neutral-400 border-x border-black transition-all duration-700"></div>
+                    </div>
+                    <div class="grid grid-cols-3 text-[9px] mt-1.5 text-center text-neutral-500 font-semibold gap-1">
+                        <div class="bg-red-950/10 py-0.5 border border-red-950/20 rounded">BEARS: <span id="sentiment-bears-pct">28%</span></div>
+                        <div class="bg-neutral-900/30 py-0.5 border border-neutral-800/40 rounded">NEUT: <span id="sentiment-neut-pct">15%</span></div>
+                        <div class="bg-emerald-950/10 py-0.5 border border-emerald-950/20 rounded">BULLS: <span id="sentiment-bulls-pct">57%</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: Live Portfolio Simulator -->
+            <div class="p-3 border-b border-panelborder bg-panelbg/40">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-[9px] tracking-widest text-neutral-500 font-bold uppercase flex items-center gap-1">
+                        <span>💼</span> QUANT PORTFOLIO
+                    </h3>
+                    <button onclick="resetPortfolio()" class="text-[9px] text-cyberred hover:underline bg-transparent border-0 cursor-pointer">RESET ACCT</button>
+                </div>
+                <div class="bg-neutral-950 border border-panelborder p-2.5 rounded space-y-2">
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-[10px] text-neutral-500 font-medium">NET LIQUIDATION VALUE</span>
+                        <span id="port-total-value" class="text-sm font-bold text-white font-mono">$50,000.00</span>
+                    </div>
+                    <div class="h-[1px] bg-neutral-900"></div>
+                    <div class="grid grid-cols-2 gap-1.5 text-[10px] font-mono">
+                        <div>
+                            <span class="block text-neutral-500 text-[8px]">CASH POSITION</span>
+                            <span id="port-cash" class="text-cybergreen font-bold">$50,000.00</span>
+                        </div>
+                        <div>
+                            <span class="block text-neutral-500 text-[8px]">SECURITIES VAL</span>
+                            <span id="port-sec-val" class="text-cyberblue font-bold">$0.00</span>
+                        </div>
+                        <div>
+                            <span class="block text-neutral-500 text-[8px]">TOTAL UNREALIZED P&L</span>
+                            <span id="port-pnl" class="text-neutral-400 font-bold">$0.00 (0.00%)</span>
+                        </div>
+                        <div>
+                            <span class="block text-neutral-500 text-[8px]">ACTIVE POSITIONS</span>
+                            <span id="port-active-pos" class="text-neutral-300 font-bold">0 securities</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Held Assets Quick Grid -->
+                <div class="mt-2 text-[10px]">
+                    <div class="text-[8px] uppercase tracking-wider text-neutral-600 mb-1">Current Open Positions</div>
+                    <div class="max-h-[110px] overflow-y-auto space-y-1 bg-neutral-950/50 p-1 border border-panelborder rounded" id="portfolio-positions-list">
+                        <div class="text-center text-neutral-600 py-2 text-[9px] italic">No active holdings. Select a stock to initiate trade.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 4: System Alerts & News Feed -->
+            <div class="p-3 flex-1 flex flex-col overflow-hidden min-h-[150px]">
+                <h3 class="text-[9px] tracking-widest text-neutral-500 font-bold mb-2 uppercase flex items-center gap-1.5">
+                    <span class="inline-block w-2 h-2 bg-cyberamber animate-ping rounded-full"></span>
+                    NEWSFEED / REGULATORY bulletins
+                </h3>
+                <div class="flex-1 overflow-y-auto border border-panelborder bg-[#050505] p-2 rounded text-[10px] space-y-2 font-mono flex flex-col-reverse" id="terminal-news-logs">
+                    <!-- Logs inserted here, bottom-up/first view is latest -->
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ==================== MIDDLE COLUMN: MAIN BOARD AND GRID ==================== -->
+        <section class="lg:col-span-6 border-r border-panelborder flex flex-col overflow-hidden bg-cyberbg">
+            
+            <!-- Controls Table Toolbar -->
+            <div class="p-2 border-b border-panelborder bg-panelbg flex flex-wrap gap-2 items-center justify-between">
+                
+                <!-- Filter buttons and search -->
+                <div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+                    <!-- Search input -->
+                    <div class="relative">
+                        <input id="stock-search" type="text" placeholder="FILTER SEC..." class="bg-neutral-950 text-[10px] font-mono border border-panelborder rounded px-2 py-1 w-28 text-white focus:outline-none focus:border-neutral-500 placeholder-neutral-700">
+                    </div>
+                    
+                    <!-- Quick Sector Selectors -->
+                    <select id="sector-filter" class="bg-neutral-950 text-[10px] font-mono border border-panelborder rounded px-1.5 py-1 text-neutral-400 focus:outline-none focus:border-neutral-500">
+                        <option value="ALL">ALL SECTORS</option>
+                        <option value="Technology">TECHNOLOGY</option>
+                        <option value="Biotech">BIOTECH</option>
+                        <option value="Financials">FINANCIALS</option>
+                        <option value="Energy">ENERGY</option>
+                        <option value="Defense">DEFENSE</option>
+                        <option value="Consumer">CONSUMER</option>
+                    </select>
+
+                    <!-- Fast Sorting toggles -->
+                    <select id="sort-filter" class="bg-neutral-950 text-[10px] font-mono border border-panelborder rounded px-1.5 py-1 text-neutral-400 focus:outline-none focus:border-neutral-500">
+                        <option value="SYM_ASC">SYM A-Z</option>
+                        <option value="PRICE_DESC">PRICE (HIGH)</option>
+                        <option value="PRICE_ASC">PRICE (LOW)</option>
+                        <option value="CHANGE_DESC">GAINERS</option>
+                        <option value="CHANGE_ASC">LOSERS</option>
+                        <option value="VOL_DESC">VOLUME</option>
+                    </select>
+                </div>
+
+                <!-- Quick statistics overview -->
+                <div class="text-[9px] text-neutral-500 font-medium">
+                    MONITORING: <span id="stock-count-label" class="text-neutral-300 font-bold">--</span> SECS | ACTIVE: <span class="text-cybergreen" id="active-up-label">-- ▲</span> / <span class="text-cyberred" id="active-down-label">-- ▼</span>
+                </div>
+            </div>
+
+            <!-- The Stock Grid/Table Wrap -->
+            <div class="stock-table-wrap flex-1 overflow-y-auto">
+                <table class="stock-table w-full text-left font-mono" id="stock-table">
+                    <thead>
+                        <tr class="border-b border-panelborder sticky top-0 bg-cyberbg z-10">
+                            <th class="py-2 px-3 text-[8px] tracking-wider text-neutral-500 font-bold uppercase w-[15%]">Symbol</th>
+                            <th class="py-2 px-3 text-[8px] tracking-wider text-neutral-500 font-bold uppercase w-[25%] hidden sm:table-cell">Company Name</th>
+                            <th class="py-2 px-3 text-[8px] tracking-wider text-neutral-500 font-bold uppercase w-[15%] text-right">Price</th>
+                            <th class="py-2 px-3 text-[8px] tracking-wider text-neutral-500 font-bold uppercase w-[15%] text-right">Change</th>
+                            <th class="py-2 px-3 text-[8px] tracking-wider text-neutral-500 font-bold uppercase w-[15%] text-right">% Chg</th>
+                            <th class="py-2 px-3 text-[8px] tracking-wider text-neutral-500 font-bold uppercase w-[15%] text-right hidden md:table-cell">Vol (24h)</th>
+                            <th class="py-2 px-3 text-[8px] tracking-wider text-neutral-500 font-bold uppercase w-[20%] text-center">Trend (30t)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stock-tbody" class="divide-y divide-neutral-900/60">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+
+        <!-- ==================== RIGHT COLUMN: DETAILED ANALYSIS & ACTIVE ORDER PANEL ==================== -->
+        <section class="lg:col-span-3 flex flex-col overflow-y-auto bg-cyberbg border-t lg:border-t-0 border-panelborder">
+            
+            <!-- SECTION 1: Active stock details header & graph -->
+            <div class="p-3 border-b border-panelborder bg-panelbg">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">ACTIVE INSTRUMENT</div>
+                        <h2 class="text-2xl font-black text-white leading-none font-mono tracking-tighter" id="detail-symbol">----</h2>
+                        <span class="text-[10px] text-neutral-500 font-semibold" id="detail-fullname">Select a security...</span>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xl font-bold font-mono tracking-tight text-white" id="detail-price">$0.00</div>
+                        <div class="text-xs font-semibold" id="detail-change">+0.00 (+0.00%)</div>
+                    </div>
+                </div>
+
+                <!-- Big Sparkline Chart -->
+                <div class="mt-3 bg-neutral-950 border border-panelborder rounded p-1.5 relative">
+                    <div class="absolute top-1 left-2 text-[8px] text-neutral-600 tracking-wider">30-TICK CORE VALUATION MATRIX</div>
+                    <canvas id="detail-canvas-chart" class="w-full h-24 bg-transparent block"></canvas>
+                </div>
+            </div>
+
+            <!-- SECTION 2: Order execution zone -->
+            <div class="p-3 border-b border-panelborder bg-panelbg/20">
+                <h3 class="text-[9px] tracking-widest text-neutral-500 font-bold mb-2 uppercase flex items-center gap-1.5">
+                    <span>⚡ EXECUTOR NODE</span>
+                    <span id="executor-err-msg" class="text-cyberred font-bold animate-pulse text-[8px] hidden"></span>
+                </h3>
+                
+                <div class="bg-neutral-950 border border-panelborder p-2.5 rounded space-y-3">
+                    <!-- Buy/Sell Tabs -->
+                    <div class="grid grid-cols-2 gap-1 bg-[#050505] p-1 border border-neutral-900 rounded">
+                        <button id="tab-buy" onclick="setOrderType('BUY')" class="bg-emerald-950/40 text-cybergreen border border-emerald-900/60 text-xs py-1 rounded transition font-bold">BUY SHARE</button>
+                        <button id="tab-sell" onclick="setOrderType('SELL')" class="bg-neutral-900/40 text-neutral-500 border border-transparent text-xs py-1 rounded transition font-bold hover:text-white">SELL SHARE</button>
+                    </div>
+
+                    <!-- Quantity selectors -->
+                    <div>
+                        <div class="flex justify-between text-[8px] text-neutral-500 font-bold mb-1">
+                            <span>TRANSACTION QUANTITY</span>
+                            <span id="max-affordable-label" class="text-neutral-500">MAX AFFORDABLE: 0</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="adjustOrderQty(-1)" class="bg-[#121216] border border-neutral-800 text-neutral-300 font-bold text-xs hover:bg-neutral-900 py-1 px-3 rounded font-mono">-</button>
+                            <input id="order-qty" type="number" min="1" value="10" oninput="calculateTotalOrderPrice()" class="bg-[#050505] text-center font-bold text-white text-sm border border-neutral-800 rounded py-1 px-2 w-full focus:outline-none focus:border-neutral-500 font-mono">
+                            <button onclick="adjustOrderQty(1)" class="bg-[#121216] border border-neutral-800 text-neutral-300 font-bold text-xs hover:bg-neutral-900 py-1 px-3 rounded font-mono">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Shortcut percentages for quick trades -->
+                    <div class="grid grid-cols-4 gap-1 text-[8px] text-center font-bold">
+                        <button onclick="setPercentQty(0.10)" class="bg-[#121216] text-neutral-500 border border-panelborder py-1 hover:bg-[#181824] hover:text-white rounded">10%</button>
+                        <button onclick="setPercentQty(0.25)" class="bg-[#121216] text-neutral-500 border border-panelborder py-1 hover:bg-[#181824] hover:text-white rounded">25%</button>
+                        <button onclick="setPercentQty(0.50)" class="bg-[#121216] text-neutral-500 border border-panelborder py-1 hover:bg-[#181824] hover:text-white rounded">50%</button>
+                        <button onclick="setPercentQty(1.00)" class="bg-[#121216] text-neutral-500 border border-panelborder py-1 hover:bg-[#181824] hover:text-white rounded">MAX</button>
+                    </div>
+
+                    <div class="h-[1px] bg-neutral-900"></div>
+
+                    <!-- Total cost -->
+                    <div class="flex justify-between items-center text-xs font-mono">
+                        <span class="text-neutral-500 text-[10px]">TOTAL ESTIMATED COST:</span>
+                        <span id="order-est-total" class="font-bold text-white">$0.00</span>
+                    </div>
+
+                    <!-- Submit action button -->
+                    <button id="order-submit-btn" onclick="executeOrder()" class="w-full bg-cybergreen/10 hover:bg-cybergreen/25 text-cybergreen font-black border border-cybergreen/40 py-2 text-xs tracking-widest uppercase transition rounded shadow-lg">
+                        EXECUTE BUY ORDER
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECTION 3: Order book depth visualizer -->
+            <div class="p-3 border-b border-panelborder">
+                <h3 class="text-[9px] tracking-widest text-neutral-500 font-bold mb-2 uppercase flex items-center justify-between">
+                    <span>📊 DEPTH BOOK L2</span>
+                    <span id="bid-ask-spread" class="text-cyberblue font-mono">SPREAD: $0.00</span>
+                </h3>
+                <div class="bg-[#050505]/60 border border-panelborder p-2 rounded text-[10px] font-mono space-y-1">
+                    <div class="grid grid-cols-3 text-center text-[8px] font-bold text-neutral-600 uppercase border-b border-neutral-900 pb-1">
+                        <span>Bid Size</span>
+                        <span>Price</span>
+                        <span>Ask Size</span>
+                    </div>
+                    <div id="order-book-bids" class="space-y-0.5 text-cyberred">
+                        <!-- Red Asks -->
+                    </div>
+                    <div class="text-center py-0.5 text-[8px] tracking-widest font-black text-neutral-500 bg-neutral-900/40 border-y border-neutral-900/60 my-1" id="midpoint-display">
+                        MIDPOINT: $0.00
+                    </div>
+                    <div id="order-book-asks" class="space-y-0.5 text-cybergreen">
+                        <!-- Green Bids -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 4: Live Global Trades list (Time & Sales) -->
+            <div class="p-3 flex-1 overflow-hidden min-h-[140px]">
+                <h3 class="text-[9px] tracking-widest text-neutral-500 font-bold mb-2 uppercase flex items-center gap-1">
+                    <span>📡</span> GLOBAL TRADE LOGGER
+                </h3>
+                <div class="h-full max-h-[160px] overflow-y-auto border border-panelborder bg-[#050505] p-2 rounded text-[9px] font-mono space-y-1" id="global-trade-sales">
+                    <!-- dynamically injected trade execution log -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ─── AUDIO ENGINE, SIMULATOR SYSTEM, RENDER SCRIPTS ─── -->
+    <script>
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  SYNTHESIZED SYNTH SOUND ENGINE (No external libraries!)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        let audioCtx = null;
+        let isMuted = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playBeep(freq, type, duration, volume) {
+            if (isMuted) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.type = type || 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(volume || 0.05, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                // Silently bypass audio context errors
+            }
+        }
+
+        function playTick(isUp) {
+            // High-pitched synthesized market tick
+            playBeep(isUp ? 880 : 440, 'triangle', 0.04, 0.012);
+        }
+
+        function playTradeBeep(isBuy) {
+            // confirm blip
+            if (isBuy) {
+                playBeep(523.25, 'sine', 0.15, 0.04); 
+                setTimeout(() => playBeep(659.25, 'sine', 0.20, 0.04), 80); 
+            } else {
+                playBeep(587.33, 'sine', 0.15, 0.04); 
+                setTimeout(() => playBeep(349.23, 'sine', 0.20, 0.04), 80); 
+            }
+        }
+
+        function playAlertBeep() {
+            playBeep(329.63, 'square', 0.15, 0.03);
+            setTimeout(() => playBeep(329.63, 'square', 0.25, 0.03), 180);
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            document.getElementById('sound-icon').textContent = isMuted ? '🔇' : '🔊';
+            document.getElementById('sound-status').textContent = isMuted ? 'AUDIO OFF' : 'AUDIO ON';
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  CONFIG & ENHANCED SYSTEM VARIABLES
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        const STOCK_COUNT = 40;
+        const HISTORY_LENGTH = 30;
+        
+        // DEFAULT TO THE SLOWEST RATE (3000ms = 3.0 seconds)
+        let UPDATE_INTERVAL_MS = 3000; 
+
+        // Market regimes defining market behaviors over time
+        const REGIMES = {
+            NORMAL: "NORMAL WALK",
+            BULL_RUN: "BULL REGIME",
+            BEAR_ATTACK: "BEAR REGIME",
+            FLASH_CRASH: "SYSTEM SHOCK",
+            VOLATILE: "CHAOS REGIME"
+        };
+        let currentRegime = REGIMES.NORMAL;
+        let regimeCyclesLeft = 40; // updates remaining in current state
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  DATA GENERATORS
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        const SECTORS = ['Technology', 'Biotech', 'Financials', 'Energy', 'Defense', 'Consumer'];
+
+        // Custom stylized futuristic/military companies
+        const COMPANIES = {
+            'Technology': [
+                { sym: 'NVA', name: 'Nova Quantum Grid' },
+                { sym: 'HXG', name: 'Helix Cybernetics' },
+                { sym: 'ZNT', name: 'Zenith Microchips' },
+                { sym: 'STR', name: 'Stratus Cloud Net' },
+                { sym: 'QNT', name: 'Quantum Core Sys' },
+                { sym: 'VTX', name: 'Vertex Holograms' },
+                { sym: 'INF', name: 'Infinity Cryptos' }
+            ],
+            'Biotech': [
+                { sym: 'ATH', name: 'Aether NeuroGen' },
+                { sym: 'GLX', name: 'Galaxy Therapeutics' },
+                { sym: 'VIR', name: 'ViroTech Synths' },
+                { sym: 'GEN', name: 'Genesis Organics' },
+                { sym: 'BIO', name: 'Biocel Lab Inc.' }
+            ],
+            'Financials': [
+                { sym: 'VNG', name: 'Vanguard Blockcap' },
+                { sym: 'KRS', name: 'Kairos Sovereign' },
+                { sym: 'NOB', name: 'Noble Trust Capital' },
+                { sym: 'MRD', name: 'Meridian Liquidity' },
+                { sym: 'APX', name: 'Apex Clearing Corp' }
+            ],
+            'Energy': [
+                { sym: 'FUS', name: 'Fusion Nuclear' },
+                { sym: 'SOL', name: 'Solstice Solar Hub' },
+                { sym: 'HYD', name: 'Hydrogen Energy' },
+                { sym: 'VOL', name: 'Voltaic Grid Co' }
+            ],
+            'Defense': [
+                { sym: 'TTN', name: 'Titan Armor Mech' },
+                { sym: 'WRD', name: 'Warden Defense Net' },
+                { sym: 'XEN', name: 'Xenon Laser Corp' },
+                { sym: 'DRA', name: 'Draco Tactical' }
+            ],
+            'Consumer': [
+                { sym: 'KRM', name: 'Karma Synthetic Foods' },
+                { sym: 'YAR', name: 'Yara VR Wear' },
+                { sym: 'VES', name: 'Vesper Luxury Air' },
+                { sym: 'WIL', name: 'Willow Greenery' }
+            ]
+        };
+
+        function randomBetween(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        function randomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  STOCK CLASS WITH TRENDS & CORRELATION
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        class Stock {
+            constructor(symbol, name, sector) {
+                this.symbol = symbol;
+                this.name = name;
+                this.sector = sector;
+                
+                // Initial price distribution
+                const base = randomBetween(12, 180);
+                this.price = Math.random() < 0.05 ? base * 4 : base;
+                this.volume = randomBetween(0.1, 5.0); 
+                this.history = [];
+                
+                this.volatility = this.getSectorVolatility();
+                this.bias = randomBetween(-0.001, 0.001); 
+
+                // Seed history to produce pre-rendered line charts
+                let seedPrice = this.price;
+                for (let i = 0; i < HISTORY_LENGTH; i++) {
+                    seedPrice = seedPrice * (1 + randomBetween(-this.volatility, this.volatility));
+                    seedPrice = Math.max(1.0, seedPrice);
+                    this.history.push(seedPrice);
+                }
+                this.price = this.history[this.history.length - 1];
+                this.change = 0;
+                this.changePercent = 0;
+                this.lastDirection = 'UP';
+            }
+
+            getSectorVolatility() {
+                switch(this.sector) {
+                    case 'Biotech': return 0.025; 
+                    case 'Technology': return 0.018; 
+                    case 'Defense': return 0.012; 
+                    case 'Energy': return 0.015; 
+                    case 'Financials': return 0.009; 
+                    case 'Consumer': return 0.007; 
+                    default: return 0.012;
+                }
+            }
+
+            step(regimeBias, regimeVol) {
+                let volModifier = 1.0;
+                let finalBias = this.bias + regimeBias;
+
+                if (currentRegime === REGIMES.VOLATILE) {
+                    volModifier = 2.5;
+                } else if (currentRegime === REGIMES.BULL_RUN && this.sector === 'Technology') {
+                    finalBias += 0.006; 
+                } else if (currentRegime === REGIMES.BEAR_ATTACK && this.sector === 'Financials') {
+                    finalBias -= 0.005; 
+                }
+
+                const finalVol = this.volatility * volModifier * regimeVol;
+                let walk = randomBetween(-finalVol, finalVol) + finalBias;
+
+                if (Math.random() < 0.008) {
+                    const corporateShock = randomBetween(-0.08, 0.08);
+                    walk += corporateShock;
+                    let newsMessage = "";
+                    if (corporateShock > 0.02) {
+                        newsMessage = `CORP BULLETIN: $${this.symbol} shares surge after rumor of mega acquisition deal.`;
+                    } else {
+                        newsMessage = `CORP WARNING: Audit oversight flagged at $${this.symbol}. Compliance review ordered.`;
+                    }
+                    addNewsItem(newsMessage, corporateShock > 0 ? "BULL" : "BEAR");
+                }
+
+                const prevPrice = this.price;
+                let newPrice = this.price * (1 + walk);
+
+                if (newPrice < 0.50) {
+                    newPrice = 2.00; 
+                    addNewsItem(`REGULATORY TRADING HALT: $${this.symbol} restructured to avoid bankruptcy.`, "NEUTRAL");
+                }
+
+                this.change = newPrice - prevPrice;
+                this.changePercent = (this.change / prevPrice) * 100;
+                this.price = newPrice;
+                this.lastDirection = this.change >= 0 ? 'UP' : 'DOWN';
+
+                this.history.push(newPrice);
+                if (this.history.length > HISTORY_LENGTH) {
+                    this.history.shift();
+                }
+
+                this.volume = Math.max(0.01, this.volume * (1 + randomBetween(-0.05, 0.05)));
+            }
+
+            get historyData() {
+                return this.history;
+            }
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  GLOBAL MACRO INDICES
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        const INDICES = [
+            { id: 'SPX', name: 'Q-500 INDEX', value: 5120.45, base: 5120.45 },
+            { id: 'COMP', name: 'NDAQ-TECH', value: 17402.10, base: 17402.10 },
+            { id: 'FIN', name: 'FIN-CORP', value: 8934.33, base: 8934.33 },
+            { id: 'XDF', name: 'DEF-GLOBAL', value: 12432.88, base: 12432.88 }
+        ];
+
+        function updateIndices() {
+            let techAvg = 0, finAvg = 0, defAvg = 0, overallAvg = 0;
+            let techC = 0, finC = 0, defC = 0;
+
+            stocks.forEach(s => {
+                overallAvg += s.changePercent;
+                if (s.sector === 'Technology') { techAvg += s.changePercent; techC++; }
+                if (s.sector === 'Financials') { finAvg += s.changePercent; finC++; }
+                if (s.sector === 'Defense') { defAvg += s.changePercent; defC++; }
+            });
+
+            overallAvg /= stocks.length;
+            techAvg = techC > 0 ? techAvg / techC : overallAvg;
+            finAvg = finC > 0 ? finAvg / finC : overallAvg;
+            defAvg = defC > 0 ? defAvg / defC : overallAvg;
+
+            INDICES.forEach(idx => {
+                let sectorMove = overallAvg;
+                if (idx.id === 'COMP') sectorMove = techAvg;
+                if (idx.id === 'FIN') sectorMove = finAvg;
+                if (idx.id === 'XDF') sectorMove = defAvg;
+
+                const indexNoise = randomBetween(-0.15, 0.15);
+                const factor = 1 + (sectorMove + indexNoise) / 100;
+                idx.value = Math.max(100, idx.value * factor);
+            });
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  PORTFOLIO SYSTEM ENGINE
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        let portfolio = {
+            cash: 50000.00,
+            holdings: {} 
+        };
+
+        function resetPortfolio() {
+            portfolio.cash = 50000.00;
+            portfolio.holdings = {};
+            addNewsItem("QUANT SYSTEM: Trading account reset. Allocation returned to $50,000.00 cash.", "NEUTRAL");
+            updatePortfolioUI();
+            playAlertBeep();
+        }
+
+        function updatePortfolioUI() {
+            let securitiesVal = 0.00;
+            let unrealizedPnL = 0.00;
+            let purchaseCostBasis = 0.00;
+
+            const posContainer = document.getElementById('portfolio-positions-list');
+            let rowsHtml = '';
+
+            const keys = Object.keys(portfolio.holdings);
+            if (keys.length === 0) {
+                posContainer.innerHTML = `<div class="text-center text-neutral-600 py-2 text-[9px] italic">No active holdings. Select a stock to initiate trade.</div>`;
+            } else {
+                keys.forEach(sym => {
+                    const holding = portfolio.holdings[sym];
+                    const stockObj = stocks.find(s => s.symbol === sym);
+                    if (!stockObj) return;
+
+                    const curPrice = stockObj.price;
+                    const value = holding.shares * curPrice;
+                    const cost = holding.shares * holding.avgCost;
+                    const pnl = value - cost;
+                    const pnlPercent = cost > 0 ? (pnl / cost) * 100 : 0;
+
+                    securitiesVal += value;
+                    purchaseCostBasis += cost;
+                    unrealizedPnL += pnl;
+
+                    const pnlColor = pnl >= 0 ? 'text-cybergreen' : 'text-cyberred';
+                    const pnlSign = pnl >= 0 ? '+' : '';
+
+                    rowsHtml += `
+                        <div onclick="selectStock('${sym}')" class="flex justify-between items-center bg-[#050505] border border-neutral-800 hover:border-neutral-500 p-1.5 rounded cursor-pointer transition">
+                            <div>
+                                <span class="font-bold text-white text-[11px]">${sym}</span>
+                                <span class="text-[9px] text-neutral-500 ml-1">${holding.shares} SHRS</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="block text-[11px] font-mono text-zinc-300">$${value.toFixed(2)}</span>
+                                <span class="block text-[9px] ${pnlColor} font-mono">${pnlSign}$${pnl.toFixed(2)} (${pnlSign}${pnlPercent.toFixed(1)}%)</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                posContainer.innerHTML = rowsHtml;
+            }
+
+            const netVal = portfolio.cash + securitiesVal;
+            const totalPnL = purchaseCostBasis > 0 ? unrealizedPnL : 0;
+            const totalPnLPct = purchaseCostBasis > 0 ? (totalPnL / purchaseCostBasis) * 100 : 0;
+
+            document.getElementById('port-total-value').textContent = `$${netVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('port-cash').textContent = `$${portfolio.cash.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('port-sec-val').textContent = `$${securitiesVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            const pnlLabel = document.getElementById('port-pnl');
+            const sign = totalPnL >= 0 ? '+' : '';
+            pnlLabel.textContent = `${sign}$${totalPnL.toFixed(2)} (${sign}${totalPnLPct.toFixed(1)}%)`;
+            pnlLabel.className = `font-bold font-mono text-[10px] ${totalPnL >= 0 ? 'text-cybergreen' : 'text-cyberred'}`;
+
+            document.getElementById('port-active-pos').textContent = `${keys.length} securit${keys.length === 1 ? 'y' : 'ies'}`;
+
+            calculateTotalOrderPrice();
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  ORDER EXECUTION PANEL & CONTROLLER
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        let currentOrderType = 'BUY'; 
+
+        function setOrderType(type) {
+            currentOrderType = type;
+            const btnBuy = document.getElementById('tab-buy');
+            const btnSell = document.getElementById('tab-sell');
+            const submitBtn = document.getElementById('order-submit-btn');
+
+            if (type === 'BUY') {
+                btnBuy.className = 'bg-emerald-950/40 text-cybergreen border border-emerald-900/60 text-xs py-1 rounded transition font-bold';
+                btnSell.className = 'bg-neutral-900/40 text-neutral-500 border border-transparent text-xs py-1 rounded transition font-bold hover:text-white';
+                submitBtn.className = 'w-full bg-cybergreen/10 hover:bg-cybergreen/25 text-cybergreen font-black border border-cybergreen/40 py-2 text-xs tracking-widest uppercase transition rounded shadow-lg';
+                submitBtn.textContent = 'EXECUTE BUY ORDER';
+            } else {
+                btnBuy.className = 'bg-neutral-900/40 text-neutral-500 border border-transparent text-xs py-1 rounded transition font-bold hover:text-white';
+                btnSell.className = 'bg-rose-950/40 text-cyberred border border-rose-900/60 text-xs py-1 rounded transition font-bold';
+                submitBtn.className = 'w-full bg-cyberred/10 hover:bg-cyberred/25 text-cyberred font-black border border-cyberred/40 py-2 text-xs tracking-widest uppercase transition rounded shadow-lg';
+                submitBtn.textContent = 'EXECUTE SELL ORDER';
+            }
+            calculateTotalOrderPrice();
+        }
+
+        function adjustOrderQty(delta) {
+            const qtyInput = document.getElementById('order-qty');
+            let val = parseInt(qtyInput.value) || 0;
+            val = Math.max(1, val + delta);
+            qtyInput.value = val;
+            calculateTotalOrderPrice();
+        }
+
+        function setPercentQty(pct) {
+            if (!activeStock) return;
+            const price = activeStock.price;
+
+            if (currentOrderType === 'BUY') {
+                const allocatable = portfolio.cash * pct;
+                const shares = Math.floor(allocatable / price);
+                document.getElementById('order-qty').value = Math.max(1, shares);
+            } else {
+                const holding = portfolio.holdings[activeStock.symbol];
+                if (holding) {
+                    const shares = Math.floor(holding.shares * pct);
+                    document.getElementById('order-qty').value = Math.max(1, shares);
+                } else {
+                    document.getElementById('order-qty').value = 0;
+                }
+            }
+            calculateTotalOrderPrice();
+        }
+
+        function calculateTotalOrderPrice() {
+            const errLabel = document.getElementById('executor-err-msg');
+            errLabel.classList.add('hidden');
+
+            if (!activeStock) {
+                document.getElementById('order-est-total').textContent = "$0.00";
+                document.getElementById('max-affordable-label').textContent = "MAX: 0";
+                return;
+            }
+
+            const qty = parseInt(document.getElementById('order-qty').value) || 0;
+            const price = activeStock.price;
+            const total = qty * price;
+
+            document.getElementById('order-est-total').textContent = `$${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+            if (currentOrderType === 'BUY') {
+                const maxBuy = Math.floor(portfolio.cash / price);
+                document.getElementById('max-affordable-label').textContent = `BUY CAPACITY: ${maxBuy}`;
+            } else {
+                const holding = portfolio.holdings[activeStock.symbol];
+                const heldQty = holding ? holding.shares : 0;
+                document.getElementById('max-affordable-label').textContent = `HELD QUANTITY: ${heldQty}`;
+            }
+        }
+
+        function executeOrder() {
+            const errLabel = document.getElementById('executor-err-msg');
+            errLabel.classList.add('hidden');
+
+            if (!activeStock) {
+                showOrderError("No selected stock.");
+                return;
+            }
+
+            const qty = parseInt(document.getElementById('order-qty').value) || 0;
+            if (qty <= 0) {
+                showOrderError("Quantity must be > 0.");
+                return;
+            }
+
+            const symbol = activeStock.symbol;
+            const price = activeStock.price;
+            const totalCost = qty * price;
+
+            if (currentOrderType === 'BUY') {
+                if (totalCost > portfolio.cash) {
+                    showOrderError("Insufficient cash.");
+                    return;
+                }
+
+                portfolio.cash -= totalCost;
+
+                if (!portfolio.holdings[symbol]) {
+                    portfolio.holdings[symbol] = { shares: 0, avgCost: 0 };
+                }
+                const oldHold = portfolio.holdings[symbol];
+                const totalShares = oldHold.shares + qty;
+                const totalCostBasis = (oldHold.shares * oldHold.avgCost) + totalCost;
+                oldHold.shares = totalShares;
+                oldHold.avgCost = totalCostBasis / totalShares;
+
+                addNewsItem(`ORDER CONFIRMED: Bought ${qty} shares of $${symbol} at $${price.toFixed(2)}`, "BULL");
+                playTradeBeep(true);
+
+            } else {
+                const holding = portfolio.holdings[symbol];
+                if (!holding || holding.shares < qty) {
+                    showOrderError("Insufficient shares held.");
+                    return;
+                }
+
+                const costBasis = qty * holding.avgCost;
+                const netRevenue = qty * price;
+                const profit = netRevenue - costBasis;
+
+                holding.shares -= qty;
+                if (holding.shares <= 0) {
+                    delete portfolio.holdings[symbol];
+                }
+
+                portfolio.cash += netRevenue;
+                addNewsItem(`ORDER CONFIRMED: Sold ${qty} shares of $${symbol} at $${price.toFixed(2)}. Profit: $${profit.toFixed(2)}`, profit >= 0 ? "BULL" : "BEAR");
+                playTradeBeep(false);
+            }
+
+            updatePortfolioUI();
+        }
+
+        function showOrderError(msg) {
+            const errLabel = document.getElementById('executor-err-msg');
+            errLabel.textContent = `[!] ERROR: ${msg}`;
+            errLabel.classList.remove('hidden');
+            playAlertBeep();
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  NEWS & GLOBAL TIMELINE LOGGERS
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        const NEWS_TEMPLATES = [
+            { text: "FEDERAL RESERVE hints at lowering interest rate markers next quarter. Growth indices rally.", effect: "BULL", target: "ALL" },
+            { text: "REGULATORY COMPLIANCE audits announced for high-tech bio corporations. Volatility increasing.", effect: "VOLATILE", target: "Biotech" },
+            { text: "GLOBAL SUPPLY BOTTLENECK threatens microchip transport logistics.", effect: "BEAR", target: "Technology" },
+            { text: "PENTAGON greenlights emergency AI weapons defense funding package.", effect: "BULL", target: "Defense" },
+            { text: "RENEWABLE ENERGY fusion power output breaks domestic generation record.", effect: "BULL", target: "Energy" },
+            { text: "CYBERWARFARE SQUAD incursions flag banking vulnerability risks. Sector under inspection.", effect: "BEAR", target: "Financials" },
+            { text: "CONSUMER INDEX indicates robust luxury purchase margins despite inflation metrics.", effect: "BULL", target: "Consumer" },
+            { text: "REPORTS CLAIM key genetic trials show 95% efficacy against auto-immune targets.", effect: "BULL", target: "Biotech" },
+            { text: "LIQUIDITY FREEZE spreads following default in offshore real estate bonds.", effect: "BEAR", target: "Financials" }
+        ];
+
+        function addNewsItem(text, type) {
+            const container = document.getElementById('terminal-news-logs');
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            
+            let colorCls = 'text-neutral-500';
+            let indicator = '✦';
+            if (type === 'BULL') { colorCls = 'text-cybergreen'; indicator = '▲'; }
+            if (type === 'BEAR') { colorCls = 'text-cyberred'; indicator = '▼'; }
+            if (type === 'VOLATILE') { colorCls = 'text-cyberamber'; indicator = '⚡'; }
+
+            const log = document.createElement('div');
+            log.className = `${colorCls} leading-tight py-1 border-b border-neutral-900 text-[10px]`;
+            log.innerHTML = `<span class="text-neutral-600 font-bold">[${timeStr}] ${indicator}</span> ${text}`;
+            container.appendChild(log);
+            
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function runNewsEngine() {
+            if (Math.random() < 0.4) {
+                const temp = NEWS_TEMPLATES[Math.floor(Math.random() * NEWS_TEMPLATES.length)];
+                addNewsItem(temp.text, temp.effect);
+
+                stocks.forEach(s => {
+                    if (temp.target === 'ALL' || s.sector === temp.target) {
+                        const magnitude = temp.effect === 'BULL' ? 0.005 : -0.005;
+                        s.bias += magnitude;
+                        setTimeout(() => s.bias -= magnitude, 15000);
+                    }
+                });
+            }
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  STATE VARIABLES & SELECTED STOCKS
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        let stocks = [];
+        let activeStock = null;
+
+        function createSecurities() {
+            stocks = [];
+            SECTORS.forEach(sec => {
+                const list = COMPANIES[sec];
+                list.forEach(co => {
+                    stocks.push(new Stock(co.sym, co.name, sec));
+                });
+            });
+            activeStock = stocks[0];
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  RENDER HELPERS (Table & Indices)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        function formatPrice(p) { return p.toFixed(2); }
+        function formatVolume(v) {
+            if (v >= 1000) return (v / 1000).toFixed(2) + 'B';
+            return v.toFixed(2) + 'M';
+        }
+
+        function drawSparkline(canvas, data, isUp) {
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            if (!data || data.length < 2) return;
+
+            const min = Math.min(...data);
+            const max = Math.max(...data);
+            const range = max - min || 1;
+
+            const color = isUp ? '#10b981' : '#ef4444';
+            const alphaColor = isUp ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)';
+
+            const pad = 3;
+            const drawW = w - pad * 2;
+            const drawH = h - pad * 2;
+
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.3;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            for (let i = 0; i < data.length; i++) {
+                const x = pad + (i / (data.length - 1)) * drawW;
+                const y = pad + drawH - ((data[i] - min) / range) * drawH;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            const lastX = pad + drawW;
+            ctx.lineTo(lastX, h);
+            ctx.lineTo(pad, h);
+            ctx.closePath();
+            ctx.fillStyle = alphaColor;
+            ctx.fill();
+        }
+
+        function drawDetailBigChart(canvas, data, isUp) {
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            if (!data || data.length < 2) return;
+
+            const min = Math.min(...data);
+            const max = Math.max(...data);
+            const range = max - min || 1;
+
+            const color = isUp ? '#10b981' : '#ef4444';
+            const gradient = ctx.createLinearGradient(0, 0, 0, h);
+            gradient.addColorStop(0, isUp ? 'rgba(16, 185, 129, 0.18)' : 'rgba(239, 68, 68, 0.18)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+
+            const padY = 12;
+            const padX = 8;
+            const drawW = w - padX * 2;
+            const drawH = h - padY * 2;
+
+            for (let i = 0; i < data.length; i++) {
+                const x = padX + (i / (data.length - 1)) * drawW;
+                const y = padY + drawH - ((data[i] - min) / range) * drawH;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            ctx.lineTo(padX + drawW, h);
+            ctx.lineTo(padX, h);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            const lastX = padX + drawW;
+            const lastY = padY + drawH - ((data[data.length - 1] - min) / range) * drawH;
+            ctx.beginPath();
+            ctx.arc(lastX, lastY, 3.5, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+
+        function renderTable() {
+            const searchQuery = document.getElementById('stock-search').value.toUpperCase();
+            const sectorFilter = document.getElementById('sector-filter').value;
+            const sortVal = document.getElementById('sort-filter').value;
+
+            let filtered = stocks.filter(s => {
+                const matchesSearch = s.symbol.includes(searchQuery) || s.name.toUpperCase().includes(searchQuery);
+                const matchesSector = sectorFilter === 'ALL' || s.sector === sectorFilter;
+                return matchesSearch && matchesSector;
+            });
+
+            filtered.sort((a, b) => {
+                if (sortVal === 'SYM_ASC') return a.symbol.localeCompare(b.symbol);
+                if (sortVal === 'PRICE_DESC') return b.price - a.price;
+                if (sortVal === 'PRICE_ASC') return a.price - b.price;
+                if (sortVal === 'CHANGE_DESC') return b.changePercent - a.changePercent;
+                if (sortVal === 'CHANGE_ASC') return a.changePercent - b.changePercent;
+                if (sortVal === 'VOL_DESC') return b.volume - a.volume;
+                return 0;
+            });
+
+            document.getElementById('stock-count-label').textContent = filtered.length;
+            const upSecs = filtered.filter(s => s.changePercent >= 0).length;
+            const downSecs = filtered.length - upSecs;
+            document.getElementById('active-up-label').textContent = upSecs;
+            document.getElementById('active-down-label').textContent = downSecs;
+
+            const tbody = document.getElementById('stock-tbody');
+            let html = '';
+
+            filtered.forEach(s => {
+                const activeHighlight = (activeStock && activeStock.symbol === s.symbol) ? 'bg-[#18181b]/60' : '';
+                const isUp = s.changePercent >= 0;
+                const sign = isUp ? '+' : '';
+                const colorCls = isUp ? 'text-cybergreen' : 'text-cyberred';
+                const arrow = isUp ? '▲' : '▼';
+                
+                html += `
+                    <tr onclick="selectStock('${s.symbol}')" class="hover:bg-[#09090b] cursor-pointer transition ${activeHighlight}">
+                        <td class="py-2.5 px-3 font-bold text-white text-[11px]">${s.symbol}<span class="block font-normal text-[8px] text-neutral-500 uppercase">${s.sector}</span></td>
+                        <td class="py-2.5 px-3 text-neutral-500 text-[10px] font-medium hidden sm:table-cell truncate max-w-[120px]">${s.name}</td>
+                        <td id="td-price-${s.symbol}" class="py-2.5 px-3 text-right font-bold text-neutral-200 tabular-nums text-[11px]">$${formatPrice(s.price)}</td>
+                        <td id="td-change-${s.symbol}" class="py-2.5 px-3 text-right font-medium text-[11px] tabular-nums ${colorCls}">${arrow} ${sign}${formatPrice(s.change)}</td>
+                        <td id="td-pct-${s.symbol}" class="py-2.5 px-3 text-right font-bold text-[11px] tabular-nums ${colorCls}">${sign}${s.changePercent.toFixed(2)}%</td>
+                        <td class="py-2.5 px-3 text-right text-neutral-600 tabular-nums text-[10px] hidden md:table-cell">${formatVolume(s.volume)}</td>
+                        <td class="py-1.5 px-3 text-center">
+                            <div class="inline-block w-16 h-7 bg-neutral-950/40 border border-neutral-900 rounded overflow-hidden">
+                                <canvas id="spark-${s.symbol}" width="64" height="28" class="block"></canvas>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+
+            filtered.forEach(s => {
+                const canvas = document.getElementById(`spark-${s.symbol}`);
+                if (canvas) {
+                    drawSparkline(canvas, s.historyData, s.changePercent >= 0);
+                }
+            });
+        }
+
+        function renderIndices() {
+            const grid = document.getElementById('indices-grid');
+            let html = '';
+            INDICES.forEach(idx => {
+                const chgValue = idx.value - idx.base;
+                const chgPct = (chgValue / idx.base) * 100;
+                const isUp = chgValue >= 0;
+                const colorCls = isUp ? 'text-cybergreen' : 'text-cyberred';
+                const arrow = isUp ? '▲' : '▼';
+
+                html += `
+                    <div class="bg-neutral-950 p-2 border border-panelborder rounded hover:border-neutral-800 transition font-mono">
+                        <div class="text-[8px] text-neutral-500 font-bold">${idx.name}</div>
+                        <div class="text-xs font-bold text-white tabular-nums">$${idx.value.toFixed(2)}</div>
+                        <div class="text-[9px] ${colorCls} font-bold mt-0.5 tabular-nums">
+                            ${arrow} ${isUp ? '+' : ''}${chgPct.toFixed(2)}%
+                        </div>
+                    </div>
+                `;
+            });
+            grid.innerHTML = html;
+        }
+
+        function selectStock(sym) {
+            const target = stocks.find(s => s.symbol === sym);
+            if (!target) return;
+            activeStock = target;
+
+            playBeep(350, 'sine', 0.08, 0.02);
+
+            renderTable();
+            updateDetailPanel();
+            calculateTotalOrderPrice();
+        }
+
+        function updateDetailPanel() {
+            if (!activeStock) return;
+            document.getElementById('detail-symbol').textContent = activeStock.symbol;
+            document.getElementById('detail-fullname').textContent = activeStock.name + ' • ' + activeStock.sector.toUpperCase();
+            document.getElementById('detail-price').textContent = `$${formatPrice(activeStock.price)}`;
+
+            const isUp = activeStock.changePercent >= 0;
+            const sign = isUp ? '+' : '';
+            const colorCls = isUp ? 'text-cybergreen' : 'text-cyberred';
+            document.getElementById('detail-change').textContent = `${isUp ? '▲' : '▼'} ${sign}${formatPrice(activeStock.change)} (${sign}${activeStock.changePercent.toFixed(2)}%)`;
+            document.getElementById('detail-change').className = `text-xs font-bold font-mono ${colorCls}`;
+
+            const canvas = document.getElementById('detail-canvas-chart');
+            drawDetailBigChart(canvas, activeStock.historyData, isUp);
+
+            renderOrderBook();
+        }
+
+        function renderOrderBook() {
+            if (!activeStock) return;
+            const mid = activeStock.price;
+            
+            const spreadPercent = activeStock.volatility * 0.15; 
+            const spread = Math.max(0.01, mid * spreadPercent);
+            
+            document.getElementById('bid-ask-spread').textContent = `SPREAD: $${spread.toFixed(2)}`;
+            document.getElementById('midpoint-display').textContent = `MIDPOINT: $${mid.toFixed(2)}`;
+
+            const bidContainer = document.getElementById('order-book-asks');
+            let bidsHtml = '';
+            for (let i = 1; i <= 3; i++) {
+                const price = mid - (spread * 0.5) - (i * spread * 0.3);
+                const size = randomInt(50, 600) * 10;
+                const pctOfDepth = (size / 6000) * 100;
+                bidsHtml += `
+                    <div class="flex justify-between items-center text-[10px] relative px-1 py-0.5">
+                        <div class="absolute top-0 bottom-0 left-0 bg-emerald-950/10" style="width: ${pctOfDepth}%"></div>
+                        <span class="text-neutral-500 font-semibold z-10">${size}</span>
+                        <span class="text-cybergreen font-bold tabular-nums z-10">$${price.toFixed(2)}</span>
+                        <span class="text-[8px] text-neutral-600 z-10">BID</span>
+                    </div>
+                `;
+            }
+            bidContainer.innerHTML = bidsHtml;
+
+            const askContainer = document.getElementById('order-book-bids');
+            let asksHtml = '';
+            for (let i = 3; i >= 1; i--) {
+                const price = mid + (spread * 0.5) + (i * spread * 0.3);
+                const size = randomInt(50, 600) * 10;
+                const pctOfDepth = (size / 6000) * 100;
+                asksHtml += `
+                    <div class="flex justify-between items-center text-[10px] relative px-1 py-0.5">
+                        <div class="absolute top-0 bottom-0 left-0 bg-rose-950/10" style="width: ${pctOfDepth}%"></div>
+                        <span class="text-neutral-500 font-semibold z-10">${size}</span>
+                        <span class="text-cyberred font-bold tabular-nums z-10">$${price.toFixed(2)}</span>
+                        <span class="text-[8px] text-neutral-600 z-10">ASK</span>
+                    </div>
+                `;
+            }
+            askContainer.innerHTML = asksHtml;
+        }
+
+        function renderTicker() {
+            const track = document.getElementById('ticker-track');
+            
+            const shuffled = [...stocks].sort(() => Math.random() - 0.5).slice(0, 20);
+
+            let elements = [];
+            for (let copy = 0; copy < 3; copy++) {
+                shuffled.forEach(s => {
+                    const isUp = s.changePercent >= 0;
+                    const colorCls = isUp ? 'text-cybergreen' : 'text-cyberred';
+                    const arrow = isUp ? '▲' : '▼';
+                    elements.push(`
+                        <span onclick="selectStock('${s.symbol}')" class="inline-flex items-center gap-1.5 text-[10px] tracking-wide cursor-pointer hover:bg-neutral-900 px-2 py-1 rounded">
+                            <span class="text-white font-bold">${s.symbol}</span>
+                            <span class="text-neutral-300 font-mono font-medium">$${formatPrice(s.price)}</span>
+                            <span class="${colorCls} font-bold">${arrow} ${isUp ? '+' : ''}${s.changePercent.toFixed(1)}%</span>
+                        </span>
+                    `);
+                });
+            }
+            track.innerHTML = elements.join('');
+        }
+
+        function logSimulatedTrades() {
+            const container = document.getElementById('global-trade-sales');
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            
+            const target = stocks[Math.floor(Math.random() * stocks.length)];
+            const isBuy = Math.random() < 0.52; 
+            const size = randomInt(1, 150) * 10;
+            const sizeFormatted = size.toLocaleString();
+
+            const entry = document.createElement('div');
+            entry.className = `flex justify-between items-center py-0.5 border-b border-neutral-900/40 ${isBuy ? 'text-cybergreen/80' : 'text-cyberred/80'}`;
+            entry.innerHTML = `
+                <span class="text-neutral-600 font-bold">${timeStr}</span>
+                <span class="font-bold text-neutral-300">$${target.symbol}</span>
+                <span class="font-semibold tabular-nums text-right">${sizeFormatted} @ $${target.price.toFixed(2)}</span>
+                <span class="text-[8px] font-black uppercase text-neutral-600">${isBuy ? 'BUY' : 'SELL'}</span>
+            `;
+
+            container.insertBefore(entry, container.firstChild);
+
+            if (container.children.length > 25) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            const ms = String(Math.floor(now.getMilliseconds() / 10)).padStart(2, '0');
+            const str = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${ms}`;
+            document.getElementById('clock-display').textContent = str;
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  MARKET ENGINE CORE (REGIME STATE MACHINE)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        function triggerMarketShock(type) {
+            playAlertBeep();
+            if (type === 'BULL') {
+                currentRegime = REGIMES.BULL_RUN;
+                regimeCyclesLeft = 20;
+                addNewsItem("QUANT WARNING: Sudden hyper-liquidity inject trace detected. Sector indexes rising.", "BULL");
+            } else if (type === 'BEAR') {
+                currentRegime = REGIMES.BEAR_ATTACK;
+                regimeCyclesLeft = 20;
+                addNewsItem("QUANT WARNING: Sudden massive systemic short selling detected across indices.", "BEAR");
+            } else if (type === 'CRASH') {
+                currentRegime = REGIMES.FLASH_CRASH;
+                regimeCyclesLeft = 8;
+                addNewsItem("QUANT CRITICAL: CORE LIQUIDITY ALGORITHM ANOMALY. MARKET CAP OUTFLOW DETECTED.", "BEAR");
+            }
+            document.getElementById('current-regime').textContent = currentRegime;
+        }
+
+        function manageRegimes() {
+            regimeCyclesLeft--;
+            if (regimeCyclesLeft <= 0) {
+                const rolled = Math.random();
+                if (rolled < 0.60) {
+                    currentRegime = REGIMES.NORMAL;
+                    regimeCyclesLeft = randomInt(25, 50);
+                    addNewsItem("SYSTEM STATUS: Macro market indexes stabilizing. Volatility metrics returning to mean.", "NEUTRAL");
+                } else if (rolled < 0.75) {
+                    currentRegime = REGIMES.BULL_RUN;
+                    regimeCyclesLeft = randomInt(15, 30);
+                    addNewsItem("SYSTEM STATUS: Positive sentiment momentum scaling. High liquidity expansion detected.", "BULL");
+                } else if (rolled < 0.90) {
+                    currentRegime = REGIMES.BEAR_ATTACK;
+                    regimeCyclesLeft = randomInt(15, 30);
+                    addNewsItem("SYSTEM STATUS: Market valuation compression active. Outflow vector detected.", "BEAR");
+                } else {
+                    currentRegime = REGIMES.VOLATILE;
+                    regimeCyclesLeft = randomInt(10, 20);
+                    addNewsItem("SYSTEM STATUS: Extreme volatility threshold breached. Regulatory risk warnings active.", "VOLATILE");
+                }
+                document.getElementById('current-regime').textContent = currentRegime;
+            }
+
+            let sentiment = 50;
+            if (currentRegime === REGIMES.BULL_RUN) sentiment = randomInt(68, 94);
+            else if (currentRegime === REGIMES.BEAR_ATTACK) sentiment = randomInt(10, 35);
+            else if (currentRegime === REGIMES.FLASH_CRASH) sentiment = randomInt(3, 14);
+            else sentiment = randomInt(42, 65);
+
+            document.getElementById('sentiment-val').textContent = `${sentiment}% ${sentiment > 50 ? 'GREED' : 'FEAR'}`;
+            document.getElementById('sentiment-val').className = sentiment > 50 ? 'text-cybergreen font-bold' : 'text-cyberred font-bold';
+            document.getElementById('sentiment-indicator').style.left = `${sentiment}%`;
+
+            const bulls = Math.min(100, Math.max(0, sentiment + randomInt(-5, 5)));
+            const bears = Math.min(100 - bulls, Math.max(0, 100 - sentiment + randomInt(-5, 5)));
+            const neut = Math.max(0, 100 - bulls - bears);
+
+            document.getElementById('sentiment-bulls-pct').textContent = `${bulls}%`;
+            document.getElementById('sentiment-bears-pct').textContent = `${bears}%`;
+            document.getElementById('sentiment-neut-pct').textContent = `${neut}%`;
+        }
+
+        function stepMarket() {
+            let regimeBias = 0.0;
+            let regimeVol = 1.0;
+
+            if (currentRegime === REGIMES.BULL_RUN) {
+                regimeBias = 0.003; 
+                regimeVol = 1.2;
+            } else if (currentRegime === REGIMES.BEAR_ATTACK) {
+                regimeBias = -0.003; 
+                regimeVol = 1.3;
+            } else if (currentRegime === REGIMES.FLASH_CRASH) {
+                regimeBias = -0.015; 
+                regimeVol = 3.0;
+            } else if (currentRegime === REGIMES.VOLATILE) {
+                regimeBias = -0.001; 
+                regimeVol = 2.4;
+            }
+
+            let globalUp = false;
+            stocks.forEach(s => {
+                const prev = s.price;
+                s.step(regimeBias, regimeVol);
+                if (s.price > prev) globalUp = true;
+
+                const priceCell = document.getElementById(`td-price-${s.symbol}`);
+                const changeCell = document.getElementById(`td-change-${s.symbol}`);
+                const pctCell = document.getElementById(`td-pct-${s.symbol}`);
+                if (priceCell && changeCell && pctCell) {
+                    const animCls = s.price >= prev ? 'tick-up' : 'tick-down';
+                    priceCell.classList.remove('tick-up', 'tick-down');
+                    changeCell.classList.remove('tick-up', 'tick-down');
+                    pctCell.classList.remove('tick-up', 'tick-down');
+                    void priceCell.offsetWidth; 
+                    priceCell.classList.add(animCls);
+                    changeCell.classList.add(animCls);
+                    pctCell.classList.add(animCls);
+                }
+            });
+
+            playTick(globalUp);
+            updateIndices();
+            manageRegimes();
+            runNewsEngine();
+
+            renderTable();
+            renderIndices();
+            updateDetailPanel();
+            updatePortfolioUI();
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  SYSTEM INITIALIZATION
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        function init() {
+            createSecurities();
+            updateClock();
+            renderTable();
+            renderIndices();
+            renderTicker();
+            updateDetailPanel();
+            updatePortfolioUI();
+
+            setInterval(updateClock, 30);
+            
+            // Set the slow market update schedule using the initial 3000ms delay.
+            let marketCycleInterval = setInterval(stepMarket, UPDATE_INTERVAL_MS);
+
+            // Connect speed slider to adjust market ticks dynamically
+            const slider = document.getElementById('speed-slider');
+            slider.addEventListener('input', (e) => {
+                const speedMs = parseInt(e.target.value);
+                // Update text to show actual tick interval cleanly
+                const relIntervalSec = (speedMs / 1000).toFixed(1);
+                document.getElementById('speed-label').textContent = `${relIntervalSec}s`;
+                
+                clearInterval(marketCycleInterval);
+                UPDATE_INTERVAL_MS = speedMs;
+                marketCycleInterval = setInterval(stepMarket, UPDATE_INTERVAL_MS);
+            });
+
+            // Fast marquee logs
+            setInterval(logSimulatedTrades, 400);
+            setInterval(logSimulatedTrades, 700);
+
+            setInterval(renderTicker, 8000);
+
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    renderTable();
+                    updateDetailPanel();
+                }, 200);
+            });
+
+            addNewsItem("QUANT SYSTEM: Secure terminal nodes handshake authenticated. Live datafeeds ONLINE.", "BULL");
+            addNewsItem("FEDERAL MARGIN RESERVE: Initial collateral credit of $50,000.00 applied.", "NEUTRAL");
+
+            console.log("⚡ QUANT-X terminal active.");
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
