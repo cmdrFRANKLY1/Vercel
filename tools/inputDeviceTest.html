@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>input device test</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['JetBrains Mono', 'monospace'],
+                        verdana: ['Verdana', 'Geneva', 'sans-serif'],
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        ::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3a3a3a;
+            border-radius: 8px;
+        }
+
+        body {
+            background: #050505;
+            font-family: 'Verdana', 'Geneva', sans-serif;
+            color: #e0e0e0;
+            padding: 1.5rem;
+            min-height: 100vh;
+            overflow-y: auto;
+        }
+
+        /* ── Back Button ── */
+        .back-btn {
+            position: fixed;
+            top: 1.2rem;
+            left: 1.2rem;
+            z-index: 100;
+            background: rgba(11, 11, 11, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 40px;
+            padding: 0.6rem 1.4rem;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-family: 'Verdana', 'Geneva', sans-serif;
+            transition: all 0.3s ease;
+            letter-spacing: 0.04em;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .back-btn:hover {
+            color: rgba(255, 255, 255, 0.8);
+            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(11, 11, 11, 0.9);
+        }
+
+        /* ── Status Dot ── */
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+        .status-dot.online {
+            background: #34d399;
+            box-shadow: 0 0 16px rgba(52, 211, 153, 0.3);
+        }
+        .status-dot.idle {
+            background: #4a4a4a;
+        }
+
+        /* ── Key Chips ── */
+        .key-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 48px;
+            height: 44px;
+            padding: 0 14px;
+            background: #0f0f12;
+            border: 1.5px solid #2a2a2a;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            font-weight: 500;
+            color: #c0c0c0;
+            transition: all 0.1s ease;
+            user-select: none;
+        }
+        .key-chip.active {
+            border-color: #60a5fa;
+            background: #1a2a42;
+            color: #93bbfc;
+            box-shadow: 0 0 30px rgba(96, 165, 250, 0.1);
+            transform: scale(1.03);
+        }
+        .key-chip.active-mod {
+            border-color: #fbbf24;
+            background: #2a2418;
+            color: #fcd34d;
+            box-shadow: 0 0 30px rgba(251, 191, 36, 0.08);
+        }
+
+        /* ── Mouse Buttons ── */
+        .mouse-btn-indicator {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 1.5px solid #2a2a2a;
+            background: #0f0f12;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.1s ease;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .mouse-btn-indicator.active {
+            border-color: #60a5fa;
+            background: #1a2a42;
+            color: #93bbfc;
+            box-shadow: 0 0 30px rgba(96, 165, 250, 0.08);
+            transform: scale(1.05);
+        }
+
+        /* ── Controller Buttons ── */
+        .controller-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 1.5px solid #2a2a2a;
+            background: #0f0f12;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #666;
+            transition: all 0.08s ease;
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+        }
+        .controller-btn.active {
+            border-color: #60a5fa;
+            background: #1a2a42;
+            color: #93bbfc;
+            box-shadow: 0 0 30px rgba(96, 165, 250, 0.08);
+            transform: scale(1.06);
+        }
+        .controller-btn.trigger {
+            border-radius: 8px;
+            width: 52px;
+            height: 32px;
+            font-size: 9px;
+        }
+
+        /* ── Axis Bar ── */
+        .axis-bar {
+            height: 6px;
+            background: #1a1a1a;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            width: 100%;
+        }
+        .axis-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.05s ease;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .axis-fill.negative {
+            background: #f87171;
+        }
+        .axis-fill.positive {
+            background: #60a5fa;
+        }
+
+        /* ── Gamepad Card ── */
+        .gamepad-card {
+            border: 1.5px solid #1e1e1e;
+            border-radius: 12px;
+            padding: 16px 18px;
+            background: #0a0a0c;
+            transition: border-color 0.3s ease;
+        }
+        .gamepad-card.connected {
+            border-color: #2a5a4a;
+        }
+
+        /* ── Horizontal Logs ── */
+        .log-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            height: 48px;
+            padding: 4px 12px;
+            scrollbar-width: thin;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid #1a1a1a;
+        }
+        .log-entry {
+            font-size: 13px;
+            padding: 4px 16px 4px 0;
+            margin-right: 16px;
+            border-right: 1px solid #2a2a2a;
+            color: #7a7a7a;
+            font-family: 'JetBrains Mono', monospace;
+            white-space: nowrap;
+            flex-shrink: 0;
+            line-height: 1.4;
+        }
+        .log-entry:last-child {
+            border-right: none;
+        }
+        .log-entry .key {
+            color: #60a5fa;
+        }
+        .log-entry .mouse {
+            color: #fbbf24;
+        }
+        .log-entry .ctrl {
+            color: #34d399;
+        }
+        .log-entry .highlight {
+            color: #d0d0d0;
+        }
+        @keyframes logFade {
+            0% {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── Unified Log ── */
+        #unified-log {
+            max-height: 260px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        #unified-log .log-entry {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 5px 0;
+            margin: 0;
+            border-right: none;
+            white-space: normal;
+            word-break: break-all;
+            font-size: 12px;
+            color: #b0b0b0;
+        }
+        #unified-log .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            .back-btn {
+                top: 0.8rem;
+                left: 0.8rem;
+                padding: 0.4rem 1rem;
+                font-size: 0.7rem;
+            }
+            .mouse-btn-indicator {
+                width: 44px;
+                height: 44px;
+                font-size: 11px;
+            }
+            .controller-btn {
+                width: 38px;
+                height: 38px;
+                font-size: 8px;
+            }
+            .controller-btn.trigger {
+                width: 42px;
+                height: 26px;
+                font-size: 7px;
+            }
+            .key-chip {
+                min-width: 38px;
+                height: 36px;
+                font-size: 12px;
+                padding: 0 10px;
+            }
+            .log-entry {
+                font-size: 11px;
+                padding: 4px 10px 4px 0;
+                margin-right: 10px;
+            }
+            #unified-log .log-entry {
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .mouse-btn-indicator {
+                width: 36px;
+                height: 36px;
+                font-size: 9px;
+            }
+            .controller-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 7px;
+            }
+            .controller-btn.trigger {
+                width: 36px;
+                height: 22px;
+                font-size: 6px;
+            }
+            .key-chip {
+                min-width: 32px;
+                height: 30px;
+                font-size: 10px;
+                padding: 0 8px;
+            }
+            .log-entry {
+                font-size: 10px;
+                padding: 2px 8px 2px 0;
+                margin-right: 8px;
+            }
+            #unified-log .log-entry {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ─── BACK BUTTON ──────────────────────────────────────── -->
+    <a href="/" class="back-btn" aria-label="Back to Index">← Back</a>
+
+    <!-- ─── HEADER ───────────────────────────────────────────── -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 mt-12 md:mt-0">
+        <div class="flex items-center gap-4">
+            <div class="text-base font-mono text-neutral-400 tracking-widest select-none border border-neutral-800/60 rounded-lg px-4 py-2 bg-[#09090b]">
+                <span class="text-neutral-500">⌨</span> INPUT TEST
+            </div>
+            <div class="flex items-center gap-2 text-sm text-neutral-500">
+                <span class="status-dot online" id="status-dot"></span>
+                <span id="status-label" class="font-mono text-neutral-400">ready</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-3 self-start md:self-auto">
+            <button id="clear-logs-btn" class="text-xs text-neutral-500 hover:text-neutral-200 border border-neutral-800 hover:border-neutral-600 rounded-lg px-4 py-2 bg-[#09090b] transition-all font-mono tracking-wider">
+                ⌧ clear logs
+            </button>
+            <button id="clear-all-btn" class="text-xs text-neutral-500 hover:text-neutral-200 border border-neutral-800 hover:border-neutral-600 rounded-lg px-4 py-2 bg-[#09090b] transition-all font-mono tracking-wider">
+                ⟳ reset all
+            </button>
+        </div>
+    </div>
+
+    <!-- ─── MAIN GRID ────────────────────────────────────────── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <!-- ─── KEYBOARD ────────────────────────────────────── -->
+        <div class="bg-[#09090b] border border-neutral-800/80 rounded-xl p-5 flex flex-col">
+            <div class="flex items-center justify-between text-xs text-neutral-500 font-mono tracking-widest uppercase border-b border-neutral-800/40 pb-3 mb-4">
+                <span class="flex items-center gap-2 text-neutral-400">⌨ keyboard</span>
+                <span id="keyboard-status" class="text-[10px] text-neutral-600">waiting for input...</span>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <!-- Modifier keys -->
+                <div class="flex flex-wrap gap-2">
+                    <span class="key-chip" id="key-ctrl">Ctrl</span>
+                    <span class="key-chip" id="key-shift">Shift</span>
+                    <span class="key-chip" id="key-alt">Alt</span>
+                    <span class="key-chip" id="key-meta">Meta</span>
+                </div>
+
+                <!-- Last pressed key -->
+                <div class="flex items-center gap-4">
+                    <span class="text-sm text-neutral-500 font-mono">last key:</span>
+                    <span id="last-key-display" class="text-lg font-bold text-neutral-200 font-mono">—</span>
+                    <span id="last-key-code" class="text-xs text-neutral-600 font-mono">(—)</span>
+                </div>
+
+                <!-- Key history -->
+                <div class="flex flex-wrap gap-2 min-h-[48px] items-center py-1" id="key-history">
+                    <span class="text-sm text-neutral-600 italic">press any key...</span>
+                </div>
+
+                <!-- Event log (Horizontal) -->
+                <div class="mt-1 pt-3 border-t border-neutral-800/40">
+                    <div class="text-[10px] text-neutral-600 uppercase tracking-widest mb-2">event log</div>
+                    <div id="keyboard-log" class="log-container w-full">
+                        <span class="log-entry">awaiting input...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── MOUSE ────────────────────────────────────────── -->
+        <div class="bg-[#09090b] border border-neutral-800/80 rounded-xl p-5 flex flex-col">
+            <div class="flex items-center justify-between text-xs text-neutral-500 font-mono tracking-widest uppercase border-b border-neutral-800/40 pb-3 mb-4">
+                <span class="flex items-center gap-2 text-neutral-400">🖱 mouse</span>
+                <span id="mouse-status" class="text-[10px] text-neutral-600">waiting...</span>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <!-- Position -->
+                <div class="flex items-center gap-5 text-sm flex-wrap">
+                    <span class="text-neutral-500 font-mono">X: <span id="mouse-x" class="text-neutral-200 font-bold">—</span></span>
+                    <span class="text-neutral-500 font-mono">Y: <span id="mouse-y" class="text-neutral-200 font-bold">—</span></span>
+                    <span class="text-neutral-500 font-mono">buttons: <span id="mouse-buttons" class="text-neutral-300 font-mono">—</span></span>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex gap-3">
+                    <div class="mouse-btn-indicator" id="mouse-left">L</div>
+                    <div class="mouse-btn-indicator" id="mouse-middle">M</div>
+                    <div class="mouse-btn-indicator" id="mouse-right">R</div>
+                    <div class="mouse-btn-indicator" id="mouse-back">←</div>
+                    <div class="mouse-btn-indicator" id="mouse-forward">→</div>
+                </div>
+
+                <!-- Scroll -->
+                <div class="flex items-center gap-5 text-sm flex-wrap">
+                    <span class="text-neutral-500 font-mono">scroll: <span id="mouse-scroll" class="text-neutral-200 font-bold">—</span></span>
+                    <span class="text-neutral-500 font-mono">delta: <span id="mouse-delta" class="text-neutral-200 font-bold">—</span></span>
+                </div>
+
+                <!-- Event log (Horizontal) -->
+                <div class="mt-1 pt-3 border-t border-neutral-800/40">
+                    <div class="text-[10px] text-neutral-600 uppercase tracking-widest mb-2">event log</div>
+                    <div id="mouse-log" class="log-container w-full">
+                        <span class="log-entry">awaiting input...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── CONTROLLER ────────────────────────────────────────── -->
+    <div class="bg-[#09090b] border border-neutral-800/80 rounded-xl p-5 mt-5 flex flex-col">
+        <div class="flex items-center justify-between text-xs text-neutral-500 font-mono tracking-widest uppercase border-b border-neutral-800/40 pb-3 mb-4">
+            <span class="flex items-center gap-2 text-neutral-400">🎮 controller / gamepad</span>
+            <div class="flex items-center gap-4">
+                <span id="controller-count" class="text-xs text-neutral-600 font-mono">0 connected</span>
+                <button id="scan-controllers" class="text-[10px] text-neutral-500 hover:text-neutral-200 border border-neutral-800 hover:border-neutral-600 rounded-lg px-3 py-1.5 bg-[#070708] transition-all font-mono">
+                    ⟳ scan
+                </button>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-3">
+            <div id="controller-container" class="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
+                <div class="text-sm text-neutral-500 italic font-mono">no controllers connected</div>
+                <div class="text-xs text-neutral-700 font-mono">connect a gamepad and press any button</div>
+            </div>
+
+            <!-- Event log (Horizontal) -->
+            <div class="pt-3 border-t border-neutral-800/40">
+                <div class="text-[10px] text-neutral-600 uppercase tracking-widest mb-2">controller log</div>
+                <div id="controller-log" class="log-container w-full">
+                    <span class="log-entry">waiting for controller...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── UNIFIED INPUT LOG ────────────────────────────────── -->
+    <div class="bg-[#09090b] border border-neutral-800/80 rounded-xl p-5 mt-5 flex flex-col">
+        <div class="flex items-center justify-between text-xs text-neutral-500 font-mono tracking-widest uppercase border-b border-neutral-800/40 pb-3 mb-4">
+            <span class="flex items-center gap-2 text-neutral-400">📋 unified input log</span>
+            <span class="text-[10px] text-neutral-600">captures all devices with Windows Key enum + numeric code</span>
+        </div>
+        <div id="unified-log" class="w-full font-mono text-sm space-y-0.5">
+            <div class="log-entry text-neutral-500">waiting for input...</div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // Windows Key Enum mapping (System.Windows.Input.Key)
+            // Based on: https://learn.microsoft.com/en-us/dotnet/api/system.windows.input.key
+            // Also includes numeric virtual key code (VK_*) values
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            const WIN_KEY_ENUM = {
+                // Special keys
+                'None': 'None',
+                'Cancel': 'Cancel',
+                'Back': 'Back',
+                'Tab': 'Tab',
+                'LineFeed': 'LineFeed',
+                'Clear': 'Clear',
+                'Enter': 'Enter',
+                'Return': 'Return',
+                'Pause': 'Pause',
+                'Capital': 'Capital',
+                'CapsLock': 'CapsLock',
+                'HangulMode': 'HangulMode',
+                'KanaMode': 'KanaMode',
+                'JunjaMode': 'JunjaMode',
+                'FinalMode': 'FinalMode',
+                'HanjaMode': 'HanjaMode',
+                'KanjiMode': 'KanjiMode',
+                'Escape': 'Escape',
+                'ImeConvert': 'ImeConvert',
+                'ImeNonConvert': 'ImeNonConvert',
+                'ImeAccept': 'ImeAccept',
+                'ImeModeChange': 'ImeModeChange',
+                'Space': 'Space',
+                'PageUp': 'PageUp',
+                'Prior': 'Prior',
+                'Next': 'Next',
+                'PageDown': 'PageDown',
+                'End': 'End',
+                'Home': 'Home',
+                'Left': 'Left',
+                'Up': 'Up',
+                'Right': 'Right',
+                'Down': 'Down',
+                'Select': 'Select',
+                'Print': 'Print',
+                'Execute': 'Execute',
+                'PrintScreen': 'PrintScreen',
+                'Snapshot': 'Snapshot',
+                'Insert': 'Insert',
+                'Delete': 'Delete',
+                'Help': 'Help',
+                // Digits 0-9
+                'D0': 'D0', 'D1': 'D1', 'D2': 'D2', 'D3': 'D3', 'D4': 'D4',
+                'D5': 'D5', 'D6': 'D6', 'D7': 'D7', 'D8': 'D8', 'D9': 'D9',
+                // Letters A-Z
+                'A': 'A', 'B': 'B', 'C': 'C', 'D': 'D', 'E': 'E',
+                'F': 'F', 'G': 'G', 'H': 'H', 'I': 'I', 'J': 'J',
+                'K': 'K', 'L': 'L', 'M': 'M', 'N': 'N', 'O': 'O',
+                'P': 'P', 'Q': 'Q', 'R': 'R', 'S': 'S', 'T': 'T',
+                'U': 'U', 'V': 'V', 'W': 'W', 'X': 'X', 'Y': 'Y', 'Z': 'Z',
+                // Windows keys
+                'LWin': 'LWin',
+                'RWin': 'RWin',
+                'Apps': 'Apps',
+                'Sleep': 'Sleep',
+                // Numpad
+                'NumPad0': 'NumPad0', 'NumPad1': 'NumPad1', 'NumPad2': 'NumPad2',
+                'NumPad3': 'NumPad3', 'NumPad4': 'NumPad4', 'NumPad5': 'NumPad5',
+                'NumPad6': 'NumPad6', 'NumPad7': 'NumPad7', 'NumPad8': 'NumPad8', 'NumPad9': 'NumPad9',
+                'Multiply': 'Multiply', 'Add': 'Add', 'Separator': 'Separator',
+                'Subtract': 'Subtract', 'Decimal': 'Decimal', 'Divide': 'Divide',
+                // Function keys
+                'F1': 'F1', 'F2': 'F2', 'F3': 'F3', 'F4': 'F4', 'F5': 'F5',
+                'F6': 'F6', 'F7': 'F7', 'F8': 'F8', 'F9': 'F9', 'F10': 'F10',
+                'F11': 'F11', 'F12': 'F12', 'F13': 'F13', 'F14': 'F14', 'F15': 'F15',
+                'F16': 'F16', 'F17': 'F17', 'F18': 'F18', 'F19': 'F19', 'F20': 'F20',
+                'F21': 'F21', 'F22': 'F22', 'F23': 'F23', 'F24': 'F24',
+                // Lock keys
+                'NumLock': 'NumLock',
+                'Scroll': 'Scroll',
+                // Shift keys
+                'LeftShift': 'LeftShift',
+                'RightShift': 'RightShift',
+                'LeftCtrl': 'LeftCtrl',
+                'RightCtrl': 'RightCtrl',
+                'LeftAlt': 'LeftAlt',
+                'RightAlt': 'RightAlt',
+                // Browser keys
+                'BrowserBack': 'BrowserBack',
+                'BrowserForward': 'BrowserForward',
+                'BrowserRefresh': 'BrowserRefresh',
+                'BrowserStop': 'BrowserStop',
+                'BrowserSearch': 'BrowserSearch',
+                'BrowserFavorites': 'BrowserFavorites',
+                'BrowserHome': 'BrowserHome',
+                // Media keys
+                'VolumeMute': 'VolumeMute',
+                'VolumeDown': 'VolumeDown',
+                'VolumeUp': 'VolumeUp',
+                'MediaNextTrack': 'MediaNextTrack',
+                'MediaPreviousTrack': 'MediaPreviousTrack',
+                'MediaStop': 'MediaStop',
+                'MediaPlayPause': 'MediaPlayPause',
+                'LaunchMail': 'LaunchMail',
+                'SelectMedia': 'SelectMedia',
+                'LaunchApplication1': 'LaunchApplication1',
+                'LaunchApplication2': 'LaunchApplication2',
+                // OEM keys
+                'Oem1': 'Oem1',
+                'OemSemicolon': 'OemSemicolon',
+                'OemPlus': 'OemPlus',
+                'OemComma': 'OemComma',
+                'OemMinus': 'OemMinus',
+                'OemPeriod': 'OemPeriod',
+                'Oem2': 'Oem2',
+                'OemQuestion': 'OemQuestion',
+                'Oem3': 'Oem3',
+                'OemTilde': 'OemTilde',
+                'AbntC1': 'AbntC1',
+                'AbntC2': 'AbntC2',
+                'Oem4': 'Oem4',
+                'OemOpenBrackets': 'OemOpenBrackets',
+                'Oem5': 'Oem5',
+                'OemPipe': 'OemPipe',
+                'Oem6': 'Oem6',
+                'OemCloseBrackets': 'OemCloseBrackets',
+                'Oem7': 'Oem7',
+                'OemQuotes': 'OemQuotes',
+                'Oem8': 'Oem8',
+                'Oem102': 'Oem102',
+                'OemBackslash': 'OemBackslash',
+                // IME / System keys
+                'ImeProcessed': 'ImeProcessed',
+                'System': 'System',
+                'DbeAlphanumeric': 'DbeAlphanumeric',
+                'OemAttn': 'OemAttn',
+                'DbeKatakana': 'DbeKatakana',
+                'OemFinish': 'OemFinish',
+                'DbeHiragana': 'DbeHiragana',
+                'OemCopy': 'OemCopy',
+                'DbeSbcsChar': 'DbeSbcsChar',
+                'OemAuto': 'OemAuto',
+                'DbeDbcsChar': 'DbeDbcsChar',
+                'OemEnlw': 'OemEnlw',
+                'DbeRoman': 'DbeRoman',
+                'OemBackTab': 'OemBackTab',
+                'Attn': 'Attn',
+                'DbeNoRoman': 'DbeNoRoman',
+                'CrSel': 'CrSel',
+                'DbeEnterWordRegisterMode': 'DbeEnterWordRegisterMode',
+                'DbeEnterImeConfigureMode': 'DbeEnterImeConfigureMode',
+                'ExSel': 'ExSel',
+                'DbeFlushString': 'DbeFlushString',
+                'EraseEof': 'EraseEof',
+            };
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // Map DOM KeyboardEvent.key / code to Windows Key enum name
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            function getWindowsKeyEnum(key, code) {
+                // Handle special cases first
+                const specialMap = {
+                    'Control': 'LeftCtrl',
+                    'Shift': 'LeftShift',
+                    'Alt': 'LeftAlt',
+                    'Meta': 'LWin',
+                    ' ': 'Space',
+                    'Escape': 'Escape',
+                    'Enter': 'Enter',
+                    'Tab': 'Tab',
+                    'Backspace': 'Back',
+                    'Delete': 'Delete',
+                    'ArrowUp': 'Up',
+                    'ArrowDown': 'Down',
+                    'ArrowLeft': 'Left',
+                    'ArrowRight': 'Right',
+                    'CapsLock': 'CapsLock',
+                    'PageUp': 'PageUp',
+                    'PageDown': 'PageDown',
+                    'Home': 'Home',
+                    'End': 'End',
+                    'Insert': 'Insert',
+                    'PrintScreen': 'PrintScreen',
+                    'Pause': 'Pause',
+                    'ScrollLock': 'Scroll',
+                    'NumLock': 'NumLock',
+                    'ContextMenu': 'Apps',
+                };
+
+                if (specialMap[key]) return specialMap[key];
+
+                // Handle function keys
+                if (/^F\d+$/.test(key)) return key;
+
+                // Handle digit keys (D0-D9)
+                if (/^[0-9]$/.test(key)) return 'D' + key;
+
+                // Handle letter keys (A-Z)
+                if (/^[A-Za-z]$/.test(key)) return key.toUpperCase();
+
+                // Handle numpad keys
+                const numpadMap = {
+                    '0': 'NumPad0',
+                    '1': 'NumPad1',
+                    '2': 'NumPad2',
+                    '3': 'NumPad3',
+                    '4': 'NumPad4',
+                    '5': 'NumPad5',
+                    '6': 'NumPad6',
+                    '7': 'NumPad7',
+                    '8': 'NumPad8',
+                    '9': 'NumPad9',
+                    '*': 'Multiply',
+                    '+': 'Add',
+                    '-': 'Subtract',
+                    '.': 'Decimal',
+                    '/': 'Divide',
+                };
+                if (numpadMap[key]) return numpadMap[key];
+
+                // Handle OEM keys via code
+                const oemCodeMap = {
+                    'Semicolon': 'OemSemicolon',
+                    'Equal': 'OemPlus',
+                    'Comma': 'OemComma',
+                    'Minus': 'OemMinus',
+                    'Period': 'OemPeriod',
+                    'Slash': 'OemQuestion',
+                    'Backquote': 'OemTilde',
+                    'BracketLeft': 'OemOpenBrackets',
+                    'Backslash': 'OemBackslash',
+                    'BracketRight': 'OemCloseBrackets',
+                    'Quote': 'OemQuotes',
+                };
+                if (oemCodeMap[code]) return oemCodeMap[code];
+
+                // Handle media/browser keys
+                const mediaMap = {
+                    'AudioVolumeMute': 'VolumeMute',
+                    'AudioVolumeDown': 'VolumeDown',
+                    'AudioVolumeUp': 'VolumeUp',
+                    'MediaTrackNext': 'MediaNextTrack',
+                    'MediaTrackPrevious': 'MediaPreviousTrack',
+                    'MediaStop': 'MediaStop',
+                    'MediaPlayPause': 'MediaPlayPause',
+                    'LaunchMail': 'LaunchMail',
+                    'LaunchApp1': 'LaunchApplication1',
+                    'LaunchApp2': 'LaunchApplication2',
+                    'BrowserBack': 'BrowserBack',
+                    'BrowserForward': 'BrowserForward',
+                    'BrowserRefresh': 'BrowserRefresh',
+                    'BrowserStop': 'BrowserStop',
+                    'BrowserSearch': 'BrowserSearch',
+                    'BrowserFavorites': 'BrowserFavorites',
+                    'BrowserHome': 'BrowserHome',
+                };
+                if (mediaMap[key]) return mediaMap[key];
+
+                // If we have a direct match in the enum, use it
+                if (WIN_KEY_ENUM[key]) return WIN_KEY_ENUM[key];
+
+                // Fallback: return the key itself with a note
+                return key || 'Unknown';
+            }
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // DOM refs
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            const keyboardLog = document.getElementById('keyboard-log');
+            const mouseLog = document.getElementById('mouse-log');
+            const controllerLog = document.getElementById('controller-log');
+            const unifiedLog = document.getElementById('unified-log');
+
+            const keyChips = {
+                ctrl: document.getElementById('key-ctrl'),
+                shift: document.getElementById('key-shift'),
+                alt: document.getElementById('key-alt'),
+                meta: document.getElementById('key-meta'),
+            };
+
+            const lastKeyDisplay = document.getElementById('last-key-display');
+            const lastKeyCode = document.getElementById('last-key-code');
+            const keyHistory = document.getElementById('key-history');
+
+            const mouseX = document.getElementById('mouse-x');
+            const mouseY = document.getElementById('mouse-y');
+            const mouseButtons = document.getElementById('mouse-buttons');
+            const mouseScroll = document.getElementById('mouse-scroll');
+            const mouseDelta = document.getElementById('mouse-delta');
+
+            const mouseIndicators = {
+                left: document.getElementById('mouse-left'),
+                middle: document.getElementById('mouse-middle'),
+                right: document.getElementById('mouse-right'),
+                back: document.getElementById('mouse-back'),
+                forward: document.getElementById('mouse-forward'),
+            };
+
+            const controllerContainer = document.getElementById('controller-container');
+            const controllerCount = document.getElementById('controller-count');
+
+            const statusDot = document.getElementById('status-dot');
+            const statusLabel = document.getElementById('status-label');
+
+            const clearLogsBtn = document.getElementById('clear-logs-btn');
+            const clearAllBtn = document.getElementById('clear-all-btn');
+            const scanBtn = document.getElementById('scan-controllers');
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // State
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            let keyLogEntries = [];
+            let mouseLogEntries = [];
+            let controllerLogEntries = [];
+            let unifiedLogEntries = [];
+            let keyHistoryEntries = [];
+            const MAX_LOG = 20;
+            const MAX_KEY_HISTORY = 12;
+            const activeKeys = new Set();
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // Unified Log
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            function addUnifiedLog(device, event, detail) {
+                const time = new Date().toLocaleTimeString();
+                unifiedLogEntries.unshift({ time, device, event, detail });
+                if (unifiedLogEntries.length > 100) unifiedLogEntries.pop();
+                renderUnifiedLog();
+            }
+
+            function renderUnifiedLog() {
+                if (unifiedLogEntries.length === 0) {
+                    unifiedLog.innerHTML = `<div class="log-entry text-neutral-500">waiting for input...</div>`;
+                    return;
+                }
+                unifiedLog.innerHTML = unifiedLogEntries.map(e =>
+                    `<div class="log-entry">
+                        <span class="text-neutral-600">[${e.time}]</span>
+                        <span class="text-blue-400 font-bold">${e.device}</span>
+                        <span class="text-neutral-500">|</span>
+                        <span class="text-yellow-400">${e.event}</span>
+                        <span class="text-neutral-500">|</span>
+                        <span class="text-green-300">${e.detail}</span>
+                    </div>`
+                ).join('');
+            }
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // Device-specific Logs
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            function addKeyboardLog(msg, type = '') {
+                keyLogEntries.unshift({ msg, type });
+                if (keyLogEntries.length > MAX_LOG) keyLogEntries.pop();
+                renderKeyboardLog();
+            }
+
+            function addMouseLog(msg, type = '') {
+                mouseLogEntries.unshift({ msg, type });
+                if (mouseLogEntries.length > MAX_LOG) mouseLogEntries.pop();
+                renderMouseLog();
+            }
+
+            function addControllerLog(msg, type = '') {
+                controllerLogEntries.unshift({ msg, type });
+                if (controllerLogEntries.length > MAX_LOG) controllerLogEntries.pop();
+                renderControllerLog();
+            }
+
+            function renderKeyboardLog() {
+                if (keyLogEntries.length === 0) {
+                    keyboardLog.innerHTML = `<span class="log-entry">awaiting input...</span>`;
+                    return;
+                }
+                keyboardLog.innerHTML = keyLogEntries.map(e =>
+                    `<span class="log-entry"><span class="${e.type}">${e.msg}</span></span>`
+                ).join('');
+            }
+
+            function renderMouseLog() {
+                if (mouseLogEntries.length === 0) {
+                    mouseLog.innerHTML = `<span class="log-entry">awaiting input...</span>`;
+                    return;
+                }
+                mouseLog.innerHTML = mouseLogEntries.map(e =>
+                    `<span class="log-entry"><span class="${e.type}">${e.msg}</span></span>`
+                ).join('');
+            }
+
+            function renderControllerLog() {
+                if (controllerLogEntries.length === 0) {
+                    controllerLog.innerHTML = `<span class="log-entry">waiting for controller...</span>`;
+                    return;
+                }
+                controllerLog.innerHTML = controllerLogEntries.map(e =>
+                    `<span class="log-entry"><span class="${e.type}">${e.msg}</span></span>`
+                ).join('');
+            }
+
+            function updateKeyHistory(key) {
+                keyHistoryEntries.unshift(key);
+                if (keyHistoryEntries.length > MAX_KEY_HISTORY) keyHistoryEntries.pop();
+                if (keyHistoryEntries.length === 0) {
+                    keyHistory.innerHTML = `<span class="text-sm text-neutral-600 italic">press any key...</span>`;
+                    return;
+                }
+                keyHistory.innerHTML = keyHistoryEntries.map(k =>
+                    `<span class="key-chip ${k.active ? 'active' : ''}" style="font-size:13px;min-width:40px;height:38px;padding:0 12px;">${k.display}</span>`
+                ).join('');
+            }
+
+            function getKeyDisplay(key) {
+                const map = {
+                    'Control': 'Ctrl',
+                    'Shift': 'Shift',
+                    'Alt': 'Alt',
+                    'Meta': 'Meta',
+                    ' ': '␣',
+                    'Escape': 'Esc',
+                    'Enter': '↵',
+                    'Tab': '⇥',
+                    'Backspace': '⌫',
+                    'Delete': '⌦',
+                    'ArrowUp': '↑',
+                    'ArrowDown': '↓',
+                    'ArrowLeft': '←',
+                    'ArrowRight': '→',
+                    'CapsLock': '⇪',
+                    'PageUp': 'Pg↑',
+                    'PageDown': 'Pg↓',
+                    'Home': 'Home',
+                    'End': 'End',
+                    'Insert': 'Ins',
+                };
+                if (map[key]) return map[key];
+                if (key.length === 1) return key.toUpperCase();
+                return key;
+            }
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // Keyboard Events
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            document.addEventListener('keydown', function(e) {
+                const key = e.key;
+                const display = getKeyDisplay(key);
+                const code = e.code;
+                const winKeyEnum = getWindowsKeyEnum(key, code);
+                const keyCode = e.keyCode || e.which; // numeric virtual key code
+
+                if (!activeKeys.has(key)) {
+                    activeKeys.add(key);
+                    const msg = `↓ ${display} (${code})`;
+                    addKeyboardLog(msg, 'key');
+                    addUnifiedLog('Keyboard', 'KeyDown',
+                        `${display} (${code}) → System.Windows.Input.Key.${winKeyEnum} (${keyCode})`);
+                    updateKeyHistory({ display, active: true });
+
+                    if (key === 'Control') keyChips.ctrl.classList.add('active-mod');
+                    if (key === 'Shift') keyChips.shift.classList.add('active-mod');
+                    if (key === 'Alt') keyChips.alt.classList.add('active-mod');
+                    if (key === 'Meta') keyChips.meta.classList.add('active-mod');
+
+                    lastKeyDisplay.textContent = display;
+                    lastKeyCode.textContent = `(${code})`;
+                }
+
+                if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.code)) {
+                    e.preventDefault();
+                }
+
+                statusDot.className = 'status-dot online';
+                statusLabel.textContent = 'keyboard';
+            });
+
+            document.addEventListener('keyup', function(e) {
+                const key = e.key;
+                const display = getKeyDisplay(key);
+                const code = e.code;
+                const winKeyEnum = getWindowsKeyEnum(key, code);
+                const keyCode = e.keyCode || e.which;
+
+                if (activeKeys.has(key)) {
+                    activeKeys.delete(key);
+                    const msg = `↑ ${display} (${code})`;
+                    addKeyboardLog(msg, 'key');
+                    addUnifiedLog('Keyboard', 'KeyUp',
+                        `${display} (${code}) → System.Windows.Input.Key.${winKeyEnum} (${keyCode})`);
+
+                    if (key === 'Control') keyChips.ctrl.classList.remove('active-mod');
+                    if (key === 'Shift') keyChips.shift.classList.remove('active-mod');
+                    if (key === 'Alt') keyChips.alt.classList.remove('active-mod');
+                    if (key === 'Meta') keyChips.meta.classList.remove('active-mod');
+                }
+            });
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // Mouse Events
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            const mouseBtnMap = ['left', 'middle', 'right', 'back', 'forward'];
+
+            function updateMouseButtons(buttons) {
+                mouseButtons.textContent = buttons;
+                for (let i = 0; i < mouseBtnMap.length; i++) {
+                    const btn = mouseBtnMap[i];
+                    const active = (buttons & (1 << i)) !== 0;
+                    mouseIndicators[btn].classList.toggle('active', active);
+                }
+            }
+
+            document.addEventListener('mousemove', function(e) {
+                mouseX.textContent = e.clientX;
+                mouseY.textContent = e.clientY;
+                if (e.buttons !== undefined) {
+                    updateMouseButtons(e.buttons);
+                }
+                statusDot.className = 'status-dot online';
+                statusLabel.textContent = 'mouse';
+            });
+
+            document.addEventListener('mousedown', function(e) {
+                const btn = mouseBtnMap[e.button] || `btn${e.button}`;
+                const msg = `⬇ ${btn} at (${e.clientX}, ${e.clientY})`;
+                addMouseLog(msg, 'mouse');
+                addUnifiedLog('Mouse', 'ButtonDown', `${btn} (button ${e.button}) at X=${e.clientX} Y=${e.clientY}`);
+                statusDot.className = 'status-dot online';
+                statusLabel.textContent = 'mouse';
+            });
+
+            document.addEventListener('mouseup', function(e) {
+                const btn = mouseBtnMap[e.button] || `btn${e.button}`;
+                const msg = `⬆ ${btn}`;
+                addMouseLog(msg, 'mouse');
+                addUnifiedLog('Mouse', 'ButtonUp', `${btn} (button ${e.button})`);
+            });
+
+            document.addEventListener('wheel', function(e) {
+                const delta = e.deltaY;
+                const currentScroll = parseInt(mouseScroll.textContent) || 0;
+                mouseScroll.textContent = currentScroll + delta;
+                mouseDelta.textContent = Math.round(delta);
+                const msg = `scroll ${delta > 0 ? 'down' : 'up'} (${Math.round(delta)}px)`;
+                addMouseLog(msg, 'mouse');
+                addUnifiedLog('Mouse', 'Scroll', `DeltaY=${Math.round(delta)}`);
+                statusDot.className = 'status-dot online';
+                statusLabel.textContent = 'scroll';
+                e.preventDefault();
+            }, { passive: false });
+
+            document.addEventListener('mouseleave', function() {
+                mouseX.textContent = '—';
+                mouseY.textContent = '—';
+                mouseButtons.textContent = '—';
+                updateMouseButtons(0);
+            });
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // Controller
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            const controllerStates = new Map();
+            const GAMEPAD_BUTTONS = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 'Back', 'Start', 'LS', 'RS',
+                'Dpad-U', 'Dpad-D', 'Dpad-L', 'Dpad-R', 'Home'
+            ];
+            const GAMEPAD_AXES = ['LX', 'LY', 'RX', 'RY'];
+
+            let controllerLoop = null;
+
+            function renderControllers() {
+                const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+                const connected = gamepads.filter(g => g !== null);
+                controllerCount.textContent = `${connected.length} connected`;
+
+                if (connected.length === 0) {
+                    controllerContainer.innerHTML = `
+                        <div class="text-sm text-neutral-500 italic font-mono">no controllers connected</div>
+                        <div class="text-xs text-neutral-700 font-mono">connect a gamepad and press any button</div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                connected.forEach((gp, idx) => {
+                    const id = gp.id || `controller-${idx}`;
+                    const shortId = id.replace(/\(.*?\)/g, '').trim().substring(0, 32);
+
+                    html += `
+                        <div class="gamepad-card connected">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-sm text-neutral-200 font-mono">${shortId}</span>
+                                <span class="text-[10px] text-neutral-600">#${gp.index}</span>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                    `;
+
+                    for (let i = 0; i < Math.min(gp.buttons.length, GAMEPAD_BUTTONS.length); i++) {
+                        const btn = gp.buttons[i];
+                        const label = GAMEPAD_BUTTONS[i] || `B${i}`;
+                        const pressed = btn && btn.pressed;
+                        const value = btn && btn.value !== undefined ? btn.value : 0;
+                        const activeClass = pressed ? 'active' : '';
+                        const isTrigger = label === 'LT' || label === 'RT';
+                        const display = isTrigger ? `${Math.round(value * 100)}%` : label;
+                        html += `
+                            <div class="controller-btn ${activeClass} ${isTrigger ? 'trigger' : ''}" style="${isTrigger ? 'width:52px;height:32px;border-radius:8px;font-size:9px;' : ''}">
+                                ${display}
+                            </div>
+                        `;
+                    }
+
+                    html += `</div><div class="flex flex-wrap gap-4 text-xs text-neutral-500">`;
+                    for (let i = 0; i < Math.min(gp.axes.length, GAMEPAD_AXES.length); i++) {
+                        const val = gp.axes[i] || 0;
+                        const label = GAMEPAD_AXES[i] || `A${i}`;
+                        const pct = Math.round((val + 1) / 2 * 100);
+                        const cls = val < -0.1 ? 'negative' : (val > 0.1 ? 'positive' : '');
+                        html += `
+                            <div class="flex-1 min-w-[100px]">
+                                <div class="flex justify-between text-[10px] text-neutral-600 mb-0.5">
+                                    <span>${label}</span>
+                                    <span>${val.toFixed(2)}</span>
+                                </div>
+                                <div class="axis-bar">
+                                    <div class="axis-fill ${cls}" style="width:${pct}%;"></div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    html += `</div></div>`;
+                });
+                controllerContainer.innerHTML = html;
+            }
+
+            function scanGamepads() {
+                const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+                const connected = gamepads.filter(g => g !== null);
+                if (connected.length > 0) {
+                    addControllerLog(`found ${connected.length} controller(s)`, 'ctrl');
+                    statusDot.className = 'status-dot online';
+                    statusLabel.textContent = 'controller';
+                }
+                renderControllers();
+            }
+
+            function startControllerLoop() {
+                if (controllerLoop) return;
+                controllerLoop = setInterval(() => {
+                    if (navigator.getGamepads) {
+                        const gamepads = navigator.getGamepads();
+                        const connected = gamepads.filter(g => g !== null);
+
+                        connected.forEach(gp => {
+                            if (!gp) return;
+                            if (!controllerStates.has(gp.index)) {
+                                controllerStates.set(gp.index, {
+                                    buttons: new Array(gp.buttons.length).fill(false),
+                                    axes: new Array(gp.axes.length).fill(0)
+                                });
+                            }
+                            const state = controllerStates.get(gp.index);
+
+                            // Check buttons
+                            gp.buttons.forEach((btn, idx) => {
+                                if (btn.pressed !== state.buttons[idx]) {
+                                    state.buttons[idx] = btn.pressed;
+                                    const label = GAMEPAD_BUTTONS[idx] || `B${idx}`;
+                                    const eventType = btn.pressed ? 'ButtonDown' : 'ButtonUp';
+                                    const msg =
+                                        `${btn.pressed ? '⬇' : '⬆'} ${label} (button ${idx})`;
+                                    addControllerLog(msg, 'ctrl');
+                                    addUnifiedLog('Controller', eventType,
+                                        `${label} (button ${idx})`);
+                                }
+                            });
+
+                            // Check axes
+                            gp.axes.forEach((val, idx) => {
+                                if (Math.abs(val - state.axes[idx]) > 0.05) {
+                                    state.axes[idx] = val;
+                                    const label = GAMEPAD_AXES[idx] || `A${idx}`;
+                                    addUnifiedLog('Controller', 'AxisMove',
+                                        `${label} (axis ${idx}) = ${val.toFixed(2)}`);
+                                }
+                            });
+
+                            controllerStates.set(gp.index, state);
+                        });
+
+                        if (connected.length > 0) {
+                            renderControllers();
+                        }
+                    }
+                }, 100);
+            }
+
+            function stopControllerLoop() {
+                if (controllerLoop) {
+                    clearInterval(controllerLoop);
+                    controllerLoop = null;
+                }
+            }
+
+            window.addEventListener('gamepadconnected', function(e) {
+                const gp = e.gamepad;
+                const msg = `connected: ${gp.id} (${gp.buttons.length} buttons, ${gp.axes.length} axes)`;
+                addControllerLog(msg, 'ctrl');
+                addUnifiedLog('Controller', 'Connected',
+                    `${gp.id} (${gp.buttons.length} buttons, ${gp.axes.length} axes)`);
+                scanGamepads();
+                startControllerLoop();
+                statusDot.className = 'status-dot online';
+                statusLabel.textContent = 'controller';
+            });
+
+            window.addEventListener('gamepaddisconnected', function(e) {
+                const gp = e.gamepad;
+                const msg = `disconnected: ${gp.id}`;
+                addControllerLog(msg, 'ctrl');
+                addUnifiedLog('Controller', 'Disconnected', `${gp.id}`);
+                scanGamepads();
+                const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+                const connected = gamepads.filter(g => g !== null);
+                if (connected.length === 0) {
+                    stopControllerLoop();
+                    controllerContainer.innerHTML =
+                        `<div class="text-sm text-neutral-500 italic font-mono">no controllers connected</div>`;
+                    controllerCount.textContent = '0 connected';
+                }
+            });
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // Clear / Reset
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            clearLogsBtn.addEventListener('click', function() {
+                keyLogEntries = [];
+                mouseLogEntries = [];
+                controllerLogEntries = [];
+                unifiedLogEntries = [];
+                renderKeyboardLog();
+                renderMouseLog();
+                renderControllerLog();
+                renderUnifiedLog();
+                keyHistoryEntries = [];
+                updateKeyHistory('');
+                lastKeyDisplay.textContent = '—';
+                lastKeyCode.textContent = '(—)';
+                mouseX.textContent = '—';
+                mouseY.textContent = '—';
+                mouseButtons.textContent = '—';
+                mouseScroll.textContent = '—';
+                mouseDelta.textContent = '—';
+                updateMouseButtons(0);
+                Object.values(keyChips).forEach(chip => chip.classList.remove('active-mod'));
+                activeKeys.clear();
+                controllerLog.innerHTML = `<span class="log-entry">logs cleared</span>`;
+            });
+
+            clearAllBtn.addEventListener('click', function() {
+                clearLogsBtn.click();
+                scanGamepads();
+                statusDot.className = 'status-dot online';
+                statusLabel.textContent = 'ready';
+                addUnifiedLog('System', 'Reset', 'All logs and states cleared');
+            });
+
+            scanBtn.addEventListener('click', function() {
+                scanGamepads();
+                addControllerLog('manual scan triggered', 'ctrl');
+                addUnifiedLog('System', 'Scan', 'Manual controller scan initiated');
+            });
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // Init
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            function init() {
+                const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+                const connected = gamepads.filter(g => g !== null);
+                if (connected.length > 0) {
+                    scanGamepads();
+                    startControllerLoop();
+                    addControllerLog(`found ${connected.length} controller(s) on startup`, 'ctrl');
+                    addUnifiedLog('System', 'Startup', `Found ${connected.length} controller(s)`);
+                }
+                addKeyboardLog('▶ keyboard ready', 'key');
+                addMouseLog('▶ mouse ready', 'mouse');
+                addUnifiedLog('System', 'Ready', 'Input test initialized');
+                statusDot.className = 'status-dot online';
+                statusLabel.textContent = 'ready';
+            }
+            init();
+
+            window.__inputTest = {
+                clearLogs: () => clearLogsBtn.click(),
+                reset: () => clearAllBtn.click(),
+                scan: () => scanBtn.click(),
+            };
+
+        })();
+    </script>
+
+</body>
+</html>
