@@ -125,7 +125,7 @@
         }
     </style>
 </head>
-<body class="flex flex-col h-screen select-none selection:bg-neutral-800 selection:text-white">
+<body class="flex flex-col h-screen select-none selection:bg-neutral-800 selection:text-white overflow-hidden relative">
 
     <!-- ─── HEADER BAR ─── -->
     <header class="flex-shrink-0 bg-panelbg border-b border-panelborder px-4 py-2.5 flex flex-wrap items-center justify-between gap-4 z-10 font-mono">
@@ -160,17 +160,24 @@
                 <span id="speed-label" class="text-[10px] font-bold text-neutral-400 min-w-[32px]">30.0s</span>
             </div>
 
-            <!-- Sound toggle -->
-            <button id="sound-btn" onclick="toggleMute()" class="flex items-center gap-1 bg-neutral-900/50 hover:bg-neutral-900 text-neutral-500 hover:text-neutral-200 px-2.5 py-1 border border-panelborder transition text-[10px] rounded">
+            <!-- Blip toggle -->
+            <button id="sound-btn" onclick="toggleMute()" class="flex items-center gap-1 bg-neutral-900/50 hover:bg-neutral-900 text-neutral-500 hover:text-neutral-200 px-2.5 py-1 border border-panelborder transition text-[10px] rounded font-mono">
                 <span id="sound-icon">🔇</span>
-                <span id="sound-status">AUDIO OFF</span>
+                <span id="sound-status">BLIP OFF</span>
             </button>
 
             <!-- TTS Toggle Button -->
-            <button id="tts-btn" onclick="toggleTTS()" class="flex items-center gap-1 bg-neutral-900/50 hover:bg-neutral-900 text-neutral-500 hover:text-neutral-200 px-2.5 py-1 border border-panelborder transition text-[10px] rounded">
+            <button id="tts-btn" onclick="toggleTTS()" class="flex items-center gap-1 bg-neutral-900/50 hover:bg-neutral-900 text-neutral-500 hover:text-neutral-200 px-2.5 py-1 border border-panelborder transition text-[10px] rounded font-mono">
                 <span id="tts-icon">🔇</span>
                 <span id="tts-status">TTS OFF</span>
             </button>
+
+            <!-- TTS Speed Control -->
+            <div class="flex items-center gap-2 bg-[#050505] px-2 py-1 border border-[#171717] rounded">
+                <span class="text-[9px] text-neutral-500">TTS SPD</span>
+                <input id="tts-speed-slider" type="range" min="0.5" max="2.0" value="1.0" step="0.1" class="w-12 h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-neutral-500">
+                <span id="tts-speed-label" class="text-[10px] font-bold text-neutral-400 min-w-[24px]">1.0x</span>
+            </div>
 
             <!-- TTS Volume Control -->
             <div class="flex items-center gap-2 bg-[#050505] px-2 py-1 border border-[#171717] rounded">
@@ -193,68 +200,12 @@
         </div>
     </div>
 
-    <!-- ─── MAIN WORKSPACE GRID (4 Feed Channels + Sidebar Console) ─── -->
+    <!-- ─── MAIN WORKSPACE GRID (Dynamic Feed Channels + Sidebar Console) ─── -->
     <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden h-full">
 
-        <!-- Feed Aggregators (Left Side - Span 9) -->
-        <section class="lg:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4 p-4 overflow-y-auto bg-cyberbg">
-            
-            <!-- Category 1: Tech Feed -->
-            <div class="flex flex-col h-[380px] bg-panelbg border border-panelborder rounded-md p-3.5 relative shadow-lg">
-                <div class="flex items-center justify-between border-b border-neutral-900 pb-2.5 mb-3 font-mono">
-                    <h3 class="text-xs font-bold text-white tracking-widest uppercase flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 bg-cyberblue rounded-full"></span>
-                        TECH_INNOVATION.XML
-                    </h3>
-                    <span id="tech-count" class="text-[9px] text-neutral-500 font-mono font-bold bg-[#050505] px-1.5 py-0.5 border border-panelborder rounded-sm">0 ARTICLES</span>
-                </div>
-                <div id="feed-tech" class="flex-1 overflow-y-auto space-y-2.5 pr-1">
-                    <!-- Tech elements go here -->
-                </div>
-            </div>
-
-            <!-- Category 2: Computer Science & Systems Feed -->
-            <div class="flex flex-col h-[380px] bg-panelbg border border-panelborder rounded-md p-3.5 relative shadow-lg">
-                <div class="flex items-center justify-between border-b border-neutral-900 pb-2.5 mb-3 font-mono">
-                    <h3 class="text-xs font-bold text-white tracking-widest uppercase flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 bg-cybergreen rounded-full"></span>
-                        SYSTEMS_ENGINEERING.RSS
-                    </h3>
-                    <span id="computer-count" class="text-[9px] text-neutral-500 font-mono font-bold bg-[#050505] px-1.5 py-0.5 border border-panelborder rounded-sm">0 ARTICLES</span>
-                </div>
-                <div id="feed-computer" class="flex-1 overflow-y-auto space-y-2.5 pr-1">
-                    <!-- Computer elements go here -->
-                </div>
-            </div>
-
-            <!-- Category 3: Gaming & Development Feed -->
-            <div class="flex flex-col h-[380px] bg-panelbg border border-panelborder rounded-md p-3.5 relative shadow-lg">
-                <div class="flex items-center justify-between border-b border-neutral-900 pb-2.5 mb-3 font-mono">
-                    <h3 class="text-xs font-bold text-white tracking-widest uppercase flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 bg-cyberred rounded-full"></span>
-                        GAMING_DEV_NEWS.XML
-                    </h3>
-                    <span id="gaming-count" class="text-[9px] text-neutral-500 font-mono font-bold bg-[#050505] px-1.5 py-0.5 border border-panelborder rounded-sm">0 ARTICLES</span>
-                </div>
-                <div id="feed-gaming" class="flex-1 overflow-y-auto space-y-2.5 pr-1">
-                    <!-- Gaming elements go here -->
-                </div>
-            </div>
-
-            <!-- Category 4: Science & Exploration Feed -->
-            <div class="flex flex-col h-[380px] bg-panelbg border border-panelborder rounded-md p-3.5 relative shadow-lg">
-                <div class="flex items-center justify-between border-b border-neutral-900 pb-2.5 mb-3 font-mono">
-                    <h3 class="text-xs font-bold text-white tracking-widest uppercase flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 bg-cyberamber rounded-full"></span>
-                        ASTROPHYSICS_SCI.RSS
-                    </h3>
-                    <span id="science-count" class="text-[9px] text-neutral-500 font-mono font-bold bg-[#050505] px-1.5 py-0.5 border border-panelborder rounded-sm">0 ARTICLES</span>
-                </div>
-                <div id="feed-science" class="flex-1 overflow-y-auto space-y-2.5 pr-1">
-                    <!-- Science elements go here -->
-                </div>
-            </div>
-
+        <!-- Dynamic Feed Aggregators Container (Left Side - Span 9) -->
+        <section id="feeds-container" class="lg:col-span-9 grid gap-4 p-4 overflow-y-auto bg-cyberbg">
+            <!-- Rendered dynamically on load based on feeds configuration file -->
         </section>
 
         <!-- Aggregator Sidebar Console (Right Side - Span 3) -->
@@ -266,7 +217,7 @@
                 <div class="bg-[#050505] border border-panelborder p-3 rounded text-[10px] font-mono space-y-2">
                     <div class="flex justify-between">
                         <span class="text-neutral-500 font-semibold">INGESTION AGENTS:</span>
-                        <span class="text-white font-bold" id="telemetry-agents-status">ACTIVE (4/4)</span>
+                        <span class="text-white font-bold" id="telemetry-agents-status">ACTIVE</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-neutral-500 font-semibold">PACKETS PROCESSED:</span>
@@ -286,7 +237,7 @@
             <!-- Aggregator Server Connection Stream Console -->
             <div class="flex-1 flex flex-col min-h-[250px] overflow-hidden space-y-2">
                 <h4 class="text-[10px] text-neutral-500 font-mono font-bold tracking-widest uppercase">💾 LIVE PARSER DIAGNOSTIC</h4>
-                <div id="live-parser-console" class="flex-1 overflow-y-auto bg-[#050505] border border-neutral-800 p-2.5 rounded font-mono text-[9px] space-y-1.5 text-neutral-600 flex flex-col-reverse">
+                <div id="live-parser-console" class="flex-1 overflow-y-auto bg-[#050505] border border-panelborder p-2.5 rounded font-mono text-[9px] space-y-1.5 text-neutral-600 flex flex-col-reverse">
                     <!-- Dynamic simulated socket data logs -->
                 </div>
             </div>
@@ -297,13 +248,14 @@
 
     <!-- ─── ARTICLE READER DETAIL MODAL TERMINAL ─── -->
     <div id="article-reader-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-[#09090b] border border-neutral-800 rounded-md max-w-lg w-full p-5 space-y-4 shadow-2xl text-left">
+        <div class="bg-[#09090b] border border-neutral-800 rounded-md max-w-lg w-full p-5 space-y-4 shadow-2xl text-left relative">
             <div class="flex justify-between items-start border-b border-neutral-900 pb-3 font-mono">
                 <div>
                     <span id="modal-category-label" class="text-[8px] px-1.5 py-0.5 bg-[#050505] border border-neutral-800 text-cyberblue rounded uppercase font-bold">CATEGORY</span>
-                    <h2 id="modal-title" class="text-sm font-bold text-white mt-2 leading-snug font-sans">Article Title</h2>
+                    <h2 id="modal-title" class="text-sm font-bold text-white mt-2 leading-snug font-sans font-sans font-sans">Article Title</h2>
                 </div>
-                <button onclick="closeReader()" class="text-neutral-500 hover:text-white font-bold text-[10px] transition-colors">[ ESC ]</button>
+                <!-- Clean Modern Close Button -->
+                <button onclick="closeReader()" class="text-neutral-500 hover:text-white font-bold text-xl leading-none transition-colors" title="Close reader">&times;</button>
             </div>
             
             <div class="space-y-3 text-xs leading-relaxed max-h-60 overflow-y-auto">
@@ -313,13 +265,13 @@
                     <span id="modal-readtime">EST. READ: --</span>
                     <span id="modal-date">PUBLISHED: --</span>
                 </div>
-                <p id="modal-body" class="whitespace-pre-line text-neutral-300 font-sans">
+                <p id="modal-body" class="whitespace-pre-line text-neutral-300 font-sans font-sans font-sans">
                     Aggregating content summary payload...
                 </p>
             </div>
 
             <div class="border-t border-neutral-900 pt-3 flex justify-between items-center text-[10px] font-mono">
-                <a id="modal-external-link" href="#" target="_blank" class="text-cyberblue hover:text-blue-400 hover:underline font-bold flex items-center gap-1 transition-colors">
+                <a id="modal-external-link" href="#" target="_blank" class="text-cyberblue hover:text-blue-400 hover:underline font-bold flex items-center gap-1 transition-colors font-sans">
                     VIEW SOURCE ENDPOINT ↗
                 </a>
                 <button onclick="closeReader()" class="bg-[#050505] hover:bg-neutral-950 border border-neutral-800 hover:border-neutral-600 text-white font-bold px-3 py-1.5 rounded transition text-[10px]">
@@ -338,6 +290,9 @@
         let isMuted = true; // Default sound to MUTED (OFF)
         let isTtsEnabled = false; // Default TTS to OFF
         let ttsVolume = 1.0; // Default TTS volume to 100%
+        let ttsSpeed = 1.0; // Default TTS rate to 1.0x
+        let ttsRestartTimeout = null;
+        let lastSpokenText = "";
 
         function initAudio() {
             if (!audioCtx) {
@@ -380,11 +335,11 @@
             setTimeout(() => playChirp(220, 'square', 0.15, 0.02), 120);
         }
 
-        // Mute toggle function
+        // Mute toggle function (Renamed to Blip)
         function toggleMute() {
             isMuted = !isMuted;
             document.getElementById('sound-icon').textContent = isMuted ? '🔇' : '🔊';
-            document.getElementById('sound-status').textContent = isMuted ? 'AUDIO OFF' : 'AUDIO ON';
+            document.getElementById('sound-status').textContent = isMuted ? 'BLIP OFF' : 'BLIP ON';
         }
 
         // TTS Toggle Function
@@ -398,12 +353,12 @@
                 icon.textContent = '🗣️';
                 status.textContent = 'TTS ON';
                 btn.classList.add('border-cyberblue', 'text-white');
-                speakText("Text to speech online.");
+                speakText("Text to speech online.", true); // Force immediate announcement override
             } else {
                 icon.textContent = '🔇';
                 status.textContent = 'TTS OFF';
                 btn.classList.remove('border-cyberblue', 'text-white');
-                // Standard announcement of power-off state, bypassing standard mute flags temporarily
+                // Standard announcement of power-off state, force-canceling existing utterance queues
                 speakText("Text to speech offline.", true);
             }
         }
@@ -412,127 +367,24 @@
         function speakText(text, force = false) {
             if (!('speechSynthesis' in window)) return;
             
-            // Instantly cancel any ongoing speech to enforce a single-stream limit
-            window.speechSynthesis.cancel();
-
             if (!isTtsEnabled && !force) return;
 
+            // If force parameter is provided, we cancel active TTS immediately to trigger feedback
+            if (force) {
+                window.speechSynthesis.cancel();
+            } else if (window.speechSynthesis.speaking) {
+                // Skip playing if another automatic update is already reading to prevent overlapping overloads
+                return;
+            }
+
+            lastSpokenText = text;
+
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 1.05; // Slightly sped up for optimal reading
+            utterance.rate = ttsSpeed; // Enforce user-defined rate parameters
             utterance.pitch = 1.0;
-            utterance.volume = ttsVolumePercentage(); // Enforce user-defined telemetry volume parameter
+            utterance.volume = ttsVolumePercentage(); // Enforce user-defined volume parameter
             window.speechSynthesis.speak(utterance);
         }
-
-        // Helper determining target vocal gain factor
-        function getTtsVolume() {
-            return isTtsEnabled ? 1.0 : 0.0;
-        }
-
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  OFFLINE LOCAL FALLBACK ARTICLES DATABASE (Perfect schema match for newsFeed.json)
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        const FALLBACK_DB = {
-            tech: [
-                {
-                    "id": "tech-001",
-                    "title": "Silicon Wafer Yields Jump 14% with Extreme Ultraviolet Laser Arrays",
-                    "source": "TechCrunch",
-                    "author": "Dr. Keith Vance",
-                    "published": "18:42:10",
-                    "snippet": "Recent advancements in ultraviolet laser cooling technology show massive optimization factors. EUV arrays now scale fabrication accuracy inside modern 2nm architectures with 99.8% precision margins.",
-                    "readTime": "3 min",
-                    "url": "https://techcrunch.com"
-                },
-                {
-                    "id": "tech-002",
-                    "title": "Aether Grid Launches Solar-Powered Server Arrays in Low Orbit",
-                    "source": "The Verge",
-                    "author": "Clara Sterling",
-                    "published": "17:15:32",
-                    "snippet": "To completely mitigate land-based energy footprint constraints, Aether Grid launches structural cubesat clusters powered by direct orbital solar energy grids, reducing routing latency factors down by 14ms globally.",
-                    "readTime": "5 min",
-                    "url": "https://www.theverge.com"
-                }
-            ],
-            computer: [
-                {
-                    "id": "comp-001",
-                    "title": "Linux Kernel Update Pushes Multi-Threaded Storage I/O Optimization",
-                    "source": "Hacker News",
-                    "author": "SysAdmin Core",
-                    "published": "19:02:15",
-                    "snippet": "Patch 7.42.1 resolves fundamental storage scheduler blocks, optimizing background indexing. Storage operations run parallel pipelines at double speed without context-switching costs.",
-                    "readTime": "4 min",
-                    "url": "https://news.ycombinator.com"
-                },
-                {
-                    "id": "comp-002",
-                    "title": "Optical Bus Pathways Replace Traditional Copper Circuit Lanes",
-                    "source": "Toptal Engineering",
-                    "author": "Optics Lab",
-                    "published": "16:44:11",
-                    "snippet": "Routing gigabit metrics directly via micro-LED laser tubes eliminates heat dispersion problems and elevates cache throughput constraints inside multi-socket computing architectures.",
-                    "readTime": "5 min",
-                    "url": "https://www.toptal.com/developers/blog"
-                }
-            ],
-            gaming: [
-                {
-                    "id": "game-001",
-                    "title": "Voxel Engine Achieves Infinite Procedural Generation on Mobile Chips",
-                    "source": "Rock Paper Shotgun",
-                    "author": "IndieDev Unit",
-                    "published": "18:22:30",
-                    "snippet": "Combining custom octree indexing structures with localized rendering shaders lets developers project expansive voxel landscapes on lightweight devices without thermal throttling.",
-                    "readTime": "3 min",
-                    "url": "https://www.rockpapershotgun.com"
-                },
-                {
-                    "id": "game-002",
-                    "title": "Cozy Simulation Indie Breakout Hits 5 Million Unique Active Players",
-                    "source": "Eurogamer",
-                    "author": "Game Tracker",
-                    "published": "15:40:12",
-                    "snippet": "Focusing on low-poly hand-painted aesthetics, calming lo-fi soundscapes, and completely non-competitive mechanics, the game captures global attention across diverse age demographics.",
-                    "readTime": "4 min",
-                    "url": "https://www.eurogamer.net"
-                }
-            ],
-            science: [
-                {
-                    "id": "sci-001",
-                    "title": "Deep-Space Probe Monitors Active Cryovolcanic Eruption on Neptune's Moon",
-                    "source": "NASA Breaking News",
-                    "author": "Astro Science Core",
-                    "published": "19:40:00",
-                    "snippet": "Telemetry analysis from the deep-probe shows liquid methane and ice particles erupting from geysers under extremely low planetary temperatures, proving deep interior heat vectors exist.",
-                    "readTime": "5 min",
-                    "url": "https://www.nasa.gov"
-                },
-                {
-                    "id": "sci-002",
-                    "title": "Sub-Glacial Geothermal Vents Reveal Resilient Chemotrophic Bacteria",
-                    "source": "Nature",
-                    "author": "Bio Exploration Team",
-                    "published": "16:11:45",
-                    "snippet": "Collecting samples under ice layers identifies life surviving entirely on chemical energy, providing pristine laboratory models of potential life in other Jovian oceans.",
-                    "readTime": "6 min",
-                    "url": "https://www.nature.com"
-                }
-            ]
-        };
-
-        // Master articles database parsed from newsFeed.json
-        let feedDatabase = FALLBACK_DB;
-
-        // Tracks live visible articles inside display columns (Max 15 per category)
-        let activeFeeds = { tech: [], computer: [], gaming: [], science: [] };
-        let allHeadlines = []; // Scrolling ticker queue
-        let packetIngestionCount = 0;
-        
-        // GLOBAL UPDATE CONFIGURATION: default updated to 30 seconds (30000ms)
-        let UPDATE_INTERVAL_MS = 30000; 
 
         // Helper retrieving volume multiplier dynamically from user input slider bounds
         function ttsVolumePercentage() {
@@ -540,68 +392,265 @@
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  LOAD DYNAMIC ARTICLES FROM newsFeed.json
+        //  OFFLINE LOCAL FALLBACK ARTICLES DATABASE & SOURCES
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        const DEFAULT_FEED_LIST = {
+            "feeds": {
+                "Science & Technology": [
+                    { "name": "TechCrunch" },
+                    { "name": "The Verge" },
+                    { "name": "Wired" },
+                    { "name": "Ars Technica" },
+                    { "name": "Hacker News" },
+                    { "name": "Science Daily" },
+                    { "name": "NASA Breaking News" },
+                    { "name": "Nature" }
+                ],
+                "Gaming & Entertainment": [
+                    { "name": "PC Gamer" },
+                    { "name": "Rock Paper Shotgun" },
+                    { "name": "IGN" },
+                    { "name": "GameSpot" },
+                    { "name": "Eurogamer" },
+                    { "name": "Polygon" }
+                ],
+                "World News": [
+                    { "name": "BBC News" },
+                    { "name": "CNN" },
+                    { "name": "Al Jazeera" },
+                    { "name": "Reuters" },
+                    { "name": "AP News" },
+                    { "name": "Bloomberg" }
+                ]
+            }
+        };
+
+        // Procedural High-Fidelity Safe Articles Engine mapped directly to JSON keys
+        const PROCEDURAL_NEWS_TEMPLATES = {
+            "Science & Technology": [
+                {
+                    title: "Silicon Wafer Yields Jump with Extreme Ultraviolet Laser Arrays",
+                    snippet: "Recent advancements in ultraviolet laser cooling technology show massive optimization factors. EUV arrays now scale fabrication accuracy inside modern architectures with 99.8% precision margins."
+                },
+                {
+                    title: "Solar-Powered Orbital Servers Mitigate Terrestrial Energy Constraints",
+                    snippet: "To completely bypass land-based energy footprints, new Cubesat servers powered by direct orbital solar energy grids reduce data transit routing times globally."
+                },
+                {
+                    title: "Rust-Based Kernel Optimization Patches Fundamental Thread Latency",
+                    snippet: "A brand-new kernel scheduling patch resolves core resource blocking. Microsecond-level process switching runs parallel instructions at double previous speeds."
+                },
+                {
+                    title: "Quantum Dot Encryption Layers Reach Real-World Viability Milestone",
+                    snippet: "Researchers successfully establish a stable, secure network path with continuous quantum entanglement over 40 kilometers of fiber optic cables."
+                },
+                {
+                    title: "Ocean-Current Turbines Begin Supplying Uninterrupted Grid Telemetry",
+                    snippet: "Deploying high-torque blades directly inside deep marine currents yields stable electrical output, providing pristine kinetic performance metrics."
+                }
+            ],
+            "Gaming & Entertainment": [
+                {
+                    title: "Voxel Rendering Shaders Push Procedural Worlds on Mobile Hardware",
+                    snippet: "Custom octree indexing allows low-power mobile graphic processors to stream endless, highly detailed open worlds at stable high frame rates."
+                },
+                {
+                    title: "Calming Indie Lo-Fi Simulation Hits Ten Million Active Player Mark",
+                    snippet: "By prioritizing peaceful community-building loops and hand-painted aesthetics over traditional competitive stress, the hit indie title captures massive global attention."
+                },
+                {
+                    title: "Adaptive Ray-Traced Shadow Pipelines Integrated into Standard Game Engines",
+                    snippet: "The new global lighting renderer calculates real-time light bounces with half the processing cost, offering photorealistic environments to indie creators."
+                },
+                {
+                    title: "Symphonic Virtual Reality Suite Wins Top Prize at Digital Arts Festival",
+                    snippet: "By fusing real-time spatialized audio synthesis with advanced haptic vest coordination, the experience delivers unprecedented sensory immersion."
+                },
+                {
+                    title: "Legendary Retro Side-Scroller Remake Premieres Brand New Orchestral Soundtrack",
+                    snippet: "Fusing vintage chiptune melodies with a live philharmonic performance creates a highly praised nostalgic audio landscape that redefines modern adaptation standards."
+                }
+            ],
+            "World News": [
+                {
+                    title: "Global Supply Networks Pivot to Smart Port Routing Algorithms",
+                    snippet: "Implementing decentralized shipping index charts allows container fleets to dynamically reroute around congested harbors, reducing delivery latency by 35%."
+                },
+                {
+                    title: "Renewable Tidal Turbine Grid Begins Supplying Power to Coastal Cities",
+                    snippet: "Positioned in deep-sea currents, the newly established marine energy project registers continuous clean power outputs surpassing seasonal forecasts."
+                },
+                {
+                    title: "International Scholastic Treaty Establishes Open Research Repositories",
+                    snippet: "Dozens of academic institutions agree to a mutual data-sharing consensus, accelerating global research projects by removing paywalls."
+                },
+                {
+                    title: "Hyperloop High-Speed Cargo Network Completes Initial Vacuum Tube Tests",
+                    snippet: "The transport capsule successfully traverses a 10-kilometer test track at high sub-sonic speeds, demonstrating a zero-emission logistics alternative."
+                },
+                {
+                    title: "Global Forestry Protection Initiative Employs Satellite Audio Arrays",
+                    snippet: "A synchronized satellite acoustic monitoring network detects illegal canopy destruction patterns in real-time, sending immediate coordinates to ground units."
+                }
+            ]
+        };
+
+        // Master dynamic structures configured from newsFeedList.json
+        let feedConfiguration = DEFAULT_FEED_LIST;
+        let categoriesList = [];
+
+        // Tracks live visible articles inside display columns (Max 15 per category)
+        let activeFeeds = {};
+        let allHeadlines = []; // Scrolling ticker queue
+        let packetIngestionCount = 0;
+        
+        // Dynamic Ingest Deduplication Set Tracker per category to avoid repeating
+        let usedArticleIds = {};
+        
+        // GLOBAL UPDATE CONFIGURATION: default updated to 30 seconds (30000ms)
+        let UPDATE_INTERVAL_MS = 30000; 
+
+        // ─── LOAD DYNAMIC CATEGORIES FROM newsFeedList.json ───
         async function fetchNewsFeedDatabase() {
             try {
-                // Fetch the config database file
-                const response = await fetch('newsFeed.json');
+                // Fetch the list configuration index
+                const response = await fetch('newsFeedList.json');
                 if (!response.ok) {
-                    throw new Error('newsFeed.json config file unavailable');
+                    throw new Error('newsFeedList.json unavailable');
                 }
                 const data = await response.json();
                 
-                if (data && data.articles) {
-                    // Overwrite default configuration structures with verified parsed JSON content
-                    feedDatabase = data.articles;
-
-                    document.getElementById('feed-source-status').textContent = 'newsFeed.json ACTIVE';
+                if (data && data.feeds) {
+                    feedConfiguration = data;
+                    document.getElementById('feed-source-status').textContent = 'newsFeedList.json ACTIVE';
                     document.getElementById('feed-source-status').className = 'text-cybergreen font-bold';
-                    addNewsItemToTerminal("SYSTEM: Sourced live database indexes from newsFeed.json successfully.", "BULL");
+                    addNewsItemToTerminal("SYSTEM: Sourced live sources from newsFeedList.json successfully.", "BULL");
                 }
             } catch (err) {
-                console.warn('Could not read newsFeed.json. Deploying offline database safety fallback.', err);
-                document.getElementById('feed-source-status').textContent = 'LOCAL CACHE ACTIVE';
+                console.warn('Could not read newsFeedList.json. Deploying offline list fallbacks.', err);
+                document.getElementById('feed-source-status').textContent = 'LOCAL LIST ACTIVE';
                 document.getElementById('feed-source-status').className = 'text-neutral-500 font-bold';
-                addNewsItemToTerminal("WARNING: newsFeed.json fetch blocked/offline. Local fallback active.", "BEAR");
+                addNewsItemToTerminal("WARNING: newsFeedList.json blocked/offline. Fallback categories deployed.", "BEAR");
             }
+
+            categoriesList = Object.keys(feedConfiguration.feeds);
+            buildDynamicWorkspaceLayout();
         }
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  FEED PROCESSING ENGINE
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        function ingestNewItem(forcedCategory = null) {
-            const categories = ['tech', 'computer', 'gaming', 'science'];
-            const cat = forcedCategory || categories[Math.floor(Math.random() * categories.length)];
+        // Dynamically adapts the grid layout to the number of categories inside the json file
+        function buildDynamicWorkspaceLayout() {
+            const container = document.getElementById('feeds-container');
             
-            // Acquire authentic articles from parsed data pool
-            const articlesList = feedDatabase[cat];
-            if (!articlesList || articlesList.length === 0) return;
+            // Adjust layouts adaptively based on parsed category counts
+            container.className = "lg:col-span-9 grid gap-4 p-4 overflow-y-auto bg-cyberbg";
+            if (categoriesList.length === 1) {
+                container.classList.add('grid-cols-1');
+            } else if (categoriesList.length === 2) {
+                container.classList.add('grid-cols-1', 'md:grid-cols-2');
+            } else if (categoriesList.length === 3) {
+                container.classList.add('grid-cols-1', 'md:grid-cols-2', 'xl:grid-cols-3');
+            } else {
+                container.classList.add('grid-cols-1', 'md:grid-cols-2', 'xl:grid-cols-4');
+            }
 
-            // Pick a random structured article
-            const baseArticle = articlesList[Math.floor(Math.random() * articlesList.length)];
+            // Clean array maps and dynamic allocations
+            activeFeeds = {};
+            usedArticleIds = {};
+
+            const mutedColorMaps = [
+                { dot: 'bg-cyberblue', text: 'text-cyberblue', accent: 'accent-cyberblue' },
+                { dot: 'bg-cybergreen', text: 'text-cybergreen', accent: 'accent-cybergreen' },
+                { dot: 'bg-cyberred', text: 'text-cyberred', accent: 'accent-cyberred' },
+                { dot: 'bg-cyberamber', text: 'text-cyberamber', accent: 'accent-cyberamber' }
+            ];
+
+            let htmlString = "";
+            categoriesList.forEach((catName, index) => {
+                activeFeeds[catName] = [];
+                usedArticleIds[catName] = new Set();
+
+                // Cycle colors safely within bounds
+                const colorToken = mutedColorMaps[index % mutedColorMaps.length];
+
+                htmlString += `
+                    <div class="flex flex-col h-[380px] bg-panelbg border border-panelborder rounded-md p-3.5 relative shadow-lg">
+                        <div class="flex items-center justify-between border-b border-neutral-900 pb-2.5 mb-3 font-mono">
+                            <h3 class="text-xs font-bold text-white tracking-widest uppercase flex items-center gap-1.5 truncate max-w-[70%]" title="${catName}">
+                                <span class="w-1.5 h-1.5 rounded-full shrink-0 ${colorToken.dot}"></span>
+                                <span class="truncate">${catName}</span>
+                            </h3>
+                            <div class="flex items-center gap-2.5 shrink-0">
+                                <label class="flex items-center gap-1 text-[9px] text-neutral-500 font-mono font-bold cursor-pointer hover:text-neutral-400">
+                                    <input type="checkbox" id="tts-check-${index}" checked class="w-3 h-3 bg-[#050505] border border-[#171717] rounded-sm cursor-pointer ${colorToken.accent}">
+                                    TTS
+                                </label>
+                                <span id="count-val-${index}" class="text-[9px] text-neutral-500 font-mono font-bold bg-[#050505] px-1.5 py-0.5 border border-panelborder rounded-sm">0 ARTICLES</span>
+                            </div>
+                        </div>
+                        <div id="feed-column-${index}" class="flex-1 overflow-y-auto space-y-2.5 pr-1">
+                            <div class="text-center py-8 text-neutral-600 text-[10px] italic font-mono">Connecting pipeline...</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = htmlString;
+            document.getElementById('telemetry-agents-status').textContent = `ACTIVE (${categoriesList.length}/${categoriesList.length})`;
+        }
+
+        // ─── FEED PROCESSING ENGINE ───
+        function ingestNewItem(forcedCategoryIndex = null) {
+            if (categoriesList.length === 0) return;
             
-            // Create a custom clone so multiple timestamped streams don't overlap
+            const catIndex = forcedCategoryIndex !== null ? forcedCategoryIndex : Math.floor(Math.random() * categoriesList.length);
+            const catName = categoriesList[catIndex];
+            
+            // Settle feed arrays from configuration
+            const sourcesList = feedConfiguration.feeds[catName];
+            if (!sourcesList || sourcesList.length === 0) return;
+
+            // Pick a random listed source from sources array
+            const sourceObj = sourcesList[Math.floor(Math.random() * sourcesList.length)];
+            const sourceName = sourceObj.name || "System Core";
+
+            // Settle procedural templates
+            const templates = PROCEDURAL_NEWS_TEMPLATES[catName] || PROCEDURAL_NEWS_TEMPLATES["Science & Technology"];
+            
+            // Deduplicate to ensure clean streams
+            let availableTemplates = templates.filter((t, idx) => !usedArticleIds[catName].has(idx));
+            if (availableTemplates.length === 0) {
+                usedArticleIds[catName].clear();
+                availableTemplates = templates;
+            }
+
+            const randIndex = Math.floor(Math.random() * availableTemplates.length);
+            const chosenTemplate = availableTemplates[randIndex];
+            
+            // Track the original index of chosen template to safely register as used
+            const originalTemplateIdx = templates.indexOf(chosenTemplate);
+            usedArticleIds[catName].add(originalTemplateIdx);
+
             const item = {
-                id: `${baseArticle.id || 'gen'}-${Math.random().toString(36).substr(2, 9)}`,
-                title: baseArticle.title,
-                sourceName: baseArticle.source || "Quant-X",
-                author: baseArticle.author || "System Core",
-                snippet: baseArticle.snippet || "Transmission payload stream cleared.",
-                readTime: baseArticle.readTime || "2 min",
-                url: baseArticle.url || "https://techcrunch.com",
-                category: cat
+                id: `art-${catIndex}-${Math.random().toString(36).substr(2, 9)}`,
+                title: chosenTemplate.title,
+                snippet: chosenTemplate.snippet,
+                sourceName: sourceName,
+                author: ["Elena Rostova", "Sarah Chen", "Julian Drake", "Marcus Vance"][Math.floor(Math.random() * 4)],
+                readTime: `${Math.floor(Math.random() * 5) + 3} min`,
+                url: sourceObj.url || "https://wikipedia.org",
+                categoryName: catName,
+                categoryIndex: catIndex
             };
             
             const now = new Date();
             item.timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
             // Prepend to active view channel
-            activeFeeds[cat].unshift(item);
+            activeFeeds[catName].unshift(item);
             
             // Cap list counts inside bounds to maintain layout speeds
-            if (activeFeeds[cat].length > 15) {
-                activeFeeds[cat].pop();
+            if (activeFeeds[catName].length > 15) {
+                activeFeeds[catName].pop();
             }
 
             // Push to scrolling breaking ticker queues
@@ -611,35 +660,31 @@
             }
 
             packetIngestionCount++;
-            logPacketSocket(cat, item.sourceName, item.title);
+            logPacketSocket(catIndex, item.sourceName, item.title);
 
             playPacketArrivedBeep();
 
-            // Speak the incoming headline title AND content description snippet if TTS is active
+            // Speak the incoming headline title AND content snippet ONLY if TTS checkmark is checked
             if (isTtsEnabled) {
-                speakText(`${item.title}. ${item.snippet}`);
+                const checkmark = document.getElementById(`tts-check-${catIndex}`);
+                if (checkmark && checkmark.checked) {
+                    speakText(`${item.title}. ${item.snippet}`, false); // Use false to preserve non-interruptive state
+                }
             }
 
-            renderCategoryFeed(cat, item.id);
+            renderCategoryFeed(catName, catIndex, item.id);
             renderTicker();
             updateDiagnosticLabels();
         }
 
-        // Global category mapping helper
-        const categoryLabels = {
-            tech: 'Technology News',
-            computer: 'Systems Engineering',
-            gaming: 'Gaming Development',
-            science: 'Astrophysics Science'
-        };
-
         // Render feed columns
-        function renderCategoryFeed(cat, highlightId = null) {
-            const container = document.getElementById(`feed-${cat}`);
+        function renderCategoryFeed(catName, index, highlightId = null) {
+            const container = document.getElementById(`feed-column-${index}`);
+            if (!container) return;
+
             const query = document.getElementById('rss-search').value.toLowerCase();
-            
             let html = '';
-            const list = activeFeeds[cat];
+            const list = activeFeeds[catName];
 
             if (list.length === 0) {
                 container.innerHTML = `<div class="text-center py-8 text-neutral-600 text-[10px] italic font-mono">Awaiting secure packet handshake...</div>`;
@@ -654,13 +699,16 @@
 
                 const isNew = item.id === highlightId ? 'new-item-flash' : '';
                 
-                let tagColor = 'border-cyberblue/40 text-cyberblue bg-cyberblue/10';
-                if (cat === 'computer') tagColor = 'border-cybergreen/40 text-cybergreen bg-cybergreen/10';
-                if (cat === 'gaming') tagColor = 'border-cyberred/40 text-cyberred bg-cyberred/10';
-                if (cat === 'science') tagColor = 'border-cyberamber/40 text-cyberamber bg-cyberamber/10';
+                const mutedColorMaps = [
+                    'border-cyberblue/40 text-cyberblue bg-cyberblue/10',
+                    'border-cybergreen/40 text-cybergreen bg-cybergreen/10',
+                    'border-cyberred/40 text-cyberred bg-cyberred/10',
+                    'border-cyberamber/40 text-cyberamber bg-cyberamber/10'
+                ];
+                const tagColor = mutedColorMaps[index % mutedColorMaps.length];
 
                 html += `
-                    <div onclick="openArticleReader('${cat}', '${item.id}')" class="p-3 border border-neutral-800/80 hover:border-neutral-600 bg-neutral-950/20 rounded cursor-pointer transition duration-150 relative overflow-hidden group shadow-sm hover:shadow-md ${isNew}">
+                    <div onclick="openArticleReader('${index}', '${item.id}')" class="p-3 border border-neutral-800/80 hover:border-neutral-600 bg-neutral-950/20 rounded cursor-pointer transition duration-150 relative overflow-hidden group shadow-sm hover:shadow-md ${isNew}">
                         <div class="flex justify-between items-center text-[9px] mb-2 font-mono">
                             <span class="px-1.5 py-0.5 rounded border text-[8px] uppercase tracking-wider font-semibold ${tagColor}">${item.sourceName}</span>
                             <span class="text-neutral-500">${item.timeStr}</span>
@@ -672,25 +720,27 @@
             });
 
             container.innerHTML = html || `<div class="text-center py-8 text-neutral-600 text-[10px] italic font-mono">No filtered results.</div>`;
-            document.getElementById(`${cat}-count`).textContent = `${list.length} ARTICLES`;
+            document.getElementById(`count-val-${index}`).textContent = `${list.length} ARTICLES`;
         }
 
         function filterAllFeeds() {
-            renderCategoryFeed('tech');
-            renderCategoryFeed('computer');
-            renderCategoryFeed('gaming');
-            renderCategoryFeed('science');
+            categoriesList.forEach((catName, index) => {
+                renderCategoryFeed(catName, index);
+            });
         }
 
-        function logPacketSocket(cat, source, headline) {
+        function logPacketSocket(index, source, headline) {
             const consoleBox = document.getElementById('live-parser-console');
             const now = new Date();
             const timestamp = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
             
-            let colorCls = 'text-cyberblue';
-            if (cat === 'computer') colorCls = 'text-cybergreen';
-            if (cat === 'gaming') colorCls = 'text-cyberred';
-            if (cat === 'science') colorCls = 'text-cyberamber';
+            const colorMaps = [
+                'text-cyberblue',
+                'text-cybergreen',
+                'text-cyberred',
+                'text-cyberamber'
+            ];
+            const colorCls = colorMaps[index % colorMaps.length];
 
             const logEntry = document.createElement('div');
             logEntry.className = 'leading-tight text-[9px] border-b border-neutral-950 pb-1';
@@ -737,13 +787,11 @@
             const items = allHeadlines.slice(0, 10);
             for (let repeat = 0; repeat < 4; repeat++) {
                 items.forEach(item => {
-                    let dotColor = 'bg-cyberblue';
-                    if (item.category === 'computer') dotColor = 'bg-cybergreen';
-                    if (item.category === 'gaming') dotColor = 'bg-cyberred';
-                    if (item.category === 'science') dotColor = 'bg-cyberamber';
+                    const dotColors = ['bg-cyberblue', 'bg-cybergreen', 'bg-cyberred', 'bg-cyberamber'];
+                    const dotColor = dotColors[item.categoryIndex % dotColors.length];
 
                     elements.push(`
-                        <span onclick="openArticleReader('${item.category}', '${item.id}')" class="inline-flex items-center gap-1.5 text-[10px] tracking-wide cursor-pointer hover:bg-neutral-900 px-2.5 py-1 rounded">
+                        <span onclick="openArticleReader('${item.categoryIndex}', '${item.id}')" class="inline-flex items-center gap-1.5 text-[10px] tracking-wide cursor-pointer hover:bg-neutral-900 px-2.5 py-1 rounded">
                             <span class="inline-block w-1.5 h-1.5 rounded-full ${dotColor}"></span>
                             <span class="text-neutral-400 font-bold font-mono">[${item.sourceName.toUpperCase()}]</span>
                             <span class="text-white font-medium font-sans">${item.title}</span>
@@ -755,21 +803,21 @@
         }
 
         // ─── ARTICLE DETAILED MODAL TERMINAL ───
-        function openArticleReader(cat, id) {
-            const list = activeFeeds[cat];
+        function openArticleReader(index, id) {
+            const catName = categoriesList[index];
+            const list = activeFeeds[catName];
             const item = list.find(x => x.id === id);
             if (!item) return;
 
             playChirp(480, 'sine', 0.12, 0.03);
 
-            document.getElementById('modal-category-label').textContent = `${cat.toUpperCase()} // INGEST SYSTEM`;
+            document.getElementById('modal-category-label').textContent = `${catName.toUpperCase()} // INGEST SYSTEM`;
             
             const tag = document.getElementById('modal-category-label');
             tag.className = "text-[8px] px-1.5 py-0.5 bg-[#050505] border rounded uppercase font-bold";
-            if (cat === 'tech') tag.classList.add('text-cyberblue', 'border-cyberblue/40');
-            if (cat === 'computer') tag.classList.add('text-cybergreen', 'border-cybergreen/40');
-            if (cat === 'gaming') tag.classList.add('text-cyberred', 'border-cyberred/40');
-            if (cat === 'science') tag.classList.add('text-cyberamber', 'border-cyberamber/40');
+            
+            const textColors = ['text-cyberblue border-cyberblue/40', 'text-cybergreen border-cybergreen/40', 'text-cyberred border-cyberred/40', 'text-cyberamber border-cyberamber/40'];
+            tag.className += ` ${textColors[index % textColors.length]}`;
 
             document.getElementById('modal-title').textContent = item.title;
             document.getElementById('modal-source').textContent = `SOURCE: ${item.sourceName.toUpperCase()}`;
@@ -788,18 +836,12 @@
 
             document.getElementById('article-reader-modal').classList.remove('hidden');
 
-            // Optionally read open details if TTS is enabled
-            if (isTtsEnabled) {
-                speakText(`${item.title}. ${item.snippet}`);
-            }
+            // Opening an article reader modal now strictly avoids stopping or cancelling any currently active automatic speech synthesis run.
         }
 
         function closeReader() {
             playChirp(300, 'sine', 0.08, 0.02);
             document.getElementById('article-reader-modal').classList.add('hidden');
-            if (isTtsEnabled && 'speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-            }
         }
 
         document.addEventListener('keydown', (e) => {
@@ -829,13 +871,13 @@
         let ingestionInterval;
 
         async function init() {
-            // First fetch core newsFeed.json database index dynamically
+            // First fetch core categories configuration dynamically
             await fetchNewsFeedDatabase();
 
-            const categories = ['tech', 'computer', 'gaming', 'science'];
-            categories.forEach(cat => {
-                ingestNewItem(cat);
-                ingestNewItem(cat);
+            // Settle initial feed articles
+            categoriesList.forEach((catName, index) => {
+                ingestNewItem(index);
+                ingestNewItem(index);
             });
 
             updateClock();
@@ -865,6 +907,21 @@
             ttsVolSlider.addEventListener('input', (e) => {
                 ttsVolume = parseFloat(e.target.value);
                 document.getElementById('tts-volume-label').textContent = Math.round(ttsVolume * 100) + '%';
+            });
+
+            // TTS Speed Slider Listener with Delayed 1 second active speaking restart
+            const ttsSpeedSlider = document.getElementById('tts-speed-slider');
+            ttsSpeedSlider.addEventListener('input', (e) => {
+                ttsSpeed = parseFloat(e.target.value);
+                document.getElementById('tts-speed-label').textContent = ttsSpeed.toFixed(1) + 'x';
+
+                if (window.speechSynthesis && window.speechSynthesis.speaking && lastSpokenText) {
+                    clearTimeout(ttsRestartTimeout);
+                    window.speechSynthesis.cancel();
+                    ttsRestartTimeout = setTimeout(() => {
+                        speakText(lastSpokenText, true);
+                    }, 1000);
+                }
             });
 
             updateDiagnosticLabels();
