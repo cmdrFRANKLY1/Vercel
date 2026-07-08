@@ -289,7 +289,7 @@
 
         <div id="loading-spinner" class="hidden my-auto self-center flex flex-col items-center gap-3">
             <div class="w-8 h-8 border-2 border-neutral-800 border-t-neutral-400 rounded-full animate-spin"></div>
-            <span id="loading-text" class="text-xs text-neutral-600 font-mono tracking-widest uppercase">Initializing tarkov.dev offline cache...</span>
+            <span id="loading-text" class="text-xs text-neutral-600 font-mono tracking-widest uppercase">Initializing databases...</span>
         </div>
     </div>
 
@@ -424,6 +424,8 @@
                 if (response.ok) {
                     voiceAttackLocalCache = await response.json();
                     console.log('VoiceAttack Search Index successfully cached locally.', voiceAttackLocalCache.length, 'tokens cached.');
+                } else {
+                    throw new Error("Local search index fetch status not OK");
                 }
             } catch (err) {
                 console.warn('Failed to load voiceAttackSearchIndex.json, setting default offline fallbacks.', err);
@@ -581,7 +583,7 @@
 
             // Normal dynamic filtering (Prevent rendering any results if tag/mode is 'all')
             const query = rawVal.trim().toLowerCase();
-            if (query.length > 1) {
+            if (query.length > 0) {
                 if (currentSearchMode !== 'all') {
                     searchSuggestions.classList.add('hidden');
                     performLocalUnifiedSearch(query);
@@ -1159,9 +1161,9 @@
             setRandomProfilePic();
 
             preloadCharacterResources();
-            fetchMenuItems(); // Unified dropdown fetch (fixed undefined function call)
+            fetchMenuItems(); // Unified dropdown fetch
             
-            loadVoiceAttackDatabase();
+            await loadVoiceAttackDatabase();
             await prefetchTarkovDatabase();
         };
     </script>
