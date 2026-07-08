@@ -100,6 +100,15 @@
             border-color: #555;
             color: #fff;
         }
+        .btn-tool-save {
+            color: #00D2FF;
+            border-color: rgba(0, 210, 255, 0.2);
+        }
+        .btn-tool-save:hover {
+            background: rgba(0, 210, 255, 0.1);
+            border-color: #00D2FF;
+            color: #33d6ff;
+        }
         .btn-tool-clear {
             color: #ff6b6b;
             border-color: rgba(255, 107, 107, 0.2);
@@ -276,7 +285,6 @@
             display: inline-block;
             transition: all 0.15s ease;
             box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-            cursor: pointer;
         }
         .rhyme-suggestion-badge:hover {
             border-color: #ffe66d;
@@ -856,6 +864,8 @@
     <!-- Header Action Toolbar -->
     <div class="header-toolbar">
         <button id="toolLoremBtn" class="btn-tool">Lorem Ipsum</button>
+        <!-- Save button renamed -->
+        <button id="toolSaveBtn" class="btn-tool btn-tool-save">Save as Markdown File</button>
         <button id="toolClearBtn" class="btn-tool btn-tool-clear">Clear</button>
         <!-- Dynamic Help button "?" right next to Clear -->
         <button id="toolHelpBtn" class="btn-tool btn-tool-help" title="About & Help">?</button>
@@ -1142,6 +1152,7 @@
         const toolClearBtn = document.getElementById('toolClearBtn');
         const toolLoremBtn = document.getElementById('toolLoremBtn');
         const toolHelpBtn = document.getElementById('toolHelpBtn');
+        const toolSaveBtn = document.getElementById('toolSaveBtn');
 
         // Custom Safe Confirmation Modal References
         const modalBackdrop = document.getElementById('customModalBackdrop');
@@ -1928,6 +1939,46 @@ Et harum quidem rerum facilis est et expedita distinctio.`;
         showRhymeCheck.addEventListener('change', () => updatePreview());
         showWordsLineCheck.addEventListener('change', () => updatePreview());
 
+        // ----- SAVE PREVIEW AS MARKDOWN (.md) WITH COLORS INTACT -----
+        function exportMarkdown() {
+            const text = input.value;
+            if (!text.trim()) {
+                return; // Guard to make sure it only works when there is text
+            }
+            const lines = text.split('\n');
+            const mdLines = lines.map(line => {
+                const tokens = line.match(/[\w']+|[^\w']/g) || [];
+                return tokens.map(token => {
+                    if (/[a-z]/i.test(token)) {
+                        const key = getRhymeKey(token);
+                        const color = getColorForRhyme(key);
+                        const lowerToken = token.toLowerCase();
+                        const lowerKey = key.toLowerCase();
+                        let suffixStart = lowerToken.lastIndexOf(lowerKey);
+                        if (suffixStart === -1) suffixStart = 0;
+                        const prefix = token.slice(0, suffixStart);
+                        const suffix = token.slice(suffixStart);
+                        return `${prefix}<span style="color:${color};font-weight:bold;">${suffix}</span>`;
+                    } else {
+                        return token;
+                    }
+                }).join('');
+            });
+            const markdownContent = mdLines.join('\n');
+            
+            const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'lyrics_flow_sheet.md';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        toolSaveBtn.addEventListener('click', exportMarkdown);
+
         // ----- Local fallback rhyme key extraction (heuristic) -----
         function getRhymeKeyLocalFallback(word) {
             const lower = word.toLowerCase();
@@ -2149,6 +2200,18 @@ Et harum quidem rerum facilis est et expedita distinctio.`;
         // ----- Update Preview & Compute Metrics -----
         function updatePreview() {
             const text = input.value;
+            
+            // Toggle save button disabled styling based on empty state
+            if (!text.trim()) {
+                toolSaveBtn.style.opacity = "0.4";
+                toolSaveBtn.style.cursor = "not-allowed";
+                toolSaveBtn.style.pointerEvents = "none";
+            } else {
+                toolSaveBtn.style.opacity = "1";
+                toolSaveBtn.style.cursor = "pointer";
+                toolSaveBtn.style.pointerEvents = "auto";
+            }
+
             const lines = text.split('\n');
 
             const processedLines = lines.map(line => processLine(line));
@@ -2253,6 +2316,7 @@ Et harum quidem rerum facilis est et expedita distinctio.`;
 
             const flowScoreVal = rhymeContrib + cadenceContrib + lexicalContrib;
 
+            // Determine Grade Badge
             let grade = "D-Class";
             if (flowScoreVal >= 90) grade = "S-Class";
             else if (flowScoreVal >= 75) grade = "A-Class";
