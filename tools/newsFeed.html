@@ -108,7 +108,7 @@
 
         /* Custom pulsing visualizer elements */
         .pulse-dot-blue {
-            animation: pulse-blue 1.5s ease-in-out infinite;
+            animation: pulse-blue 1.5s hover:scale-105 ease-in-out infinite;
         }
         @keyframes pulse-blue {
             0%, 100% { opacity: 1; transform: scale(1); }
@@ -132,7 +132,7 @@
         <div class="flex items-center gap-3">
             <!-- Back to Index Button -->
             <a href="/" class="flex items-center gap-1.5 text-[14px] text-neutral-500 hover:text-white border border-neutral-800 bg-neutral-900/40 hover:bg-neutral-900 px-3.5 py-2 rounded transition font-mono focus:outline-none">
-                <span class="text-neutral-600 font-bold">&lt;</span> BACK
+                <span class="text-neutral-600 font-bold">&lt;_</span> BACK
             </a>
 
             <span class="text-cyberblue font-bold text-base tracking-wider flex items-center gap-1.5 uppercase">
@@ -140,7 +140,7 @@
                 QUANT-X // RSS HUB
             </span>
             <div class="hidden sm:flex items-center gap-1.5 text-[14px] bg-[#050505] px-2 py-0.5 border border-[#171717] text-neutral-500">
-                <span>FEED STREAM: <span class="text-cybergreen" id="connection-status">CONNECTED</span></span>
+                <span>FEED STREAM: <span id="feed-stream-status" class="text-cybergreen">CONNECTED</span></span>
                 <span class="text-neutral-800">|</span>
                 <span>DATA RATE: <span id="data-rate-label" class="text-cyberamber font-bold">0.3 pkts/s</span></span>
             </div>
@@ -150,8 +150,13 @@
         <div class="flex flex-wrap items-center gap-3 text-xs">
             <!-- Search bar filter for headlines -->
             <div class="relative">
-                <input id="rss-search" type="text" placeholder="FILTER HEADLINES..." oninput="filterAllFeeds()" class="bg-[#050505] text-[14px] font-mono border border-[#171717] focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 rounded px-2.5 py-1 w-44 text-white focus:outline-none placeholder-neutral-700">
+                <input id="rss-search" type="text" placeholder="FILTER HEADLINES..." oninput="filterAllFeeds()" class="bg-[#050505] text-[14px] font-mono border border-panelborder focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 rounded px-2.5 py-1 w-44 text-white focus:outline-none placeholder-neutral-700">
             </div>
+
+            <!-- Ingestion Mode Toggle Button (Green cybergreen style for Normal mode, amber for Tarkov mode) -->
+            <button id="tarkov-btn" onclick="toggleTarkovMode()" class="flex items-center bg-neutral-900/50 hover:bg-neutral-900 px-3 py-1.5 border transition text-[14px] rounded font-mono text-cybergreen border-cybergreen/40 hover:border-cybergreen">
+                <span id="tarkov-status">Normal Mode</span>
+            </button>
 
             <!-- Ingestion Speed Control -->
             <div class="flex items-center gap-2 bg-[#050505] px-2 py-1 border border-[#171717] rounded">
@@ -184,6 +189,13 @@
                 <span class="text-[13px] text-neutral-500">TTS COOLDOWN</span>
                 <input id="tts-cooldown-slider" type="range" min="0" max="1800" value="5" step="5" class="w-12 h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-neutral-500">
                 <span id="tts-cooldown-label" class="text-[14px] font-bold text-neutral-400 min-w-[24px]">5s</span>
+            </div>
+
+            <!-- TTS Pan Control (Left/Center/Right Balance Settings) -->
+            <div class="flex items-center gap-2 bg-[#050505] px-2 py-1 border border-[#171717] rounded">
+                <span class="text-[13px] text-neutral-500">TTS PAN</span>
+                <input id="tts-pan-slider" type="range" min="-1" max="1" value="0" step="0.1" class="w-12 h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-neutral-500">
+                <span id="tts-pan-label" class="text-[14px] font-bold text-neutral-400 min-w-[24px]">C</span>
             </div>
 
             <!-- TTS Volume Control -->
@@ -298,6 +310,7 @@
         let isTtsEnabled = false; // Default TTS to OFF
         let ttsVolume = 0.5; // Default TTS volume to 50%
         let ttsSpeed = 0.9; // Default TTS rate to 0.9x
+        let ttsPan = 0.0; // Spatial audio panning setting: -1.0 (Left), 0.0 (Center), 1.0 (Right)
         let ttsCooldown = 5; // Default TTS cooldown set to responsive 5s for reliable updates
         let lastTtsTime = 0; // Epoch timestamp of last speech synthesis output
         let lastAutoTtsTime = 0; // Distinct epoch timestamp for automatic feed speech synthesis updates
@@ -318,9 +331,22 @@
             try {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
+                
+                // Construct a Web Audio StereoPannerNode for spatial channel allocation
+                let panner = null;
+                if (audioCtx.createStereoPanner) {
+                    panner = audioCtx.createStereoPanner();
+                    panner.pan.setValueAtTime(ttsPan, audioCtx.currentTime);
+                }
 
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
+                if (panner) {
+                    osc.connect(gain);
+                    gain.connect(panner);
+                    panner.connect(audioCtx.destination);
+                } else {
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                }
 
                 osc.type = type || 'sine';
                 osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
@@ -401,6 +427,7 @@
             utterance.rate = ttsSpeed; // Enforce user-defined rate parameters
             utterance.pitch = 1.0;
             utterance.volume = ttsVolumePercentage(); // Enforce user-defined volume parameter
+            
             window.speechSynthesis.speak(utterance);
         }
 
@@ -510,6 +537,49 @@
                     title: "Global Forestry Protection Initiative Employs Satellite Audio Arrays",
                     snippet: "A synchronized satellite acoustic monitoring network detects illegal canopy destruction patterns in real-time, sending immediate coordinates to ground units."
                 }
+            ],
+            // Isolated, unique EFT datasets mapping perfectly to category names to avoid duplicates
+            "Official EFT Intel": [
+                {
+                    title: "Battlestate Games Announces Matchmaking Logic Upgrades for Peak Hours",
+                    snippet: "Engineering teams deployed server-side structural adjustments. Game server allocation latency has successfully dropped by 180ms during active queue spikes."
+                },
+                {
+                    title: "Tarkov Arena Regional League Finals Set for Next Weekend",
+                    snippet: "Tournament coordinators announce official rules and map pool selections. Spectators with active BSG account links can earn custom preset unlocks during matches."
+                },
+                {
+                    title: "Security Operations Report: Expanded Heuristic Detection Wave",
+                    snippet: "BSG security agents integrated updated client-integrity telemetry checks. Over 1,200 hardware identifiers linked to malicious alterations were permanently flagged."
+                }
+            ],
+            "Nikita's Intel Feed": [
+                {
+                    title: "@nikgeneburn: working on core sound physics adjustments",
+                    snippet: "Work is underway to completely resolve audio occlusion and transition boundaries on vertical layers in Customs and Interchange. Expect high accuracy micro-patches soon."
+                },
+                {
+                    title: "@nikgeneburn: showing a render of a tactical weapon teaser...",
+                    snippet: "Teaser reveals a highly modular tactical modern receiver with precision integration rails. Early technical feedback suggests it is chambered in 6.8x51mm."
+                },
+                {
+                    title: "@nikgeneburn: checking options for manual chamber loading checks...",
+                    snippet: "Community poll receives exceptional feedback. Dev team confirms planning for manual bullet extraction and visual inspection features for selected bolt-action weapons."
+                }
+            ],
+            "Patch Notes & Updates": [
+                {
+                    title: "Technical Client Patch 0.15.5.2 Deployment Instructions",
+                    snippet: "Client updates rolling out globally. Fixed micro-stuttering on complex landscape rendering structures. Corrected a rare item inspection rendering layout alignment bug."
+                },
+                {
+                    title: "Server Hotfix: Flea Market System Commission Readjustment",
+                    snippet: "Dynamic taxation coefficients have been reduced. Commission charges will dynamically reduce based on high active trader reputation metrics."
+                },
+                {
+                    title: "Ammunition Balance Shift: 7.62x39mm PP Physics Tuning",
+                    snippet: "Slight adjustments to steel-core penetrators. Velocity thresholds have been adjusted to handle standard tier 4 protective vests slightly more reliably."
+                }
             ]
         };
 
@@ -527,6 +597,13 @@
         
         // GLOBAL UPDATE CONFIGURATION: default updated to 30 seconds (30000ms)
         let UPDATE_INTERVAL_MS = 30000; 
+
+        // Ingestion Mode Configuration Backup State
+        let isTarkovModeActive = false;
+        let backupFeedConfiguration = null;
+        let backupCategoriesList = null;
+        let backupUsedArticleIds = null;
+        let backupActiveFeeds = null;
 
         // ─── LOAD DYNAMIC CATEGORIES FROM newsFeedList.json ───
         async function fetchNewsFeedDatabase() {
@@ -590,9 +667,9 @@
                 // Cycle colors safely within bounds
                 const colorToken = mutedColorMaps[index % mutedColorMaps.length];
 
-                // Turn checkbox ON by default *only* if the category contains "Breaking News"
+                // Turn checkbox ON by default *only* if the category contains "Breaking News" or if it is Tarkov Mode
                 const isBreakingNews = catName.toLowerCase().includes("breaking");
-                const isChecked = isBreakingNews ? "checked" : "";
+                const isChecked = (isBreakingNews || isTarkovModeActive) ? "checked" : "";
 
                 // h-[calc(100vh-210px)] allows cards to dynamically fill the screen cleanly!
                 htmlString += `
@@ -637,6 +714,90 @@
             }
         };
 
+        // ─── Ingestion Mode Switch ───
+        window.toggleTarkovMode = async function() {
+            isTarkovModeActive = !isTarkovModeActive;
+            const btn = document.getElementById('tarkov-btn');
+            const status = document.getElementById('tarkov-status');
+
+            if (isTarkovModeActive) {
+                // Switch EFT button layout styling strictly to Tarkov Gold / Amber
+                btn.className = "flex items-center bg-neutral-900/50 hover:bg-neutral-900 px-3 py-1.5 border transition text-[14px] rounded font-mono text-cyberamber border-cyberamber/40 hover:border-cyberamber";
+                status.textContent = 'Tarkov Mode';
+
+                // Backup existing non-Tarkov feeds configuration
+                backupFeedConfiguration = JSON.parse(JSON.stringify(feedConfiguration));
+                backupCategoriesList = [...categoriesList];
+                backupUsedArticleIds = {};
+                for (let cat in usedArticleIds) {
+                    backupUsedArticleIds[cat] = new Set(usedArticleIds[cat]);
+                }
+                backupActiveFeeds = JSON.parse(JSON.stringify(activeFeeds));
+
+                // Clear current scrolling ticker track headlines to avoid duplicate leaks from previous modes
+                allHeadlines = [];
+
+                // Load Escape From Tarkov news sources dynamically from outsourced JSON file
+                try {
+                    const response = await fetch('tarkovFeedList.json');
+                    if (!response.ok) {
+                        throw new Error('tarkovFeedList.json unavailable');
+                    }
+                    const data = await response.json();
+                    if (data && data.feeds) {
+                        feedConfiguration = data;
+                        addNewsItemToTerminal("SYSTEM: Encrypted sources loaded from tarkovFeedList.json.", "BULL");
+                    }
+                } catch (err) {
+                    console.warn('Could not read tarkovFeedList.json. Deploying offline list fallbacks.', err);
+                    feedConfiguration = {
+                        "feeds": {
+                            "Official EFT Intel": [
+                                { "name": "BSG Dev Blog", "url": "https://www.escapefromtarkov.com/news" },
+                                { "name": "EFT Launcher News", "url": "https://www.escapefromtarkov.com/news" },
+                                { "name": "BSG Security Audit", "url": "https://status.escapefromtarkov.com/" }
+                            ],
+                            "Nikita's Intel Feed": [
+                                { "name": "@nikgeneburn (Twitter)", "url": "https://x.com/nikgeneburn" },
+                                { "name": "Nikita Podcast Transcripts", "url": "https://www.reddit.com/r/EscapefromTarkov/" }
+                            ],
+                            "Patch Notes & Updates": [
+                                { "name": "BSG Patch Repository", "url": "https://www.escapefromtarkov.com/news" },
+                                { "name": "EFT Dev Tracker", "url": "https://tarkov.dev/" }
+                            ]
+                        }
+                    };
+                    addNewsItemToTerminal("WARNING: tarkovFeedList.json offline. Emergency local configurations loaded.", "BEAR");
+                }
+
+                addNewsItemToTerminal("SYSTEM: Escape from Tarkov encrypted channels prioritizing now...", "BULL");
+                playAlertBeep();
+            } else {
+                // Switch EFT button layout styling strictly to Normal Green
+                btn.className = "flex items-center bg-neutral-900/50 hover:bg-neutral-900 px-3 py-1.5 border transition text-[14px] rounded font-mono text-cybergreen border-cybergreen/40 hover:border-cybergreen";
+                status.textContent = 'Normal Mode';
+
+                // Clear current scrolling ticker track headlines to avoid duplicate leaks from previous modes
+                allHeadlines = [];
+
+                // Restore non-Tarkov parameters
+                feedConfiguration = backupFeedConfiguration || DEFAULT_FEED_LIST;
+                addNewsItemToTerminal("SYSTEM: Sourced non-Tarkov RSS feeds back to aggregator matrix.", "BEAR");
+                playPacketArrivedBeep();
+            }
+
+            categoriesList = Object.keys(feedConfiguration.feeds);
+            buildDynamicWorkspaceLayout();
+
+            // Populate initial seed files immediately
+            categoriesList.forEach((catName, index) => {
+                ingestNewItem(index);
+                ingestNewItem(index);
+            });
+
+            filterAllFeeds();
+        };
+
         // ─── FEED PROCESSING ENGINE ───
         function ingestNewItem(forcedCategoryIndex = null) {
             if (categoriesList.length === 0) return;
@@ -652,29 +813,30 @@
             const sourceObj = sourcesList[Math.floor(Math.random() * sourcesList.length)];
             const sourceName = sourceObj.name || "System Core";
 
-            // Settle procedural templates
-            const templates = PROCEDURAL_NEWS_TEMPLATES[catName] || PROCEDURAL_NEWS_TEMPLATES["Science & Technology"];
-            
+            // Determine if template exists under category name, fallback safely
+            let templates = PROCEDURAL_NEWS_TEMPLATES[catName] || PROCEDURAL_NEWS_TEMPLATES["Science & Technology"];
+
             // Deduplicate to ensure clean streams
+            if (!usedArticleIds[catName]) {
+                usedArticleIds[catName] = new Set();
+            }
             let availableTemplates = templates.filter((t, idx) => !usedArticleIds[catName].has(idx));
             if (availableTemplates.length === 0) {
                 usedArticleIds[catName].clear();
                 availableTemplates = templates;
             }
 
-            const randIndex = Math.floor(Math.random() * availableTemplates.length);
-            const chosenTemplate = availableTemplates[randIndex];
+            const chosenObj = availableTemplates[Math.floor(Math.random() * availableTemplates.length)];
+            const chosenTemplateIdx = templates.indexOf(chosenObj);
             
-            // Track the original index of chosen template to safely register as used
-            const originalTemplateIdx = templates.indexOf(chosenTemplate);
-            usedArticleIds[catName].add(originalTemplateIdx);
+            usedArticleIds[catName].add(chosenTemplateIdx);
 
             const item = {
                 id: `art-${catIndex}-${Math.random().toString(36).substr(2, 9)}`,
-                title: chosenTemplate.title,
-                snippet: chosenTemplate.snippet,
+                title: chosenObj.title,
+                snippet: chosenObj.snippet,
                 sourceName: sourceName,
-                author: ["Elena Rostova", "Sarah Chen", "Julian Drake", "Marcus Vance"][Math.floor(Math.random() * 4)],
+                author: isTarkovModeActive ? "BSG-Tactical" : ["Elena Rostova", "Sarah Chen", "Julian Drake", "Marcus Vance"][Math.floor(Math.random() * 4)],
                 readTime: `${Math.floor(Math.random() * 5) + 3} min`,
                 url: sourceObj.url || "https://wikipedia.org",
                 categoryName: catName,
@@ -805,6 +967,7 @@
             }
         }
 
+        // Dynamic System Status Console Ingestion Logger
         function addNewsItemToTerminal(text, type) {
             const consoleBox = document.getElementById('live-parser-console');
             const now = new Date();
@@ -986,6 +1149,24 @@
                     displayStr = ttsCooldown + 's';
                 }
                 document.getElementById('tts-cooldown-label').textContent = displayStr;
+            });
+
+            // TTS Pan Balance Slider Listener
+            const ttsPanSlider = document.getElementById('tts-pan-slider');
+            ttsPanSlider.addEventListener('input', (e) => {
+                ttsPan = parseFloat(e.target.value);
+                let displayStr = "C";
+                if (ttsPan < -0.1) {
+                    displayStr = "L" + Math.round(Math.abs(ttsPan) * 100);
+                } else if (ttsPan > 0.1) {
+                    displayStr = "R" + Math.round(ttsPan * 100);
+                } else {
+                    displayStr = "C";
+                }
+                document.getElementById('tts-pan-label').textContent = displayStr;
+                
+                // Play a brief high frequency test signal showing the current balance location
+                playChirp(1500, 'sine', 0.08, 0.02);
             });
 
             updateDiagnosticLabels();
