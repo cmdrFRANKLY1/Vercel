@@ -419,22 +419,54 @@
 
         // ─── Load VoiceAttack Search Index ───────────────────────────────
         async function loadVoiceAttackDatabase() {
-            try {
-                const response = await fetch(getAbsoluteUrl('voiceAttackSearchIndex.json'));
-                if (response.ok) {
-                    voiceAttackLocalCache = await response.json();
-                    console.log('VoiceAttack Search Index successfully cached locally.', voiceAttackLocalCache.length, 'tokens cached.');
-                } else {
-                    throw new Error("Local search index fetch status not OK");
+            const paths = [
+                'voiceAttackSearchIndex.json',
+                getAbsoluteUrl('voiceAttackSearchIndex.json'),
+                './voiceAttackSearchIndex.json'
+            ];
+            
+            for (const path of paths) {
+                try {
+                    const response = await fetch(path);
+                    if (response.ok) {
+                        voiceAttackLocalCache = await response.json();
+                        console.log('VoiceAttack Search Index successfully cached locally from', path, voiceAttackLocalCache.length, 'tokens cached.');
+                        return; // Successfully loaded, break out
+                    }
+                } catch (err) {
+                    console.warn(`Failed to fetch VoiceAttack index from ${path}:`, err);
                 }
-            } catch (err) {
-                console.warn('Failed to load voiceAttackSearchIndex.json, setting default offline fallbacks.', err);
-                voiceAttackLocalCache = [
-                    { "token": "{TIME}", "description": "Current time expressed in 24‑hour clock.", "category": "Time/Date" },
-                    { "token": "{RANDOM:low:high}", "description": "Generates a random integer.", "category": "Math" },
-                    { "token": "{CLIP}", "description": "Renders text content of the Windows clipboard.", "category": "Clipboard" }
-                ];
             }
+
+            // High Fidelity safety fallback containing standard VoiceAttack tokens if offline or path failed
+            console.warn('All fetch attempts for voiceAttackSearchIndex.json failed. Initializing standard fallbacks.');
+            voiceAttackLocalCache = [
+                { "token": "{TIME}", "description": "Current time expressed in 24‑hour clock.", "category": "Time/Date" },
+                { "token": "{TIME:dateVariableName}", "description": "Time of the indicated date variable, expressed in 24‑hour clock.", "category": "Time/Date" },
+                { "token": "{time}", "description": "Current time expressed as a 12‑hour clock.", "category": "Time/Date" },
+                { "token": "{time:dateVariableName}", "description": "Time of the indicated date variable, expressed as a 12‑hour clock.", "category": "Time/Date" },
+                { "token": "{TIMEHOUR}", "description": "Hour of the current time, expressed in a 12‑hour clock.", "category": "Time/Date" },
+                { "token": "{TIMEHOUR24}", "description": "Hour of the current time, expressed in a 24‑hour clock.", "category": "Time/Date" },
+                { "token": "{TIMEMINUTE}", "description": "Minute of the current time.", "category": "Time/Date" },
+                { "token": "{TIMESECOND}", "description": "Second of the current time.", "category": "Time/Date" },
+                { "token": "{TIMESTAMP}", "description": "Current date/time formatted uniquely for logs.", "category": "Time/Date" },
+                { "token": "{DATE}", "description": "Current date formatted as 'April 3, 2022'.", "category": "Time/Date" },
+                { "token": "{RANDOM:lowValue:highValue}", "description": "Generates a random integer between lowValue and highValue (inclusive).", "category": "Math" },
+                { "token": "{EXP: expression}", "description": "Evaluates an arithmetic, text, or logical expression.", "category": "Math" },
+                { "token": "{TXT:variableName}", "description": "Retrieves the value of a text variable.", "category": "Variable" },
+                { "token": "{TXT RANDOM:value}", "description": "Randomly selects one of the semicolon‑separated items.", "category": "Text Utility" },
+                { "token": "{TXT LEN:variableName / value}", "description": "Returns the length of the text variable's value.", "category": "Text Utility" },
+                { "token": "{TXT UPPER:variableName / value}", "description": "Returns the text variable's value in upper case.", "category": "Text Utility" },
+                { "token": "{TXT LOWER:variableName / value}", "description": "Returns the text variable's value in lower case.", "category": "Text Utility" },
+                { "token": "{INT:variableName}", "description": "Retrieves the value of an integer variable.", "category": "Variable" },
+                { "token": "{DEC:variableName}", "description": "Retrieves the value of a decimal variable.", "category": "Variable" },
+                { "token": "{BOOL:variableName}", "description": "Retrieves the value of a Boolean variable.", "category": "Variable" },
+                { "token": "{ACTIVEWINDOWTITLE}", "description": "Returns the active window's title text.", "category": "Window" },
+                { "token": "{CLIP}", "description": "Replaced by the current text content of the Windows clipboard.", "category": "Clipboard" },
+                { "token": "{DICTATION}", "description": "Replaced by the entire dictation buffer content.", "category": "Dictation" },
+                { "token": "{CMD}", "description": "The name of the currently executing command.", "category": "Command" },
+                { "token": "{PROFILE}", "description": "Returns the name of the currently loaded profile.", "category": "Profile" }
+            ];
         }
 
         // ─── Escape from Tarkov Service Status Fetching ───────────────
@@ -537,6 +569,9 @@
             // Re-focus input field
             searchInput.focus();
 
+            // Run a blank search to show all elements by default!
+            performLocalUnifiedSearch('');
+
             // Bind remove tag action
             document.getElementById('remove-tag-btn').addEventListener('click', removeSearchTag);
         }
@@ -581,7 +616,7 @@
                 }
             }
 
-            // Normal dynamic filtering (Prevent rendering any results if tag/mode is 'all')
+            // Normal dynamic filtering
             const query = rawVal.trim().toLowerCase();
             if (query.length > 0) {
                 if (currentSearchMode !== 'all') {
@@ -595,7 +630,8 @@
                 tarkovResults.classList.add('hidden');
                 searchSuggestions.classList.remove('hidden');
             } else if (query.length === 0) {
-                tarkovResults.classList.add('hidden');
+                // If query is empty but we have a tag, show all items
+                performLocalUnifiedSearch('');
             }
         });
 
@@ -619,9 +655,11 @@
         inputClearBtn.addEventListener('click', function() {
             searchInput.value = '';
             inputClearBtn.classList.add('hidden');
-            tarkovResults.classList.add('hidden');
             if (currentSearchMode === 'all') {
+                tarkovResults.classList.add('hidden');
                 searchSuggestions.classList.remove('hidden');
+            } else {
+                performLocalUnifiedSearch('');
             }
             searchInput.focus();
         });
@@ -629,9 +667,7 @@
         searchForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const query = searchInput.value.trim().toLowerCase();
-            if (query) {
-                performLocalUnifiedSearch(query);
-            }
+            performLocalUnifiedSearch(query);
         });
 
         clearSearchBtn.addEventListener('click', function() {
@@ -640,7 +676,7 @@
 
         // ─── Unified Local Search Router ─────────────────────────────────
         function performLocalUnifiedSearch(queryStr) {
-            // Guard: Do not display any results if 'all' (no active filter prefix tag) is set
+            // Guard: Do not display any results if 'all' is set
             if (currentSearchMode === 'all') {
                 tarkovResults.classList.add('hidden');
                 return;
@@ -650,23 +686,37 @@
             let matchedItems = [];
 
             if (currentSearchMode === 'eft') {
-                // Filter Tarkov elements
-                matchedItems = tarkovLocalCache.filter(item => {
-                    const name = item.name ? item.name.toLowerCase() : '';
-                    const shortName = item.shortName ? item.shortName.toLowerCase() : '';
-                    const tagMatches = item.tags ? item.tags.some(tag => tag.toLowerCase().includes(queryStr)) : false;
-                    return name.includes(queryStr) || shortName.includes(queryStr) || tagMatches;
-                });
-                renderTarkovGrid(matchedItems.slice(0, 50));
+                const ignorePrefixes = ['eft', 'tarkov', 'escape from tarkov'];
+                const isIgnorable = ignorePrefixes.includes(queryStr);
+                
+                if (queryStr === '' || isIgnorable) {
+                    matchedItems = tarkovLocalCache;
+                } else {
+                    matchedItems = tarkovLocalCache.filter(item => {
+                        const name = item.name ? item.name.toLowerCase() : '';
+                        const shortName = item.shortName ? item.shortName.toLowerCase() : '';
+                        const tagMatches = item.tags ? item.tags.some(tag => tag.toLowerCase().includes(queryStr)) : false;
+                        return name.includes(queryStr) || shortName.includes(queryStr) || tagMatches;
+                    });
+                }
+                renderTarkovGrid(matchedItems.slice(0, 100));
             } else if (currentSearchMode === 'va') {
-                // Filter VoiceAttack index tokens
-                matchedItems = voiceAttackLocalCache.filter(item => {
-                    const token = item.token ? item.token.toLowerCase() : '';
-                    const desc = item.description ? item.description.toLowerCase() : '';
-                    const category = item.category ? item.category.toLowerCase() : '';
-                    return token.includes(queryStr) || desc.includes(queryStr) || category.includes(queryStr);
-                });
-                renderVoiceAttackGrid(matchedItems.slice(0, 50));
+                // If user types exactly "va" or "voiceattack" inside VA mode, don't clear the results!
+                const ignorePrefixes = ['va', 'voiceattack', 'voice attack'];
+                const isIgnorable = ignorePrefixes.includes(queryStr);
+                
+                if (queryStr === '' || isIgnorable) {
+                    matchedItems = voiceAttackLocalCache;
+                } else {
+                    matchedItems = voiceAttackLocalCache.filter(item => {
+                        const token = item.token ? item.token.toLowerCase() : '';
+                        const desc = item.description ? item.description.toLowerCase() : '';
+                        const category = item.category ? item.category.toLowerCase() : '';
+                        return token.includes(queryStr) || desc.includes(queryStr) || category.includes(queryStr);
+                    });
+                }
+                // Render up to 300 matched items so the entire database is viewable without aggressive limits
+                renderVoiceAttackGrid(matchedItems.slice(0, 300));
             }
         }
 
