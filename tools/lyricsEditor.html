@@ -271,9 +271,9 @@
             font-weight: 600;
         }
 
-        /* Left Editor Bottom Status Bar */
+        /* Global Extended Bottom Status Bar (Stretches Full Horizontal Width) */
         .editor-status-bar {
-            padding: 0.5rem 1rem;
+            padding: 0.6rem 2rem;
             background: #151515;
             font-size: 0.8rem;
             color: #888;
@@ -281,6 +281,17 @@
             font-family: 'JetBrains Mono', monospace;
             user-select: none;
             flex-shrink: 0;
+            scrollbar-width: none; /* Hide standard Firefox scrollbar */
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 1.5rem;
+            width: 100%;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .editor-status-bar::-webkit-scrollbar {
+            display: none; /* Hide Chrome/Safari scrollbar */
         }
         .editor-status-bar span {
             color: #ffe66d;
@@ -550,11 +561,20 @@
 
         .rhythm-grid {
             display: flex;
-            flex-wrap: wrap;
+            flex-direction: column;
             gap: 5px;
             max-height: 95px;
             overflow-y: auto;
             align-content: flex-start;
+        }
+
+        /* Line-aligned row structure for syllables */
+        .rhythm-row {
+            display: flex;
+            gap: 5px;
+            min-height: 12px;
+            align-items: center;
+            flex-wrap: wrap;
         }
         
         /* Rigid grid for words structure */
@@ -692,13 +712,6 @@
                 <div class="hint-badge" id="badgeDiversity" title="VOCABULARY DIVERSITY (15% weight): Computed as Type-Token Ratio (unique words divided by total words). Showcase wide lexical range and minimize repetitive filler words.">Vocabulary Diversity (15%): <span id="hintDiversity">0</span> pts</div>
             </div>
         </div>
-
-        <!-- Metadata Status Bar -->
-        <div class="editor-status-bar">
-            Lines: <span id="infoLines">0</span> | 
-            Words: <span id="infoWords">0</span> | 
-            Current Line: <span id="infoCurrentLine">1</span>
-        </div>
     </div>
 
     <!-- Vertical Drag Divider -->
@@ -797,6 +810,19 @@
     </div>
 </div>
 
+<!-- ROOT-LEVEL BOTTOM STATUS BAR (Extended horizontally across the entire viewport) -->
+<div class="editor-status-bar" id="editorStatusBar">
+    <div style="flex-shrink: 0; display: flex; gap: 1rem; align-items: center;">
+        Lines: <span id="infoLines">0</span> | 
+        Words: <span id="infoWords">0</span> | 
+        Current Line: <span id="infoCurrentLine">1</span>
+    </div>
+    <div style="color: #333; flex-shrink: 0;">|</div>
+    <div id="letterCountsContainer" style="display: flex; gap: 0.8rem; align-items: center; flex-grow: 1; overflow-x: auto;">
+        <span style="color: #555; font-style: italic;">No letters.</span>
+    </div>
+</div>
+
 <script>
     (function() {
         "use strict";
@@ -806,7 +832,6 @@
             const originalGetRangeAt = Selection.prototype.getRangeAt;
             Selection.prototype.getRangeAt = function(index) {
                 if (index === 0 && this.rangeCount === 0) {
-                    // Safe collapsed range bounded within document body instead of Document parent container itself
                     const range = document.createRange();
                     if (document.body) {
                         range.selectNodeContents(document.body);
@@ -970,6 +995,7 @@
             lineNumbers.scrollTop = input.scrollTop;
         }
 
+        // Fix caret mapping update
         function updateCurrentLine() {
             const textUpToCursor = input.value.substring(0, input.selectionStart);
             const lineCount = textUpToCursor.split('\n').length;
@@ -1755,6 +1781,26 @@
             infoLines.innerText = lines.length;
             infoWords.innerText = wordsList.length;
 
+            // DYNAMIC LETTER COUNT ENGINE (In correct alphabetical order, listing only active letters)
+            const upperText = text.toUpperCase();
+            const letterFreq = {};
+            for (let i = 0; i < upperText.length; i++) {
+                const char = upperText[i];
+                if (char >= 'A' && char <= 'Z') {
+                    letterFreq[char] = (letterFreq[char] || 0) + 1;
+                }
+            }
+            const activeSortedLetters = Object.keys(letterFreq).sort();
+            const letterCountsContainer = document.getElementById('letterCountsContainer');
+
+            if (activeSortedLetters.length === 0) {
+                letterCountsContainer.innerHTML = '<span style="color: #555; font-style: italic;">No letters.</span>';
+            } else {
+                letterCountsContainer.innerHTML = activeSortedLetters.map(letter => {
+                    return `<span style="color: #888; font-weight: 500;">${letter}:</span> <span style="color: #ffe66d; font-weight: 600;">${letterFreq[letter]}</span>`;
+                }).join(' <span style="color: #333;">|</span> ');
+            }
+
             // Calculate Avg Syllables per line
             const validLinesCount = lines.filter(l => l.trim().length > 0).length;
             const avgSyl = validLinesCount > 0 ? (totalSyllables / validLinesCount) : 0;
@@ -1816,23 +1862,37 @@
             // Render live flow timeline canvas
             drawTimelinePlot(wordsList, keyCounts);
 
-            // Render Syllables Grid
+            // Render Syllables Grid (Aligned to Lines)
             rhythmGrid.innerHTML = '';
             if (wordsList.length === 0) {
                 rhythmGrid.innerHTML = '<span style="font-size:0.75rem; color:#555; font-style:italic;">Awaiting inputs...</span>';
             } else {
-                wordsList.forEach(w => {
-                    const sylCount = getSyllableCount(w);
-                    const key = getRhymeKey(w);
-                    const rhymeColor = getColorForRhyme(key);
+                lines.forEach((line, lineIdx) => {
+                    const tokens = line.match(/[\w']+/g) || [];
+                    const lineWords = tokens.filter(tok => /[a-z]/i.test(tok));
+                    
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'rhythm-row';
 
-                    for (let i = 0; i < sylCount; i++) {
-                        const tile = document.createElement('span');
-                        tile.className = 'rhythm-tile';
-                        tile.style.backgroundColor = rhymeColor;
-                        tile.title = `${w} (Syllable ${i + 1}/${sylCount})`;
-                        rhythmGrid.appendChild(tile);
+                    if (lineWords.length > 0) {
+                        lineWords.forEach(w => {
+                            const sylCount = getSyllableCount(w);
+                            const key = getRhymeKey(w);
+                            const rhymeColor = getColorForRhyme(key);
+
+                            for (let i = 0; i < sylCount; i++) {
+                                const tile = document.createElement('span');
+                                tile.className = 'rhythm-tile';
+                                tile.style.backgroundColor = rhymeColor;
+                                tile.title = `${w} (Syllable ${i + 1}/${sylCount})`;
+                                rowDiv.appendChild(tile);
+                            }
+                        });
+                    } else {
+                        // Maintain empty row spacing matching blank lines in editor
+                        rowDiv.style.visibility = 'hidden';
                     }
+                    rhythmGrid.appendChild(rowDiv);
                 });
             }
 
@@ -1856,12 +1916,12 @@
                             const rhymeColor = isRhymed ? getColorForRhyme(key) : hexToRgba(selectedWordColor, 0.15);
 
                             tile.style.backgroundColor = rhymeColor;
-                            tile.style.border = 'none';
+                            tile.style.border = '1px solid #ffffff'; // ENFORCED: Real word tile has white border
                             tile.title = `${word} (Line ${lineIdx + 1}, Word ${i + 1})`;
                         } else {
                             // Faint placeholder slot representing line width disparities
                             tile.style.backgroundColor = 'rgba(255, 255, 255, 0.02)';
-                            tile.style.border = '1px solid #222';
+                            tile.style.border = 'none'; // ENFORCED: Empty fallback slots have no border
                             tile.title = `Empty slot (Line ${lineIdx + 1})`;
                         }
                         wordGrid.appendChild(tile);
