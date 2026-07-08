@@ -182,8 +182,8 @@
             <!-- TTS Cooldown Control (Up to 30 minutes / 1800s) -->
             <div class="flex items-center gap-2 bg-[#050505] px-2 py-1 border border-[#171717] rounded">
                 <span class="text-[13px] text-neutral-500">TTS COOLDOWN</span>
-                <input id="tts-cooldown-slider" type="range" min="0" max="1800" value="180" step="5" class="w-12 h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-neutral-500">
-                <span id="tts-cooldown-label" class="text-[14px] font-bold text-neutral-400 min-w-[24px]">3m</span>
+                <input id="tts-cooldown-slider" type="range" min="0" max="1800" value="5" step="5" class="w-12 h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-neutral-500">
+                <span id="tts-cooldown-label" class="text-[14px] font-bold text-neutral-400 min-w-[24px]">5s</span>
             </div>
 
             <!-- TTS Volume Control -->
@@ -259,7 +259,7 @@
             <div class="flex justify-between items-start border-b border-neutral-900 pb-3 font-mono">
                 <div>
                     <span id="modal-category-label" class="text-[12px] px-1.5 py-0.5 bg-[#050505] border border-neutral-800 text-cyberblue rounded uppercase font-bold">CATEGORY</span>
-                    <h2 id="modal-title" class="text-lg font-bold text-white mt-2 leading-snug font-sans font-sans">Article Title</h2>
+                    <h2 id="modal-title" class="text-lg font-bold text-white mt-2 leading-snug font-sans">Article Title</h2>
                 </div>
                 <!-- Clean Modern Close Button -->
                 <button onclick="closeReader()" class="text-neutral-500 hover:text-white font-bold text-2xl leading-none transition-colors" title="Close reader">&times;</button>
@@ -298,8 +298,9 @@
         let isTtsEnabled = false; // Default TTS to OFF
         let ttsVolume = 0.5; // Default TTS volume to 50%
         let ttsSpeed = 0.9; // Default TTS rate to 0.9x
-        let ttsCooldown = 180; // Default TTS cooldown to 180 seconds (3 minutes)
+        let ttsCooldown = 5; // Default TTS cooldown set to responsive 5s for reliable updates
         let lastTtsTime = 0; // Epoch timestamp of last speech synthesis output
+        let lastAutoTtsTime = 0; // Distinct epoch timestamp for automatic feed speech synthesis updates
         let ttsRestartTimeout = null;
         let lastSpokenText = "";
 
@@ -373,7 +374,7 @@
         }
 
         // Standardized Safe TTS engine supporting only one instance at a time
-        function speakText(text, force = false) {
+        function speakText(text, force = false, isAutoNews = false) {
             if (!('speechSynthesis' in window)) return;
             
             if (!isTtsEnabled && !force) return;
@@ -382,12 +383,19 @@
             if (force) {
                 window.speechSynthesis.cancel();
             } else if (window.speechSynthesis.speaking) {
-                // Skip playing if another automatic update is already reading to prevent overlapping overloads
-                return;
+                // Self-healing: if stuck speaking for > 15s (browser bug), cancel and recover
+                if (Date.now() - lastTtsTime > 15000) {
+                    window.speechSynthesis.cancel();
+                } else {
+                    return; // Skip playing if another automatic update is already reading
+                }
             }
 
             lastSpokenText = text;
             lastTtsTime = Date.now(); // Record current timestamp of successful speech trigger
+            if (isAutoNews) {
+                lastAutoTtsTime = Date.now();
+            }
 
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.rate = ttsSpeed; // Enforce user-defined rate parameters
@@ -519,11 +527,6 @@
         
         // GLOBAL UPDATE CONFIGURATION: default updated to 30 seconds (30000ms)
         let UPDATE_INTERVAL_MS = 30000; 
-
-        // Helper retrieving volume multiplier dynamically from user input slider bounds
-        function ttsVolumePercentage() {
-            return ttsVolume;
-        }
 
         // ─── LOAD DYNAMIC CATEGORIES FROM newsFeedList.json ───
         async function fetchNewsFeedDatabase() {
@@ -706,9 +709,9 @@
             if (isTtsEnabled) {
                 const checkmark = document.getElementById(`tts-check-${catIndex}`);
                 if (checkmark && checkmark.checked) {
-                    const elapsed = Date.now() - lastTtsTime;
+                    const elapsed = Date.now() - lastAutoTtsTime;
                     if (elapsed >= (ttsCooldown * 1000)) {
-                        speakText(`${item.title}. ${item.snippet}`, false); // Use false to preserve non-interruptive state
+                        speakText(`${item.title}. ${item.snippet}`, false, true); 
                     } else {
                         console.log(`TTS update skipped: Cooldown active (${Math.round((ttsCooldown * 1000 - elapsed) / 1000)}s remaining)`);
                     }
@@ -882,6 +885,7 @@
             document.getElementById('article-reader-modal').classList.remove('hidden');
         }
 
+        // Close detailed modal terminal
         function closeReader() {
             playChirp(300, 'sine', 0.08, 0.02);
             document.getElementById('article-reader-modal').classList.add('hidden');
