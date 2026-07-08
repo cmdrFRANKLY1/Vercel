@@ -244,7 +244,7 @@
             border: 1px solid #3a3a3a;
             display: inline-block;
             transition: all 0.15s ease;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
             cursor: pointer;
         }
         .prediction-suggestion-badge:hover {
@@ -284,7 +284,8 @@
             border: 1px solid #3a3a3a;
             display: inline-block;
             transition: all 0.15s ease;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+            cursor: pointer;
         }
         .rhyme-suggestion-badge:hover {
             border-color: #ffe66d;
@@ -851,8 +852,8 @@
 
 <header>
     <div class="header-left">
-        <!-- New Back Nav Button pointing to index.html -->
-        <a href="index.html" class="btn-back">
+        <!-- New Back Nav Button pointing to index.html with interactive safety intercept -->
+        <a href="index.html" class="btn-back" id="btnBack">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="display:inline-block; vertical-align:middle; transform: translateY(-1px);">
                 <path d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
             </svg>
@@ -1153,6 +1154,7 @@
         const toolLoremBtn = document.getElementById('toolLoremBtn');
         const toolHelpBtn = document.getElementById('toolHelpBtn');
         const toolSaveBtn = document.getElementById('toolSaveBtn');
+        const btnBack = document.getElementById('btnBack');
 
         // Custom Safe Confirmation Modal References
         const modalBackdrop = document.getElementById('customModalBackdrop');
@@ -1869,6 +1871,7 @@
         });
 
         const closeHelpModal = () => {
+            helpModalBackdrop.style.none = 'none';
             helpModalBackdrop.style.display = 'none';
         };
 
@@ -1877,6 +1880,24 @@
         helpModalBackdrop.addEventListener('click', (e) => {
             if (e.target === helpModalBackdrop) {
                 closeHelpModal();
+            }
+        });
+
+        // Back Navigation Safety Interceptor
+        btnBack.addEventListener('click', (e) => {
+            if (input.value.trim().length > 0) {
+                e.preventDefault();
+                openConfirmModal(
+                    "Leave Lyrics Studio?", 
+                    "You have active lyrics in the workspace. Navigating back will lose your current work. Are you sure you want to proceed?", 
+                    () => {
+                        window.location.href = "index.html";
+                    }
+                );
+            } else {
+                // Empty editor can safely go back directly
+                e.preventDefault();
+                window.location.href = "index.html";
             }
         });
 
