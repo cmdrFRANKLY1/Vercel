@@ -1,663 +1,264 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🌍 World Clock – Manual Timezone</title>
+    <title>~ // world-clock</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['JetBrains Mono', 'monospace'],
+                        verdana: ['Verdana', 'Geneva', 'sans-serif'],
+                    },
+                },
+            },
+        };
+    </script>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        /* Custom scrollbars for high density container scrolling */
+        .custom-scroll::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
         }
-
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+        }
         body {
-            background: #0b0e14;
-            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
-            color: #d0d8e8;
-            padding: 24px;
-            min-height: 100vh;
-        }
-
-        /* ----- header ----- */
-        .header {
-            max-width: 1400px;
-            margin: 0 auto 20px auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-
-        .header h1 {
-            font-weight: 600;
-            font-size: 28px;
-            letter-spacing: 0.5px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .header h1 span {
-            background: #1a212e;
-            padding: 2px 14px;
-            border-radius: 40px;
-            font-size: 14px;
-            font-weight: 400;
-            color: #6a7a94;
-        }
-
-        .header-controls {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            flex-wrap: wrap;
-        }
-
-        .search-box {
-            background: #141a24;
-            border: 1px solid #1f2a38;
-            border-radius: 40px;
-            padding: 8px 18px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: border 0.2s;
-        }
-
-        .search-box:focus-within {
-            border-color: #4a6a9a;
-        }
-
-        .search-box input {
-            background: transparent;
-            border: none;
-            color: #d0d8e8;
-            font-size: 15px;
-            outline: none;
-            min-width: 160px;
-            font-family: inherit;
-        }
-
-        .search-box input::placeholder {
-            color: #4a5a74;
-        }
-
-        .search-box .icon {
-            color: #4a5a74;
-            font-size: 18px;
-        }
-
-        .toggle-btn {
-            background: #141a24;
-            border: 1px solid #1f2a38;
-            color: #b0bed8;
-            padding: 8px 18px;
-            border-radius: 40px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: inherit;
-        }
-
-        .toggle-btn:hover {
-            background: #1a212e;
-            border-color: #2a3444;
-        }
-
-        .toggle-btn.active {
-            background: #2d3b4f;
-            border-color: #4a6a9a;
-            color: #e8edf5;
-        }
-
-        /* ----- local spotlight ----- */
-        .local-spotlight {
-            max-width: 1400px;
-            margin: 0 auto 24px auto;
-            background: linear-gradient(145deg, #1a2436, #0f1624);
-            border-radius: 24px;
-            padding: 24px 32px;
-            border: 1px solid #2a3a52;
-            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 16px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .local-spotlight::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 70% 30%, rgba(74, 106, 154, 0.08), transparent 60%);
-            pointer-events: none;
-        }
-
-        .local-spotlight .local-label {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            z-index: 1;
-            flex-wrap: wrap;
-        }
-
-        .local-spotlight .local-label .badge {
-            background: #2d3b4f;
-            padding: 4px 14px;
-            border-radius: 40px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #6a8ab8;
-            letter-spacing: 0.5px;
-            border: 1px solid #1f2a38;
-        }
-
-        .local-spotlight .local-label .city {
-            font-size: 20px;
-            font-weight: 600;
-            color: #e8edf5;
-        }
-
-        .local-spotlight .local-label .timezone-name {
-            font-size: 14px;
-            color: #6a7a94;
-            font-weight: 400;
-        }
-
-        .local-spotlight .local-time-wrap {
-            display: flex;
-            align-items: baseline;
-            gap: 16px;
-            z-index: 1;
-            flex-wrap: wrap;
-        }
-
-        .local-spotlight .local-time {
-            font-size: 48px;
-            font-weight: 700;
-            font-variant-numeric: tabular-nums;
-            letter-spacing: 2px;
-            color: #f5f8fc;
-            font-family: 'JetBrains Mono', 'Segoe UI', monospace;
-        }
-
-        .local-spotlight .local-time .secs {
-            font-size: 24px;
-            font-weight: 400;
-            color: #6a7a94;
-            margin-left: 6px;
-        }
-
-        .local-spotlight .local-date {
-            font-size: 16px;
-            color: #8a9ab8;
-            font-weight: 400;
-        }
-
-        .local-spotlight .local-offset {
-            background: #0f141e;
-            padding: 4px 16px;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: 500;
-            color: #f5c542;
-            border: 1px solid #1f2a38;
-            z-index: 1;
-        }
-
-        /* timezone selector */
-        .tz-selector-wrap {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            z-index: 1;
-            background: #0f141e;
-            padding: 4px 12px 4px 16px;
-            border-radius: 40px;
-            border: 1px solid #1f2a38;
-        }
-
-        .tz-selector-wrap label {
-            font-size: 12px;
-            color: #6a7a94;
-            font-weight: 500;
-            letter-spacing: 0.3px;
-        }
-
-        .tz-selector-wrap select {
-            background: #1a212e;
-            border: 1px solid #2a3444;
-            color: #d0d8e8;
-            padding: 4px 8px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 500;
-            outline: none;
-            cursor: pointer;
-            font-family: inherit;
-            max-width: 200px;
-        }
-
-        .tz-selector-wrap select:hover {
-            border-color: #4a6a9a;
-        }
-
-        .tz-selector-wrap select option {
-            background: #141a24;
-            color: #d0d8e8;
-        }
-
-        .tz-selector-wrap .detect-btn {
-            background: transparent;
-            border: none;
-            color: #6a8ab8;
-            font-size: 14px;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 20px;
-            transition: all 0.2s;
-            font-family: inherit;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-
-        .tz-selector-wrap .detect-btn:hover {
-            background: #1a212e;
-            color: #b0bed8;
-        }
-
-        @media (max-width: 700px) {
-            .local-spotlight {
-                padding: 18px 20px;
-                flex-direction: column;
-                align-items: stretch;
-                text-align: center;
-            }
-            .local-spotlight .local-label {
-                justify-content: center;
-            }
-            .local-spotlight .local-time-wrap {
-                justify-content: center;
-            }
-            .local-spotlight .local-time {
-                font-size: 36px;
-            }
-            .local-spotlight .local-time .secs {
-                font-size: 18px;
-            }
-            .tz-selector-wrap {
-                justify-content: center;
-                flex-wrap: wrap;
-                padding: 6px 12px;
-            }
-            .tz-selector-wrap select {
-                max-width: 160px;
-                font-size: 12px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .local-spotlight .local-time {
-                font-size: 28px;
-            }
-            .local-spotlight .local-time .secs {
-                font-size: 14px;
-            }
-        }
-
-        /* ----- clock grid ----- */
-        .clock-grid {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 18px;
-        }
-
-        .clock-card {
-            background: #141a24;
-            border-radius: 20px;
-            padding: 18px 16px 16px 16px;
-            border: 1px solid #1f2a38;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-            min-height: 150px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .clock-card:hover {
-            border-color: #2a3444;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-            transform: translateY(-2px);
-        }
-
-        .clock-card .city-name {
-            font-size: 17px;
-            font-weight: 600;
-            color: #d0d8e8;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 2px;
-        }
-
-        .clock-card .city-name .flag {
-            font-size: 18px;
-            line-height: 1;
-        }
-
-        .clock-card .timezone-label {
-            font-size: 12px;
-            color: #6a7a94;
-            font-weight: 400;
-            margin-bottom: 6px;
-            letter-spacing: 0.3px;
-        }
-
-        .clock-card .time-display {
-            font-size: 28px;
-            font-weight: 700;
-            font-variant-numeric: tabular-nums;
-            letter-spacing: 1px;
-            color: #f0f4fc;
-            margin-bottom: 2px;
-            font-family: 'JetBrains Mono', 'Segoe UI', monospace;
-        }
-
-        .clock-card .time-display .seconds {
-            font-size: 16px;
-            font-weight: 400;
-            color: #6a7a94;
-            margin-left: 4px;
-        }
-
-        .clock-card .date-display {
-            font-size: 13px;
-            color: #8a9ab8;
-            font-weight: 400;
-        }
-
-        .clock-card .utc-offset {
-            position: absolute;
-            top: 14px;
-            right: 14px;
-            background: #0f141e;
-            padding: 2px 12px;
-            border-radius: 30px;
-            font-size: 12px;
-            font-weight: 500;
-            color: #6a8ab8;
-            border: 1px solid #1a212e;
-        }
-
-        .clock-card .utc-offset.positive {
-            color: #7cf5a0;
-        }
-        .clock-card .utc-offset.negative {
-            color: #ff6670;
-        }
-
-        .clock-card .day-indicator {
-            display: inline-block;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 1px 12px;
-            border-radius: 30px;
-            background: #1a212e;
-            color: #6a7a94;
-            margin-top: 6px;
-            align-self: flex-start;
-        }
-
-        .clock-card .day-indicator.today {
-            background: #2d3b4f;
-            color: #b0bed8;
-        }
-
-        .clock-card .day-indicator.tomorrow {
-            background: #2d3b4f;
-            color: #7cf5a0;
-        }
-
-        .clock-card .day-indicator.yesterday {
-            background: #2d3b4f;
-            color: #ff6670;
-        }
-
-        /* time difference */
-        .clock-card .time-diff {
-            font-size: 13px;
-            font-weight: 600;
-            margin-top: 6px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .clock-card .time-diff.ahead {
-            color: #7cf5a0;
-        }
-
-        .clock-card .time-diff.behind {
-            color: #ff6670;
-        }
-
-        .clock-card .time-diff.same {
-            color: #6a7a94;
-        }
-
-        .clock-card .time-diff .diff-icon {
-            font-size: 16px;
-        }
-
-        .clock-card.utc-card {
-            border-color: #3a4b63;
-            background: #111a26;
-        }
-
-        .clock-card.utc-card .utc-offset {
-            background: #1a212e;
-            border-color: #2a3444;
-            color: #f5c542;
-        }
-
-        /* no results */
-        .no-results {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 60px 20px;
-            color: #6a7a94;
-            font-size: 18px;
-        }
-
-        .no-results span {
-            font-size: 48px;
-            display: block;
-            margin-bottom: 12px;
-        }
-
-        /* footer */
-        .footer {
-            max-width: 1400px;
-            margin: 28px auto 0 auto;
-            text-align: center;
-            color: #4a5a74;
-            font-size: 13px;
-            border-top: 1px solid #1a212e;
-            padding-top: 18px;
-            display: flex;
-            justify-content: center;
-            gap: 24px;
-            flex-wrap: wrap;
-        }
-
-        .footer span {
-            opacity: 0.7;
-        }
-
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0b0e14;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #2a3444;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #3a4b63;
+            background-color: #050505;
         }
     </style>
 </head>
-<body>
+<body class="h-full font-mono bg-[#050505] text-[#a1a1aa] flex flex-col p-4 md:p-6 selection:bg-neutral-800 selection:text-white relative overflow-x-hidden">
 
-    <div class="header">
-        <h1>
-            🌍 World Clock
-            <span id="totalCount">0</span>
-        </h1>
-        <div class="header-controls">
-            <div class="search-box">
-                <span class="icon">🔍</span>
-                <input type="text" id="searchInput" placeholder="Search city..." />
-            </div>
-            <button class="toggle-btn" id="formatToggle">🕒 24h</button>
-            <button class="toggle-btn active" id="utcToggle">🌐 UTC</button>
-        </div>
-    </div>
-
-    <!-- ===== LOCAL SPOTLIGHT with timezone selector ===== -->
-    <div class="local-spotlight" id="localSpotlight">
-        <div class="local-label">
-            <span class="badge">📍 YOUR REFERENCE</span>
-            <span class="city" id="localCity">—</span>
-            <span class="timezone-name" id="localTimezoneName">—</span>
-        </div>
-        <div class="local-time-wrap">
-            <span class="local-time" id="localTimeDisplay">--:--:--</span>
-            <span class="local-date" id="localDateDisplay">—</span>
-            <span class="local-offset" id="localOffsetDisplay">UTC±0</span>
-            <div class="tz-selector-wrap">
-                <label for="tzSelect">🌐</label>
-                <select id="tzSelect"></select>
-                <button class="detect-btn" id="detectTzBtn">🔄 detect</button>
+    <!-- Top Navigation & Action Controls -->
+    <div class="w-full flex flex-col md:flex-row md:items-center justify-between gap-4 z-40 mb-6 border-b border-neutral-950 pb-4">
+        <!-- Left: Back link and Title -->
+        <div class="flex items-center gap-4">
+            <a href="index.html" class="flex items-center justify-center h-9 px-3 text-xs border border-neutral-800 hover:border-neutral-500 bg-neutral-900/50 hover:bg-neutral-900 text-neutral-400 hover:text-white rounded transition-all font-mono select-none">
+                [ ← back ]
+            </a>
+            <div>
+                <h1 class="text-sm md:text-base font-bold text-white tracking-wider uppercase flex items-center gap-2">
+                    🌍 WORLD CLOCK WALL <span id="clock-count" class="text-neutral-600 font-normal text-xs">[0]</span>
+                </h1>
+                <p class="text-[10px] text-neutral-600 uppercase font-bold tracking-widest mt-0.5">Tactical Timezone Intelligence Node</p>
             </div>
         </div>
+
+        <!-- Center/Right Controls -->
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Search field inside dynamic input wrapper -->
+            <div class="relative bg-[#09090b] rounded border border-neutral-800/80 focus-within:border-neutral-500 focus-within:ring-1 focus-within:ring-neutral-500 transition-all text-xs h-9 flex items-center px-3 min-w-[200px]">
+                <span class="text-neutral-600 mr-2 select-none">🔍</span>
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="Search city, region..." 
+                    class="bg-transparent text-white placeholder-neutral-700 focus:outline-none w-full"
+                    autocomplete="off"
+                />
+            </div>
+
+            <button id="formatToggle" class="h-9 border border-neutral-800 hover:border-neutral-500 bg-neutral-900/50 hover:bg-neutral-900 px-3 rounded text-[11px] font-bold text-neutral-400 hover:text-white transition-all uppercase">
+                🕒 24H
+            </button>
+            <button id="utcToggle" class="h-9 border border-neutral-800 hover:border-neutral-500 bg-neutral-900/50 hover:bg-neutral-900 px-3 rounded text-[11px] font-bold text-neutral-400 hover:text-white transition-all uppercase">
+                🌐 UTC CARD: ON
+            </button>
+        </div>
     </div>
 
-    <div class="clock-grid" id="clockGrid"></div>
+    <!-- Active Spotlight / Reference Panel Dashboard (System Style Block) -->
+    <section class="bg-[#09090b] border border-neutral-800/80 rounded p-4 mb-6 relative overflow-hidden">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <!-- Reference stats -->
+            <div class="space-y-1.5">
+                <div class="flex items-center gap-2">
+                    <span class="bg-[#241a0f] border border-[#5c3e1c] text-amber-500 text-[9px] tracking-wider uppercase font-bold px-2 py-0.5 rounded">
+                        REFERENCE TIMEZONE
+                    </span>
+                    <span id="plannerStatus" class="bg-neutral-900 border border-neutral-800 text-neutral-400 text-[9px] tracking-wider uppercase font-bold px-2 py-0.5 rounded hidden animate-pulse">
+                        PLANNING MODE ACTIVE
+                    </span>
+                </div>
+                <div>
+                    <h2 id="localCity" class="text-sm font-bold text-white tracking-wider uppercase">—</h2>
+                    <p id="localTimezoneName" class="text-[10px] text-neutral-500">Auto-detecting local system timezone...</p>
+                </div>
+            </div>
 
-    <div class="footer">
-        <span>🔄 updates every second</span>
-        <span>⏱️ diff vs your selected reference</span>
-        <span id="lastUpdate"></span>
+            <!-- Reference clock output -->
+            <div class="flex flex-wrap items-end lg:items-center gap-4 justify-between lg:justify-end">
+                <div class="font-mono text-left lg:text-right">
+                    <div class="flex items-baseline gap-2">
+                        <span id="localTimeDisplay" class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight select-all">--:--:--</span>
+                        <span id="localOffsetDisplay" class="text-[10px] font-bold text-neutral-400 bg-neutral-950 border border-neutral-800 px-2 py-0.5 rounded">UTC±0</span>
+                    </div>
+                    <p id="localDateDisplay" class="text-[10px] text-neutral-500 uppercase font-bold mt-1 tracking-wider">—</p>
+                </div>
+
+                <!-- Customized drop-down box -->
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <div class="flex items-center gap-2 bg-[#09090b] border border-neutral-800 rounded px-3 h-9 w-full sm:w-auto">
+                        <span class="text-xs">🌎</span>
+                        <select id="tzSelect" class="bg-transparent text-[11px] font-bold text-neutral-300 outline-none cursor-pointer max-w-[200px] sm:max-w-[240px]">
+                            <option value="detect" class="bg-neutral-950">🔍 Auto-detect (System)</option>
+                        </select>
+                    </div>
+                    <button id="detectTzBtn" class="h-9 border border-neutral-800 hover:border-neutral-500 bg-neutral-900/50 hover:bg-neutral-900 text-neutral-400 hover:text-white px-3 rounded text-[11px] font-bold transition-all uppercase">
+                        Reset Auto
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Integrated Scrubber Slider -->
+        <div class="mt-4 pt-4 border-t border-neutral-900">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+                <div>
+                    <span class="text-[9px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-sm bg-neutral-600 animate-pulse"></span>
+                        Interactive Meeting Planner Scrubber (Linear Timeline)
+                    </span>
+                    <p class="text-[10px] text-neutral-600">Scrub relative hours forward or backward. Double click to restore live ticking.</p>
+                </div>
+                <button id="resetPlannerBtn" class="text-[9px] font-bold text-neutral-500 hover:text-white hover:underline transition-all uppercase opacity-0 pointer-events-none">
+                    [ Reset Timeline ]
+                </button>
+            </div>
+            <div class="flex items-center gap-4">
+                <span id="sliderValueDisplay" class="font-mono text-xs font-bold text-white w-14 text-center bg-neutral-950 border border-neutral-800 rounded py-0.5">Live</span>
+                <input 
+                    type="range" 
+                    id="plannerSlider" 
+                    min="-24" 
+                    max="24" 
+                    value="0" 
+                    class="w-full h-1 bg-neutral-800 rounded appearance-none cursor-pointer accent-white focus:outline-none"
+                />
+            </div>
+        </div>
+    </section>
+
+    <!-- Region Filters / Categories -->
+    <div class="mb-4 flex flex-wrap gap-1.5 items-center select-none" id="filterContainer">
+        <span class="text-[9px] font-bold text-neutral-500 uppercase mr-2 tracking-widest">Filter Zone:</span>
+        <button data-filter="all" class="filter-btn active bg-neutral-800 text-white border border-neutral-700 text-[10px] font-bold uppercase px-3 py-1 rounded transition-all">All</button>
+        <button data-filter="Americas" class="filter-btn bg-neutral-900/40 text-neutral-500 hover:text-neutral-300 border border-neutral-800/60 text-[10px] font-bold uppercase px-3 py-1 rounded transition-all">Americas</button>
+        <button data-filter="Europe" class="filter-btn bg-neutral-900/40 text-neutral-500 hover:text-neutral-300 border border-neutral-800/60 text-[10px] font-bold uppercase px-3 py-1 rounded transition-all">Europe</button>
+        <button data-filter="Asia" class="filter-btn bg-neutral-900/40 text-neutral-500 hover:text-neutral-300 border border-neutral-800/60 text-[10px] font-bold uppercase px-3 py-1 rounded transition-all">Asia</button>
+        <button data-filter="Africa" class="filter-btn bg-neutral-900/40 text-neutral-500 hover:text-neutral-300 border border-neutral-800/60 text-[10px] font-bold uppercase px-3 py-1 rounded transition-all">Africa</button>
+        <button data-filter="Oceania" class="filter-btn bg-neutral-900/40 text-neutral-500 hover:text-neutral-300 border border-neutral-800/60 text-[10px] font-bold uppercase px-3 py-1 rounded transition-all">Oceania</button>
     </div>
 
+    <!-- Clock Grid Layout (High-Density Clock Wall Grid) -->
+    <main class="flex-1 overflow-y-auto custom-scroll pr-1">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 w-full" id="clockGrid">
+            <!-- Dynamic high density terminal output rendered via JavaScript -->
+        </div>
+    </main>
+
+    <!-- Footer Controls -->
+    <footer class="mt-4 pt-4 border-t border-neutral-950 text-center text-[10px] text-neutral-600 space-y-1">
+        <div class="flex flex-wrap justify-center gap-x-6 gap-y-1">
+            <span>⏱️ Tick synchronization accurate to timezone base offsets</span>
+            <span id="lastUpdate" class="text-neutral-500"></span>
+        </div>
+    </footer>
+
+    <!-- Main JavaScript Application -->
     <script>
-        // ================================================================
-        //  WORLD CLOCK – with manual timezone selection (privacy-friendly)
-        // ================================================================
-
-        // ----- timezone definitions (full list) -----
-        const TIMEZONES = [
-            { id: 'UTC', label: 'UTC', city: 'UTC', flag: '🌐', offset: 0 },
-            { id: 'Pacific/Midway', label: 'UTC-11', city: 'Midway', flag: '🇺🇸', offset: -11 },
-            { id: 'Pacific/Honolulu', label: 'UTC-10', city: 'Honolulu', flag: '🇺🇸', offset: -10 },
-            { id: 'America/Anchorage', label: 'UTC-9', city: 'Anchorage', flag: '🇺🇸', offset: -9 },
-            { id: 'America/Los_Angeles', label: 'UTC-8', city: 'Los Angeles', flag: '🇺🇸', offset: -8 },
-            { id: 'America/Denver', label: 'UTC-7', city: 'Denver', flag: '🇺🇸', offset: -7 },
-            { id: 'America/Chicago', label: 'UTC-6', city: 'Chicago', flag: '🇺🇸', offset: -6 },
-            { id: 'America/New_York', label: 'UTC-5', city: 'New York', flag: '🇺🇸', offset: -5 },
-            { id: 'America/Caracas', label: 'UTC-4', city: 'Caracas', flag: '🇻🇪', offset: -4 },
-            { id: 'America/Sao_Paulo', label: 'UTC-3', city: 'São Paulo', flag: '🇧🇷', offset: -3 },
-            { id: 'Atlantic/South_Georgia', label: 'UTC-2', city: 'S. Georgia', flag: '🇬🇸', offset: -2 },
-            { id: 'Atlantic/Azores', label: 'UTC-1', city: 'Azores', flag: '🇵🇹', offset: -1 },
-            { id: 'Europe/London', label: 'UTC+0', city: 'London', flag: '🇬🇧', offset: 0 },
-            { id: 'Europe/Paris', label: 'UTC+1', city: 'Paris', flag: '🇫🇷', offset: 1 },
-            { id: 'Europe/Athens', label: 'UTC+2', city: 'Athens', flag: '🇬🇷', offset: 2 },
-            { id: 'Europe/Moscow', label: 'UTC+3', city: 'Moscow', flag: '🇷🇺', offset: 3 },
-            { id: 'Asia/Dubai', label: 'UTC+4', city: 'Dubai', flag: '🇦🇪', offset: 4 },
-            { id: 'Asia/Karachi', label: 'UTC+5', city: 'Karachi', flag: '🇵🇰', offset: 5 },
-            { id: 'Asia/Kolkata', label: 'UTC+5:30', city: 'Kolkata', flag: '🇮🇳', offset: 5.5 },
-            { id: 'Asia/Kathmandu', label: 'UTC+5:45', city: 'Kathmandu', flag: '🇳🇵', offset: 5.75 },
-            { id: 'Asia/Dhaka', label: 'UTC+6', city: 'Dhaka', flag: '🇧🇩', offset: 6 },
-            { id: 'Asia/Bangkok', label: 'UTC+7', city: 'Bangkok', flag: '🇹🇭', offset: 7 },
-            { id: 'Asia/Shanghai', label: 'UTC+8', city: 'Shanghai', flag: '🇨🇳', offset: 8 },
-            { id: 'Asia/Tokyo', label: 'UTC+9', city: 'Tokyo', flag: '🇯🇵', offset: 9 },
-            { id: 'Australia/Sydney', label: 'UTC+10', city: 'Sydney', flag: '🇦🇺', offset: 10 },
-            { id: 'Pacific/Noumea', label: 'UTC+11', city: 'Nouméa', flag: '🇳🇨', offset: 11 },
-            { id: 'Pacific/Auckland', label: 'UTC+12', city: 'Auckland', flag: '🇳🇿', offset: 12 },
-            { id: 'Pacific/Kiritimati', label: 'UTC+14', city: 'Kiritimati', flag: '🇰🇮', offset: 14 },
+        const TIMEZONE_LIST = [
+            { id: 'UTC', label: 'UTC', city: 'UTC Offset Base', flag: '🌐', offset: 0, region: 'UTC' },
+            { id: 'Pacific/Midway', label: 'UTC-11', city: 'Midway Atoll', flag: '🇺🇸', offset: -11, region: 'Oceania' },
+            { id: 'Pacific/Honolulu', label: 'UTC-10', city: 'Honolulu', flag: '🇺🇸', offset: -10, region: 'Oceania' },
+            { id: 'America/Anchorage', label: 'UTC-9', city: 'Anchorage', flag: '🇺🇸', offset: -9, region: 'Americas' },
+            { id: 'America/Los_Angeles', label: 'UTC-8', city: 'Los Angeles', flag: '🇺🇸', offset: -8, region: 'Americas' },
+            { id: 'America/Denver', label: 'UTC-7', city: 'Denver', flag: '🇺🇸', offset: -7, region: 'Americas' },
+            { id: 'America/Chicago', label: 'UTC-6', city: 'Chicago', flag: '🇺🇸', offset: -6, region: 'Americas' },
+            { id: 'America/New_York', label: 'UTC-5', city: 'New York', flag: '🇺🇸', offset: -5, region: 'Americas' },
+            { id: 'America/Caracas', label: 'UTC-4', city: 'Caracas', flag: '🇻🇪', offset: -4, region: 'Americas' },
+            { id: 'America/Sao_Paulo', label: 'UTC-3', city: 'São Paulo', flag: '🇧🇷', offset: -3, region: 'Americas' },
+            { id: 'Atlantic/South_Georgia', label: 'UTC-2', city: 'S. Georgia', flag: '🇬🇸', offset: -2, region: 'Americas' },
+            { id: 'Atlantic/Azores', label: 'UTC-1', city: 'Azores', flag: '🇵🇹', offset: -1, region: 'Europe' },
+            { id: 'Europe/London', label: 'UTC+0', city: 'London', flag: '🇬🇧', offset: 0, region: 'Europe' },
+            { id: 'Europe/Paris', label: 'UTC+1', city: 'Paris', flag: '🇫🇷', offset: 1, region: 'Europe' },
+            { id: 'Europe/Athens', label: 'UTC+2', city: 'Athens', flag: '🇬🇷', offset: 2, region: 'Europe' },
+            { id: 'Europe/Moscow', label: 'UTC+3', city: 'Moscow', flag: '🇷🇺', offset: 3, region: 'Europe' },
+            { id: 'Asia/Dubai', label: 'UTC+4', city: 'Dubai', flag: '🇦🇪', offset: 4, region: 'Asia' },
+            { id: 'Asia/Karachi', label: 'UTC+5', city: 'Karachi', flag: '🇵🇰', offset: 5, region: 'Asia' },
+            { id: 'Asia/Kolkata', label: 'UTC+5:30', city: 'Kolkata', flag: '🇮🇳', offset: 5.5, region: 'Asia' },
+            { id: 'Asia/Kathmandu', label: 'UTC+5:45', city: 'Kathmandu', flag: '🇳🇵', offset: 5.75, region: 'Asia' },
+            { id: 'Asia/Dhaka', label: 'UTC+6', city: 'Dhaka', flag: '🇧🇩', offset: 6, region: 'Asia' },
+            { id: 'Asia/Bangkok', label: 'UTC+7', city: 'Bangkok', flag: '🇹🇭', offset: 7, region: 'Asia' },
+            { id: 'Asia/Shanghai', label: 'UTC+8', city: 'Shanghai', flag: '🇨🇳', offset: 8, region: 'Asia' },
+            { id: 'Asia/Tokyo', label: 'UTC+9', city: 'Tokyo', flag: '🇯🇵', offset: 9, region: 'Asia' },
+            { id: 'Australia/Sydney', label: 'UTC+10', city: 'Sydney', flag: '🇦🇺', offset: 10, region: 'Oceania' },
+            { id: 'Pacific/Noumea', label: 'UTC+11', city: 'Nouméa', flag: '🇳🇨', offset: 11, region: 'Oceania' },
+            { id: 'Pacific/Auckland', label: 'UTC+12', city: 'Auckland', flag: '🇳🇿', offset: 12, region: 'Oceania' },
+            { id: 'Pacific/Kiritimati', label: 'UTC+14', city: 'Kiritimati', flag: '🇰🇮', offset: 14, region: 'Oceania' },
+            { id: 'America/Toronto', label: 'UTC-5', city: 'Toronto', flag: '🇨🇦', offset: -5, region: 'Americas' },
+            { id: 'America/Mexico_City', label: 'UTC-6', city: 'Mexico City', flag: '🇲🇽', offset: -6, region: 'Americas' },
+            { id: 'America/Bogota', label: 'UTC-5', city: 'Bogotá', flag: '🇨🇴', offset: -5, region: 'Americas' },
+            { id: 'America/Santiago', label: 'UTC-3', city: 'Santiago', flag: '🇨🇱', offset: -3, region: 'Americas' },
+            { id: 'Europe/Berlin', label: 'UTC+1', city: 'Berlin', flag: '🇩🇪', offset: 1, region: 'Europe' },
+            { id: 'Europe/Rome', label: 'UTC+1', city: 'Rome', flag: '🇮🇹', offset: 1, region: 'Europe' },
+            { id: 'Europe/Madrid', label: 'UTC+1', city: 'Madrid', flag: '🇪🇸', offset: 1, region: 'Europe' },
+            { id: 'Europe/Kyiv', label: 'UTC+2', city: 'Kyiv', flag: '🇺🇦', offset: 2, region: 'Europe' },
+            { id: 'Europe/Istanbul', label: 'UTC+3', city: 'Istanbul', flag: '🇹🇷', offset: 3, region: 'Europe' },
+            { id: 'Africa/Cairo', label: 'UTC+2', city: 'Cairo', flag: '🇪🇬', offset: 2, region: 'Africa' },
+            { id: 'Africa/Johannesburg', label: 'UTC+2', city: 'Johannesburg', flag: '🇿🇦', offset: 2, region: 'Africa' },
+            { id: 'Asia/Jerusalem', label: 'UTC+2', city: 'Jerusalem', flag: '🇮🇱', offset: 2, region: 'Asia' },
+            { id: 'Asia/Riyadh', label: 'UTC+3', city: 'Riyadh', flag: '🇸🇦', offset: 3, region: 'Asia' },
+            { id: 'Asia/Tehran', label: 'UTC+3:30', city: 'Tehran', flag: '🇮🇷', offset: 3.5, region: 'Asia' },
+            { id: 'Asia/Baghdad', label: 'UTC+3', city: 'Baghdad', flag: '🇮🇶', offset: 3, region: 'Asia' },
+            { id: 'Asia/Kuwait', label: 'UTC+3', city: 'Kuwait City', flag: '🇰🇼', offset: 3, region: 'Asia' },
+            { id: 'Asia/Tashkent', label: 'UTC+5', city: 'Tashkent', flag: '🇺🇿', offset: 5, region: 'Asia' },
+            { id: 'Asia/Yangon', label: 'UTC+6:30', city: 'Yangon', flag: '🇲🇲', offset: 6.5, region: 'Asia' },
+            { id: 'Asia/Jakarta', label: 'UTC+7', city: 'Jakarta', flag: '🇮🇩', offset: 7, region: 'Asia' },
+            { id: 'Asia/Hong_Kong', label: 'UTC+8', city: 'Hong Kong', flag: '🇭🇰', offset: 8, region: 'Asia' },
+            { id: 'Asia/Singapore', label: 'UTC+8', city: 'Singapore', flag: '🇸🇬', offset: 8, region: 'Asia' },
+            { id: 'Asia/Seoul', label: 'UTC+9', city: 'Seoul', flag: '🇰🇷', offset: 9, region: 'Asia' },
+            { id: 'Australia/Perth', label: 'UTC+8', city: 'Perth', flag: '🇦🇺', offset: 8, region: 'Oceania' },
+            { id: 'Australia/Brisbane', label: 'UTC+10', city: 'Brisbane', flag: '🇦🇺', offset: 10, region: 'Oceania' },
+            { id: 'Australia/Melbourne', label: 'UTC+10', city: 'Melbourne', flag: '🇦🇺', offset: 10, region: 'Oceania' },
+            { id: 'Pacific/Fiji', label: 'UTC+12', city: 'Suva', flag: '🇫🇯', offset: 12, region: 'Oceania' },
         ];
 
-        const EXTRA_CITIES = [
-            { id: 'America/Toronto', label: 'UTC-5', city: 'Toronto', flag: '🇨🇦', offset: -5 },
-            { id: 'America/Mexico_City', label: 'UTC-6', city: 'Mexico City', flag: '🇲🇽', offset: -6 },
-            { id: 'America/Bogota', label: 'UTC-5', city: 'Bogotá', flag: '🇨🇴', offset: -5 },
-            { id: 'America/Santiago', label: 'UTC-3', city: 'Santiago', flag: '🇨🇱', offset: -3 },
-            { id: 'Europe/Berlin', label: 'UTC+1', city: 'Berlin', flag: '🇩🇪', offset: 1 },
-            { id: 'Europe/Rome', label: 'UTC+1', city: 'Rome', flag: '🇮🇹', offset: 1 },
-            { id: 'Europe/Madrid', label: 'UTC+1', city: 'Madrid', flag: '🇪🇸', offset: 1 },
-            { id: 'Europe/Kyiv', label: 'UTC+2', city: 'Kyiv', flag: '🇺🇦', offset: 2 },
-            { id: 'Europe/Istanbul', label: 'UTC+3', city: 'Istanbul', flag: '🇹🇷', offset: 3 },
-            { id: 'Africa/Cairo', label: 'UTC+2', city: 'Cairo', flag: '🇪🇬', offset: 2 },
-            { id: 'Africa/Johannesburg', label: 'UTC+2', city: 'Johannesburg', flag: '🇿🇦', offset: 2 },
-            { id: 'Asia/Jerusalem', label: 'UTC+2', city: 'Jerusalem', flag: '🇮🇱', offset: 2 },
-            { id: 'Asia/Riyadh', label: 'UTC+3', city: 'Riyadh', flag: '🇸🇦', offset: 3 },
-            { id: 'Asia/Tehran', label: 'UTC+3:30', city: 'Tehran', flag: '🇮🇷', offset: 3.5 },
-            { id: 'Asia/Baghdad', label: 'UTC+3', city: 'Baghdad', flag: '🇮🇶', offset: 3 },
-            { id: 'Asia/Kuwait', label: 'UTC+3', city: 'Kuwait City', flag: '🇰🇼', offset: 3 },
-            { id: 'Asia/Tashkent', label: 'UTC+5', city: 'Tashkent', flag: '🇺🇿', offset: 5 },
-            { id: 'Asia/Yangon', label: 'UTC+6:30', city: 'Yangon', flag: '🇲🇲', offset: 6.5 },
-            { id: 'Asia/Jakarta', label: 'UTC+7', city: 'Jakarta', flag: '🇮🇩', offset: 7 },
-            { id: 'Asia/Hong_Kong', label: 'UTC+8', city: 'Hong Kong', flag: '🇭🇰', offset: 8 },
-            { id: 'Asia/Singapore', label: 'UTC+8', city: 'Singapore', flag: '🇸🇬', offset: 8 },
-            { id: 'Asia/Seoul', label: 'UTC+9', city: 'Seoul', flag: '🇰🇷', offset: 9 },
-            { id: 'Australia/Perth', label: 'UTC+8', city: 'Perth', flag: '🇦🇺', offset: 8 },
-            { id: 'Australia/Brisbane', label: 'UTC+10', city: 'Brisbane', flag: '🇦🇺', offset: 10 },
-            { id: 'Australia/Melbourne', label: 'UTC+10', city: 'Melbourne', flag: '🇦🇺', offset: 10 },
-            { id: 'Pacific/Fiji', label: 'UTC+12', city: 'Suva', flag: '🇫🇯', offset: 12 },
-        ];
-
-        const allZones = [...TIMEZONES, ...EXTRA_CITIES];
+        // Unique mapping setup
         const uniqueMap = new Map();
-        allZones.forEach(z => { if (!uniqueMap.has(z.id)) uniqueMap.set(z.id, z); });
-        const TIMEZONE_LIST = Array.from(uniqueMap.values());
-        TIMEZONE_LIST.sort((a, b) => a.offset - b.offset);
+        TIMEZONE_LIST.forEach(z => { if (!uniqueMap.has(z.id)) uniqueMap.set(z.id, z); });
+        const ALL_ZONES = Array.from(uniqueMap.values()).sort((a, b) => a.offset - b.offset);
 
-        // ----- state -----
+        // State control
         let use24Hour = true;
         let showUTC = true;
         let searchTerm = '';
+        let selectedFilter = 'all';
         let clockInterval = null;
+        let selectedTzId = 'detect';
+        let sliderOffsetValue = 0;
 
-        // user's selected timezone (default: detect)
-        let selectedTzId = 'detect'; // 'detect' means use system timezone
-        let userOffsetHours = null; // cached offset when detected
-
+        // Elements
         const grid = document.getElementById('clockGrid');
         const searchInput = document.getElementById('searchInput');
         const formatToggle = document.getElementById('formatToggle');
         const utcToggle = document.getElementById('utcToggle');
-        const totalCount = document.getElementById('totalCount');
         const lastUpdate = document.getElementById('lastUpdate');
+        const filterContainer = document.getElementById('filterContainer');
+        const clockCount = document.getElementById('clock-count');
 
         const localCity = document.getElementById('localCity');
         const localTimezoneName = document.getElementById('localTimezoneName');
@@ -667,7 +268,11 @@
         const tzSelect = document.getElementById('tzSelect');
         const detectBtn = document.getElementById('detectTzBtn');
 
-        // ----- helpers -----
+        const plannerSlider = document.getElementById('plannerSlider');
+        const sliderValueDisplay = document.getElementById('sliderValueDisplay');
+        const resetPlannerBtn = document.getElementById('resetPlannerBtn');
+        const plannerStatus = document.getElementById('plannerStatus');
+
         function formatOffset(offset) {
             const sign = offset >= 0 ? '+' : '';
             const abs = Math.abs(offset);
@@ -677,24 +282,10 @@
             return `${sign}${hours}:${mins.toString().padStart(2, '0')}`;
         }
 
-        function getDayLabel(dayDiff) {
-            if (dayDiff === 0) return 'today';
-            if (dayDiff === 1) return 'tomorrow';
-            if (dayDiff === -1) return 'yesterday';
-            return '';
-        }
-
-        function getDayLabelDisplay(dayDiff) {
-            if (dayDiff === 0) return '📅 today';
-            if (dayDiff === 1) return '📅 tomorrow';
-            if (dayDiff === -1) return '📅 yesterday';
-            return '';
-        }
-
-        function getTimeForOffset(offsetHours) {
+        function getTimeForOffset(offsetHours, customSliderHours = 0) {
             const now = new Date();
             const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
-            const targetMs = utcMs + offsetHours * 3600000;
+            const targetMs = utcMs + (offsetHours + customSliderHours) * 3600000;
             return new Date(targetMs);
         }
 
@@ -711,198 +302,231 @@
             }
         }
 
-        function formatDate(date) {
-            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        }
-
         function formatDateLong(date) {
-            return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+            return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
         }
 
-        function formatTimeDiff(ms) {
-            if (ms === 0) return { sign: '±', hours: 0, minutes: 0, seconds: 0, formatted: '±0:00:00', cls: 'same' };
-            const sign = ms > 0 ? '+' : '-';
-            const absMs = Math.abs(ms);
-            const totalSec = Math.floor(absMs / 1000);
-            const hours = Math.floor(totalSec / 3600);
-            const minutes = Math.floor((totalSec % 3600) / 60);
-            const seconds = totalSec % 60;
-            const formatted = `${sign}${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            return { sign, hours, minutes, seconds, formatted, cls: sign === '+' ? 'ahead' : 'behind' };
-        }
-
-        // ----- get current reference offset (user-selected or detected) -----
         function getReferenceOffset() {
             if (selectedTzId === 'detect') {
-                // use system timezone
                 return -new Date().getTimezoneOffset() / 60;
             } else {
-                const entry = TIMEZONE_LIST.find(t => t.id === selectedTzId);
-                if (entry) return entry.offset;
-                // fallback: detect
-                return -new Date().getTimezoneOffset() / 60;
+                const entry = ALL_ZONES.find(t => t.id === selectedTzId);
+                return entry ? entry.offset : -new Date().getTimezoneOffset() / 60;
             }
         }
 
         function getReferenceCityName() {
             if (selectedTzId === 'detect') {
-                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Unknown';
-                return tz.replace(/_/g, ' ').replace(/\//g, ' / ');
+                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'System Local';
+                return '📍 ' + tz.split('/').pop().replace(/_/g, ' ').toUpperCase();
             } else {
-                const entry = TIMEZONE_LIST.find(t => t.id === selectedTzId);
-                return entry ? `${entry.flag} ${entry.city}` : 'Custom';
+                const entry = ALL_ZONES.find(t => t.id === selectedTzId);
+                return entry ? `${entry.flag} ${entry.city.toUpperCase()}` : '📍 CUSTOM';
             }
         }
 
         function getReferenceCityLabel() {
             if (selectedTzId === 'detect') {
-                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Auto';
-                return tz.replace(/_/g, ' ').replace(/\//g, ' / ');
+                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local Auto-detect';
+                return tz.replace(/_/g, ' ').replace(/\//g, ' / ').toUpperCase();
             } else {
-                const entry = TIMEZONE_LIST.find(t => t.id === selectedTzId);
-                return entry ? `${entry.city} (${entry.label})` : 'Custom';
+                const entry = ALL_ZONES.find(t => t.id === selectedTzId);
+                return entry ? `${entry.city.toUpperCase()} (${entry.label})` : 'CUSTOM';
             }
         }
 
-        // ----- update local spotlight -----
-        function updateLocalSpotlight() {
-            const offset = getReferenceOffset();
-            const now = new Date();
-            // compute time at reference offset
-            const refDate = getTimeForOffset(offset);
+        // Minimal high density layout colors for day/night
+        function getDaylightTheme(hour) {
+            if (hour >= 6 && hour < 18) {
+                return {
+                    border: 'border-neutral-800 hover:border-neutral-600',
+                    badge: 'border-neutral-800 text-neutral-400 bg-neutral-900',
+                    label: 'DAY',
+                    progressColor: 'bg-neutral-500'
+                };
+            } else {
+                return {
+                    border: 'border-neutral-900 hover:border-neutral-700',
+                    badge: 'border-neutral-900 text-neutral-600 bg-neutral-950',
+                    label: 'NIGHT',
+                    progressColor: 'bg-neutral-800'
+                };
+            }
+        }
 
+        function updateLocalSpotlight() {
+            const refOffset = getReferenceOffset();
+            const refDate = getTimeForOffset(refOffset, sliderOffsetValue);
             const cityName = getReferenceCityName();
             const label = getReferenceCityLabel();
 
             localCity.textContent = cityName;
             localTimezoneName.textContent = label;
 
-            const timeStr = formatTime(refDate, use24Hour);
-            localTimeDisplay.textContent = timeStr;
+            localTimeDisplay.textContent = formatTime(refDate, use24Hour);
+            localDateDisplay.textContent = formatDateLong(refDate);
+            localOffsetDisplay.textContent = `UTC${formatOffset(refOffset)}`;
 
-            const dateStr = formatDateLong(refDate);
-            localDateDisplay.textContent = dateStr;
-
-            const offsetStr = formatOffset(offset);
-            localOffsetDisplay.textContent = `UTC${offsetStr}`;
+            if (sliderOffsetValue !== 0) {
+                plannerStatus.classList.remove('hidden');
+                resetPlannerBtn.classList.remove('opacity-0', 'pointer-events-none');
+                sliderValueDisplay.textContent = `${sliderOffsetValue > 0 ? '+' : ''}${sliderOffsetValue}h`;
+            } else {
+                plannerStatus.classList.add('hidden');
+                resetPlannerBtn.classList.add('opacity-0', 'pointer-events-none');
+                sliderValueDisplay.textContent = `Live`;
+            }
         }
 
-        // ----- render clocks -----
         function renderClocks() {
             const refOffset = getReferenceOffset();
-            const now = new Date();
-            const refNow = getTimeForOffset(refOffset); // reference "now"
+            const refNow = getTimeForOffset(refOffset, sliderOffsetValue);
+            const todayRef = new Date(refNow.getFullYear(), refNow.getMonth(), refNow.getDate());
 
-            const filteredBase = TIMEZONE_LIST.filter(tz => {
+            const filtered = ALL_ZONES.filter(tz => {
                 const q = searchTerm.toLowerCase().trim();
-                if (!q) return true;
-                return tz.city.toLowerCase().includes(q) ||
+                const matchesSearch = !q || 
+                    tz.city.toLowerCase().includes(q) ||
                     tz.label.toLowerCase().includes(q) ||
                     tz.id.toLowerCase().includes(q);
+
+                const matchesUTC = showUTC || tz.id !== 'UTC';
+                const matchesRegion = selectedFilter === 'all' || tz.region === selectedFilter;
+
+                return matchesSearch && matchesUTC && matchesRegion;
             });
 
-            const filtered = showUTC ? filteredBase : filteredBase.filter(tz => tz.id !== 'UTC');
-            totalCount.textContent = filtered.length;
+            clockCount.textContent = `[${filtered.length}]`;
 
             if (filtered.length === 0) {
                 grid.innerHTML = `
-                    <div class="no-results">
-                        <span>🔍</span>
-                        No cities found${searchTerm ? ` for “${searchTerm}”` : ''}
-                        ${!showUTC ? ' (UTC hidden)' : ''}
+                    <div class="col-span-full text-center py-12 text-neutral-600 font-mono text-xs uppercase tracking-wider">
+                        No matches found.
                     </div>
                 `;
                 return;
             }
 
-            // today in reference timezone
-            const todayRef = new Date(refNow.getFullYear(), refNow.getMonth(), refNow.getDate());
-
             let html = '';
             for (const tz of filtered) {
-                const targetDate = getTimeForOffset(tz.offset);
-
+                const targetDate = getTimeForOffset(tz.offset, sliderOffsetValue);
                 const timeStr = formatTime(targetDate, use24Hour);
-                const dateStr = formatDate(targetDate);
+                const dateStr = targetDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
 
                 const targetDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
-                const diffDays = Math.round((targetDay - todayRef) / (86400000));
-                const dayDisplay = getDayLabelDisplay(diffDays);
-                const dayLabel = getDayLabel(diffDays);
+                const diffDays = Math.round((targetDay - todayRef) / 86400000);
 
-                const offsetStr = formatOffset(tz.offset);
-                const offsetClass = tz.offset > 0 ? 'positive' : (tz.offset < 0 ? 'negative' : '');
-                const isUTC = tz.offset === 0 && tz.id === 'UTC';
-                const flag = tz.flag || '🌐';
+                let dayLabelHTML = '';
+                if (diffDays === 1) {
+                    dayLabelHTML = `<span class="text-[#2e6b4d] font-bold text-[9px] uppercase tracking-wider">Tomorrow</span>`;
+                } else if (diffDays === -1) {
+                    dayLabelHTML = `<span class="text-[#8c323c] font-bold text-[9px] uppercase tracking-wider">Yesterday</span>`;
+                } else {
+                    dayLabelHTML = `<span class="text-neutral-600 text-[9px] uppercase tracking-wider">Today</span>`;
+                }
 
-                const timeParts = timeStr.split(':');
-                const timeMain = timeParts.slice(0, 2).join(':');
-                const secs = timeParts[2] || '00';
-
-                // diff vs reference (in seconds precision)
+                let offsetRelationHTML = '';
                 const diffMs = targetDate.getTime() - refNow.getTime();
-                const diff = formatTimeDiff(diffMs);
-                const diffIcon = diff.sign === '+' ? '⬆️' : (diff.sign === '-' ? '⬇️' : '⏺️');
+                const absMs = Math.abs(diffMs);
+                const totalSecs = Math.floor(absMs / 1000);
+
+                if (totalSecs === 0) {
+                    offsetRelationHTML = `<span class="text-neutral-600 text-[9px] font-bold tracking-wider uppercase">Same time</span>`;
+                } else {
+                    const h = Math.floor(totalSecs / 3600);
+                    const m = Math.floor((totalSecs % 3600) / 60);
+                    const s = totalSecs % 60;
+
+                    let formattedDiff = '';
+                    if (h > 0) formattedDiff += `${h}h `;
+                    formattedDiff += `${m}m ${s.toString().padStart(2, '0')}s`;
+
+                    if (diffMs > 0) {
+                        offsetRelationHTML = `<span class="text-[#346b52] text-[9px] font-bold tracking-wider uppercase">▲ ${formattedDiff} ahead</span>`;
+                    } else {
+                        offsetRelationHTML = `<span class="text-[#964247] text-[9px] font-bold tracking-wider uppercase">▼ ${formattedDiff} behind</span>`;
+                    }
+                }
+
+                const currentHour = targetDate.getHours();
+                const daylight = getDaylightTheme(currentHour);
+
+                const parts = timeStr.split(':');
+                const mainTime = parts.slice(0, 2).join(':');
+                const secondsWithSuffix = parts[2] || '';
+
+                const dayProgressPct = ((targetDate.getHours() * 60 + targetDate.getMinutes()) / 1440) * 100;
 
                 html += `
-                    <div class="clock-card ${isUTC ? 'utc-card' : ''}">
-                        <div class="utc-offset ${offsetClass}">UTC${offsetStr}</div>
-                        <div class="city-name">
-                            <span class="flag">${flag}</span>
-                            ${tz.city}
+                    <div class="bg-[#09090b] rounded p-3 flex flex-col justify-between border ${daylight.border} transition-all duration-150 relative overflow-hidden text-left shadow-md">
+                        <!-- Header Line -->
+                        <div class="flex items-center justify-between gap-1 border-b border-neutral-900 pb-1.5 mb-2">
+                            <div class="flex items-center gap-1.5 min-w-0">
+                                <span class="text-sm shrink-0">${tz.flag || '🌐'}</span>
+                                <span class="text-[11px] font-bold text-white truncate uppercase tracking-wider" title="${tz.city}">${tz.city}</span>
+                            </div>
+                            <span class="text-[8.5px] font-mono text-neutral-600 uppercase tracking-widest font-bold">
+                                ${formatOffset(tz.offset)}
+                            </span>
                         </div>
-                        <div class="timezone-label">${tz.label}</div>
-                        <div class="time-display">
-                            ${timeMain}<span class="seconds">:${secs}</span>
+
+                        <!-- Main Big Time Output (JetBrains Mono) -->
+                        <div class="my-1.5 font-mono">
+                            <div class="flex items-baseline gap-0.5">
+                                <span class="text-xl font-extrabold text-white tracking-tight">${mainTime}</span>
+                                <span class="text-[11px] text-neutral-600 font-bold">:${secondsWithSuffix}</span>
+                            </div>
+                            <div class="flex items-center justify-between mt-1 text-[9px] font-bold text-neutral-500">
+                                <span>${dateStr}</span>
+                                ${dayLabelHTML}
+                            </div>
                         </div>
-                        <div class="date-display">${dateStr}</div>
-                        ${dayLabel ? `<div class="day-indicator ${dayLabel}">${dayDisplay}</div>` : ''}
-                        <div class="time-diff ${diff.cls}">
-                            <span class="diff-icon">${diffIcon}</span>
-                            ${diff.formatted} ${diff.sign === '+' ? 'ahead' : (diff.sign === '-' ? 'behind' : 'same time')}
+
+                        <!-- Micro Grid Stats Line -->
+                        <div class="mt-2 pt-2 border-t border-neutral-900 space-y-1.5">
+                            <div class="flex items-center justify-between text-[8.5px] font-bold">
+                                ${offsetRelationHTML}
+                                <span class="text-[8px] font-mono px-1 py-0.2 border border-neutral-800/80 rounded bg-neutral-950 text-neutral-500">
+                                    ${daylight.label}
+                                </span>
+                            </div>
+
+                            <!-- Day Progress Bar -->
+                            <div class="w-full bg-[#050505] h-1 rounded overflow-hidden" title="Cycle: ${Math.round(dayProgressPct)}%">
+                                <div class="h-full rounded ${daylight.progressColor} transition-all duration-300" style="width: ${dayProgressPct}%"></div>
+                            </div>
                         </div>
                     </div>
                 `;
             }
 
             grid.innerHTML = html;
-            lastUpdate.textContent = `🔄 updated ${new Date().toLocaleTimeString()}`;
+            lastUpdate.textContent = `SYNCED: ${new Date().toLocaleTimeString().toUpperCase()}`;
         }
 
-        // ----- full update -----
         function updateAll() {
             updateLocalSpotlight();
             renderClocks();
         }
 
-        // ----- populate timezone dropdown -----
         function populateTzSelect() {
-            // keep current selection
             const current = tzSelect.value || 'detect';
-
-            // build options: detect + all timezones
-            let options = `<option value="detect">🔍 Auto-detect</option>`;
-            for (const tz of TIMEZONE_LIST) {
-                const label = `${tz.flag} ${tz.city} (${tz.label})`;
-                options += `<option value="${tz.id}">${label}</option>`;
+            let options = `<option value="detect" class="bg-neutral-950 text-neutral-300">🔍 Auto-detect (System)</option>`;
+            for (const tz of ALL_ZONES) {
+                options += `<option value="${tz.id}" class="bg-neutral-950 text-neutral-300">${tz.flag} ${tz.city.toUpperCase()} (${tz.label})</option>`;
             }
             tzSelect.innerHTML = options;
             tzSelect.value = current;
-
-            // if current not found, fallback to detect
             if (!tzSelect.value) tzSelect.value = 'detect';
             selectedTzId = tzSelect.value;
         }
 
-        // ----- handle timezone change -----
         function onTzChange() {
             selectedTzId = tzSelect.value;
-            // save to localStorage
             try { localStorage.setItem('worldClockTz', selectedTzId); } catch (e) {}
             updateAll();
         }
 
-        // ----- detect button -----
         function onDetect() {
             tzSelect.value = 'detect';
             selectedTzId = 'detect';
@@ -910,17 +534,95 @@
             updateAll();
         }
 
-        // ----- init -----
+        function startClock() {
+            if (clockInterval) clearInterval(clockInterval);
+            updateAll();
+            clockInterval = setInterval(() => {
+                if (sliderOffsetValue === 0) {
+                    updateAll();
+                } else {
+                    updateLocalSpotlight();
+                }
+            }, 1000);
+        }
+
+        function initListeners() {
+            tzSelect.addEventListener('change', onTzChange);
+            detectBtn.addEventListener('click', onDetect);
+
+            searchInput.addEventListener('input', (e) => {
+                searchTerm = e.target.value;
+                renderClocks();
+            });
+
+            formatToggle.addEventListener('click', () => {
+                use24Hour = !use24Hour;
+                formatToggle.textContent = use24Hour ? '🕒 24H' : '🕒 12H';
+                updateAll();
+            });
+
+            utcToggle.addEventListener('click', () => {
+                showUTC = !showUTC;
+                utcToggle.textContent = showUTC ? '🌐 UTC CARD: ON' : '🌐 UTC CARD: OFF';
+                renderClocks();
+            });
+
+            filterContainer.addEventListener('click', (e) => {
+                const btn = e.target.closest('.filter-btn');
+                if (!btn) return;
+                
+                filterContainer.querySelectorAll('.filter-btn').forEach(b => {
+                    b.classList.remove('active', 'bg-neutral-800', 'text-white', 'border-neutral-700');
+                    b.classList.add('bg-neutral-900/40', 'text-neutral-500', 'border-neutral-800/60');
+                });
+                
+                btn.classList.add('active', 'bg-neutral-800', 'text-white', 'border-neutral-700');
+                btn.classList.remove('bg-neutral-900/40', 'text-neutral-500', 'border-neutral-800/60');
+                
+                selectedFilter = btn.dataset.filter;
+                renderClocks();
+            });
+
+            plannerSlider.addEventListener('input', (e) => {
+                sliderOffsetValue = parseInt(e.target.value);
+                updateAll();
+            });
+
+            plannerSlider.addEventListener('dblclick', resetPlanner);
+            resetPlannerBtn.addEventListener('click', resetPlanner);
+
+            function resetPlanner() {
+                plannerSlider.value = 0;
+                sliderOffsetValue = 0;
+                updateAll();
+            }
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.target.closest('input')) {
+                    e.preventDefault();
+                    searchInput.focus();
+                }
+                if (e.key === 'Escape' && document.activeElement === searchInput) {
+                    searchInput.blur();
+                    searchInput.value = '';
+                    searchTerm = '';
+                    renderClocks();
+                }
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) updateAll();
+            });
+        }
+
         function init() {
-            // load saved timezone
             let saved = 'detect';
             try {
                 const stored = localStorage.getItem('worldClockTz');
                 if (stored) saved = stored;
             } catch (e) {}
-
+            
             populateTzSelect();
-            // set saved
             if (saved && tzSelect.querySelector(`option[value="${saved}"]`)) {
                 tzSelect.value = saved;
             } else {
@@ -928,68 +630,11 @@
             }
             selectedTzId = tzSelect.value;
 
-            // event listeners
-            tzSelect.addEventListener('change', onTzChange);
-            detectBtn.addEventListener('click', onDetect);
-
-            // start clock
+            initListeners();
             startClock();
         }
 
-        // ----- clock loop -----
-        function startClock() {
-            if (clockInterval) clearInterval(clockInterval);
-            updateAll();
-            clockInterval = setInterval(updateAll, 1000);
-        }
-
-        // ----- event listeners for controls -----
-        searchInput.addEventListener('input', (e) => {
-            searchTerm = e.target.value;
-            renderClocks();
-        });
-
-        formatToggle.addEventListener('click', () => {
-            use24Hour = !use24Hour;
-            formatToggle.textContent = use24Hour ? '🕒 24h' : '🕒 12h';
-            formatToggle.classList.toggle('active', use24Hour);
-            updateAll();
-        });
-        formatToggle.classList.add('active');
-
-        utcToggle.addEventListener('click', () => {
-            showUTC = !showUTC;
-            utcToggle.classList.toggle('active', showUTC);
-            renderClocks();
-        });
-
-        // keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.target.closest('input')) {
-                e.preventDefault();
-                searchInput.focus();
-            }
-            if (e.key === 'Escape' && document.activeElement === searchInput) {
-                searchInput.blur();
-                searchInput.value = '';
-                searchTerm = '';
-                renderClocks();
-            }
-        });
-
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) updateAll();
-        });
-
-        window.addEventListener('beforeunload', () => {
-            if (clockInterval) clearInterval(clockInterval);
-        });
-
-        // ----- go -----
         init();
-        console.log(`🌍 World Clock loaded — ${TIMEZONE_LIST.length} time zones`);
-        console.log('🔍 Press "/" to search, "Esc" to clear');
-        console.log('📍 Select your timezone from the dropdown to override auto-detection.');
     </script>
 </body>
 </html>
