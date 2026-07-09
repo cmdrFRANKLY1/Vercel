@@ -1,650 +1,634 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>local time · 9‑dot menu</title>
-  <style>
-    /* ── reset ── */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>local time · 9‑dot menu</title>
+    <style>
+        /* ── Reset & base ── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    body {
-      background: #0b0b0b;
-      min-height: 100vh;
-      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-      color: #d6d6d6;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 1.5rem 1rem 1rem 1rem;
-      position: relative;
-    }
+        body {
+            background: #0b0b0b;
+            min-height: 100vh;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            color: #d6d6d6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem 1rem 1rem 1rem;
+            position: relative;
+        }
 
-    /* ── top bar ── */
-    .top-bar {
-      width: 100%;
-      max-width: 1200px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 0.5rem 1.5rem 0.5rem;
-      position: relative;
-    }
+        /* ── Top bar ── */
+        .top-bar {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 0.5rem 1.5rem 0.5rem;
+            position: relative;
+        }
 
-    /* ── clock (centered) ── */
-    #clock {
-      font-size: 1.6rem;
-      font-weight: 400;
-      letter-spacing: 0.03em;
-      text-align: center;
-      flex: 1;
-    }
+        /* ── Clock (centered) ── */
+        #clock {
+            font-size: 1.6rem;
+            font-weight: 400;
+            letter-spacing: 0.03em;
+            text-align: center;
+            flex: 1;
+            margin: 0 1rem;
+            white-space: nowrap;
+        }
 
-    /* ── 9‑dot button (Google‑style) ── */
-    .dot-btn {
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      padding: 0.5rem 0.6rem;
-      border-radius: 0.3rem;
-      transition: background 0.2s;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
+        /* ── Google‑style 9‑dot button ── */
+        .dot-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem 0.6rem;
+            border-radius: 0.3rem;
+            transition: background 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
 
-    .dot-btn:hover {
-      background: rgba(255, 255, 255, 0.06);
-    }
+        .dot-btn:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .dot-btn:active {
+            background: rgba(255, 255, 255, 0.12);
+        }
 
-    .dot-btn:active {
-      background: rgba(255, 255, 255, 0.12);
-    }
+        .dot-btn .row {
+            display: flex;
+            gap: 3px;
+        }
+        .dot-btn .dot-icon {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #b0b0b0;
+            transition: background 0.2s;
+        }
+        .dot-btn:hover .dot-icon {
+            background: #e6e6e6;
+        }
 
-    .dot-btn .row {
-      display: flex;
-      gap: 3px;
-    }
+        /* ── 9‑dot menu popup ── */
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(2px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            padding: 1.5rem;
+        }
+        .menu-overlay.active {
+            display: flex;
+        }
 
-    .dot-btn .dot-icon {
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      background: #b0b0b0;
-      transition: background 0.2s;
-    }
+        .menu-panel {
+            background: #141414;
+            border-radius: 1rem;
+            padding: 2rem 2.5rem;
+            max-width: 750px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid #2a2a2a;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+            position: relative;
+        }
+        .menu-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+        .menu-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .menu-panel::-webkit-scrollbar-thumb {
+            background: #3a3a3a;
+            border-radius: 2px;
+        }
 
-    .dot-btn:hover .dot-icon {
-      background: #e6e6e6;
-    }
+        .menu-close {
+            position: absolute;
+            top: 0.6rem;
+            right: 1rem;
+            background: transparent;
+            border: none;
+            color: #6a6a6a;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: color 0.2s;
+            font-family: inherit;
+            line-height: 1;
+        }
+        .menu-close:hover {
+            color: #e6e6e6;
+        }
 
-    /* ── 9‑dot menu popup overlay ── */
-    .menu-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(2px);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 999;
-      padding: 1.5rem;
-    }
+        /* ── Folder groups inside the menu ── */
+        .folder-group {
+            margin-bottom: 1.8rem;
+        }
+        .folder-group:last-child {
+            margin-bottom: 0;
+        }
 
-    .menu-overlay.active {
-      display: flex;
-    }
+        .folder-label {
+            font-size: 0.75rem;
+            color: #6a6a6a;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.6rem;
+            border-bottom: 1px solid #242424;
+            padding-bottom: 0.3rem;
+            text-align: center;
+        }
 
-    .menu-panel {
-      background: #141414;
-      border-radius: 1rem;
-      padding: 2rem 2.5rem;
-      max-width: 750px;
-      width: 100%;
-      max-height: 80vh;
-      overflow-y: auto;
-      border: 1px solid #2a2a2a;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
-      position: relative;
-    }
+        /* ── 3×3 grid inside menu ── */
+        .dot-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            width: fit-content;
+            justify-items: center;
+            align-items: center;
+            margin: 0 auto;
+        }
 
-    .menu-panel::-webkit-scrollbar {
-      width: 4px;
-    }
-    .menu-panel::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .menu-panel::-webkit-scrollbar-thumb {
-      background: #3a3a3a;
-      border-radius: 2px;
-    }
+        /* ── Individual dot (menu) ── */
+        .dot {
+            width: 2.8rem;
+            height: 2.8rem;
+            border-radius: 50%;
+            background: #2a2a2a;
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+            cursor: default;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-    .menu-close {
-      position: absolute;
-      top: 0.6rem;
-      right: 1rem;
-      background: transparent;
-      border: none;
-      color: #6a6a6a;
-      font-size: 1.6rem;
-      cursor: pointer;
-      transition: color 0.2s;
-      font-family: inherit;
-      line-height: 1;
-    }
+        .dot.active {
+            background: #b0b0b0;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(176, 176, 176, 0.15);
+        }
+        .dot.active:hover {
+            background: #e6e6e6;
+            transform: scale(1.2);
+            box-shadow: 0 0 20px rgba(230, 230, 230, 0.25);
+        }
+        .dot.active:active {
+            transform: scale(0.92);
+        }
 
-    .menu-close:hover {
-      color: #e6e6e6;
-    }
+        /* ── Tooltip inside menu dot ── */
+        .dot .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 0.2rem 0.6rem;
+            border-radius: 0.3rem;
+            font-size: 0.65rem;
+            white-space: nowrap;
+            border: 1px solid #333;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+            font-family: inherit;
+        }
+        .dot.active:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
 
-    /* ── folder groups inside the menu ── */
-    .folder-group {
-      margin-bottom: 1.8rem;
-    }
+        /* ── Dot label (initials) ── */
+        .dot .dot-label {
+            font-size: 0.55rem;
+            color: #0b0b0b;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            user-select: none;
+            line-height: 1;
+            text-align: center;
+            max-width: 1.8rem;
+            word-break: break-all;
+        }
+        .dot.inactive .dot-label {
+            display: none;
+        }
 
-    .folder-group:last-child {
-      margin-bottom: 0;
-    }
+        /* ── Iframe overlay (file viewer) ── */
+        .iframe-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(3px);
+            display: none;
+            z-index: 1000;
+            padding: 1.5rem;
+        }
+        .iframe-overlay.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-    .folder-label {
-      font-size: 0.75rem;
-      color: #6a6a6a;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-bottom: 0.6rem;
-      border-bottom: 1px solid #242424;
-      padding-bottom: 0.3rem;
-    }
+        .close-btn {
+            position: fixed;
+            top: 1.2rem;
+            right: 1.8rem;
+            background: transparent;
+            border: none;
+            color: #ff3b3b;
+            font-size: 1.4rem;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            padding: 0.3rem 0.8rem;
+            border-radius: 0.3rem;
+            transition: background 0.2s, color 0.2s;
+            z-index: 1001;
+            letter-spacing: 0.05em;
+        }
+        .close-btn:hover {
+            background: rgba(255, 59, 59, 0.15);
+            color: #ff6b6b;
+        }
+        .close-btn:active {
+            transform: scale(0.96);
+        }
 
-    /* ── 3×3 grid inside menu ── */
-    .dot-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
-      width: fit-content;
-      justify-items: center;
-      align-items: center;
-      margin: 0 auto;
-    }
+        .iframe-content {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            background: #0b0b0b;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+            border: 1px solid #2a2a2a;
+        }
+        .iframe-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #0b0b0b;
+        }
 
-    /* ── individual dot (menu) ── */
-    .dot {
-      width: 2.8rem;
-      height: 2.8rem;
-      border-radius: 50%;
-      background: #2a2a2a;
-      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-      cursor: default;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+        /* ── Status / error ── */
+        .status {
+            color: #8a8a8a;
+            font-size: 0.9rem;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
 
-    .dot.active {
-      background: #b0b0b0;
-      cursor: pointer;
-      box-shadow: 0 0 8px rgba(176, 176, 176, 0.15);
-    }
+        /* ── Responsive ── */
+        @media (max-width: 640px) {
+            #clock {
+                font-size: 1.1rem;
+            }
+            .dot-btn {
+                padding: 0.3rem 0.4rem;
+            }
+            .dot-btn .dot-icon {
+                width: 3px;
+                height: 3px;
+            }
+            .dot-btn .row {
+                gap: 2px;
+            }
+            .menu-panel {
+                padding: 1.5rem 1.2rem;
+            }
+            .dot {
+                width: 2.2rem;
+                height: 2.2rem;
+            }
+            .dot .dot-label {
+                font-size: 0.45rem;
+                max-width: 1.4rem;
+            }
+            .dot-grid {
+                gap: 0.7rem;
+            }
+            .close-btn {
+                top: 0.8rem;
+                right: 1rem;
+                font-size: 1.1rem;
+                padding: 0.2rem 0.6rem;
+            }
+            .iframe-content {
+                top: 10px;
+                left: 10px;
+                right: 10px;
+                bottom: 10px;
+                border-radius: 0.3rem;
+            }
+        }
 
-    .dot.active:hover {
-      background: #e6e6e6;
-      transform: scale(1.2);
-      box-shadow: 0 0 20px rgba(230, 230, 230, 0.25);
-    }
-
-    .dot.active:active {
-      transform: scale(0.92);
-    }
-
-    /* tooltip inside menu dot */
-    .dot .tooltip {
-      visibility: hidden;
-      opacity: 0;
-      position: absolute;
-      bottom: calc(100% + 8px);
-      left: 50%;
-      transform: translateX(-50%);
-      background: #1a1a1a;
-      color: #e0e0e0;
-      padding: 0.2rem 0.6rem;
-      border-radius: 0.3rem;
-      font-size: 0.65rem;
-      white-space: nowrap;
-      border: 1px solid #333;
-      transition: opacity 0.2s ease;
-      pointer-events: none;
-      font-family: inherit;
-    }
-
-    .dot.active:hover .tooltip {
-      visibility: visible;
-      opacity: 1;
-    }
-
-    /* dot label (short name inside the dot) */
-    .dot .dot-label {
-      font-size: 0.55rem;
-      color: #0b0b0b;
-      font-weight: 500;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      user-select: none;
-      line-height: 1;
-      text-align: center;
-      max-width: 1.8rem;
-      word-break: break-all;
-    }
-
-    .dot.inactive .dot-label {
-      display: none;
-    }
-
-    /* ── iframe overlay (separate from menu) ── */
-    .iframe-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.88);
-      backdrop-filter: blur(3px);
-      display: none;
-      z-index: 1000;
-      padding: 1.5rem;
-    }
-
-    .iframe-overlay.active {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .close-btn {
-      position: fixed;
-      top: 1.2rem;
-      right: 1.8rem;
-      background: transparent;
-      border: none;
-      color: #ff3b3b;
-      font-size: 1.4rem;
-      font-weight: 500;
-      font-family: inherit;
-      cursor: pointer;
-      padding: 0.3rem 0.8rem;
-      border-radius: 0.3rem;
-      transition: background 0.2s, color 0.2s;
-      z-index: 1001;
-      letter-spacing: 0.05em;
-    }
-
-    .close-btn:hover {
-      background: rgba(255, 59, 59, 0.15);
-      color: #ff6b6b;
-    }
-
-    .close-btn:active {
-      transform: scale(0.96);
-    }
-
-    .iframe-content {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      right: 20px;
-      bottom: 20px;
-      background: #0b0b0b;
-      border-radius: 0.5rem;
-      overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
-      border: 1px solid #2a2a2a;
-    }
-
-    .iframe-content iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: #0b0b0b;
-    }
-
-    /* ── status / error ── */
-    .status {
-      color: #8a8a8a;
-      font-size: 0.9rem;
-      margin-top: 1.5rem;
-      text-align: center;
-    }
-
-    /* ── responsive ── */
-    @media (max-width: 640px) {
-      #clock {
-        font-size: 1.1rem;
-      }
-
-      .dot-btn {
-        padding: 0.3rem 0.4rem;
-      }
-      .dot-btn .dot-icon {
-        width: 3px;
-        height: 3px;
-      }
-      .dot-btn .row {
-        gap: 2px;
-      }
-
-      .menu-panel {
-        padding: 1.5rem 1.2rem;
-      }
-
-      .dot {
-        width: 2.2rem;
-        height: 2.2rem;
-      }
-
-      .dot .dot-label {
-        font-size: 0.45rem;
-        max-width: 1.4rem;
-      }
-
-      .dot-grid {
-        gap: 0.7rem;
-      }
-
-      .close-btn {
-        top: 0.8rem;
-        right: 1rem;
-        font-size: 1.1rem;
-        padding: 0.2rem 0.6rem;
-      }
-
-      .iframe-content {
-        top: 10px;
-        left: 10px;
-        right: 10px;
-        bottom: 10px;
-        border-radius: 0.3rem;
-      }
-    }
-
-    @media (max-width: 420px) {
-      #clock {
-        font-size: 0.85rem;
-      }
-
-      .dot {
-        width: 1.8rem;
-        height: 1.8rem;
-      }
-
-      .dot .dot-label {
-        font-size: 0.4rem;
-        max-width: 1.2rem;
-      }
-
-      .dot-grid {
-        gap: 0.5rem;
-      }
-
-      .menu-panel {
-        padding: 1rem 0.8rem;
-      }
-    }
-  </style>
+        @media (max-width: 420px) {
+            #clock {
+                font-size: 0.85rem;
+                white-space: normal;
+            }
+            .dot {
+                width: 1.8rem;
+                height: 1.8rem;
+            }
+            .dot .dot-label {
+                font-size: 0.4rem;
+                max-width: 1.2rem;
+            }
+            .dot-grid {
+                gap: 0.5rem;
+            }
+            .menu-panel {
+                padding: 1rem 0.8rem;
+            }
+        }
+    </style>
 </head>
 <body>
 
-  <!-- top bar: clock + 9‑dot button -->
-  <div class="top-bar">
-    <div></div> <!-- spacer -->
-    <div id="clock">--:--:-- // --.--.----</div>
-    <button class="dot-btn" id="dotBtn" aria-label="Open 9‑dot menu">
-      <div class="row">
-        <span class="dot-icon"></span>
-        <span class="dot-icon"></span>
-        <span class="dot-icon"></span>
-      </div>
-      <div class="row">
-        <span class="dot-icon"></span>
-        <span class="dot-icon"></span>
-        <span class="dot-icon"></span>
-      </div>
-      <div class="row">
-        <span class="dot-icon"></span>
-        <span class="dot-icon"></span>
-        <span class="dot-icon"></span>
-      </div>
-    </button>
-  </div>
-
-  <!-- 9‑dot menu popup -->
-  <div class="menu-overlay" id="menuOverlay">
-    <div class="menu-panel" id="menuPanel">
-      <button class="menu-close" id="menuClose" aria-label="Close menu">✕</button>
-      <div id="menuContent"></div>
+    <!-- ─── TOP BAR ─── -->
+    <div class="top-bar">
+        <div></div> <!-- spacer -->
+        <div id="clock">--:--:-- // --.--.----</div>
+        <button class="dot-btn" id="dotBtn" aria-label="Open 9‑dot menu">
+            <div class="row">
+                <span class="dot-icon"></span>
+                <span class="dot-icon"></span>
+                <span class="dot-icon"></span>
+            </div>
+            <div class="row">
+                <span class="dot-icon"></span>
+                <span class="dot-icon"></span>
+                <span class="dot-icon"></span>
+            </div>
+            <div class="row">
+                <span class="dot-icon"></span>
+                <span class="dot-icon"></span>
+                <span class="dot-icon"></span>
+            </div>
+        </button>
     </div>
-  </div>
 
-  <!-- iframe overlay -->
-  <div class="iframe-overlay" id="iframeOverlay">
-    <button class="close-btn" id="closeBtn">Close</button>
-    <div class="iframe-content">
-      <iframe id="iframe" src="about:blank"></iframe>
+    <!-- ─── 9‑DOT MENU POPUP ─── -->
+    <div class="menu-overlay" id="menuOverlay">
+        <div class="menu-panel" id="menuPanel">
+            <button class="menu-close" id="menuClose" aria-label="Close menu">✕</button>
+            <div id="menuContent"></div>
+        </div>
     </div>
-  </div>
 
-  <div class="status" id="status"></div>
+    <!-- ─── IFRAME OVERLAY (FILE VIEWER) ─── -->
+    <div class="iframe-overlay" id="iframeOverlay">
+        <button class="close-btn" id="closeBtn">Close</button>
+        <div class="iframe-content">
+            <iframe id="iframe" src="about:blank"></iframe>
+        </div>
+    </div>
 
-  <script>
-    (function() {
-      "use strict";
+    <div class="status" id="status"></div>
 
-      // ── DOM refs ──
-      const clockEl = document.getElementById('clock');
-      const dotBtn = document.getElementById('dotBtn');
-      const menuOverlay = document.getElementById('menuOverlay');
-      const menuClose = document.getElementById('menuClose');
-      const menuContent = document.getElementById('menuContent');
-      const iframeOverlay = document.getElementById('iframeOverlay');
-      const iframe = document.getElementById('iframe');
-      const closeBtn = document.getElementById('closeBtn');
-      const status = document.getElementById('status');
+    <script>
+        (function() {
+            "use strict";
 
-      // ── clock ──
-      function pad(n) {
-        return String(n).padStart(2, '0');
-      }
+            // ─── DOM refs ────────────────────────────────────────────
+            const clockEl = document.getElementById('clock');
+            const dotBtn = document.getElementById('dotBtn');
+            const menuOverlay = document.getElementById('menuOverlay');
+            const menuClose = document.getElementById('menuClose');
+            const menuContent = document.getElementById('menuContent');
+            const iframeOverlay = document.getElementById('iframeOverlay');
+            const iframe = document.getElementById('iframe');
+            const closeBtn = document.getElementById('closeBtn');
+            const status = document.getElementById('status');
 
-      function updateClock() {
-        const now = new Date();
-        const h = pad(now.getHours());
-        const m = pad(now.getMinutes());
-        const s = pad(now.getSeconds());
-        const day = pad(now.getDate());
-        const month = pad(now.getMonth() + 1);
-        const year = now.getFullYear();
-        clockEl.textContent = `${h}:${m}:${s} // ${day}.${month}.${year}`;
-      }
-
-      updateClock();
-      setInterval(updateClock, 1000);
-
-      // ── filename formatter ──
-      function formatDisplayName(filename) {
-        let name = filename.replace(/\.html$/i, '');
-        let words = name.split(/(?=[A-Z])/);
-        words = words.map(word => word.charAt(0).toUpperCase() + word.slice(1));
-        return words.join(' ');
-      }
-
-      // ── get initials for dot label ──
-      function getInitials(filename) {
-        let name = filename.replace(/\.html$/i, '');
-        let words = name.split(/(?=[A-Z])/);
-        // take first letter of each word, max 3 chars
-        let initials = words.map(w => w.charAt(0).toUpperCase()).join('');
-        return initials.slice(0, 3);
-      }
-
-      // ── menu toggle ──
-      function openMenu() {
-        menuOverlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-      }
-
-      function closeMenu() {
-        menuOverlay.classList.remove('active');
-        document.body.style.overflow = '';
-      }
-
-      dotBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        openMenu();
-      });
-
-      menuClose.addEventListener('click', closeMenu);
-      menuOverlay.addEventListener('click', function(e) {
-        if (e.target === menuOverlay) closeMenu();
-      });
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && menuOverlay.classList.contains('active')) closeMenu();
-      });
-
-      // ── iframe overlay logic ──
-      function openIframe(url) {
-        iframe.src = url;
-        iframeOverlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        // close the menu if it's open
-        if (menuOverlay.classList.contains('active')) closeMenu();
-      }
-
-      function closeIframe() {
-        iframeOverlay.classList.remove('active');
-        iframe.src = 'about:blank';
-        document.body.style.overflow = '';
-      }
-
-      closeBtn.addEventListener('click', closeIframe);
-      iframeOverlay.addEventListener('click', function(e) {
-        if (e.target === iframeOverlay) closeIframe();
-      });
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && iframeOverlay.classList.contains('active')) closeIframe();
-      });
-
-      // ── build menu from htmlList.json ──
-      function buildMenu(grouped) {
-        menuContent.innerHTML = '';
-        const folderNames = Object.keys(grouped);
-
-        if (folderNames.length === 0) {
-          menuContent.innerHTML = '<div style="color:#6a6a6a;text-align:center;padding:1rem 0;">No files found.</div>';
-          return;
-        }
-
-        folderNames.forEach(folder => {
-          const files = grouped[folder];
-          // limit to 9 files per folder, shuffle and take first 9
-          const shuffled = [...files].sort(() => Math.random() - 0.5);
-          const selected = shuffled.slice(0, 9);
-
-          const groupDiv = document.createElement('div');
-          groupDiv.className = 'folder-group';
-
-          const label = document.createElement('div');
-          label.className = 'folder-label';
-          label.textContent = folder.toUpperCase();
-          groupDiv.appendChild(label);
-
-          const grid = document.createElement('div');
-          grid.className = 'dot-grid';
-
-          // assign files to random positions
-          const positions = Array.from({ length: 9 }, (_, i) => i);
-          const shuffledPos = positions.sort(() => Math.random() - 0.5);
-          const positionMap = {};
-          for (let i = 0; i < selected.length; i++) {
-            positionMap[shuffledPos[i]] = selected[i];
-          }
-
-          for (let i = 0; i < 9; i++) {
-            const dot = document.createElement('div');
-            dot.className = 'dot';
-
-            if (positionMap.hasOwnProperty(i)) {
-              const filePath = positionMap[i];
-              dot.classList.add('active');
-
-              const parts = filePath.split('/');
-              const filename = parts[parts.length - 1];
-              const displayName = formatDisplayName(filename);
-              const initials = getInitials(filename);
-
-              // tooltip
-              const tooltip = document.createElement('span');
-              tooltip.className = 'tooltip';
-              tooltip.textContent = displayName;
-              dot.appendChild(tooltip);
-
-              // label inside dot
-              const labelSpan = document.createElement('span');
-              labelSpan.className = 'dot-label';
-              labelSpan.textContent = initials;
-              dot.appendChild(labelSpan);
-
-              dot.addEventListener('click', function(e) {
-                e.stopPropagation();
-                openIframe(filePath);
-              });
-            } else {
-              dot.classList.add('inactive');
-              dot.style.background = '#1a1a1a';
+            // ─── Clock ──────────────────────────────────────────────
+            function pad(n) {
+                return String(n).padStart(2, '0');
             }
-            grid.appendChild(dot);
-          }
 
-          groupDiv.appendChild(grid);
-          menuContent.appendChild(groupDiv);
-        });
-      }
+            function updateClock() {
+                const now = new Date();
+                const h = pad(now.getHours());
+                const m = pad(now.getMinutes());
+                const s = pad(now.getSeconds());
+                const day = pad(now.getDate());
+                const month = pad(now.getMonth() + 1);
+                const year = now.getFullYear();
+                clockEl.textContent = `${h}:${m}:${s} // ${day}.${month}.${year}`;
+            }
+            updateClock();
+            setInterval(updateClock, 1000);
 
-      // ── fetch and group ──
-      fetch('htmlList.json')
-        .then(response => {
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          return response.json();
-        })
-        .then(data => {
-          if (!Array.isArray(data)) throw new Error('Invalid JSON: expected array');
+            // ─── Helpers ─────────────────────────────────────────────
+            function shuffleArray(arr) {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                return arr;
+            }
 
-          const grouped = {};
-          data.forEach(path => {
-            const parts = path.split('/');
-            const folder = parts.length > 1 ? parts[0] : 'root';
-            if (!grouped[folder]) grouped[folder] = [];
-            grouped[folder].push(path);
-          });
+            function formatDisplayName(filename) {
+                let name = filename.replace(/\.html$/i, '');
+                let words = name.split(/(?=[A-Z])/);
+                words = words.map(w => w.charAt(0).toUpperCase() + w.slice(1));
+                return words.join(' ');
+            }
 
-          buildMenu(grouped);
-          status.textContent = '';
-        })
-        .catch(err => {
-          status.textContent = `⚠️ Could not load list: ${err.message}`;
-          console.error(err);
-        });
+            function getInitials(filename) {
+                let name = filename.replace(/\.html$/i, '');
+                let words = name.split(/(?=[A-Z])/);
+                let initials = words.map(w => w.charAt(0).toUpperCase()).join('');
+                return initials.slice(0, 3);
+            }
 
-    })();
-  </script>
+            // ─── Menu logic ──────────────────────────────────────────
+            function openMenu() {
+                menuOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeMenu() {
+                menuOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            dotBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openMenu();
+            });
+
+            menuClose.addEventListener('click', closeMenu);
+            menuOverlay.addEventListener('click', (e) => {
+                if (e.target === menuOverlay) closeMenu();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && menuOverlay.classList.contains('active')) closeMenu();
+            });
+
+            // ─── Iframe overlay logic ───────────────────────────────
+            function openIframe(url) {
+                iframe.src = url;
+                iframeOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                if (menuOverlay.classList.contains('active')) closeMenu();
+            }
+
+            function closeIframe() {
+                iframeOverlay.classList.remove('active');
+                iframe.src = 'about:blank';
+                document.body.style.overflow = '';
+            }
+
+            closeBtn.addEventListener('click', closeIframe);
+            iframeOverlay.addEventListener('click', (e) => {
+                if (e.target === iframeOverlay) closeIframe();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && iframeOverlay.classList.contains('active')) closeIframe();
+            });
+
+            // ─── Build menu from htmlList.json ──────────────────────
+            function buildMenu(grouped) {
+                menuContent.innerHTML = '';
+                const folderNames = Object.keys(grouped);
+
+                if (folderNames.length === 0) {
+                    menuContent.innerHTML =
+                        '<div style="color:#6a6a6a;text-align:center;padding:1rem 0;">No files found.</div>';
+                    return;
+                }
+
+                folderNames.forEach(folder => {
+                    const files = grouped[folder];
+                    // limit to 9 files per folder
+                    const filesToShow = files.slice(0, 9);
+
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'folder-group';
+
+                    const label = document.createElement('div');
+                    label.className = 'folder-label';
+                    label.textContent = folder.toUpperCase();
+                    groupDiv.appendChild(label);
+
+                    const grid = document.createElement('div');
+                    grid.className = 'dot-grid';
+
+                    // ── Random placement ──
+                    const gridSlots = Array(9).fill(null);
+                    const shuffledIndices = shuffleArray([...Array(9).keys()]);
+
+                    filesToShow.forEach((filePath, idx) => {
+                        gridSlots[shuffledIndices[idx]] = filePath;
+                    });
+
+                    // ── Render dots ──
+                    gridSlots.forEach((filePath, index) => {
+                        const dot = document.createElement('div');
+                        dot.className = 'dot';
+
+                        if (filePath) {
+                            dot.classList.add('active');
+
+                            const parts = filePath.split('/');
+                            const filename = parts[parts.length - 1];
+                            const displayName = formatDisplayName(filename);
+                            const initials = getInitials(filename);
+
+                            // Tooltip
+                            const tooltip = document.createElement('span');
+                            tooltip.className = 'tooltip';
+                            tooltip.textContent = displayName;
+                            dot.appendChild(tooltip);
+
+                            // Label inside dot
+                            const labelSpan = document.createElement('span');
+                            labelSpan.className = 'dot-label';
+                            labelSpan.textContent = initials;
+                            dot.appendChild(labelSpan);
+
+                            dot.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                openIframe(filePath);
+                            });
+                        } else {
+                            dot.classList.add('inactive');
+                            dot.style.background = '#1a1a1a';
+                        }
+
+                        grid.appendChild(dot);
+                    });
+
+                    groupDiv.appendChild(grid);
+                    menuContent.appendChild(groupDiv);
+                });
+            }
+
+            // ─── Fetch and group by root folder ────────────────────
+            fetch('htmlList.json')
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    if (!Array.isArray(data)) throw new Error('Invalid JSON: expected array');
+
+                    const grouped = {};
+                    data.forEach(path => {
+                        // handle paths like "tools/lyricsEditor.html" or "standalone.html"
+                        const parts = path.split('/');
+                        const folder = parts.length > 1 ? parts[0] : 'general';
+                        if (!grouped[folder]) grouped[folder] = [];
+                        grouped[folder].push(path);
+                    });
+
+                    buildMenu(grouped);
+                    status.textContent = '';
+                })
+                .catch(err => {
+                    status.textContent = `⚠️ Could not load list: ${err.message}`;
+                    console.error(err);
+                });
+
+        })();
+    </script>
 
 </body>
 </html>
