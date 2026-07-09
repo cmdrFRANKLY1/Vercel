@@ -1,637 +1,493 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>local time · 9‑dot menu</title>
-  <style>
-    /* ── Reset & base ── */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro World Clock Compass</title>
+    <!-- Tailwind CSS for lightweight responsive scaffolding -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --compass-white: #ffffff;
+            --compass-dim-white: #e5e7eb;
+            --compass-gray: #888888;
+            --compass-dark-gray: #374151;
+            --bg-dark: #000000;
+        }
 
-    body {
-      background: #0b0b0b;
-      min-height: 100vh;
-      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-      color: #d6d6d6;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 1.5rem 1rem 1rem 1rem;
-    }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--compass-dim-white);
+            /* High-legibility system sans-serif typography */
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            overflow: hidden;
+        }
 
-    /* ── Top bar ── */
-    .top-bar {
-      width: 100%;
-      max-width: 1200px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 0.5rem 1.5rem 0.5rem;
-    }
+        /* --- Crisp Text-Based Compass Viewport --- */
+        .compass-viewport {
+            position: relative;
+            width: 100%;
+            max-width: 680px;
+            height: 68px;
+            /* Simple CSS mask for fading edges - highly optimized */
+            mask-image: linear-gradient(to right, transparent, white 20%, white 80%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, white 20%, white 80%, transparent);
+            overflow: hidden;
+            cursor: grab;
+        }
+        
+        .compass-viewport:active {
+            cursor: grabbing;
+        }
 
-    #clock {
-      font-size: 1.6rem;
-      font-weight: 400;
-      letter-spacing: 0.03em;
-      text-align: center;
-      flex: 1;
-      margin: 0 1rem;
-      white-space: nowrap;
-    }
+        /* Text-based borders top & bottom */
+        .compass-viewport::before, .compass-viewport::after {
+            content: '';
+            position: absolute;
+            left: 5%;
+            right: 5%;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--compass-dark-gray), var(--compass-white), var(--compass-dark-gray), transparent);
+        }
+        .compass-viewport::before { top: 2px; }
+        .compass-viewport::after { bottom: 2px; }
 
-    /* ── Google‑style 9‑dot button ── */
-    .dot-btn {
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      padding: 0.5rem 0.6rem;
-      border-radius: 0.3rem;
-      transition: background 0.2s;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    .dot-btn:hover {
-      background: rgba(255, 255, 255, 0.06);
-    }
-    .dot-btn:active {
-      background: rgba(255, 255, 255, 0.12);
-    }
-    .dot-btn .row {
-      display: flex;
-      gap: 3px;
-    }
-    .dot-btn .dot-icon {
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      background: #b0b0b0;
-      transition: background 0.2s;
-    }
-    .dot-btn:hover .dot-icon {
-      background: #e6e6e6;
-    }
+        /* Minimal Center Indicator Arrow */
+        .compass-center-notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--compass-white);
+            font-size: 0.75rem;
+            line-height: 1;
+            z-index: 10;
+            pointer-events: none;
+        }
 
-    /* ── Menu popup ── */
-    .menu-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(2px);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 999;
-      padding: 1.5rem;
-    }
-    .menu-overlay.active {
-      display: flex;
-    }
+        /* --- Scrolling Track --- */
+        .compass-track {
+            position: absolute;
+            top: 6px; /* Offset slightly to clear the top border line */
+            left: 50%;
+            width: 0;
+            height: 56px; /* Increased height of the rolling contents area */
+            will-change: transform;
+            transition: transform 0.08s cubic-bezier(0.25, 1, 0.5, 1);
+        }
 
-    .menu-panel {
-      background: #141414;
-      border-radius: 1rem;
-      padding: 2rem 2.5rem;
-      max-width: 600px;
-      width: 100%;
-      max-height: 80vh;
-      overflow-y: auto;
-      border: 1px solid #2a2a2a;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
-      position: relative;
-    }
-    .menu-panel::-webkit-scrollbar {
-      width: 4px;
-    }
-    .menu-panel::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .menu-panel::-webkit-scrollbar-thumb {
-      background: #3a3a3a;
-      border-radius: 2px;
-    }
+        /* --- Individual Location Elements --- */
+        .compass-item {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: translateX(-50%);
+            user-select: none;
+            width: 160px;
+        }
 
-    .menu-close {
-      position: absolute;
-      top: 0.6rem;
-      right: 1rem;
-      background: transparent;
-      border: none;
-      color: #6a6a6a;
-      font-size: 1.6rem;
-      cursor: pointer;
-      transition: color 0.2s;
-      font-family: inherit;
-      line-height: 1;
-    }
-    .menu-close:hover {
-      color: #e6e6e6;
-    }
+        .location-name {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--compass-gray);
+            line-height: 1.1;
+            margin-bottom: 2px;
+            letter-spacing: 2px;
+            transition: color 0.15s ease;
+        }
 
-    /* ── Folder sections ── */
-    .folder-section {
-      margin-bottom: 2rem;
-    }
-    .folder-section:last-child {
-      margin-bottom: 0;
-    }
+        .location-time {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #6b7280; /* Dimmed initially */
+            line-height: 1.1;
+            margin-bottom: 2px;
+            transition: color 0.15s ease, transform 0.15s ease;
+        }
 
-    .folder-title {
-      font-size: 0.75rem;
-      color: #6a6a6a;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-bottom: 0.6rem;
-      border-bottom: 1px solid #242424;
-      padding-bottom: 0.3rem;
-      text-align: center;
-    }
+        .time-diff {
+            font-size: 0.55rem;
+            font-weight: 500;
+            color: var(--compass-dark-gray);
+            line-height: 1.1;
+            transition: color 0.15s ease;
+        }
 
-    /* ── Dot grid (3×3) ── */
-    .dot-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.8rem;
-      justify-items: center;
-      align-items: center;
-      margin: 0 auto 0.8rem auto;
-      width: fit-content;
-    }
+        /* Highlight elements that align with the center compass line */
+        .compass-item.at-center .location-name {
+            color: var(--compass-white);
+        }
 
-    .dot {
-      width: 2.8rem;
-      height: 2.8rem;
-      border-radius: 50%;
-      background: #2a2a2a;
-      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-      cursor: default;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .dot.active {
-      background: #b0b0b0;
-      cursor: pointer;
-      box-shadow: 0 0 8px rgba(176, 176, 176, 0.15);
-    }
-    .dot.active:hover {
-      background: #e6e6e6;
-      transform: scale(1.2);
-      box-shadow: 0 0 20px rgba(230, 230, 230, 0.25);
-    }
-    .dot.active:active {
-      transform: scale(0.92);
-    }
-    .dot .tooltip {
-      visibility: hidden;
-      opacity: 0;
-      position: absolute;
-      bottom: calc(100% + 8px);
-      left: 50%;
-      transform: translateX(-50%);
-      background: #1a1a1a;
-      color: #e0e0e0;
-      padding: 0.2rem 0.6rem;
-      border-radius: 0.3rem;
-      font-size: 0.65rem;
-      white-space: nowrap;
-      border: 1px solid #333;
-      transition: opacity 0.2s ease;
-      pointer-events: none;
-      font-family: inherit;
-    }
-    .dot.active:hover .tooltip {
-      visibility: visible;
-      opacity: 1;
-    }
-    .dot .dot-label {
-      font-size: 0.55rem;
-      color: #0b0b0b;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      user-select: none;
-      line-height: 1;
-      text-align: center;
-      max-width: 1.8rem;
-      word-break: break-all;
-    }
-    .dot.inactive .dot-label {
-      display: none;
-    }
+        .compass-item.at-center .location-time {
+            color: var(--compass-white);
+            transform: scale(1.05);
+        }
 
-    /* ── Vertical file list ── */
-    .file-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-      padding-left: 0.5rem;
-      margin-top: 0.2rem;
-    }
+        .compass-item.at-center .time-diff {
+            color: var(--compass-dim-white);
+        }
 
-    .file-link {
-      color: #b0b0b0;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: color 0.15s;
-      border-bottom: 1px solid transparent;
-      padding: 0.1rem 0;
-      width: fit-content;
-    }
-    .file-link:hover {
-      color: #f0f0f0;
-      border-bottom-color: #4a4a4a;
-    }
-    .file-link:active {
-      color: #ffffff;
-    }
+        /* Monospace ticks */
+        .tick-mark {
+            font-size: 0.5rem;
+            line-height: 1;
+            color: var(--compass-dark-gray);
+            margin-top: 2px;
+            transition: color 0.15s ease;
+        }
 
-    /* ── Iframe overlay ── */
-    .iframe-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.88);
-      backdrop-filter: blur(3px);
-      display: none;
-      z-index: 1000;
-      padding: 1.5rem;
-    }
-    .iframe-overlay.active {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+        .compass-item.at-center .tick-mark {
+            color: var(--compass-white);
+        }
 
-    .close-btn {
-      position: fixed;
-      top: 1.2rem;
-      right: 1.8rem;
-      background: transparent;
-      border: none;
-      color: #ff3b3b;
-      font-size: 1.4rem;
-      font-weight: 500;
-      font-family: inherit;
-      cursor: pointer;
-      padding: 0.3rem 0.8rem;
-      border-radius: 0.3rem;
-      transition: background 0.2s, color 0.2s;
-      z-index: 1001;
-      letter-spacing: 0.05em;
-    }
-    .close-btn:hover {
-      background: rgba(255, 59, 59, 0.15);
-      color: #ff6b6b;
-    }
-    .close-btn:active {
-      transform: scale(0.96);
-    }
+        /* Square button styles */
+        .square-btn {
+            background-color: var(--bg-dark);
+            border: 1px solid var(--compass-dark-gray);
+            color: var(--compass-dim-white);
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            aspect-ratio: 1 / 1;
+            padding: 12px;
+        }
 
-    .iframe-content {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      right: 20px;
-      bottom: 20px;
-      background: #0b0b0b;
-      border-radius: 0.5rem;
-      overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
-      border: 1px solid #2a2a2a;
-    }
-    .iframe-content iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: #0b0b0b;
-    }
-
-    /* ── Status ── */
-    .status {
-      color: #8a8a8a;
-      font-size: 0.9rem;
-      margin-top: 1.5rem;
-      text-align: center;
-    }
-
-    /* ── Responsive ── */
-    @media (max-width: 640px) {
-      #clock {
-        font-size: 1.1rem;
-      }
-      .dot-btn {
-        padding: 0.3rem 0.4rem;
-      }
-      .dot-btn .dot-icon {
-        width: 3px;
-        height: 3px;
-      }
-      .dot-btn .row {
-        gap: 2px;
-      }
-      .menu-panel {
-        padding: 1.5rem 1.2rem;
-      }
-      .dot {
-        width: 2.2rem;
-        height: 2.2rem;
-      }
-      .dot .dot-label {
-        font-size: 0.45rem;
-        max-width: 1.4rem;
-      }
-      .dot-grid {
-        gap: 0.6rem;
-      }
-      .file-link {
-        font-size: 0.8rem;
-      }
-      .close-btn {
-        top: 0.8rem;
-        right: 1rem;
-        font-size: 1.1rem;
-        padding: 0.2rem 0.6rem;
-      }
-      .iframe-content {
-        top: 10px;
-        left: 10px;
-        right: 10px;
-        bottom: 10px;
-        border-radius: 0.3rem;
-      }
-    }
-
-    @media (max-width: 420px) {
-      #clock {
-        font-size: 0.85rem;
-        white-space: normal;
-      }
-      .menu-panel {
-        padding: 1rem 0.8rem;
-      }
-      .dot {
-        width: 1.8rem;
-        height: 1.8rem;
-      }
-      .dot .dot-label {
-        font-size: 0.4rem;
-        max-width: 1.2rem;
-      }
-      .dot-grid {
-        gap: 0.4rem;
-      }
-      .file-link {
-        font-size: 0.7rem;
-      }
-    }
-  </style>
+        .square-btn:hover {
+            border-color: var(--compass-white);
+            background-color: var(--compass-white);
+            color: var(--bg-dark);
+        }
+    </style>
 </head>
-<body>
+<body class="flex flex-col items-center justify-start min-h-screen pt-4 px-4 select-none">
 
-  <!-- ─── TOP BAR ─── -->
-  <div class="top-bar">
-    <div></div>
-    <div id="clock">--:--:-- // --.--.----</div>
-    <button class="dot-btn" id="dotBtn" aria-label="Open menu">
-      <div class="row"><span class="dot-icon"></span><span class="dot-icon"></span><span class="dot-icon"></span></div>
-      <div class="row"><span class="dot-icon"></span><span class="dot-icon"></span><span class="dot-icon"></span></div>
-      <div class="row"><span class="dot-icon"></span><span class="dot-icon"></span><span class="dot-icon"></span></div>
-    </button>
-  </div>
+    <!-- MAIN COMPACT HUD CONTAINER (More compact and moved tightly to top center) -->
+    <div class="w-full flex flex-col items-center justify-start max-w-4xl">
+        
+        <!-- Local Time HUD (Snug margins) -->
+        <div class="text-center mb-3">
+            <div id="local-time" class="text-4xl font-black tracking-widest text-white">
+                00:00:00
+            </div>
+            <div id="local-date" class="text-[9px] text-gray-500 font-semibold tracking-widest mt-0.5">
+                ...
+            </div>
+        </div>
 
-  <!-- ─── MENU POPUP ─── -->
-  <div class="menu-overlay" id="menuOverlay">
-    <div class="menu-panel" id="menuPanel">
-      <button class="menu-close" id="menuClose">✕</button>
-      <div id="menuContent"></div>
+        <!-- Skyrim Compass Container (No gray background, tight padding) -->
+        <div class="w-full flex justify-center py-2 mb-6">
+            <div class="compass-viewport" id="compass-viewport">
+                <div class="compass-center-notch">▼</div>
+                <div class="compass-track" id="compass-track">
+                    <!-- Javascript populates items here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Tools Grid Section -->
+        <div id="tools-container" class="w-full max-w-lg mt-4 hidden">
+            <div class="text-center text-[9px] text-gray-500 font-bold tracking-[3px] mb-4">
+                ✦ Available Realms ✦
+            </div>
+            <div id="tools-grid" class="grid grid-cols-2 gap-4 max-w-xs mx-auto">
+                <!-- Dynamically generated square buttons -->
+            </div>
+        </div>
+
     </div>
-  </div>
 
-  <!-- ─── IFRAME OVERLAY ─── -->
-  <div class="iframe-overlay" id="iframeOverlay">
-    <button class="close-btn" id="closeBtn">Close</button>
-    <div class="iframe-content">
-      <iframe id="iframe" src="about:blank"></iframe>
+    <!-- Edge-to-Edge Wrapper Iframe Overlay -->
+    <div id="wrapper-modal" class="fixed inset-0 bg-black z-50 flex-col hidden">
+        <div class="flex items-center justify-between px-6 py-3 border-b border-neutral-900 bg-black select-none">
+            <span id="wrapper-title" class="text-[9px] font-extrabold tracking-[3px] text-white">WORKSPACE</span>
+            <button id="wrapper-close" class="text-[9px] border border-white hover:bg-white hover:text-black px-3 py-1 font-bold tracking-[2px] transition-all duration-150">
+                [ CLOSE ]
+            </button>
+        </div>
+        <iframe id="wrapper-iframe" class="flex-grow w-full border-0 bg-black" src=""></iframe>
     </div>
-  </div>
 
-  <div class="status" id="status"></div>
+    <script>
+        const locations = [
+            { name: "Honolulu", zone: "Pacific/Honolulu" },
+            { name: "Anchorage", zone: "America/Anchorage" },
+            { name: "Los Angeles", zone: "America/Los_Angeles" },
+            { name: "Denver", zone: "America/Denver" },
+            { name: "Chicago", zone: "America/Chicago" },
+            { name: "New York", zone: "America/New_York" },
+            { name: "Sao Paulo", zone: "America/Sao_Paulo" },
+            { name: "Azores", zone: "Atlantic/Azores" },
+            { name: "London", zone: "Europe/London" },
+            { name: "Paris", zone: "Europe/Paris" },
+            { name: "Cairo", zone: "Africa/Cairo" },
+            { name: "Moscow", zone: "Europe/Moscow" },
+            { name: "Dubai", zone: "Asia/Dubai" },
+            { name: "Karachi", zone: "Asia/Karachi" },
+            { name: "Dhaka", zone: "Asia/Dhaka" },
+            { name: "Bangkok", zone: "Asia/Bangkok" },
+            { name: "Hong Kong", zone: "Asia/Hong_Kong" },
+            { name: "Tokyo", zone: "Asia/Tokyo" },
+            { name: "Sydney", zone: "Australia/Sydney" },
+            { name: "Auckland", zone: "Pacific/Auckland" }
+        ];
 
-  <script>
-    (function() {
-      "use strict";
+        const viewport = document.getElementById('compass-viewport');
+        const track = document.getElementById('compass-track');
+        const localTimeEl = document.getElementById('local-time');
+        const localDateEl = document.getElementById('local-date');
+        const toolsContainer = document.getElementById('tools-container');
+        const toolsGrid = document.getElementById('tools-grid');
 
-      // ─── DOM refs ──────────────────────────────────────────────
-      const clockEl = document.getElementById('clock');
-      const dotBtn = document.getElementById('dotBtn');
-      const menuOverlay = document.getElementById('menuOverlay');
-      const menuClose = document.getElementById('menuClose');
-      const menuContent = document.getElementById('menuContent');
-      const iframeOverlay = document.getElementById('iframeOverlay');
-      const iframe = document.getElementById('iframe');
-      const closeBtn = document.getElementById('closeBtn');
-      const status = document.getElementById('status');
+        // Wrapper Overlay elements
+        const wrapperModal = document.getElementById('wrapper-modal');
+        const wrapperIframe = document.getElementById('wrapper-iframe');
+        const wrapperClose = document.getElementById('wrapper-close');
+        const wrapperTitle = document.getElementById('wrapper-title');
 
-      // ─── Clock ──────────────────────────────────────────────────
-      function pad(n) { return String(n).padStart(2, '0'); }
-      function updateClock() {
-        const now = new Date();
-        const h = pad(now.getHours());
-        const m = pad(now.getMinutes());
-        const s = pad(now.getSeconds());
-        const day = pad(now.getDate());
-        const month = pad(now.getMonth() + 1);
-        const year = now.getFullYear();
-        clockEl.textContent = `${h}:${m}:${s} // ${day}.${month}.${year}`;
-      }
-      updateClock();
-      setInterval(updateClock, 1000);
+        let compassOffset = 0; 
+        let targetOffset = 0;  
+        const spacingMultiplier = 160; // Pixels per hour distance
+        let lastSecondsTimestamp = -1; // Flag tracking the last rendered second
 
-      // ─── Helpers ───────────────────────────────────────────────
-      function shuffle(arr) {
-        const a = [...arr];
-        for (let i = a.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [a[i], a[j]] = [a[j], a[i]];
-        }
-        return a;
-      }
+        // Instantly generate minimal DOM nodes for compass
+        locations.forEach((loc, index) => {
+            const item = document.createElement('div');
+            item.className = 'compass-item';
+            item.id = `item-${index}`;
+            item.innerHTML = `
+                <div class="location-name">${loc.name}</div>
+                <div class="location-time" id="time-${index}">00:00:00</div>
+                <div class="time-diff" id="diff-${index}">...</div>
+                <div class="tick-mark">|</div>
+            `;
+            track.appendChild(item);
+        });
 
-      function formatDisplayName(filename) {
-        let name = filename.replace(/\.html$/i, '');
-        let words = name.split(/(?=[A-Z])/);
-        words = words.map(w => w.charAt(0).toUpperCase() + w.slice(1));
-        return words.join(' ');
-      }
-
-      function getInitials(filename) {
-        let name = filename.replace(/\.html$/i, '');
-        let words = name.split(/(?=[A-Z])/);
-        let initials = words.map(w => w.charAt(0).toUpperCase()).join('');
-        return initials.slice(0, 3);
-      }
-
-      // ─── Menu toggle ────────────────────────────────────────────
-      function openMenu() {
-        menuOverlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-      }
-      function closeMenu() {
-        menuOverlay.classList.remove('active');
-        document.body.style.overflow = '';
-      }
-      dotBtn.addEventListener('click', (e) => { e.stopPropagation(); openMenu(); });
-      menuClose.addEventListener('click', closeMenu);
-      menuOverlay.addEventListener('click', (e) => { if (e.target === menuOverlay) closeMenu(); });
-      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && menuOverlay.classList.contains('active')) closeMenu(); });
-
-      // ─── Iframe overlay ──────────────────────────────────────────
-      function openIframe(url) {
-        iframe.src = url;
-        iframeOverlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        if (menuOverlay.classList.contains('active')) closeMenu();
-      }
-      function closeIframe() {
-        iframeOverlay.classList.remove('active');
-        iframe.src = 'about:blank';
-        document.body.style.overflow = '';
-      }
-      closeBtn.addEventListener('click', closeIframe);
-      iframeOverlay.addEventListener('click', (e) => { if (e.target === iframeOverlay) closeIframe(); });
-      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && iframeOverlay.classList.contains('active')) closeIframe(); });
-
-      // ─── Build menu from htmlList.json ──────────────────────────
-      function buildMenu(grouped) {
-        menuContent.innerHTML = '';
-        const folderNames = Object.keys(grouped);
-        if (folderNames.length === 0) {
-          menuContent.innerHTML = '<div style="color:#6a6a6a;text-align:center;padding:1rem 0;">No files found.</div>';
-          return;
+        // Helper to format path string to a nice clean title
+        function beautifyToolName(path) {
+            const filename = path.split('/').pop().replace('.html', '');
+            return filename
+                .replace(/([A-Z])/g, ' $1')
+                .trim()
+                .toUpperCase();
         }
 
-        folderNames.forEach(folder => {
-          const files = shuffle(grouped[folder]);
-          const fileCount = files.length;
-          // Determine number of active dots: random between 4 and min(9, fileCount)
-          const maxDots = Math.min(9, fileCount);
-          const dotCount = Math.max(4, Math.floor(Math.random() * (maxDots - 3)) + 3); // 4 to maxDots
-          // Pick which files get a dot (first 'dotCount' after shuffle)
-          const dotFiles = files.slice(0, dotCount);
-          // Shuffle the positions (0-8) and assign dotFiles randomly
-          const positions = shuffle([...Array(9).keys()]);
-          const positionMap = {};
-          for (let i = 0; i < dotCount; i++) {
-            positionMap[positions[i]] = dotFiles[i];
-          }
-
-          // ── Build section ──
-          const section = document.createElement('div');
-          section.className = 'folder-section';
-
-          const title = document.createElement('div');
-          title.className = 'folder-title';
-          title.textContent = folder.toUpperCase();
-          section.appendChild(title);
-
-          // Dot grid
-          const grid = document.createElement('div');
-          grid.className = 'dot-grid';
-
-          for (let i = 0; i < 9; i++) {
-            const dot = document.createElement('div');
-            dot.className = 'dot';
-            if (positionMap.hasOwnProperty(i)) {
-              const filePath = positionMap[i];
-              dot.classList.add('active');
-              const parts = filePath.split('/');
-              const filename = parts[parts.length - 1];
-              const displayName = formatDisplayName(filename);
-              const initials = getInitials(filename);
-
-              // Tooltip
-              const tooltip = document.createElement('span');
-              tooltip.className = 'tooltip';
-              tooltip.textContent = displayName;
-              dot.appendChild(tooltip);
-
-              // Label
-              const label = document.createElement('span');
-              label.className = 'dot-label';
-              label.textContent = initials;
-              dot.appendChild(label);
-
-              dot.addEventListener('click', (e) => {
-                e.stopPropagation();
-                openIframe(filePath);
-              });
-            } else {
-              dot.classList.add('inactive');
-              dot.style.background = '#1a1a1a';
+        // Fetch JSON and build dynamic workspace buttons (no hardcoded fallbacks)
+        async function loadHTMLList() {
+            try {
+                const response = await fetch('htmlList.json');
+                if (!response.ok) throw new Error('Could not load htmlList.json');
+                
+                const list = await response.json();
+                if (Array.isArray(list) && list.length > 0) {
+                    toolsGrid.innerHTML = '';
+                    list.forEach(itemPath => {
+                        const btn = document.createElement('button');
+                        btn.className = 'square-btn';
+                        btn.textContent = beautifyToolName(itemPath);
+                        btn.addEventListener('click', () => {
+                            openWrapper(itemPath);
+                        });
+                        toolsGrid.appendChild(btn);
+                    });
+                    toolsContainer.classList.remove('hidden');
+                } else {
+                    toolsContainer.classList.add('hidden');
+                }
+            } catch (err) {
+                console.warn('htmlList.json loading skipped or failed. No items will be loaded:', err);
+                toolsContainer.classList.add('hidden');
             }
-            grid.appendChild(dot);
-          }
+        }
 
-          section.appendChild(grid);
+        // Handle opening of iframe wrapper
+        function openWrapper(path) {
+            wrapperTitle.textContent = beautifyToolName(path);
+            wrapperIframe.src = path;
+            wrapperModal.style.display = 'flex';
+        }
 
-          // ── Vertical file list (all files, clickable) ──
-          const list = document.createElement('div');
-          list.className = 'file-list';
-          files.forEach(path => {
-            const parts = path.split('/');
-            const filename = parts[parts.length - 1];
-            const displayName = formatDisplayName(filename);
-            const link = document.createElement('span');
-            link.className = 'file-link';
-            link.textContent = displayName;
-            link.addEventListener('click', () => openIframe(path));
-            list.appendChild(link);
-          });
-          section.appendChild(list);
-
-          menuContent.appendChild(section);
-        });
-      }
-
-      // ─── Fetch and group by root folder ─────────────────────────
-      fetch('htmlList.json')
-        .then(response => {
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          return response.json();
-        })
-        .then(data => {
-          if (!Array.isArray(data)) throw new Error('Invalid JSON: expected array');
-          const grouped = {};
-          data.forEach(path => {
-            const parts = path.split('/');
-            const folder = parts.length > 1 ? parts[0] : 'general';
-            if (!grouped[folder]) grouped[folder] = [];
-            grouped[folder].push(path);
-          });
-          buildMenu(grouped);
-          status.textContent = '';
-        })
-        .catch(err => {
-          status.textContent = `⚠️ Could not load list: ${err.message}`;
-          console.error(err);
+        // Handle closing of iframe wrapper
+        wrapperClose.addEventListener('click', () => {
+            wrapperModal.style.display = 'none';
+            wrapperIframe.src = ''; // reset iframe memory
         });
 
-    })();
-  </script>
+        // Dynamic position, state, and anti-overlap handler
+        function renderCompassPositionAndHighlight() {
+            const now = new Date();
+            
+            // 1. Calculate ideal coordinates based on timezone offset
+            const positionedItems = locations.map((loc, index) => {
+                let hourDifference = 0;
+                try {
+                    const tzString = now.toLocaleString("en-US", { timeZone: loc.zone });
+                    const tzDate = new Date(tzString);
+                    hourDifference = (tzDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+                } catch(e) {}
+                
+                return {
+                    index,
+                    idealX: hourDifference * spacingMultiplier,
+                    x: hourDifference * spacingMultiplier
+                };
+            });
 
+            // 2. Sort by ideal position to run the overlap-avoidance algorithm
+            positionedItems.sort((a, b) => a.idealX - b.idealX);
+
+            // Enforce a minimum horizontal separation of 140px between adjacent centers to prevent overlapping names
+            const minSeparation = 140;
+            const iterations = 5; // Run multiple passes to smoothly resolve complex clusters
+            
+            for (let step = 0; step < iterations; step++) {
+                for (let i = 0; i < positionedItems.length - 1; i++) {
+                    let leftNode = positionedItems[i];
+                    let rightNode = positionedItems[i + 1];
+                    let overlap = minSeparation - (rightNode.x - leftNode.x);
+                    
+                    if (overlap > 0) {
+                        // Push them apart equally
+                        leftNode.x -= overlap / 2;
+                        rightNode.x += overlap / 2;
+                    }
+                }
+            }
+
+            // 3. Render the adjusted positions back to the DOM elements
+            positionedItems.forEach((item) => {
+                const domItem = document.getElementById(`item-${item.index}`);
+                if (domItem) {
+                    domItem.style.left = `${item.x}px`;
+
+                    // Simple proximity styling trigger (highlight item when centered near ▼)
+                    const itemGlobalPosition = item.x + targetOffset;
+                    if (Math.abs(itemGlobalPosition) < 32) {
+                        domItem.classList.add('at-center');
+                    } else {
+                        domItem.classList.remove('at-center');
+                    }
+                }
+            });
+        }
+
+        // HEAVY calculation updates: strictly bound to happen exactly once per second
+        function updateTickingClocks() {
+            const now = new Date();
+            const currentSeconds = Math.floor(now.getTime() / 1000);
+
+            // Halt if the second has not incremented
+            if (currentSeconds === lastSecondsTimestamp) return;
+            lastSecondsTimestamp = currentSeconds;
+
+            // Update local panel
+            localTimeEl.textContent = now.toTimeString().split(' ')[0];
+            localDateEl.textContent = now.toLocaleDateString(undefined, { 
+                weekday: 'short', 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+
+            // Normalize our base comparison time to have 0 milliseconds to match string-parsed dates
+            const nowSec = new Date(now);
+            nowSec.setMilliseconds(0);
+
+            // Update all target cities
+            locations.forEach((loc, index) => {
+                const clockElement = document.getElementById(`time-${index}`);
+                const diffElement = document.getElementById(`diff-${index}`);
+                
+                try {
+                    const tzString = now.toLocaleString("en-US", { timeZone: loc.zone });
+                    const tzDate = new Date(tzString); // tzDate automatically has 0 milliseconds
+
+                    // Compute precise, stable delta (Days, Hours, Minutes, Seconds)
+                    let diffMs = tzDate - nowSec;
+                    const prefix = diffMs >= 0 ? "+" : "-";
+                    const absDiff = Math.abs(diffMs);
+
+                    const days = Math.floor(absDiff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((absDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((absDiff % (1000 * 60)) / 1000);
+
+                    // Render updated text values seamlessly
+                    clockElement.textContent = tzDate.toTimeString().split(' ')[0];
+                    diffElement.textContent = `${prefix}${days > 0 ? days + 'd ' : ''}${hours}h ${minutes}m ${seconds}s`;
+                } catch (e) {
+                    clockElement.textContent = "Error";
+                    diffElement.textContent = "Error";
+                }
+            });
+        }
+
+        // --- Clean Scroll & Gesture Engine ---
+        function animate() {
+            // Smoothly slide track using cheap, native CSS transforms
+            if (Math.abs(targetOffset - compassOffset) > 0.05) {
+                compassOffset += (targetOffset - compassOffset) * 0.15;
+                track.style.transform = `translateX(${compassOffset}px)`;
+            }
+            
+            // Fast visual position alignment
+            renderCompassPositionAndHighlight();
+
+            // Run timezone math only on a fresh second
+            updateTickingClocks();
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Handle Mousewheel inputs
+        window.addEventListener('wheel', (e) => {
+            if (e.target.closest('#compass-viewport') || e.target.closest('body')) {
+                targetOffset -= e.deltaY * 0.35; // Fine-tuned scroll sensitivity
+                
+                // Keep viewport bounded inside approximate timeline limits
+                const maxScrollLimit = spacingMultiplier * 13.5;
+                targetOffset = Math.max(-maxScrollLimit, Math.min(maxScrollLimit, targetOffset));
+            }
+        });
+
+        // Clean Drag / Swipe support
+        let isDragging = false;
+        let startX = 0;
+
+        const startDrag = (clientX) => {
+            isDragging = true;
+            startX = clientX;
+        };
+
+        const moveDrag = (clientX) => {
+            if (!isDragging) return;
+            const dx = clientX - startX;
+            targetOffset += dx;
+            startX = clientX;
+        };
+
+        const stopDrag = () => { isDragging = false; };
+
+        // Bind drag listeners
+        viewport.addEventListener('mousedown', (e) => startDrag(e.clientX));
+        window.addEventListener('mousemove', (e) => moveDrag(e.clientX));
+        window.addEventListener('mouseup', stopDrag);
+
+        viewport.addEventListener('touchstart', (e) => startDrag(e.touches[0].clientX));
+        window.addEventListener('touchmove', (e) => moveDrag(e.touches[0].clientX));
+        window.addEventListener('touchend', stopDrag);
+
+        // Initialization
+        loadHTMLList();
+        animate();
+    </script>
 </body>
 </html>
