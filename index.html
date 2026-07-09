@@ -67,7 +67,7 @@
                         <!-- Main Input Area -->
                         <input type="text"
                             id="search-input"
-                            placeholder="Type 'eft:' or 'va:' to begin..."
+                            placeholder="Type 'eft:', 'va:', or 'cc:' to begin..."
                             autocomplete="off"
                             disabled
                             class="flex-1 bg-transparent text-white placeholder-neutral-700 focus:outline-none py-1.5 font-mono text-sm disabled:opacity-50 min-w-[120px]"
@@ -91,6 +91,10 @@
                         <button type="button" data-prefix="va" class="suggestion-item w-full text-left px-3 py-2 rounded text-xs text-neutral-400 hover:text-white hover:bg-neutral-800/50 transition-colors duration-150 font-mono flex justify-between">
                             <span>🎙️ voiceattack / va :</span>
                             <span class="text-neutral-600 text-[10px]">Search variables, window titles & tokens</span>
+                        </button>
+                        <button type="button" data-prefix="cc" class="suggestion-item w-full text-left px-3 py-2 rounded text-xs text-neutral-400 hover:text-white hover:bg-neutral-800/50 transition-colors duration-150 font-mono flex justify-between">
+                            <span>🎧 crewchief / cc :</span>
+                            <span class="text-neutral-600 text-[10px]">Search sim racing voice commands</span>
                         </button>
                     </div>
                 </form>
@@ -371,11 +375,12 @@
         // Global databases memory cache
         let tarkovLocalCache = [];
         let voiceAttackLocalCache = [];
+        let crewChiefLocalCache = [];
 
         // Cooldown configuration (3 minutes in milliseconds)
         const COOLDOWN_DURATION = 3 * 60 * 1000;
 
-        // Active Category Mode ('all', 'eft', 'va')
+        // Active Category Mode ('all', 'eft', 'va', 'cc')
         let currentSearchMode = 'all';
 
         // ─── Dynamic Font Settings Loader ───────────────────────────────
@@ -442,30 +447,54 @@
             console.warn('All fetch attempts for voiceAttackSearchIndex.json failed. Initializing standard fallbacks.');
             voiceAttackLocalCache = [
                 { "token": "{TIME}", "description": "Current time expressed in 24‑hour clock.", "category": "Time/Date" },
-                { "token": "{TIME:dateVariableName}", "description": "Time of the indicated date variable, expressed in 24‑hour clock.", "category": "Time/Date" },
-                { "token": "{time}", "description": "Current time expressed as a 12‑hour clock.", "category": "Time/Date" },
-                { "token": "{time:dateVariableName}", "description": "Time of the indicated date variable, expressed as a 12‑hour clock.", "category": "Time/Date" },
-                { "token": "{TIMEHOUR}", "description": "Hour of the current time, expressed in a 12‑hour clock.", "category": "Time/Date" },
-                { "token": "{TIMEHOUR24}", "description": "Hour of the current time, expressed in a 24‑hour clock.", "category": "Time/Date" },
-                { "token": "{TIMEMINUTE}", "description": "Minute of the current time.", "category": "Time/Date" },
-                { "token": "{TIMESECOND}", "description": "Second of the current time.", "category": "Time/Date" },
-                { "token": "{TIMESTAMP}", "description": "Current date/time formatted uniquely for logs.", "category": "Time/Date" },
-                { "token": "{DATE}", "description": "Current date formatted as 'April 3, 2022'.", "category": "Time/Date" },
-                { "token": "{RANDOM:lowValue:highValue}", "description": "Generates a random integer between lowValue and highValue (inclusive).", "category": "Math" },
-                { "token": "{EXP: expression}", "description": "Evaluates an arithmetic, text, or logical expression.", "category": "Math" },
-                { "token": "{TXT:variableName}", "description": "Retrieves the value of a text variable.", "category": "Variable" },
-                { "token": "{TXT RANDOM:value}", "description": "Randomly selects one of the semicolon‑separated items.", "category": "Text Utility" },
-                { "token": "{TXT LEN:variableName / value}", "description": "Returns the length of the text variable's value.", "category": "Text Utility" },
-                { "token": "{TXT UPPER:variableName / value}", "description": "Returns the text variable's value in upper case.", "category": "Text Utility" },
-                { "token": "{TXT LOWER:variableName / value}", "description": "Returns the text variable's value in lower case.", "category": "Text Utility" },
-                { "token": "{INT:variableName}", "description": "Retrieves the value of an integer variable.", "category": "Variable" },
-                { "token": "{DEC:variableName}", "description": "Retrieves the value of a decimal variable.", "category": "Variable" },
-                { "token": "{BOOL:variableName}", "description": "Retrieves the value of a Boolean variable.", "category": "Variable" },
-                { "token": "{ACTIVEWINDOWTITLE}", "description": "Returns the active window's title text.", "category": "Window" },
-                { "token": "{CLIP}", "description": "Replaced by the current text content of the Windows clipboard.", "category": "Clipboard" },
-                { "token": "{DICTATION}", "description": "Replaced by the entire dictation buffer content.", "category": "Dictation" },
-                { "token": "{CMD}", "description": "The name of the currently executing command.", "category": "Command" },
-                { "token": "{PROFILE}", "description": "Returns the name of the currently loaded profile.", "category": "Profile" }
+                { "token": "{ACTIVEWINDOWTITLE}", "description": "Returns the active window's title text.", "category": "Window" }
+            ];
+        }
+
+        // ─── Load CrewChief Voice Index ───────────────────────────────
+        async function loadCrewChiefDatabase() {
+            const paths = [
+                'crewchief/crewChiefVoiceIndex.json',
+                getAbsoluteUrl('crewchief/crewChiefVoiceIndex.json'),
+                'crewChiefVoiceIndex.json',
+                getAbsoluteUrl('crewChiefVoiceIndex.json'),
+                './crewChiefVoiceIndex.json'
+            ];
+            
+            for (const path of paths) {
+                try {
+                    const response = await fetch(path);
+                    if (response.ok) {
+                        crewChiefLocalCache = await response.json();
+                        console.log('CrewChief Voice Index successfully cached locally from', path, crewChiefLocalCache.length, 'commands cached.');
+                        return; // Successfully loaded, break out
+                    }
+                } catch (err) {
+                    console.warn(`Failed to fetch CrewChief index from ${path}:`, err);
+                }
+            }
+
+            // High Fidelity safety fallback containing standard CrewChief phrases if offline or path failed
+            console.warn('All fetch attempts for crewChiefVoiceIndex.json failed. Initializing standard fallbacks.');
+            crewChiefLocalCache = [
+                {
+                    "phrases": [
+                        "how's my fuel",
+                        "how's my tyre wear",
+                        "how's my body work",
+                        "how's my aero"
+                    ],
+                    "description": "Reports the status of the specified car component or performance metric."
+                },
+                {
+                    "phrases": [
+                        "what's my gap in front",
+                        "what's my gap ahead",
+                        "what's my gap behind",
+                        "what's my position"
+                    ],
+                    "description": "Reports the specified race information."
+                }
             ];
         }
 
@@ -546,17 +575,26 @@
             
             const isEFT = ['eft', 'tarkov', 'escape from tarkov'].includes(prefixValue.toLowerCase());
             const isVA = ['va', 'voiceattack', 'voice attack'].includes(prefixValue.toLowerCase());
+            const isCC = ['cc', 'crewchief'].includes(prefixValue.toLowerCase());
             
-            if (!isEFT && !isVA) return;
+            if (!isEFT && !isVA && !isCC) return;
             
-            currentSearchMode = isEFT ? 'eft' : 'va';
+            currentSearchMode = isEFT ? 'eft' : (isVA ? 'va' : 'cc');
             
+            let tagClass = 'bg-amber-950/80 border-amber-800 text-amber-300';
+            let tagText = 'EFT';
+            if (isVA) {
+                tagClass = 'bg-sky-950/80 border-sky-800 text-sky-300';
+                tagText = 'VA';
+            } else if (isCC) {
+                tagClass = 'bg-emerald-950/80 border-emerald-800 text-emerald-300';
+                tagText = 'CC';
+            }
+
             const tag = document.createElement('div');
-            tag.className = `flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider font-mono shadow-sm ${
-                isEFT ? 'bg-amber-950/80 border border-amber-800 text-amber-300' : 'bg-sky-950/80 border border-sky-800 text-sky-300'
-            }`;
+            tag.className = `flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider font-mono shadow-sm border ${tagClass}`;
             tag.innerHTML = `
-                <span>${isEFT ? 'EFT' : 'VA'}</span>
+                <span>${tagText}</span>
                 <button type="button" id="remove-tag-btn" class="hover:text-white font-bold focus:outline-none ml-1 text-xs leading-none">&times;</button>
             `;
             
@@ -580,7 +618,7 @@
             searchTagsContainer.innerHTML = '';
             promptSymbol.classList.remove('hidden');
             currentSearchMode = 'all';
-            searchInput.placeholder = "Type 'eft:' or 'va:' to begin...";
+            searchInput.placeholder = "Type 'eft:', 'va:', or 'cc:' to begin...";
             searchInput.value = '';
             inputClearBtn.classList.add('hidden');
             tarkovResults.classList.add('hidden');
@@ -607,9 +645,9 @@
                 inputClearBtn.classList.add('hidden');
             }
 
-            // Detect if user has typed tag prefix command (e.g. "eft:", "va:" or with spaces "eft ", "va ")
+            // Detect if user has typed tag prefix command (e.g. "eft:", "va:", "cc:")
             if (currentSearchMode === 'all') {
-                const matchPrefix = rawVal.match(/^(eft|tarkov|escape from tarkov|va|voiceattack|voice attack)(:| )/i);
+                const matchPrefix = rawVal.match(/^(eft|tarkov|escape from tarkov|va|voiceattack|voice attack|cc|crewchief)(:| )/i);
                 if (matchPrefix) {
                     createSearchTag(matchPrefix[1]);
                     return;
@@ -700,8 +738,8 @@
                     });
                 }
                 renderTarkovGrid(matchedItems.slice(0, 100));
+            
             } else if (currentSearchMode === 'va') {
-                // If user types exactly "va" or "voiceattack" inside VA mode, don't clear the results!
                 const ignorePrefixes = ['va', 'voiceattack', 'voice attack'];
                 const isIgnorable = ignorePrefixes.includes(queryStr);
                 
@@ -715,8 +753,22 @@
                         return token.includes(queryStr) || desc.includes(queryStr) || category.includes(queryStr);
                     });
                 }
-                // Render up to 300 matched items so the entire database is viewable without aggressive limits
                 renderVoiceAttackGrid(matchedItems.slice(0, 300));
+            
+            } else if (currentSearchMode === 'cc') {
+                const ignorePrefixes = ['cc', 'crewchief'];
+                const isIgnorable = ignorePrefixes.includes(queryStr);
+                
+                if (queryStr === '' || isIgnorable) {
+                    matchedItems = crewChiefLocalCache;
+                } else {
+                    matchedItems = crewChiefLocalCache.filter(item => {
+                        const desc = item.description ? item.description.toLowerCase() : '';
+                        const phrasesMatch = item.phrases ? item.phrases.some(p => p.toLowerCase().includes(queryStr)) : false;
+                        return desc.includes(queryStr) || phrasesMatch;
+                    });
+                }
+                renderCrewChiefGrid(matchedItems.slice(0, 300));
             }
         }
 
@@ -734,8 +786,9 @@
             }
 
             resultsGrid.innerHTML = items.map(item => {
-                // If the mixed search returns a VoiceAttack token, render it natively
+                // Failsafes for mixed searches if implemented later
                 if (item.token) return buildVoiceAttackCardHtml(item);
+                if (item.phrases) return buildCrewChiefCardHtml(item);
 
                 const tagsHtml = renderTags(item.tags);
                 let detailsHtml = '';
@@ -854,6 +907,22 @@
             resultsGrid.innerHTML = items.map(item => buildVoiceAttackCardHtml(item)).join('');
         }
 
+        // Render CrewChief Index matches
+        function renderCrewChiefGrid(items) {
+            resultsCount.textContent = items.length;
+
+            if (items.length === 0) {
+                resultsGrid.innerHTML = `
+                    <div class="col-span-full border border-dashed border-neutral-900 p-6 rounded text-left select-none font-verdana">
+                        <p class="text-sm text-neutral-500">No matching CrewChief voice commands found.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            resultsGrid.innerHTML = items.map(item => buildCrewChiefCardHtml(item)).join('');
+        }
+
         // Helper building VoiceAttack card representation
         function buildVoiceAttackCardHtml(item) {
             const cleanToken = item.token.replace(/{|}/g, '');
@@ -875,6 +944,39 @@
                                 <span class="text-[16px] drop-shadow-md">🎙️</span>
                             </div>
                         </div>
+                        <div class="pt-3 border-t border-neutral-800/80 text-xs text-neutral-400 font-sans leading-relaxed">
+                            <span class="text-neutral-500 block uppercase font-mono text-[9px] font-bold tracking-wider select-none mb-1">Description</span>
+                            ${item.description}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Helper building CrewChief card representation
+        function buildCrewChiefCardHtml(item) {
+            const primaryPhrase = (item.phrases && item.phrases.length > 0) ? item.phrases[0] : 'Unknown Command';
+            const extraPhrases = (item.phrases && item.phrases.length > 1) 
+                ? `<div class="mt-1.5 text-[10px] text-neutral-500 font-mono italic truncate" title="${item.phrases.slice(1).join(' | ')}">Also: ${item.phrases.slice(1).join(', ')}</div>` 
+                : '';
+            
+            return `
+                <div class="bg-[#09090b] border border-neutral-800 hover:border-neutral-600 rounded-md p-4 flex flex-col justify-between transition-all duration-200 font-verdana shadow-lg w-full text-sm text-left relative overflow-hidden group">
+                    <div class="space-y-3">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-sm font-bold text-neutral-100 font-mono tracking-wide truncate pr-2 selection:bg-emerald-800 select-all" title="Click to copy command">
+                                    "${primaryPhrase}"
+                                </h3>
+                                <div class="flex flex-wrap gap-1.5 mt-2">
+                                    <span class="px-2 py-0.5 rounded border text-[9px] tracking-wide font-mono uppercase bg-emerald-900/30 border-emerald-700/80 text-emerald-300 shadow-sm">Voice Command</span>
+                                </div>
+                            </div>
+                            <div class="w-10 h-10 shrink-0 bg-neutral-950 border border-neutral-800 rounded flex items-center justify-center shadow-inner">
+                                <span class="text-[16px] drop-shadow-md">🎧</span>
+                            </div>
+                        </div>
+                        ${extraPhrases}
                         <div class="pt-3 border-t border-neutral-800/80 text-xs text-neutral-400 font-sans leading-relaxed">
                             <span class="text-neutral-500 block uppercase font-mono text-[9px] font-bold tracking-wider select-none mb-1">Description</span>
                             ${item.description}
@@ -1082,7 +1184,7 @@
                     try {
                         tarkovLocalCache = JSON.parse(cachedDataStr);
                         searchInput.disabled = false;
-                        searchInput.placeholder = "Type 'eft:' or 'va:' to begin...";
+                        searchInput.placeholder = "Type 'eft:', 'va:', or 'cc:' to begin...";
                         console.log('Tarkov database loaded from local cache.');
                         return;
                     } catch (e) {
@@ -1176,12 +1278,12 @@
                 localStorage.setItem('tarkov_last_fetch_timestamp', now.toString());
 
                 searchInput.disabled = false;
-                searchInput.placeholder = "Type 'eft:' or 'va:' to begin...";
+                searchInput.placeholder = "Type 'eft:', 'va:', or 'cc:' to begin...";
             } catch (err) {
                 if (cachedDataStr) {
                     tarkovLocalCache = JSON.parse(cachedDataStr);
                     searchInput.disabled = false;
-                    searchInput.placeholder = "Type 'eft:' or 'va:' to begin... (Offline Fallback)";
+                    searchInput.placeholder = "Type 'eft:', 'va:', or 'cc:' to begin... (Offline)";
                 } else {
                     searchInput.placeholder = "Cache offline. Refresh to try again.";
                 }
@@ -1214,6 +1316,7 @@
             fetchMenuItems(); // Unified dropdown fetch
             
             await loadVoiceAttackDatabase();
+            await loadCrewChiefDatabase();
             await prefetchTarkovDatabase();
         };
     </script>
