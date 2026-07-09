@@ -336,9 +336,9 @@
         const loadingSpinner = document.getElementById('loading-spinner');
         const loadingText = document.getElementById('loading-text');
 
-        // Fallback local constants matching requested files
-        const DEFAULT_HTML_LIST = ["tools/txt2json.html", "tarkov/tarkovdb.html"];
-        const DEFAULT_TOOLS_LIST = ["tools/txt2json.html"];
+        // Fallback local constants set to clean empty arrays
+        const DEFAULT_HTML_LIST = [];
+        const DEFAULT_TOOLS_LIST = [];
 
         // Global Portrait Pool matching characterGenerator setup to ensure dynamic images load smoothly
         const PORTRAIT_POOL = [
@@ -434,8 +434,9 @@
                 try {
                     const response = await fetch(path);
                     if (response.ok) {
-                        voiceAttackLocalCache = await response.json();
-                        console.log('VoiceAttack Search Index successfully cached locally from', path, voiceAttackLocalCache.length, 'tokens cached.');
+                        const data = await response.json();
+                        voiceAttackLocalCache = Array.isArray(data) ? data : (data.entries || []);
+                        console.log('VoiceAttack Search Index successfully cached locally from', path, voiceAttackLocalCache.length, 'entries cached.');
                         return; // Successfully loaded, break out
                     }
                 } catch (err) {
@@ -443,29 +444,26 @@
                 }
             }
 
-            // High Fidelity safety fallback containing standard VoiceAttack tokens if offline or path failed
-            console.warn('All fetch attempts for voiceAttackSearchIndex.json failed. Initializing standard fallbacks.');
-            voiceAttackLocalCache = [
-                { "token": "{TIME}", "description": "Current time expressed in 24‑hour clock.", "category": "Time/Date" },
-                { "token": "{ACTIVEWINDOWTITLE}", "description": "Returns the active window's title text.", "category": "Window" }
-            ];
+            console.warn('All fetch attempts for voiceAttackSearchIndex.json failed. Operating with empty VoiceAttack dataset.');
+            voiceAttackLocalCache = [];
         }
 
         // ─── Load CrewChief Voice Index ───────────────────────────────
         async function loadCrewChiefDatabase() {
             const paths = [
-                'crewchief/crewChiefVoiceIndex.json',
-                getAbsoluteUrl('crewchief/crewChiefVoiceIndex.json'),
-                'crewChiefVoiceIndex.json',
-                getAbsoluteUrl('crewChiefVoiceIndex.json'),
-                './crewChiefVoiceIndex.json'
+                'crewchief/crewChiefSearchIndex.json',
+                getAbsoluteUrl('crewchief/crewChiefSearchIndex.json'),
+                'crewChiefSearchIndex.json',
+                getAbsoluteUrl('crewChiefSearchIndex.json'),
+                './crewChiefSearchIndex.json'
             ];
             
             for (const path of paths) {
                 try {
                     const response = await fetch(path);
                     if (response.ok) {
-                        crewChiefLocalCache = await response.json();
+                        const data = await response.json();
+                        crewChiefLocalCache = Array.isArray(data) ? data : (data.searchIndex || []);
                         console.log('CrewChief Voice Index successfully cached locally from', path, crewChiefLocalCache.length, 'commands cached.');
                         return; // Successfully loaded, break out
                     }
@@ -474,28 +472,8 @@
                 }
             }
 
-            // High Fidelity safety fallback containing standard CrewChief phrases if offline or path failed
-            console.warn('All fetch attempts for crewChiefVoiceIndex.json failed. Initializing standard fallbacks.');
-            crewChiefLocalCache = [
-                {
-                    "phrases": [
-                        "how's my fuel",
-                        "how's my tyre wear",
-                        "how's my body work",
-                        "how's my aero"
-                    ],
-                    "description": "Reports the status of the specified car component or performance metric."
-                },
-                {
-                    "phrases": [
-                        "what's my gap in front",
-                        "what's my gap ahead",
-                        "what's my gap behind",
-                        "what's my position"
-                    ],
-                    "description": "Reports the specified race information."
-                }
-            ];
+            console.warn('All fetch attempts for crewChiefSearchIndex.json failed. Operating with empty CrewChief dataset.');
+            crewChiefLocalCache = [];
         }
 
         // ─── Escape from Tarkov Service Status Fetching ───────────────
@@ -520,7 +498,7 @@
                     'bg-[#346b52]', 'bg-[#8c6d32]', 'bg-[#964247]',
                     'shadow-[0_0_8px_rgba(16,185,129,0.4)]', 
                     'shadow-[0_0_8px_rgba(245,158,11,0.4)]', 
-                    'shadow-[0_0_8px_rgba(239,68,68,0.4)]',
+                    'shadow-[0_0_239,68,68,0.4)]',
                     'shadow-[0_0_6px_rgba(52,107,82,0.4)]',
                     'shadow-[0_0_6px_rgba(140,109,50,0.4)]',
                     'shadow-[0_0_6px_rgba(150,66,71,0.4)]'
@@ -607,7 +585,7 @@
             // Re-focus input field
             searchInput.focus();
 
-            // Run a blank search to show all elements by default!
+            // Run a blank search to reset parameters without displaying all elements automatically!
             performLocalUnifiedSearch('');
 
             // Bind remove tag action
@@ -668,7 +646,7 @@
                 tarkovResults.classList.add('hidden');
                 searchSuggestions.classList.remove('hidden');
             } else if (query.length === 0) {
-                // If query is empty but we have a tag, show all items
+                // If query is empty but we have a tag, clear and hide results
                 performLocalUnifiedSearch('');
             }
         });
@@ -720,6 +698,13 @@
                 return;
             }
 
+            // Prevent blank search from showing everything by default.
+            // Only react to active query input characters!
+            if (queryStr === '') {
+                tarkovResults.classList.add('hidden');
+                return;
+            }
+
             tarkovResults.classList.remove('hidden');
             let matchedItems = [];
 
@@ -747,10 +732,12 @@
                     matchedItems = voiceAttackLocalCache;
                 } else {
                     matchedItems = voiceAttackLocalCache.filter(item => {
-                        const token = item.token ? item.token.toLowerCase() : '';
+                        const title = item.title ? item.title.toLowerCase() : '';
                         const desc = item.description ? item.description.toLowerCase() : '';
-                        const category = item.category ? item.category.toLowerCase() : '';
-                        return token.includes(queryStr) || desc.includes(queryStr) || category.includes(queryStr);
+                        const tagsMatch = item.tags ? item.tags.some(t => t.toLowerCase().includes(queryStr)) : false;
+                        // Handle legacy token property if present
+                        const token = item.token ? item.token.toLowerCase() : '';
+                        return title.includes(queryStr) || desc.includes(queryStr) || token.includes(queryStr) || tagsMatch;
                     });
                 }
                 renderVoiceAttackGrid(matchedItems.slice(0, 300));
@@ -763,9 +750,11 @@
                     matchedItems = crewChiefLocalCache;
                 } else {
                     matchedItems = crewChiefLocalCache.filter(item => {
+                        const title = item.title ? item.title.toLowerCase() : '';
                         const desc = item.description ? item.description.toLowerCase() : '';
                         const phrasesMatch = item.phrases ? item.phrases.some(p => p.toLowerCase().includes(queryStr)) : false;
-                        return desc.includes(queryStr) || phrasesMatch;
+                        const tagsMatch = item.tags ? item.tags.some(t => t.toLowerCase().includes(queryStr)) : false;
+                        return title.includes(queryStr) || desc.includes(queryStr) || phrasesMatch || tagsMatch;
                     });
                 }
                 renderCrewChiefGrid(matchedItems.slice(0, 300));
@@ -787,8 +776,8 @@
 
             resultsGrid.innerHTML = items.map(item => {
                 // Failsafes for mixed searches if implemented later
-                if (item.token) return buildVoiceAttackCardHtml(item);
-                if (item.phrases) return buildCrewChiefCardHtml(item);
+                if (item.token || item.title && currentSearchMode === 'va') return buildVoiceAttackCardHtml(item);
+                if (item.phrases || item.title && currentSearchMode === 'cc') return buildCrewChiefCardHtml(item);
 
                 const tagsHtml = renderTags(item.tags);
                 let detailsHtml = '';
@@ -925,8 +914,9 @@
 
         // Helper building VoiceAttack card representation
         function buildVoiceAttackCardHtml(item) {
-            const cleanToken = item.token.replace(/{|}/g, '');
-            const categoryTag = `<span class="px-2 py-0.5 rounded border text-[9px] tracking-wide font-mono uppercase bg-sky-900/30 border-sky-700/80 text-sky-300 shadow-sm">${item.category || 'Macro Token'}</span>`;
+            const displayTitle = item.title || item.token || 'VoiceAttack Definition';
+            const categoryTags = item.tags || (item.category ? [item.category] : []);
+            const tagsHtml = renderTags(categoryTags);
             
             return `
                 <div class="bg-[#09090b] border border-neutral-800 hover:border-neutral-600 rounded-md p-4 flex flex-col justify-between transition-all duration-200 font-verdana shadow-lg w-full text-sm text-left relative overflow-hidden group">
@@ -934,10 +924,10 @@
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex-1 min-w-0">
                                 <h3 class="text-sm font-bold text-neutral-100 font-mono tracking-wide truncate pr-2 selection:bg-sky-800 select-all" title="Click to copy macro">
-                                    ${item.token}
+                                    ${displayTitle}
                                 </h3>
                                 <div class="flex flex-wrap gap-1.5 mt-2">
-                                    ${categoryTag}
+                                    ${tagsHtml}
                                 </div>
                             </div>
                             <div class="w-10 h-10 shrink-0 bg-neutral-950 border border-neutral-800 rounded flex items-center justify-center shadow-inner">
@@ -955,10 +945,20 @@
 
         // Helper building CrewChief card representation
         function buildCrewChiefCardHtml(item) {
-            const primaryPhrase = (item.phrases && item.phrases.length > 0) ? item.phrases[0] : 'Unknown Command';
-            const extraPhrases = (item.phrases && item.phrases.length > 1) 
-                ? `<div class="mt-1.5 text-[10px] text-neutral-500 font-mono italic truncate" title="${item.phrases.slice(1).join(' | ')}">Also: ${item.phrases.slice(1).join(', ')}</div>` 
-                : '';
+            const displayTitle = item.title || (item.phrases && item.phrases.length > 0 ? `"${item.phrases[0]}"` : 'CrewChief Command');
+            
+            // Build phrases string if they exist
+            let extraPhrases = '';
+            if (item.phrases && item.phrases.length > 1) {
+                extraPhrases = `<div class="mt-1.5 text-[10px] text-neutral-500 font-mono italic truncate" title="${item.phrases.slice(1).join(' | ')}">Also: ${item.phrases.slice(1).join(', ')}</div>`;
+            }
+
+            // Ensure "Voice Command" tag is included
+            let rawTags = item.tags ? [...item.tags] : [];
+            if (!rawTags.some(t => t.toLowerCase() === 'voice command')) {
+                rawTags.unshift('Voice Command');
+            }
+            const tagsHtml = renderTags(rawTags);
             
             return `
                 <div class="bg-[#09090b] border border-neutral-800 hover:border-neutral-600 rounded-md p-4 flex flex-col justify-between transition-all duration-200 font-verdana shadow-lg w-full text-sm text-left relative overflow-hidden group">
@@ -966,10 +966,10 @@
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex-1 min-w-0">
                                 <h3 class="text-sm font-bold text-neutral-100 font-mono tracking-wide truncate pr-2 selection:bg-emerald-800 select-all" title="Click to copy command">
-                                    "${primaryPhrase}"
+                                    ${displayTitle}
                                 </h3>
                                 <div class="flex flex-wrap gap-1.5 mt-2">
-                                    <span class="px-2 py-0.5 rounded border text-[9px] tracking-wide font-mono uppercase bg-emerald-900/30 border-emerald-700/80 text-emerald-300 shadow-sm">Voice Command</span>
+                                    ${tagsHtml}
                                 </div>
                             </div>
                             <div class="w-10 h-10 shrink-0 bg-neutral-950 border border-neutral-800 rounded flex items-center justify-center shadow-inner">
@@ -986,7 +986,7 @@
             `;
         }
 
-        function renderTags(tags, type) {
+        function renderTags(tags) {
             if (!tags) return '';
             const renderableTags = [...new Set([...tags])];
             return renderableTags.slice(0, 4).map(tag => {
@@ -1003,6 +1003,12 @@
                     styleClass = 'border-amber-700/80 text-amber-300 bg-amber-900/30';
                 } else if (cleanTag === 'keys' || cleanTag === 'keycard' || cleanTag === 'key') {
                     styleClass = 'border-purple-700/80 text-purple-300 bg-purple-900/30';
+                } else if (cleanTag === 'voice command') {
+                    styleClass = 'border-emerald-700/80 text-emerald-300 bg-emerald-950/30 font-bold';
+                } else if (['settings', 'installation', 'configuration', 'troubleshooting'].includes(cleanTag)) {
+                    styleClass = 'border-amber-700/80 text-amber-400 bg-amber-950/35';
+                } else if (['speech recognition', 'tokens', 'dictation', 'actions', 'commands'].includes(cleanTag)) {
+                    styleClass = 'border-sky-700/80 text-sky-400 bg-sky-950/35';
                 }
                 
                 const displayTag = tag.includes(':') ? tag.split(':')[1] : tag;
@@ -1084,12 +1090,12 @@
             };
 
             const [names, birthplaces, idols, professions, attributes, biographies] = await Promise.all([
-                fetchResource('listOfNames.json', ["Aria Vance", "Valen Vance", "Dax Thorne"]),
-                fetchResource('listOfBirthPlaces.json', ["Innovation Ridge", "Neverwinter Citadel"]),
-                fetchResource('listOfIdols.json', ["The Sentinel", "David Liang"]),
-                fetchResource('listOfProfessions.json', ["Systems Architect", "Lead Developer"]),
-                fetchResource('listOfAttributes.json', { "Strength": ["Mighty"], "Dexterity": ["Agile"], "Constitution": ["Resilient"], "Intelligence": ["Wise"], "Wisdom": ["Insightful"], "Charisma": ["Charming"] }),
-                fetchResource('rndBiography.json', { reputation: ["Known,"], background: ["trained,"], motivation: ["searching,"], secrets: ["has a key."] })
+                fetchResource('listOfNames.json', []),
+                fetchResource('listOfBirthPlaces.json', []),
+                fetchResource('listOfIdols.json', []),
+                fetchResource('listOfProfessions.json', []),
+                fetchResource('listOfAttributes.json', {}),
+                fetchResource('rndBiography.json', { reputation: [], background: [], motivation: [], secrets: [] })
             ]);
 
             loadedCharacterData = { names, birthplaces, idols, professions, attributes, biographies };
