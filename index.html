@@ -206,8 +206,12 @@
 
     <!-- Edge-to-Edge Wrapper Iframe Overlay -->
     <div id="wrapper-modal" class="fixed inset-0 bg-black z-50 flex-col hidden">
-        <!-- Clean, minimal menu bar without workspace title -->
-        <div class="flex items-center justify-end px-6 py-3 border-b border-neutral-900 bg-black select-none">
+        <!-- Clean, minimal menu bar without workspace title with New Tab option -->
+        <div class="flex items-center justify-end gap-3 px-6 py-3 border-b border-neutral-900 bg-black select-none">
+            <!-- Open in New Tab Button -->
+            <button id="wrapper-newtab" class="text-xs border border-neutral-800 hover:border-white text-neutral-400 hover:text-white px-4 py-1.5 font-semibold tracking-normal transition-all duration-150">
+                Open in New Tab
+            </button>
             <!-- Close button styled with highly readable typography, standard casing -->
             <button id="wrapper-close" class="text-xs border border-white hover:bg-white hover:text-black px-4 py-1.5 font-semibold tracking-normal transition-all duration-150">
                 Close Workspace
@@ -266,6 +270,7 @@
         const wrapperModal = document.getElementById('wrapper-modal');
         const wrapperIframe = document.getElementById('wrapper-iframe');
         const wrapperClose = document.getElementById('wrapper-close');
+        const wrapperNewTab = document.getElementById('wrapper-newtab');
 
         // Custom Confirmation Modal elements
         const confirmModal = document.getElementById('confirm-modal');
@@ -276,6 +281,7 @@
         let targetOffset = 0;  
         const spacingMultiplier = 160; // Pixels per hour distance
         let lastSecondsTimestamp = -1; // Flag tracking the last rendered second
+        let currentActivePath = '';    // Stores the currently loaded workspace path
 
         // Instantly generate minimal DOM nodes for compass
         locations.forEach((loc, index) => {
@@ -330,9 +336,20 @@
 
         // Handle opening of iframe wrapper
         function openWrapper(path) {
+            currentActivePath = path;
             wrapperIframe.src = path;
             wrapperModal.style.display = 'flex';
         }
+
+        // Open in New Tab action - closes modal immediately and opens path
+        wrapperNewTab.addEventListener('click', () => {
+            if (currentActivePath) {
+                window.open(currentActivePath, '_blank');
+                wrapperModal.style.display = 'none';
+                wrapperIframe.src = '';
+                currentActivePath = '';
+            }
+        });
 
         // Trigger Custom Close Confirmation instead of standard window.confirm
         wrapperClose.addEventListener('click', () => {
@@ -344,6 +361,7 @@
             confirmModal.style.display = 'none';
             wrapperModal.style.display = 'none';
             wrapperIframe.src = ''; // reset iframe memory
+            currentActivePath = '';
         });
 
         // Confirmation actions cancel
