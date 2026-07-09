@@ -206,13 +206,29 @@
 
     <!-- Edge-to-Edge Wrapper Iframe Overlay -->
     <div id="wrapper-modal" class="fixed inset-0 bg-black z-50 flex-col hidden">
-        <div class="flex items-center justify-between px-6 py-3 border-b border-neutral-900 bg-black select-none">
-            <span id="wrapper-title" class="text-[9px] font-extrabold tracking-[3px] text-white">WORKSPACE</span>
-            <button id="wrapper-close" class="text-[9px] border border-white hover:bg-white hover:text-black px-3 py-1 font-bold tracking-[2px] transition-all duration-150">
-                [ CLOSE ]
+        <!-- Clean, minimal menu bar without workspace title -->
+        <div class="flex items-center justify-end px-6 py-3 border-b border-neutral-900 bg-black select-none">
+            <!-- Close button styled with highly readable typography, standard casing -->
+            <button id="wrapper-close" class="text-xs border border-white hover:bg-white hover:text-black px-4 py-1.5 font-semibold tracking-normal transition-all duration-150">
+                Close Workspace
             </button>
         </div>
         <iframe id="wrapper-iframe" class="flex-grow w-full border-0 bg-black" src=""></iframe>
+    </div>
+
+    <!-- Custom Confirmation Dialog Modal (Prevents browser popup issues in iframes) -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center hidden select-none">
+        <div class="border border-neutral-800 bg-black p-6 max-w-xs w-full mx-4 text-center">
+            <div class="text-[10px] font-bold tracking-widest text-white mb-6">ARE YOU SURE YOU WANT TO CLOSE?</div>
+            <div class="flex justify-center gap-4">
+                <button id="confirm-yes" class="text-[10px] border border-white hover:bg-white hover:text-black px-4 py-2 font-bold tracking-widest transition-all">
+                    YES, CLOSE
+                </button>
+                <button id="confirm-no" class="text-[10px] border border-neutral-800 hover:border-white px-4 py-2 font-bold tracking-widest transition-all text-neutral-400 hover:text-white">
+                    NO, STAY
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -250,7 +266,11 @@
         const wrapperModal = document.getElementById('wrapper-modal');
         const wrapperIframe = document.getElementById('wrapper-iframe');
         const wrapperClose = document.getElementById('wrapper-close');
-        const wrapperTitle = document.getElementById('wrapper-title');
+
+        // Custom Confirmation Modal elements
+        const confirmModal = document.getElementById('confirm-modal');
+        const confirmYes = document.getElementById('confirm-yes');
+        const confirmNo = document.getElementById('confirm-no');
 
         let compassOffset = 0; 
         let targetOffset = 0;  
@@ -310,15 +330,24 @@
 
         // Handle opening of iframe wrapper
         function openWrapper(path) {
-            wrapperTitle.textContent = beautifyToolName(path);
             wrapperIframe.src = path;
             wrapperModal.style.display = 'flex';
         }
 
-        // Handle closing of iframe wrapper
+        // Trigger Custom Close Confirmation instead of standard window.confirm
         wrapperClose.addEventListener('click', () => {
+            confirmModal.style.display = 'flex';
+        });
+
+        // Confirmation actions
+        confirmYes.addEventListener('click', () => {
+            confirmModal.style.display = 'none';
             wrapperModal.style.display = 'none';
             wrapperIframe.src = ''; // reset iframe memory
+        });
+
+        confirmNo.addEventListener('click', () => {
+            confirmModal.style.display = 'none';
         });
 
         // Dynamic position, state, and anti-overlap handler
