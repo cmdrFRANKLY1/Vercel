@@ -206,12 +206,22 @@
 
     <!-- Edge-to-Edge Wrapper Iframe Overlay -->
     <div id="wrapper-modal" class="fixed inset-0 bg-black z-50 flex-col hidden">
-        <!-- Clean, minimal menu bar without workspace title with New Tab option -->
+        <!-- Clean, minimal menu bar with standard casing buttons -->
         <div class="flex items-center justify-end gap-3 px-6 py-3 border-b border-neutral-900 bg-black select-none">
             <!-- Open in New Tab Button -->
             <button id="wrapper-newtab" class="text-xs border border-neutral-800 hover:border-white text-neutral-400 hover:text-white px-4 py-1.5 font-semibold tracking-normal transition-all duration-150">
                 Open in New Tab
             </button>
+            <!-- Dropdown-Based Download Button -->
+            <div class="relative inline-block text-left">
+                <button id="wrapper-download" class="text-xs border border-neutral-800 hover:border-white text-neutral-400 hover:text-white px-4 py-1.5 font-semibold tracking-normal transition-all duration-150 flex items-center gap-1">
+                    Download ▾
+                </button>
+                <div id="download-dropdown" class="absolute right-0 mt-2 w-28 bg-black border border-neutral-800 z-50 hidden flex-col">
+                    <button id="download-html-opt" class="text-left px-3 py-1.5 text-xs text-neutral-400 hover:text-white hover:bg-neutral-900 transition-all">.HTML</button>
+                    <button id="download-txt-opt" class="text-left px-3 py-1.5 text-xs text-neutral-400 hover:text-white hover:bg-neutral-900 transition-all">.TXT</button>
+                </div>
+            </div>
             <!-- Close button styled with highly readable typography, standard casing -->
             <button id="wrapper-close" class="text-xs border border-white hover:bg-white hover:text-black px-4 py-1.5 font-semibold tracking-normal transition-all duration-150">
                 Close Workspace
@@ -271,6 +281,10 @@
         const wrapperIframe = document.getElementById('wrapper-iframe');
         const wrapperClose = document.getElementById('wrapper-close');
         const wrapperNewTab = document.getElementById('wrapper-newtab');
+        const wrapperDownload = document.getElementById('wrapper-download');
+        const downloadDropdown = document.getElementById('download-dropdown');
+        const downloadHtmlOpt = document.getElementById('download-html-opt');
+        const downloadTxtOpt = document.getElementById('download-txt-opt');
 
         // Custom Confirmation Modal elements
         const confirmModal = document.getElementById('confirm-modal');
@@ -350,6 +364,47 @@
                 currentActivePath = '';
             }
         });
+
+        // Toggle the download dropdown menu
+        wrapperDownload.addEventListener('click', (e) => {
+            e.stopPropagation();
+            downloadDropdown.classList.toggle('hidden');
+        });
+
+        // Close download dropdown if clicked elsewhere
+        window.addEventListener('click', () => {
+            downloadDropdown.classList.add('hidden');
+        });
+
+        // Performs fetch to Blob transition and executes local browser download
+        async function runDownload(format) {
+            if (!currentActivePath) return;
+            try {
+                const response = await fetch(currentActivePath);
+                if (!response.ok) throw new Error('File download read failure');
+                const text = await response.text();
+                
+                const mimeType = format === 'html' ? 'text/html' : 'text/plain';
+                const blob = new Blob([text], { type: mimeType });
+                
+                // Extract filename only (e.g. tools/lyricsEditor.html -> lyricsEditor)
+                const baseName = currentActivePath.split('/').pop().replace('.html', '');
+                const targetFilename = `${baseName}.${format}`;
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = targetFilename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+            } catch (err) {
+                console.error('Error running downlaod export:', err);
+            }
+        }
+
+        downloadHtmlOpt.addEventListener('click', () => runDownload('html'));
+        downloadTxtOpt.addEventListener('click', () => runDownload('txt'));
 
         // Trigger Custom Close Confirmation instead of standard window.confirm
         wrapperClose.addEventListener('click', () => {
