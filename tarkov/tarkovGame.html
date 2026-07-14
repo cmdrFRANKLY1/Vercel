@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarkov Minigames</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-image: radial-gradient(circle at center, #1f1f22 0%, #0a0a0b 100%);
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .text-shadow-glow {
+            text-shadow: 0 0 15px rgba(234, 179, 8, 0.7);
+        }
+        .minigame-item {
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        /* Celebration flashes – kept for wins */
+        @keyframes shake-gentle {
+            0%, 100% { transform: translate(0, 0); }
+            20%, 60% { transform: translate(-3px, 2px); }
+            40%, 80% { transform: translate(3px, -2px); }
+        }
+        @keyframes shake-medium {
+            0%, 100% { transform: translate(0, 0); }
+            10%, 50%, 90% { transform: translate(-8px, 6px); }
+            30%, 70% { transform: translate(8px, -6px); }
+        }
+        @keyframes shake-hard {
+            0%, 100% { transform: translate(0, 0) rotate(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translate(-14px, 10px) rotate(-1.5deg); }
+            20%, 40%, 60%, 80% { transform: translate(14px, -10px) rotate(1.5deg); }
+        }
+        .shake-gentle { animation: shake-gentle 0.4s ease-in-out; }
+        .shake-medium { animation: shake-medium 0.6s ease-in-out; }
+        .shake-hard { animation: shake-hard 1s ease-in-out; }
+
+        @keyframes flash-gold {
+            0%, 100% { border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 15px rgba(0,0,0,0.9); }
+            50% { border-color: rgba(234, 179, 8, 1); box-shadow: 0 0 35px rgba(234, 179, 8, 0.6); }
+        }
+        @keyframes flash-emerald {
+            0%, 100% { border-color: rgba(16, 185, 129, 0.4); box-shadow: 0 0 15px rgba(0,0,0,0.9); }
+            50% { border-color: rgba(16, 185, 129, 1); box-shadow: 0 0 45px rgba(16, 185, 129, 0.7); }
+        }
+        @keyframes flash-rainbow {
+            0% { border-color: #ef4444; box-shadow: 0 0 50px rgba(239, 68, 68, 0.85); }
+            20% { border-color: #eab308; box-shadow: 0 0 50px rgba(234, 179, 8, 0.85); }
+            40% { border-color: #10b981; box-shadow: 0 0 50px rgba(16, 185, 129, 0.85); }
+            60% { border-color: #3b82f6; box-shadow: 0 0 50px rgba(59, 130, 246, 0.85); }
+            80% { border-color: #a855f7; box-shadow: 0 0 50px rgba(168, 85, 247, 0.85); }
+            100% { border-color: #ef4444; box-shadow: 0 0 50px rgba(239, 68, 68, 0.85); }
+        }
+        .flash-win-3 { animation: flash-gold 1s infinite; }
+        .flash-win-4 { animation: flash-emerald 0.7s infinite; }
+        .flash-win-5 { animation: flash-rainbow 1.5s infinite linear; }
+
+        /* Minigame overlay */
+        #minigameOverlay {
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="text-zinc-200 min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Confetti Canvas for wins -->
+    <canvas id="confettiCanvas" class="pointer-events-none fixed inset-0 z-[100]"></canvas>
+
+    <!-- Minigame Overlay (for future external minigames) -->
+    <div id="minigameOverlay" class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center hidden">
+        <div id="minigameContainer" class="relative w-[90vw] max-w-4xl h-[80vh] bg-[#1a1a1d] rounded-2xl border border-yellow-600/30 shadow-2xl overflow-hidden">
+            <div id="mgLoading" class="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
+                <div class="text-yellow-500 text-xl">Loading Minigame...</div>
+            </div>
+            <div id="mgContent" class="w-full h-full"></div>
+            <button id="mgCloseBtn" class="absolute top-4 right-4 text-white/60 hover:text-white text-3xl z-20">&times;</button>
+        </div>
+    </div>
+
+    <div class="max-w-4xl w-full flex flex-col items-center">
+        <!-- Header -->
+        <h1 class="text-5xl font-bold tracking-wider text-yellow-600 mb-2 uppercase drop-shadow-md">Tarkov minigame</h1>
+        <p class="text-zinc-400 mb-8 text-center max-w-lg text-lg">Spin for loot – no QTEs built‑in</p>
+
+        <!-- minigame Machine Wrapper -->
+        <div id="machineWrapper" class="relative bg-[#18181a] p-4 sm:p-8 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.9)] border-2 border-zinc-700/50 w-full max-w-3xl transition-all duration-300">
+            
+            <!-- Loading Overlay (initialisation) -->
+            <div id="loadingOverlay" class="absolute inset-0 bg-black/80 z-50 flex items-center justify-center rounded-2xl backdrop-blur-sm transition-opacity duration-500">
+                <div class="text-center flex flex-col items-center">
+                    <div class="w-12 h-12 border-4 border-yellow-600 border-t-transparent rounded-full animate-spin mb-4 shadow-[0_0_15px_rgba(202,138,4,0.5)]"></div>
+                    <p id="loadingText" class="text-yellow-600 text-xl font-semibold tracking-widest uppercase">Loading Flea Market...</p>
+                </div>
+            </div>
+
+            <!-- Machine Display -->
+            <div class="relative bg-zinc-950 p-3 sm:p-4 rounded-lg shadow-inner border border-black overflow-hidden w-full" id="machineDisplay">
+                
+                <!-- Target Win Line -->
+                <div class="absolute top-[116px] left-0 w-full h-[100px] border-y-2 border-yellow-500/80 bg-yellow-500/10 pointer-events-none z-10 box-border shadow-[0_0_20px_rgba(234,179,8,0.2)]"></div>
+                
+                <!-- Reels -->
+                <div class="flex gap-1.5 sm:gap-3 relative z-0 justify-center">
+                    <!-- Reel 1-5 -->
+                    <div class="h-[300px] w-[80px] sm:w-[110px] overflow-hidden bg-[#0d0d0f] rounded border border-zinc-800/80 relative shadow-inner">
+                        <div id="reel-0" class="flex flex-col w-full minigame-item"></div>
+                    </div>
+                    <div class="h-[300px] w-[80px] sm:w-[110px] overflow-hidden bg-[#0d0d0f] rounded border border-zinc-800/80 relative shadow-inner">
+                        <div id="reel-1" class="flex flex-col w-full minigame-item"></div>
+                    </div>
+                    <div class="h-[300px] w-[80px] sm:w-[110px] overflow-hidden bg-[#0d0d0f] rounded border border-zinc-800/80 relative shadow-inner">
+                        <div id="reel-2" class="flex flex-col w-full minigame-item"></div>
+                    </div>
+                    <div class="h-[300px] w-[80px] sm:w-[110px] overflow-hidden bg-[#0d0d0f] rounded border border-zinc-800/80 relative shadow-inner">
+                        <div id="reel-3" class="flex flex-col w-full minigame-item"></div>
+                    </div>
+                    <div class="h-[300px] w-[80px] sm:w-[110px] overflow-hidden bg-[#0d0d0f] rounded border border-zinc-800/80 relative shadow-inner">
+                        <div id="reel-4" class="flex flex-col w-full minigame-item"></div>
+                    </div>
+                </div>
+                
+                <!-- Gradient overlay -->
+                <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/60 pointer-events-none z-20"></div>
+            </div>
+
+            <!-- Controls -->
+            <div class="mt-8 flex flex-col items-center">
+                <button id="spinBtn" disabled class="bg-gradient-to-b from-yellow-600 to-yellow-800 text-black font-bold text-3xl py-3 px-16 rounded shadow-lg hover:from-yellow-500 hover:to-yellow-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 border border-yellow-400/50 uppercase tracking-widest z-30">
+                    SPIN
+                </button>
+                <div id="status" class="mt-6 h-10 text-2xl font-semibold text-zinc-300 text-center tracking-wide">
+                    Ready to roll
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="mt-8 bg-[#131315]/80 p-4 rounded-xl border border-zinc-800 w-full max-w-3xl shadow-lg">
+            <div class="flex justify-between items-center mb-3 pb-2 border-b border-zinc-800/85">
+                <h3 class="text-xs text-zinc-400 uppercase tracking-widest font-semibold flex items-center gap-2 font-mono">
+                    <span class="inline-block w-2 h-2 bg-yellow-600 rounded-full animate-pulse"></span>
+                    Raid Activity Log
+                </h3>
+                <button id="clearLogBtn" class="text-[9px] text-zinc-500 hover:text-zinc-300 uppercase tracking-wider font-bold transition-colors">Clear Logs</button>
+            </div>
+            <div id="activityLogContainer" class="flex flex-col gap-1.5 max-h-[140px] overflow-y-auto no-scrollbar text-[11px] font-mono select-text scroll-smooth">
+                <div class="text-zinc-500 text-center py-4">Logs initialised. No QTE events.</div>
+            </div>
+        </div>
+
+        <!-- Loot Pool -->
+        <div class="mt-8 text-center w-full max-w-lg">
+            <h3 class="text-sm text-zinc-500 uppercase tracking-widest mb-3 font-semibold">Current Session Loot Pool</h3>
+            <div id="lootPool" class="flex gap-4 justify-center bg-zinc-900/50 rounded-lg p-3 border border-zinc-800/50">
+                <span class="text-yellow-500 font-bold text-lg">₽ 0</span>
+                <span class="text-zinc-500">|</span>
+                <span class="text-blue-400 font-bold text-lg">0× Items</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  minigame MACHINE ENGINE – Tarkov items + suspenseful spin
+        // ============================================================
+
+        // --- Tarkov Item Definitions (emojis as icons, replace with real URLs) ---
+        const ITEMS = [
+            { name: 'Salewa', icon: '💊' },
+            { name: 'Morphine', icon: '💉' },
+            { name: 'Golden Star', icon: '⭐' },
+            { name: 'Tetra', icon: '📟' },
+            { name: 'GPU', icon: '💻' },
+            { name: 'LEDX', icon: '💡' },
+            { name: 'Bitcoin', icon: '₿' },
+            { name: 'Roler', icon: '⌚' },
+            { name: 'Horse', icon: '🐴' },
+            { name: 'Chainlet', icon: '⛓️' },
+            { name: 'Grizzly', icon: '🧸' },
+            { name: 'Propital', icon: '🧪' },
+            { name: 'Military Cable', icon: '🔌' },
+            { name: 'Wire', icon: '🧵' },
+            { name: 'Bolts', icon: '🔩' },
+            { name: 'Duct Tape', icon: '📦' },
+            { name: 'Screwdriver', icon: '🪛' },
+            { name: 'Flash Drive', icon: '💾' },
+            { name: 'Diary', icon: '📓' },
+            { name: 'Lion', icon: '🦁' },
+        ];
+
+        const REEL_COUNT = 5;
+        const VISIBLE_ROWS = 3;
+        const SYMBOLS_PER_REEL = 30; // total symbols per reel (with repeats)
+
+        // Generate a reel by picking random items from ITEMS
+        function generateReel() {
+            const reel = [];
+            for (let i = 0; i < SYMBOLS_PER_REEL; i++) {
+                const idx = Math.floor(Math.random() * ITEMS.length);
+                reel.push(idx); // store index into ITEMS
+            }
+            return reel;
+        }
+
+        // Pre-fill reels
+        let reels = [];
+        for (let i = 0; i < REEL_COUNT; i++) {
+            reels.push(generateReel());
+        }
+
+        // Current top index for each reel (the symbol at the win line)
+        let currentTopIndex = [0, 0, 0, 0, 0];
+
+        // DOM refs
+        const reelElements = [];
+        for (let i = 0; i < REEL_COUNT; i++) {
+            reelElements.push(document.getElementById(`reel-${i}`));
+        }
+
+        const spinBtn = document.getElementById('spinBtn');
+        const statusDiv = document.getElementById('status');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const logContainer = document.getElementById('activityLogContainer');
+        const clearLogBtn = document.getElementById('clearLogBtn');
+
+        // --- Render a reel (shows VISIBLE_ROWS items starting from topIndex) ---
+        function renderReel(reelIndex) {
+            const reelData = reels[reelIndex];
+            const start = currentTopIndex[reelIndex];
+            const container = reelElements[reelIndex];
+            container.innerHTML = '';
+            for (let i = 0; i < VISIBLE_ROWS; i++) {
+                const idx = (start + i) % reelData.length;
+                const itemIdx = reelData[idx];
+                const item = ITEMS[itemIdx];
+                const div = document.createElement('div');
+                div.className = 'flex flex-col items-center justify-center h-[100px] text-4xl sm:text-5xl font-bold text-zinc-100';
+                // Show icon and small name (optional)
+                div.innerHTML = `<span>${item.icon}</span><span class="text-[8px] sm:text-[10px] text-zinc-400 mt-1">${item.name}</span>`;
+                container.appendChild(div);
+            }
+        }
+
+        // Render all reels
+        function renderAllReels() {
+            for (let i = 0; i < REEL_COUNT; i++) {
+                renderReel(i);
+            }
+        }
+
+        // --- Spinning logic with suspense ---
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Spin a single reel: rapidly change symbols for a duration, then stop at a specific index
+        async function spinReel(reelIndex, spinDuration, stopIndex) {
+            const reelData = reels[reelIndex];
+            const container = reelElements[reelIndex];
+            const startTime = Date.now();
+            let intervalId;
+
+            return new Promise((resolve) => {
+                // Rapidly update symbols every 50ms during spin
+                intervalId = setInterval(() => {
+                    // Show a random symbol at each position (for visual effect)
+                    const tempStart = Math.floor(Math.random() * (reelData.length - VISIBLE_ROWS));
+                    container.innerHTML = '';
+                    for (let i = 0; i < VISIBLE_ROWS; i++) {
+                        const idx = (tempStart + i) % reelData.length;
+                        const itemIdx = reelData[idx];
+                        const item = ITEMS[itemIdx];
+                        const div = document.createElement('div');
+                        div.className = 'flex flex-col items-center justify-center h-[100px] text-4xl sm:text-5xl font-bold text-zinc-100';
+                        div.innerHTML = `<span>${item.icon}</span><span class="text-[8px] sm:text-[10px] text-zinc-400 mt-1">${item.name}</span>`;
+                        container.appendChild(div);
+                    }
+                }, 50);
+
+                // After spinDuration, stop and set final position
+                setTimeout(() => {
+                    clearInterval(intervalId);
+                    // Set the top index to stopIndex
+                    currentTopIndex[reelIndex] = stopIndex;
+                    renderReel(reelIndex);
+                    resolve();
+                }, spinDuration);
+            });
+        }
+
+        // Main spin function – CS:GO style sequential stopping
+        async function spin() {
+            spinBtn.disabled = true;
+            statusDiv.textContent = 'Spinning...';
+            addLog('Spin initiated.');
+
+            // Determine final positions (with some random, but we may force a win for demo)
+            // For realism, we'll randomly pick stop indices.
+            const stopIndices = [];
+            for (let i = 0; i < REEL_COUNT; i++) {
+                const reelLen = reels[i].length;
+                stopIndices.push(Math.floor(Math.random() * reelLen));
+            }
+
+            // Optionally, force a win sometimes (e.g., if random match count >= 3)
+            // We'll just let it be random.
+
+            // Spin each reel with increasing delays to create suspense
+            const spinDurations = [1200, 1400, 1600, 1800, 2000]; // ms each reel spins
+
+            // Add log updates for suspense
+            for (let i = 0; i < REEL_COUNT; i++) {
+                // Update status for each reel
+                statusDiv.textContent = `Reel ${i+1} spinning...`;
+                addLog(`Reel ${i+1} is spinning.`);
+                await spinReel(i, spinDurations[i], stopIndices[i]);
+                statusDiv.textContent = `Reel ${i+1} stopped.`;
+                addLog(`Reel ${i+1} stopped.`);
+                // Small pause between reels for dramatic effect
+                await sleep(300);
+            }
+
+            // All reels stopped – evaluate win
+            const winSymbols = currentTopIndex.map((idx, i) => reels[i][idx]);
+            const matchCount = countMatches(winSymbols);
+            let winAmount = 0;
+            let winMessage = 'No win.';
+
+            if (matchCount >= 3) {
+                winAmount = matchCount * 150; // placeholder
+                winMessage = `🔥 WIN! ${matchCount} matching items! +${winAmount} ₽`;
+                statusDiv.textContent = winMessage;
+                addLog(`Win: ${winMessage}`);
+                // visual celebration (no QTE)
+                document.getElementById('machineWrapper').classList.add('flash-win-3');
+                setTimeout(() => {
+                    document.getElementById('machineWrapper').classList.remove('flash-win-3');
+                }, 1500);
+                // launch confetti (simple)
+                launchConfetti();
+            } else {
+                statusDiv.textContent = 'Nothing this time. Try again.';
+                addLog('No win.');
+            }
+
+            // Update loot pool
+            updateLootPool(winAmount);
+
+            spinBtn.disabled = false;
+        }
+
+        function countMatches(symbolIndices) {
+            if (symbolIndices.length === 0) return 0;
+            const firstIdx = symbolIndices[0];
+            const firstItem = ITEMS[firstIdx];
+            let count = 0;
+            for (let idx of symbolIndices) {
+                if (ITEMS[idx].name === firstItem.name) count++;
+                else break;
+            }
+            return count;
+        }
+
+        // --- Confetti (simple) ---
+        function launchConfetti() {
+            const canvas = document.getElementById('confettiCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const pieces = [];
+            for (let i = 0; i < 150; i++) {
+                pieces.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    w: Math.random() * 8 + 4,
+                    h: Math.random() * 8 + 4,
+                    color: `hsl(${Math.random() * 360}, 80%, 60%)`,
+                    vy: Math.random() * 3 + 2,
+                    vx: (Math.random() - 0.5) * 2,
+                    rot: Math.random() * 360,
+                    rv: (Math.random() - 0.5) * 4,
+                });
+            }
+            let frames = 0;
+            const interval = setInterval(() => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = false;
+                for (let p of pieces) {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.rot += p.rv;
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rot * Math.PI / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+                    ctx.restore();
+                    if (p.y < canvas.height + 20) alive = true;
+                }
+                frames++;
+                if (!alive || frames > 200) {
+                    clearInterval(interval);
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }, 20);
+        }
+
+        // --- Logging ---
+        function addLog(message) {
+            const entry = document.createElement('div');
+            const timestamp = new Date().toLocaleTimeString();
+            entry.className = 'text-zinc-300 border-b border-zinc-800/50 py-1';
+            entry.innerHTML = `<span class="text-yellow-600/70">[${timestamp}]</span> ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        clearLogBtn.addEventListener('click', () => {
+            logContainer.innerHTML = '';
+            addLog('Logs cleared.');
+        });
+
+        // --- Loot Pool ---
+        let totalMoney = 0;
+        let totalItems = 0;
+
+        function updateLootPool(amount) {
+            totalMoney += amount;
+            if (amount > 0) totalItems += Math.floor(amount / 100);
+            document.querySelector('#lootPool span:first-child').textContent = `₽ ${totalMoney}`;
+            document.querySelector('#lootPool span:last-child').textContent = `${totalItems}× Items`;
+        }
+
+        // --- Init ---
+        function init() {
+            setTimeout(() => {
+                loadingOverlay.style.opacity = '0';
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, 500);
+                spinBtn.disabled = false;
+                renderAllReels();
+                addLog('System ready. No QTEs active.');
+                statusDiv.textContent = 'Ready to roll';
+            }, 1200);
+        }
+
+        spinBtn.addEventListener('click', spin);
+
+        // --- Minigame Manager (for future external minigames) ---
+        const MinigameManager = {
+            overlay: document.getElementById('minigameOverlay'),
+            container: document.getElementById('mgContent'),
+            loading: document.getElementById('mgLoading'),
+            closeBtn: document.getElementById('mgCloseBtn'),
+            currentGame: null,
+
+            launch(gameName) {
+                this.overlay.classList.remove('hidden');
+                this.loading.classList.remove('hidden');
+                this.container.innerHTML = '';
+
+                const iframe = document.createElement('iframe');
+                iframe.src = `/tarkov/minigames/${gameName}/index.html`;
+                iframe.className = 'w-full h-full border-0';
+                iframe.allow = 'autoplay; encrypted-media';
+                this.container.appendChild(iframe);
+
+                iframe.onload = () => {
+                    this.loading.classList.add('hidden');
+                    iframe.contentWindow.postMessage({ type: 'init', data: {} }, '*');
+                };
+
+                window.addEventListener('message', this._handleMessage);
+                this.currentGame = gameName;
+            },
+
+            _handleMessage(event) {
+                if (event.data.type === 'result') {
+                    MinigameManager.close();
+                    document.dispatchEvent(new CustomEvent('minigameComplete', { detail: event.data }));
+                }
+            },
+
+            close() {
+                this.overlay.classList.add('hidden');
+                this.container.innerHTML = '';
+                window.removeEventListener('message', this._handleMessage);
+                this.currentGame = null;
+            }
+        };
+
+        document.getElementById('mgCloseBtn').addEventListener('click', () => MinigameManager.close());
+
+        // Start
+        init();
+    </script>
+</body>
+</html>
