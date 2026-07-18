@@ -328,13 +328,13 @@
                     }
                 }
 
-                if (list.length === 0) {
-                    // Fallback example data just in case nothing loaded
-                    list = ["tools/lyricsEditor.html", "tools/audioVisualLatencyTest.html"];
-                    console.warn('Could not locate htmlList.json in /resources, using defaults.');
-                }
-
                 treeView.innerHTML = ''; // Clear loading text
+
+                if (list.length === 0) {
+                    treeView.innerHTML = '<li class="tree-item" style="cursor: default; color: var(--dim-text);">NO FILES CONFIGURED</li>';
+                    console.warn('Could not locate htmlList.json in /resources.');
+                    return;
+                }
                 
                 list.forEach(filePath => {
                     const li = document.createElement('li');
@@ -371,18 +371,6 @@
         }
 
         // --- TICKER DATA LOGIC ---
-        const FALLBACK_JSON = {
-          "categories": [
-            {
-              "name": "Fallback Technology News",
-              "feeds": [
-                { "title": "TechCrunch", "url": "https://techcrunch.com/feed/" },
-                { "title": "The Verge", "url": "https://www.theverge.com/rss/index.xml" }
-              ]
-            }
-          ]
-        };
-
         const tickerContent = document.getElementById('ticker-content');
 
         async function fetchConfig() {
@@ -395,7 +383,7 @@
                     console.warn(`Could not load RSS config from ${path}`);
                 }
             }
-            return FALLBACK_JSON;
+            return { categories: [] }; // No hardcoded fallback
         }
 
         async function fetchRSS(url) {
