@@ -97,7 +97,7 @@
             color: #555555;
         }
 
-        /* --- MAIN WORKSPACE --- */
+        /* --- MAIN WORKSPACE BASE --- */
         main {
             flex: 1;
             display: flex;
@@ -117,17 +117,45 @@
             font-size: 0.9rem;
         }
 
-        /* The embedded HTML wrapper */
-        .workspace-wrapper {
-            width: 100%;
-            height: 100%;
-            border: none;
+        /* --- OVERLAY MODAL WRAPPER --- */
+        .overlay-wrapper {
+            position: fixed;
+            inset: 0;
+            background-color: var(--bg-color);
+            z-index: 100;
             display: none;
+            flex-direction: column;
+        }
+
+        .overlay-wrapper.is-open {
+            display: flex;
+        }
+
+        .overlay-header {
+            height: 60px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            flex-shrink: 0;
             background-color: var(--bg-color);
         }
 
-        .workspace-wrapper.is-active {
-            display: block;
+        .overlay-title {
+            color: var(--dim-text);
+            font-weight: 700;
+            letter-spacing: 2px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        /* The embedded HTML iframe */
+        .workspace-wrapper {
+            width: 100%;
+            flex: 1;
+            border: none;
+            background-color: var(--bg-color);
         }
 
         /* --- TOGGLE BUTTONS --- */
@@ -254,10 +282,9 @@
             </ul>
         </aside>
 
-        <!-- Main Content Area -->
+        <!-- Main Content Area (Base index.html) -->
         <main>
             <div id="welcome-message">Waiting for terminal instructions...</div>
-            <iframe id="workspace-iframe" class="workspace-wrapper" src=""></iframe>
         </main>
 
     </div>
@@ -270,6 +297,16 @@
         <div class="ticker" id="ticker-content">
             <span class="ticker-item" style="color: var(--dim-text);">INITIALIZING FEED SYNC...</span>
         </div>
+    </div>
+
+    <!-- Overlay Modal Wrapper (Sits on top of everything) -->
+    <div class="overlay-wrapper" id="overlay-wrapper">
+        <div class="overlay-header">
+            <span class="overlay-title" id="overlay-title">WORKSPACE</span>
+            <!-- Resetting position relative for the static header layout -->
+            <button id="overlay-close" class="ableton-toggle" style="position: static; margin-left: auto;">CLOSE [ X ]</button>
+        </div>
+        <iframe id="workspace-iframe" class="workspace-wrapper" src=""></iframe>
     </div>
 
     <script>
@@ -305,14 +342,26 @@
             }
         });
 
+        // --- OVERLAY WRAPPER LOGIC ---
+        const overlayWrapper = document.getElementById('overlay-wrapper');
+        const overlayClose = document.getElementById('overlay-close');
+        const overlayTitle = document.getElementById('overlay-title');
+        const workspaceIframe = document.getElementById('workspace-iframe');
+
+        overlayClose.addEventListener('click', () => {
+            overlayWrapper.classList.remove('is-open');
+            // Clear the iframe src to stop background audio/processes
+            workspaceIframe.src = '';
+            // Reset active states in sidebar
+            document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('active'));
+        });
+
         // --- SIDEBAR FILE TREE LOGIC ---
         const treeView = document.getElementById('tree-view');
-        const welcomeMessage = document.getElementById('welcome-message');
-        const workspaceIframe = document.getElementById('workspace-iframe');
 
         async function initFileTree() {
             try {
-                // Fetch the user's provided json list from the specific /resources path
+                // Dynamically fetch from local resources structure without hardcoded defaults
                 const pathsToTry = ['/resources/htmlList.json', 'resources/htmlList.json', 'htmlList.json'];
                 let list = [];
                 
@@ -321,14 +370,14 @@
                         const response = await fetch(path);
                         if (response.ok) {
                             list = await response.json();
-                            break; // Stop looking once we successfully load it
+                            break;
                         }
                     } catch (e) {
-                        // Ignore and try the next path
+                        // Continue checking fallback paths
                     }
                 }
 
-                treeView.innerHTML = ''; // Clear loading text
+                treeView.innerHTML = '';
 
                 if (list.length === 0) {
                     treeView.innerHTML = '<li class="tree-item" style="cursor: default; color: var(--dim-text);">NO FILES CONFIGURED</li>';
@@ -340,7 +389,7 @@
                     const li = document.createElement('li');
                     li.className = 'tree-item';
                     
-                    // Split path to highlight the folder hierarchy in the UI
+                    // Format nice readable folder hierarchies
                     const pathParts = filePath.split('/');
                     const fileName = pathParts.pop().replace('.html', '');
                     const folderPath = pathParts.length > 0 ? pathParts.join('/') + '/' : '';
@@ -348,15 +397,15 @@
                     li.innerHTML = `<span class="tree-folder">${folderPath}</span>${fileName}`;
                     
                     li.addEventListener('click', () => {
-                        // Handle Active States
+                        // Manage UI active selection class
                         document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('active'));
                         li.classList.add('active');
                         
-                        // Switch Viewport
-                        welcomeMessage.style.display = 'none';
-                        workspaceIframe.classList.add('is-active');
+                        // Launch the Ableton-style overlay on top
+                        overlayTitle.textContent = fileName;
+                        overlayWrapper.classList.add('is-open');
                         
-                        // Force absolute root path to prevent Vercel relative 404 routing errors
+                        // Force absolute root path for stable Vercel routing
                         const targetUrl = filePath.startsWith('/') ? filePath : '/' + filePath;
                         workspaceIframe.src = targetUrl;
                     });
@@ -383,7 +432,7 @@
                     console.warn(`Could not load RSS config from ${path}`);
                 }
             }
-            return { categories: [] }; // No hardcoded fallback
+            return { categories: [] };
         }
 
         async function fetchRSS(url) {
