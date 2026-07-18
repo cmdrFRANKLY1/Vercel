@@ -312,14 +312,26 @@
 
         async function initFileTree() {
             try {
-                // Fetch the user's provided json list
-                const response = await fetch('htmlList.json');
+                // Fetch the user's provided json list from the specific /resources path
+                const pathsToTry = ['/resources/htmlList.json', 'resources/htmlList.json', 'htmlList.json'];
                 let list = [];
-                if (response.ok) {
-                    list = await response.json();
-                } else {
-                    // Fallback example data just in case
+                
+                for (const path of pathsToTry) {
+                    try {
+                        const response = await fetch(path);
+                        if (response.ok) {
+                            list = await response.json();
+                            break; // Stop looking once we successfully load it
+                        }
+                    } catch (e) {
+                        // Ignore and try the next path
+                    }
+                }
+
+                if (list.length === 0) {
+                    // Fallback example data just in case nothing loaded
                     list = ["tools/lyricsEditor.html", "tools/audioVisualLatencyTest.html"];
+                    console.warn('Could not locate htmlList.json in /resources, using defaults.');
                 }
 
                 treeView.innerHTML = ''; // Clear loading text
@@ -353,7 +365,7 @@
                 });
 
             } catch (err) {
-                console.warn('Could not load htmlList.json', err);
+                console.error('Critical error building file tree:', err);
                 treeView.innerHTML = '<li class="tree-item" style="color: red;">FILE SYS ERROR</li>';
             }
         }
@@ -374,7 +386,7 @@
         const tickerContent = document.getElementById('ticker-content');
 
         async function fetchConfig() {
-            const pathsToTry = ['/resources/rssFeedsList.json'];
+            const pathsToTry = ['/resources/rssFeedsList.json', 'resources/rssFeedsList.json'];
             for (const path of pathsToTry) {
                 try {
                     const res = await fetch(path);
