@@ -58,8 +58,6 @@
             white-space: nowrap;
             padding-left: 100vw; /* Start completely off-screen to the right */
             will-change: transform;
-            /* Animation duration will be set dynamically via JS based on text length */
-            animation: ticker-scroll linear infinite;
         }
 
         @keyframes ticker-scroll {
@@ -68,7 +66,7 @@
         }
 
         .ticker:hover {
-            animation-play-state: paused; /* Pause on hover so users can click links */
+            animation-play-state: paused !important; /* Pause on hover so users can click links */
         }
 
         /* Ticker Items */
@@ -113,7 +111,7 @@
 
     <div class="ticker-wrap">
         <div class="ticker" id="ticker-content">
-            <span class="ticker-item">INITIALIZING FEED SYNC...</span>
+            <span class="ticker-item" style="color: var(--dim-text);">INITIALIZING FEED SYNC...</span>
         </div>
     </div>
 
@@ -148,14 +146,16 @@
         const tickerContent = document.getElementById('ticker-content');
 
         async function fetchConfig() {
-            // Updated path to point to the new resources directory
             const pathsToTry = ['/resources/rssFeedsList.json'];
             for (const path of pathsToTry) {
                 try {
                     const res = await fetch(path);
-                    if (res.ok) return await res.json();
+                    if (res.ok) {
+                        const data = await res.json();
+                        return data;
+                    }
                 } catch (e) {
-                    // ignore and try next fallback
+                    console.warn(`Could not load config from ${path}, falling back to defaults.`);
                 }
             }
             return FALLBACK_JSON;
@@ -175,12 +175,13 @@
             const xmlDoc = parser.parseFromString(xmlString, "text/xml");
             const items = [];
 
-            if (xmlDoc.querySelector("parsererror")) return items;
+            // We no longer strictly return empty arrays on parsererror
+            // because many feeds have minor namespace errors but are still readable!
 
             const isAtom = xmlDoc.getElementsByTagName('feed').length > 0 && xmlDoc.getElementsByTagName('entry').length > 0;
 
             if (isAtom) {
-                const entries = Array.from(xmlDoc.querySelectorAll('entry')).slice(0, 5); // Limit to 5 per feed for the ticker
+                const entries = Array.from(xmlDoc.querySelectorAll('entry')).slice(0, 5); // Limit to 5 per feed
                 entries.forEach(entry => { 
                     const title = entry.querySelector('title')?.textContent?.trim() || 'Untitled';
                     let link = '#';
@@ -190,14 +191,14 @@
                             link = ln.getAttribute('href'); break;
                         }
                     }
-                    items.push({ title, link });
+                    if (title !== 'Untitled') items.push({ title, link });
                 });
             } else {
                 const nodes = Array.from(xmlDoc.querySelectorAll('item')).slice(0, 5);
                 nodes.forEach(node => { 
                     const title = node.querySelector('title')?.textContent?.trim() || 'Untitled';
                     const link = node.querySelector('link')?.textContent?.trim() || node.querySelector('guid')?.textContent?.trim() || '#';
-                    items.push({ title, link });
+                    if (title !== 'Untitled') items.push({ title, link });
                 });
             }
             return items;
@@ -205,50 +206,68 @@
 
         async function bootTicker() {
             try {
+                tickerContent.innerHTML = '<span class="ticker-item" style="color: var(--dim-text);">FETCHING LATEST ARTICLES...</span>';
+                
                 const config = await fetchConfig();
-                tickerContent.innerHTML = '<span class="ticker-item text-dim">FETCHING LATEST ARTICLES...</span>';
+                
+                // Flatten feeds to process them
+                const allFeeds = config.categories ? config.categories.flatMap(cat => cat.feeds || []) : [];
+                
+                if (allFeeds.length === 0) {
+                    tickerContent.innerHTML = '<span class="ticker-item" style="color: var(--dim-text);">NO FEEDS CONFIGURED.</span>';
+                    return;
+                }
+
+                // Fetch feeds CONCURRENTLY for vastly improved loading speeds
+                const feedPromises = allFeeds.map(async (feed) => {
+                    try {
+                        const xmlText = await fetchRSS(feed.url);
+                        const items = parseXMLData(xmlText);
+                        return { feed, items };
+                    } catch (err) {
+                        console.warn(`Failed to load feed: ${feed.title}`, err);
+                        return { feed, items: [] }; // Fail gracefully for individual feeds
+                    }
+                });
+
+                const results = await Promise.all(feedPromises);
                 
                 let allItemsHTML = '';
                 let totalCharacters = 0;
 
-                // Flatten feeds to process them
-                const allFeeds = config.categories.flatMap(cat => cat.feeds);
-                
-                // Process feeds sequentially or in smaller batches to avoid overwhelming the proxy
-                for (const feed of allFeeds) {
-                    try {
-                        const xmlText = await fetchRSS(feed.url);
-                        const items = parseXMLData(xmlText);
-                        
-                        items.forEach(item => {
-                            const itemHTML = `
-                                <span class="ticker-item">
-                                    <span class="feed-source">${feed.title}</span>
-                                    <a href="${item.link}" target="_blank" rel="noopener noreferrer">${item.title}</a>
-                                </span><span class="separator">✦</span>
-                            `;
-                            allItemsHTML += itemHTML;
-                            totalCharacters += feed.title.length + item.title.length;
-                        });
-                    } catch (err) {
-                        console.warn(`Failed to load feed: ${feed.title}`, err);
-                    }
-                }
+                results.forEach(({ feed, items }) => {
+                    items.forEach(item => {
+                        const itemHTML = `
+                            <span class="ticker-item">
+                                <span class="feed-source">${feed.title}</span>
+                                <a href="${item.link}" target="_blank" rel="noopener noreferrer">${item.title}</a>
+                            </span><span class="separator">✦</span>
+                        `;
+                        allItemsHTML += itemHTML;
+                        totalCharacters += feed.title.length + item.title.length;
+                    });
+                });
 
-                if (allItemsHTML) {
+                if (allItemsHTML.length > 0) {
                     tickerContent.innerHTML = allItemsHTML;
+                    
+                    // Force a browser reflow to reset the animation smoothly
+                    tickerContent.style.animation = 'none';
+                    tickerContent.offsetHeight; 
+                    
                     // Dynamically calculate animation duration based on content length
-                    // Roughly 10 seconds per 100 characters for a readable scroll speed
-                    const scrollDuration = Math.max(20, totalCharacters * 0.10);
-                    tickerContent.style.animationDuration = `${scrollDuration}s`;
+                    // Roughly 12 seconds per 100 characters for a comfortable reading speed
+                    const scrollDuration = Math.max(20, totalCharacters * 0.12);
+                    tickerContent.style.animation = `ticker-scroll ${scrollDuration}s linear infinite`;
                 } else {
-                    tickerContent.innerHTML = '<span class="ticker-item">NO FEEDS AVAILABLE AT THIS TIME.</span>';
-                    tickerContent.style.animationDuration = `10s`;
+                    tickerContent.innerHTML = '<span class="ticker-item" style="color: var(--dim-text);">NO ARTICLES AVAILABLE AT THIS TIME.</span>';
+                    tickerContent.style.animation = `ticker-scroll 10s linear infinite`;
                 }
 
             } catch (error) {
-                tickerContent.innerHTML = '<span class="ticker-item">SYSTEM ERROR: UNABLE TO LOAD FEEDS.</span>';
-                tickerContent.style.animationDuration = `10s`;
+                console.error('Ticker boot error:', error);
+                tickerContent.innerHTML = '<span class="ticker-item" style="color: var(--dim-text);">SYSTEM ERROR: UNABLE TO LOAD FEEDS.</span>';
+                tickerContent.style.animation = `ticker-scroll 10s linear infinite`;
             }
         }
 
