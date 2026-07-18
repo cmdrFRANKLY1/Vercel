@@ -3,594 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retro World Clock Compass</title>
-    <!-- Tailwind CSS for lightweight responsive scaffolding -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>RSS News Ticker</title>
     <style>
         :root {
-            --compass-white: #ffffff;
-            --compass-dim-white: #e5e7eb;
-            --compass-gray: #888888;
-            --compass-dark-gray: #374151;
-            --bg-dark: #000000;
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --dim-text: #888888;
+            --border-color: #333333;
         }
 
         body {
-            background-color: var(--bg-dark);
-            color: var(--compass-dim-white);
-            /* High-legibility system sans-serif typography */
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            overflow: hidden;
-        }
-
-        /* --- Crisp Text-Based Compass Viewport --- */
-        .compass-viewport {
-            position: relative;
-            width: 100%;
-            max-width: 680px;
-            height: 54px; /* Reduced from 68px for maximum compactness */
-            /* Simple CSS mask for fading edges - highly optimized */
-            mask-image: linear-gradient(to right, transparent, white 20%, white 80%, transparent);
-            -webkit-mask-image: linear-gradient(to right, transparent, white 20%, white 80%, transparent);
-            overflow: hidden;
-            cursor: grab;
-        }
-        
-        .compass-viewport:active {
-            cursor: grabbing;
-        }
-
-        /* Text-based borders top & bottom */
-        .compass-viewport::before, .compass-viewport::after {
-            content: '';
-            position: absolute;
-            left: 5%;
-            right: 5%;
-            height: 1px;
-            background: linear-gradient(to right, transparent, var(--compass-dark-gray), var(--compass-white), var(--compass-dark-gray), transparent);
-        }
-        .compass-viewport::before { top: 2px; }
-        .compass-viewport::after { bottom: 2px; }
-
-        /* Minimal Center Indicator Arrow */
-        .compass-center-notch {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            color: var(--compass-white);
-            font-size: 0.7rem;
-            line-height: 1;
-            z-index: 10;
-            pointer-events: none;
-        }
-
-        /* --- Scrolling Track --- */
-        .compass-track {
-            position: absolute;
-            top: 4px; /* Snug fit up top */
-            left: 50%;
-            width: 0;
-            height: 44px; /* Reduced to match more compact scale */
-            will-change: transform;
-            transition: transform 0.08s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-
-        /* --- Individual Location Elements --- */
-        .compass-item {
-            position: absolute;
+            overflow: hidden; /* Prevent scrollbars from the ticker */
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            transform: translateX(-50%);
-            user-select: none;
-            width: 140px;
         }
 
-        .location-name {
-            font-size: 0.6rem;
-            font-weight: 700;
-            color: var(--compass-gray);
-            line-height: 1.0;
-            margin-bottom: 1px;
-            letter-spacing: 1.5px;
-            transition: color 0.15s ease;
-        }
-
-        .location-time {
-            font-size: 0.7rem;
-            font-weight: 800;
-            color: #6b7280; /* Dimmed initially */
-            line-height: 1.0;
-            margin-bottom: 1px;
-            transition: color 0.15s ease, transform 0.15s ease;
-        }
-
-        .time-diff {
-            font-size: 0.5rem;
-            font-weight: 500;
-            color: var(--compass-dark-gray);
-            line-height: 1.0;
-            transition: color 0.15s ease;
-        }
-
-        /* Highlight elements that align with the center compass line */
-        .compass-item.at-center .location-name {
-            color: var(--compass-white);
-        }
-
-        .compass-item.at-center .location-time {
-            color: var(--compass-white);
-            transform: scale(1.03);
-        }
-
-        .compass-item.at-center .time-diff {
-            color: var(--compass-dim-white);
-        }
-
-        /* Monospace ticks */
-        .tick-mark {
-            font-size: 0.45rem;
-            line-height: 1;
-            color: var(--compass-dark-gray);
-            margin-top: 1px;
-            transition: color 0.15s ease;
-        }
-
-        .compass-item.at-center .tick-mark {
-            color: var(--compass-white);
-        }
-
-        /* Square button styles */
-        .square-btn {
-            background-color: var(--bg-dark);
-            border: 1px solid var(--compass-dark-gray);
-            color: var(--compass-dim-white);
-            font-size: 0.65rem;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            transition: all 0.2s ease;
+        /* Main content area (placeholder) */
+        main {
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            text-align: center;
-            aspect-ratio: 1 / 1;
-            padding: 12px;
+            flex-direction: column;
+            color: var(--dim-text);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
         }
 
-        .square-btn:hover {
-            border-color: var(--compass-white);
-            background-color: var(--compass-white);
-            color: var(--bg-dark);
+        /* Ticker Container - Always on bottom */
+        .ticker-wrap {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 48px;
+            background-color: var(--bg-color);
+            border-top: 1px solid var(--border-color);
+            overflow: hidden;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+        }
+
+        /* The scrolling element */
+        .ticker {
+            display: inline-block;
+            white-space: nowrap;
+            padding-left: 100vw; /* Start completely off-screen to the right */
+            will-change: transform;
+            /* Animation duration will be set dynamically via JS based on text length */
+            animation: ticker-scroll linear infinite;
+        }
+
+        @keyframes ticker-scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .ticker:hover {
+            animation-play-state: paused; /* Pause on hover so users can click links */
+        }
+
+        /* Ticker Items */
+        .ticker-item {
+            display: inline-block;
+            margin-right: 3rem;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+        }
+
+        .ticker-item a {
+            color: var(--text-color);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .ticker-item a:hover {
+            color: var(--dim-text);
+            text-decoration: underline;
+        }
+
+        .feed-source {
+            font-weight: 700;
+            margin-right: 0.5rem;
+            color: var(--dim-text);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        .separator {
+            color: var(--border-color);
+            margin: 0 1rem;
         }
     </style>
 </head>
-<body class="flex flex-col items-center justify-start min-h-screen pt-4 px-4 select-none">
+<body>
 
-    <!-- MAIN COMPACT HUD CONTAINER -->
-    <div class="w-full flex flex-col items-center justify-start max-w-4xl">
-        
-        <!-- Local Time HUD (Snug margins) -->
-        <div class="text-center mb-1.5">
-            <div id="local-time" class="text-2xl font-black tracking-widest text-white">
-                00:00:00
-            </div>
-            <div id="local-date" class="text-[8px] text-gray-500 font-semibold tracking-widest mt-0">
-                ...
-            </div>
-        </div>
+    <main>
+        <div>Waiting for terminal instructions...</div>
+    </main>
 
-        <!-- Skyrim Compass Container (No gray background, tight padding) -->
-        <div class="w-full flex justify-center py-1 mb-3">
-            <div class="compass-viewport" id="compass-viewport">
-                <div class="compass-center-notch">▼</div>
-                <div class="compass-track" id="compass-track">
-                    <!-- Javascript populates items here -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Tools Grid Section -->
-        <div id="tools-container" class="w-full max-w-lg mt-3 hidden">
-            <div class="text-center text-[9px] text-gray-500 font-bold tracking-[3px] mb-4">
-                ✦ Available Realms ✦
-            </div>
-            <div id="tools-grid" class="grid grid-cols-2 gap-4 max-w-xs mx-auto">
-                <!-- Dynamically generated square buttons -->
-            </div>
-        </div>
-
-    </div>
-
-    <!-- Edge-to-Edge Wrapper Iframe Overlay -->
-    <div id="wrapper-modal" class="fixed inset-0 bg-black z-50 flex-col hidden">
-        <!-- Clean, minimal menu bar with standard casing buttons -->
-        <div class="flex items-center justify-end gap-3 px-6 py-3 border-b border-neutral-900 bg-black select-none">
-            <!-- Open in New Tab Button -->
-            <button id="wrapper-newtab" class="text-xs border border-neutral-800 hover:border-white text-neutral-400 hover:text-white px-4 py-1.5 font-semibold tracking-normal transition-all duration-150">
-                Open in New Tab
-            </button>
-            <!-- Dropdown-Based Download Button -->
-            <div class="relative inline-block text-left">
-                <button id="wrapper-download" class="text-xs border border-neutral-800 hover:border-white text-neutral-400 hover:text-white px-4 py-1.5 font-semibold tracking-normal transition-all duration-150 flex items-center gap-1">
-                    Download HTML
-                </button>
-                <div id="download-dropdown" class="absolute right-0 mt-2 w-28 bg-black border border-neutral-800 z-50 hidden flex-col">
-                    <button id="download-html-opt" class="text-left px-3 py-1.5 text-xs text-neutral-400 hover:text-white hover:bg-neutral-900 transition-all">.HTML</button>
-                    <button id="download-txt-opt" class="text-left px-3 py-1.5 text-xs text-neutral-400 hover:text-white hover:bg-neutral-900 transition-all">.TXT</button>
-                </div>
-            </div>
-            <!-- Close button styled with highly readable typography, standard casing -->
-            <button id="wrapper-close" class="text-xs border border-white hover:bg-white hover:text-black px-4 py-1.5 font-semibold tracking-normal transition-all duration-150">
-                Close Workspace
-            </button>
-        </div>
-        <iframe id="wrapper-iframe" class="flex-grow w-full border-0 bg-black" src=""></iframe>
-    </div>
-
-    <!-- Custom Confirmation Dialog Modal (Prevents browser popup issues in iframes) -->
-    <div id="confirm-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center hidden select-none">
-        <div class="border border-neutral-800 bg-black p-6 max-w-xs w-full mx-4 text-center">
-            <div class="text-[10px] font-bold tracking-widest text-white mb-6">ARE YOU SURE YOU WANT TO CLOSE?</div>
-            <div class="flex justify-center gap-4">
-                <button id="confirm-yes" class="text-[10px] border border-white hover:bg-white hover:text-black px-4 py-2 font-bold tracking-widest transition-all">
-                    YES, CLOSE
-                </button>
-                <button id="confirm-no" class="text-[10px] border border-neutral-800 hover:border-white px-4 py-2 font-bold tracking-widest transition-all text-neutral-400 hover:text-white">
-                    NO, STAY
-                </button>
-            </div>
+    <div class="ticker-wrap">
+        <div class="ticker" id="ticker-content">
+            <span class="ticker-item">INITIALIZING FEED SYNC...</span>
         </div>
     </div>
 
     <script>
-        const locations = [
-            { name: "Honolulu", zone: "Pacific/Honolulu" },
-            { name: "Anchorage", zone: "America/Anchorage" },
-            { name: "Los Angeles", zone: "America/Los_Angeles" },
-            { name: "Denver", zone: "America/Denver" },
-            { name: "Chicago", zone: "America/Chicago" },
-            { name: "New York", zone: "America/New_York" },
-            { name: "Sao Paulo", zone: "America/Sao_Paulo" },
-            { name: "Azores", zone: "Atlantic/Azores" },
-            { name: "London", zone: "Europe/London" },
-            { name: "Paris", zone: "Europe/Paris" },
-            { name: "Cairo", zone: "Africa/Cairo" },
-            { name: "Moscow", zone: "Europe/Moscow" },
-            { name: "Dubai", zone: "Asia/Dubai" },
-            { name: "Karachi", zone: "Asia/Karachi" },
-            { name: "Dhaka", zone: "Asia/Dhaka" },
-            { name: "Bangkok", zone: "Asia/Bangkok" },
-            { name: "Hong Kong", zone: "Asia/Hong_Kong" },
-            { name: "Tokyo", zone: "Asia/Tokyo" },
-            { name: "Sydney", zone: "Australia/Sydney" },
-            { name: "Auckland", zone: "Pacific/Auckland" }
-        ];
-
-        const viewport = document.getElementById('compass-viewport');
-        const track = document.getElementById('compass-track');
-        const localTimeEl = document.getElementById('local-time');
-        const localDateEl = document.getElementById('local-date');
-        const toolsContainer = document.getElementById('tools-container');
-        const toolsGrid = document.getElementById('tools-grid');
-
-        // Wrapper Overlay elements
-        const wrapperModal = document.getElementById('wrapper-modal');
-        const wrapperIframe = document.getElementById('wrapper-iframe');
-        const wrapperClose = document.getElementById('wrapper-close');
-        const wrapperNewTab = document.getElementById('wrapper-newtab');
-        const wrapperDownload = document.getElementById('wrapper-download');
-        const downloadDropdown = document.getElementById('download-dropdown');
-        const downloadHtmlOpt = document.getElementById('download-html-opt');
-        const downloadTxtOpt = document.getElementById('download-txt-opt');
-
-        // Custom Confirmation Modal elements
-        const confirmModal = document.getElementById('confirm-modal');
-        const confirmYes = document.getElementById('confirm-yes');
-        const confirmNo = document.getElementById('confirm-no');
-
-        let compassOffset = 0; 
-        let targetOffset = 0;  
-        const spacingMultiplier = 160; // Pixels per hour distance
-        let lastSecondsTimestamp = -1; // Flag tracking the last rendered second
-        let currentActivePath = '';    // Stores the currently loaded workspace path
-
-        // Instantly generate minimal DOM nodes for compass
-        locations.forEach((loc, index) => {
-            const item = document.createElement('div');
-            item.className = 'compass-item';
-            item.id = `item-${index}`;
-            item.innerHTML = `
-                <div class="location-name">${loc.name}</div>
-                <div class="location-time" id="time-${index}">00:00:00</div>
-                <div class="time-diff" id="diff-${index}">...</div>
-                <div class="tick-mark">|</div>
-            `;
-            track.appendChild(item);
-        });
-
-        // Helper to format path string to a nice clean title
-        function beautifyToolName(path) {
-            const filename = path.split('/').pop().replace('.html', '');
-            return filename
-                .replace(/([A-Z])/g, ' $1')
-                .trim()
-                .toUpperCase();
-        }
-
-        // Fetch JSON and build dynamic workspace buttons (no hardcoded fallbacks)
-        async function loadHTMLList() {
-            try {
-                const response = await fetch('htmlList.json');
-                if (!response.ok) throw new Error('Could not load htmlList.json');
-                
-                const list = await response.json();
-                if (Array.isArray(list) && list.length > 0) {
-                    toolsGrid.innerHTML = '';
-                    list.forEach(itemPath => {
-                        const btn = document.createElement('button');
-                        btn.className = 'square-btn';
-                        btn.textContent = beautifyToolName(itemPath);
-                        btn.addEventListener('click', () => {
-                            openWrapper(itemPath);
-                        });
-                        toolsGrid.appendChild(btn);
-                    });
-                    toolsContainer.classList.remove('hidden');
-                } else {
-                    toolsContainer.classList.add('hidden');
-                }
-            } catch (err) {
-                console.warn('htmlList.json loading skipped or failed. No items will be loaded:', err);
-                toolsContainer.classList.add('hidden');
+        // Fallback JSON in case the fetch fails
+        const FALLBACK_JSON = {
+          "categories": [
+            {
+              "name": "German Gaming News",
+              "feeds": [
+                { "title": "GamesIndustry", "url": "https://www.gamesindustry.biz/topics/german-games-industry-association/feed" },
+                { "title": "SAZ News", "url": "https://www.spieleautorenzunft.de/news.rss" }
+              ]
+            },
+            {
+              "name": "German Science News",
+              "feeds": [
+                { "title": "IDW", "url": "https://idw-online.de/en/news.rss" },
+                { "title": "DFG", "url": "https://www.dfg.de/rss/info-wissenschaft.rss" }
+              ]
+            },
+            {
+              "name": "Technology News",
+              "feeds": [
+                { "title": "TechCrunch", "url": "https://techcrunch.com/feed/" },
+                { "title": "The Verge", "url": "https://www.theverge.com/rss/index.xml" }
+              ]
             }
-        }
+          ]
+        };
 
-        // Handle opening of iframe wrapper
-        function openWrapper(path) {
-            currentActivePath = path;
-            wrapperIframe.src = path;
-            wrapperModal.style.display = 'flex';
-        }
+        const tickerContent = document.getElementById('ticker-content');
 
-        // Open in New Tab action - closes modal immediately and opens path
-        wrapperNewTab.addEventListener('click', () => {
-            if (currentActivePath) {
-                window.open(currentActivePath, '_blank');
-                wrapperModal.style.display = 'none';
-                wrapperIframe.src = '';
-                currentActivePath = '';
-            }
-        });
-
-        // Toggle the download dropdown menu
-        wrapperDownload.addEventListener('click', (e) => {
-            e.stopPropagation();
-            downloadDropdown.classList.toggle('hidden');
-        });
-
-        // Close download dropdown if clicked elsewhere
-        window.addEventListener('click', () => {
-            downloadDropdown.classList.add('hidden');
-        });
-
-        // Performs fetch to Blob transition and executes local browser download
-        async function runDownload(format) {
-            if (!currentActivePath) return;
-            try {
-                const response = await fetch(currentActivePath);
-                if (!response.ok) throw new Error('File download read failure');
-                const text = await response.text();
-                
-                const mimeType = format === 'html' ? 'text/html' : 'text/plain';
-                const blob = new Blob([text], { type: mimeType });
-                
-                // Extract filename only (e.g. tools/lyricsEditor.html -> lyricsEditor)
-                const baseName = currentActivePath.split('/').pop().replace('.html', '');
-                const targetFilename = `${baseName}.${format}`;
-                
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = targetFilename;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(link.href);
-            } catch (err) {
-                console.error('Error running downlaod export:', err);
-            }
-        }
-
-        downloadHtmlOpt.addEventListener('click', () => runDownload('html'));
-        downloadTxtOpt.addEventListener('click', () => runDownload('txt'));
-
-        // Trigger Custom Close Confirmation instead of standard window.confirm
-        wrapperClose.addEventListener('click', () => {
-            confirmModal.style.display = 'flex';
-        });
-
-        // Confirmation actions
-        confirmYes.addEventListener('click', () => {
-            confirmModal.style.display = 'none';
-            wrapperModal.style.display = 'none';
-            wrapperIframe.src = ''; // reset iframe memory
-            currentActivePath = '';
-        });
-
-        // Confirmation actions cancel
-        confirmNo.addEventListener('click', () => {
-            confirmModal.style.display = 'none';
-        });
-
-        // Dynamic position, state, and anti-overlap handler
-        function renderCompassPositionAndHighlight() {
-            const now = new Date();
-            
-            // 1. Calculate ideal coordinates based on timezone offset
-            const positionedItems = locations.map((loc, index) => {
-                let hourDifference = 0;
+        async function fetchConfig() {
+            const pathsToTry = ['/tools/rss/rssFeedsList.json', '/tools/rss/rssFeedsList.html'];
+            for (const path of pathsToTry) {
                 try {
-                    const tzString = now.toLocaleString("en-US", { timeZone: loc.zone });
-                    const tzDate = new Date(tzString);
-                    hourDifference = (tzDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-                } catch(e) {}
-                
-                return {
-                    index,
-                    idealX: hourDifference * spacingMultiplier,
-                    x: hourDifference * spacingMultiplier
-                };
-            });
-
-            // 2. Sort by ideal position to run the overlap-avoidance algorithm
-            positionedItems.sort((a, b) => a.idealX - b.idealX);
-
-            // Enforce a minimum horizontal separation of 120px between adjacent centers to prevent overlapping names
-            const minSeparation = 120;
-            const iterations = 5; // Run multiple passes to smoothly resolve complex clusters
-            
-            for (let step = 0; step < iterations; step++) {
-                for (let i = 0; i < positionedItems.length - 1; i++) {
-                    let leftNode = positionedItems[i];
-                    let rightNode = positionedItems[i + 1];
-                    let overlap = minSeparation - (rightNode.x - leftNode.x);
-                    
-                    if (overlap > 0) {
-                        // Push them apart equally
-                        leftNode.x -= overlap / 2;
-                        rightNode.x += overlap / 2;
-                    }
-                }
-            }
-
-            // 3. Render the adjusted positions back to the DOM elements
-            positionedItems.forEach((item) => {
-                const domItem = document.getElementById(`item-${item.index}`);
-                if (domItem) {
-                    domItem.style.left = `${item.x}px`;
-
-                    // Simple proximity styling trigger (highlight item when centered near ▼)
-                    const itemGlobalPosition = item.x + targetOffset;
-                    if (Math.abs(itemGlobalPosition) < 32) {
-                        domItem.classList.add('at-center');
-                    } else {
-                        domItem.classList.remove('at-center');
-                    }
-                }
-            });
-        }
-
-        // HEAVY calculation updates: strictly bound to happen exactly once per second
-        function updateTickingClocks() {
-            const now = new Date();
-            const currentSeconds = Math.floor(now.getTime() / 1000);
-
-            // Halt if the second has not incremented
-            if (currentSeconds === lastSecondsTimestamp) return;
-            lastSecondsTimestamp = currentSeconds;
-
-            // Update local panel
-            localTimeEl.textContent = now.toTimeString().split(' ')[0];
-            localDateEl.textContent = now.toLocaleDateString(undefined, { 
-                weekday: 'short', 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric' 
-            });
-
-            // Normalize our base comparison time to have 0 milliseconds to match string-parsed dates
-            const nowSec = new Date(now);
-            nowSec.setMilliseconds(0);
-
-            // Update all target cities
-            locations.forEach((loc, index) => {
-                const clockElement = document.getElementById(`time-${index}`);
-                const diffElement = document.getElementById(`diff-${index}`);
-                
-                try {
-                    const tzString = now.toLocaleString("en-US", { timeZone: loc.zone });
-                    const tzDate = new Date(tzString); // tzDate automatically has 0 milliseconds
-
-                    // Compute precise, stable delta (Days, Hours, Minutes, Seconds)
-                    let diffMs = tzDate - nowSec;
-                    const prefix = diffMs >= 0 ? "+" : "-";
-                    const absDiff = Math.abs(diffMs);
-
-                    const days = Math.floor(absDiff / (1000 * 60 * 60 * 24));
-                    const hours = Math.floor((absDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const minutes = Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((absDiff % (1000 * 60)) / 1000);
-
-                    // Render updated text values seamlessly
-                    clockElement.textContent = tzDate.toTimeString().split(' ')[0];
-                    diffElement.textContent = `${prefix}${days > 0 ? days + 'd ' : ''}${hours}h ${minutes}m ${seconds}s`;
+                    const res = await fetch(path);
+                    if (res.ok) return await res.json();
                 } catch (e) {
-                    clockElement.textContent = "Error";
-                    diffElement.textContent = "Error";
+                    // ignore and try next fallback
                 }
-            });
-        }
-
-        // --- Clean Scroll & Gesture Engine ---
-        function animate() {
-            // Smoothly slide track using cheap, native CSS transforms
-            if (Math.abs(targetOffset - compassOffset) > 0.05) {
-                compassOffset += (targetOffset - compassOffset) * 0.15;
-                track.style.transform = `translateX(${compassOffset}px)`;
             }
-            
-            // Fast visual position alignment
-            renderCompassPositionAndHighlight();
-
-            // Run timezone math only on a fresh second
-            updateTickingClocks();
-            
-            requestAnimationFrame(animate);
+            return FALLBACK_JSON;
         }
 
-        // Handle Mousewheel inputs
-        window.addEventListener('wheel', (e) => {
-            if (e.target.closest('#compass-viewport') || e.target.closest('body')) {
-                targetOffset -= e.deltaY * 0.35; // Fine-tuned scroll sensitivity
+        async function fetchRSS(url) {
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+            const response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            if (!data.contents) throw new Error('Empty payload');
+            return data.contents;
+        }
+
+        function parseXMLData(xmlString) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+            const items = [];
+
+            if (xmlDoc.querySelector("parsererror")) return items;
+
+            const isAtom = xmlDoc.getElementsByTagName('feed').length > 0 && xmlDoc.getElementsByTagName('entry').length > 0;
+
+            if (isAtom) {
+                const entries = Array.from(xmlDoc.querySelectorAll('entry')).slice(0, 5); // Limit to 5 per feed for the ticker
+                entries.forEach(entry => { 
+                    const title = entry.querySelector('title')?.textContent?.trim() || 'Untitled';
+                    let link = '#';
+                    const linkNodes = entry.querySelectorAll('link');
+                    for (let ln of linkNodes) {
+                        if (ln.getAttribute('rel') === 'alternate' || !ln.hasAttribute('rel')) {
+                            link = ln.getAttribute('href'); break;
+                        }
+                    }
+                    items.push({ title, link });
+                });
+            } else {
+                const nodes = Array.from(xmlDoc.querySelectorAll('item')).slice(0, 5);
+                nodes.forEach(node => { 
+                    const title = node.querySelector('title')?.textContent?.trim() || 'Untitled';
+                    const link = node.querySelector('link')?.textContent?.trim() || node.querySelector('guid')?.textContent?.trim() || '#';
+                    items.push({ title, link });
+                });
+            }
+            return items;
+        }
+
+        async function bootTicker() {
+            try {
+                const config = await fetchConfig();
+                tickerContent.innerHTML = '<span class="ticker-item text-dim">FETCHING LATEST ARTICLES...</span>';
                 
-                // Keep viewport bounded inside approximate timeline limits
-                const maxScrollLimit = spacingMultiplier * 13.5;
-                targetOffset = Math.max(-maxScrollLimit, Math.min(maxScrollLimit, targetOffset));
+                let allItemsHTML = '';
+                let totalCharacters = 0;
+
+                // Flatten feeds to process them
+                const allFeeds = config.categories.flatMap(cat => cat.feeds);
+                
+                // Process feeds sequentially or in smaller batches to avoid overwhelming the proxy
+                for (const feed of allFeeds) {
+                    try {
+                        const xmlText = await fetchRSS(feed.url);
+                        const items = parseXMLData(xmlText);
+                        
+                        items.forEach(item => {
+                            const itemHTML = `
+                                <span class="ticker-item">
+                                    <span class="feed-source">${feed.title}</span>
+                                    <a href="${item.link}" target="_blank" rel="noopener noreferrer">${item.title}</a>
+                                </span><span class="separator">✦</span>
+                            `;
+                            allItemsHTML += itemHTML;
+                            totalCharacters += feed.title.length + item.title.length;
+                        });
+                    } catch (err) {
+                        console.warn(`Failed to load feed: ${feed.title}`, err);
+                    }
+                }
+
+                if (allItemsHTML) {
+                    tickerContent.innerHTML = allItemsHTML;
+                    // Dynamically calculate animation duration based on content length
+                    // Roughly 10 seconds per 100 characters for a readable scroll speed
+                    const scrollDuration = Math.max(20, totalCharacters * 0.10);
+                    tickerContent.style.animationDuration = `${scrollDuration}s`;
+                } else {
+                    tickerContent.innerHTML = '<span class="ticker-item">NO FEEDS AVAILABLE AT THIS TIME.</span>';
+                    tickerContent.style.animationDuration = `10s`;
+                }
+
+            } catch (error) {
+                tickerContent.innerHTML = '<span class="ticker-item">SYSTEM ERROR: UNABLE TO LOAD FEEDS.</span>';
+                tickerContent.style.animationDuration = `10s`;
             }
-        });
+        }
 
-        // Clean Drag / Swipe support
-        let isDragging = false;
-        let startX = 0;
-
-        const startDrag = (clientX) => {
-            isDragging = true;
-            startX = clientX;
-        };
-
-        const moveDrag = (clientX) => {
-            if (!isDragging) return;
-            const dx = clientX - startX;
-            targetOffset += dx;
-            startX = clientX;
-        };
-
-        const stopDrag = () => { isDragging = false; };
-
-        // Bind drag listeners
-        viewport.addEventListener('mousedown', (e) => startDrag(e.clientX));
-        window.addEventListener('mousemove', (e) => moveDrag(e.clientX));
-        window.addEventListener('mouseup', stopDrag);
-
-        viewport.addEventListener('touchstart', (e) => startDrag(e.touches[0].clientX));
-        window.addEventListener('touchmove', (e) => moveDrag(e.touches[0].clientX));
-        window.addEventListener('touchend', stopDrag);
-
-        // Initialization
-        loadHTMLList();
-        animate();
+        // Initialize ticker on load
+        window.addEventListener('DOMContentLoaded', bootTicker);
     </script>
 </body>
 </html>
