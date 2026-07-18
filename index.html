@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RSS News Ticker</title>
+    <title>Workspace Dashboard</title>
     <style>
         :root {
             --bg-color: #000000;
             --text-color: #ffffff;
             --dim-text: #888888;
             --border-color: #333333;
+            --ticker-height: 48px;
         }
 
         body {
@@ -18,45 +19,181 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            overflow: hidden; /* Prevent scrollbars from the ticker */
+            overflow: hidden;
             height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
-        /* Main content area (placeholder) */
+        /* --- LAYOUT SHELL --- */
+        .app-shell {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            height: calc(100vh - var(--ticker-height));
+            overflow: hidden;
+        }
+
+        /* --- ABLETON STYLE SIDEBAR --- */
+        .sidebar {
+            width: 0;
+            height: 100%;
+            background-color: var(--bg-color);
+            border-right: 0px solid var(--border-color); /* Hidden when closed */
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), border 0.25s;
+            display: flex;
+            flex-direction: column;
+            padding-top: 60px; /* Space for the toggle button */
+            flex-shrink: 0;
+        }
+
+        .sidebar.is-open {
+            width: 260px;
+            border-right: 1px solid var(--border-color);
+        }
+
+        /* File Tree Styles */
+        .tree-view {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            width: 260px; /* Fixed width to prevent text wrap jumps during animation */
+        }
+
+        .tree-item {
+            padding: 8px 20px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: var(--dim-text);
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: background-color 0.1s, color 0.1s;
+        }
+
+        .tree-item:hover {
+            color: var(--text-color);
+            background-color: #111111;
+        }
+
+        /* Active inverted Ableton state */
+        .tree-item.active {
+            background-color: var(--text-color);
+            color: var(--bg-color);
+            font-weight: 700;
+        }
+
+        .tree-folder {
+            color: var(--border-color);
+            margin-right: 4px;
+        }
+
+        .tree-item.active .tree-folder {
+            color: #555555;
+        }
+
+        /* --- MAIN WORKSPACE --- */
         main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background-color: var(--bg-color);
+        }
+
+        #welcome-message {
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-direction: column;
             color: var(--dim-text);
             text-transform: uppercase;
             letter-spacing: 2px;
             font-size: 0.9rem;
         }
 
-        /* Ticker Container - Always on bottom */
-        .ticker-wrap {
-            position: fixed;
-            bottom: 0;
-            left: 0;
+        /* The embedded HTML wrapper */
+        .workspace-wrapper {
             width: 100%;
-            height: 48px;
+            height: 100%;
+            border: none;
+            display: none;
+            background-color: var(--bg-color);
+        }
+
+        .workspace-wrapper.is-active {
+            display: block;
+        }
+
+        /* --- TOGGLE BUTTONS --- */
+        .ableton-toggle {
+            position: fixed;
+            background-color: var(--bg-color);
+            color: var(--dim-text);
+            border: 1px solid var(--border-color);
+            padding: 4px 10px;
+            font-family: inherit;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            cursor: pointer;
+            z-index: 60;
+            transition: color 0.15s, background-color 0.15s;
+        }
+
+        .ableton-toggle:hover {
+            color: var(--text-color);
+            background-color: #111111;
+        }
+
+        /* Sidebar Toggle (Top Left) */
+        #sidebar-toggle {
+            top: 20px;
+            left: 20px;
+        }
+
+        /* Ticker Toggle (Bottom Right) */
+        #ticker-toggle {
+            bottom: var(--ticker-height);
+            right: 20px;
+            border-bottom: none;
+            transition: bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.15s, background-color 0.15s;
+        }
+
+        #ticker-toggle.is-hidden {
+            bottom: 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* --- TICKER COMPONENT --- */
+        .ticker-wrap {
+            width: 100%;
+            height: var(--ticker-height);
             background-color: var(--bg-color);
             border-top: 1px solid var(--border-color);
             overflow: hidden;
             box-sizing: border-box;
             display: flex;
             align-items: center;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 50;
+            flex-shrink: 0;
         }
 
-        /* The scrolling element */
+        .ticker-wrap.is-hidden {
+            transform: translateY(100%);
+            margin-top: calc(var(--ticker-height) * -1); /* Pull content down to fill void */
+        }
+
         .ticker {
             display: inline-block;
             white-space: nowrap;
-            padding-left: 100vw; /* Start completely off-screen to the right */
+            padding-left: 100vw;
             will-change: transform;
         }
 
@@ -66,10 +203,9 @@
         }
 
         .ticker:hover {
-            animation-play-state: paused !important; /* Pause on hover so users can click links */
+            animation-play-state: paused !important;
         }
 
-        /* Ticker Items */
         .ticker-item {
             display: inline-block;
             margin-right: 3rem;
@@ -105,36 +241,125 @@
 </head>
 <body>
 
-    <main>
-        <div>Waiting for terminal instructions...</div>
-    </main>
+    <!-- Top Left Toggle -->
+    <button id="sidebar-toggle" class="ableton-toggle">FILES [ + ]</button>
 
-    <div class="ticker-wrap">
+    <!-- Main Application Flex Shell -->
+    <div class="app-shell">
+        
+        <!-- Collapsible Tree View -->
+        <aside class="sidebar" id="sidebar">
+            <ul class="tree-view" id="tree-view">
+                <li class="tree-item" style="cursor: default;">LOADING LIST...</li>
+            </ul>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main>
+            <div id="welcome-message">Waiting for terminal instructions...</div>
+            <iframe id="workspace-iframe" class="workspace-wrapper" src=""></iframe>
+        </main>
+
+    </div>
+
+    <!-- Bottom Right Toggle -->
+    <button id="ticker-toggle" class="ableton-toggle">RSS [ - ]</button>
+
+    <!-- Bottom Ticker -->
+    <div class="ticker-wrap" id="ticker-container">
         <div class="ticker" id="ticker-content">
             <span class="ticker-item" style="color: var(--dim-text);">INITIALIZING FEED SYNC...</span>
         </div>
     </div>
 
     <script>
-        // Fallback JSON in case the fetch fails
+        // --- UI TOGGLES LOGIC ---
+        const tickerContainer = document.getElementById('ticker-container');
+        const tickerToggle = document.getElementById('ticker-toggle');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        
+        let isTickerHidden = false;
+        tickerToggle.addEventListener('click', () => {
+            isTickerHidden = !isTickerHidden;
+            if (isTickerHidden) {
+                tickerContainer.classList.add('is-hidden');
+                tickerToggle.classList.add('is-hidden');
+                tickerToggle.innerHTML = 'RSS [ + ]';
+            } else {
+                tickerContainer.classList.remove('is-hidden');
+                tickerToggle.classList.remove('is-hidden');
+                tickerToggle.innerHTML = 'RSS [ - ]';
+            }
+        });
+
+        let isSidebarOpen = false;
+        sidebarToggle.addEventListener('click', () => {
+            isSidebarOpen = !isSidebarOpen;
+            if (isSidebarOpen) {
+                sidebar.classList.add('is-open');
+                sidebarToggle.innerHTML = 'FILES [ - ]';
+            } else {
+                sidebar.classList.remove('is-open');
+                sidebarToggle.innerHTML = 'FILES [ + ]';
+            }
+        });
+
+        // --- SIDEBAR FILE TREE LOGIC ---
+        const treeView = document.getElementById('tree-view');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const workspaceIframe = document.getElementById('workspace-iframe');
+
+        async function initFileTree() {
+            try {
+                // Fetch the user's provided json list
+                const response = await fetch('htmlList.json');
+                let list = [];
+                if (response.ok) {
+                    list = await response.json();
+                } else {
+                    // Fallback example data just in case
+                    list = ["tools/lyricsEditor.html", "tools/audioVisualLatencyTest.html"];
+                }
+
+                treeView.innerHTML = ''; // Clear loading text
+                
+                list.forEach(filePath => {
+                    const li = document.createElement('li');
+                    li.className = 'tree-item';
+                    
+                    // Split path to highlight the folder hierarchy in the UI
+                    const pathParts = filePath.split('/');
+                    const fileName = pathParts.pop().replace('.html', '');
+                    const folderPath = pathParts.length > 0 ? pathParts.join('/') + '/' : '';
+                    
+                    li.innerHTML = `<span class="tree-folder">${folderPath}</span>${fileName}`;
+                    
+                    li.addEventListener('click', () => {
+                        // Handle Active States
+                        document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('active'));
+                        li.classList.add('active');
+                        
+                        // Switch Viewport
+                        welcomeMessage.style.display = 'none';
+                        workspaceIframe.classList.add('is-active');
+                        workspaceIframe.src = filePath;
+                    });
+                    
+                    treeView.appendChild(li);
+                });
+
+            } catch (err) {
+                console.warn('Could not load htmlList.json', err);
+                treeView.innerHTML = '<li class="tree-item" style="color: red;">FILE SYS ERROR</li>';
+            }
+        }
+
+        // --- TICKER DATA LOGIC ---
         const FALLBACK_JSON = {
           "categories": [
             {
-              "name": "German Gaming News",
-              "feeds": [
-                { "title": "GamesIndustry", "url": "https://www.gamesindustry.biz/topics/german-games-industry-association/feed" },
-                { "title": "SAZ News", "url": "https://www.spieleautorenzunft.de/news.rss" }
-              ]
-            },
-            {
-              "name": "German Science News",
-              "feeds": [
-                { "title": "IDW", "url": "https://idw-online.de/en/news.rss" },
-                { "title": "DFG", "url": "https://www.dfg.de/rss/info-wissenschaft.rss" }
-              ]
-            },
-            {
-              "name": "Technology News",
+              "name": "Fallback Technology News",
               "feeds": [
                 { "title": "TechCrunch", "url": "https://techcrunch.com/feed/" },
                 { "title": "The Verge", "url": "https://www.theverge.com/rss/index.xml" }
@@ -150,12 +375,9 @@
             for (const path of pathsToTry) {
                 try {
                     const res = await fetch(path);
-                    if (res.ok) {
-                        const data = await res.json();
-                        return data;
-                    }
+                    if (res.ok) return await res.json();
                 } catch (e) {
-                    console.warn(`Could not load config from ${path}, falling back to defaults.`);
+                    console.warn(`Could not load RSS config from ${path}`);
                 }
             }
             return FALLBACK_JSON;
@@ -174,14 +396,10 @@
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlString, "text/xml");
             const items = [];
-
-            // We no longer strictly return empty arrays on parsererror
-            // because many feeds have minor namespace errors but are still readable!
-
             const isAtom = xmlDoc.getElementsByTagName('feed').length > 0 && xmlDoc.getElementsByTagName('entry').length > 0;
 
             if (isAtom) {
-                const entries = Array.from(xmlDoc.querySelectorAll('entry')).slice(0, 5); // Limit to 5 per feed
+                const entries = Array.from(xmlDoc.querySelectorAll('entry')).slice(0, 5);
                 entries.forEach(entry => { 
                     const title = entry.querySelector('title')?.textContent?.trim() || 'Untitled';
                     let link = '#';
@@ -209,8 +427,6 @@
                 tickerContent.innerHTML = '<span class="ticker-item" style="color: var(--dim-text);">FETCHING LATEST ARTICLES...</span>';
                 
                 const config = await fetchConfig();
-                
-                // Flatten feeds to process them
                 const allFeeds = config.categories ? config.categories.flatMap(cat => cat.feeds || []) : [];
                 
                 if (allFeeds.length === 0) {
@@ -218,15 +434,13 @@
                     return;
                 }
 
-                // Fetch feeds CONCURRENTLY for vastly improved loading speeds
                 const feedPromises = allFeeds.map(async (feed) => {
                     try {
                         const xmlText = await fetchRSS(feed.url);
                         const items = parseXMLData(xmlText);
                         return { feed, items };
                     } catch (err) {
-                        console.warn(`Failed to load feed: ${feed.title}`, err);
-                        return { feed, items: [] }; // Fail gracefully for individual feeds
+                        return { feed, items: [] };
                     }
                 });
 
@@ -250,14 +464,9 @@
 
                 if (allItemsHTML.length > 0) {
                     tickerContent.innerHTML = allItemsHTML;
-                    
-                    // Force a browser reflow to reset the animation smoothly
                     tickerContent.style.animation = 'none';
-                    tickerContent.offsetHeight; 
-                    
-                    // Dynamically calculate animation duration based on content length
-                    // Roughly 12 seconds per 100 characters for a comfortable reading speed
-                    const scrollDuration = Math.max(20, totalCharacters * 0.12);
+                    tickerContent.offsetHeight; // Reflow
+                    const scrollDuration = Math.max(33, totalCharacters * 0.20);
                     tickerContent.style.animation = `ticker-scroll ${scrollDuration}s linear infinite`;
                 } else {
                     tickerContent.innerHTML = '<span class="ticker-item" style="color: var(--dim-text);">NO ARTICLES AVAILABLE AT THIS TIME.</span>';
@@ -265,14 +474,16 @@
                 }
 
             } catch (error) {
-                console.error('Ticker boot error:', error);
                 tickerContent.innerHTML = '<span class="ticker-item" style="color: var(--dim-text);">SYSTEM ERROR: UNABLE TO LOAD FEEDS.</span>';
                 tickerContent.style.animation = `ticker-scroll 10s linear infinite`;
             }
         }
 
-        // Initialize ticker on load
-        window.addEventListener('DOMContentLoaded', bootTicker);
+        // Initialize Everything
+        window.addEventListener('DOMContentLoaded', () => {
+            initFileTree();
+            bootTicker();
+        });
     </script>
 </body>
 </html>
