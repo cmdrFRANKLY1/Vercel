@@ -3,538 +3,468 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workspace Dashboard</title>
+    <title>Generic Audio Workspace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root {
-            --bg-color: #000000;
-            --text-color: #ffffff;
-            --dim-text: #888888;
-            --border-color: #333333;
-            --ticker-height: 48px;
-        }
-
+        /* Custom UI Styles to mimic a DAW */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        
         body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            overflow: hidden;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
+            font-family: 'Inter', sans-serif;
+            background-color: #1c1c1c;
+            color: #b3b3b3;
+            overflow: hidden; /* Prevent body scroll, handle scrolling in panels */
         }
 
-        /* --- LAYOUT SHELL --- */
-        .app-shell {
-            display: flex;
-            flex: 1;
-            width: 100%;
-            height: calc(100vh - var(--ticker-height));
-            overflow: hidden;
+        /* DAW Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2a2a2a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a4a4a; 
+            border: 2px solid #2a2a2a;
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5a5a5a; 
         }
 
-        /* --- ABLETON STYLE SIDEBAR --- */
-        .sidebar {
-            width: 0;
-            height: 100%;
-            background-color: var(--bg-color);
-            border-right: 0px solid var(--border-color); /* Hidden when closed */
-            overflow-y: auto;
-            overflow-x: hidden;
-            transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), border 0.25s;
-            display: flex;
-            flex-direction: column;
-            padding-top: 60px; /* Space for the toggle button */
-            flex-shrink: 0;
-        }
-
-        .sidebar.is-open {
-            width: 260px;
-            border-right: 1px solid var(--border-color);
-        }
-
-        /* File Tree Styles */
-        .tree-view {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            width: 260px; /* Fixed width to prevent text wrap jumps during animation */
-        }
-
-        .tree-item {
-            padding: 8px 20px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            color: var(--dim-text);
-            border-bottom: 1px solid var(--border-color);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            transition: background-color 0.1s, color 0.1s;
-        }
-
-        .tree-item:hover {
-            color: var(--text-color);
-            background-color: #111111;
-        }
-
-        /* Active inverted Ableton state */
-        .tree-item.active {
-            background-color: var(--text-color);
-            color: var(--bg-color);
-            font-weight: 700;
-        }
-
-        .tree-folder {
-            color: var(--border-color);
-            margin-right: 4px;
-        }
-
-        .tree-item.active .tree-folder {
-            color: #555555;
-        }
-
-        /* --- MAIN WORKSPACE BASE --- */
-        main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
+        /* Clip styling */
+        .clip-slot {
+            height: 28px;
+            background-color: #2a2a2a;
+            border: 1px solid #1a1a1a;
+            margin-bottom: 2px;
             position: relative;
-            background-color: var(--bg-color);
-        }
-
-        #welcome-message {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--dim-text);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-size: 0.9rem;
-        }
-
-        /* --- OVERLAY MODAL WRAPPER --- */
-        .overlay-wrapper {
-            position: fixed;
-            inset: 0;
-            background-color: var(--bg-color);
-            z-index: 100;
-            display: none;
-            flex-direction: column;
-        }
-
-        .overlay-wrapper.is-open {
-            display: flex;
-        }
-
-        .overlay-header {
-            height: 60px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 20px;
-            flex-shrink: 0;
-            background-color: var(--bg-color);
-        }
-
-        .overlay-title {
-            color: var(--dim-text);
-            font-weight: 700;
-            letter-spacing: 2px;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-        }
-
-        /* The embedded HTML iframe */
-        .workspace-wrapper {
-            width: 100%;
-            flex: 1;
-            border: none;
-            background-color: var(--bg-color);
-        }
-
-        /* --- TOGGLE BUTTONS --- */
-        .ableton-toggle {
-            position: fixed;
-            background-color: var(--bg-color);
-            color: var(--dim-text);
-            border: 1px solid var(--border-color);
-            padding: 4px 10px;
-            font-family: inherit;
-            font-size: 0.65rem;
-            font-weight: 700;
-            letter-spacing: 2px;
             cursor: pointer;
-            z-index: 60;
-            transition: color 0.15s, background-color 0.15s;
         }
-
-        .ableton-toggle:hover {
-            color: var(--text-color);
-            background-color: #111111;
-        }
-
-        /* Sidebar Toggle (Top Left) */
-        #sidebar-toggle {
-            top: 20px;
-            left: 20px;
-        }
-
-        /* Ticker Toggle (Bottom Right) */
-        #ticker-toggle {
-            bottom: var(--ticker-height);
-            right: 20px;
-            border-bottom: none;
-            transition: bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.15s, background-color 0.15s;
-        }
-
-        #ticker-toggle.is-hidden {
+        
+        .clip {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
             bottom: 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        /* --- TICKER COMPONENT --- */
-        .ticker-wrap {
-            width: 100%;
-            height: var(--ticker-height);
-            background-color: var(--bg-color);
-            border-top: 1px solid var(--border-color);
-            overflow: hidden;
-            box-sizing: border-box;
             display: flex;
             align-items: center;
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            padding-left: 6px;
+            font-size: 11px;
+            color: #111;
+            font-weight: 500;
+            border-top-right-radius: 2px;
+            border-bottom-right-radius: 2px;
+        }
+
+        .clip:hover {
+            filter: brightness(1.1);
+        }
+
+        .clip .play-marker {
+            width: 0; 
+            height: 0; 
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+            border-left: 6px solid #111;
+            margin-right: 6px;
+        }
+
+        /* Generic Knobs/Sliders mockups */
+        .mock-knob {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #555;
+            position: relative;
+        }
+        .mock-knob::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 8px;
+            width: 2px;
+            height: 6px;
+            background-color: #888;
+        }
+
+        /* Toggle Button Styles */
+        .panel-toggle {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-color: #333;
+            border: 1px solid #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
             z-index: 50;
-            flex-shrink: 0;
+            color: #888;
+        }
+        .panel-toggle:hover {
+            background-color: #444;
+            color: #ddd;
+        }
+        .panel-toggle.active {
+            background-color: #eab308; /* Yellow active state */
+            color: #111;
         }
 
-        .ticker-wrap.is-hidden {
-            transform: translateY(100%);
-            margin-top: calc(var(--ticker-height) * -1); /* Pull content down to fill void */
-        }
-
-        .ticker {
-            display: inline-block;
-            white-space: nowrap;
-            padding-left: 100vw;
-            will-change: transform;
-        }
-
-        @keyframes ticker-scroll {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-100%); }
-        }
-
-        .ticker:hover {
-            animation-play-state: paused !important;
-        }
-
-        .ticker-item {
-            display: inline-block;
-            margin-right: 3rem;
-            font-size: 1rem;
-            letter-spacing: 0.5px;
-        }
-
-        .ticker-item a {
-            color: var(--text-color);
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .ticker-item a:hover {
-            color: var(--dim-text);
-            text-decoration: underline;
-        }
-
-        .feed-source {
-            font-weight: 700;
-            margin-right: 0.5rem;
-            color: var(--dim-text);
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 1px;
-        }
-
-        .separator {
-            color: var(--border-color);
-            margin: 0 1rem;
+        /* Layout transitions */
+        #section-left, #section-right, #section-bottom {
+            transition: all 0.2s ease-in-out;
         }
     </style>
 </head>
-<body>
+<body class="h-screen w-screen flex flex-col text-xs select-none">
 
-    <!-- Top Left Toggle -->
-    <button id="sidebar-toggle" class="ableton-toggle">FILES [ + ]</button>
-
-    <!-- Main Application Flex Shell -->
-    <div class="app-shell">
+    <!-- TOP SECTION (Transport / Global Controls) -->
+    <header class="h-12 bg-neutral-800 border-b border-black flex items-center px-4 justify-between shrink-0">
+        <div class="flex items-center space-x-4">
+            <div class="font-bold text-neutral-300">Section 1 (Global)</div>
+            
+            <!-- Generic Transport Controls -->
+            <div class="flex space-x-1 border border-neutral-900 bg-neutral-700 rounded p-0.5">
+                <button class="px-3 py-1 bg-neutral-600 hover:bg-neutral-500 rounded-sm text-green-400">▶</button>
+                <button class="px-3 py-1 bg-neutral-600 hover:bg-neutral-500 rounded-sm">■</button>
+                <button class="px-3 py-1 bg-neutral-600 hover:bg-neutral-500 rounded-sm text-red-500">●</button>
+            </div>
+            
+            <div class="flex items-center space-x-2 border border-neutral-900 bg-neutral-700 rounded px-2 py-1">
+                <span>120.00</span>
+                <span class="text-neutral-500">BPM</span>
+            </div>
+        </div>
         
-        <!-- Collapsible Tree View -->
-        <aside class="sidebar" id="sidebar">
-            <ul class="tree-view" id="tree-view">
-                <li class="tree-item" style="cursor: default;">LOADING LIST...</li>
-            </ul>
+        <div class="flex items-center space-x-2">
+            <div class="w-32 h-2 bg-neutral-900 rounded-full overflow-hidden">
+                <div class="h-full bg-green-500 w-1/2"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MIDDLE SECTION (Main Workspace) -->
+    <main class="flex-1 flex overflow-hidden relative">
+        
+        <!-- LEFT SECTION (Browser) -->
+        <aside id="section-left" class="w-56 bg-neutral-800 border-r border-black flex flex-col shrink-0">
+            <div class="p-2 border-b border-neutral-900 bg-neutral-700 font-semibold text-neutral-300 uppercase text-[10px] tracking-wider">
+                Section 2 (Browser)
+            </div>
+            <div class="p-2 flex-1 overflow-y-auto">
+                <div class="space-y-1">
+                    <div class="hover:bg-neutral-700 px-2 py-1 rounded cursor-pointer text-white">Item Category 1</div>
+                    <div class="hover:bg-neutral-700 px-2 py-1 rounded cursor-pointer">Item Category 2</div>
+                    <div class="hover:bg-neutral-700 px-2 py-1 rounded cursor-pointer">Item Category 3</div>
+                    <div class="mt-4 mb-1 px-2 text-neutral-500 uppercase text-[10px]">Folder 1</div>
+                    <div class="pl-4 space-y-1">
+                        <div class="hover:bg-neutral-700 px-2 py-0.5 rounded cursor-pointer text-neutral-400 flex items-center"><span class="w-2 h-2 rounded-full bg-blue-400 mr-2"></span> Resource 1</div>
+                        <div class="hover:bg-neutral-700 px-2 py-0.5 rounded cursor-pointer text-neutral-400 flex items-center"><span class="w-2 h-2 rounded-full bg-blue-400 mr-2"></span> Resource 2</div>
+                        <div class="hover:bg-neutral-700 px-2 py-0.5 rounded cursor-pointer text-neutral-400 flex items-center"><span class="w-2 h-2 rounded-full bg-blue-400 mr-2"></span> Resource 3</div>
+                    </div>
+                    <!-- Folder 2 Container added here -->
+                    <div class="mt-4 mb-1 px-2 text-neutral-500 uppercase text-[10px]">Folder 2</div>
+                    <div id="folder-2-list" class="pl-4 space-y-1 pb-4">
+                        <div class="text-[10px] text-neutral-600 px-2 italic">Loading...</div>
+                    </div>
+                </div>
+            </div>
         </aside>
 
-        <!-- Main Content Area (Base index.html) -->
-        <main>
-            <div id="welcome-message">Waiting for terminal instructions...</div>
-        </main>
+        <!-- CENTER SECTION (Session / Grid View) -->
+        <div id="section-center" class="flex-1 bg-neutral-900 flex overflow-x-auto p-1 space-x-1 relative">
+            
+            <!-- Toggles inside the center section (positioned absolutely to match Ableton layout) -->
+            <button id="toggle-left" onclick="toggleSection('section-left', 'toggle-left', 'width', 'w-56')" class="panel-toggle active absolute top-2 left-2" title="Toggle Section 2">
+                <svg width="8" height="8" viewBox="0 0 10 10"><path d="M7 1L3 5l4 4" stroke="currentColor" fill="none" stroke-width="2"/></svg>
+            </button>
+            <button id="toggle-bottom" onclick="toggleSection('section-bottom', 'toggle-bottom', 'height', 'h-52')" class="panel-toggle active absolute bottom-2 left-2" title="Toggle Section 5">
+                <svg width="8" height="8" viewBox="0 0 10 10"><path d="M1 3l4 4 4-4" stroke="currentColor" fill="none" stroke-width="2"/></svg>
+            </button>
+            <button id="toggle-right" onclick="toggleSection('section-right', 'toggle-right', 'width', 'w-48')" class="panel-toggle active absolute bottom-2 right-2" title="Toggle Section 4">
+                <svg width="8" height="8" viewBox="0 0 10 10"><path d="M3 1l4 4-4 4" stroke="currentColor" fill="none" stroke-width="2"/></svg>
+            </button>
 
-    </div>
+            <!-- Grid spacer to offset for the toggle buttons -->
+            <div class="w-6 shrink-0"></div>
 
-    <!-- Bottom Right Toggle -->
-    <button id="ticker-toggle" class="ableton-toggle">RSS [ - ]</button>
+            <!-- Generic Track 1 -->
+            <div class="w-28 bg-neutral-800 border border-black flex flex-col rounded-t shrink-0">
+                <div class="h-6 bg-neutral-700 text-center leading-6 font-semibold border-b border-black text-neutral-300">Track 1</div>
+                <div class="flex-1 p-1 overflow-y-auto">
+                    <div class="clip-slot">
+                        <div class="clip bg-red-400"><div class="play-marker"></div>Audio Clip 1</div>
+                    </div>
+                    <div class="clip-slot"></div>
+                    <div class="clip-slot">
+                        <div class="clip bg-red-500"><div class="play-marker"></div>Audio Clip 2</div>
+                    </div>
+                    <div class="clip-slot"></div>
+                </div>
+                <!-- Track Mixer Section -->
+                <div class="h-32 border-t border-black bg-neutral-800 p-2 flex flex-col items-center justify-between">
+                    <div class="flex space-x-2">
+                        <div class="mock-knob"></div>
+                        <div class="mock-knob"></div>
+                    </div>
+                    <div class="flex space-x-1 w-full justify-center mt-2">
+                        <div class="w-6 h-4 bg-neutral-600 rounded text-[9px] text-center leading-4 hover:bg-yellow-500 hover:text-black cursor-pointer">S</div>
+                        <div class="w-6 h-4 bg-yellow-500 text-black rounded text-[9px] text-center leading-4 cursor-pointer">M</div>
+                    </div>
+                    <div class="w-4 h-16 bg-black rounded-full mt-2 relative">
+                        <div class="absolute bottom-4 left-0 w-full h-3 bg-neutral-400 rounded-sm cursor-ns-resize"></div>
+                    </div>
+                </div>
+            </div>
 
-    <!-- Bottom Ticker -->
-    <div class="ticker-wrap" id="ticker-container">
-        <div class="ticker" id="ticker-content">
-            <span class="ticker-item" style="color: var(--dim-text);">INITIALIZING FEED SYNC...</span>
+            <!-- Generic Track 2 -->
+            <div class="w-28 bg-neutral-800 border border-black flex flex-col rounded-t shrink-0">
+                <div class="h-6 bg-neutral-700 text-center leading-6 font-semibold border-b border-black text-neutral-300">Track 2</div>
+                <div class="flex-1 p-1 overflow-y-auto">
+                    <div class="clip-slot"></div>
+                    <div class="clip-slot">
+                        <div class="clip bg-teal-400"><div class="play-marker"></div>Midi Clip 1</div>
+                    </div>
+                    <div class="clip-slot">
+                        <div class="clip bg-teal-500"><div class="play-marker"></div>Midi Clip 2</div>
+                    </div>
+                    <div class="clip-slot"></div>
+                </div>
+                <div class="h-32 border-t border-black bg-neutral-800 p-2 flex flex-col items-center justify-between">
+                    <div class="flex space-x-2">
+                        <div class="mock-knob"></div>
+                        <div class="mock-knob"></div>
+                    </div>
+                    <div class="flex space-x-1 w-full justify-center mt-2">
+                        <div class="w-6 h-4 bg-neutral-600 rounded text-[9px] text-center leading-4 hover:bg-yellow-500 hover:text-black cursor-pointer">S</div>
+                        <div class="w-6 h-4 bg-neutral-600 rounded text-[9px] text-center leading-4 hover:bg-yellow-500 hover:text-black cursor-pointer">M</div>
+                    </div>
+                    <div class="w-4 h-16 bg-black rounded-full mt-2 relative">
+                        <div class="absolute bottom-8 left-0 w-full h-3 bg-neutral-400 rounded-sm cursor-ns-resize"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generic Track 3 -->
+            <div class="w-28 bg-neutral-800 border border-black flex flex-col rounded-t shrink-0 opacity-50">
+                <div class="h-6 bg-neutral-700 text-center leading-6 font-semibold border-b border-black text-neutral-300">Track 3</div>
+                <div class="flex-1 p-1 overflow-y-auto">
+                    <div class="clip-slot"></div>
+                    <div class="clip-slot"></div>
+                    <div class="clip-slot"></div>
+                    <div class="clip-slot"></div>
+                </div>
+                <div class="h-32 border-t border-black bg-neutral-800 p-2 flex flex-col items-center justify-between">
+                    <div class="flex space-x-2">
+                        <div class="mock-knob"></div>
+                        <div class="mock-knob"></div>
+                    </div>
+                     <div class="flex space-x-1 w-full justify-center mt-2">
+                        <div class="w-6 h-4 bg-neutral-600 rounded text-[9px] text-center leading-4 hover:bg-yellow-500 hover:text-black cursor-pointer">S</div>
+                        <div class="w-6 h-4 bg-neutral-600 rounded text-[9px] text-center leading-4 hover:bg-yellow-500 hover:text-black cursor-pointer">M</div>
+                    </div>
+                    <div class="w-4 h-16 bg-black rounded-full mt-2 relative">
+                        <div class="absolute bottom-2 left-0 w-full h-3 bg-neutral-400 rounded-sm cursor-ns-resize"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="w-6 shrink-0"></div> <!-- Right spacer -->
+        </div>
+
+        <!-- RIGHT SECTION (Master / Returns) -->
+        <aside id="section-right" class="w-48 bg-neutral-800 border-l border-black flex flex-col shrink-0">
+            <div class="p-2 border-b border-neutral-900 bg-neutral-700 font-semibold text-neutral-300 uppercase text-[10px] tracking-wider text-right">
+                Section 4 (Master)
+            </div>
+            <div class="flex-1 flex p-1 space-x-1">
+                <!-- Return Track -->
+                <div class="flex-1 border border-black flex flex-col rounded-t bg-neutral-700">
+                    <div class="h-6 text-center leading-6 font-semibold border-b border-black">Ret A</div>
+                    <div class="flex-1"></div>
+                     <div class="h-32 border-t border-black p-2 flex flex-col items-center justify-end">
+                        <div class="w-4 h-24 bg-black rounded-full mt-2 relative">
+                            <div class="absolute bottom-6 left-0 w-full h-3 bg-neutral-400 rounded-sm cursor-ns-resize"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Master Track -->
+                <div class="flex-1 border border-black flex flex-col rounded-t bg-neutral-700">
+                    <div class="h-6 text-center leading-6 font-semibold border-b border-black">Master</div>
+                    <div class="flex-1 p-1 flex flex-col gap-1 justify-end pb-2">
+                        <div class="h-6 bg-neutral-600 flex items-center justify-center text-[10px] border border-black rounded-sm cursor-pointer hover:bg-neutral-500">Scene 1</div>
+                        <div class="h-6 bg-neutral-600 flex items-center justify-center text-[10px] border border-black rounded-sm cursor-pointer hover:bg-neutral-500">Scene 2</div>
+                        <div class="h-6 bg-neutral-600 flex items-center justify-center text-[10px] border border-black rounded-sm cursor-pointer hover:bg-neutral-500">Scene 3</div>
+                    </div>
+                    <div class="h-32 border-t border-black p-2 flex flex-col items-center justify-end">
+                        <div class="w-4 h-24 bg-black rounded-full mt-2 relative flex overflow-hidden">
+                             <!-- VU Meter Mockup -->
+                            <div class="absolute bottom-0 left-0 w-full h-16 bg-green-500"></div>
+                            <div class="absolute bottom-16 left-0 w-full h-4 bg-yellow-500"></div>
+                            <div class="absolute bottom-4 left-0 w-full h-3 bg-neutral-400 rounded-sm cursor-ns-resize shadow-md"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- BOTTOM SECTION (Detail View) -->
+    <footer id="section-bottom" class="h-52 bg-neutral-800 border-t border-black shrink-0 flex flex-col">
+        <!-- Detail View Tabs -->
+        <div class="h-6 bg-neutral-700 border-b border-neutral-900 flex px-2 text-[10px] uppercase tracking-wider font-semibold">
+            <div class="px-4 py-1 bg-neutral-800 border-t-2 border-yellow-500 text-neutral-200 cursor-pointer">Module View 1</div>
+            <div class="px-4 py-1 hover:bg-neutral-600 cursor-pointer text-neutral-500">Module View 2</div>
+        </div>
+        <!-- Detail Content -->
+        <div class="flex-1 flex p-2 space-x-2 overflow-x-auto bg-neutral-800">
+            <!-- Generic Device 1 -->
+            <div class="w-64 border border-black bg-neutral-700 rounded-sm flex flex-col shrink-0">
+                <div class="px-2 py-1 bg-neutral-600 border-b border-black font-semibold text-neutral-200 flex justify-between items-center">
+                    <span>Generic Instrument 1</span>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500 border border-black"></div>
+                </div>
+                <div class="flex-1 p-2 flex justify-around items-center">
+                    <div class="flex flex-col items-center"><div class="mock-knob mb-1"></div><span>Param 1</span></div>
+                    <div class="flex flex-col items-center"><div class="mock-knob mb-1"></div><span>Param 2</span></div>
+                    <div class="flex flex-col items-center"><div class="mock-knob mb-1"></div><span>Param 3</span></div>
+                </div>
+            </div>
+            
+            <!-- Generic Device 2 -->
+            <div class="w-48 border border-black bg-neutral-700 rounded-sm flex flex-col shrink-0">
+                <div class="px-2 py-1 bg-neutral-600 border-b border-black font-semibold text-neutral-200 flex justify-between items-center">
+                    <span>Audio Effect 1</span>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500 border border-black"></div>
+                </div>
+                <div class="flex-1 p-2 flex justify-around items-center">
+                    <div class="w-20 h-16 bg-neutral-900 rounded border border-neutral-800 flex items-center justify-center overflow-hidden relative">
+                        <!-- Mock visualizer graph -->
+                        <svg class="w-full h-full text-green-500" viewBox="0 0 100 100" preserveAspectRatio="none">
+                            <path d="M0 80 Q 25 20, 50 50 T 100 30 L 100 100 L 0 100 Z" fill="currentColor" opacity="0.3"/>
+                            <path d="M0 80 Q 25 20, 50 50 T 100 30" fill="none" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drop area mockup -->
+            <div class="flex-1 border border-dashed border-neutral-600 rounded-sm flex items-center justify-center text-neutral-500 min-w-[200px]">
+                Drop Audio Effects Here
+            </div>
+        </div>
+    </footer>
+
+    <!-- External Tool Wrapper Overlay added here -->
+    <div id="tool-wrapper" class="fixed inset-0 z-[100] bg-black/90 hidden flex-col p-8 backdrop-blur-sm">
+        <div class="bg-neutral-800 rounded-t-lg border border-neutral-700 flex justify-between items-center p-3 shadow-lg">
+            <h2 id="tool-title" class="text-white font-semibold ml-2 text-lg tracking-wide">Tool</h2>
+            <button onclick="closeToolWrapper()" class="bg-red-600 hover:bg-red-500 text-white rounded px-4 py-1.5 font-bold transition-colors">Close</button>
+        </div>
+        <div class="flex-1 bg-neutral-200 rounded-b-lg border-x border-b border-neutral-700 overflow-hidden shadow-2xl relative">
+            <iframe id="tool-iframe" class="w-full h-full border-none absolute inset-0"></iframe>
         </div>
     </div>
 
-    <!-- Overlay Modal Wrapper (Sits on top of everything) -->
-    <div class="overlay-wrapper" id="overlay-wrapper">
-        <div class="overlay-header">
-            <span class="overlay-title" id="overlay-title">WORKSPACE</span>
-            <!-- Resetting position relative for the static header layout -->
-            <button id="overlay-close" class="ableton-toggle" style="position: static; margin-left: auto;">CLOSE [ X ]</button>
-        </div>
-        <iframe id="workspace-iframe" class="workspace-wrapper" src=""></iframe>
-    </div>
-
+    <!-- JavaScript to handle Section Toggles -->
     <script>
-        // --- UI TOGGLES LOGIC ---
-        const tickerContainer = document.getElementById('ticker-container');
-        const tickerToggle = document.getElementById('ticker-toggle');
-        const sidebar = document.getElementById('sidebar');
-        const sidebarToggle = document.getElementById('sidebar-toggle');
-        
-        let isTickerHidden = false;
-        tickerToggle.addEventListener('click', () => {
-            isTickerHidden = !isTickerHidden;
-            if (isTickerHidden) {
-                tickerContainer.classList.add('is-hidden');
-                tickerToggle.classList.add('is-hidden');
-                tickerToggle.innerHTML = 'RSS [ + ]';
-            } else {
-                tickerContainer.classList.remove('is-hidden');
-                tickerToggle.classList.remove('is-hidden');
-                tickerToggle.innerHTML = 'RSS [ - ]';
-            }
-        });
-
-        let isSidebarOpen = false;
-        sidebarToggle.addEventListener('click', () => {
-            isSidebarOpen = !isSidebarOpen;
-            if (isSidebarOpen) {
-                sidebar.classList.add('is-open');
-                sidebarToggle.innerHTML = 'FILES [ - ]';
-            } else {
-                sidebar.classList.remove('is-open');
-                sidebarToggle.innerHTML = 'FILES [ + ]';
-            }
-        });
-
-        // --- OVERLAY WRAPPER LOGIC ---
-        const overlayWrapper = document.getElementById('overlay-wrapper');
-        const overlayClose = document.getElementById('overlay-close');
-        const overlayTitle = document.getElementById('overlay-title');
-        const workspaceIframe = document.getElementById('workspace-iframe');
-
-        overlayClose.addEventListener('click', () => {
-            overlayWrapper.classList.remove('is-open');
-            // Clear the iframe src to stop background audio/processes
-            workspaceIframe.src = '';
-            // Reset active states in sidebar
-            document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('active'));
-        });
-
-        // --- SIDEBAR FILE TREE LOGIC ---
-        const treeView = document.getElementById('tree-view');
-
-        async function initFileTree() {
-            try {
-                // Dynamically fetch from local resources structure without hardcoded defaults
-                const pathsToTry = ['/resources/htmlList.json', 'resources/htmlList.json', 'htmlList.json'];
-                let list = [];
-                
-                for (const path of pathsToTry) {
-                    try {
-                        const response = await fetch(path);
-                        if (response.ok) {
-                            list = await response.json();
-                            break;
-                        }
-                    } catch (e) {
-                        // Continue checking fallback paths
-                    }
-                }
-
-                treeView.innerHTML = '';
-
-                if (list.length === 0) {
-                    treeView.innerHTML = '<li class="tree-item" style="cursor: default; color: var(--dim-text);">NO FILES CONFIGURED</li>';
-                    console.warn('Could not locate htmlList.json in /resources.');
-                    return;
-                }
-                
-                list.forEach(filePath => {
-                    const li = document.createElement('li');
-                    li.className = 'tree-item';
-                    
-                    // Format nice readable folder hierarchies
-                    const pathParts = filePath.split('/');
-                    const fileName = pathParts.pop().replace('.html', '');
-                    const folderPath = pathParts.length > 0 ? pathParts.join('/') + '/' : '';
-                    
-                    li.innerHTML = `<span class="tree-folder">${folderPath}</span>${fileName}`;
-                    
-                    li.addEventListener('click', () => {
-                        // Manage UI active selection class
-                        document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('active'));
-                        li.classList.add('active');
-                        
-                        // Launch the Ableton-style overlay on top
-                        overlayTitle.textContent = fileName;
-                        overlayWrapper.classList.add('is-open');
-                        
-                        // Force absolute root path for stable Vercel routing
-                        const targetUrl = filePath.startsWith('/') ? filePath : '/' + filePath;
-                        workspaceIframe.src = targetUrl;
-                    });
-                    
-                    treeView.appendChild(li);
-                });
-
-            } catch (err) {
-                console.error('Critical error building file tree:', err);
-                treeView.innerHTML = '<li class="tree-item" style="color: red;">FILE SYS ERROR</li>';
-            }
-        }
-
-        // --- TICKER DATA LOGIC ---
-        const tickerContent = document.getElementById('ticker-content');
-
-        async function fetchConfig() {
-            const pathsToTry = ['/resources/rssFeedsList.json', 'resources/rssFeedsList.json'];
-            for (const path of pathsToTry) {
-                try {
-                    const res = await fetch(path);
-                    if (res.ok) return await res.json();
-                } catch (e) {
-                    console.warn(`Could not load RSS config from ${path}`);
-                }
-            }
-            return { categories: [] };
-        }
-
-        async function fetchRSS(url) {
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-            const response = await fetch(proxyUrl);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
-            if (!data.contents) throw new Error('Empty payload');
-            return data.contents;
-        }
-
-        function parseXMLData(xmlString) {
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(xmlString, "text/xml");
-            const items = [];
-            const isAtom = xmlDoc.getElementsByTagName('feed').length > 0 && xmlDoc.getElementsByTagName('entry').length > 0;
-
-            if (isAtom) {
-                const entries = Array.from(xmlDoc.querySelectorAll('entry')).slice(0, 5);
-                entries.forEach(entry => { 
-                    const title = entry.querySelector('title')?.textContent?.trim() || 'Untitled';
-                    let link = '#';
-                    const linkNodes = entry.querySelectorAll('link');
-                    for (let ln of linkNodes) {
-                        if (ln.getAttribute('rel') === 'alternate' || !ln.hasAttribute('rel')) {
-                            link = ln.getAttribute('href'); break;
-                        }
-                    }
-                    if (title !== 'Untitled') items.push({ title, link });
-                });
-            } else {
-                const nodes = Array.from(xmlDoc.querySelectorAll('item')).slice(0, 5);
-                nodes.forEach(node => { 
-                    const title = node.querySelector('title')?.textContent?.trim() || 'Untitled';
-                    const link = node.querySelector('link')?.textContent?.trim() || node.querySelector('guid')?.textContent?.trim() || '#';
-                    if (title !== 'Untitled') items.push({ title, link });
-                });
-            }
-            return items;
-        }
-
-        async function bootTicker() {
-            try {
-                tickerContent.innerHTML = '<span class="ticker-item" style="color: var(--dim-text);">FETCHING LATEST ARTICLES...</span>';
-                
-                const config = await fetchConfig();
-                const allFeeds = config.categories ? config.categories.flatMap(cat => cat.feeds || []) : [];
-                
-                if (allFeeds.length === 0) {
-                    tickerContent.innerHTML = '<span class="ticker-item" style="color: var(--dim-text);">NO FEEDS CONFIGURED.</span>';
-                    return;
-                }
-
-                const feedPromises = allFeeds.map(async (feed) => {
-                    try {
-                        const xmlText = await fetchRSS(feed.url);
-                        const items = parseXMLData(xmlText);
-                        return { feed, items };
-                    } catch (err) {
-                        return { feed, items: [] };
-                    }
-                });
-
-                const results = await Promise.all(feedPromises);
-                
-                let allItemsHTML = '';
-                let totalCharacters = 0;
-
-                results.forEach(({ feed, items }) => {
-                    items.forEach(item => {
-                        const itemHTML = `
-                            <span class="ticker-item">
-                                <span class="feed-source">${feed.title}</span>
-                                <a href="${item.link}" target="_blank" rel="noopener noreferrer">${item.title}</a>
-                            </span><span class="separator">✦</span>
-                        `;
-                        allItemsHTML += itemHTML;
-                        totalCharacters += feed.title.length + item.title.length;
-                    });
-                });
-
-                if (allItemsHTML.length > 0) {
-                    tickerContent.innerHTML = allItemsHTML;
-                    tickerContent.style.animation = 'none';
-                    tickerContent.offsetHeight; // Reflow
-                    const scrollDuration = Math.max(33, totalCharacters * 0.20);
-                    tickerContent.style.animation = `ticker-scroll ${scrollDuration}s linear infinite`;
+        function toggleSection(sectionId, buttonId, dimensionClass, openSizeClass) {
+            const section = document.getElementById(sectionId);
+            const button = document.getElementById(buttonId);
+            
+            // Toggle the active styling on the button
+            button.classList.toggle('active');
+            
+            if (button.classList.contains('active')) {
+                // Open section
+                section.classList.remove('w-0', 'h-0', 'border-none', 'p-0', 'opacity-0');
+                if (dimensionClass === 'width') {
+                    section.classList.add(openSizeClass);
                 } else {
-                    tickerContent.innerHTML = '<span class="ticker-item" style="color: var(--dim-text);">NO ARTICLES AVAILABLE AT THIS TIME.</span>';
-                    tickerContent.style.animation = `ticker-scroll 10s linear infinite`;
+                    section.classList.add(openSizeClass);
                 }
-
-            } catch (error) {
-                tickerContent.innerHTML = '<span class="ticker-item" style="color: var(--dim-text);">SYSTEM ERROR: UNABLE TO LOAD FEEDS.</span>';
-                tickerContent.style.animation = `ticker-scroll 10s linear infinite`;
+            } else {
+                // Close section
+                if (dimensionClass === 'width') {
+                    section.classList.remove(openSizeClass);
+                    section.classList.add('w-0', 'border-none', 'overflow-hidden', 'opacity-0');
+                } else {
+                    section.classList.remove(openSizeClass);
+                    section.classList.add('h-0', 'border-none', 'overflow-hidden', 'opacity-0');
+                }
             }
         }
 
-        // Initialize Everything
-        window.addEventListener('DOMContentLoaded', () => {
-            initFileTree();
-            bootTicker();
+        // --- External Tool Wrapper Logic ---
+        
+        // Format path into readable name (e.g., "tools/lyricsEditor/lyricsEditor.html" -> "Lyrics Editor")
+        function formatName(path) {
+            const parts = path.split('/');
+            let fileWithExt = parts[parts.length - 1];
+            let filename = fileWithExt.split('.')[0];
+            // Convert camelCase to Title Case with spaces
+            let titleCase = filename.replace(/([A-Z])/g, ' $1').replace(/^./, function(str){ return str.toUpperCase(); });
+            return titleCase.trim();
+        }
+
+        function openToolWrapper(path, title) {
+            document.getElementById('tool-title').innerText = title;
+            document.getElementById('tool-iframe').src = path;
+            document.getElementById('tool-wrapper').classList.remove('hidden');
+            document.getElementById('tool-wrapper').classList.add('flex');
+        }
+
+        function closeToolWrapper() {
+            // Ask for confirmation before closing
+            if (confirm("Are you sure you want to close this tool? Unsaved changes might be lost.")) {
+                document.getElementById('tool-wrapper').classList.add('hidden');
+                document.getElementById('tool-wrapper').classList.remove('flex');
+                document.getElementById('tool-iframe').src = ''; // Clear iframe memory
+            }
+        }
+
+        // Fetch and populate Folder 2 on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const folder2List = document.getElementById('folder-2-list');
+            
+            // Added safety check in case the element doesn't exist
+            if (!folder2List) return;
+            
+            fetch('resources/htmlList.json')
+                .then(res => {
+                    if (!res.ok) throw new Error("JSON file not found");
+                    return res.json();
+                })
+                .then(data => {
+                    folder2List.innerHTML = ''; // Clear the "Loading..." text
+                    data.forEach(path => {
+                        const itemName = formatName(path);
+                        const el = document.createElement('div');
+                        el.className = 'hover:bg-neutral-700 px-2 py-0.5 rounded cursor-pointer text-neutral-400 flex items-center';
+                        el.innerHTML = `<span class="w-2 h-2 rounded-full bg-purple-400 mr-2"></span> ${itemName}`;
+                        el.onclick = () => openToolWrapper(path, itemName);
+                        folder2List.appendChild(el);
+                    });
+                })
+                .catch(err => {
+                    console.warn('Could not load resources/htmlList.json. Loading fallback mock data...', err);
+                    folder2List.innerHTML = ''; // Clear the "Loading..." text
+                    
+                    // Fallback using the data you provided so it renders properly even if the fetch fails during preview
+                    const mockData = ["tools/lyricsEditor/lyricsEditor.html"];
+                    mockData.forEach(path => {
+                        const itemName = formatName(path);
+                        const el = document.createElement('div');
+                        el.className = 'hover:bg-neutral-700 px-2 py-0.5 rounded cursor-pointer text-neutral-400 flex items-center';
+                        el.innerHTML = `<span class="w-2 h-2 rounded-full bg-purple-400 mr-2"></span> ${itemName}`;
+                        el.onclick = () => openToolWrapper(path, itemName);
+                        folder2List.appendChild(el);
+                    });
+                });
         });
     </script>
 </body>
