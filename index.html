@@ -465,7 +465,102 @@
                         folder2List.appendChild(el);
                     });
                 });
+
+            // --- Folder 3 (RSS Feeds) Logic ---
+            const folder3List = document.getElementById('folder-3-list');
+            
+            if (folder3List) {
+                fetch('resources/rssFeedsList.json')
+                    .then(res => {
+                        if (!res.ok) throw new Error("JSON file not found");
+                        return res.json();
+                    })
+                    .then(data => {
+                        folder3List.innerHTML = ''; // Clear the "Loading..." text
+                        data.categories.forEach(category => {
+                            // Category Header
+                            const catHeader = document.createElement('div');
+                            catHeader.className = 'text-neutral-500 text-[9px] uppercase mt-2 mb-1 px-2 font-semibold';
+                            catHeader.innerText = category.name;
+                            folder3List.appendChild(catHeader);
+
+                            // Feeds
+                            category.feeds.forEach(feed => {
+                                const el = document.createElement('div');
+                                el.className = 'hover:bg-neutral-700 px-2 py-0.5 rounded cursor-pointer text-neutral-400 flex items-center text-[10px]';
+                                el.title = feed.description;
+                                el.innerHTML = `<span class="w-2 h-2 rounded-full bg-orange-400 mr-2 shrink-0"></span> <span class="truncate">${feed.title}</span>`;
+                                el.onclick = () => addClipToTrack(feed.title, feed.url, 'track-1-clips');
+                                folder3List.appendChild(el);
+                            });
+                        });
+                    })
+                    .catch(err => {
+                        console.warn('Could not load resources/rssFeedsList.json.', err);
+                        folder3List.innerHTML = '<div class="text-[10px] text-red-500 px-2 italic">Failed to load RSS feeds.</div>';
+                    });
+            }
         });
+
+        // --- Track Clip Management Logic ---
+        
+        function addClipToTrack(title, url, trackId) {
+            const track = document.getElementById(trackId);
+            if (!track) return;
+            
+            // Avoid duplicates
+            const existingClips = track.querySelectorAll('.clip');
+            for (let clip of existingClips) {
+                if (clip.dataset.url === url) return; 
+            }
+
+            // TEMPLATE FOR AUDIO CLIPS - easy to modify later
+            const clipHtml = `
+                <div class="clip bg-red-400 flex justify-between items-center pr-1 group w-full" data-url="${url}">
+                    <div class="flex items-center overflow-hidden whitespace-nowrap text-ellipsis flex-1 pr-1">
+                        <div class="play-marker shrink-0"></div>
+                        <span class="truncate text-[10px]" title="${title}">${title}</span>
+                    </div>
+                    <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity bg-red-400/90 pl-1 shrink-0">
+                        <button class="hover:text-white transition-colors" title="TTS" onclick="triggerTts(this, '${url}', event)">🔊</button>
+                        <button class="hover:text-red-900 font-bold transition-colors" title="Remove" onclick="removeClip(this, event)">✕</button>
+                    </div>
+                </div>
+            `;
+
+            // Find first empty slot
+            const firstEmpty = track.querySelector('.empty-slot');
+            if (firstEmpty) {
+                firstEmpty.innerHTML = clipHtml;
+                firstEmpty.classList.remove('empty-slot');
+            } else {
+                // If no empty slots, append a new slot
+                const newSlot = document.createElement('div');
+                newSlot.className = 'clip-slot';
+                newSlot.innerHTML = clipHtml;
+                track.appendChild(newSlot);
+            }
+        }
+
+        function removeClip(btnElement, event) {
+            event.stopPropagation();
+            const slot = btnElement.closest('.clip-slot');
+            if (slot) {
+                slot.innerHTML = '';
+                slot.classList.add('empty-slot');
+            }
+        }
+
+        function triggerTts(btnElement, url, event) {
+            event.stopPropagation();
+            // Mock TTS behavior visualization
+            const originalText = btnElement.innerText;
+            btnElement.innerText = '💬';
+            setTimeout(() => {
+                btnElement.innerText = originalText;
+            }, 1000);
+            console.log("TTS Triggered for:", url);
+        }
     </script>
 </body>
 </html>
