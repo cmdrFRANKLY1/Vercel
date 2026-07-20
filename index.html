@@ -390,6 +390,13 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Fallback/loading text styling */
+        .loading-text {
+            color: rgba(255, 255, 255, 0.3);
+            font-style: italic;
+            font-weight: 300;
+        }
     </style>
 </head>
 <body>
@@ -570,6 +577,8 @@
         };
 
         let currentProfileUrl = '';
+        let isDataLoaded = false;
+        let isGenerating = false;
 
         // Safely robust fetch helper probing all plausible path variants
         async function loadDataset(filename) {
@@ -636,10 +645,45 @@
                 ]);
 
                 dndData = { names, professions, races, birthplaces, idols, attributes, biographies };
+                isDataLoaded = true;
+
+                // Now that data is loaded, generate the first hero
                 generateNewHero();
+
+                // Also fetch the first profile image
+                fetchProfileImage();
             } catch (err) {
                 console.error("Critical error reading D&D source datasets:", err);
+                // Show fallback data even if loading fails
+                isDataLoaded = true;
+                generateFallbackHero();
             }
+        }
+
+        // Fallback hero generation when data fails to load
+        function generateFallbackHero() {
+            document.getElementById('charName').innerText = "Mysterious Wanderer";
+            document.getElementById('charClass').innerText = "Unknown • Adventurer";
+            document.getElementById('charBio').innerText = "A traveler from distant lands whose story is yet to be told...";
+            document.getElementById('detailBirthplace').innerText = "Unknown Realm";
+            document.getElementById('detailIdol').innerText = "The Unnamed";
+
+            // Generate random stats even without data
+            const stats = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+            const attrLabels = {
+                str: 'Strength',
+                dex: 'Dexterity',
+                con: 'Constitution',
+                int: 'Intelligence',
+                wis: 'Wisdom',
+                cha: 'Charisma'
+            };
+
+            stats.forEach(stat => {
+                const roll = rollStat();
+                const adj = "Mysterious";
+                updateStatUI(stat, roll.score, roll.modifier, adj);
+            });
         }
 
         // Return a random selection from an array
@@ -683,7 +727,8 @@
             const parts = [];
             for (const section in dndData.biographies) {
                 if (Array.isArray(dndData.biographies[section])) {
-                    parts.push(getRandomItem(dndData.biographies[section]));
+                    const item = getRandomItem(dndData.biographies[section]);
+                    if (item) parts.push(item);
                 }
             }
             return parts.length > 0 ? parts.join(' ') : 'A wanderer with a highly guarded past.';
@@ -702,13 +747,20 @@
 
         // Synchronize and apply randomized character metrics to UI
         function updateStatUI(statId, score, modifier, adjective) {
-            document.getElementById(`stat-${statId}`).innerText = score;
-            document.getElementById(`mod-${statId}`).innerText = modifier;
-            document.getElementById(`adj-${statId}`).innerText = capitalize(adjective);
+            const statEl = document.getElementById(`stat-${statId}`);
+            const modEl = document.getElementById(`mod-${statId}`);
+            const adjEl = document.getElementById(`adj-${statId}`);
+            const barEl = document.getElementById(`bar-${statId}`);
+
+            if (statEl) statEl.innerText = score;
+            if (modEl) modEl.innerText = modifier;
+            if (adjEl) adjEl.innerText = capitalize(adjective);
 
             // Render score progress bar cleanly proportional to a maximum score of 20
-            const percentage = (score / 20) * 100;
-            document.getElementById(`bar-${statId}`).style.width = `${percentage}%`;
+            if (barEl) {
+                const percentage = Math.min((score / 20) * 100, 100);
+                barEl.style.width = `${percentage}%`;
+            }
         }
 
         // Fetch a completely unique image and regenerate details
@@ -717,8 +769,10 @@
             const heroPanelImg = document.getElementById('heroImage');
             const spinner = document.getElementById('loadingSpinner');
 
+            if (!profileBtnImg || !heroPanelImg) return;
+
             spinner.style.display = 'block';
-            profileBtnImg.style.opacity = '0';
+            if (profileBtnImg) profileBtnImg.style.opacity = '0';
 
             // Generate cache-busting URLs
             const randomId = Math.floor(Math.random() * 1000000);
@@ -726,58 +780,97 @@
 
             // Pre-load image to achieve beautiful fade-in
             const imgLoader = new Image();
+            imgLoader.crossOrigin = "anonymous";
             imgLoader.src = currentProfileUrl;
             imgLoader.onload = () => {
-                profileBtnImg.src = currentProfileUrl;
-                heroPanelImg.src = currentProfileUrl;
-                profileBtnImg.style.opacity = '1';
-                spinner.style.display = 'none';
+                if (profileBtnImg) {
+                    profileBtnImg.src = currentProfileUrl;
+                    profileBtnImg.style.opacity = '1';
+                }
+                if (heroPanelImg) {
+                    heroPanelImg.src = currentProfileUrl;
+                }
+                if (spinner) spinner.style.display = 'none';
+            };
+            imgLoader.onerror = () => {
+                // If image fails, use a placeholder
+                if (spinner) spinner.style.display = 'none';
+                if (profileBtnImg) {
+                    profileBtnImg.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44"%3E%3Crect width="44" height="44" fill="%23222"/%3E%3Ctext x="22" y="28" font-family="Arial" font-size="24" fill="%23666" text-anchor="middle"%3E%3F%3C/text%3E%3C/svg%3E';
+                    profileBtnImg.style.opacity = '1';
+                }
+                if (heroPanelImg) {
+                    heroPanelImg.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="90" height="90" viewBox="0 0 90 90"%3E%3Crect width="90" height="90" fill="%23222"/%3E%3Ctext x="45" y="55" font-family="Arial" font-size="40" fill="%23666" text-anchor="middle"%3E%3F%3C/text%3E%3C/svg%3E';
+                }
             };
         }
 
         // Core Generator Engine mapping data into UI Card
         function generateNewHero() {
-            // Pick Random identities
-            const randomName = getRandomItem(dndData.names) || "Nameless Exile";
-            const randomProfession = getRandomItem(dndData.professions) || "Wanderer";
-            const rawRace = getRandomItem(dndData.races);
-            const randomRace = rawRace ? sanitizeRace(rawRace) : "Outlander";
+            if (isGenerating) return;
+            isGenerating = true;
 
-            const birthplaceObj = getRandomItem(dndData.birthplaces);
-            const birthPlaceStr = birthplaceObj
-                ? (birthplaceObj.origin ? `${birthplaceObj.name} (${birthplaceObj.origin})` : birthplaceObj.name)
-                : "Unknown Realm";
+            try {
+                // If data isn't loaded yet, use fallback
+                if (!isDataLoaded) {
+                    generateFallbackHero();
+                    isGenerating = false;
+                    return;
+                }
 
-            const idolObj = getRandomItem(dndData.idols);
-            const idolStr = idolObj
-                ? (idolObj.origin ? `${idolObj.name} (${idolObj.origin})` : idolObj.name)
-                : "The Unknown Spirit";
+                // Pick Random identities
+                const randomName = getRandomItem(dndData.names) || "Nameless Exile";
+                const randomProfession = getRandomItem(dndData.professions) || "Wanderer";
+                const rawRace = getRandomItem(dndData.races);
+                const randomRace = rawRace ? sanitizeRace(rawRace) : "Outlander";
 
-            // Update Header Information
-            document.getElementById('charName').innerText = randomName;
-            document.getElementById('charClass').innerText = `${randomRace} • ${randomProfession}`;
-            document.getElementById('detailBirthplace').innerText = birthPlaceStr;
-            document.getElementById('detailIdol').innerText = idolStr;
+                const birthplaceObj = getRandomItem(dndData.birthplaces);
+                const birthPlaceStr = birthplaceObj
+                    ? (birthplaceObj.origin ? `${birthplaceObj.name} (${birthplaceObj.origin})` : birthplaceObj.name)
+                    : "Unknown Realm";
 
-            // Generate and assign rich background stories
-            document.getElementById('charBio').innerText = `"${buildBiography()}"`;
+                const idolObj = getRandomItem(dndData.idols);
+                const idolStr = idolObj
+                    ? (idolObj.origin ? `${idolObj.name} (${idolObj.origin})` : idolObj.name)
+                    : "The Unknown Spirit";
 
-            // Calculate stats
-            const stats = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
-            const attrLabels = {
-                str: 'Strength',
-                dex: 'Dexterity',
-                con: 'Constitution',
-                int: 'Intelligence',
-                wis: 'Wisdom',
-                cha: 'Charisma'
-            };
+                // Update Header Information
+                const charNameEl = document.getElementById('charName');
+                const charClassEl = document.getElementById('charClass');
+                const birthplaceEl = document.getElementById('detailBirthplace');
+                const idolEl = document.getElementById('detailIdol');
+                const bioEl = document.getElementById('charBio');
 
-            stats.forEach(stat => {
-                const roll = rollStat();
-                const adj = grabAttributeAdjective(attrLabels[stat]);
-                updateStatUI(stat, roll.score, roll.modifier, adj);
-            });
+                if (charNameEl) charNameEl.innerText = randomName;
+                if (charClassEl) charClassEl.innerText = `${randomRace} • ${randomProfession}`;
+                if (birthplaceEl) birthplaceEl.innerText = birthPlaceStr;
+                if (idolEl) idolEl.innerText = idolStr;
+
+                // Generate and assign rich background stories
+                if (bioEl) bioEl.innerText = `"${buildBiography()}"`;
+
+                // Calculate stats
+                const stats = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+                const attrLabels = {
+                    str: 'Strength',
+                    dex: 'Dexterity',
+                    con: 'Constitution',
+                    int: 'Intelligence',
+                    wis: 'Wisdom',
+                    cha: 'Charisma'
+                };
+
+                stats.forEach(stat => {
+                    const roll = rollStat();
+                    const adj = grabAttributeAdjective(attrLabels[stat]);
+                    updateStatUI(stat, roll.score, roll.modifier, adj);
+                });
+            } catch (err) {
+                console.error("Error generating hero:", err);
+                generateFallbackHero();
+            } finally {
+                isGenerating = false;
+            }
         }
 
         // Document Event Listeners
@@ -787,9 +880,6 @@
             const overlay = document.getElementById('panelOverlay');
             const closeBtn = document.getElementById('closePanelBtn');
             const rerollBtn = document.getElementById('rerollBtn');
-
-            // Load original photo
-            fetchProfileImage();
 
             // Load and parse background sources
             initializeDatasets();
