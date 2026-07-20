@@ -1,935 +1,198 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-black text-zinc-100 select-none">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fantasy Profile Panel</title>
-    <!-- Include Tailwind CSS CDN for smooth integration and visual improvements -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Modern CSS reset and custom scrollbar styles */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minimalist Index</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts for premium Monospace/Sans look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;300;400;500;700&family=Geist+Mono:wght@100;300;400;600&display=swap" rel="stylesheet">
 
-        body {
-            background-color: #050505;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            color: #ffffff;
-            background-image: radial-gradient(circle at top right, rgba(212, 175, 55, 0.08) 0%, transparent 60%);
-        }
-
-        /* Profile Icon Placement (Google-style with premium pulse) */
-        .profile-container {
-            position: absolute;
-            top: 24px;
-            right: 24px;
-            z-index: 100;
-        }
-
-        .profile-button {
-            position: relative;
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            overflow: hidden;
-            cursor: pointer;
-            border: 2px solid rgba(212, 175, 55, 0.3);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            background-color: #121212;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 10px rgba(212, 175, 55, 0.1);
-        }
-
-        .profile-button:hover {
-            transform: scale(1.08) translateY(-2px);
-            border-color: rgba(212, 175, 55, 0.8);
-            box-shadow: 0 8px 24px rgba(212, 175, 55, 0.25);
-        }
-
-        .profile-button:active {
-            transform: scale(0.96);
-        }
-
-        .profile-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: opacity 0.4s ease-in-out;
-        }
-
-        /* Profile Side Panel (Glassmorphic Drawer) */
-        .side-panel {
-            position: fixed;
-            top: 0;
-            right: -100%;
-            width: 100%;
-            max-width: 480px;
-            height: 100vh;
-            background: rgba(10, 10, 10, 0.82);
-            backdrop-filter: blur(28px);
-            -webkit-backdrop-filter: blur(28px);
-            border-left: 1px solid rgba(212, 175, 55, 0.15);
-            box-shadow: -15px 0 35px rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .side-panel.open {
-            right: 0;
-        }
-
-        /* Backdrop Overlay */
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.75);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.4s ease;
-            z-index: 999;
-        }
-
-        .overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        /* Custom scrollbar for panel body */
-        .panel-scrollable::-webkit-scrollbar {
-            width: 5px;
-        }
-        .panel-scrollable::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .panel-scrollable::-webkit-scrollbar-thumb {
-            background: rgba(212, 175, 55, 0.2);
-            border-radius: 10px;
-        }
-        .panel-scrollable::-webkit-scrollbar-thumb:hover {
-            background: rgba(212, 175, 55, 0.4);
-        }
-
-        /* Stat Card Animation */
-        .stat-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(212, 175, 55, 0.08);
-            border-radius: 12px;
-            padding: 12px 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            transition: all 0.25s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(212, 175, 55, 0.4);
-            background: rgba(212, 175, 55, 0.03);
-            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.05);
-        }
-
-        /* Gold Gradient Elements */
-        .text-gold {
-            color: #d4af37;
-            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        /* Segmented Control for Portrait Option */
-        .portrait-selector-btn {
-            transition: all 0.2s ease;
-        }
-        .portrait-selector-btn.active {
-            background-color: rgba(212, 175, 55, 0.15);
-            border-color: #d4af37;
-            color: #ffffff;
-            box-shadow: inset 0 0 8px rgba(212, 175, 55, 0.2);
-        }
-
-        /* Magic engraving glow effect */
-        @keyframes magic-pulse {
-            0%, 100% { opacity: 0.5; filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.5)); }
-            50% { opacity: 1; filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.9)); }
-        }
-        .magic-loading {
-            animation: magic-pulse 1.8s infinite ease-in-out;
-        }
-    </style>
+  <style>
+    body {
+      font-family: 'Geist Mono', 'JetBrains Mono', monospace;
+      background-color: #000000;
+    }
+  </style>
 </head>
-<body>
+<body class="min-h-screen bg-black text-zinc-100 p-8 md:p-12">
 
-    <!-- Ambient Background Scene Context -->
-    <div class="absolute inset-0 flex flex-col justify-center items-center pointer-events-none p-6 text-center select-none">
-        <h1 class="text-3xl md:text-5xl font-black tracking-widest text-zinc-800 uppercase mb-3">Tavern Registry</h1>
-        <p class="text-zinc-600 text-sm md:text-base max-w-md">Click the mystical avatar beacon in the top right to view or summon your legendary companion.</p>
+  <!-- Main Grid/Flex layout matching Top Left & Top Right requirement -->
+  <div class="w-full flex flex-col sm:flex-row justify-between items-start gap-6">
+
+    <!-- TOP LEFT: Dynamic Title & Combined Subtitle -->
+    <div class="flex flex-col space-y-2">
+      <h1 id="main-title" class="text-2xl md:text-3xl font-light tracking-tight text-white select-none">
+        Loading...
+      </h1>
+      <p id="combined-subtitle" class="text-xs md:text-sm text-zinc-400 font-light tracking-wide pl-4 border-l border-zinc-800">
+        Loading...
+      </p>
     </div>
 
-    <!-- Target Area Triggering the Panel -->
-    <div class="profile-container">
-        <button class="profile-button" id="profileBtn" title="Open Character Profile">
-            <!-- Spinner / Loader -->
-            <div class="absolute inset-0 flex items-center justify-center bg-black/50 z-10 hidden" id="loadingSpinner">
-                <div class="w-6 h-6 border-2 border-amber-400/20 border-t-amber-400 rounded-full animate-spin"></div>
-            </div>
-            <img class="profile-img" id="profileImage" alt="Profile Display" src="">
-        </button>
+    <!-- TOP RIGHT: User Local Date & Time with Seconds -->
+    <div class="flex flex-col items-start sm:items-end text-left sm:text-right font-normal space-y-1">
+      <div id="live-time" class="text-xl md:text-2xl font-light tracking-wider text-zinc-100 tabular-nums">
+        00:00:00
+      </div>
+      <div id="live-date" class="text-xs tracking-widest text-zinc-500 uppercase font-medium">
+        Loading date...
+      </div>
     </div>
 
-    <!-- Backdrop overlay for focus -->
-    <div class="overlay" id="panelOverlay"></div>
-
-    <!-- Sliding Profile Character Drawer -->
-    <aside class="side-panel" id="sidePanel">
-        <!-- Panel Header -->
-        <div class="flex justify-between items-center px-6 py-5 border-b border-white/5 bg-black/20">
-            <h2 class="text-xs uppercase tracking-[0.25em] font-black text-amber-500">Character Registry</h2>
-            <button class="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-colors text-2xl font-light" id="closePanelBtn" aria-label="Close Panel">&times;</button>
-        </div>
-
-        <!-- Panel Body containing generated sheet -->
-        <div class="panel-scrollable flex-grow overflow-y-auto px-6 py-6 space-y-6">
-
-            <!-- Hero Card -->
-            <div class="flex items-center gap-5 bg-white/[0.02] p-4 rounded-xl border border-white/5 relative overflow-hidden group">
-                <div class="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-transparent pointer-events-none"></div>
-                <div class="w-24 h-24 rounded-xl overflow-hidden border-2 border-amber-500/40 shadow-lg shadow-amber-500/5 flex-shrink-0 relative bg-zinc-900">
-                    <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" id="heroImage" src="" alt="Hero Portrait">
-                    <div class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center hidden p-2 text-center" id="imageGenerationOverlay">
-                        <div class="w-5 h-5 border-2 border-amber-400/20 border-t-amber-400 rounded-full animate-spin mb-1"></div>
-                        <span class="text-[8px] uppercase tracking-wider text-amber-400 font-bold magic-loading">Engraving Spell...</span>
-                    </div>
-                </div>
-                <div class="flex flex-col gap-1">
-                    <h3 class="text-xl font-bold tracking-tight text-white" id="charName">Summoning...</h3>
-                    <p class="text-xs text-amber-400/80 font-semibold uppercase tracking-wider" id="charClass">Class • Origin</p>
-                </div>
-            </div>
-
-            <!-- Choose Aura Portrait Selector -->
-            <div class="bg-white/[0.02] border border-white/5 p-4 rounded-xl space-y-3">
-                <div class="flex justify-between items-center">
-                    <h4 class="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-bold">AURA PORTRAIT STYLE</h4>
-                    <span id="randomNotice" class="text-[9px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full font-semibold hidden animate-pulse">Chosen Randomly</span>
-                </div>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <button class="portrait-selector-btn py-2 px-3 rounded-lg border border-white/5 text-zinc-400 hover:bg-white/[0.04] flex items-center gap-2 font-medium" data-style="dicebear">
-                        <span class="text-base">🗡️</span>
-                        RPG Hero
-                    </button>
-                    <button class="portrait-selector-btn py-2 px-3 rounded-lg border border-white/5 text-zinc-400 hover:bg-white/[0.04] flex items-center gap-2 font-medium" data-style="pixel_art">
-                        <span class="text-base">👾</span>
-                        Pixel Champ
-                    </button>
-                    <button class="portrait-selector-btn py-2 px-3 rounded-lg border border-white/5 text-zinc-400 hover:bg-white/[0.04] flex items-center gap-2 font-medium" data-style="golem">
-                        <span class="text-base">🤖</span>
-                        Ancient Golem
-                    </button>
-                    <button class="portrait-selector-btn py-2 px-3 rounded-lg border border-white/5 text-zinc-400 hover:bg-white/[0.04] flex items-center gap-2 font-medium" data-style="monster">
-                        <span class="text-base">🐉</span>
-                        Cute Familiar
-                    </button>
-                    <button class="portrait-selector-btn py-2 px-3 rounded-lg border border-white/5 text-zinc-400 hover:bg-white/[0.04] flex items-center gap-2 font-medium" data-style="sigil">
-                        <span class="text-base">🔮</span>
-                        Magic Crest
-                    </button>
-                    <button class="portrait-selector-btn py-2 px-3 rounded-lg border border-white/5 text-zinc-400 hover:bg-white/[0.04] flex items-center gap-2 font-medium" data-style="realface">
-                        <span class="text-base">👤</span>
-                        Realistic Face
-                    </button>
-                    <button class="portrait-selector-btn py-2 px-3 rounded-lg border border-white/5 text-zinc-400 hover:bg-white/[0.04] flex items-center gap-2 font-medium" data-style="landscape">
-                        <span class="text-base">🌄</span>
-                        Backdrop
-                    </button>
-                    <button class="portrait-selector-btn py-2 px-3 rounded-lg border border-white/5 text-zinc-400 hover:bg-white/[0.04] flex items-center gap-2 font-medium" data-style="ai_spell">
-                        <span class="text-base">✨</span>
-                        Imagen AI
-                    </button>
-                </div>
-            </div>
-
-            <!-- Story Bio Card -->
-            <div class="space-y-3">
-                <h4 class="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-bold">Backstory Narrative</h4>
-                <div class="bg-amber-500/[0.02] border-l-2 border-amber-500/60 p-4 rounded-r-xl text-sm leading-relaxed text-zinc-300 italic font-light" id="charBio">
-                    Generating legend...
-                </div>
-            </div>
-
-            <!-- Stats Bars -->
-            <div class="space-y-3">
-                <h4 class="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-bold">Core Attributes</h4>
-                <div class="grid grid-cols-2 gap-3" id="statsGrid">
-                    <!-- STR -->
-                    <div class="stat-card">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">Strength</span>
-                            <div class="flex items-baseline gap-1">
-                                <span class="text-base font-black text-white" id="stat-str">10</span>
-                                <span class="text-xs text-amber-400 font-bold" id="mod-str">+0</span>
-                            </div>
-                        </div>
-                        <span class="text-[11px] text-zinc-400 font-light truncate" id="adj-str">-</span>
-                        <div class="w-full h-[4px] bg-white/10 rounded-full overflow-hidden mt-1">
-                            <div class="h-full bg-gradient-to-r from-amber-500 to-yellow-300 rounded-full transition-all duration-700 w-0" id="bar-str"></div>
-                        </div>
-                    </div>
-
-                    <!-- DEX -->
-                    <div class="stat-card">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">Dexterity</span>
-                            <div class="flex items-baseline gap-1">
-                                <span class="text-base font-black text-white" id="stat-dex">10</span>
-                                <span class="text-xs text-amber-400 font-bold" id="mod-dex">+0</span>
-                            </div>
-                        </div>
-                        <span class="text-[11px] text-zinc-400 font-light truncate" id="adj-dex">-</span>
-                        <div class="w-full h-[4px] bg-white/10 rounded-full overflow-hidden mt-1">
-                            <div class="h-full bg-gradient-to-r from-amber-500 to-yellow-300 rounded-full transition-all duration-700 w-0" id="bar-dex"></div>
-                        </div>
-                    </div>
-
-                    <!-- CON -->
-                    <div class="stat-card">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">Constitution</span>
-                            <div class="flex items-baseline gap-1">
-                                <span class="text-base font-black text-white" id="stat-con">10</span>
-                                <span class="text-xs text-amber-400 font-bold" id="mod-con">+0</span>
-                            </div>
-                        </div>
-                        <span class="text-[11px] text-zinc-400 font-light truncate" id="adj-con">-</span>
-                        <div class="w-full h-[4px] bg-white/10 rounded-full overflow-hidden mt-1">
-                            <div class="h-full bg-gradient-to-r from-amber-500 to-yellow-300 rounded-full transition-all duration-700 w-0" id="bar-con"></div>
-                        </div>
-                    </div>
-
-                    <!-- INT -->
-                    <div class="stat-card">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">Intelligence</span>
-                            <div class="flex items-baseline gap-1">
-                                <span class="text-base font-black text-white" id="stat-int">10</span>
-                                <span class="text-xs text-amber-400 font-bold" id="mod-int">+0</span>
-                            </div>
-                        </div>
-                        <span class="text-[11px] text-zinc-400 font-light truncate" id="adj-int">-</span>
-                        <div class="w-full h-[4px] bg-white/10 rounded-full overflow-hidden mt-1">
-                            <div class="h-full bg-gradient-to-r from-amber-500 to-yellow-300 rounded-full transition-all duration-700 w-0" id="bar-int"></div>
-                        </div>
-                    </div>
-
-                    <!-- WIS -->
-                    <div class="stat-card">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">Wisdom</span>
-                            <div class="flex items-baseline gap-1">
-                                <span class="text-base font-black text-white" id="stat-wis">10</span>
-                                <span class="text-xs text-amber-400 font-bold" id="mod-wis">+0</span>
-                            </div>
-                        </div>
-                        <span class="text-[11px] text-zinc-400 font-light truncate" id="adj-wis">-</span>
-                        <div class="w-full h-[4px] bg-white/10 rounded-full overflow-hidden mt-1">
-                            <div class="h-full bg-gradient-to-r from-amber-500 to-yellow-300 rounded-full transition-all duration-700 w-0" id="bar-wis"></div>
-                        </div>
-                    </div>
-
-                    <!-- CHA -->
-                    <div class="stat-card">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">Charisma</span>
-                            <div class="flex items-baseline gap-1">
-                                <span class="text-base font-black text-white" id="stat-cha">10</span>
-                                <span class="text-xs text-amber-400 font-bold" id="mod-cha">+0</span>
-                            </div>
-                        </div>
-                        <span class="text-[11px] text-zinc-400 font-light truncate" id="adj-cha">-</span>
-                        <div class="w-full h-[4px] bg-white/10 rounded-full overflow-hidden mt-1">
-                            <div class="h-full bg-gradient-to-r from-amber-500 to-yellow-300 rounded-full transition-all duration-700 w-0" id="bar-cha"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Identity Origin details -->
-            <div class="space-y-3">
-                <h4 class="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-bold">Origins & Alignment</h4>
-                <div class="bg-white/[0.02] border border-white/5 p-4 rounded-xl space-y-3 text-xs">
-                    <div class="flex justify-between items-center py-2 border-b border-white/5">
-                        <span class="text-zinc-500 font-semibold">Birthplace Realm</span>
-                        <span class="text-white font-bold" id="detailBirthplace">-</span>
-                    </div>
-                    <div class="flex justify-between items-center py-2">
-                        <span class="text-zinc-500 font-semibold">Guiding Patron / Icon</span>
-                        <span class="text-amber-400 font-bold" id="detailIdol">-</span>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Regenerate/Reroll Footer Actions -->
-        <div class="p-6 border-t border-white/5 bg-black/40">
-            <button class="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-black py-4 rounded-xl text-sm font-bold tracking-wider hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10" id="rerollBtn">
-                <svg class="w-4 h-4 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-                </svg>
-                SUMMON NEXT HERO
-            </button>
-        </div>
-    </aside>
-
-    <script>
-        // Immersive local API keys
-        const apiKey = "";
-
-        // Premium fantasy fallback database in case server side files do not exist or are structured uniquely
-        const fallbackData = {
-            names: [
-                "Aethelgard Ironwood", "Elora Whispershade", "Thorne Crimsonblade", "Zephyrus Stormborn",
-                "Lyra Nightbreeze", "Kaelen Emberforge", "Morgana Voidweaver", "Valerius Sunward",
-                "Seraphina Gildedhart", "Ignis Ashwalker", "Rowena Frostbinder", "Alistair Dawnguard",
-                "Garrick Shadowmend", "Celeste Celestial", "Eldrin Oakheart", "Morwenna Blackwood",
-                "Thalia Swiftfoot", "Jax Ironfist", "Boran Stonebreaker", "Valeria Valorous"
-            ],
-            professions: [
-                "Fighter", "Mage", "Rogue", "Cleric", "Paladin", "Ranger", "Druid", "Warlock", "Bard", "Monk", "Sorcerer", "Barbarian"
-            ],
-            races: [
-                "Human", "Elf", "Dwarf", "Halfling", "Dragonborn", "Tiefling", "Orc", "Gnome", "Half-Elf", "Half-Orc", "Aasimar", "Genasi"
-            ],
-            birthplaces: [
-                { name: "Whispering Woods", origin: "Elven Sanctuary" },
-                { name: "Ironstone Citadel", origin: "Dwarven Peak" },
-                { name: "Silvermoon Valley", origin: "Celestial Glade" },
-                { name: "Stormwind Harbor", origin: "Human Kingdom" },
-                { name: "Obsidian Ridge", origin: "Dragonborn Bastion" },
-                { name: "Glimmering Deep", origin: "Underdark Abyss" },
-                { name: "Shadowfen Swamps", origin: "Witch's Grove" },
-                { name: "Celestial Spire", origin: "Astral Academy" }
-            ],
-            idols: [
-                { name: "The Sunweaver", origin: "Light & Dawn" },
-                { name: "The Voidbringer", origin: "Entropy & Mystery" },
-                { name: "The Earthmother", origin: "Nature & Rebirth" },
-                { name: "The Iron Sentinel", origin: "Justice & Order" },
-                { name: "The Stormlord", origin: "Tempest & Chaos" },
-                { name: "The Whispering Shadow", origin: "Secrets & Lies" },
-                { name: "The Great Chronicler", origin: "Time & Wisdom" }
-            ],
-            attributes: {
-                Strength: ["Mighty", "Robust", "Athletic", "Brawny", "Tough", "Stalwart", "Unstoppable", "Muscular"],
-                Dexterity: ["Agile", "Nimble", "Swift", "Evasive", "Graceful", "Reflexive", "Quick", "Silent"],
-                Constitution: ["Resilient", "Enduring", "Vigorous", "Sturdy", "Immune", "Hardy", "Unyielding", "Tough"],
-                Intelligence: ["Brilliant", "Scholarly", "Analytical", "Erudite", "Inquisitive", "Astute", "Clever", "Sharp"],
-                Wisdom: ["Perceptive", "Intuitive", "Insightful", "Enlightened", "Sage", "Prudent", "Shrewd", "Wise"],
-                Charisma: ["Magnetic", "Charming", "Inspiring", "Regal", "Persuasive", "Majestic", "Captivating", "Silver-Tongued"]
-            },
-            biographies: {
-                intro: [
-                    "Born under an auspicious alignment of stars,",
-                    "Hailing from a long line of legendary outcasts,",
-                    "Abandoned as a child in the heart of the wild,",
-                    "Raised by secretive mentors in a forgotten temple,",
-                    "Once a celebrated champion of the royal guard,"
-                ],
-                conflict: [
-                    "they took up their weapons after their home was reduced to ash by a legendary beast.",
-                    "they dedicated their life to hunting down the ancient relics of the first kings.",
-                    "they broke their sacred vows to pursue a rogue wizard who stole their master's spellbook.",
-                    "they were forced into exile after uncovering a dark conspiracy in the capital's high council.",
-                    "they now walk the earth in search of a legendary cure for an ancient ancestral curse."
-                ],
-                ending: [
-                    "With only a blade and their wits, they vow to carve their own destiny across the realms.",
-                    "They will not rest until the innocent are avenged and their honor is fully restored.",
-                    "They seek to unite the fractured clans and bring permanent peace to the troubled borders.",
-                    "Driven by an insatiable curiosity, they venture into the darkest corners of the unknown.",
-                    "They walk a fine line between light and shadow, trusting only their instincts to survive."
-                ]
-            }
-        };
-
-        // Active state model holding active database values
-        let dndData = {
-            names: [],
-            professions: [],
-            races: [],
-            birthplaces: [],
-            idols: [],
-            attributes: {},
-            biographies: {}
-        };
-
-        // Complete array of fast/free portrait styles suitable for randomizing at startup
-        const randomizableStyles = ['dicebear', 'pixel_art', 'golem', 'monster', 'sigil', 'realface', 'landscape'];
-        let currentPortraitStyle = 'dicebear'; // Set randomly on initialization
-        let isDataLoaded = false;
-        let isGenerating = false;
-
-        // Smart parser to extract raw array from nested JSON wrappers or root objects
-        function getArrayFromData(data) {
-            if (!data) return [];
-            if (Array.isArray(data)) return data;
-            if (typeof data === 'object') {
-                const searchKeys = ['races', 'results', 'names', 'professions', 'classes', 'birthplaces', 'idols', 'attributes', 'biographies', 'data', 'list'];
-                for (const key of searchKeys) {
-                    if (Array.isArray(data[key])) return data[key];
-                }
-                for (const key in data) {
-                    if (Array.isArray(data[key])) return data[key];
-                }
-            }
-            return [data];
-        }
-
-        // Safe fetch helper locating local JSON files with broad coverage
-        async function loadDataset(filename) {
-            const origin = window.location.origin;
-            const pathCandidates = [
-                `/${filename}`,
-                `/resources/dnd/${filename}`,
-                `/dnd/${filename}`,
-                `./${filename}`,
-                `./resources/dnd/${filename}`,
-                `resources/dnd/${filename}`,
-                `/${filename.toLowerCase()}`,
-                `/resources/dnd/${filename.toLowerCase()}`,
-                `${origin}/${filename}`
-            ];
-
-            const uniquePaths = [...new Set(pathCandidates)];
-
-            for (const url of uniquePaths) {
-                try {
-                    const res = await fetch(url);
-                    if (res.ok) {
-                        const contentType = res.headers.get('content-type') || '';
-                        if (contentType.includes('text/html')) continue;
-
-                        const text = await res.text();
-                        try {
-                            const parsed = JSON.parse(text);
-                            console.log(`Loaded dataset: ${filename} from ${url}`);
-                            return parsed;
-                        } catch (err) {
-                            // try next URL
-                        }
-                    }
-                } catch (e) {
-                    // try next URL
-                }
-            }
-            throw new Error(`Path resolution failed for: ${filename}`);
-        }
-
-        // Initialize datasets combining loaded assets with robust embedded fallbacks
-        async function initializeDatasets() {
-            try {
-                const [names, professions, races, birthplaces, idols, attributes, biographies] = await Promise.all([
-                    loadDataset('listOfNames.json').catch(() => null),
-                    loadDataset('listOfProfessions.json').catch(() => null),
-                    loadDataset('listOfRaces.json').catch(() => null),
-                    loadDataset('listOfBirthPlaces.json').catch(() => null),
-                    loadDataset('listOfIdols.json').catch(() => null),
-                    loadDataset('listOfAttributes.json').catch(() => null),
-                    loadDataset('rndBiography.json').catch(() => null)
-                ]);
-
-                dndData.names = names ? getArrayFromData(names) : fallbackData.names;
-                dndData.professions = professions ? getArrayFromData(professions) : fallbackData.professions;
-                dndData.races = races ? getArrayFromData(races) : fallbackData.races;
-                dndData.birthplaces = birthplaces ? getArrayFromData(birthplaces) : fallbackData.birthplaces;
-                dndData.idols = idols ? getArrayFromData(idols) : fallbackData.idols;
-
-                // Handle nesting for attributes object
-                if (attributes) {
-                    if (attributes.attributes && typeof attributes.attributes === 'object' && !Array.isArray(attributes.attributes)) {
-                        dndData.attributes = attributes.attributes;
-                    } else {
-                        dndData.attributes = attributes;
-                    }
-                } else {
-                    dndData.attributes = fallbackData.attributes;
-                }
-
-                // Handle nesting for biographies
-                if (biographies) {
-                    if (biographies.biographies && typeof biographies.biographies === 'object') {
-                        dndData.biographies = biographies.biographies;
-                    } else {
-                        dndData.biographies = biographies;
-                    }
-                } else {
-                    dndData.biographies = fallbackData.biographies;
-                }
-
-                isDataLoaded = true;
-                generateNewHero();
-            } catch (err) {
-                console.error("Initiating with robust local backup datasets:", err);
-                dndData = { ...fallbackData };
-                isDataLoaded = true;
-                generateNewHero();
-            }
-        }
-
-        // Return a clean random item from a parsed list or array
-        function getRandomItem(data) {
-            const arr = getArrayFromData(data);
-            if (!arr || arr.length === 0) return null;
-            return arr[Math.floor(Math.random() * arr.length)];
-        }
-
-        // Cleans system filepaths, extensions, and formats races correctly
-        function sanitizeRace(raceValue) {
-            if (!raceValue) return 'Unknown';
-            let str = '';
-            if (typeof raceValue === 'string') {
-                str = raceValue;
-            } else if (typeof raceValue === 'object') {
-                str = raceValue.name || raceValue.race || raceValue.label || raceValue.title || JSON.stringify(raceValue);
-            } else {
-                str = String(raceValue);
-            }
-
-            let formatted = str.split('\\').pop().split('/').pop().replace('.html', '');
-            // Split camelcase gracefully but avoid prepending spaces incorrectly
-            formatted = formatted.replace(/([a-z])([A-Z])/g, '$1 $2').trim();
-            return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-        }
-
-        // Maps attributes from the parsed structure safely matching any casing
-        function grabAttributeAdjective(statName) {
-            if (!dndData.attributes) return 'Mysterious';
-            let list = dndData.attributes[statName];
-            if (!list) {
-                const matchedKey = Object.keys(dndData.attributes).find(
-                    k => k.toLowerCase() === statName.toLowerCase()
-                );
-                if (matchedKey) list = dndData.attributes[matchedKey];
-            }
-            return getRandomItem(list) || 'Intriguing';
-        }
-
-        // Dynamic narrative bio structure builder from any layout schema
-        function buildBiography() {
-            if (!dndData.biographies) {
-                return 'A wanderer of unknown pathways whose story is yet written.';
-            }
-
-            // Case A: Flat list of fully written stories
-            if (Array.isArray(dndData.biographies)) {
-                return getRandomItem(dndData.biographies) || 'A hero of legendary origins.';
-            }
-
-            // Case B: Modular multi-part narrative sections (intro, conflict, resolution, etc)
-            if (typeof dndData.biographies === 'object') {
-                const parts = [];
-                // Sort keys logically to structure the narrative correctly
-                const narrativeOrdering = ['intro', 'start', 'origin', 'backstory', 'plot', 'middle', 'conflict', 'ending', 'conclusion', 'destiny'];
-                const keys = Object.keys(dndData.biographies).sort((a, b) => {
-                    const idxA = narrativeOrdering.findIndex(o => a.toLowerCase().includes(o));
-                    const idxB = narrativeOrdering.findIndex(o => b.toLowerCase().includes(o));
-                    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-                    if (idxA !== -1) return -1;
-                    if (idxB !== -1) return 1;
-                    return a.localeCompare(b);
-                });
-
-                for (const key of keys) {
-                    const section = dndData.biographies[key];
-                    if (section) {
-                        const item = getRandomItem(section);
-                        if (item) parts.push(item);
-                    }
-                }
-                if (parts.length > 0) return parts.join(' ');
-            }
-
-            return 'A wanderer with a highly guarded past.';
-        }
-
-        // Calculate visual + score modifier matching traditional D&D stats
-        function rollStat() {
-            const roll = Math.floor(Math.random() * 6) + Math.floor(Math.random() * 6) + Math.floor(Math.random() * 6) + 3;
-            const modifier = Math.floor((roll - 10) / 2);
-            return {
-                score: roll,
-                modifier: modifier >= 0 ? `+${modifier}` : `${modifier}`
-            };
-        }
-
-        // Synchronize and apply randomized character metrics to UI
-        function updateStatUI(statId, score, modifier, adjective) {
-            const statEl = document.getElementById(`stat-${statId}`);
-            const modEl = document.getElementById(`mod-${statId}`);
-            const adjEl = document.getElementById(`adj-${statId}`);
-            const barEl = document.getElementById(`bar-${statId}`);
-
-            if (statEl) statEl.innerText = score;
-            if (modEl) modEl.innerText = modifier;
-            if (adjEl) adjEl.innerText = adjective.charAt(0).toUpperCase() + adjective.slice(1);
-
-            if (barEl) {
-                const percentage = Math.min((score / 20) * 100, 100);
-                barEl.style.width = `${percentage}%`;
-            }
-        }
-
-        // Core Generator Engine mapping data into UI Card
-        function generateNewHero() {
-            if (isGenerating) return;
-            isGenerating = true;
-
-            try {
-                const randomName = getRandomItem(dndData.names) || "Valerius Sunward";
-                const randomProfession = getRandomItem(dndData.professions) || "Paladin";
-                const rawRace = getRandomItem(dndData.races);
-                const randomRace = rawRace ? sanitizeRace(rawRace) : "Human";
-
-                const birthplaceObj = getRandomItem(dndData.birthplaces);
-                let birthPlaceStr = "Unknown Realm";
-                if (birthplaceObj) {
-                    if (typeof birthplaceObj === 'string') {
-                        birthPlaceStr = birthplaceObj;
-                    } else {
-                        birthPlaceStr = birthplaceObj.origin ? `${birthplaceObj.name} (${birthplaceObj.origin})` : birthplaceObj.name;
-                    }
-                }
-
-                const idolObj = getRandomItem(dndData.idols);
-                let idolStr = "The Great Spirit";
-                if (idolObj) {
-                    if (typeof idolObj === 'string') {
-                        idolStr = idolObj;
-                    } else {
-                        idolStr = idolObj.origin ? `${idolObj.name} (${idolObj.origin})` : idolObj.name;
-                    }
-                }
-
-                document.getElementById('charName').innerText = randomName;
-                document.getElementById('charClass').innerText = `${randomRace} • ${randomProfession}`;
-                document.getElementById('detailBirthplace').innerText = birthPlaceStr;
-                document.getElementById('detailIdol').innerText = idolStr;
-                document.getElementById('charBio').innerText = `"${buildBiography()}"`;
-
-                const stats = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
-                const attrLabels = {
-                    str: 'Strength',
-                    dex: 'Dexterity',
-                    con: 'Constitution',
-                    int: 'Intelligence',
-                    wis: 'Wisdom',
-                    cha: 'Charisma'
-                };
-
-                stats.forEach(stat => {
-                    const roll = rollStat();
-                    const adj = grabAttributeAdjective(attrLabels[stat]);
-                    updateStatUI(stat, roll.score, roll.modifier, adj);
-                });
-
-                fetchActivePortrait();
-            } catch (err) {
-                console.error("Error generating hero:", err);
-            } finally {
-                isGenerating = false;
-            }
-        }
-
-        // Safe wrapper to call Gemini Imagen API with exponential backoff
-        async function fetchGeminiImagen(promptText) {
-            let delay = 1000;
-            for (let attempt = 0; attempt < 5; attempt++) {
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            instances: {
-                                prompt: promptText
-                            },
-                            parameters: {
-                                sampleCount: 1
-                            }
-                        })
-                    });
-
-                    if (response.ok) {
-                        const result = await response.json();
-                        if (result.predictions?.[0]?.bytesBase64Encoded) {
-                            return `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
-                        }
-                    }
-                } catch (e) {
-                    // Fail silently, retry next loop
-                }
-                await new Promise(resolve => setTimeout(resolve, delay));
-                delay *= 2;
-            }
-            throw new Error("Magic failed to conjure custom AI portrait.");
-        }
-
-        // Coordinate active selected profile avatar render
-        async function fetchActivePortrait() {
-            const profileBtnImg = document.getElementById('profileImage');
-            const heroPanelImg = document.getElementById('heroImage');
-            const mainSpinner = document.getElementById('loadingSpinner');
-            const spellOverlay = document.getElementById('imageGenerationOverlay');
-
-            const charName = document.getElementById('charName').innerText;
-            const charClass = document.getElementById('charClass').innerText;
-
-            if (mainSpinner) mainSpinner.classList.remove('hidden');
-            if (spellOverlay) spellOverlay.classList.add('hidden');
-
-            let finalUrl = '';
-
-            // Handle multiple free generation APIs safely
-            if (currentPortraitStyle === 'dicebear') {
-                // Consistent RPG adventurer vector avatar
-                finalUrl = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(charName)}`;
-            }
-            else if (currentPortraitStyle === 'pixel_art') {
-                // Retro 8-bit retro gaming champion
-                finalUrl = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(charName)}`;
-            }
-            else if (currentPortraitStyle === 'golem') {
-                // Ancient robotic Golem / Construct (Set 1)
-                finalUrl = `https://robohash.org/${encodeURIComponent(charName)}?set=set1`;
-            }
-            else if (currentPortraitStyle === 'monster') {
-                // Magical monster companion or familiar (Set 2)
-                finalUrl = `https://robohash.org/${encodeURIComponent(charName)}?set=set2`;
-            }
-            else if (currentPortraitStyle === 'sigil') {
-                // Abstract magical sigil / heraldry representation
-                finalUrl = `https://source.boringavatars.com/beam/120/${encodeURIComponent(charName)}?colors=d4af37,f3e5ab,111111,2a2a2a,ff6b6b`;
-            }
-            else if (currentPortraitStyle === 'realface') {
-                // High-quality, safe realistic face portraits with zero hotlinking restrictions!
-                const gender = Math.random() > 0.5 ? 'men' : 'women';
-                const faceId = Math.floor(Math.random() * 100);
-                finalUrl = `https://randomuser.me/api/portraits/${gender}/${faceId}.jpg`;
-            }
-            else if (currentPortraitStyle === 'landscape') {
-                // Beautiful environmental scenics
-                const keywords = ['forest', 'mountain', 'castle', 'cave', 'sky', 'aurora', 'desert'];
-                const kw = keywords[Math.floor(Math.random() * keywords.length)];
-                finalUrl = `https://picsum.photos/seed/${encodeURIComponent(charName + kw)}/300/300`;
-            }
-            else if (currentPortraitStyle === 'ai_spell') {
-                if (spellOverlay) spellOverlay.classList.remove('hidden');
-
-                const magicPrompt = `A high fantasy RPG character portrait, digital art style, representing a ${charClass} named ${charName}. High detail, medieval concept art.`;
-                try {
-                    const base64Img = await fetchGeminiImagen(magicPrompt);
-                    profileBtnImg.src = base64Img;
-                    heroPanelImg.src = base64Img;
-                    if (mainSpinner) mainSpinner.classList.add('hidden');
-                    if (spellOverlay) spellOverlay.classList.add('hidden');
-                    return;
-                } catch (err) {
-                    console.warn(err.message);
-                    // Standard safe fallback style
-                    finalUrl = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(charName)}`;
-                }
-            }
-
-            // Image Preloader to ensure smooth, non-flickering renders
-            const imgLoader = new Image();
-            imgLoader.onload = () => {
-                profileBtnImg.src = finalUrl;
-                heroPanelImg.src = finalUrl;
-                if (mainSpinner) mainSpinner.classList.add('hidden');
-                if (spellOverlay) spellOverlay.classList.add('hidden');
-            };
-            imgLoader.onerror = () => {
-                // Safe default fallback
-                const fallbackSvg = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(charName)}`;
-                profileBtnImg.src = fallbackSvg;
-                heroPanelImg.src = fallbackSvg;
-                if (mainSpinner) mainSpinner.classList.add('hidden');
-                if (spellOverlay) spellOverlay.classList.add('hidden');
-            };
-            imgLoader.src = finalUrl;
-        }
-
-        // Initialize User Controls
-        document.addEventListener('DOMContentLoaded', () => {
-            const profileBtn = document.getElementById('profileBtn');
-            const sidePanel = document.getElementById('sidePanel');
-            const overlay = document.getElementById('panelOverlay');
-            const closeBtn = document.getElementById('closePanelBtn');
-            const rerollBtn = document.getElementById('rerollBtn');
-            const randomNotice = document.getElementById('randomNotice');
-
-            // 🎲 Load-time Randomizer Engine: Choose a random free API
-            currentPortraitStyle = randomizableStyles[Math.floor(Math.random() * randomizableStyles.length)];
-
-            // Show custom "Chosen Randomly" badge to inform the user
-            if (randomNotice) {
-                randomNotice.classList.remove('hidden');
-                setTimeout(() => {
-                    randomNotice.classList.add('opacity-0');
-                    setTimeout(() => randomNotice.classList.add('hidden'), 500);
-                }, 3000);
-            }
-
-            initializeDatasets();
-
-            // Toggle Panel Open
-            profileBtn.addEventListener('click', () => {
-                sidePanel.classList.add('open');
-                overlay.classList.add('active');
-            });
-
-            // Close actions
-            const closeDrawer = () => {
-                sidePanel.classList.remove('open');
-                overlay.classList.remove('active');
-            };
-            closeBtn.addEventListener('click', closeDrawer);
-            overlay.addEventListener('click', closeDrawer);
-
-            // Re-roll button trigger
-            rerollBtn.addEventListener('click', () => {
-                generateNewHero();
-            });
-
-            // Setup Portrait Segmented Control Buttons
-            const selectorButtons = document.querySelectorAll('.portrait-selector-btn');
-
-            // Set randomized active button visual on page start
-            const initialActiveBtn = document.querySelector(`.portrait-selector-btn[data-style="${currentPortraitStyle}"]`);
-            if (initialActiveBtn) initialActiveBtn.classList.add('active');
-
-            selectorButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    selectorButtons.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    currentPortraitStyle = btn.getAttribute('data-style');
-                    fetchActivePortrait();
-                });
-            });
-        });
-    </script>
+  </div>
+
+  <script>
+    // --- EMBEDDED RESOURCE: rndIndexTitles.json ---
+    const RND_INDEX_TITLES = [
+      "PixelPioneer", "NebulaNest", "QuantumQuill", "VelvetVortex", "AuroraArchive",
+      "CrimsonCascade", "EchoEmporium", "ZenithZephyr", "MysticMeadow", "RadiantRealm",
+      "CosmicCanvas", "LunarLagoon", "SolarSphere", "TerraTrove", "VividVista",
+      "WhisperWillow", "BlazeBazaar", "DuskDynamo", "FrostFable", "GlimmerGrove",
+      "HavenHarbor", "IrisIsle", "JadeJunction", "KaleidoKeep", "LushLabyrinth",
+      "MirageMosaic", "NovaNook", "ObsidianOasis", "PrismPavilion", "QuartzQuest",
+      "RippleRidge", "SereneSummit", "TidalTapestry", "UmbraUnion", "ValeVoyage",
+      "WanderWeb", "XenonXplore", "YonderYard", "ZephyrZone", "ArcaneAtlas",
+      "BerylBreeze", "CinderCove", "DriftDale", "EmberEden", "FluxForge",
+      "GaleGarden", "HollowHearth", "InkInfinite", "JasperJive", "KindleKnot",
+      "LocketLair", "MellowMoor", "NorthNimbus", "OpalOutpost", "PetalPulse",
+      "RavenRoost", "SableStream", "ThornThicket", "UtopiaUrn", "VioletVale",
+      "WispWander", "YewYard", "AzureApex", "BrassBarrow", "CedarCrest",
+      "DewDapple", "ElderEcho", "FallowFjord", "GossamerGlen", "HeatherHollow",
+      "IvyInlet", "JetJewel", "KestrelKeep", "LindenLedge", "MarbleMire",
+      "NettleNiche", "OrchidOre", "PonderPine", "RusticRook", "ShaleShire",
+      "TarnTower", "UrchinUplands", "VerdeVault", "WicketWoods", "YarrowYard",
+      "AshenAerie", "BrambleBay", "ChimeChasm", "DoveDell", "ErmineEyre",
+      "FennelFalls", "GorseGap", "HazelHolt", "IrisInn", "JuniperJamb",
+      "KelpKove", "LarchLane", "MossMere", "NymphNook", "OakenOwl",
+      "PixiePond", "RyeRidge", "SageSprint", "ToadstoolTarn", "VixenVale",
+      "WrenWright", "YuleYard", "BryceBooth", "CoveCraft", "DuneDraft",
+      "EarlEstate", "FinchForge", "GuildGaze", "HawkHaven", "IvyInch",
+      "JoltJazz", "KnotKnight", "LilyLoft", "MintMoor", "NashNest",
+      "OnyxOde", "PalmPulse", "RookRally", "ScoutShoal", "TrekTide",
+      "UrgeUtopia", "VineVerve", "WadeWisp", "YapYard", "ZincZest",
+      "AlderAisle", "BirchBight", "CliffClimb", "DellDawn", "ErneEbb",
+      "FirFleet", "GlenGust", "HeathHue", "IsleIris", "JadeJet",
+      "KnollKnot", "LynnLull", "MereMist", "NookNimbus", "OreOasis",
+      "PeakPulse", "QuayQuill", "RillRust", "ShawShine", "ThorpTide",
+      "UplandUrn", "ValeVane", "WoldWisp", "YardYarn", "ZionZephyr",
+      "BluffBrine", "CreekCrest", "DuneDew", "EyotEcho", "FellFlux",
+      "GarthGlim", "HolmHaze", "InchIris", "JutJewel", "KyleKnot",
+      "LochLure", "MuirMist", "NessNova", "PointePulse", "RathRune",
+      "SkeinSkim", "TarnTint", "UrrUplift", "VoeVerve", "WickWane",
+      "YareYawn"
+    ];
+
+    // --- EMBEDDED RESOURCE: rndIndexSubtitles.json ---
+    const RND_INDEX_SUBTITLES = {
+      "Niche Tools": [
+        "Niche Tools", "Specialized Software", "Personal Utilities", "Task-Specific Applications",
+        "Role-Specific Tools", "Profession-Specific Software", "Hobby-Specific Tools",
+        "Interest-Based Applications", "Workflow Utilities", "Power User Tools", "Expert Utilities",
+        "Professional Software", "Industry-Specific Solutions", "Custom Toolchains",
+        "Purpose-Built Applications", "Vertical Software", "Dedicated Utilities", "Special-Purpose Tools",
+        "Focused Applications", "Productivity Helpers", "Companion Apps", "Technical Utilities",
+        "Developer Tools", "Creator Tools", "Research Tools", "Automation Utilities",
+        "Hidden Gems", "Lesser-Known Software", "Niche Resources", "Specialized Platforms",
+        "Personalized Software", "Tailored Applications", "Custom Solutions", "Custom-Built Tools",
+        "Highly Specialized Utilities", "Domain-Specific Software", "Field-Specific Applications",
+        "Occupation-Based Tools", "Career-Focused Software", "Trade Utilities", "Engineering Tools",
+        "Scientific Software", "Medical Applications", "Educational Utilities", "Academic Tools",
+        "Business Utilities", "Creative Software", "Artist Tools", "Designer Utilities",
+        "Music Production Tools", "Video Editing Utilities", "Photography Software", "3D Modeling Tools",
+        "CAD Software", "GIS Applications", "Mapping Utilities", "Data Analysis Tools",
+        "Database Utilities", "System Administration Tools", "Network Utilities", "Security Tools",
+        "Forensics Software", "Monitoring Utilities", "Diagnostics Tools", "Benchmark Utilities",
+        "File Management Tools", "Backup Utilities", "Synchronization Tools", "Virtualization Software",
+        "Container Tools", "Terminal Utilities", "Command-Line Tools", "Scripting Utilities",
+        "Debugging Tools", "Testing Frameworks", "Reverse Engineering Tools", "Modding Utilities",
+        "Game Companion Tools", "Simulation Utilities", "Productivity Automation", "Macro Tools",
+        "Launcher Utilities", "Overlay Applications", "Clipboard Managers", "Window Management Tools",
+        "Knowledge Management Tools", "Note-Taking Utilities", "Information Managers",
+        "Personal Knowledge Tools", "Reference Utilities", "Offline Tools", "Portable Applications",
+        "Self-Hosted Software", "Open Source Utilities", "Experimental Software", "Community Projects",
+        "Independent Utilities", "Single-Purpose Software", "One-Trick Utilities", "Micro Utilities",
+        "Minimalist Tools", "Advanced Utilities", "Expert-Level Software", "Enthusiast Applications",
+        "Geek Tools", "Power Productivity Software", "Workflow Optimization Tools", "Efficiency Utilities",
+        "Time-Saving Applications", "Specialized Resources", "Rare Utilities", "Underground Software",
+        "Unique Applications", "Alternative Software", "Problem-Solving Tools", "Everyday Utilities",
+        "Utility Software", "Small Productivity Apps"
+      ],
+      "Accessibility Features": [
+        "Accessibility Features", "Assistive Technology", "Inclusive Design", "Universal Access",
+        "Barrier-Free Computing", "Alternative Input Methods", "Keyboard Navigation", "Screen Reader Support",
+        "Voice Control", "Speech Recognition", "Text-to-Speech", "Speech-to-Text", "Visual Accessibility",
+        "Hearing Accessibility", "Motor Accessibility", "Cognitive Accessibility", "Reading Assistance",
+        "Color Accessibility", "High Contrast Mode", "Screen Magnification", "Closed Captions",
+        "Subtitles", "Adaptive Interfaces", "Usability Enhancements", "Accessibility Options",
+        "Inclusive User Experience", "Disability Accommodations", "Digital Inclusion", "Adaptive Computing",
+        "Accessible Workflows", "Accessibility Support", "Accessibility Settings", "Accessibility Tools",
+        "Accessibility Services", "Accessible Software", "Accessible Design", "Inclusive Interfaces",
+        "Universal Design", "User Accessibility", "Assistive Features", "Adaptive Technology",
+        "Adaptive Features", "Alternative Navigation", "Alternative Controls", "Alternative Interaction",
+        "Hands-Free Computing", "Voice Interaction", "Voice Navigation", "Speech Commands",
+        "Dictation", "Voice Typing", "Keyboard Shortcuts", "Full Keyboard Access", "Switch Access",
+        "Switch Control", "Eye Tracking", "Eye Control", "Head Tracking", "Head Mouse",
+        "On-Screen Keyboard", "Virtual Keyboard", "Sticky Keys", "Filter Keys", "Toggle Keys",
+        "Mouse Keys", "Single-Handed Controls", "Touch Accessibility", "Touch Accommodations",
+        "Gesture Alternatives", "Large Click Targets", "Large Buttons", "Simplified Navigation",
+        "Simplified Interface", "Reduced Motion", "Animation Reduction", "Motion Accessibility",
+        "Dark Mode", "Light Sensitivity Options", "Color Filters", "Color Blind Support",
+        "Color Blind Modes", "Custom Themes", "High Visibility Mode", "Contrast Enhancement",
+        "Large Text", "Scalable Fonts", "Font Size Adjustment", "Zoom Support", "Screen Zoom",
+        "Magnifier", "Reading Mode", "Reader View", "Focus Mode", "Reading Focus",
+        "Line Focus", "Text Highlighting", "Text Spacing", "Letter Spacing", "Word Spacing",
+        "Dyslexia-Friendly Fonts", "Reading Guides", "Audio Feedback", "Visual Feedback",
+        "Haptic Feedback", "Notification Customization", "Caption Support", "Live Captions",
+        "Automatic Captions", "Audio Descriptions", "Sign Language Support", "Sound Indicators",
+        "Visual Alerts", "Flash Notifications", "Hearing Assistance", "Low Vision Support",
+        "Blind Accessibility", "Low Mobility Support", "Neurodiversity Support", "Attention Assistance",
+        "Memory Aids", "Error Prevention", "Confirmation Prompts", "Custom Accessibility Profiles",
+        "Personalized Accessibility", "Accessible Productivity", "Accessible Navigation",
+        "Accessible Communication", "Accessible Workflows", "Universal Usability", "Inclusive Computing"
+      ]
+    };
+
+    // Select Random Item Utility
+    function getRandomItem(array) {
+      return array[Math.floor(Math.random() * array.length)];
+    }
+
+    // Generate pairing and update HTML directly
+    function generateIndices() {
+      const selectedTitle = getRandomItem(RND_INDEX_TITLES);
+      const selectedNiche = getRandomItem(RND_INDEX_SUBTITLES["Niche Tools"]);
+      const selectedAccess = getRandomItem(RND_INDEX_SUBTITLES["Accessibility Features"]);
+
+      document.getElementById('main-title').innerText = selectedTitle;
+      document.getElementById('combined-subtitle').innerText = `${selectedNiche} • ${selectedAccess}`;
+    }
+
+    // --- TIMEZONE AND CLOCK ---
+    function updateClock() {
+      const now = new Date();
+
+      // Clock format: Local time with seconds
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+
+      document.getElementById('live-time').innerText = `${hours}:${minutes}:${seconds}`;
+
+      // Date format: Day of the week, Month Day, Year
+      const options = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+      document.getElementById('live-date').innerText = now.toLocaleDateString(undefined, options);
+    }
+
+    // --- INITIALIZATION ---
+    window.onload = function() {
+      generateIndices();
+      updateClock();
+      setInterval(updateClock, 1000); // update clock every second
+    }
+  </script>
 </body>
 </html>
