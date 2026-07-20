@@ -3,582 +3,818 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generic Audio Workspace</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Fantasy Profile Panel</title>
     <style>
-        /* Custom UI Styles to mimic a DAW */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-        
+        /* Modern CSS reset and smooth transitions */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #1c1c1c;
-            color: #b3b3b3;
-            overflow: hidden; /* Prevent body scroll, handle scrolling in panels */
+            background-color: #000000;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #ffffff;
         }
 
-        /* DAW Custom Scrollbars */
-        ::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #2a2a2a; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #4a4a4a; 
-            border: 2px solid #2a2a2a;
-            border-radius: 5px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #5a5a5a; 
-        }
-
-        /* Clip styling */
-        .clip-slot {
-            height: 28px;
-            background-color: #2a2a2a;
-            border: 1px solid #1a1a1a;
-            margin-bottom: 2px;
-            position: relative;
-            cursor: pointer;
-            display: flex;
-        }
-        
-        .clip {
+        /* Profile Icon Placement (Google-style) */
+        .profile-container {
             position: absolute;
+            top: 24px;
+            right: 24px;
+            z-index: 100;
+        }
+
+        .profile-button {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .profile-button:hover {
+            transform: scale(1.08);
+            border-color: rgba(255, 255, 255, 0.7);
+            box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+        }
+
+        .profile-button:active {
+            transform: scale(0.96);
+        }
+
+        .profile-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+        }
+
+        /* Profile Side Panel (Glassmorphic Drawer) */
+        .side-panel {
+            position: fixed;
+            top: 0;
+            right: -100%; /* Hidden off-screen by default */
+            width: 100%;
+            max-width: 460px;
+            height: 100vh;
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .side-panel.open {
+            right: 0;
+        }
+
+        /* Backdrop Overlay */
+        .overlay {
+            position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+            z-index: 999;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Panel Header */
+        .panel-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            padding-left: 6px;
-            font-size: 11px;
-            color: #111;
-            font-weight: 500;
-            border-top-right-radius: 2px;
-            border-bottom-right-radius: 2px;
+            padding: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        .clip:hover {
-            filter: brightness(1.1);
+        .panel-title {
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #d4af37; /* Elegent gold accent */
+            font-weight: 700;
         }
 
-        .clip .play-marker {
-            width: 0; 
-            height: 0; 
-            border-top: 4px solid transparent;
-            border-bottom: 4px solid transparent;
-            border-left: 6px solid #111;
-            margin-right: 6px;
-        }
-
-        /* Generic Knobs/Sliders mockups */
-        .mock-knob {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            border: 2px solid #555;
-            position: relative;
-        }
-        .mock-knob::after {
-            content: '';
-            position: absolute;
-            top: 2px;
-            left: 8px;
-            width: 2px;
-            height: 6px;
-            background-color: #888;
-        }
-
-        /* Toggle Button Styles */
-        .panel-toggle {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background-color: #333;
-            border: 1px solid #111;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        .close-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 24px;
             cursor: pointer;
-            z-index: 50;
-            color: #888;
-        }
-        .panel-toggle:hover {
-            background-color: #444;
-            color: #ddd;
-        }
-        .panel-toggle.active {
-            background-color: #eab308; /* Yellow active state */
-            color: #111;
+            transition: color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
         }
 
-        /* Layout transitions */
-        #section-left, #section-right, #section-bottom {
-            transition: all 0.2s ease-in-out;
+        .close-btn:hover {
+            color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Panel Content layout */
+        .panel-body {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            flex-grow: 1;
+        }
+
+        /* Large Character Portrait Display */
+        .character-hero {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .hero-img-wrapper {
+            width: 90px;
+            height: 90px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #d4af37;
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+            flex-shrink: 0;
+        }
+
+        .hero-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .hero-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .char-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+        }
+
+        .char-sub {
+            font-size: 0.9rem;
+            color: #a3a3a3;
+            text-transform: capitalize;
+        }
+
+        /* Section layout */
+        .section-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        /* Biography Section */
+        .bio-box {
+            background: rgba(212, 175, 55, 0.03);
+            border-left: 3px solid #d4af37;
+            padding: 16px;
+            border-radius: 0 12px 12px 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #e5e5e5;
+            font-style: italic;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(212, 175, 55, 0.3);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-name {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #a3a3a3;
+        }
+
+        .stat-val-group {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .stat-num {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .stat-mod {
+            font-size: 0.85rem;
+            color: #d4af37;
+            font-weight: 600;
+        }
+
+        .stat-adjective {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stat-progress-bg {
+            width: 100%;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .stat-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #d4af37, #f3e5ab);
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Identity / Origins details */
+        .details-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .detail-label {
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 500;
+        }
+
+        .detail-value {
+            color: #ffffff;
+            font-weight: 600;
+            text-align: right;
+            max-width: 60%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Actions at bottom */
+        .panel-actions {
+            padding: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(10, 10, 10, 0.95);
+        }
+
+        .action-button {
+            width: 100%;
+            background: linear-gradient(135deg, #d4af37, #aa7c11);
+            color: #000000;
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+            background: linear-gradient(135deg, #e5c158, #c59b27);
+        }
+
+        .action-button:active {
+            transform: scale(0.98);
+        }
+
+        /* Global loading spinner */
+        .spinner {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top: 2px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col text-xs select-none">
+<body>
 
-    <!-- TOP SECTION (Transport / Global Controls) -->
-    <header class="h-12 bg-neutral-800 border-b border-black flex items-center px-4 justify-between shrink-0">
-        <div class="flex items-center space-x-4">
-            <div class="font-bold text-neutral-300">Section 1 (Global)</div>
-            
-            <!-- Generic Transport Controls -->
-            <div class="flex space-x-1 border border-neutral-900 bg-neutral-700 rounded p-0.5">
-                <button class="px-3 py-1 bg-neutral-600 hover:bg-neutral-500 rounded-sm text-green-400">▶</button>
-                <button class="px-3 py-1 bg-neutral-600 hover:bg-neutral-500 rounded-sm">■</button>
-                <button class="px-3 py-1 bg-neutral-600 hover:bg-neutral-500 rounded-sm text-red-500">●</button>
-            </div>
-            
-            <div class="flex items-center space-x-2 border border-neutral-900 bg-neutral-700 rounded px-2 py-1">
-                <span>120.00</span>
-                <span class="text-neutral-500">BPM</span>
-            </div>
-        </div>
-        
-        <div class="flex items-center space-x-2">
-            <div class="w-32 h-2 bg-neutral-900 rounded-full overflow-hidden">
-                <div class="h-full bg-green-500 w-1/2"></div>
-            </div>
-        </div>
-    </header>
-
-    <!-- MIDDLE SECTION (Main Workspace) -->
-    <main class="flex-1 flex overflow-hidden relative">
-        
-        <!-- LEFT SECTION (Browser) -->
-        <aside id="section-left" class="w-56 bg-neutral-800 border-r border-black flex flex-col shrink-0">
-            <div class="p-2 border-b border-neutral-900 bg-neutral-700 font-semibold text-neutral-300 uppercase text-[10px] tracking-wider">
-                Section 2 (Browser)
-            </div>
-            <div class="p-2 flex-1 overflow-y-auto">
-                <div class="space-y-1">
-                    <div class="hover:bg-neutral-700 px-2 py-1 rounded cursor-pointer text-white">Item Category 1</div>
-                    <div class="hover:bg-neutral-700 px-2 py-1 rounded cursor-pointer">Item Category 2</div>
-                    <div class="hover:bg-neutral-700 px-2 py-1 rounded cursor-pointer">Item Category 3</div>
-                    
-                    <!-- Folder 1 -->
-                    <div class="mt-4 mb-1 px-2 text-neutral-500 uppercase text-[10px]">Folder 1</div>
-                    <div class="pl-4 space-y-1">
-                        <div class="hover:bg-neutral-700 px-2 py-0.5 rounded cursor-pointer text-neutral-400 flex items-center"><span class="w-2 h-2 rounded-full bg-blue-400 mr-2"></span> Resource 1</div>
-                        <div class="hover:bg-neutral-700 px-2 py-0.5 rounded cursor-pointer text-neutral-400 flex items-center"><span class="w-2 h-2 rounded-full bg-blue-400 mr-2"></span> Resource 2</div>
-                        <div class="hover:bg-neutral-700 px-2 py-0.5 rounded cursor-pointer text-neutral-400 flex items-center"><span class="w-2 h-2 rounded-full bg-blue-400 mr-2"></span> Resource 3</div>
-                    </div>
-                    
-                    <!-- Folder 2 Container (Tools/HTML files) -->
-                    <div class="mt-4 mb-1 px-2 text-neutral-500 uppercase text-[10px]">Folder 2 (Tools)</div>
-                    <div id="folder-2-list" class="pl-4 space-y-1 pb-2">
-                        <div class="text-[10px] text-neutral-600 px-2 italic">Loading...</div>
-                    </div>
-
-                    <!-- Folder 3 Container (RSS Feeds) -->
-                    <div class="mt-4 mb-1 px-2 text-neutral-500 uppercase text-[10px]">Folder 3 (RSS Feeds)</div>
-                    <div id="folder-3-list" class="pl-4 space-y-1 pb-4">
-                        <div class="text-[10px] text-neutral-600 px-2 italic">Loading...</div>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- CENTER SECTION (Session / Grid View) -->
-        <div id="section-center" class="flex-1 bg-neutral-900 flex overflow-x-auto p-1 space-x-1 relative">
-            
-            <!-- Toggles inside the center section -->
-            <button id="toggle-left" onclick="toggleSection('section-left', 'toggle-left', 'width', 'w-56')" class="panel-toggle active absolute top-2 left-2" title="Toggle Section 2">
-                <svg width="8" height="8" viewBox="0 0 10 10"><path d="M7 1L3 5l4 4" stroke="currentColor" fill="none" stroke-width="2"/></svg>
-            </button>
-            <button id="toggle-bottom" onclick="toggleSection('section-bottom', 'toggle-bottom', 'height', 'h-52')" class="panel-toggle active absolute bottom-2 left-2" title="Toggle Section 5">
-                <svg width="8" height="8" viewBox="0 0 10 10"><path d="M1 3l4 4 4-4" stroke="currentColor" fill="none" stroke-width="2"/></svg>
-            </button>
-            <button id="toggle-right" onclick="toggleSection('section-right', 'toggle-right', 'width', 'w-48')" class="panel-toggle active absolute bottom-2 right-2" title="Toggle Section 4">
-                <svg width="8" height="8" viewBox="0 0 10 10"><path d="M3 1l4 4-4 4" stroke="currentColor" fill="none" stroke-width="2"/></svg>
-            </button>
-
-            <!-- Grid spacer to offset for the toggle buttons -->
-            <div class="w-6 shrink-0"></div>
-
-            <!-- Generic Track 1 (Target for RSS Clips) -->
-            <div class="w-28 bg-neutral-800 border border-black flex flex-col rounded-t shrink-0">
-                <div class="h-6 bg-neutral-700 text-center leading-6 font-semibold border-b border-black text-neutral-300">Track 1</div>
-                <div id="track-1-clips" class="flex-1 p-1 overflow-y-auto">
-                    <!-- Default empty clips -->
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                </div>
-                <!-- Track Mixer Section -->
-                <div class="h-32 border-t border-black bg-neutral-800 p-2 flex flex-col items-center justify-between">
-                    <div class="flex space-x-2">
-                        <div class="mock-knob"></div>
-                        <div class="mock-knob"></div>
-                    </div>
-                    <div class="flex space-x-1 w-full justify-center mt-2">
-                        <div class="w-6 h-4 bg-neutral-600 rounded text-[9px] text-center leading-4 hover:bg-yellow-500 hover:text-black cursor-pointer">S</div>
-                        <div class="w-6 h-4 bg-yellow-500 text-black rounded text-[9px] text-center leading-4 cursor-pointer">M</div>
-                    </div>
-                    <div class="w-4 h-16 bg-black rounded-full mt-2 relative">
-                        <div class="absolute bottom-4 left-0 w-full h-3 bg-neutral-400 rounded-sm cursor-ns-resize"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Generic Track 2 -->
-            <div class="w-28 bg-neutral-800 border border-black flex flex-col rounded-t shrink-0">
-                <div class="h-6 bg-neutral-700 text-center leading-6 font-semibold border-b border-black text-neutral-300">Track 2</div>
-                <div id="track-2-clips" class="flex-1 p-1 overflow-y-auto">
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                </div>
-                <div class="h-32 border-t border-black bg-neutral-800 p-2 flex flex-col items-center justify-between">
-                    <div class="flex space-x-2">
-                        <div class="mock-knob"></div>
-                        <div class="mock-knob"></div>
-                    </div>
-                    <div class="flex space-x-1 w-full justify-center mt-2">
-                        <div class="w-6 h-4 bg-neutral-600 rounded text-[9px] text-center leading-4 hover:bg-yellow-500 hover:text-black cursor-pointer">S</div>
-                        <div class="w-6 h-4 bg-neutral-600 rounded text-[9px] text-center leading-4 hover:bg-yellow-500 hover:text-black cursor-pointer">M</div>
-                    </div>
-                    <div class="w-4 h-16 bg-black rounded-full mt-2 relative">
-                        <div class="absolute bottom-8 left-0 w-full h-3 bg-neutral-400 rounded-sm cursor-ns-resize"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Generic Track 3 -->
-            <div class="w-28 bg-neutral-800 border border-black flex flex-col rounded-t shrink-0 opacity-50">
-                <div class="h-6 bg-neutral-700 text-center leading-6 font-semibold border-b border-black text-neutral-300">Track 3</div>
-                <div id="track-3-clips" class="flex-1 p-1 overflow-y-auto">
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                    <div class="clip-slot empty-slot"></div>
-                </div>
-                <div class="h-32 border-t border-black bg-neutral-800 p-2 flex flex-col items-center justify-between">
-                    <div class="flex space-x-2">
-                        <div class="mock-knob"></div>
-                        <div class="mock-knob"></div>
-                    </div>
-                     <div class="flex space-x-1 w-full justify-center mt-2">
-                        <div class="w-6 h-4 bg-neutral-600 rounded text-[9px] text-center leading-4 hover:bg-yellow-500 hover:text-black cursor-pointer">S</div>
-                        <div class="w-6 h-4 bg-neutral-600 rounded text-[9px] text-center leading-4 hover:bg-yellow-500 hover:text-black cursor-pointer">M</div>
-                    </div>
-                    <div class="w-4 h-16 bg-black rounded-full mt-2 relative">
-                        <div class="absolute bottom-2 left-0 w-full h-3 bg-neutral-400 rounded-sm cursor-ns-resize"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="w-6 shrink-0"></div> <!-- Right spacer -->
-        </div>
-
-        <!-- RIGHT SECTION (Master / Returns) -->
-        <aside id="section-right" class="w-48 bg-neutral-800 border-l border-black flex flex-col shrink-0">
-            <div class="p-2 border-b border-neutral-900 bg-neutral-700 font-semibold text-neutral-300 uppercase text-[10px] tracking-wider text-right">
-                Section 4 (Master)
-            </div>
-            <div class="flex-1 flex p-1 space-x-1">
-                <!-- Return Track -->
-                <div class="flex-1 border border-black flex flex-col rounded-t bg-neutral-700">
-                    <div class="h-6 text-center leading-6 font-semibold border-b border-black">Ret A</div>
-                    <div class="flex-1"></div>
-                     <div class="h-32 border-t border-black p-2 flex flex-col items-center justify-end">
-                        <div class="w-4 h-24 bg-black rounded-full mt-2 relative">
-                            <div class="absolute bottom-6 left-0 w-full h-3 bg-neutral-400 rounded-sm cursor-ns-resize"></div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Master Track -->
-                <div class="flex-1 border border-black flex flex-col rounded-t bg-neutral-700">
-                    <div class="h-6 text-center leading-6 font-semibold border-b border-black">Master</div>
-                    <div class="flex-1 p-1 flex flex-col gap-1 justify-end pb-2">
-                        <div class="h-6 bg-neutral-600 flex items-center justify-center text-[10px] border border-black rounded-sm cursor-pointer hover:bg-neutral-500">Scene 1</div>
-                        <div class="h-6 bg-neutral-600 flex items-center justify-center text-[10px] border border-black rounded-sm cursor-pointer hover:bg-neutral-500">Scene 2</div>
-                        <div class="h-6 bg-neutral-600 flex items-center justify-center text-[10px] border border-black rounded-sm cursor-pointer hover:bg-neutral-500">Scene 3</div>
-                    </div>
-                    <div class="h-32 border-t border-black p-2 flex flex-col items-center justify-end">
-                        <div class="w-4 h-24 bg-black rounded-full mt-2 relative flex overflow-hidden">
-                             <!-- VU Meter Mockup -->
-                            <div class="absolute bottom-0 left-0 w-full h-16 bg-green-500"></div>
-                            <div class="absolute bottom-16 left-0 w-full h-4 bg-yellow-500"></div>
-                            <div class="absolute bottom-4 left-0 w-full h-3 bg-neutral-400 rounded-sm cursor-ns-resize shadow-md"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-    </main>
-
-    <!-- BOTTOM SECTION (Detail View) -->
-    <footer id="section-bottom" class="h-52 bg-neutral-800 border-t border-black shrink-0 flex flex-col">
-        <!-- Detail View Tabs -->
-        <div class="h-6 bg-neutral-700 border-b border-neutral-900 flex px-2 text-[10px] uppercase tracking-wider font-semibold">
-            <div class="px-4 py-1 bg-neutral-800 border-t-2 border-yellow-500 text-neutral-200 cursor-pointer">Module View 1</div>
-            <div class="px-4 py-1 hover:bg-neutral-600 cursor-pointer text-neutral-500">Module View 2</div>
-        </div>
-        <!-- Detail Content -->
-        <div class="flex-1 flex p-2 space-x-2 overflow-x-auto bg-neutral-800">
-            <!-- Generic Device 1 -->
-            <div class="w-64 border border-black bg-neutral-700 rounded-sm flex flex-col shrink-0">
-                <div class="px-2 py-1 bg-neutral-600 border-b border-black font-semibold text-neutral-200 flex justify-between items-center">
-                    <span>Generic Instrument 1</span>
-                    <div class="w-3 h-3 rounded-full bg-yellow-500 border border-black"></div>
-                </div>
-                <div class="flex-1 p-2 flex justify-around items-center">
-                    <div class="flex flex-col items-center"><div class="mock-knob mb-1"></div><span>Param 1</span></div>
-                    <div class="flex flex-col items-center"><div class="mock-knob mb-1"></div><span>Param 2</span></div>
-                    <div class="flex flex-col items-center"><div class="mock-knob mb-1"></div><span>Param 3</span></div>
-                </div>
-            </div>
-            
-            <!-- Generic Device 2 -->
-            <div class="w-48 border border-black bg-neutral-700 rounded-sm flex flex-col shrink-0">
-                <div class="px-2 py-1 bg-neutral-600 border-b border-black font-semibold text-neutral-200 flex justify-between items-center">
-                    <span>Audio Effect 1</span>
-                    <div class="w-3 h-3 rounded-full bg-yellow-500 border border-black"></div>
-                </div>
-                <div class="flex-1 p-2 flex justify-around items-center">
-                    <div class="w-20 h-16 bg-neutral-900 rounded border border-neutral-800 flex items-center justify-center overflow-hidden relative">
-                        <!-- Mock visualizer graph -->
-                        <svg class="w-full h-full text-green-500" viewBox="0 0 100 100" preserveAspectRatio="none">
-                            <path d="M0 80 Q 25 20, 50 50 T 100 30 L 100 100 L 0 100 Z" fill="currentColor" opacity="0.3"/>
-                            <path d="M0 80 Q 25 20, 50 50 T 100 30" fill="none" stroke="currentColor" stroke-width="2"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Drop area mockup -->
-            <div class="flex-1 border border-dashed border-neutral-600 rounded-sm flex items-center justify-center text-neutral-500 min-w-[200px]">
-                Drop Audio Effects Here
-            </div>
-        </div>
-    </footer>
-
-    <!-- External Tool Wrapper Overlay -->
-    <div id="tool-wrapper" class="fixed inset-0 z-[100] bg-black/90 hidden flex-col p-8 backdrop-blur-sm">
-        <div class="bg-neutral-800 rounded-t-lg border border-neutral-700 flex justify-between items-center p-3 shadow-lg">
-            <h2 id="tool-title" class="text-white font-semibold ml-2 text-lg tracking-wide">Tool</h2>
-            <button onclick="closeToolWrapper()" class="bg-red-600 hover:bg-red-500 text-white rounded px-4 py-1.5 font-bold transition-colors">Close</button>
-        </div>
-        <div class="flex-1 bg-neutral-200 rounded-b-lg border-x border-b border-neutral-700 overflow-hidden shadow-2xl relative">
-            <iframe id="tool-iframe" class="w-full h-full border-none absolute inset-0"></iframe>
+    <!-- Target Area Triggering the Panel -->
+    <div class="profile-container">
+        <div class="profile-button" id="profileBtn" title="Open Character Profile">
+            <div class="spinner" id="loadingSpinner"></div>
+            <img class="profile-img" id="profileImage" alt="Profile Display">
         </div>
     </div>
 
-    <!-- JavaScript to handle Section Toggles and Data -->
-    <script>
-        function toggleSection(sectionId, buttonId, dimensionClass, openSizeClass) {
-            const section = document.getElementById(sectionId);
-            const button = document.getElementById(buttonId);
-            
-            button.classList.toggle('active');
-            
-            if (button.classList.contains('active')) {
-                section.classList.remove('w-0', 'h-0', 'border-none', 'p-0', 'opacity-0');
-                if (dimensionClass === 'width') {
-                    section.classList.add(openSizeClass);
-                } else {
-                    section.classList.add(openSizeClass);
-                }
-            } else {
-                if (dimensionClass === 'width') {
-                    section.classList.remove(openSizeClass);
-                    section.classList.add('w-0', 'border-none', 'overflow-hidden', 'opacity-0');
-                } else {
-                    section.classList.remove(openSizeClass);
-                    section.classList.add('h-0', 'border-none', 'overflow-hidden', 'opacity-0');
-                }
-            }
-        }
+    <!-- Backdrop overlay for focus -->
+    <div class="overlay" id="panelOverlay"></div>
 
-        function formatName(path) {
-            const parts = path.split('/');
-            let fileWithExt = parts[parts.length - 1];
-            let filename = fileWithExt.split('.')[0];
-            let titleCase = filename.replace(/([A-Z])/g, ' $1').replace(/^./, function(str){ return str.toUpperCase(); });
-            return titleCase.trim();
-        }
+    <!-- Sliding Profile Character Drawer -->
+    <aside class="side-panel" id="sidePanel">
+        <!-- Panel Header -->
+        <div class="panel-header">
+            <h2 class="panel-title">Character Registry</h2>
+            <button class="close-btn" id="closePanelBtn" aria-label="Close Panel">&times;</button>
+        </div>
 
-        function openToolWrapper(path, title) {
-            document.getElementById('tool-title').innerText = title;
-            document.getElementById('tool-iframe').src = path;
-            document.getElementById('tool-wrapper').classList.remove('hidden');
-            document.getElementById('tool-wrapper').classList.add('flex');
-        }
+        <!-- Panel Body containing generated sheet -->
+        <div class="panel-body">
 
-        function closeToolWrapper() {
-            if (confirm("Are you sure you want to close this tool? Unsaved changes might be lost.")) {
-                document.getElementById('tool-wrapper').classList.add('hidden');
-                document.getElementById('tool-wrapper').classList.remove('flex');
-                document.getElementById('tool-iframe').src = ''; 
-            }
-        }
+            <!-- Hero Card -->
+            <div class="character-hero">
+                <div class="hero-img-wrapper">
+                    <img class="hero-img" id="heroImage" src="" alt="Hero Portrait">
+                </div>
+                <div class="hero-info">
+                    <h3 class="char-name" id="charName">Summoning...</h3>
+                    <p class="char-sub" id="charClass">Class • Origin</p>
+                </div>
+            </div>
 
-        // Fetch Data on Load
-        document.addEventListener('DOMContentLoaded', () => {
-            
-            // --- FOLDER 2: HTML Tools ---
-            const folder2List = document.getElementById('folder-2-list');
-            if (folder2List) {
-                fetch('resources/htmlList.json')
-                    .then(res => {
-                        if (!res.ok) throw new Error("JSON file not found");
-                        return res.json();
-                    })
-                    .then(data => {
-                        folder2List.innerHTML = ''; 
-                        data.forEach(path => {
-                            const itemName = formatName(path);
-                            const el = document.createElement('div');
-                            el.className = 'hover:bg-neutral-700 px-2 py-0.5 rounded cursor-pointer text-neutral-400 flex items-center';
-                            el.innerHTML = `<span class="w-2 h-2 rounded-full bg-purple-400 mr-2"></span> ${itemName}`;
-                            el.onclick = () => openToolWrapper(path, itemName);
-                            folder2List.appendChild(el);
-                        });
-                    })
-                    .catch(err => {
-                        console.warn('Could not load resources/htmlList.json. Loading fallback mock data...', err);
-                        folder2List.innerHTML = ''; 
-                        const mockData = ["tools/lyricsEditor/lyricsEditor.html"];
-                        mockData.forEach(path => {
-                            const itemName = formatName(path);
-                            const el = document.createElement('div');
-                            el.className = 'hover:bg-neutral-700 px-2 py-0.5 rounded cursor-pointer text-neutral-400 flex items-center';
-                            el.innerHTML = `<span class="w-2 h-2 rounded-full bg-purple-400 mr-2"></span> ${itemName}`;
-                            el.onclick = () => openToolWrapper(path, itemName);
-                            folder2List.appendChild(el);
-                        });
-                    });
-            }
+            <!-- Story Bio Card -->
+            <div>
+                <h4 class="section-title">Backstory Narrative</h4>
+                <div class="bio-box" id="charBio">Generating legend...</div>
+            </div>
 
-            // --- FOLDER 3: RSS Feeds ---
-            const folder3List = document.getElementById('folder-3-list');
-            if (folder3List) {
-                // Hardcoded fallback data in case the fetch fails 
-                const mockRssData = {
-                  "categories": [
-                    {
-                      "name": "German Gaming News",
-                      "feeds": [
-                        {"title": "GamesIndustry.biz", "url": "https://www.gamesindustry.biz/topics/german-games-industry-association/feed", "description": "News about the German games market."},
-                        {"title": "Spiele-Autoren-Zunft News", "url": "https://www.spieleautorenzunft.de/news.rss", "description": "Official news from the German Game Designers Association."}
-                      ]
-                    },
-                    {
-                      "name": "English Technology News",
-                      "feeds": [
-                        {"title": "TechCrunch", "url": "https://techcrunch.com/feed/", "description": "Leading technology news platform."},
-                        {"title": "The Verge", "url": "https://www.theverge.com/rss/index.xml", "description": "Technology and culture news."}
-                      ]
-                    }
-                  ]
-                };
-
-                const renderRssFeeds = (data) => {
-                    folder3List.innerHTML = ''; 
-                    data.categories.forEach(category => {
-                        const catHeader = document.createElement('div');
-                        catHeader.className = 'text-neutral-500 text-[9px] uppercase mt-2 mb-1 px-2 font-semibold';
-                        catHeader.innerText = category.name;
-                        folder3List.appendChild(catHeader);
-
-                        category.feeds.forEach(feed => {
-                            const el = document.createElement('div');
-                            el.className = 'hover:bg-neutral-700 px-2 py-0.5 rounded cursor-pointer text-neutral-400 flex items-center text-[10px]';
-                            el.title = feed.description;
-                            el.innerHTML = `<span class="w-2 h-2 rounded-full bg-orange-400 mr-2 shrink-0"></span> <span class="truncate">${feed.title}</span>`;
-                            el.onclick = () => addClipToTrack(feed.title, feed.url, 'track-1-clips');
-                            folder3List.appendChild(el);
-                        });
-                    });
-                };
-
-                fetch('resources/rssFeedsList.json')
-                    .then(res => {
-                        if (!res.ok) throw new Error("JSON file not found");
-                        return res.json();
-                    })
-                    .then(data => renderRssFeeds(data))
-                    .catch(err => {
-                        console.warn('Could not load resources/rssFeedsList.json. Loading fallback mock data...', err);
-                        renderRssFeeds(mockRssData); // Use fallback so it definitely appears
-                    });
-            }
-        });
-
-        // --- Track Clip Management Logic ---
-        function addClipToTrack(title, url, trackId) {
-            const track = document.getElementById(trackId);
-            if (!track) return;
-            
-            const existingClips = track.querySelectorAll('.clip');
-            for (let clip of existingClips) {
-                if (clip.dataset.url === url) return; 
-            }
-
-            const clipHtml = `
-                <div class="clip bg-red-400 flex justify-between items-center pr-1 group w-full" data-url="${url}">
-                    <div class="flex items-center overflow-hidden whitespace-nowrap text-ellipsis flex-1 pr-1">
-                        <div class="play-marker shrink-0"></div>
-                        <span class="truncate text-[10px]" title="${title}">${title}</span>
+            <!-- Stats Bars -->
+            <div>
+                <h4 class="section-title">Core Attributes</h4>
+                <div class="stats-grid">
+                    <!-- STR -->
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-name">Strength</span>
+                            <div class="stat-val-group">
+                                <span class="stat-num" id="stat-str">10</span>
+                                <span class="stat-mod" id="mod-str">+0</span>
+                            </div>
+                        </div>
+                        <span class="stat-adjective" id="adj-str">-</span>
+                        <div class="stat-progress-bg">
+                            <div class="stat-progress-fill" id="bar-str"></div>
+                        </div>
                     </div>
-                    <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity bg-red-400/90 pl-1 shrink-0">
-                        <button class="hover:text-white transition-colors" title="TTS" onclick="triggerTts(this, '${url}', event)">🔊</button>
-                        <button class="hover:text-red-900 font-bold transition-colors" title="Remove" onclick="removeClip(this, event)">✕</button>
+
+                    <!-- DEX -->
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-name">Dexterity</span>
+                            <div class="stat-val-group">
+                                <span class="stat-num" id="stat-dex">10</span>
+                                <span class="stat-mod" id="mod-dex">+0</span>
+                            </div>
+                        </div>
+                        <span class="stat-adjective" id="adj-dex">-</span>
+                        <div class="stat-progress-bg">
+                            <div class="stat-progress-fill" id="bar-dex"></div>
+                        </div>
+                    </div>
+
+                    <!-- CON -->
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-name">Constitution</span>
+                            <div class="stat-val-group">
+                                <span class="stat-num" id="stat-con">10</span>
+                                <span class="stat-mod" id="mod-con">+0</span>
+                            </div>
+                        </div>
+                        <span class="stat-adjective" id="adj-con">-</span>
+                        <div class="stat-progress-bg">
+                            <div class="stat-progress-fill" id="bar-con"></div>
+                        </div>
+                    </div>
+
+                    <!-- INT -->
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-name">Intelligence</span>
+                            <div class="stat-val-group">
+                                <span class="stat-num" id="stat-int">10</span>
+                                <span class="stat-mod" id="mod-int">+0</span>
+                            </div>
+                        </div>
+                        <span class="stat-adjective" id="adj-int">-</span>
+                        <div class="stat-progress-bg">
+                            <div class="stat-progress-fill" id="bar-int"></div>
+                        </div>
+                    </div>
+
+                    <!-- WIS -->
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-name">Wisdom</span>
+                            <div class="stat-val-group">
+                                <span class="stat-num" id="stat-wis">10</span>
+                                <span class="stat-mod" id="mod-wis">+0</span>
+                            </div>
+                        </div>
+                        <span class="stat-adjective" id="adj-wis">-</span>
+                        <div class="stat-progress-bg">
+                            <div class="stat-progress-fill" id="bar-wis"></div>
+                        </div>
+                    </div>
+
+                    <!-- CHA -->
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-name">Charisma</span>
+                            <div class="stat-val-group">
+                                <span class="stat-num" id="stat-cha">10</span>
+                                <span class="stat-mod" id="mod-cha">+0</span>
+                            </div>
+                        </div>
+                        <span class="stat-adjective" id="adj-cha">-</span>
+                        <div class="stat-progress-bg">
+                            <div class="stat-progress-fill" id="bar-cha"></div>
+                        </div>
                     </div>
                 </div>
-            `;
+            </div>
 
-            const firstEmpty = track.querySelector('.empty-slot');
-            if (firstEmpty) {
-                firstEmpty.innerHTML = clipHtml;
-                firstEmpty.classList.remove('empty-slot');
-            } else {
-                const newSlot = document.createElement('div');
-                newSlot.className = 'clip-slot';
-                newSlot.innerHTML = clipHtml;
-                track.appendChild(newSlot);
+            <!-- Identity Origin details -->
+            <div>
+                <h4 class="section-title">Origins & Alignment</h4>
+                <div class="details-list">
+                    <div class="detail-item">
+                        <span class="detail-label">Birth Place</span>
+                        <span class="detail-value" id="detailBirthplace">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Guiding Icon / Idol</span>
+                        <span class="detail-value" id="detailIdol">-</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Regenerate/Reroll Footer Actions -->
+        <div class="panel-actions">
+            <button class="action-button" id="rerollBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                Summon Next Hero
+            </button>
+        </div>
+    </aside>
+
+    <script>
+        // Global variables holding loaded D&D datasets
+        let dndData = {
+            names: [],
+            professions: [],
+            races: [],
+            birthplaces: [],
+            idols: [],
+            attributes: {},
+            biographies: {}
+        };
+
+        let currentProfileUrl = '';
+
+        // Safely robust fetch helper probing all plausible path variants
+        async function loadDataset(filename) {
+            const origin = window.location.origin;
+            const possibleURLs = [
+                // 1. Direct path from the current origin context
+                `/${filename}`,
+                `/resources/dnd/${filename}`,
+                `/dnd/${filename}`,
+                // 2. Relative paths matching the sandbox environment structure
+                `./${filename}`,
+                `./resources/dnd/${filename}`,
+                `resources/dnd/${filename}`,
+                // 3. Lowercase versions to combat case-sensitive environments
+                `/${filename.toLowerCase()}`,
+                `/resources/dnd/${filename.toLowerCase()}`,
+                `./${filename.toLowerCase()}`,
+                // 4. Fallback URLs matching host configurations
+                `${origin}/${filename}`,
+                `${origin}/resources/dnd/${filename}`,
+                `${origin}/dnd/${filename}`
+            ];
+
+            // Filter out unique entries to avoid redundant resource fetches
+            const uniqueURLs = [...new Set(possibleURLs)];
+
+            for (const url of uniqueURLs) {
+                try {
+                    const res = await fetch(url);
+                    if (res.ok) {
+                        const contentType = res.headers.get('content-type') || '';
+                        // Safeguard: Skip HTML pages served mistakenly with 200 OK statuses on missing files (custom 404s)
+                        if (contentType.includes('text/html')) {
+                            continue;
+                        }
+
+                        const text = await res.text();
+                        try {
+                            const data = JSON.parse(text);
+                            console.log(`Successfully fetched and parsed: ${filename} from URL: ${url}`);
+                            return data;
+                        } catch (parseError) {
+                            console.warn(`JSON parsing error at path ${url} for ${filename}. Output may have been modified or raw text format. Trying fallback routes.`);
+                        }
+                    }
+                } catch (e) {
+                    // Try next path candidate
+                }
+            }
+            throw new Error(`Failed to locate resource matching: ${filename}`);
+        }
+
+        // Initialize and load everything from the requested resources
+        async function initializeDatasets() {
+            try {
+                const [names, professions, races, birthplaces, idols, attributes, biographies] = await Promise.all([
+                    loadDataset('listOfNames.json'),
+                    loadDataset('listOfProfessions.json'),
+                    loadDataset('listOfRaces.json'),
+                    loadDataset('listOfBirthPlaces.json'),
+                    loadDataset('listOfIdols.json'),
+                    loadDataset('listOfAttributes.json'),
+                    loadDataset('rndBiography.json')
+                ]);
+
+                dndData = { names, professions, races, birthplaces, idols, attributes, biographies };
+                generateNewHero();
+            } catch (err) {
+                console.error("Critical error reading D&D source datasets:", err);
             }
         }
 
-        function removeClip(btnElement, event) {
-            event.stopPropagation();
-            const slot = btnElement.closest('.clip-slot');
-            if (slot) {
-                slot.innerHTML = '';
-                slot.classList.add('empty-slot');
-            }
+        // Return a random selection from an array
+        function getRandomItem(arr) {
+            if (!arr || arr.length === 0) return '';
+            return arr[Math.floor(Math.random() * arr.length)];
         }
 
-        function triggerTts(btnElement, url, event) {
-            event.stopPropagation();
-            const originalText = btnElement.innerText;
-            btnElement.innerText = '💬';
-            setTimeout(() => {
-                btnElement.innerText = originalText;
-            }, 1000);
-            console.log("TTS Triggered for:", url);
+        // Cleans system paths or extensions occasionally remaining in raw race data
+        function sanitizeRace(raceValue) {
+            if (typeof raceValue !== 'string') return 'Unknown';
+            let formatted = raceValue.split('\\').pop().split('/').pop().replace('.html', '');
+            formatted = formatted.replace(/([A-Z])/g, ' $1').trim(); // Space out camelCase
+            return formatted.charAt(0).toUpperCase() + formatted.slice(1);
         }
+
+        // Maps attributes from the parsed structure safely matching any casing
+        function grabAttributeAdjective(statName) {
+            if (!dndData.attributes) return 'Mysterious';
+            let list = dndData.attributes[statName];
+            if (!list) {
+                const matchedKey = Object.keys(dndData.attributes).find(
+                    k => k.toLowerCase() === statName.toLowerCase()
+                );
+                if (matchedKey) list = dndData.attributes[matchedKey];
+            }
+            return getRandomItem(list) || 'Intriguing';
+        }
+
+        // Simple utility to sentence-case random adjectives/attributes
+        function capitalize(text) {
+            if (typeof text !== 'string' || !text) return '';
+            return text.charAt(0).toUpperCase() + text.slice(1);
+        }
+
+        // Assemble paragraphs dynamically out of rndBiography properties
+        function buildBiography() {
+            if (!dndData.biographies || typeof dndData.biographies !== 'object') {
+                return 'A wanderer of unknown pathways whose story is yet written.';
+            }
+            const parts = [];
+            for (const section in dndData.biographies) {
+                if (Array.isArray(dndData.biographies[section])) {
+                    parts.push(getRandomItem(dndData.biographies[section]));
+                }
+            }
+            return parts.length > 0 ? parts.join(' ') : 'A wanderer with a highly guarded past.';
+        }
+
+        // Calculate visual + score modifier matching traditional D&D stats
+        function rollStat() {
+            // Traditional 3d6 roll
+            const roll = Math.floor(Math.random() * 6) + Math.floor(Math.random() * 6) + Math.floor(Math.random() * 6) + 3;
+            const modifier = Math.floor((roll - 10) / 2);
+            return {
+                score: roll,
+                modifier: modifier >= 0 ? `+${modifier}` : `${modifier}`
+            };
+        }
+
+        // Synchronize and apply randomized character metrics to UI
+        function updateStatUI(statId, score, modifier, adjective) {
+            document.getElementById(`stat-${statId}`).innerText = score;
+            document.getElementById(`mod-${statId}`).innerText = modifier;
+            document.getElementById(`adj-${statId}`).innerText = capitalize(adjective);
+
+            // Render score progress bar cleanly proportional to a maximum score of 20
+            const percentage = (score / 20) * 100;
+            document.getElementById(`bar-${statId}`).style.width = `${percentage}%`;
+        }
+
+        // Fetch a completely unique image and regenerate details
+        function fetchProfileImage() {
+            const profileBtnImg = document.getElementById('profileImage');
+            const heroPanelImg = document.getElementById('heroImage');
+            const spinner = document.getElementById('loadingSpinner');
+
+            spinner.style.display = 'block';
+            profileBtnImg.style.opacity = '0';
+
+            // Generate cache-busting URLs
+            const randomId = Math.floor(Math.random() * 1000000);
+            currentProfileUrl = `https://thispersondoesnotexist.com/?v=${randomId}`;
+
+            // Pre-load image to achieve beautiful fade-in
+            const imgLoader = new Image();
+            imgLoader.src = currentProfileUrl;
+            imgLoader.onload = () => {
+                profileBtnImg.src = currentProfileUrl;
+                heroPanelImg.src = currentProfileUrl;
+                profileBtnImg.style.opacity = '1';
+                spinner.style.display = 'none';
+            };
+        }
+
+        // Core Generator Engine mapping data into UI Card
+        function generateNewHero() {
+            // Pick Random identities
+            const randomName = getRandomItem(dndData.names) || "Nameless Exile";
+            const randomProfession = getRandomItem(dndData.professions) || "Wanderer";
+            const rawRace = getRandomItem(dndData.races);
+            const randomRace = rawRace ? sanitizeRace(rawRace) : "Outlander";
+
+            const birthplaceObj = getRandomItem(dndData.birthplaces);
+            const birthPlaceStr = birthplaceObj
+                ? (birthplaceObj.origin ? `${birthplaceObj.name} (${birthplaceObj.origin})` : birthplaceObj.name)
+                : "Unknown Realm";
+
+            const idolObj = getRandomItem(dndData.idols);
+            const idolStr = idolObj
+                ? (idolObj.origin ? `${idolObj.name} (${idolObj.origin})` : idolObj.name)
+                : "The Unknown Spirit";
+
+            // Update Header Information
+            document.getElementById('charName').innerText = randomName;
+            document.getElementById('charClass').innerText = `${randomRace} • ${randomProfession}`;
+            document.getElementById('detailBirthplace').innerText = birthPlaceStr;
+            document.getElementById('detailIdol').innerText = idolStr;
+
+            // Generate and assign rich background stories
+            document.getElementById('charBio').innerText = `"${buildBiography()}"`;
+
+            // Calculate stats
+            const stats = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+            const attrLabels = {
+                str: 'Strength',
+                dex: 'Dexterity',
+                con: 'Constitution',
+                int: 'Intelligence',
+                wis: 'Wisdom',
+                cha: 'Charisma'
+            };
+
+            stats.forEach(stat => {
+                const roll = rollStat();
+                const adj = grabAttributeAdjective(attrLabels[stat]);
+                updateStatUI(stat, roll.score, roll.modifier, adj);
+            });
+        }
+
+        // Document Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            const profileBtn = document.getElementById('profileBtn');
+            const sidePanel = document.getElementById('sidePanel');
+            const overlay = document.getElementById('panelOverlay');
+            const closeBtn = document.getElementById('closePanelBtn');
+            const rerollBtn = document.getElementById('rerollBtn');
+
+            // Load original photo
+            fetchProfileImage();
+
+            // Load and parse background sources
+            initializeDatasets();
+
+            // Toggle Panel Open
+            profileBtn.addEventListener('click', () => {
+                sidePanel.classList.add('open');
+                overlay.classList.add('active');
+            });
+
+            // Toggle Panel Close functions
+            const closePanel = () => {
+                sidePanel.classList.remove('open');
+                overlay.classList.remove('active');
+            };
+
+            closeBtn.addEventListener('click', closePanel);
+            overlay.addEventListener('click', closePanel);
+
+            // Trigger complete clean reload & rebuild
+            rerollBtn.addEventListener('click', () => {
+                fetchProfileImage();
+                generateNewHero();
+            });
+        });
     </script>
 </body>
 </html>
