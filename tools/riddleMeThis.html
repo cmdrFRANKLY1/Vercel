@@ -12,44 +12,105 @@
             height: 100%;
             margin: 0;
             padding: 0;
-            overflow: hidden; 
+            overflow: hidden;
             background-color: #000;
             color: #fff;
             font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
         }
         canvas {
             display: block;
+        }
+        /* light mode overrides */
+        body.light-mode {
+            background-color: #f0f4f8;
+            color: #1e293b;
+        }
+        body.light-mode .glass-panel {
+            background: rgba(255,255,255,0.6) !important;
+            border-color: #cbd5e1 !important;
+            backdrop-filter: blur(8px);
+            color: #1e293b;
+        }
+        body.light-mode .glass-panel-dark {
+            background: rgba(0,0,0,0.05) !important;
+            border-color: #cbd5e1 !important;
+            color: #1e293b;
+        }
+        body.light-mode .btn-answer {
+            background: rgba(255,255,255,0.7) !important;
+            border-color: #94a3b8 !important;
+            color: #0f172a !important;
+        }
+        body.light-mode .btn-answer:hover {
+            background: rgba(255,255,255,0.9) !important;
+            border-color: #64748b !important;
+        }
+        body.light-mode .category-btn {
+            background: rgba(255,255,255,0.5) !important;
+            border-color: #cbd5e1 !important;
+            color: #0f172a !important;
+        }
+        body.light-mode .category-btn:hover {
+            background: rgba(255,255,255,0.8) !important;
+            border-color: #94a3b8 !important;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1) !important;
+        }
+        body.light-mode .level-badge {
+            background: rgba(255,255,255,0.7) !important;
+            border-color: #cbd5e1 !important;
+            color: #0f172a !important;
+        }
+        body.light-mode .top-bar {
+            background: rgba(255,255,255,0.5) !important;
+            border-color: #cbd5e1 !important;
+            color: #0f172a !important;
         }
     </style>
 </head>
 <body class="relative w-full h-full">
 
-    <div class="absolute inset-0 p-6 flex justify-between items-start z-10 pointer-events-none">
-        <!-- Top Left: Back Button -->
-        <a href="index.html" class="pointer-events-auto flex items-center gap-2 text-gray-400 hover:text-white transition-colors duration-300 group bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-800">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform group-hover:-translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            <span class="text-sm tracking-wider uppercase font-semibold">Back</span>
-        </a>
+    <!-- Top Bar: Back + Toggles + Date/Time -->
+    <div class="absolute top-0 left-0 w-full px-6 py-4 flex flex-wrap items-center justify-between z-30 pointer-events-none gap-2">
+        <!-- Left group: Back + toggles -->
+        <div class="flex items-center gap-3 pointer-events-auto flex-wrap">
+            <a href="index.html" class="top-bar flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 group bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-700 light-mode:text-gray-700 light-mode:hover:text-black">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform group-hover:-translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span class="text-sm tracking-wider uppercase font-semibold">Back</span>
+            </a>
 
-        <!-- Top Right: Date and Time -->
-        <div class="pointer-events-auto text-right bg-black/30 px-4 py-2 rounded-xl backdrop-blur-sm border border-gray-800 flex flex-col items-end">
-            <div id="time-display" class="text-xl font-light tracking-widest font-mono text-gray-200 mb-1">--:--:--</div>
-            <div id="date-display" class="text-xs text-gray-400 tracking-widest uppercase">--</div>
+            <!-- Dark/Light Toggle -->
+            <button id="theme-toggle" class="top-bar flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-700 light-mode:text-gray-700 light-mode:hover:text-black">
+                <span id="theme-icon">🌙</span>
+                <span class="text-sm tracking-wider uppercase font-semibold hidden sm:inline">Theme</span>
+            </button>
+
+            <!-- German/English Toggle -->
+            <button id="lang-toggle" class="top-bar flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-700 light-mode:text-gray-700 light-mode:hover:text-black">
+                <span id="lang-icon">🇬🇧</span>
+                <span class="text-sm tracking-wider uppercase font-semibold hidden sm:inline">EN</span>
+            </button>
+        </div>
+
+        <!-- Right: Date/Time -->
+        <div class="pointer-events-auto text-right top-bar bg-black/30 px-4 py-2 rounded-xl backdrop-blur-sm border border-gray-700 flex flex-col items-end light-mode:bg-white/50">
+            <div id="time-display" class="text-xl font-light tracking-widest font-mono text-gray-200 mb-1 light-mode:text-gray-700">--:--:--</div>
+            <div id="date-display" class="text-xs text-gray-400 tracking-widest uppercase light-mode:text-gray-500">--</div>
         </div>
     </div>
 
     <!-- Top Center: Level Display -->
-    <div id="level-display-container" class="absolute top-6 left-1/2 transform -translate-x-1/2 z-10 pointer-events-none opacity-0 transition-all duration-500 -translate-y-4">
-        <div class="bg-black/30 px-6 py-2 rounded-full backdrop-blur-sm border border-gray-800 text-sm tracking-widest font-mono text-gray-400 flex items-center shadow-[0_0_15px_rgba(0,0,0,0.5)]">
-            LEVEL <span id="level-value" class="text-white text-xl font-bold ml-3">1</span>
+    <div id="level-display-container" class="absolute top-20 left-1/2 transform -translate-x-1/2 z-10 pointer-events-none opacity-0 transition-all duration-500 -translate-y-4">
+        <div class="level-badge bg-black/30 px-6 py-2 rounded-full backdrop-blur-sm border border-gray-800 text-sm tracking-widest font-mono text-gray-400 flex items-center shadow-[0_0_15px_rgba(0,0,0,0.5)] light-mode:bg-white/60 light-mode:border-gray-300 light-mode:text-gray-600">
+            LEVEL <span id="level-value" class="text-white text-xl font-bold ml-3 light-mode:text-gray-800">1</span>
         </div>
     </div>
 
-    <!-- Center Text for Interaction -->
+    <!-- Center Content -->
     <div class="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
-        <h1 id="main-text" class="pointer-events-auto text-5xl md:text-7xl font-bold tracking-widest cursor-pointer transition-all duration-500 hover:scale-110 hover:text-blue-300 text-center drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] text-white">
+        <h1 id="main-text" class="pointer-events-auto text-5xl md:text-7xl font-bold tracking-widest cursor-pointer transition-all duration-500 hover:scale-110 hover:text-blue-300 text-center drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] text-white light-mode:text-gray-800 light-mode:hover:text-blue-600">
             Are you ready?
         </h1>
         
@@ -59,14 +120,14 @@
 
         <!-- Question Container -->
         <div id="question-container" class="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none opacity-0 transition-all duration-700 transform scale-50 max-w-5xl px-6 w-full mx-auto">
-            <h2 id="question-text" class="text-2xl md:text-4xl font-semibold tracking-wide text-center drop-shadow-md mb-12 text-gray-100 px-4">
+            <h2 id="question-text" class="text-2xl md:text-4xl font-semibold tracking-wide text-center drop-shadow-md mb-12 text-gray-100 px-4 light-mode:text-gray-800">
                 <!-- Question populates here -->
             </h2>
             <div id="answer-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl px-4">
                 <!-- Answers populate here -->
             </div>
             
-            <button id="back-to-categories-btn" class="mt-12 px-6 py-3 bg-white/5 hover:bg-white/10 border border-gray-600 rounded-full text-xs uppercase tracking-widest transition-all duration-300 opacity-0 pointer-events-none hover:shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+            <button id="back-to-categories-btn" class="mt-12 px-6 py-3 bg-white/5 hover:bg-white/10 border border-gray-600 rounded-full text-xs uppercase tracking-widest transition-all duration-300 opacity-0 pointer-events-none hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] light-mode:bg-gray-200/50 light-mode:border-gray-400 light-mode:text-gray-700 light-mode:hover:bg-gray-300/70">
                 Back to Categories
             </button>
         </div>
@@ -75,7 +136,7 @@
     <canvas id="dust-canvas" class="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"></canvas>
 
     <script>
-        // Clock Logic
+        // ===== CLOCK =====
         function updateClock() {
             const now = new Date();
             const dateOptions = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
@@ -86,7 +147,34 @@
         updateClock();
         setInterval(updateClock, 1000);
 
-        // Particle Engine Logic
+        // ===== THEME TOGGLE =====
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        let darkMode = true;
+
+        themeToggle.addEventListener('click', () => {
+            darkMode = !darkMode;
+            document.body.classList.toggle('light-mode', !darkMode);
+            themeIcon.textContent = darkMode ? '🌙' : '☀️';
+            // adjust canvas background if needed (but we keep transparent)
+        });
+
+        // ===== LANGUAGE TOGGLE (demo) =====
+        const langToggle = document.getElementById('lang-toggle');
+        const langIcon = document.getElementById('lang-icon');
+        let langEn = true;
+        langToggle.addEventListener('click', () => {
+            langEn = !langEn;
+            langIcon.textContent = langEn ? '🇬🇧' : '🇩🇪';
+            // In a real app you'd switch text, but we just show a visual indicator.
+            // For this demo we update the main title to show toggle works.
+            const mainText = document.getElementById('main-text');
+            if (mainText.textContent === 'Are you ready?' || mainText.textContent === 'Bereit?') {
+                mainText.textContent = langEn ? 'Are you ready?' : 'Bereit?';
+            }
+        });
+
+        // ===== PARTICLE ENGINE =====
         const canvas = document.getElementById('dust-canvas');
         const ctx = canvas.getContext('2d');
         let width, height;
@@ -223,7 +311,7 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas(); animate();
 
-        // Game/UI Logic
+        // ===== GAME LOGIC =====
         const mainText = document.getElementById('main-text');
         mainText.addEventListener('click', () => {
             if (isWarping) return;
@@ -233,13 +321,12 @@
             targetWarpSpeed = 40;
             
             setTimeout(() => {
-                mainText.textContent = "Pick a Category";
+                mainText.textContent = langEn ? "Pick a Category" : "Wähle eine Kategorie";
                 targetWarpSpeed = 0;
                 mainText.style.opacity = 1;
                 mainText.style.transform = 'scale(1) translateY(-20px)';
                 mainText.style.pointerEvents = 'none';
                 
-                // Fetch categories, and unlock warp interactions once it finishes
                 loadCategories().finally(() => {
                     setTimeout(() => { isWarping = false; }, 100);
                 });
@@ -255,7 +342,6 @@
             let files = [];
             
             try {
-                // Primary Fetch: Vercel API
                 const response = await fetch('/api/topics');
                 if (!response.ok) throw new Error('Network response was not ok');
                 files = await response.json();
@@ -263,13 +349,10 @@
             } catch (error) {
                 console.warn("Primary API failed. Initiating GitHub Fallback...", error);
                 try {
-                    // Fallback Fetch: GitHub API Directory Listing
                     const ghResponse = await fetch('https://api.github.com/repos/cmdrFRANKLY1/Vercel/contents/resources/riddleMeThis');
                     if (!ghResponse.ok) throw new Error('GitHub API response not ok');
                     const ghData = await ghResponse.json();
-                    
                     if (Array.isArray(ghData)) {
-                        // Extract just the filenames from the GitHub payload
                         files = ghData.map(item => item.name);
                     }
                 } catch (ghError) {
@@ -281,24 +364,21 @@
             grid.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-8');
             grid.classList.add('opacity-100');
             
-            // Filter strictly for our specific json files
             files = files.filter(f => typeof f === 'string' && f.startsWith('topicRMT.') && f.endsWith('.json'));
 
             if (files.length === 0) {
-                // Fallback UI if NO files were successfully fetched
                 const btn = document.createElement('button');
-                btn.className = "pointer-events-auto px-6 py-4 bg-black/40 border border-gray-700 rounded-xl backdrop-blur-md text-white font-semibold tracking-wider hover:bg-gray-800/80 transition-all duration-300 hover:-translate-y-1 opacity-0 col-span-1 md:col-start-2";
-                btn.textContent = "Back (Failed to connect to Databanks)";
+                btn.className = "category-btn pointer-events-auto px-6 py-4 bg-black/40 border border-gray-700 rounded-xl backdrop-blur-md text-white font-semibold tracking-wider hover:bg-gray-800/80 transition-all duration-300 hover:-translate-y-1 opacity-0 col-span-1 md:col-start-2";
+                btn.textContent = langEn ? "Back (Failed to connect)" : "Zurück (Verbindung fehlgeschlagen)";
                 btn.style.animation = `fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.1s`;
                 btn.onclick = () => { triggerReverseWarp(); };
                 grid.appendChild(btn);
                 return;
             }
 
-            // Populate Grid with real categories
             files.forEach((file, index) => {
                 const btn = document.createElement('button');
-                btn.className = "pointer-events-auto px-6 py-4 bg-black/40 border border-gray-700 rounded-xl backdrop-blur-md text-white font-semibold tracking-wider hover:bg-blue-900/40 hover:border-blue-400 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(96,165,250,0.4)] opacity-0 flex items-center justify-center text-center h-full break-words";
+                btn.className = "category-btn pointer-events-auto px-6 py-4 bg-black/40 border border-gray-700 rounded-xl backdrop-blur-md text-white font-semibold tracking-wider hover:bg-blue-900/40 hover:border-blue-400 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(96,165,250,0.4)] opacity-0 flex items-center justify-center text-center h-full break-words";
                 btn.textContent = formatTopicName(file);
                 btn.style.animation = `fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards ${index * 0.1}s`;
                 
@@ -324,7 +404,6 @@
             lvlContainer.classList.add('opacity-100', 'translate-y-0');
             
             const grid = document.getElementById('category-grid');
-            const mainText = document.getElementById('main-text');
             grid.classList.add('opacity-0', 'pointer-events-none', 'translate-y-8');
             grid.classList.remove('opacity-100');
             mainText.style.opacity = 0; 
@@ -332,14 +411,12 @@
             let questions = [];
             
             try {
-                // Primary Fetch: Local Folder
                 const response = await fetch(`../resources/riddleMeThis/${filename}`);
                 if (!response.ok) throw new Error('Failed to fetch local JSON');
                 questions = await response.json();
             } catch (error) {
                 console.warn("Local fetch failed. Fetching Raw JSON from GitHub Fallback...", error);
                 try {
-                    // Fallback Fetch: Raw GitHub File
                     const ghResponse = await fetch(`https://raw.githubusercontent.com/cmdrFRANKLY1/Vercel/main/resources/riddleMeThis/${filename}`);
                     if (!ghResponse.ok) throw new Error('Failed to fetch GitHub Raw Data');
                     questions = await ghResponse.json();
@@ -348,7 +425,6 @@
                 }
             }
 
-            // Shuffle all loaded questions
             activeQuestions = questions.sort(() => Math.random() - 0.5);
 
             setTimeout(() => {
@@ -362,7 +438,6 @@
             const questionText = document.getElementById('question-text');
             const backBtn = document.getElementById('back-to-categories-btn');
             
-            // If warping between questions, trigger effects
             if (colorOverride) {
                 isWarping = true;
                 targetWarpSpeed = 40 * warpDir;
@@ -371,12 +446,11 @@
                 qContainer.classList.remove('opacity-100', 'pointer-events-auto', 'scale-100');
             }
 
-            // Wait for warp visual to peak before updating text
             setTimeout(() => {
                 answerGrid.innerHTML = '';
                 
                 if (!activeQuestions || activeQuestions.length === 0) {
-                    questionText.textContent = "Category Complete!";
+                    questionText.textContent = langEn ? "Category Complete!" : "Kategorie abgeschlossen!";
                     backBtn.classList.remove('opacity-0', 'pointer-events-none');
                     backBtn.classList.add('opacity-100', 'pointer-events-auto');
                 } else {
@@ -387,13 +461,9 @@
                     backBtn.classList.add('opacity-0', 'pointer-events-none');
                     backBtn.classList.remove('opacity-100', 'pointer-events-auto');
                     
-                    allAnswers.forEach(ans => {
+                    allAnswers.forEach((ans, idx) => {
                         const btn = document.createElement('button');
-                        btn.className = "px-6 py-4 bg-black/40 border border-gray-600 rounded-xl backdrop-blur-md text-gray-200 font-medium text-lg hover:bg-white/10 hover:border-gray-400 transition-all duration-500 w-full text-center md:text-left min-h-[80px] shadow-lg break-words transform";
-                        
-                        // Hide and scale down initially
-                        btn.classList.add('opacity-0', 'scale-50', 'pointer-events-none');
-
+                        btn.className = "btn-answer px-6 py-4 bg-black/40 border border-gray-600 rounded-xl backdrop-blur-md text-gray-200 font-medium text-lg hover:bg-white/10 hover:border-gray-400 transition-all duration-500 w-full text-center md:text-left min-h-[80px] shadow-lg break-words transform opacity-0 scale-50 pointer-events-none";
                         btn.textContent = ans;
                         
                         btn.onclick = () => {
@@ -420,7 +490,6 @@
                                 });
                             }
                             
-                            // Delay to let user see the answer, then warp to next
                             setTimeout(() => {
                                 if (isCorrect) {
                                     currentLevel++;
@@ -439,8 +508,8 @@
                         };
                         answerGrid.appendChild(btn);
 
-                        // Reveal answers randomly between 3 to 5 seconds
-                        const randomDelay = Math.random() * 2000 + 3000;
+                        // --- FIX: answers appear much faster (200-800ms) ---
+                        const randomDelay = Math.random() * 600 + 200; // 200ms to 800ms
                         setTimeout(() => {
                             btn.classList.remove('opacity-0', 'scale-50', 'pointer-events-none');
                             btn.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
@@ -452,7 +521,6 @@
                 qContainer.classList.remove('opacity-0', 'pointer-events-none', 'scale-50');
                 qContainer.classList.add('opacity-100', 'pointer-events-auto', 'scale-100');
                 
-                // End Warp
                 setTimeout(() => { 
                     isWarping = false; 
                     warpColorOverride = null;
@@ -490,8 +558,8 @@
                     mainText.style.transform = 'scale(0.8)';
 
                     setTimeout(() => {
-                        mainText.textContent = "Are you ready?";
-                        mainText.className = "pointer-events-auto text-5xl md:text-7xl font-bold tracking-widest cursor-pointer transition-all duration-500 hover:scale-110 hover:text-blue-300 text-center drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] text-white";
+                        mainText.textContent = langEn ? "Are you ready?" : "Bereit?";
+                        mainText.className = "pointer-events-auto text-5xl md:text-7xl font-bold tracking-widest cursor-pointer transition-all duration-500 hover:scale-110 hover:text-blue-300 text-center drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] text-white light-mode:text-gray-800 light-mode:hover:text-blue-600";
                         mainText.style.opacity = 1;
                         mainText.style.transform = 'scale(1)';
                         setTimeout(() => { isWarping = false; }, 100);
@@ -500,7 +568,6 @@
             }, 800);
         }
 
-        // Standard Reverse Warp Logic
         function triggerReverseWarp() {
             if (isWarping) return;
             isWarping = true;
@@ -515,7 +582,7 @@
             setTimeout(() => {
                 grid.innerHTML = '';
                 targetWarpSpeed = 0;
-                mainText.textContent = "Are you ready?";
+                mainText.textContent = langEn ? "Are you ready?" : "Bereit?";
                 mainText.style.opacity = 1;
                 mainText.style.transform = 'scale(1)';
                 
@@ -546,7 +613,7 @@
             setTimeout(() => {
                 targetWarpSpeed = 0;
                 const mainText = document.getElementById('main-text');
-                mainText.textContent = "Pick a Category";
+                mainText.textContent = langEn ? "Pick a Category" : "Wähle eine Kategorie";
                 mainText.style.opacity = 1;
                 
                 loadCategories().finally(() => {
