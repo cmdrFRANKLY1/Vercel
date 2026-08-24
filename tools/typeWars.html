@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TechType Drop - Minimal Monochrom Typing Minigame</title>
+    <title>TechType Drop - Special Words Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -19,57 +19,41 @@
 <body class="h-full flex flex-col justify-between relative bg-black transition-colors duration-200" id="body-container">
 
     <header class="w-full p-4 flex flex-col space-y-3 bg-black border-b border-zinc-800 z-20 transition-colors duration-200" id="header-container">
-        <!-- Top Row: Logo, Toggles on the left, and Clock on the right -->
         <div class="flex justify-between items-center w-full">
             <div class="flex items-center space-x-3">
                 <div class="w-2.5 h-2.5 bg-white transition-colors duration-200" id="logo-indicator"></div>
                 <h1 class="font-bold text-sm tracking-widest text-white transition-colors duration-200" id="logo-text">TECHTYPE_DROP</h1>
             </div>
-            
             <div class="flex items-center space-x-4 md:space-x-6">
                 <div class="flex items-center space-x-2">
-                    <button id="lang-toggle" class="px-2 py-1 border border-zinc-700 text-xs text-zinc-300 hover:text-white hover:border-white transition tracking-wider">
-                        LANG: EN
-                    </button>
-                    <button id="theme-toggle" class="px-2 py-1 border border-zinc-700 text-xs text-zinc-300 hover:text-white hover:border-white transition tracking-wider">
-                        THEME: DARK
-                    </button>
+                    <button id="lang-toggle" class="px-2 py-1 border border-zinc-700 text-xs text-zinc-300 hover:text-white hover:border-white transition tracking-wider">LANG: EN</button>
+                    <button id="theme-toggle" class="px-2 py-1 border border-zinc-700 text-xs text-zinc-300 hover:text-white hover:border-white transition tracking-wider">THEME: DARK</button>
                 </div>
                 <div class="hidden lg:block text-xs md:text-sm tracking-wider text-zinc-400" id="clock-display">00/00/0000 00:00:00</div>
             </div>
         </div>
-
-        <!-- Second Row: Stats (Score, WPM, HP) -->
         <div class="flex space-x-6 text-xs md:text-sm tracking-wider text-zinc-400 pt-1 border-t border-zinc-800/60" id="stats-row">
             <div>SCORE: <span id="score-val" class="text-white font-bold transition-colors duration-200">0</span></div>
             <div>WPM: <span id="wpm-val" class="text-white font-bold transition-colors duration-200">0</span></div>
             <div>APM: <span id="apm-val" class="text-white font-bold transition-colors duration-200">0</span></div>
             <div>HP: <span id="hp-val" class="text-white font-bold transition-colors duration-200">100</span></div>
+            <div id="moon-gravity-badge" class="hidden text-purple-400 font-bold animate-pulse">🌙 MOON GRAVITY: <span id="moon-timer">5</span>s</div>
         </div>
     </header>
 
     <main id="playfield" class="flex-1 relative overflow-hidden bg-black cursor-crosshair transition-colors duration-200">
-        <!-- Dynamic falling words will be injected here -->
-        
-        <!-- Pixel Explosion Particles Canvas Layer -->
         <div id="particle-container" class="absolute inset-0 pointer-events-none z-15 overflow-hidden">
             <canvas id="particle-canvas" class="w-full h-full block"></canvas>
         </div>
-
-        <!-- Pixel Landscape Canvas Container at the Bottom -->
         <div id="landscape-container" class="absolute bottom-0 left-0 w-full h-24 z-10 pointer-events-none overflow-hidden">
             <canvas id="landscape-canvas" class="w-full h-full block"></canvas>
         </div>
-        
-        <!-- Start / Game Over Overlay -->
         <div id="overlay" class="absolute inset-0 bg-black/95 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center transition-colors duration-200">
             <h2 id="overlay-title" class="text-3xl md:text-5xl font-bold text-white mb-4 tracking-wider transition-colors duration-200">TECHTYPE DROP</h2>
             <p id="overlay-desc" class="text-zinc-500 max-w-md mb-8 text-xs md:text-sm leading-relaxed">
-                Type the falling computer science terminology before they hit the ground. Minimalist monochromatic focus mode.
+                Type the falling computer science terminology. Special colored words grant unique abilities!
             </p>
-            <button id="action-btn" class="px-6 py-3 bg-white text-black font-bold rounded-none hover:bg-zinc-200 transition text-sm tracking-widest">
-                INITIALIZE_GAME
-            </button>
+            <button id="action-btn" class="px-6 py-3 bg-white text-black font-bold rounded-none hover:bg-zinc-200 transition text-sm tracking-widest">INITIALIZE_GAME</button>
         </div>
     </main>
 
@@ -106,21 +90,33 @@
             "faden", "token", "typskript", "unicode", "variable", "virtuell", "schwachstelle", "websocket"
         ];
 
-        let gameState = 'IDLE'; // IDLE, PLAYING, GAMEOVER
+        // Special word types
+        const SPECIAL_TYPES = ['red', 'blue', 'yellow', 'rainbow'];
+        const SPECIAL_COLORS = {
+            red: { border: 'border-red-500', glow: 'shadow-[0_0_15px_rgba(239,68,68,0.5)]', text: 'text-red-400' },
+            blue: { border: 'border-blue-500', glow: 'shadow-[0_0_15px_rgba(59,130,246,0.5)]', text: 'text-blue-400' },
+            yellow: { border: 'border-yellow-500', glow: 'shadow-[0_0_15px_rgba(234,179,8,0.5)]', text: 'text-yellow-400' },
+            rainbow: { border: 'border-purple-500', glow: 'shadow-[0_0_15px_rgba(168,85,247,0.5)]', text: 'text-purple-400' }
+        };
+
+        let gameState = 'IDLE';
         let score = 0;
         let hp = 100;
         let wordsOnScreen = [];
         let activeWordId = null;
         let lastFrameTime = 0;
         let spawnTimer = 0;
-        let spawnInterval = 1800; // ms
+        let spawnInterval = 1800;
         let gameSpeedMultiplier = 1;
         let totalCharsTyped = 0;
-        let totalActions = 0; 
+        let totalActions = 0;
         let gameStartTime = 0;
         let isDarkMode = true;
-        let currentLang = 'EN'; 
-        let particles = []; 
+        let currentLang = 'EN';
+        let particles = [];
+        let moonGravityActive = false;
+        let moonGravityTimer = 0;
+        const MOON_GRAVITY_DURATION = 5000;
 
         const bodyContainer = document.getElementById('body-container');
         const headerContainer = document.getElementById('header-container');
@@ -144,6 +140,8 @@
         const particleCanvas = document.getElementById('particle-canvas');
         const particleCtx = particleCanvas.getContext('2d');
         const clockDisplay = document.getElementById('clock-display');
+        const moonBadge = document.getElementById('moon-gravity-badge');
+        const moonTimerSpan = document.getElementById('moon-timer');
 
         function updateClock() {
             const now = new Date();
@@ -153,7 +151,6 @@
             const hours = String(now.getHours()).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
             const seconds = String(now.getSeconds()).padStart(2, '0');
-            
             if (clockDisplay) {
                 clockDisplay.textContent = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
             }
@@ -166,11 +163,10 @@
 
         function initLandscape() {
             landscapeCanvas.width = playfield.clientWidth;
-            landscapeCanvas.height = 96; 
+            landscapeCanvas.height = 96;
             particleCanvas.width = playfield.clientWidth;
             particleCanvas.height = playfield.clientHeight;
             landscapeHeights = [];
-            
             let currentHeight = 35 + Math.random() * 25;
             for (let i = 0; i < landscapeCanvas.width; i++) {
                 if (Math.random() < 0.25) {
@@ -179,7 +175,6 @@
                 }
                 landscapeHeights.push(Math.floor(currentHeight));
             }
-
             initialLandscapeArea = landscapeHeights.reduce((sum, h) => sum + h, 0);
             if (initialLandscapeArea === 0) initialLandscapeArea = 1;
             updateHpFromLandscape();
@@ -196,27 +191,23 @@
         function drawLandscape() {
             landscapeCtx.clearRect(0, 0, landscapeCanvas.width, landscapeCanvas.height);
             const isDark = isDarkMode;
-            
             for (let x = 0; x < landscapeHeights.length; x++) {
                 const h = landscapeHeights[x];
                 if (h <= 0) continue;
                 const y = landscapeCanvas.height - h;
-
-                landscapeCtx.fillStyle = isDark ? '#18181b' : '#e4e4e7'; 
+                landscapeCtx.fillStyle = isDark ? '#18181b' : '#e4e4e7';
                 landscapeCtx.fillRect(x, y, 1, h);
-
-                landscapeCtx.fillStyle = isDark ? '#a1a1aa' : '#3f3f46'; 
+                landscapeCtx.fillStyle = isDark ? '#a1a1aa' : '#3f3f46';
                 landscapeCtx.fillRect(x, y, 1, 1);
             }
         }
 
         function triggerPixelExplosion(impactX, impactY, colorOverride = null) {
-            const numParticles = 85; 
+            const numParticles = 85;
             const isDark = isDarkMode;
             const particleColor = colorOverride || (isDark ? '#a1a1aa' : '#3f3f46');
-
             for (let i = 0; i < numParticles; i++) {
-                const angle = (Math.random() * Math.PI) + Math.PI; 
+                const angle = (Math.random() * Math.PI) + Math.PI;
                 const speed = Math.random() * 6 + 1.0;
                 particles.push({
                     x: impactX + (Math.random() - 0.5) * 45,
@@ -234,20 +225,17 @@
         function updateParticles(delta) {
             particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
             if (particles.length === 0) return;
-
-            const gravity = 0.15;
+            const gravity = moonGravityActive ? -0.05 : 0.15;
             for (let i = particles.length - 1; i >= 0; i--) {
                 const p = particles[i];
                 p.x += p.vx * (delta / 16);
                 p.y += p.vy * (delta / 16);
                 p.vy += gravity * (delta / 16);
                 p.alpha -= p.decay * (delta / 16);
-
                 if (p.alpha <= 0 || p.y > particleCanvas.height) {
                     particles.splice(i, 1);
                     continue;
                 }
-
                 particleCtx.fillStyle = p.color;
                 particleCtx.globalAlpha = Math.max(0, p.alpha);
                 particleCtx.fillRect(Math.floor(p.x), Math.floor(p.y), p.size, p.size);
@@ -257,8 +245,7 @@
 
         function damageLandscape(impactX) {
             const centerCol = Math.round(impactX);
-            const radius = 18; 
-            
+            const radius = 18;
             for (let x = centerCol - radius; x <= centerCol + radius; x++) {
                 if (x >= 0 && x < landscapeHeights.length) {
                     const distance = Math.abs(x - centerCol);
@@ -268,9 +255,22 @@
             }
             drawLandscape();
             updateHpFromLandscape();
-
             const groundY = playfield.clientHeight - (landscapeHeights[centerCol] || 20);
             triggerPixelExplosion(centerCol, groundY);
+        }
+
+        function triggerWordExplosion(word, color = '#fbbf24') {
+            if (!word || !word.element) return;
+            const rect = word.element.getBoundingClientRect();
+            const playRect = playfield.getBoundingClientRect();
+            const cx = rect.left + rect.width/2 - playRect.left;
+            const cy = rect.top + rect.height/2 - playRect.top;
+            triggerPixelExplosion(cx, cy, color);
+        }
+
+        function getRandomSpecialType() {
+            const types = ['red', 'blue', 'yellow', 'rainbow'];
+            return types[Math.floor(Math.random() * types.length)];
         }
 
         themeToggleBtn.addEventListener('click', () => {
@@ -280,14 +280,12 @@
                 themeToggleBtn.textContent = "THEME: DARK";
                 themeToggleBtn.className = "px-2 py-1 border border-zinc-700 text-xs text-zinc-300 hover:text-white hover:border-white transition tracking-wider";
                 langToggleBtn.className = "px-2 py-1 border border-zinc-700 text-xs text-zinc-300 hover:text-white hover:border-white transition tracking-wider";
-                
                 bodyContainer.className = "h-full flex flex-col justify-between relative bg-black transition-colors duration-200";
                 headerContainer.className = "w-full p-4 flex flex-col space-y-3 bg-black border-b border-zinc-800 z-20 transition-colors duration-200";
                 statsRow.className = "flex space-x-6 text-xs md:text-sm tracking-wider text-zinc-400 pt-1 border-t border-zinc-800/60";
                 footerContainer.className = "w-full p-4 bg-black border-t border-zinc-800 z-20 flex justify-center items-center transition-colors duration-200";
                 overlay.className = "absolute inset-0 bg-black/95 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center transition-colors duration-200";
                 playfield.className = "flex-1 relative overflow-hidden bg-black cursor-crosshair transition-colors duration-200";
-                
                 logoIndicator.className = "w-2.5 h-2.5 bg-white transition-colors duration-200";
                 logoText.className = "font-bold text-sm tracking-widest text-white transition-colors duration-200";
                 scoreVal.className = "text-white font-bold transition-colors duration-200";
@@ -295,20 +293,17 @@
                 hpVal.className = "text-white font-bold transition-colors duration-200";
                 overlayTitle.className = "text-3xl md:text-5xl font-bold text-white mb-4 tracking-wider transition-colors duration-200";
                 actionBtn.className = "px-6 py-3 bg-white text-black font-bold rounded-none hover:bg-zinc-200 transition text-sm tracking-widest";
-                
                 inputField.className = "w-full bg-black border border-zinc-700 focus:border-white rounded-none px-4 py-3 text-white placeholder-zinc-700 outline-none tracking-wider text-sm transition";
             } else {
                 themeToggleBtn.textContent = "THEME: LIGHT";
                 themeToggleBtn.className = "px-2 py-1 border border-zinc-300 text-xs text-zinc-600 hover:text-black hover:border-black transition tracking-wider";
                 langToggleBtn.className = "px-2 py-1 border border-zinc-300 text-xs text-zinc-600 hover:text-black hover:border-black transition tracking-wider";
-                
                 bodyContainer.className = "h-full flex flex-col justify-between relative bg-white transition-colors duration-200";
                 headerContainer.className = "w-full p-4 flex flex-col space-y-3 bg-white border-b border-zinc-200 z-20 transition-colors duration-200";
                 statsRow.className = "flex space-x-6 text-xs md:text-sm tracking-wider text-zinc-500 pt-1 border-t border-zinc-200";
                 footerContainer.className = "w-full p-4 bg-white border-t border-zinc-200 z-20 flex justify-center items-center transition-colors duration-200";
                 overlay.className = "absolute inset-0 bg-white/95 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center transition-colors duration-200";
                 playfield.className = "flex-1 relative overflow-hidden bg-white cursor-crosshair transition-colors duration-200";
-                
                 logoIndicator.className = "w-2.5 h-2.5 bg-black transition-colors duration-200";
                 logoText.className = "font-bold text-sm tracking-widest text-black transition-colors duration-200";
                 scoreVal.className = "text-black font-bold transition-colors duration-200";
@@ -316,10 +311,8 @@
                 hpVal.className = "text-black font-bold transition-colors duration-200";
                 overlayTitle.className = "text-3xl md:text-5xl font-bold text-black mb-4 tracking-wider transition-colors duration-200";
                 actionBtn.className = "px-6 py-3 bg-black text-white font-bold rounded-none hover:bg-zinc-800 transition text-sm tracking-widest";
-                
                 inputField.className = "w-full bg-white border border-zinc-300 focus:border-black rounded-none px-4 py-3 text-black placeholder-zinc-400 outline-none tracking-wider text-sm transition";
             }
-            
             wordsOnScreen.forEach(w => w.updateHTML());
             drawLandscape();
         });
@@ -328,24 +321,25 @@
             currentLang = currentLang === 'EN' ? 'DE' : 'EN';
             langToggleBtn.textContent = `LANG: ${currentLang}`;
             if (currentLang === 'DE') {
-                overlayDesc.textContent = "Tippe die herabfallenden Informatik-Begriffe, bevor sie den Boden berühren. Minimalistischer Monochrom-Modus.";
+                overlayDesc.textContent = "Tippe die herabfallenden Informatik-Begriffe. Spezielle farbige Wörter verleihen einzigartige Fähigkeiten!";
                 actionBtn.textContent = "SPIEL_STARTEN";
                 inputField.placeholder = "Tippe fallende Wörter hier...";
             } else {
-                overlayDesc.textContent = "Type the falling computer science terminology before they hit the ground. Minimalist monochromatic focus mode.";
+                overlayDesc.textContent = "Type the falling computer science terminology. Special colored words grant unique abilities!";
                 actionBtn.textContent = "INITIALIZE_GAME";
                 inputField.placeholder = "Type falling words here...";
             }
         });
 
         class FallingWord {
-            constructor(text) {
+            constructor(text, specialType = null) {
                 this.id = Math.random().toString(36).substring(2, 9);
                 this.text = text;
+                this.specialType = specialType;
                 this.typedIndex = 0;
                 this.x = Math.random() * (playfield.clientWidth - 150) + 20;
-                this.y = -40; 
-                this.speed = (Math.random() * 0.8 + 0.8) * 0.08; 
+                this.y = -40;
+                this.speed = (Math.random() * 0.8 + 0.8) * 0.08;
                 this.element = this.createElement();
             }
 
@@ -355,41 +349,48 @@
                     ? 'word-card absolute px-3 py-1 bg-black border text-xs tracking-wider flex items-center space-x-1 pointer-events-none transition-colors duration-200' 
                     : 'word-card absolute px-3 py-1 bg-white border text-xs tracking-wider flex items-center space-x-1 pointer-events-none transition-colors duration-200';
                 
-                el.className = `${baseClass} ${isDarkMode ? 'border-zinc-800' : 'border-zinc-200'}`;
-
+                let extraClass = '';
+                if (this.specialType) {
+                    const colors = SPECIAL_COLORS[this.specialType];
+                    extraClass = `${colors.border} ${colors.glow}`;
+                } else {
+                    extraClass = isDarkMode ? 'border-zinc-800' : 'border-zinc-200';
+                }
+                el.className = `${baseClass} ${extraClass}`;
                 el.style.left = `${this.x}px`;
                 el.style.top = `${this.y}px`;
-                
-                const typed = this.text.substring(0, this.typedIndex);
-                const remaining = this.text.substring(this.typedIndex);
-                
-                if (isDarkMode) {
-                    el.innerHTML = `<span class="text-white underline">${typed}</span><span class="text-zinc-500">${remaining}</span>`;
-                } else {
-                    el.innerHTML = `<span class="text-black underline">${typed}</span><span class="text-zinc-400">${remaining}</span>`;
-                }
-                
+                this.updateHTMLContent(el);
                 playfield.appendChild(el);
                 return el;
             }
 
-            updateHTML() {
-                if (!this.element) return;
+            updateHTMLContent(el) {
+                if (!el) return;
                 const typed = this.text.substring(0, this.typedIndex);
                 const remaining = this.text.substring(this.typedIndex);
-                const isActive = this.element === activeWordElement();
-
+                const isActive = el === activeWordElement();
+                const colorClass = this.specialType ? SPECIAL_COLORS[this.specialType].text : '';
+                
+                let bgClass, borderClass;
                 if (isDarkMode) {
-                    const borderClass = isActive ? 'border-white' : 'border-zinc-800';
-                    const bgClass = isActive ? 'bg-zinc-900' : 'bg-black';
-                    this.element.className = `word-card absolute px-3 py-1 ${bgClass} border ${borderClass} text-xs tracking-wider flex items-center space-x-1 pointer-events-none transition-colors duration-200`;
-                    this.element.innerHTML = `<span class="text-white underline">${typed}</span><span class="text-zinc-500">${remaining}</span>`;
+                    bgClass = isActive ? 'bg-zinc-900' : 'bg-black';
+                    borderClass = this.specialType ? SPECIAL_COLORS[this.specialType].border : (isActive ? 'border-white' : 'border-zinc-800');
                 } else {
-                    const borderClass = isActive ? 'border-black' : 'border-zinc-200';
-                    const bgClass = isActive ? 'bg-zinc-100' : 'bg-white';
-                    this.element.className = `word-card absolute px-3 py-1 ${bgClass} border ${borderClass} text-xs tracking-wider flex items-center space-x-1 pointer-events-none transition-colors duration-200`;
-                    this.element.innerHTML = `<span class="text-black underline">${typed}</span><span class="text-zinc-400">${remaining}</span>`;
+                    bgClass = isActive ? 'bg-zinc-100' : 'bg-white';
+                    borderClass = this.specialType ? SPECIAL_COLORS[this.specialType].border : (isActive ? 'border-black' : 'border-zinc-200');
                 }
+                const glowClass = this.specialType ? SPECIAL_COLORS[this.specialType].glow : '';
+                el.className = `word-card absolute px-3 py-1 ${bgClass} border ${borderClass} ${glowClass} text-xs tracking-wider flex items-center space-x-1 pointer-events-none transition-colors duration-200`;
+                
+                if (isDarkMode) {
+                    el.innerHTML = `<span class="text-white underline ${colorClass}">${typed}</span><span class="text-zinc-500 ${colorClass}">${remaining}</span>`;
+                } else {
+                    el.innerHTML = `<span class="text-black underline ${colorClass}">${typed}</span><span class="text-zinc-400 ${colorClass}">${remaining}</span>`;
+                }
+            }
+
+            updateHTML() {
+                this.updateHTMLContent(this.element);
             }
 
             update(delta) {
@@ -424,15 +425,15 @@
             gameSpeedMultiplier = 1;
             totalCharsTyped = 0;
             totalActions = 0;
+            moonGravityActive = false;
+            moonGravityTimer = 0;
+            moonBadge.classList.add('hidden');
             gameStartTime = performance.now();
-            
             initLandscape();
-
             scoreVal.textContent = score;
             hpVal.textContent = hp;
             wpmVal.textContent = 0;
             apmVal.textContent = 0;
-
             overlay.classList.add('hidden');
             inputField.value = '';
             inputField.focus();
@@ -451,19 +452,30 @@
 
         function gameLoop(timestamp) {
             if (gameState !== 'PLAYING') return;
-
             const delta = timestamp - lastFrameTime;
             lastFrameTime = timestamp;
 
-            updateParticles(delta);
+            // Moon gravity timer
+            if (moonGravityActive) {
+                moonGravityTimer -= delta;
+                const remainingSecs = Math.max(0, Math.ceil(moonGravityTimer / 1000));
+                moonTimerSpan.textContent = remainingSecs;
+                if (moonGravityTimer <= 0) {
+                    moonGravityActive = false;
+                    moonBadge.classList.add('hidden');
+                }
+            }
 
+            updateParticles(delta);
             spawnTimer += delta;
             if (spawnTimer >= spawnInterval) {
                 spawnTimer = 0;
                 const activeWordSet = currentLang === 'DE' ? WORDS_DE : WORDS_EN;
                 const randomWord = activeWordSet[Math.floor(Math.random() * activeWordSet.length)];
-                wordsOnScreen.push(new FallingWord(randomWord));
-                
+                // 25% chance for special word
+                const isSpecial = Math.random() < 0.25;
+                const specialType = isSpecial ? getRandomSpecialType() : null;
+                wordsOnScreen.push(new FallingWord(randomWord, specialType));
                 if (spawnInterval > 800) spawnInterval -= 30;
                 gameSpeedMultiplier += 0.005;
             }
@@ -472,18 +484,14 @@
             for (let i = wordsOnScreen.length - 1; i >= 0; i--) {
                 const word = wordsOnScreen[i];
                 word.update(delta);
-
                 if (word.y >= playfieldHeight) {
                     damageLandscape(word.x + 40);
-
                     if (word.id === activeWordId) {
                         activeWordId = null;
                         inputField.value = '';
                     }
-                    
                     word.destroy();
                     wordsOnScreen.splice(i, 1);
-
                     if (hp <= 0) {
                         gameOver();
                         return;
@@ -498,13 +506,88 @@
                 wpmVal.textContent = currentWpm;
                 apmVal.textContent = currentApm;
             }
-
             requestAnimationFrame(gameLoop);
+        }
+
+        function completeWord(word) {
+            // Base score
+            score += word.text.length * 10;
+            totalCharsTyped += word.text.length;
+            scoreVal.textContent = score;
+
+            // Handle special word effects
+            if (word.specialType) {
+                const color = SPECIAL_COLORS[word.specialType].text.replace('text-', '');
+                const colorMap = {
+                    'red-400': '#ef4444',
+                    'blue-400': '#3b82f6',
+                    'yellow-400': '#eab308',
+                    'purple-400': '#a855f7'
+                };
+                const particleColor = colorMap[color] || '#fbbf24';
+
+                switch(word.specialType) {
+                    case 'red': // EXPLOSION - auto-complete nearby words
+                        triggerWordExplosion(word, particleColor);
+                        const blastRadius = 180;
+                        const caughtWords = wordsOnScreen.filter(w => w.id !== word.id && 
+                            Math.hypot(w.x - word.x, w.y - word.y) <= blastRadius);
+                        caughtWords.forEach(cw => {
+                            triggerWordExplosion(cw, particleColor);
+                            score += cw.text.length * 10;
+                            totalCharsTyped += cw.text.length;
+                            cw.destroy();
+                        });
+                        wordsOnScreen = wordsOnScreen.filter(w => w.id === word.id || !caughtWords.includes(w));
+                        scoreVal.textContent = score;
+                        break;
+
+                    case 'blue': // ELECTRIC CHAIN - complete 1 nearby normal word
+                        const chainRadius = 200;
+                        const chainTargets = wordsOnScreen.filter(w => w.id !== word.id && 
+                            w.specialType === null && 
+                            Math.hypot(w.x - word.x, w.y - word.y) <= chainRadius);
+                        if (chainTargets.length > 0) {
+                            const target = chainTargets[0];
+                            triggerWordExplosion(target, '#60a5fa');
+                            score += target.text.length * 10;
+                            totalCharsTyped += target.text.length;
+                            target.destroy();
+                            wordsOnScreen = wordsOnScreen.filter(w => w.id !== target.id);
+                            scoreVal.textContent = score;
+                        }
+                        break;
+
+                    case 'yellow': // MOON GRAVITY - 5 seconds, stackable
+                        triggerWordExplosion(word, particleColor);
+                        moonGravityActive = true;
+                        moonGravityTimer += MOON_GRAVITY_DURATION;
+                        moonBadge.classList.remove('hidden');
+                        break;
+
+                    case 'rainbow': // COLOR CHANGING - auto-complete ALL words on screen
+                        triggerWordExplosion(word, '#a78bfa');
+                        const allWords = [...wordsOnScreen].filter(w => w.id !== word.id);
+                        allWords.forEach(w => {
+                            triggerWordExplosion(w, '#a78bfa');
+                            score += w.text.length * 10;
+                            totalCharsTyped += w.text.length;
+                            w.destroy();
+                        });
+                        wordsOnScreen = wordsOnScreen.filter(w => w.id === word.id);
+                        scoreVal.textContent = score;
+                        break;
+                }
+            }
+
+            word.destroy();
+            wordsOnScreen = wordsOnScreen.filter(w => w.id !== word.id);
+            activeWordId = null;
+            inputField.value = '';
         }
 
         inputField.addEventListener('input', (e) => {
             if (gameState !== 'PLAYING') return;
-
             totalActions++;
             const val = inputField.value;
 
@@ -515,7 +598,6 @@
                     matchedWord.typedIndex = val.length;
                     matchedWord.setActive(true);
                     matchedWord.updateHTML();
-                    
                     if (matchedWord.typedIndex === matchedWord.text.length) {
                         completeWord(matchedWord);
                     }
@@ -528,7 +610,6 @@
                     if (activeWord.text.startsWith(val)) {
                         activeWord.typedIndex = val.length;
                         activeWord.updateHTML();
-
                         if (activeWord.typedIndex === activeWord.text.length) {
                             completeWord(activeWord);
                         }
@@ -542,25 +623,9 @@
             }
         });
 
-        function completeWord(word) {
-            score += word.text.length * 10;
-            totalCharsTyped += word.text.length;
-            scoreVal.textContent = score;
-
-            word.destroy();
-            wordsOnScreen = wordsOnScreen.filter(w => w.id !== word.id);
-            activeWordId = null;
-            inputField.value = '';
-        }
-
-        actionBtn.addEventListener('click', () => {
-            startGame();
-        });
-
+        actionBtn.addEventListener('click', startGame);
         playfield.addEventListener('click', () => {
-            if (gameState === 'PLAYING') {
-                inputField.focus();
-            }
+            if (gameState === 'PLAYING') inputField.focus();
         });
 
         window.addEventListener('resize', () => {
@@ -572,9 +637,7 @@
             initLandscape();
         });
 
-        window.addEventListener('load', () => {
-            initLandscape();
-        });
+        window.addEventListener('load', initLandscape);
     </script>
 </body>
 </html>
