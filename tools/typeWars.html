@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TechType Drop - Special Words Edition</title>
+    <title>TechType Drop - Scrabble Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -66,6 +66,45 @@
     </footer>
 
     <script>
+        // Scrabble letter values (English)
+        const LETTER_VALUES = {
+            'a': 1, 'e': 1, 'i': 1, 'o': 1, 'u': 1, 'l': 1, 'n': 1, 's': 1, 't': 1, 'r': 1,
+            'd': 2, 'g': 2,
+            'b': 3, 'c': 3, 'm': 3, 'p': 3,
+            'f': 4, 'h': 4, 'v': 4, 'w': 4, 'y': 4,
+            'k': 5,
+            'j': 8, 'x': 8,
+            'q': 10, 'z': 10
+        };
+
+        // German letter values (similar to Scrabble DE)
+        const LETTER_VALUES_DE = {
+            'a': 1, 'e': 1, 'i': 1, 'o': 1, 'u': 1, 'l': 1, 'n': 1, 's': 1, 't': 1, 'r': 1,
+            'd': 2, 'g': 2,
+            'b': 3, 'c': 3, 'm': 3, 'p': 3,
+            'f': 4, 'h': 4, 'v': 4, 'w': 4, 'y': 4,
+            'k': 5,
+            'j': 8, 'x': 8,
+            'q': 10, 'z': 10,
+            'ä': 6, 'ö': 6, 'ü': 6, 'ß': 8
+        };
+
+        function getLetterValue(char, lang) {
+            const lower = char.toLowerCase();
+            if (lang === 'DE') {
+                return LETTER_VALUES_DE[lower] || 1;
+            }
+            return LETTER_VALUES[lower] || 1;
+        }
+
+        function calculateWordValue(word, lang) {
+            let total = 0;
+            for (let i = 0; i < word.length; i++) {
+                total += getLetterValue(word[i], lang);
+            }
+            return total;
+        }
+
         const WORDS_EN = [
             "algorithm", "backend", "binary", "browser", "buffer", "cache", "closure", "compiler", 
             "cookie", "coroutine", "database", "debugging", "deploy", "desktop", "domain", "dynamic", 
@@ -90,7 +129,6 @@
             "faden", "token", "typskript", "unicode", "variable", "virtuell", "schwachstelle", "websocket"
         ];
 
-        // Special word types
         const SPECIAL_TYPES = ['red', 'blue', 'yellow', 'rainbow'];
         const SPECIAL_COLORS = {
             red: { border: 'border-red-500', glow: 'shadow-[0_0_15px_rgba(239,68,68,0.5)]', text: 'text-red-400' },
@@ -455,7 +493,6 @@
             const delta = timestamp - lastFrameTime;
             lastFrameTime = timestamp;
 
-            // Moon gravity timer
             if (moonGravityActive) {
                 moonGravityTimer -= delta;
                 const remainingSecs = Math.max(0, Math.ceil(moonGravityTimer / 1000));
@@ -472,7 +509,6 @@
                 spawnTimer = 0;
                 const activeWordSet = currentLang === 'DE' ? WORDS_DE : WORDS_EN;
                 const randomWord = activeWordSet[Math.floor(Math.random() * activeWordSet.length)];
-                // 25% chance for special word
                 const isSpecial = Math.random() < 0.25;
                 const specialType = isSpecial ? getRandomSpecialType() : null;
                 wordsOnScreen.push(new FallingWord(randomWord, specialType));
@@ -510,8 +546,12 @@
         }
 
         function completeWord(word) {
-            // Base score
-            score += word.text.length * 10;
+            // Calculate Scrabble-style score for the word
+            const wordValue = calculateWordValue(word.text, currentLang);
+            const specialMultiplier = word.specialType ? 2 : 1;
+            const earnedScore = wordValue * 10 * specialMultiplier;
+            
+            score += earnedScore;
             totalCharsTyped += word.text.length;
             scoreVal.textContent = score;
 
@@ -533,9 +573,10 @@
                         const caughtWords = wordsOnScreen.filter(w => w.id !== word.id && 
                             Math.hypot(w.x - word.x, w.y - word.y) <= blastRadius);
                         caughtWords.forEach(cw => {
-                            triggerWordExplosion(cw, particleColor);
-                            score += cw.text.length * 10;
+                            const cwValue = calculateWordValue(cw.text, currentLang);
+                            score += cwValue * 10;
                             totalCharsTyped += cw.text.length;
+                            triggerWordExplosion(cw, particleColor);
                             cw.destroy();
                         });
                         wordsOnScreen = wordsOnScreen.filter(w => w.id === word.id || !caughtWords.includes(w));
@@ -549,9 +590,10 @@
                             Math.hypot(w.x - word.x, w.y - word.y) <= chainRadius);
                         if (chainTargets.length > 0) {
                             const target = chainTargets[0];
-                            triggerWordExplosion(target, '#60a5fa');
-                            score += target.text.length * 10;
+                            const targetValue = calculateWordValue(target.text, currentLang);
+                            score += targetValue * 10;
                             totalCharsTyped += target.text.length;
+                            triggerWordExplosion(target, '#60a5fa');
                             target.destroy();
                             wordsOnScreen = wordsOnScreen.filter(w => w.id !== target.id);
                             scoreVal.textContent = score;
@@ -569,9 +611,10 @@
                         triggerWordExplosion(word, '#a78bfa');
                         const allWords = [...wordsOnScreen].filter(w => w.id !== word.id);
                         allWords.forEach(w => {
-                            triggerWordExplosion(w, '#a78bfa');
-                            score += w.text.length * 10;
+                            const wValue = calculateWordValue(w.text, currentLang);
+                            score += wValue * 10;
                             totalCharsTyped += w.text.length;
+                            triggerWordExplosion(w, '#a78bfa');
                             w.destroy();
                         });
                         wordsOnScreen = wordsOnScreen.filter(w => w.id === word.id);
