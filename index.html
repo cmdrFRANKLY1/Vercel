@@ -173,6 +173,17 @@
       font-size: 14px;
       letter-spacing: 0.5px;
     }
+
+    /* Error state */
+    .error-state {
+      color: #c0392b;
+      font-size: 13px;
+      letter-spacing: 0.3px;
+      border: 1px solid #c0392b33;
+      padding: 12px 20px;
+      border-radius: 8px;
+      background: #c0392b11;
+    }
   </style>
 </head>
 <body class="min-h-screen bg-black text-zinc-100 p-8 md:p-12">
@@ -367,14 +378,23 @@
     // --- LOAD HTML LIST FROM JSON ---
     async function loadHtmlList() {
       try {
-        const response = await fetch('Resources/htmlList.json');
+        // Using lowercase "resources" as specified
+        const response = await fetch('resources/htmlList.json');
+        
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
+        
         const data = await response.json();
+        
+        // Validate that we got an array
+        if (!Array.isArray(data)) {
+          throw new Error('JSON data is not an array');
+        }
+        
         return data;
       } catch (error) {
-        console.error('Failed to load htmlList.json:', error);
+        console.error('Failed to load resources/htmlList.json:', error);
         return null;
       }
     }
@@ -383,8 +403,18 @@
     function renderGrid(items) {
       gridContainer.innerHTML = '';
 
-      if (!items || items.length === 0) {
-        gridContainer.innerHTML = `<div class="empty-state">No resources found</div>`;
+      if (!items) {
+        gridContainer.innerHTML = `
+          <div class="error-state">
+            ⚠️ Failed to load resources/htmlList.json<br>
+            <span style="font-size:11px;color:#666;">Make sure the file exists at: resources/htmlList.json</span>
+          </div>
+        `;
+        return;
+      }
+
+      if (items.length === 0) {
+        gridContainer.innerHTML = `<div class="empty-state">📭 No resources found in htmlList.json</div>`;
         return;
       }
 
@@ -461,7 +491,7 @@
       updateClock();
       setInterval(updateClock, 1000);
 
-      // Load HTML list from JSON
+      // Load HTML list from JSON (lowercase "resources")
       const htmlItems = await loadHtmlList();
       renderGrid(htmlItems);
     }
