@@ -342,11 +342,6 @@
             font-style: italic;
             font-size: 0.8rem;
         }
-        .day-card.weekend {
-            opacity: 0.5;
-            border-left-color: var(--text-light);
-        }
-        .day-card.weekend .day-name { color: var(--text-light); }
 
         /* ===== Card Footer ===== */
         .card-footer {
@@ -498,9 +493,7 @@
                 error: 'Fehler beim Laden',
                 retry: '🔄 Neu laden',
                 open: 'Datei öffnen',
-                daysList: ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'],
-                noDetails: 'Keine Tagesdetails',
-                noStructured: 'Keine strukturierten Daten gefunden'
+                daysList: ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag']
             },
             en: {
                 title: 'Training Log · Detailed View',
@@ -516,9 +509,7 @@
                 error: 'Error loading',
                 retry: '🔄 Retry',
                 open: 'Open file',
-                daysList: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-                noDetails: 'No day details',
-                noStructured: 'No structured data found'
+                daysList: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
             }
         };
 
@@ -586,7 +577,7 @@
             setLanguage(saved);
         }
 
-        // ===== DOCX PARSER - Enhanced for table structure =====
+        // ===== DOCX PARSER =====
         async function extractDocxText(arrayBuffer) {
             try {
                 const zip = await JSZip.loadAsync(arrayBuffer);
@@ -595,14 +586,10 @@
 
                 const xmlText = await docFile.async('string');
                 
-                // Extract all text between <w:t> tags
                 const textMatches = xmlText.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
                 const texts = textMatches.map(m => m.replace(/<[^>]*>/g, '').trim()).filter(t => t.length > 0);
-                
-                // Join with spaces to preserve structure
                 const fullText = texts.join(' ').replace(/\s+/g, ' ').trim();
                 
-                // Extract days with their content and hours
                 const days = extractDaysFromTable(fullText);
                 return { text: fullText, days };
             } catch (e) {
@@ -614,9 +601,8 @@
         function extractDaysFromTable(text) {
             const days = {};
             const lang = currentLang;
-            const dayNames = translations[lang].daysList;
+            const dayNames = translations[lang].daysList; // Only Monday-Friday
             
-            // Pattern to match: "DayName" followed by content, then "8" (or other number) at the end
             for (let i = 0; i < dayNames.length; i++) {
                 const dayName = dayNames[i];
                 const nextDay = i < dayNames.length - 1 ? dayNames[i + 1] : '$';
@@ -627,7 +613,6 @@
                 const match = text.match(regex);
                 if (match) {
                     let content = match[1].trim();
-                    // Extract hours
                     let hours = '8';
                     const hourMatch = content.match(/(\d+)\s*(?:h|Std\.|Stunden)/i);
                     if (hourMatch) {
@@ -640,7 +625,6 @@
                         content = content.replace(/\s*\d+\s*(?:h|Std\.|Stunden)?\s*$/, '').trim();
                     }
                     
-                    // Clean up content
                     content = content.replace(/[–\-]\s*Selbständig.*$/gim, '').trim();
                     content = content.replace(/Selbstständiges\s*Lernen/gi, '').trim();
                     content = content.replace(/\s+/g, ' ').trim();
@@ -654,7 +638,7 @@
                 }
             }
             
-            // Fallback: simple pattern
+            // Fallback
             if (Object.keys(days).length === 0) {
                 const simpleRegex = new RegExp(
                     '(' + dayNames.join('|') + ')\\s*[:;]?\\s*([^\\n]+)', 'gi'
@@ -696,9 +680,16 @@
                 const reports = docFiles.map(item => {
                     const fileName = item.name;
                     const rawUrl = `${BASE_RAW_URL}/${encodeURIComponent(fileName)}`;
-                    const weekInfo = extractWeekFromFilename(fileName);
-                    let weekLabel = 'Woche unbekannt';
-                    if (weekInfo) weekLabel = `${weekInfo.start} – ${weekInfo.end}`;
+                    // Extract date range from filename
+                    const weekMatch = fileName.match(/(\d{1,2}\.\d{1,2}\.\d{4})\s*-\s*(\d{1,2}\.\d{1,2}\.\d{4})/);
+                    let weekLabel = '';
+                    if (weekMatch) {
+                        weekLabel = `${weekMatch[1]} – ${weekMatch[2]}`;
+                    } else {
+                        // Try to get just the date
+                        const dateMatch = fileName.match(/(\d{1,2}\.\d{1,2}\.\d{4})/);
+                        weekLabel = dateMatch ? dateMatch[1] : '';
+                    }
                     const isFisi = fileName.includes('FISI') || fileName.toLowerCase().includes('fisi');
                     return {
                         name: fileName,
@@ -728,11 +719,6 @@
                 console.error('Error fetching files:', err);
                 throw err;
             }
-        }
-
-        function extractWeekFromFilename(filename) {
-            const match = filename.match(/(\d{1,2}\.\d{1,2}\.\d{4})\s*-\s*(\d{1,2}\.\d{1,2}\.\d{4})/);
-            return match ? { start: match[1], end: match[2] } : null;
         }
 
         // ===== FETCH & PARSE =====
@@ -766,7 +752,7 @@
         function render(reports) {
             const lang = currentLang;
             const t = translations[lang];
-            const dayNames = t.daysList.slice(0, 5);
+            const dayNames = t.daysList; // Only Monday-Friday
 
             if (reports.length === 0) {
                 grid.innerHTML = `
@@ -783,7 +769,9 @@
             let totalDays = 0;
             for (const report of reports) {
                 const dayEntries = Object.entries(report.days);
-                totalDays += dayEntries.length;
+                // Only count days that have actual content (not empty or '—')
+                const validDays = dayEntries.filter(([day, data]) => data.content && data.content !== '—' && data.content.trim().length > 0);
+                totalDays += validDays.length;
 
                 const dayMap = {};
                 dayEntries.forEach(([day, data]) => {
@@ -798,7 +786,7 @@
                                 ${report.name.replace(/\.(doc|docx)$/i, '').substring(0, 50)}
                             </div>
                             <div class="card-badges">
-                                <span class="badge badge-week"><i class="far fa-calendar-alt"></i> ${report.week}</span>
+                                ${report.week ? `<span class="badge badge-week"><i class="far fa-calendar-alt"></i> ${report.week}</span>` : ''}
                                 ${report.isFisi ? '<span class="badge badge-primary"><i class="fas fa-server"></i> FISI</span>' : ''}
                                 <span class="badge"><i class="far fa-clock"></i> ${report.year}</span>
                             </div>
@@ -825,7 +813,7 @@
                         </div>
 
                         <div class="card-footer">
-                            <span class="badge"><i class="fas fa-list"></i> ${dayEntries.length} ${t.days}</span>
+                            <span class="badge"><i class="fas fa-list"></i> ${validDays.length} ${t.days}</span>
                             <a href="${report.url}" target="_blank" class="download-link" download>
                                 <i class="fas fa-download"></i> ${t.open}
                             </a>
@@ -844,19 +832,23 @@
                 'Dienstag': 'fire', 'Tuesday': 'fire',
                 'Mittwoch': 'cloud', 'Wednesday': 'cloud',
                 'Donnerstag': 'bolt', 'Thursday': 'bolt',
-                'Freitag': 'star', 'Friday': 'star',
-                'Samstag': 'sun', 'Saturday': 'sun',
-                'Sonntag': 'coffee', 'Sunday': 'coffee'
+                'Freitag': 'star', 'Friday': 'star'
             };
             return map[day] || 'calendar-day';
         }
 
         function updateStats(reports) {
             totalCount.textContent = reports.length;
-            const weeks = new Set(reports.map(r => r.week));
+            const weeks = new Set(reports.map(r => r.week).filter(w => w.length > 0));
             weekCount.textContent = weeks.size;
             let days = 0;
-            reports.forEach(r => days += Object.keys(r.days).length);
+            reports.forEach(r => {
+                // Count only valid days (content exists and not '—')
+                const validDays = Object.entries(r.days).filter(([day, data]) => 
+                    data.content && data.content !== '—' && data.content.trim().length > 0
+                );
+                days += validDays.length;
+            });
             dayCount.textContent = days;
         }
 
@@ -933,16 +925,13 @@
         }
 
         // ===== EVENT LISTENERS =====
-        // Search
         searchInput.addEventListener('input', function() {
             searchTerm = this.value;
             applyFilters();
         });
 
-        // Refresh
         refreshBtn.addEventListener('click', () => loadData(true));
 
-        // Language toggle
         document.querySelectorAll('#langToggle .toggle-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const lang = this.dataset.lang;
@@ -957,7 +946,6 @@
             });
         });
 
-        // Theme toggle
         document.querySelectorAll('#themeToggle .toggle-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const theme = this.dataset.theme;
