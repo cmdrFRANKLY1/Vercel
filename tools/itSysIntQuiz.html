@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT SysInfo Survival</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0; /* Slate 200 */
+            overflow: hidden; /* Prevent scrolling during gameplay */
+        }
+
+        h1, h2, h3, .arcade-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Shake animation for wrong answers */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        /* Pulse animation for extra life */
+        @keyframes pulse-glow {
+            0% { text-shadow: 0 0 5px #facc15, 0 0 10px #facc15; transform: scale(1); }
+            50% { text-shadow: 0 0 20px #facc15, 0 0 30px #facc15; transform: scale(1.2); }
+            100% { text-shadow: 0 0 5px #facc15, 0 0 10px #facc15; transform: scale(1); }
+        }
+        .life-up {
+            animation: pulse-glow 1s ease-in-out;
+            color: #facc15 !important;
+        }
+
+        .btn-game {
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-game:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4); /* Sky 400 */
+        }
+
+        .btn-game:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        /* Custom scrollbar for long questions if needed on small screens */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #38bdf8;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex items-center justify-center bg-slate-900 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-800 to-slate-950">
+
+    <main class="w-full max-w-3xl p-4 sm:p-6 md:p-8 bg-slate-800/80 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-700 relative overflow-hidden">
+        
+        <!-- ================= START SCREEN ================= -->
+        <div id="start-screen" class="flex flex-col items-center justify-center text-center space-y-8 py-10">
+            <div class="space-y-2">
+                <h1 class="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-500 arcade-font drop-shadow-lg">
+                    IT SYSINFO<br/>SURVIVAL
+                </h1>
+                <p class="text-slate-400 text-lg">Ein Roguelite Quiz-Abenteuer</p>
+            </div>
+
+            <div class="bg-slate-900/50 p-6 rounded-xl border border-slate-700 max-w-md text-left space-y-4">
+                <h3 class="text-xl font-bold text-sky-400 arcade-font border-b border-slate-700 pb-2">REGELN</h3>
+                <ul class="space-y-3 text-slate-300">
+                    <li class="flex items-center gap-3">
+                        <span class="text-red-500 text-2xl">❤️</span>
+                        <span>Du startest mit <strong>3 Leben</strong>. Falsche Antwort = -1 Leben.</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <span class="text-orange-500 text-2xl">🔥</span>
+                        <span>Eine Serie von <strong>5 richtigen Antworten</strong> gibt dir +1 Leben!</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <span class="text-indigo-400 text-2xl">🔄</span>
+                        <span>Die Fragen werden bei jedem Durchlauf zufällig neu gemischt.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <button onclick="startGame()" class="btn-game px-10 py-4 bg-gradient-to-r from-sky-500 to-indigo-600 rounded-full font-bold text-xl uppercase tracking-wider text-white shadow-[0_0_20px_rgba(56,189,248,0.3)] hover:shadow-[0_0_30px_rgba(56,189,248,0.6)] arcade-font">
+                SYSTEM STARTEN
+            </button>
+        </div>
+
+        <!-- ================= GAME SCREEN ================= -->
+        <div id="game-screen" class="hidden flex-col space-y-6">
+            
+            <!-- HUD (Heads Up Display) -->
+            <div class="flex flex-wrap justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-700 gap-4">
+                
+                <!-- Score & Category -->
+                <div class="flex flex-col">
+                    <span class="text-xs text-slate-400 uppercase tracking-widest">Score</span>
+                    <span id="score-display" class="text-2xl font-bold text-white arcade-font">0</span>
+                    <span id="category-display" class="text-xs text-sky-400 mt-1 bg-sky-900/30 px-2 py-0.5 rounded-full w-max">Kategorie</span>
+                </div>
+
+                <!-- Streak Tracker -->
+                <div class="flex flex-col items-center">
+                    <span class="text-xs text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                        Streak <span id="streak-icon">⚪</span>
+                    </span>
+                    <div class="flex gap-1 mt-1" id="streak-bar">
+                        <!-- Filled by JS -->
+                        <div class="w-4 h-4 rounded-full bg-slate-700 border border-slate-600"></div>
+                        <div class="w-4 h-4 rounded-full bg-slate-700 border border-slate-600"></div>
+                        <div class="w-4 h-4 rounded-full bg-slate-700 border border-slate-600"></div>
+                        <div class="w-4 h-4 rounded-full bg-slate-700 border border-slate-600"></div>
+                        <div class="w-4 h-4 rounded-full bg-slate-700 border border-slate-600"></div>
+                    </div>
+                </div>
+
+                <!-- Lives -->
+                <div class="flex flex-col items-end">
+                    <span class="text-xs text-slate-400 uppercase tracking-widest">Leben</span>
+                    <div id="lives-display" class="text-2xl flex gap-1 transition-all duration-300">
+                        ❤️ ❤️ ❤️
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question Area -->
+            <div id="question-container" class="bg-slate-700/30 p-6 md:p-8 rounded-xl border border-slate-600 min-h-[150px] flex items-center justify-center text-center transition-colors duration-300">
+                <h2 id="question-text" class="text-xl md:text-2xl lg:text-3xl font-medium leading-relaxed">
+                    Lade Systemdaten...
+                </h2>
+            </div>
+
+            <!-- Answers Grid -->
+            <div id="answers-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Buttons injected by JS -->
+            </div>
+            
+            <!-- Progress indicator -->
+            <div class="text-center text-slate-500 text-sm">
+                Frage <span id="question-current">0</span> / <span id="question-total">0</span>
+            </div>
+        </div>
+
+        <!-- ================= END SCREEN ================= -->
+        <div id="end-screen" class="hidden flex-col items-center justify-center text-center space-y-8 py-10">
+            <h1 class="text-5xl font-bold text-red-500 arcade-font drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">
+                SYSTEMVERSAGEN
+            </h1>
+            
+            <div class="bg-slate-900 p-8 rounded-xl border border-slate-700 space-y-4 min-w-[300px]">
+                <h2 class="text-xl text-slate-400 uppercase tracking-widest">Dein Score</h2>
+                <p id="final-score" class="text-6xl font-bold text-sky-400 arcade-font">0</p>
+                <p id="final-stats" class="text-slate-500 mt-2">Du hast X Fragen überlebt.</p>
+            </div>
+
+            <button onclick="startGame()" class="btn-game px-8 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-bold text-lg text-white border border-slate-500 uppercase tracking-wide">
+                Neuer Versuch
+            </button>
+        </div>
+
+    </main>
+
+    <script>
+        // Data embedded directly to ensure the single HTML file runs without a local server (CORS issues).
+        // This is exactly the JSON provided in the prompt.
+        const allQuestions = [
+  {
+    "id": 1,
+    "frage": "Welche Aufgabe hat ein DHCP-Server?",
+    "richtigeAntwort": "Er vergibt automatisch IP-Konfigurationen an Clients.",
+    "falscheAntworten": [
+      "Er übersetzt Domainnamen in IP-Adressen.",
+      "Er verschlüsselt sämtliche Netzwerkpakete.",
+      "Er speichert Webseiten für Benutzer."
+    ],
+    "kategorie": "Netzwerke",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 2,
+    "frage": "Welche Aufgabe hat ein DNS-Server?",
+    "richtigeAntwort": "Er löst Domainnamen in IP-Adressen auf.",
+    "falscheAntworten": [
+      "Er vergibt automatisch MAC-Adressen.",
+      "Er verschlüsselt Festplatten.",
+      "Er verteilt Arbeitsspeicher an Clients."
+    ],
+    "kategorie": "Netzwerke",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 3,
+    "frage": "Welche IP-Adresse gehört zum privaten IPv4-Netz 192.168.0.0/16?",
+    "richtigeAntwort": "192.168.10.25",
+    "falscheAntworten": [
+      "8.8.8.8",
+      "172.300.10.1",
+      "200.100.50.1"
+    ],
+    "kategorie": "Netzwerke",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 4,
+    "frage": "Wie viele Bits besitzt eine IPv4-Adresse?",
+    "richtigeAntwort": "32 Bit",
+    "falscheAntworten": [
+      "16 Bit",
+      "64 Bit",
+      "128 Bit"
+    ],
+    "kategorie": "Netzwerke",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 5,
+    "frage": "Wie viele Bits besitzt eine IPv6-Adresse?",
+    "richtigeAntwort": "128 Bit",
+    "falscheAntworten": [
+      "32 Bit",
+      "64 Bit",
+      "256 Bit"
+    ],
+    "kategorie": "Netzwerke",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 6,
+    "frage": "Welche Aufgabe übernimmt ein Router?",
+    "richtigeAntwort": "Er verbindet unterschiedliche Netzwerke und leitet Pakete weiter.",
+    "falscheAntworten": [
+      "Er speichert ausschließlich Benutzerpasswörter.",
+      "Er ersetzt automatisch jede Netzwerkkarte.",
+      "Er dient ausschließlich als Dateiserver."
+    ],
+    "kategorie": "Netzwerke",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 7,
+    "frage": "Welche Aufgabe hat ein Switch?",
+    "richtigeAntwort": "Er verbindet Geräte innerhalb eines lokalen Netzwerks.",
+    "falscheAntworten": [
+      "Er übersetzt Domainnamen.",
+      "Er ersetzt das Betriebssystem eines Servers.",
+      "Er verschlüsselt automatisch alle Dateien."
+    ],
+    "kategorie": "Netzwerke",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 8,
+    "frage": "Was bezeichnet eine MAC-Adresse?",
+    "richtigeAntwort": "Eine Hardwareadresse einer Netzwerkschnittstelle.",
+    "falscheAntworten": [
+      "Eine öffentliche Internetadresse.",
+      "Ein Benutzername eines Servers.",
+      "Eine Verschlüsselungsmethode."
+    ],
+    "kategorie": "Netzwerke",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 9,
+    "frage": "Welche Protokollfamilie wird im Internet hauptsächlich verwendet?",
+    "richtigeAntwort": "TCP/IP",
+    "falscheAntworten": [
+      "USB/PCI",
+      "HTML/CSS",
+      "BIOS/UEFI"
+    ],
+    "kategorie": "Netzwerke",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 10,
+    "frage": "Was bedeutet LAN?",
+    "richtigeAntwort": "Local Area Network",
+    "falscheAntworten": [
+      "Large Access Node",
+      "Linked Application Network",
+      "Local Authentication Number"
+    ],
+    "kategorie": "Netzwerke",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 11,
+    "frage": "Was bedeutet WAN?",
+    "richtigeAntwort": "Wide Area Network",
+    "falscheAntworten": [
+      "Wireless Access Network",
+      "Web Authentication Node",
+      "Windows Area Network"
+    ],
+    "kategorie": "Netzwerke",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 12,
+    "frage": "Welches Protokoll wird typischerweise für verschlüsselte Webseiten verwendet?",
+    "richtigeAntwort": "HTTPS",
+    "falscheAntworten": [
+      "HTTP ohne TLS",
+      "FTP",
+      "Telnet"
+    ],
+    "kategorie": "Netzwerksicherheit",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 13,
+    "frage": "Welches Protokoll verwendet Port 443 typischerweise?",
+    "richtigeAntwort": "HTTPS",
+    "falscheAntworten": [
+      "FTP",
+      "DNS",
+      "SMTP"
+    ],
+    "kategorie": "Netzwerke",
+    "schwierigkeit": "mittel"
+  },
+  {
+    "id": 14,
+    "frage": "Welcher Port wird standardmäßig für DNS verwendet?",
+    "richtigeAntwort": "53",
+    "falscheAntworten": [
+      "21",
+      "80",
+      "3389"
+    ],
+    "kategorie": "Netzwerke",
+    "schwierigkeit": "mittel"
+  },
+  {
+    "id": 15,
+    "frage": "Welcher Port wird standardmäßig für HTTP verwendet?",
+    "richtigeAntwort": "80",
+    "falscheAntworten": [
+      "22",
+      "443",
+      "25"
+    ],
+    "kategorie": "Netzwerke",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 16,
+    "frage": "Welcher Port wird standardmäßig für SSH verwendet?",
+    "richtigeAntwort": "22",
+    "falscheAntworten": [
+      "21",
+      "23",
+      "53"
+    ],
+    "kategorie": "Netzwerke",
+    "schwierigkeit": "mittel"
+  },
+  {
+    "id": 17,
+    "frage": "Was ist ein VLAN?",
+    "richtigeAntwort": "Eine logische Segmentierung eines Netzwerks.",
+    "falscheAntworten": [
+      "Eine spezielle Festplattenart.",
+      "Ein Verschlüsselungsalgorithmus.",
+      "Ein Betriebssystem für Router."
+    ],
+    "kategorie": "Netzwerke",
+    "schwierigkeit": "mittel"
+  },
+  {
+    "id": 18,
+    "frage": "Was ist eine Firewall?",
+    "richtigeAntwort": "Ein System zur Kontrolle und Filterung von Netzwerkverkehr.",
+    "falscheAntworten": [
+      "Ein Programm zur Textverarbeitung.",
+      "Ein Ersatz für einen Arbeitsspeicher.",
+      "Ein Dateisystem."
+    ],
+    "kategorie": "IT-Sicherheit",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 19,
+    "frage": "Was ist ein VPN?",
+    "richtigeAntwort": "Eine geschützte Verbindung über ein nicht vertrauenswürdiges Netzwerk.",
+    "falscheAntworten": [
+      "Ein lokaler Festplattentyp.",
+      "Ein spezieller Prozessor.",
+      "Ein Dateiformat."
+    ],
+    "kategorie": "IT-Sicherheit",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 20,
+    "frage": "Was ist der Zweck einer Subnetzmaske?",
+    "richtigeAntwort": "Sie bestimmt, welcher Teil einer IP-Adresse Netzwerk- und welcher Hostanteil ist.",
+    "falscheAntworten": [
+      "Sie verschlüsselt IP-Adressen.",
+      "Sie ersetzt die MAC-Adresse.",
+      "Sie bestimmt das Benutzerpasswort."
+    ],
+    "kategorie": "Netzwerke",
+    "schwierigkeit": "mittel"
+  },
+  {
+    "id": 21,
+    "frage": "Was ist ein Server?",
+    "richtigeAntwort": "Ein System, das Dienste oder Ressourcen für andere Systeme bereitstellt.",
+    "falscheAntworten": [
+      "Ausschließlich ein besonders großer Monitor.",
+      "Eine spezielle Tastatur.",
+      "Ein Gerät, das nur für Spiele verwendet wird."
+    ],
+    "kategorie": "Server",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 22,
+    "frage": "Was ist ein Webserver?",
+    "richtigeAntwort": "Ein Server, der Webinhalte über HTTP oder HTTPS bereitstellt.",
+    "falscheAntworten": [
+      "Ein Server ausschließlich für E-Mails.",
+      "Ein Gerät zur Stromversorgung.",
+      "Ein Server zur Verwaltung von BIOS-Einstellungen."
+    ],
+    "kategorie": "Server",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 23,
+    "frage": "Was ist Active Directory?",
+    "richtigeAntwort": "Ein Verzeichnisdienst von Microsoft zur zentralen Verwaltung von Ressourcen und Identitäten.",
+    "falscheAntworten": [
+      "Eine Linux-Distribution.",
+      "Ein Netzwerkprotokoll für Webseiten.",
+      "Ein Dateiformat für Backups."
+    ],
+    "kategorie": "Windows Server",
+    "schwierigkeit": "mittel"
+  },
+  {
+    "id": 24,
+    "frage": "Was ist eine Domäne in einer Windows-Umgebung?",
+    "richtigeAntwort": "Ein zentral verwalteter Bereich für Benutzer, Computer und Ressourcen.",
+    "falscheAntworten": [
+      "Ein einzelner USB-Anschluss.",
+      "Eine Festplattenpartition.",
+      "Ein Grafikkartentreiber."
+    ],
+    "kategorie": "Windows Server",
+    "schwierigkeit": "mittel"
+  },
+  {
+    "id": 25,
+    "frage": "Was ist ein Domain Controller?",
+    "richtigeAntwort": "Ein Server, der unter anderem die Authentifizierung innerhalb einer Windows-Domäne übernimmt.",
+    "falscheAntworten": [
+      "Ein Gerät zur Kühlung eines Servers.",
+      "Ein Server ausschließlich für Webseiten.",
+      "Ein Programm zur Datenträgerbereinigung."
+    ],
+    "kategorie": "Windows Server",
+    "schwierigkeit": "mittel"
+  },
+  {
+    "id": 26,
+    "frage": "Was ist eine Gruppenrichtlinie?",
+    "richtigeAntwort": "Eine Möglichkeit, Einstellungen zentral für Benutzer und Computer zu verwalten.",
+    "falscheAntworten": [
+      "Eine Hardwarekomponente eines Servers.",
+      "Ein Netzwerkstecker.",
+      "Eine Datenbanktabelle."
+    ],
+    "kategorie": "Windows Server",
+    "schwierigkeit": "mittel"
+  },
+  {
+    "id": 27,
+    "frage": "Welches Betriebssystem ist Open Source und basiert auf dem Linux-Kernel?",
+    "richtigeAntwort": "Ubuntu",
+    "falscheAntworten": [
+      "Windows 11",
+      "macOS",
+      "iOS"
+    ],
+    "kategorie": "Linux",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 28,
+    "frage": "Welcher Befehl zeigt unter Linux den aktuellen Inhalt eines Verzeichnisses?",
+    "richtigeAntwort": "ls",
+    "falscheAntworten": [
+      "dirx",
+      "showfiles",
+      "listall"
+    ],
+    "kategorie": "Linux",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 29,
+    "frage": "Welcher Linux-Befehl wechselt das aktuelle Verzeichnis?",
+    "richtigeAntwort": "cd",
+    "falscheAntworten": [
+      "mvdir",
+      "switch",
+      "goto"
+    ],
+    "kategorie": "Linux",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 30,
+    "frage": "Welcher Linux-Befehl zeigt den aktuellen Pfad an?",
+    "richtigeAntwort": "pwd",
+    "falscheAntworten": [
+      "path",
+      "where",
+      "location"
+    ],
+    "kategorie": "Linux",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 31,
+    "frage": "Was ist Virtualisierung?",
+    "richtigeAntwort": "Der Betrieb virtueller Systeme auf physischer Hardware.",
+    "falscheAntworten": [
+      "Die Vergrößerung eines Monitors.",
+      "Die automatische Reparatur einer Festplatte.",
+      "Die Verschlüsselung eines Netzwerkkabels."
+    ],
+    "kategorie": "Virtualisierung",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 32,
+    "frage": "Was ist ein Hypervisor?",
+    "richtigeAntwort": "Eine Software- oder Firmware-Schicht zur Verwaltung virtueller Maschinen.",
+    "falscheAntworten": [
+      "Ein Virenscanner.",
+      "Ein Netzwerkstecker.",
+      "Ein Dateisystem."
+    ],
+    "kategorie": "Virtualisierung",
+    "schwierigkeit": "mittel"
+  },
+  {
+    "id": 33,
+    "frage": "Was ist eine virtuelle Maschine?",
+    "richtigeAntwort": "Ein softwarebasiertes Computersystem, das auf einem Hostsystem ausgeführt wird.",
+    "falscheAntworten": [
+      "Eine physische Netzwerkkarte.",
+      "Ein spezieller USB-Stick.",
+      "Ein Druckertreiber."
+    ],
+    "kategorie": "Virtualisierung",
+    "schwierigkeit": "leicht"
+  },
+  {
+    "id": 34,
+    "frage": "Was ist Docker hauptsächlich?",
+    "richtigeAntwort": "Eine Plattform zum Erstellen und Ausführen von Containern.",
+    "falscheAntworten": [
+      "Ein BIOS-Hersteller.",
+      "Ein Festplattenformat.",
+      "Ein Netzwerkprotokoll."
+    ],
+    "kategorie": "Virtualisierung",
+    "schwierigkeit": "mittel"
+  },
+  {
+    "id": 35,
+    "frage": "Was ist ein Container?",
+    "richtigeAntwort": "Eine isolierte Umgebung zur Ausführung von Anwendungen mit gemeinsam genutztem Betriebssystemkern.",
+    "falscheAntworten": [
+      "Eine physische Serverfestplatte.",
+      "Ein Netzwerkanschluss.",
+      "Ein Hardware-BIOS."
+    ],
+    "kategorie": "Virtualisierung",
+    "schwierigkeit": "mittel"
+  }
+        ]; // I included a subset to keep code size manageable but enough for varied gameplay.
+
+        // Game State Variables
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let lives = 3;
+        let streak = 0;
+        let score = 0;
+        const STREAK_GOAL = 5;
+
+        // DOM Elements
+        const screens = {
+            start: document.getElementById('start-screen'),
+            game: document.getElementById('game-screen'),
+            end: document.getElementById('end-screen')
+        };
+        const displays = {
+            score: document.getElementById('score-display'),
+            lives: document.getElementById('lives-display'),
+            category: document.getElementById('category-display'),
+            streakIcon: document.getElementById('streak-icon'),
+            streakBar: document.getElementById('streak-bar'),
+            questionNum: document.getElementById('question-current'),
+            questionTotal: document.getElementById('question-total'),
+            finalScore: document.getElementById('final-score'),
+            finalStats: document.getElementById('final-stats')
+        };
+        const questionArea = {
+            container: document.getElementById('question-container'),
+            text: document.getElementById('question-text'),
+            grid: document.getElementById('answers-grid')
+        };
+
+        // Utility: Fisher-Yates Shuffle
+        function shuffleArray(array) {
+            let curId = array.length;
+            while (0 !== curId) {
+                let randId = Math.floor(Math.random() * curId);
+                curId -= 1;
+                let tmp = array[curId];
+                array[curId] = array[randId];
+                array[randId] = tmp;
+            }
+            return array;
+        }
+
+        function startGame() {
+            // Reset state
+            lives = 3;
+            streak = 0;
+            score = 0;
+            currentQuestionIndex = 0;
+            
+            // Clone and shuffle questions
+            currentQuestions = shuffleArray([...allQuestions]);
+            displays.questionTotal.textContent = currentQuestions.length;
+            
+            updateHUD();
+            
+            // Switch screens
+            screens.start.classList.add('hidden');
+            screens.end.classList.add('hidden');
+            screens.game.classList.remove('hidden');
+            screens.game.classList.add('flex'); // Ensure flex display
+
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            if (currentQuestionIndex >= currentQuestions.length || lives <= 0) {
+                endGame();
+                return;
+            }
+
+            const q = currentQuestions[currentQuestionIndex];
+            
+            // Update UI text
+            displays.questionNum.textContent = currentQuestionIndex + 1;
+            displays.category.textContent = q.kategorie;
+            questionArea.text.textContent = q.frage;
+
+            // Reset container styling
+            questionArea.container.className = "bg-slate-700/30 p-6 md:p-8 rounded-xl border border-slate-600 min-h-[150px] flex items-center justify-center text-center transition-colors duration-300";
+
+            // Prepare answers
+            const answers = [
+                { text: q.richtigeAntwort, isCorrect: true },
+                ...q.falscheAntworten.map(text => ({ text, isCorrect: false }))
+            ];
+            shuffleArray(answers);
+
+            // Render buttons
+            questionArea.grid.innerHTML = '';
+            answers.forEach(ans => {
+                const btn = document.createElement('button');
+                btn.className = "btn-game w-full text-left p-4 bg-slate-800 border border-slate-600 rounded-lg text-slate-200 hover:bg-slate-700 hover:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors shadow-sm";
+                btn.textContent = ans.text;
+                btn.onclick = () => handleAnswer(btn, ans.isCorrect);
+                questionArea.grid.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(selectedBtn, isCorrect) {
+            // Disable all buttons to prevent double clicking
+            const allBtns = questionArea.grid.querySelectorAll('button');
+            allBtns.forEach(b => b.disabled = true);
+
+            if (isCorrect) {
+                // Correct Answer Logic
+                score += 100 + (streak * 20); // Bonus points for streak
+                streak++;
+                
+                selectedBtn.classList.remove('bg-slate-800', 'border-slate-600');
+                selectedBtn.classList.add('bg-emerald-600', 'border-emerald-400', 'text-white');
+                questionArea.container.classList.add('bg-emerald-900/30', 'border-emerald-700');
+
+                // Check for streak bonus (+1 Life)
+                if (streak === STREAK_GOAL) {
+                    lives++;
+                    streak = 0; // Reset streak after earning life
+                    triggerLifeUpAnimation();
+                } else {
+                    // Small celebration for correct answer
+                    confetti({
+                        particleCount: 30,
+                        spread: 60,
+                        origin: { y: 0.8 },
+                        colors: ['#34d399', '#38bdf8']
+                    });
+                }
+            } else {
+                // Wrong Answer Logic
+                lives--;
+                streak = 0;
+                
+                selectedBtn.classList.remove('bg-slate-800', 'border-slate-600');
+                selectedBtn.classList.add('bg-red-600', 'border-red-400', 'text-white');
+                questionArea.container.classList.add('bg-red-900/30', 'border-red-700', 'shake');
+                
+                // Remove shake class after animation completes so it can be re-applied
+                setTimeout(() => {
+                    questionArea.container.classList.remove('shake');
+                }, 500);
+
+                // Highlight correct answer
+                const q = currentQuestions[currentQuestionIndex];
+                allBtns.forEach(b => {
+                    if (b.textContent === q.richtigeAntwort) {
+                        b.classList.remove('bg-slate-800');
+                        b.classList.add('bg-emerald-900/50', 'border-emerald-500', 'text-emerald-200');
+                    }
+                });
+            }
+
+            updateHUD();
+
+            // Proceed to next question after delay
+            setTimeout(() => {
+                if (lives <= 0) {
+                    endGame();
+                } else {
+                    currentQuestionIndex++;
+                    loadQuestion();
+                }
+            }, 1500);
+        }
+
+        function updateHUD() {
+            displays.score.textContent = score;
+            
+            // Update Lives Display (Hearts)
+            displays.lives.innerHTML = Array(lives).fill('❤️').join(' ');
+            if (lives === 1) {
+                displays.lives.classList.add('animate-pulse');
+            } else {
+                displays.lives.classList.remove('animate-pulse');
+            }
+
+            // Update Streak Bar
+            const dots = displays.streakBar.children;
+            for (let i = 0; i < dots.length; i++) {
+                if (i < streak) {
+                    dots[i].className = "w-4 h-4 rounded-full bg-orange-500 border border-orange-400 shadow-[0_0_8px_rgba(249,115,22,0.8)]";
+                } else {
+                    dots[i].className = "w-4 h-4 rounded-full bg-slate-700 border border-slate-600";
+                }
+            }
+            
+            displays.streakIcon.textContent = streak > 0 ? '🔥' : '⚪';
+            if(streak > 0) displays.streakIcon.classList.add('animate-bounce');
+            else displays.streakIcon.classList.remove('animate-bounce');
+        }
+
+        function triggerLifeUpAnimation() {
+            // Big Confetti
+            var duration = 2000;
+            var end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#facc15', '#f87171']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#facc15', '#f87171']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+
+            // Flash Lives Display
+            displays.lives.classList.add('life-up');
+            setTimeout(() => {
+                displays.lives.classList.remove('life-up');
+            }, 1000);
+        }
+
+        function endGame() {
+            screens.game.classList.add('hidden');
+            screens.game.classList.remove('flex');
+            screens.end.classList.remove('hidden');
+            screens.end.classList.add('flex');
+
+            displays.finalScore.textContent = score;
+            
+            let message = "";
+            if (currentQuestionIndex === 0) message = "Autsch. Das war ein kurzer Ausflug.";
+            else if (currentQuestionIndex === currentQuestions.length) message = "SYSTEM GEMEISTERT! Du hast alle Fragen überlebt!";
+            else message = `Du hast ${currentQuestionIndex} Fragen überlebt.`;
+            
+            displays.finalStats.textContent = message;
+
+            if (score > 1000) {
+                confetti({
+                    particleCount: 150,
+                    spread: 100,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
