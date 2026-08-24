@@ -45,7 +45,6 @@
             <div>WPM: <span id="wpm-val" class="text-white font-bold transition-colors duration-200">0</span></div>
             <div>APM: <span id="apm-val" class="text-white font-bold transition-colors duration-200">0</span></div>
             <div>HP: <span id="hp-val" class="text-white font-bold transition-colors duration-200">100</span></div>
-            <div id="modifier-badge" class="hidden text-yellow-400 font-bold animate-pulse">MOD: <span id="modifier-name">NONE</span> (<span id="modifier-timer">30</span>s)</div>
         </div>
     </header>
 
@@ -122,12 +121,6 @@
         let isDarkMode = true;
         let currentLang = 'EN'; 
         let particles = []; 
-
-        let activeModifier = null; // 'AUTO_TYPE' or 'EXPLODE_CHAIN'
-        let modifierTimer = 0; 
-        const modifierBadge = document.getElementById('modifier-badge');
-        const modifierNameSpan = document.getElementById('modifier-name');
-        const modifierTimerSpan = document.getElementById('modifier-timer');
 
         const bodyContainer = document.getElementById('body-container');
         const headerContainer = document.getElementById('header-container');
@@ -280,16 +273,6 @@
             triggerPixelExplosion(centerCol, groundY);
         }
 
-        // --- trigger explosion at word position (for ANY word) ---
-        function triggerWordExplosion(word) {
-            if (!word || !word.element) return;
-            const rect = word.element.getBoundingClientRect();
-            const playRect = playfield.getBoundingClientRect();
-            const cx = rect.left + rect.width/2 - playRect.left;
-            const cy = rect.top + rect.height/2 - playRect.top;
-            triggerPixelExplosion(cx, cy, '#fbbf24'); // gold/yellow for clear visibility
-        }
-
         themeToggleBtn.addEventListener('click', () => {
             isDarkMode = !isDarkMode;
             const statsRow = document.getElementById('stats-row');
@@ -356,10 +339,9 @@
         });
 
         class FallingWord {
-            constructor(text, isSpecial = false) {
+            constructor(text) {
                 this.id = Math.random().toString(36).substring(2, 9);
                 this.text = text;
-                this.isSpecial = isSpecial;
                 this.typedIndex = 0;
                 this.x = Math.random() * (playfield.clientWidth - 150) + 20;
                 this.y = -40; 
@@ -373,11 +355,7 @@
                     ? 'word-card absolute px-3 py-1 bg-black border text-xs tracking-wider flex items-center space-x-1 pointer-events-none transition-colors duration-200' 
                     : 'word-card absolute px-3 py-1 bg-white border text-xs tracking-wider flex items-center space-x-1 pointer-events-none transition-colors duration-200';
                 
-                if (this.isSpecial) {
-                    el.className = `${baseClass} ${isDarkMode ? 'border-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.3)]' : 'border-yellow-600 shadow-[0_0_10px_rgba(202,138,4,0.3)]'}`;
-                } else {
-                    el.className = `${baseClass} ${isDarkMode ? 'border-zinc-800' : 'border-zinc-200'}`;
-                }
+                el.className = `${baseClass} ${isDarkMode ? 'border-zinc-800' : 'border-zinc-200'}`;
 
                 el.style.left = `${this.x}px`;
                 el.style.top = `${this.y}px`;
@@ -385,11 +363,10 @@
                 const typed = this.text.substring(0, this.typedIndex);
                 const remaining = this.text.substring(this.typedIndex);
                 
-                const fontStyle = this.isSpecial ? 'font-black font-extrabold text-sm' : '';
                 if (isDarkMode) {
-                    el.innerHTML = `<span class="text-white underline ${fontStyle}">${typed}</span><span class="text-zinc-500 ${fontStyle}">${remaining}</span>`;
+                    el.innerHTML = `<span class="text-white underline">${typed}</span><span class="text-zinc-500">${remaining}</span>`;
                 } else {
-                    el.innerHTML = `<span class="text-black underline ${fontStyle}">${typed}</span><span class="text-zinc-400 ${fontStyle}">${remaining}</span>`;
+                    el.innerHTML = `<span class="text-black underline">${typed}</span><span class="text-zinc-400">${remaining}</span>`;
                 }
                 
                 playfield.appendChild(el);
@@ -400,19 +377,18 @@
                 if (!this.element) return;
                 const typed = this.text.substring(0, this.typedIndex);
                 const remaining = this.text.substring(this.typedIndex);
-                const fontStyle = this.isSpecial ? 'font-black font-extrabold text-sm' : '';
                 const isActive = this.element === activeWordElement();
 
                 if (isDarkMode) {
-                    const borderClass = this.isSpecial ? 'border-yellow-500' : (isActive ? 'border-white' : 'border-zinc-800');
+                    const borderClass = isActive ? 'border-white' : 'border-zinc-800';
                     const bgClass = isActive ? 'bg-zinc-900' : 'bg-black';
                     this.element.className = `word-card absolute px-3 py-1 ${bgClass} border ${borderClass} text-xs tracking-wider flex items-center space-x-1 pointer-events-none transition-colors duration-200`;
-                    this.element.innerHTML = `<span class="text-white underline ${fontStyle}">${typed}</span><span class="text-zinc-500 ${fontStyle}">${remaining}</span>`;
+                    this.element.innerHTML = `<span class="text-white underline">${typed}</span><span class="text-zinc-500">${remaining}</span>`;
                 } else {
-                    const borderClass = this.isSpecial ? 'border-yellow-600' : (isActive ? 'border-black' : 'border-zinc-200');
+                    const borderClass = isActive ? 'border-black' : 'border-zinc-200';
                     const bgClass = isActive ? 'bg-zinc-100' : 'bg-white';
                     this.element.className = `word-card absolute px-3 py-1 ${bgClass} border ${borderClass} text-xs tracking-wider flex items-center space-x-1 pointer-events-none transition-colors duration-200`;
-                    this.element.innerHTML = `<span class="text-black underline ${fontStyle}">${typed}</span><span class="text-zinc-400 ${fontStyle}">${remaining}</span>`;
+                    this.element.innerHTML = `<span class="text-black underline">${typed}</span><span class="text-zinc-400">${remaining}</span>`;
                 }
             }
 
@@ -448,9 +424,6 @@
             gameSpeedMultiplier = 1;
             totalCharsTyped = 0;
             totalActions = 0;
-            activeModifier = null;
-            modifierTimer = 0;
-            modifierBadge.classList.add('hidden');
             gameStartTime = performance.now();
             
             initLandscape();
@@ -482,16 +455,6 @@
             const delta = timestamp - lastFrameTime;
             lastFrameTime = timestamp;
 
-            if (activeModifier) {
-                modifierTimer -= delta;
-                const remainingSecs = Math.max(0, Math.ceil(modifierTimer / 1000));
-                modifierTimerSpan.textContent = remainingSecs;
-                if (modifierTimer <= 0) {
-                    activeModifier = null;
-                    modifierBadge.classList.add('hidden');
-                }
-            }
-
             updateParticles(delta);
 
             spawnTimer += delta;
@@ -499,8 +462,7 @@
                 spawnTimer = 0;
                 const activeWordSet = currentLang === 'DE' ? WORDS_DE : WORDS_EN;
                 const randomWord = activeWordSet[Math.floor(Math.random() * activeWordSet.length)];
-                const isSpecial = Math.random() < 0.15;
-                wordsOnScreen.push(new FallingWord(randomWord, isSpecial));
+                wordsOnScreen.push(new FallingWord(randomWord));
                 
                 if (spawnInterval > 800) spawnInterval -= 30;
                 gameSpeedMultiplier += 0.005;
@@ -581,62 +543,9 @@
         });
 
         function completeWord(word) {
-            // --- MOD EXPLOSION: trigger explosion for every correctly typed word ---
-            if (activeModifier === 'EXPLODE_CHAIN') {
-                triggerWordExplosion(word);
-            }
-
-            // --- Score and special handling ---
-            score += word.text.length * (word.isSpecial ? 25 : 10);
+            score += word.text.length * 10;
             totalCharsTyped += word.text.length;
             scoreVal.textContent = score;
-
-            // Only special words grant new modifiers
-            if (word.isSpecial) {
-                const modifiers = ['AUTO_TYPE', 'EXPLODE_CHAIN'];
-                activeModifier = modifiers[Math.floor(Math.random() * modifiers.length)];
-                modifierTimer = 30000; 
-                modifierNameSpan.textContent = activeModifier === 'AUTO_TYPE' ? 'AUTO-ADJACENT' : 'EXPLOSION-CHAIN';
-                modifierBadge.classList.remove('hidden');
-            }
-
-            // Execute modifier actions (AUTO_TYPE or EXPLODE_CHAIN)
-            if (activeModifier === 'AUTO_TYPE') {
-                const others = wordsOnScreen.filter(w => w.id !== word.id);
-                if (others.length > 0) {
-                    let closest = others[0];
-                    let minDistance = Math.hypot(closest.x - word.x, closest.y - word.y);
-                    for (let i = 1; i < others.length; i++) {
-                        const dist = Math.hypot(others[i].x - word.x, others[i].y - word.y);
-                        if (dist < minDistance) {
-                            minDistance = dist;
-                            closest = others[i];
-                        }
-                    }
-                    if (closest) {
-                        // Auto-type also triggers explosion if EXPLODE_CHAIN is active
-                        if (activeModifier === 'EXPLODE_CHAIN') {
-                            triggerWordExplosion(closest);
-                        }
-                        score += closest.text.length * 10;
-                        totalCharsTyped += closest.text.length;
-                        closest.destroy();
-                        wordsOnScreen = wordsOnScreen.filter(w => w.id !== closest.id);
-                        scoreVal.textContent = score;
-                    }
-                }
-            } else if (activeModifier === 'EXPLODE_CHAIN') {
-                const blastRadius = 160;
-                const caughtWords = wordsOnScreen.filter(w => w.id !== word.id && Math.hypot(w.x - word.x, w.y - word.y) <= blastRadius);
-                caughtWords.forEach(cw => {
-                    triggerWordExplosion(cw); // explosion for each caught word
-                    score += cw.text.length * 10;
-                    totalCharsTyped += cw.text.length;
-                    cw.destroy();
-                });
-                wordsOnScreen = wordsOnScreen.filter(w => w.id === word.id || !caughtWords.includes(w));
-                scoreVal.textContent = score;
-            }
 
             word.destroy();
             wordsOnScreen = wordsOnScreen.filter(w => w.id !== word.id);
