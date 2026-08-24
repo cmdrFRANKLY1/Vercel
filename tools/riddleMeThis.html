@@ -109,6 +109,7 @@
         let currentFilename = '';
         let currentLevel = 1;
         let questionsAnsweredCount = 0;
+        let cachedCategories = null;
 
         window.addEventListener('mousemove', (e) => {
             targetMouseX = (e.clientX - width / 2) * 0.05;
@@ -265,10 +266,9 @@
             return filename.replace('topicRMT.', '').replace('.json', '').replace(/_/g, ' ');
         }
 
-        async function loadCategories() {
-            const grid = document.getElementById('category-grid');
+        async function fetchCategoriesList() {
+            if (cachedCategories) return cachedCategories;
             let files = [];
-            
             try {
                 const response = await fetch('/api/topics');
                 if (!response.ok) throw new Error('Network response was not ok');
@@ -288,18 +288,25 @@
                     files = [];
                 }
             }
+            cachedCategories = files.filter(f => typeof f === 'string' && f.startsWith('topicRMT.') && f.endsWith('.json'));
+            return cachedCategories;
+        }
+
+        async function loadCategories() {
+            const grid = document.getElementById('category-grid');
+            grid.innerHTML = ''; // Thoroughly purge existing buttons to prevent duplicates
+            
+            let files = await fetchCategoriesList();
 
             grid.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-8');
             grid.classList.add('opacity-100');
-            
-            files = files.filter(f => typeof f === 'string' && f.startsWith('topicRMT.') && f.endsWith('.json'));
 
             if (files.length === 0) {
                 const btn = document.createElement('button');
                 btn.className = "pointer-events-auto px-6 py-4 bg-black/40 border border-gray-700 rounded-xl backdrop-blur-md text-white font-semibold tracking-wider hover:bg-gray-800/80 transition-all duration-300 hover:-translate-y-1 opacity-0 col-span-1 md:col-start-2";
                 btn.textContent = "Back (Failed to connect)";
                 btn.style.animation = `fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.1s`;
-                btn.onclick = () => { triggerReverseWarp(); };
+                btn.onclick = () => { returnToCategories(); };
                 grid.appendChild(btn);
                 return;
             }
@@ -340,6 +347,7 @@
             if (grid) {
                 grid.classList.add('opacity-0', 'pointer-events-none', 'translate-y-8');
                 grid.classList.remove('opacity-100');
+                grid.innerHTML = ''; // Clear grid contents
             }
             if (mainText) mainText.style.opacity = 0; 
             
