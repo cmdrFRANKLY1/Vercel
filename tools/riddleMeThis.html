@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dust Particles</title>
+    <title>Riddle Me This</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -19,15 +19,21 @@
         }
         canvas {
             display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
         }
     </style>
 </head>
-<body class="relative w-full h-full">
+<body class="relative w-full h-full overflow-hidden">
 
     <!-- Top Bar: Back + Date/Time -->
     <div class="absolute top-0 left-0 w-full px-6 py-4 flex flex-wrap items-center justify-between z-30 pointer-events-none gap-2">
         <div class="flex items-center gap-3 pointer-events-auto flex-wrap">
-            <!-- Fix: use standard link with proper relative path -->
             <a href="./index.html" id="back-to-home-btn" class="flex items-center gap-2 text-gray-400 hover:text-white transition-colors duration-300 group bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-800">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform group-hover:-translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -51,14 +57,14 @@
 
     <!-- Center Content -->
     <div class="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
-        <h1 id="main-text" class="pointer-events-auto text-5xl md:text-7xl font-bold tracking-widest cursor-pointer transition-all duration-500 hover:scale-110 hover:text-blue-300 text-center drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] text-white">
+        <h1 id="main-text" class="pointer-events-auto text-5xl md:text-7xl font-bold tracking-widest cursor-pointer transition-all duration-500 hover:scale-110 hover:text-blue-300 text-center drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] text-white z-40 select-none">
             Are you ready?
         </h1>
         
         <div id="category-grid" class="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-0 pointer-events-none transition-all duration-700 transform translate-y-8 max-w-5xl px-6 w-full">
         </div>
 
-        <!-- German Disclaimer Container (Zoom Step) -->
+        <!-- German Disclaimer Container -->
         <div id="disclaimer-container" class="absolute inset-0 flex flex-col items-center justify-center z-30 pointer-events-none opacity-0 transition-all duration-700 transform scale-50 max-w-4xl px-6 w-full mx-auto text-center">
             <div class="bg-black/60 border border-yellow-500/50 p-8 md:p-12 rounded-2xl backdrop-blur-xl shadow-[0_0_30px_rgba(234,179,8,0.2)] pointer-events-auto cursor-pointer hover:border-yellow-400 transition-all duration-300 group" id="disclaimer-card">
                 <div class="text-yellow-400 text-xs uppercase tracking-widest font-mono mb-4 flex items-center justify-center gap-2">
@@ -83,7 +89,6 @@
             <h2 id="question-text" class="text-2xl md:text-4xl font-semibold tracking-wide text-center drop-shadow-md mb-12 text-gray-100 px-4"></h2>
             <div id="answer-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl px-4"></div>
             
-            <!-- Category Switch Prompt Modal/Container (Shown every 15 questions) -->
             <div id="switch-prompt-container" class="mt-8 flex flex-col items-center gap-3 opacity-0 pointer-events-none transition-all duration-500">
                 <p class="text-sm tracking-widest text-blue-300 uppercase font-mono">You've answered 15 questions in this category!</p>
                 <div class="flex gap-4">
@@ -98,12 +103,9 @@
         </div>
     </div>
 
-    <canvas id="dust-canvas" class="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"></canvas>
+    <canvas id="dust-canvas"></canvas>
 
     <script>
-        // --- FIXED BACK BUTTON: remove conflicting JS, rely on native href ---
-        // (No extra JS needed; the href="./index.html" works as intended)
-
         function updateClock() {
             const now = new Date();
             const dateOptions = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
@@ -120,7 +122,7 @@
         const ctx = canvas.getContext('2d');
         let width, height;
         let particles = [];
-        const particleCount = 700;
+        const particleCount = 800;
         let warpSpeed = 0, targetWarpSpeed = 0, isWarping = false;
         let mouseX = 0, mouseY = 0, targetMouseX = 0, targetMouseY = 0;
         let warpColorOverride = null;
@@ -132,6 +134,10 @@
         let questionsAnsweredCount = 0;
         let cachedCategories = null;
 
+        // GitHub Repository Constants for Direct Remote File Fetching
+        const GITHUB_API_TREE_URL = "https://api.github.com/repos/cmdrFRANKLY1/Resources/contents/RiddleMeThis";
+        const GITHUB_RAW_BASE_URL = "https://raw.githubusercontent.com/cmdrFRANKLY1/Resources/main/RiddleMeThis/";
+
         window.addEventListener('mousemove', (e) => {
             targetMouseX = (e.clientX - width / 2) * 0.05;
             targetMouseY = (e.clientY - height / 2) * 0.05;
@@ -140,8 +146,8 @@
         function resizeCanvas() {
             width = window.innerWidth;
             height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
             initParticles();
         }
 
@@ -191,7 +197,7 @@
                 if (this.x < -50 || this.x > width + 50 || this.y < -50 || this.y > height + 50) {
                     if (warpSpeed > 2) {
                         const angle = Math.random() * Math.PI * 2; const dist = Math.random() * (Math.min(width, height) * 0.15); 
-                        this.x = width / 2 + Math.cos(angle) * dist; this.y = width / 2 + Math.sin(angle) * dist;
+                        this.x = width / 2 + Math.cos(angle) * dist; this.y = height / 2 + Math.sin(angle) * dist;
                     } else if (warpSpeed < -2) {
                     } else {
                         if (this.x < -10) this.x = width + 10;
@@ -260,26 +266,35 @@
         const mainText = document.getElementById('main-text');
         
         function setupMainTextClick() {
+            if (!mainText) return;
             mainText.style.pointerEvents = 'auto';
-            mainText.onclick = () => {
+            mainText.style.opacity = '1';
+            mainText.style.transform = 'scale(1)';
+            
+            const handleStart = (e) => {
+                if (e) e.preventDefault();
                 if (isWarping) return;
                 isWarping = true;
-                mainText.style.opacity = 0;
+                
+                mainText.style.opacity = '0';
                 mainText.style.transform = 'scale(0.8)';
+                mainText.style.pointerEvents = 'none';
                 targetWarpSpeed = 40;
                 
                 setTimeout(() => {
                     mainText.textContent = "Pick a Category";
                     targetWarpSpeed = 0;
-                    mainText.style.opacity = 1;
+                    mainText.style.opacity = '1';
                     mainText.style.transform = 'scale(1) translateY(-20px)';
-                    mainText.style.pointerEvents = 'none';
                     
                     loadCategories().finally(() => {
                         setTimeout(() => { isWarping = false; }, 100);
                     });
                 }, 525);
             };
+
+            mainText.onclick = handleStart;
+            mainText.ontouchend = handleStart;
         }
         setupMainTextClick();
 
@@ -291,12 +306,16 @@
             if (cachedCategories) return cachedCategories;
             let files = [];
             try {
-                const response = await fetch('/api/topics');
-                if (!response.ok) throw new Error('Network response was not ok');
-                files = await response.json();
-                if (!Array.isArray(files) || files.length === 0) throw new Error('Empty array returned');
+                const response = await fetch(GITHUB_API_TREE_URL);
+                if (!response.ok) throw new Error('GitHub API rate limit or network error');
+                const data = await response.json();
+                if (Array.isArray(data)) {
+                    files = data.filter(item => item.type === 'file').map(item => item.name);
+                } else {
+                    throw new Error('Invalid GitHub directory response structure');
+                }
             } catch (error) {
-                console.warn("Primary API failed. Using local fallback files...", error);
+                console.warn("GitHub API fetch failed. Using fallback filenames...", error);
                 files = [
                     "topicRMT.IT_System_Integration.json",
                     "topicRMT.Linux_Terminal.json",
@@ -319,7 +338,7 @@
             if (files.length === 0) {
                 const btn = document.createElement('button');
                 btn.className = "pointer-events-auto px-6 py-4 bg-black/40 border border-gray-700 rounded-xl backdrop-blur-md text-white font-semibold tracking-wider hover:bg-gray-800/80 transition-all duration-300 hover:-translate-y-1 opacity-0 col-span-1 md:col-start-2";
-                btn.textContent = "Back (Failed to connect)";
+                btn.textContent = "Back (Failed to connect to GitHub)";
                 btn.style.animation = `fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.1s`;
                 btn.onclick = () => { returnToCategories(); };
                 grid.appendChild(btn);
@@ -410,12 +429,12 @@
             }
             
             try {
-                const response = await fetch(`../resources/riddleMeThis/${filename}`);
-                if (!response.ok) throw new Error('Failed to fetch Vercel JSON');
+                const response = await fetch(`${GITHUB_RAW_BASE_URL}${filename}`);
+                if (!response.ok) throw new Error('Failed to fetch JSON from GitHub raw storage');
                 const textData = await response.text();
                 questions = safeParseJSON(textData);
             } catch (error) {
-                console.warn("Vercel resource fetch failed. Using fallback questions...", error);
+                console.warn("GitHub raw fetch failed. Using fallback questions...", error);
                 questions = [
                     { frage: "Was bedeutet IP in der Netzwerktechnik?", richtigeAntwort: "Internet Protocol", falscheAntworten: ["Internal Port", "Interconnected Program", "Instant Packet"] },
                     { frage: "Welches Linux-Kommando listet Dateien auf?", richtigeAntwort: "ls", falscheAntworten: ["list", "show", "dirlist"] }
@@ -598,8 +617,8 @@
 
             if (mainText) {
                 mainText.textContent = "SKILL ISSUE";
-                mainText.className = "pointer-events-auto text-5xl md:text-7xl font-bold tracking-widest cursor-pointer transition-all duration-500 text-center drop-shadow-[0_0_25px_rgba(239,68,68,0.8)] text-red-500";
-                mainText.style.opacity = 1;
+                mainText.className = "pointer-events-auto text-5xl md:text-7xl font-bold tracking-widest cursor-pointer transition-all duration-500 text-center drop-shadow-[0_0_25px_rgba(239,68,68,0.8)] text-red-500 z-40 select-none";
+                mainText.style.opacity = '1';
                 mainText.style.transform = 'scale(1.2)';
                 mainText.style.pointerEvents = 'none';
             }
@@ -609,16 +628,13 @@
                 warpColorOverride = null;
 
                 setTimeout(() => {
-                    if (mainText) mainText.style.opacity = 0;
+                    if (mainText) mainText.style.opacity = '0';
                     if (mainText) mainText.style.transform = 'scale(0.8)';
 
                     setTimeout(() => {
                         if (mainText) {
                             mainText.textContent = "Are you ready?";
-                            mainText.className = "pointer-events-auto text-5xl md:text-7xl font-bold tracking-widest cursor-pointer transition-all duration-500 hover:scale-110 hover:text-blue-300 text-center drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] text-white";
-                            mainText.style.opacity = 1;
-                            mainText.style.transform = 'scale(1)';
-                            mainText.style.pointerEvents = 'auto';
+                            mainText.className = "pointer-events-auto text-5xl md:text-7xl font-bold tracking-widest cursor-pointer transition-all duration-500 hover:scale-110 hover:text-blue-300 text-center drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] text-white z-40 select-none";
                         }
                         setupMainTextClick();
                         setTimeout(() => { isWarping = false; }, 100);
@@ -672,5 +688,3 @@
         `;
         document.head.appendChild(style);
     </script>
-</body>
-</html>
