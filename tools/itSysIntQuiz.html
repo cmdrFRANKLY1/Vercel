@@ -136,11 +136,10 @@
                 </select>
             </div>
 
-            <button id="start-btn" disabled class="font-sans font-bold rounded-xl border border-slate-400 dark:border-slate-500 px-8 py-3 sm:px-10 sm:py-4 text-lg sm:text-xl tracking-widest btn-hover-fx bg-slate-800 text-white uppercase shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-3">
-                <span id="start-btn-text">[ LADE VERCEL JSON... ]</span>
-                <span id="start-btn-spinner" class="loading-spinner"></span>
+            <button id="start-btn" class="font-sans font-bold rounded-xl border border-slate-400 dark:border-slate-500 px-8 py-3 sm:px-10 sm:py-4 text-lg sm:text-xl tracking-widest btn-hover-fx bg-slate-800 text-white uppercase shadow-lg transition-all flex items-center gap-3">
+                <span id="start-btn-text">[ SPIEL STARTEN ]</span>
             </button>
-            <div id="total-questions-info" class="mt-6 font-mono text-xs sm:text-sm text-slate-500 dark:text-slate-400 tracking-wider">VERBINDE MIT VERCEL DEPLOYMENT...</div>
+            <div id="total-questions-info" class="mt-6 font-mono text-xs sm:text-sm text-green-500 dark:text-green-400 tracking-wider">📊 DATENBANK BEREIT</div>
         </div>
 
         <div id="game-ui" class="w-full flex-col min-h-full h-auto hidden py-2 sm:py-6">
@@ -246,8 +245,252 @@
     </div>
 
     <script>
-        let rawQuestions = [];
-        let clusters = [];
+        // ===== EMBEDDED JSON DATA =====
+        // Replace this with your actual JSON data
+        const rawQuestions = [
+            {
+                "frage": "Was ist die Hauptfunktion eines Betriebssystems?",
+                "richtigeAntwort": "Verwaltung von Hardware- und Software-Ressourcen",
+                "falscheAntworten": [
+                    "Erstellung von Grafiken",
+                    "Verwaltung von Netzwerkverbindungen",
+                    "Datenbankverwaltung"
+                ],
+                "kategorie": "Betriebssysteme"
+            },
+            {
+                "frage": "Welche Datenstruktur verwendet LIFO (Last In First Out)?",
+                "richtigeAntwort": "Stack",
+                "falscheAntworten": [
+                    "Queue",
+                    "Array",
+                    "Linked List"
+                ],
+                "kategorie": "Datenstrukturen"
+            },
+            {
+                "frage": "Was ist eine IP-Adresse?",
+                "richtigeAntwort": "Eine eindeutige Kennung für Geräte in einem Netzwerk",
+                "falscheAntworten": [
+                    "Ein physischer Speicherort",
+                    "Ein Gerätetyp",
+                    "Ein Netzwerkprotokoll"
+                ],
+                "kategorie": "Netzwerktechnik"
+            },
+            {
+                "frage": "Welcher Befehl wird in Linux verwendet, um Dateiberechtigungen zu ändern?",
+                "richtigeAntwort": "chmod",
+                "falscheAntworten": [
+                    "chown",
+                    "chgrp",
+                    "chdir"
+                ],
+                "kategorie": "Linux"
+            },
+            {
+                "frage": "Was bedeutet 'HTTP'?",
+                "richtigeAntwort": "HyperText Transfer Protocol",
+                "falscheAntworten": [
+                    "HyperText Transmission Protocol",
+                    "HighTech Transfer Protocol",
+                    "HyperTransfer Text Protocol"
+                ],
+                "kategorie": "Netzwerktechnik"
+            },
+            {
+                "frage": "Welche Programmiersprache wird häufig für Webentwicklung verwendet?",
+                "richtigeAntwort": "JavaScript",
+                "falscheAntworten": [
+                    "Python",
+                    "C++",
+                    "Java"
+                ],
+                "kategorie": "Programmierung"
+            },
+            {
+                "frage": "Was ist ein Algorithmus?",
+                "richtigeAntwort": "Eine Schritt-für-Schritt-Anleitung zur Problemlösung",
+                "falscheAntworten": [
+                    "Ein Computerprogramm",
+                    "Eine Datenbank",
+                    "Ein Betriebssystem"
+                ],
+                "kategorie": "Algorithmen"
+            },
+            {
+                "frage": "Welches Protokoll wird für E-Mail-Versand verwendet?",
+                "richtigeAntwort": "SMTP",
+                "falscheAntworten": [
+                    "POP3",
+                    "IMAP",
+                    "FTP"
+                ],
+                "kategorie": "Netzwerktechnik"
+            },
+            {
+                "frage": "Was ist Virtualisierung?",
+                "richtigeAntwort": "Erstellung virtueller Versionen von Hardware oder Software",
+                "falscheAntworten": [
+                    "Physische Serverinstallation",
+                    "Netzwerkverkabelung",
+                    "Datenbanksicherung"
+                ],
+                "kategorie": "Virtualisierung"
+            },
+            {
+                "frage": "Welcher Befehl zeigt den aktuellen Verzeichnispfad in Linux an?",
+                "richtigeAntwort": "pwd",
+                "falscheAntworten": [
+                    "ls",
+                    "cd",
+                    "dir"
+                ],
+                "kategorie": "Linux"
+            },
+            {
+                "frage": "Was ist die Funktion einer Firewall?",
+                "richtigeAntwort": "Überwachung und Kontrolle des Netzwerkverkehrs",
+                "falscheAntworten": [
+                    "Erstellung von Backups",
+                    "Installation von Software",
+                    "Datenbankoptimierung"
+                ],
+                "kategorie": "Netzwerktechnik"
+            },
+            {
+                "frage": "Welche Datenbank ist ein NoSQL-System?",
+                "richtigeAntwort": "MongoDB",
+                "falscheAntworten": [
+                    "PostgreSQL",
+                    "MySQL",
+                    "Oracle"
+                ],
+                "kategorie": "Datenbanken"
+            },
+            {
+                "frage": "Was bedeutet 'GUI'?",
+                "richtigeAntwort": "Graphical User Interface",
+                "falscheAntworten": [
+                    "General User Interface",
+                    "Graphic User Integration",
+                    "Global User Interface"
+                ],
+                "kategorie": "Allgemein"
+            },
+            {
+                "frage": "Welche Verschlüsselung gilt als sicher?",
+                "richtigeAntwort": "AES (Advanced Encryption Standard)",
+                "falscheAntworten": [
+                    "DES (Data Encryption Standard)",
+                    "ROT13",
+                    "Base64"
+                ],
+                "kategorie": "Sicherheit"
+            },
+            {
+                "frage": "Was ist die Hauptaufgabe eines Compilers?",
+                "richtigeAntwort": "Übersetzung von Quellcode in Maschinencode",
+                "falscheAntworten": [
+                    "Ausführung von Programmen",
+                    "Erstellung von Datenbanken",
+                    "Netzwerkverwaltung"
+                ],
+                "kategorie": "Programmierung"
+            },
+            {
+                "frage": "Welches Betriebssystem ist Open Source?",
+                "richtigeAntwort": "Linux",
+                "falscheAntworten": [
+                    "Windows",
+                    "macOS",
+                    "iOS"
+                ],
+                "kategorie": "Betriebssysteme"
+            },
+            {
+                "frage": "Was ist die Funktion von DNS?",
+                "richtigeAntwort": "Auflösung von Domainnamen in IP-Adressen",
+                "falscheAntworten": [
+                    "Erstellung von Websites",
+                    "Datenbankverwaltung",
+                    "Dateikomprimierung"
+                ],
+                "kategorie": "Netzwerktechnik"
+            },
+            {
+                "frage": "Welche Programmiersprache ist besonders für KI-Entwicklung beliebt?",
+                "richtigeAntwort": "Python",
+                "falscheAntworten": [
+                    "C#",
+                    "Ruby",
+                    "PHP"
+                ],
+                "kategorie": "Programmierung"
+            },
+            {
+                "frage": "Was ist ein Container in der IT?",
+                "richtigeAntwort": "Ein isolierter Bereich für Anwendungen und ihre Abhängigkeiten",
+                "falscheAntworten": [
+                    "Ein physischer Server",
+                    "Eine Datenbanktabelle",
+                    "Ein Netzwerkgerät"
+                ],
+                "kategorie": "DevOps"
+            },
+            {
+                "frage": "Welcher Befehl zeigt laufende Prozesse in Linux an?",
+                "richtigeAntwort": "ps",
+                "falscheAntworten": [
+                    "top",
+                    "kill",
+                    "ls"
+                ],
+                "kategorie": "Linux"
+            },
+            {
+                "frage": "Was ist die Bedeutung von 'REST' in der Softwareentwicklung?",
+                "richtigeAntwort": "Representational State Transfer - ein Architekturstil für APIs",
+                "falscheAntworten": [
+                    "Rapid Execution Service Tool",
+                    "Remote System Transfer",
+                    "Regular Expression Syntax Tool"
+                ],
+                "kategorie": "Programmierung"
+            },
+            {
+                "frage": "Welches Gerät wird für die Umwandlung von analog zu digital verwendet?",
+                "richtigeAntwort": "ADC (Analog-Digital-Converter)",
+                "falscheAntworten": [
+                    "DAC (Digital-Analog-Converter)",
+                    "CPU",
+                    "RAM"
+                ],
+                "kategorie": "Hardware"
+            },
+            {
+                "frage": "Was ist ein SQL-Injection-Angriff?",
+                "richtigeAntwort": "Einschleusen von schädlichem SQL-Code in eine Abfrage",
+                "falscheAntworten": [
+                    "Eine Methode zur Datenbankoptimierung",
+                    "Ein Netzwerkprotokoll",
+                    "Eine Firewall-Konfiguration"
+                ],
+                "kategorie": "Sicherheit"
+            },
+            {
+                "frage": "Welche Komponente ist für die Speicherung von Daten in einem Computer verantwortlich?",
+                "richtigeAntwort": "Festplatte oder SSD",
+                "falscheAntworten": [
+                    "CPU",
+                    "RAM",
+                    "Mainboard"
+                ],
+                "kategorie": "Hardware"
+            }
+        ];
+        // ===== END EMBEDDED JSON =====
+
         let questions = [];
         let currentQuestionIndex = 0;
         let score = 0;
@@ -262,91 +505,11 @@
         let minigameTimeLeft = 0;
         let isFirstQuestion = true;
         let isLoading = false;
+        let clusters = [];
 
         document.addEventListener('DOMContentLoaded', () => {
-            loadVercelDatabase();
+            initMenu();
         });
-
-        async function loadVercelDatabase() {
-            if (isLoading) return;
-            isLoading = true;
-            
-            const startBtn = document.getElementById('start-btn');
-            const infoEl = document.getElementById('total-questions-info');
-            const spinner = document.getElementById('start-btn-spinner');
-            const btnText = document.getElementById('start-btn-text');
-            
-            if (spinner) spinner.style.display = 'inline-block';
-            btnText.textContent = '[ LADE VERCEL JSON... ]';
-            infoEl.textContent = '⏳ LADE itSysIntQuestions.json VOM VERCEL SERVER...';
-            infoEl.className = 'mt-6 font-mono text-xs sm:text-sm text-slate-500 dark:text-slate-400 tracking-wider';
-            
-            // EXACT VERCEL SUBDIRECTORY PATHS MATCHING YOUR FOLDER STRUCTURE
-            const vercelPaths = [
-                './tools/itSysIntQuestions.json',
-                '/tools/itSysIntQuestions.json',
-                'tools/itSysIntQuestions.json',
-                './resources/itSysIntQuestions.json',
-                '/resources/itSysIntQuestions.json',
-                'resources/itSysIntQuestions.json',
-                './itSysIntQuestions.json',
-                '/itSysIntQuestions.json',
-                'itSysIntQuestions.json'
-            ];
-
-            let loaded = false;
-            let loadErrors = [];
-
-            for (let path of vercelPaths) {
-                try {
-                    infoEl.textContent = `🔍 PRÜFE VERCEL PFAD: ${path}`;
-                    console.log(`🔍 Fetching from Vercel: ${path}`);
-                    
-                    const res = await fetch(path, {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Cache-Control': 'no-cache'
-                        }
-                    });
-                    
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (Array.isArray(data) && data.length > 0) {
-                            rawQuestions = data;
-                            loaded = true;
-                            console.log(`✅ Loaded successfully from Vercel: ${path} (${rawQuestions.length} questions)`);
-                            infoEl.textContent = `✅ VERCEL JSON GELADEN: ${rawQuestions.length} FRAGEN (${path})`;
-                            infoEl.className = 'mt-6 font-mono text-xs sm:text-sm text-green-500 dark:text-green-400 tracking-wider';
-                            break;
-                        } else {
-                            loadErrors.push(`${path} (Leeres Array oder ungültiges JSON)`);
-                        }
-                    } else {
-                        loadErrors.push(`${path} (HTTP ${res.status})`);
-                    }
-                } catch (err) {
-                    loadErrors.push(`${path} (${err.message})`);
-                }
-            }
-
-            if (spinner) spinner.style.display = 'none';
-            isLoading = false;
-            
-            if (loaded && rawQuestions.length > 0) {
-                initMenu();
-            } else {
-                infoEl.textContent = '❌ FEHLER: itSysIntQuestions.json AUF VERCEL NICHT GEFUNDEN';
-                infoEl.className = 'mt-6 font-mono text-xs sm:text-sm text-red-500 dark:text-red-400 tracking-wider status-error';
-                infoEl.title = `Versuchte Vercel-Pfade:\n${loadErrors.join('\n')}`;
-                btnText.textContent = '[ ERNEUT VERSUCHEN ]';
-                startBtn.disabled = false;
-                startBtn.onclick = () => {
-                    rawQuestions = [];
-                    loadVercelDatabase();
-                };
-            }
-        }
 
         function extractCategories() {
             const uniqueCats = [...new Set(rawQuestions.map(q => q.kategorie).filter(Boolean))];
