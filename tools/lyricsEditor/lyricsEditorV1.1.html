@@ -1,0 +1,2355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lyrics Editor</title>
+    <!-- Premium Google Fonts for superior readability -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ----- STREAMING_CHUNK:Styling the dark mode layout and global styles... ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #121212;
+            color: #f0f0f0;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            letter-spacing: -0.015em;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+        body.dragging-active {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        :focus-visible {
+            outline: 2px solid #a2d2ff;
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+
+        header {
+            padding: 1rem 2rem;
+            background: #181818;
+            border-bottom: 1px solid #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+            flex-shrink: 0;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+        header h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #ffffff;
+        }
+
+        .header-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .btn-tool {
+            background: #222222;
+            color: #e0e0e0;
+            border: 1px solid #333333;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+        .btn-tool:hover {
+            background: #2a2a2a;
+            border-color: #444444;
+            color: #ffffff;
+        }
+        .btn-tool-save {
+            color: #a2d2ff;
+            border-color: rgba(162, 210, 255, 0.25);
+        }
+        .btn-tool-save:hover {
+            background: rgba(162, 210, 255, 0.12);
+            border-color: #a2d2ff;
+            color: #bfe3ff;
+        }
+        .btn-tool-clear {
+            color: #ffb7b2;
+            border-color: rgba(255, 183, 178, 0.25);
+        }
+        .btn-tool-clear:hover {
+            background: rgba(255, 183, 178, 0.12);
+            border-color: #ffb7b2;
+            color: #ffd1cf;
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .editor {
+            width: 50%;
+            min-width: 200px;
+            display: flex;
+            flex-direction: column;
+            background: #161616;
+            flex-shrink: 0;
+        }
+        .editor .label {
+            padding: 0.75rem 1.2rem;
+            background: #1e1e1e;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #b3b3b3;
+            border-bottom: 1px solid #2a2a2a;
+            user-select: none;
+        }
+        
+        .editor-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            background: transparent;
+        }
+        
+        .line-numbers {
+            padding: 1.2rem 0.25rem 1.2rem 0;
+            background: #111111;
+            color: #4e4e4e;
+            text-align: right;
+            font-family: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
+            font-size: 1rem;
+            line-height: 1.8;
+            user-select: none;
+            overflow: hidden;
+            border-right: 1px solid #2a2a2a;
+            width: 2.2rem;
+            min-width: 2.2rem;
+            max-width: 2.2rem;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .line-numbers div {
+            height: 1.8em;
+        }
+
+        .editor textarea {
+            flex: 1;
+            background: transparent;
+            color: #f5f5f5;
+            border: none;
+            padding: 1.2rem;
+            font-family: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
+            font-size: 1rem;
+            line-height: 1.8;
+            resize: none;
+            outline: none;
+            width: 100%;
+            user-select: text; 
+            white-space: pre; 
+            overflow-x: auto;
+            overflow-y: auto;
+        }
+        .editor textarea::placeholder {
+            color: #4a4a4a;
+        }
+
+        .editor-sub-bar {
+            padding: 0.75rem 1.2rem;
+            background: #131313;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            min-height: 44px;
+            user-select: none;
+            flex-shrink: 0;
+            border-top: 1px solid #222222;
+        }
+        .editor-hints-bar {
+            background: #151515;
+            padding: 0.6rem 1.2rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .sub-bar-label {
+            color: #ffffff;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .suggestion-badge {
+            background: #1a1a1a;
+            color: #ffffff;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.78rem;
+            font-family: 'JetBrains Mono', monospace;
+            border: 1px solid #2d2d2d;
+            display: inline-block;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+            cursor: pointer;
+        }
+        .suggestion-badge:hover, .suggestion-badge:focus-visible {
+            border-color: #ffffff;
+            color: #ffffff;
+            background: #222222;
+            outline: none;
+        }
+
+        .hint-badge {
+            background: #0d0d0d;
+            color: #c5c5c5;
+            border-radius: 6px;
+            padding: 3px 8px;
+            font-size: 0.75rem;
+            border: 1px solid #222222;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .hint-badge span {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .editor-status-bar {
+            padding: 0.5rem 1.5rem; 
+            background: #0d0d0d;
+            font-size: 0.8rem; 
+            color: #999999;
+            border-top: 1px solid #222222;
+            font-family: 'JetBrains Mono', monospace;
+            user-select: none;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 1rem;
+            width: 100%;
+            overflow: hidden; 
+        }
+        .editor-status-bar span {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        #letterCountsContainer {
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+            flex-grow: 1;
+            overflow-x: scroll; 
+            font-size: 0.75rem;
+            letter-spacing: -0.02em;
+            cursor: help; 
+            scroll-behavior: smooth;
+            -ms-overflow-style: none; 
+            scrollbar-width: none; 
+        }
+        #letterCountsContainer::-webkit-scrollbar {
+            display: none; 
+        }
+
+        .scroll-arrow-btn {
+            background: none;
+            border: none;
+            color: #444444;
+            cursor: pointer;
+            padding: 0 4px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: color 0.15s ease;
+        }
+        .scroll-arrow-btn:hover {
+            color: #ffffff;
+        }
+
+        .resizer {
+            background: #1c1c1c;
+            transition: background 0.15s ease;
+            position: relative;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+        .resizer:hover, .resizer.dragging {
+            background: rgba(255, 183, 178, 0.4);
+        }
+        .col-resizer {
+            width: 6px;
+            cursor: col-resize;
+            border-left: 1px solid #2a2a2a;
+            border-right: 1px solid #2a2a2a;
+            height: 100%;
+        }
+        .row-resizer {
+            height: 6px;
+            cursor: row-resize;
+            border-top: 1px solid #2a2a2a;
+            border-bottom: 1px solid #2a2a2a;
+            width: 100%;
+        }
+
+        .preview {
+            flex: 1;
+            min-width: 200px;
+            display: flex;
+            flex-direction: column;
+            background: #121212;
+            overflow: hidden;
+        }
+        .preview .label {
+            padding: 0.75rem 1.2rem;
+            background: #1e1e1e;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #b3b3b3;
+            border-bottom: 1px solid #2a2a2a;
+            user-select: none;
+        }
+        .preview .output {
+            flex: 1;
+            padding: 1.2rem;
+            font-family: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
+            font-size: 1rem;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-y: auto;
+            background: transparent;
+            color: #e5e5e5;
+            user-select: text;
+        }
+
+        .preview-word {
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.15s ease;
+            display: inline-block;
+        }
+        .preview-word:hover {
+            background-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .metrics-panel {
+            background: #161616;
+            display: flex;
+            flex-direction: column;
+            height: 330px; 
+            min-height: 190px;
+            flex-shrink: 0;
+            border-top: 1px solid #2a2a2a;
+            position: relative;
+            transition: min-height 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .metrics-header {
+            background: #1e1e1e;
+            padding: 0.4rem 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #2a2a2a;
+            user-select: none;
+            flex-shrink: 0;
+        }
+        .metrics-header .label-text {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #b3b3b3;
+        }
+        
+        .ableton-toggles {
+            display: flex;
+            background: #121212;
+            padding: 2px;
+            border-radius: 6px;
+            border: 1px solid #2a2a2a;
+            gap: 2px;
+        }
+        .btn-ableton {
+            background: transparent;
+            border: 1px solid transparent;
+            color: #666666;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            letter-spacing: 0.05em;
+        }
+        .btn-ableton:hover {
+            color: #b3b3b3;
+        }
+        .btn-ableton.active[data-target="timeline"] {
+            background: #252525;
+            color: #a2d2ff;
+            border-color: rgba(162, 210, 255, 0.3);
+        }
+        .btn-ableton.active[data-target="grids"] {
+            background: #252525;
+            color: #b5ead7;
+            border-color: rgba(181, 234, 215, 0.3);
+        }
+        .btn-ableton.active[data-target="stats"] {
+            background: #252525;
+            color: #fcf6bd;
+            border-color: rgba(252, 246, 189, 0.3);
+        }
+        .btn-ableton.active#toggleVowelLettersBtn {
+            background: #252525;
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .gimp-color-picker {
+            display: flex;
+            gap: 8px; 
+            align-items: center;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .gimp-square {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #1e1e1e;
+            border-radius: 4px;
+            position: relative; 
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+            cursor: pointer;
+        }
+        .gimp-square:hover {
+            transform: scale(1.15);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.6);
+        }
+        .gimp-square-syllables { background-color: #a2d2ff; z-index: 5; }
+        .gimp-square-words { background-color: #b5ead7; z-index: 3; }
+        .gimp-square-third { background-color: #fcf6bd; z-index: 1; }
+        .gimp-square.active-target {
+            border-color: #ffffff;
+            z-index: 10;
+        }
+        .gimp-square-random {
+            background: linear-gradient(135deg, #a2d2ff, #b5ead7, #fcf6bd);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #121212;
+            font-weight: bold;
+            z-index: 1;
+        }
+
+        .color-picker-popup {
+            position: absolute;
+            background: #222222;
+            border: 1px solid #444444;
+            border-radius: 8px;
+            padding: 8px;
+            z-index: 150;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+            display: none;
+        }
+        .color-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+        }
+        .color-picker-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: transform 0.1s ease;
+        }
+        .color-picker-dot:hover, .color-picker-dot:focus-visible {
+            transform: scale(1.2);
+            border-color: #ffffff;
+        }
+
+        .metrics-content {
+            padding: 1rem 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            flex: 1;
+            min-height: 0;
+        }
+        
+        .grids-row {
+            display: flex;
+            gap: 1.2rem;
+            flex: 1;
+            overflow-y: auto; 
+            min-height: 0; 
+        }
+        
+        .metrics-stats-row {
+            display: flex;
+            gap: 1.5rem;
+            flex-shrink: 0;
+            padding-top: 0.6rem;
+            border-top: 1px solid #222222;
+            background: #161616;
+        }
+        .metrics-stats-row .metric-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        @media (max-width: 1024px) {
+            .grids-row {
+                flex-direction: column;
+            }
+            .metrics-stats-row {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+
+        .metric-name {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #8c8c8c;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .metric-val-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #ffffff;
+            min-width: 60px;
+        }
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: #252525;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #a2d2ff; 
+            border-radius: 3px;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+        .grid-panel {
+            flex: 1;
+            background: #111111;
+            border: 1px solid #222222;
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            min-width: 220px;
+            min-height: 0; 
+        }
+        .grid-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .rhythm-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1; 
+            min-height: 0;
+            overflow-y: auto;
+            align-content: flex-start;
+        }
+
+        .rhythm-row {
+            display: flex;
+            gap: 6px;
+            min-height: 16px; 
+            align-items: center;
+            flex-wrap: wrap;
+            flex-shrink: 0; 
+        }
+        
+        .word-grid-container {
+            display: grid;
+            gap: 6px;
+            flex: 1; 
+            min-height: 0;
+            overflow: auto;
+            align-content: flex-start;
+            grid-auto-rows: 12px; 
+        }
+
+        .rhythm-tile {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            transition: background 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            user-select: none;
+            flex-shrink: 0; 
+        }
+        
+        .word-tile {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            transition: background 0.2s ease; 
+            flex-shrink: 0; 
+        }
+
+        .grid-desc {
+            font-size: 0.72rem;
+            color: #6c6c6c;
+            margin-top: auto;
+            line-height: 1.4;
+            padding-top: 0.4rem;
+        }
+
+        .output .rhyme-prefix { color: #e5e5e5; }
+        .output .rhyme-suffix { font-weight: 700; }
+
+        #definitionTooltip {
+            position: absolute;
+            display: none;
+            background: #1c1c1c;
+            border: 1px solid #444444;
+            border-radius: 8px;
+            padding: 10px 14px;
+            z-index: 1000;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.8);
+            max-width: 280px;
+            font-size: 0.8rem;
+            line-height: 1.45;
+            color: #f0f0f0;
+            pointer-events: none;
+            transition: opacity 0.15s ease;
+            opacity: 0;
+            user-select: text;
+        }
+
+        .custom-modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .custom-modal {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 14px;
+            padding: 1.8rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 1.3rem;
+            animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalFadeIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .modal-header {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.01em;
+        }
+        .modal-body {
+            font-size: 0.88rem;
+            color: #cccccc;
+            line-height: 1.5;
+        }
+        .modal-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+        .btn-modal {
+            padding: 0.6rem 1.2rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+        }
+        .btn-modal-cancel {
+            background: #252525;
+            color: #f0f0f0;
+            border: 1px solid #333333;
+        }
+        .btn-modal-cancel:hover { background: #2e2e2e; border-color: #444444; }
+        .btn-modal-confirm {
+            background: #ffb7b2;
+            color: #121212;
+            border: none;
+        }
+        .btn-modal-confirm:hover { background: #ffd1cf; }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #161616; }
+        ::-webkit-scrollbar-thumb { background: #333333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #444444; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <h1 id="headerTitle" data-i18n="title">Lyrics Editor</h1>
+    </div>
+    
+    <div class="header-toolbar">
+        <button id="toolSaveBtn" class="btn-tool btn-tool-save" aria-label="Save file" data-i18n="saveBtn">Save</button>
+        <button id="toolClearBtn" class="btn-tool btn-tool-clear" aria-label="Clear workspace" data-i18n="clearBtn">Clear</button>
+    </div>
+</header>
+
+<div class="container" id="mainContainer">
+    <div class="editor" id="editorPane">
+        <div class="label" data-i18n="editorLabel">Editor</div>
+        <div class="editor-container">
+            <div class="line-numbers" id="lineNumbers" aria-hidden="true"></div>
+            <textarea id="lyricsInput" placeholder="Write lyrics here to begin analysis (English or German)..." aria-label="Lyrics Input Area"></textarea>
+        </div>
+        
+        <div style="height: 1px; background-color: #2a2a2a; width: 100%; flex-shrink: 0;"></div>
+
+        <div class="editor-sub-bar" id="editorPredictionsBar">
+            <span class="sub-bar-label" id="predictionsLabel" data-i18n="predictions">Suggestions:</span>
+            <div id="predictionsList" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <span style="color: #555555; font-style: italic;" data-i18n="noWord">No word detected.</span>
+            </div>
+        </div>
+
+        <div style="height: 1px; background-color: #2a2a2a; width: 100%; flex-shrink: 0;"></div>
+
+        <div class="editor-sub-bar" id="editorRhymesBar">
+            <span class="sub-bar-label" id="rhymesLabel" data-i18n="rhymes">Rhymes:</span>
+            <div id="rhymesList" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <span style="color: #555555; font-style: italic;" data-i18n="noWord">No word detected.</span>
+            </div>
+        </div>
+
+        <div style="height: 1px; background-color: #2a2a2a; width: 100%; flex-shrink: 0;"></div>
+
+        <div class="editor-sub-bar" id="editorDefinitionsBar">
+            <span class="sub-bar-label" id="definitionsLabel" data-i18n="definition">Definition:</span>
+            <div id="definitionsList" style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; line-height: 1.4;">
+                <span style="color: #555555; font-style: italic;" data-i18n="noWord">No word detected.</span>
+            </div>
+        </div>
+
+        <div style="height: 1px; background-color: #2a2a2a; width: 100%; flex-shrink: 0;"></div>
+
+        <div class="editor-sub-bar editor-hints-bar" id="editorHintsBar">
+            <span class="sub-bar-label" data-i18n="theory">Theory:</span>
+            <div id="hintsList" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <div class="hint-badge" id="badgeRhyme" title="RHYME DENSITY (50% weight): Measures the percentage of words matching active phonetic endings."><span data-i18n="rhymeWeight">Rhyme Weight</span> (50%): <span id="hintRhyme">0</span> pts</div>
+                <div class="hint-badge" id="badgeCadence" title="CADENCE CONSISTENCY (35% weight): Evaluates line-by-line vowel count balance using standard deviation (σ)."><span data-i18n="cadenceVariance">Cadence Variance</span> (35%): <span id="hintCadence">0</span> pts</div>
+                <div class="hint-badge" id="badgeDiversity" title="VOCABULARY DIVERSITY (15% weight): Computed as Type-Token Ratio (unique words divided by total words)."><span data-i18n="vocabDiversity">Vocabulary Diversity</span> (15%): <span id="hintDiversity">0</span> pts</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="resizer col-resizer" id="colResizer" role="separator" aria-orientation="vertical"></div>
+
+    <div class="preview" id="previewPane">
+        <div class="label" data-i18n="previewLabel">Live Preview</div>
+        <div class="output" id="previewOutput" aria-live="polite"></div>
+        
+        <div class="resizer row-resizer" id="rowResizer" role="separator" aria-orientation="horizontal"></div>
+
+        <div class="metrics-panel" id="metricsPane">
+            <div class="metrics-header">
+                <span class="label-text" data-i18n="metricsTitle">📊 Flow Metrics & Density Map</span>
+                
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="ableton-toggles">
+                        <button id="toggleTimelineBtn" class="btn-ableton active" data-target="timeline" aria-pressed="true">PLOT</button>
+                        <button id="toggleGridsBtn" class="btn-ableton active" data-target="grids" aria-pressed="true">GRID</button>
+                        <button id="toggleStatsBtn" class="btn-ableton active" data-target="stats" aria-pressed="true">STATS</button>
+                    </div>
+                    
+                    <div style="width: 1px; height: 16px; background: #2a2a2a;"></div>
+
+                    <div class="gimp-color-picker" id="gimpColorPicker">
+                        <div class="gimp-square gimp-square-syllables active-target" id="sqSyllables" tabindex="0" role="button" aria-label="Change Vowels Line Color" title="Click to change Vowels line. Double click to reset."></div>
+                        <div class="gimp-square gimp-square-words" id="sqWords" tabindex="0" role="button" aria-label="Change Rhyme Curve Color" title="Click to change Rhyme curve. Double click to reset."></div>
+                        <div class="gimp-square gimp-square-third" id="sqThird" tabindex="0" role="button" aria-label="Change Words per Line Color" title="Click to change Words per Line curve. Double click to reset."></div>
+                        <div class="gimp-square gimp-square-random" id="btnRandomizeColors" tabindex="0" role="button" aria-label="Randomize Colors" title="Randomize all 3 flow-chart colors">🎲</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #141414; height: 64px; border-bottom: 1px solid #2a2a2a; position: relative; width: 100%; display: flex; flex-direction: column; justify-content: center; flex-shrink: 0;" id="timelinePlotContainer">
+                <canvas id="flowTimelineCanvas" style="width: 100%; height: 100%; display: block;"></canvas>
+                <div style="position: absolute; top: 6px; left: 12px; font-size: 0.72rem; font-weight: 600; pointer-events: auto; display: flex; gap: 16px; text-shadow: 0 1px 3px rgba(0,0,0,0.9); z-index: 10;">
+                    <label id="labelSylTimeline" style="color: #a2d2ff; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                        <input type="checkbox" id="showSylCheck" checked style="accent-color: #a2d2ff; cursor: pointer; margin: 0;">
+                        <span data-i18n="timelineVowels">● Vowels over Time</span>
+                    </label>
+                    <label id="labelRhymeTimeline" style="color: #b5ead7; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                        <input type="checkbox" id="showRhymeCheck" checked style="accent-color: #b5ead7; cursor: pointer; margin: 0;">
+                        <span data-i18n="timelineRhymes">■ Rhymes over Time</span>
+                    </label>
+                    <label id="labelWordsLineTimeline" style="color: #fcf6bd; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                        <input type="checkbox" id="showWordsLineCheck" checked style="accent-color: #fcf6bd; cursor: pointer; margin: 0;">
+                        <span data-i18n="timelineWordsPerLine">▲ Words per Line over Time</span>
+                    </label>
+                </div>
+                <div style="position: absolute; bottom: 4px; right: 12px; font-size: 0.65rem; color: #555555; pointer-events: none; text-transform: uppercase; font-weight: 600;" data-i18n="timelineProgression">
+                    Progression (Words) ➔
+                </div>
+            </div>
+            
+            <div class="metrics-content">
+                <div class="grids-row">
+                    <div class="grid-panel">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span class="grid-title" style="color: #ffffff;" data-i18n="gridVowelsTitle">Vowels</span>
+                            <button id="toggleVowelLettersBtn" class="btn-ableton active" style="font-size: 0.62rem; padding: 1px 6px;">LETTERS</button>
+                        </div>
+                        <div class="rhythm-grid" id="visualRhythmGrid"></div>
+                        <span class="grid-desc" data-i18n="gridVowelsDesc">Each tile represents a vowel. Colored tiles match rhymes.</span>
+                    </div>
+
+                    <div class="grid-panel">
+                        <span class="grid-title" style="color: #ffffff; margin-bottom: 4px; display: inline-block;" data-i18n="gridStructureTitle">Word Structure & Rhymes</span>
+                        <div class="word-grid-container" id="visualWordGrid"></div>
+                        <span class="grid-desc" data-i18n="gridStructureDesc">Rows map to lines. Blank slots fill shorter lines.</span>
+                    </div>
+                </div>
+
+                <div class="metrics-stats-row" id="metricsStatsRow">
+                    <div class="metric-item">
+                        <span class="metric-name" data-i18n="statAvgVowels">Avg. Vowels / Line</span>
+                        <div class="metric-val-wrapper">
+                            <span class="metric-value" id="avgSyllables">0.0</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="avgSyllablesBar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-name" data-i18n="statRhymeDensity">Rhyme Density</span>
+                        <div class="metric-val-wrapper">
+                            <span class="metric-value" id="rhymeDensity">0%</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="rhymeDensityBar" style="width: 0%; background-color: #ffb7b2;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="metric-item" style="flex: 1.2;">
+                        <span class="metric-name" data-i18n="statFlowScore">Live Lyric Flow Score</span>
+                        <div class="metric-val-wrapper">
+                            <span class="metric-value" id="lyricalFlowScore">0 (C)</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="flowScoreBar" style="width: 0%; background-color: #ffd1cf;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="color-picker-popup" id="colorPickerPopup" role="dialog" aria-label="Color Picker">
+                <div class="color-picker-grid" id="pickerGrid"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="editor-status-bar" id="editorStatusBar">
+    <div style="flex-shrink: 0; display: flex; gap: 0.8rem; align-items: center; font-weight: 500;">
+        <span data-i18n="statusBarLines">Lines:</span> <span id="infoLines" style="color: #ffffff;">0</span>
+        <span style="color: #333333; margin: 0 2px;">|</span>
+        <span data-i18n="statusBarWords">Words:</span> <span id="infoWords" style="color: #ffffff;">0</span>
+    </div>
+    <div style="color: #333333; flex-shrink: 0;">|</div>
+    <button class="scroll-arrow-btn" id="scrollLeftBtn" aria-label="Scroll left">◀</button>
+    <div id="letterCountsContainer">
+        <span style="color: #555555; font-style: italic;" data-i18n="noLetters">No letters.</span>
+    </div>
+    <button class="scroll-arrow-btn" id="scrollRightBtn" aria-label="Scroll right">▶</button>
+</div>
+
+<div class="custom-modal-backdrop" id="customModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="custom-modal">
+        <div class="modal-header" id="modalTitle">Confirm Action</div>
+        <div class="modal-body" id="modalDescription">Are you sure you want to proceed?</div>
+        <div class="modal-actions">
+            <button class="btn-modal btn-modal-cancel" id="btnModalCancel">Cancel</button>
+            <button class="btn-modal btn-modal-confirm" id="btnModalConfirm">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        "use strict";
+
+        // ----- Bilingual Offline Dictionary -----
+        const OFFLINE_DICT = {
+            // English samples
+            "rhyme": [1, "AYM", "correspondence of sound between words or endings of words", "noun"],
+            "time": [1, "AYM", "the indefinite continued progress of existence and events", "noun"],
+            "dime": [1, "AYM", "a ten-cent coin; a highly attractive person or perfect score", "noun"],
+            "chime": [1, "AYM", "a bell or sound of a bell ringing", "noun"],
+            "climb": [1, "AYM", "go upward, especially using one's hands and feet", "verb"],
+            "grime": [1, "AYM", "dirt ingrained on the surface of something", "noun"],
+            "prime": [1, "AYM", "of first importance; the state of greatest strength", "adjective"],
+            "light": [1, "AYT", "the natural agent that stimulates sight", "noun"],
+            "night": [1, "AYT", "the period of darkness in each twenty-four hours", "noun"],
+            "sight": [1, "AYT", "the faculty or power of seeing", "noun"],
+            "flight": [1, "AYT", "the action or process of flying", "noun"],
+            "flow": [1, "OW", "steady, continuous stream or fluid movement", "noun"],
+            "glow": [1, "OW", "give out steady light without flame", "verb"],
+            "show": [1, "OW", "allow or cause to be visible", "verb"],
+            "grow": [1, "OW", "undergo natural development by increasing in size", "verb"],
+            "beat": [1, "IY T", "strike repeatedly; a main rhythm in music", "noun"],
+            "heat": [1, "IY T", "high temperature; intensity of feeling", "noun"],
+            "street": [1, "IY T", "a public road in a city or town", "noun"],
+
+            // German samples
+            "nacht": [1, "ACHT", "die Zeit zwischen Sonnenuntergang und Sonnenaufgang", "Nomen"],
+            "macht": [1, "ACHT", "die Fähigkeit oder Befugnis, auf andere Einfluss auszuüben", "Nomen"],
+            "schlacht": [1, "ACHT", "ein größerer militärischer Kampf", "Nomen"],
+            "acht": [1, "ACHT", "die Kardinalzahl zwischen sieben und neun", "Zahlwort"],
+            "traum": [1, "OWM", "Abfolge von Bildern und Empfindungen im Schlaf", "Nomen"],
+            "raum": [1, "OWM", "Ausdehnung, Platz oder ein Zimmer", "Nomen"],
+            "baum": [1, "OWM", "eine große ausdauernde holzartige Pflanze", "Nomen"],
+            "schaum": [1, "OWM", "Ansammlung winziger Bläschen in oder auf Flüssigkeiten", "Nomen"],
+            "leben": [2, "EBEN", "der Zustand des Daseins von Lebewesen", "Nomen"],
+            "geben": [2, "EBEN", "jemandem etwas zukommen lassen", "Verb"],
+            "schweben": [2, "EBEN", "sich frei in der Luft oder im Wasser halten", "Verb"],
+            "beben": [2, "EBEN", "zittern oder erschüttern", "Verb"],
+            "licht": [1, "ICHT", "elektromagnetische Strahlung, die für das Auge sichtbar ist", "Nomen"],
+            "sicht": [1, "ICHT", "die Fähigkeit zu sehen oder die Sichtweite", "Nomen"],
+            "gesicht": [2, "ICHT", "die Vorderseite des menschlichen Kopfes", "Nomen"],
+            "welt": [1, "ELT", "die Erde zusammen mit allen Lebewesen", "Nomen"],
+            "geld": [1, "ELD", "allgemein anerkanntes Tauschmittel und Zahlungsmittel", "Nomen"],
+            "herz": [1, "ERZ", "das muskulöse Hohlorgan, das Blut durch den Körper pumpt", "Nomen"],
+            "schmerz": [1, "ERZ", "eine unangenehme Sinnes- und Gefühlsempfindung", "Nomen"]
+        };
+
+        const apiCache = {
+            rhymes: {},
+            defs: {}
+        };
+
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        // ----- DOM refs with Safe Null Guards -----
+        const input = document.getElementById('lyricsInput');
+        const output = document.getElementById('previewOutput');
+        const avgSyllablesVal = document.getElementById('avgSyllables');
+        const avgSyllablesBar = document.getElementById('avgSyllablesBar');
+        const rhymeDensityVal = document.getElementById('rhymeDensity');
+        const rhymeDensityBar = document.getElementById('rhymeDensityBar');
+        const rhythmGrid = document.getElementById('visualRhythmGrid');
+        const wordGrid = document.getElementById('visualWordGrid');
+        const lineNumbers = document.getElementById('lineNumbers');
+
+        const infoLines = document.getElementById('infoLines');
+        const infoWords = document.getElementById('infoWords');
+
+        const predictionsLabel = document.getElementById('predictionsLabel');
+        const predictionsList = document.getElementById('predictionsList');
+        const rhymesLabel = document.getElementById('rhymesLabel');
+        const rhymesList = document.getElementById('rhymesList');
+        const definitionsLabel = document.getElementById('definitionsLabel');
+        const definitionsList = document.getElementById('definitionsList');
+
+        const timelineCanvas = document.getElementById('flowTimelineCanvas');
+        const labelSylTimeline = document.getElementById('labelSylTimeline');
+        const labelRhymeTimeline = document.getElementById('labelRhymeTimeline');
+        const labelWordsLineTimeline = document.getElementById('labelWordsLineTimeline');
+        
+        const showSylCheck = document.getElementById('showSylCheck');
+        const showRhymeCheck = document.getElementById('showRhymeCheck');
+        const showWordsLineCheck = document.getElementById('showWordsLineCheck');
+
+        const lyricalFlowScore = document.getElementById('lyricalFlowScore');
+        const flowScoreBar = document.getElementById('flowScoreBar');
+        const hintRhyme = document.getElementById('hintRhyme');
+        const hintCadence = document.getElementById('hintCadence');
+        const hintDiversity = document.getElementById('hintDiversity');
+
+        const toolClearBtn = document.getElementById('toolClearBtn');
+        const toolSaveBtn = document.getElementById('toolSaveBtn');
+
+        const toggleTimelineBtn = document.getElementById('toggleTimelineBtn');
+        const toggleGridsBtn = document.getElementById('toggleGridsBtn');
+        const toggleStatsBtn = document.getElementById('toggleStatsBtn');
+        const toggleVowelLettersBtn = document.getElementById('toggleVowelLettersBtn');
+        const btnRandomizeColors = document.getElementById('btnRandomizeColors');
+        const timelinePlotContainer = document.getElementById('timelinePlotContainer');
+        const gridsRow = document.querySelector('.grids-row');
+        const metricsStatsRow = document.getElementById('metricsStatsRow');
+
+        const modalBackdrop = document.getElementById('customModalBackdrop');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalDescription = document.getElementById('modalDescription');
+        const btnModalCancel = document.getElementById('btnModalCancel');
+        const btnModalConfirm = document.getElementById('btnModalConfirm');
+
+        const sqSyllables = document.getElementById('sqSyllables');
+        const sqWords = document.getElementById('sqWords');
+        const sqThird = document.getElementById('sqThird');
+        const colorPickerPopup = document.getElementById('colorPickerPopup');
+        const pickerGrid = document.getElementById('pickerGrid');
+
+        const mainContainer = document.getElementById('mainContainer');
+        const editorPane = document.getElementById('editorPane');
+        const previewPane = document.getElementById('previewPane');
+        const metricsPane = document.getElementById('metricsPane');
+        const colResizer = document.getElementById('colResizer');
+        const rowResizer = document.getElementById('rowResizer');
+
+        const letterContainer = document.getElementById('letterCountsContainer');
+        const scrollLeftBtn = document.getElementById('scrollLeftBtn');
+        const scrollRightBtn = document.getElementById('scrollRightBtn');
+
+        let currentModalConfirmCallback = null;
+        let lastWordsList = [];
+        let lastKeyCounts = new Map();
+
+        let showTimeline = true;
+        let showGrids = true;
+        let showStats = true;
+        let showVowelLetters = true;
+        let savedMetricsPaneHeight = '330px';
+
+        // ----- Language Auto-Detection Engine -----
+        function detectLanguage(text) {
+            if (!text || !text.trim()) return 'en';
+            const lower = text.toLowerCase();
+            const germanChars = /[äöüß]/g;
+            const germanMatches = lower.match(germanChars);
+            const germanCount = germanMatches ? germanMatches.length : 0;
+
+            const germanStopWords = /\b(der|die|das|und|in|zu|den|von|mit|ist|des|auf|für|als|an|nach|wie|wird|auch|aus|er|hat|daß|sie|wurde|ein|eine|einen)\b/g;
+            const stopWordsMatches = lower.match(germanStopWords);
+            const stopWordsCount = stopWordsMatches ? stopWordsMatches.length : 0;
+
+            if (germanCount > 0 || stopWordsCount >= 2) {
+                return 'de';
+            }
+            return 'en';
+        }
+
+        let currentLang = 'en';
+        const detectedLangBadge = document.getElementById('detectedLangBadge');
+
+        const I18N = {
+            en: {
+                title: "Lyrics Editor",
+                saveBtn: "Save",
+                clearBtn: "Clear",
+                editorLabel: "Editor",
+                previewLabel: "Live Preview",
+                metricsTitle: "📊 Flow Metrics & Density Map",
+                predictions: "Suggestions:",
+                rhymes: "Rhymes:",
+                definition: "Definition:",
+                theory: "Theory:",
+                rhymeWeight: "Rhyme Weight",
+                cadenceVariance: "Cadence Variance",
+                vocabDiversity: "Vocabulary Diversity",
+                timelineVowels: "● Vowels over Time",
+                timelineRhymes: "■ Rhymes over Time",
+                timelineWordsPerLine: "▲ Words per Line over Time",
+                timelineProgression: "Progression (Words) ➔",
+                gridVowelsTitle: "Vowels",
+                gridVowelsDesc: "Each tile represents a vowel. Colored tiles match rhymes.",
+                gridStructureTitle: "Word Structure & Rhymes",
+                gridStructureDesc: "Rows map to lines. Blank slots fill shorter lines.",
+                statAvgVowels: "Avg. Vowels / Line",
+                statRhymeDensity: "Rhyme Density",
+                statFlowScore: "Live Lyric Flow Score",
+                statusBarLines: "Lines:",
+                statusBarWords: "Words:",
+                noWord: "No word detected.",
+                noLetters: "No letters.",
+                editorPlaceholder: "Write lyrics here to begin analysis (English or German)...",
+                clearModalTitle: "Clear Lyrics Workspace",
+                clearModalDesc: "Are you sure you want to delete all text from the editor? This action cannot be undone.",
+                saveModalTitle: "Save Lyrics File",
+                saveModalDesc: "Choose your preferred file export format:",
+                saveMarkdownBtn: "Markdown File",
+                saveTextBtn: "Simple Text File",
+                modalCancel: "Cancel",
+                modalConfirm: "Confirm",
+                unregistered: "unregistered",
+                offlineAcoustic: "Offline acoustic analysis",
+                noMatchAcoustic: "No matching acoustic ends found.",
+                noCatalogMatch: "No matching acoustic ends in offline catalog."
+            },
+            de: {
+                title: "Liedtexte Editor (German & English)",
+                saveBtn: "Speichern",
+                clearBtn: "Leeren",
+                editorLabel: "Editor",
+                previewLabel: "Live-Vorschau",
+                metricsTitle: "📊 Flow-Metriken & Dichtekarte",
+                predictions: "Vorschläge:",
+                rhymes: "Reime:",
+                definition: "Definition:",
+                theory: "Theorie:",
+                rhymeWeight: "Reim-Gewicht",
+                cadenceVariance: "Kadenz-Varianz",
+                vocabDiversity: "Wortschatz-Vielfalt",
+                timelineVowels: "● Vokale im Zeitverlauf",
+                timelineRhymes: "■ Reime im Zeitverlauf",
+                timelineWordsPerLine: "▲ Wörter pro Zeile",
+                timelineProgression: "Verlauf (Wörter) ➔",
+                gridVowelsTitle: "Vokale",
+                gridVowelsDesc: "Jedes Feld repräsentiert einen Vokal. Farbige Felder markieren Reime.",
+                gridStructureTitle: "Wortstruktur & Reime",
+                gridStructureDesc: "Zeilen entsprechen dem Text. Lücken füllen kürzere Zeilen.",
+                statAvgVowels: "Ø Vokale / Zeile",
+                statRhymeDensity: "Reimdichte",
+                statFlowScore: "Live Lyric Flow Score",
+                statusBarLines: "Zeilen:",
+                statusBarWords: "Wörter:",
+                noWord: "Kein Wort erkannt.",
+                noLetters: "Keine Buchstaben.",
+                editorPlaceholder: "Schreibe hier deine Liedtexte (Englisch oder Deutsch)...",
+                clearModalTitle: "Arbeitsbereich leeren",
+                clearModalDesc: "Möchtest du den gesamten Text löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+                saveModalTitle: "Liedtext speichern",
+                saveModalDesc: "Wähle dein bevorzugtes Dateiformat für den Export:",
+                saveMarkdownBtn: "Markdown-Datei",
+                saveTextBtn: "Einfache Textdatei",
+                modalCancel: "Abbrechen",
+                modalConfirm: "Bestätigen",
+                unregistered: "nicht registriert",
+                offlineAcoustic: "Offline-akustische Analyse",
+                noMatchAcoustic: "Keine passenden Reimenden gefunden.",
+                noCatalogMatch: "Keine passenden Reime im Offline-Katalog."
+            }
+        };
+        function openConfirmModal(titleText, bodyText, onConfirm, confirmText = null) {
+            if (!modalBackdrop || !modalTitle || !modalDescription) return;
+            modalTitle.innerText = titleText;
+            modalDescription.innerText = bodyText;
+            const confirmBtn = document.getElementById('btnModalConfirm');
+            if (confirmBtn && confirmText) {
+                confirmBtn.innerText = confirmText;
+            }
+            modalBackdrop.style.display = 'flex';
+            currentModalConfirmCallback = onConfirm;
+        }
+
+        function closeConfirmModal() {
+            if (modalBackdrop) modalBackdrop.style.display = 'none';
+            currentModalConfirmCallback = null;
+            const confirmBtn = document.getElementById('btnModalConfirm');
+            if (confirmBtn) confirmBtn.innerText = I18N[currentLang].modalConfirm;
+        }
+
+        function updateUILanguage(lang) {
+            currentLang = lang;
+            const detectedLangBadge = document.getElementById('detectedLangBadge');
+            if (detectedLangBadge) {
+                detectedLangBadge.innerText = `AUTO: ${lang.toUpperCase()}`;
+                detectedLangBadge.style.color = lang === 'de' ? '#b5ead7' : '#a2d2ff';
+            }
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (I18N[lang] && I18N[lang][key]) {
+                    el.innerText = I18N[lang][key];
+                }
+            });
+            const headerTitle = document.getElementById('headerTitle');
+            if (headerTitle) headerTitle.innerText = I18N[lang].title;
+            if (toolSaveBtn) toolSaveBtn.innerText = I18N[lang].saveBtn;
+            if (toolClearBtn) toolClearBtn.innerText = I18N[lang].clearBtn;
+            if (input) input.placeholder = I18N[lang].editorPlaceholder;
+        }
+
+        // ----- Keyboard accessibility helper -----
+        function triggerClickOnEnter(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.currentTarget.click();
+            }
+        }
+
+        [sqSyllables, sqWords, sqThird, btnRandomizeColors].forEach(el => {
+            if (el) el.addEventListener('keydown', triggerClickOnEnter);
+        });
+
+        // ----- Drag and Resize Logic -----
+        let activeResizer = null;
+
+        if (colResizer) {
+            colResizer.addEventListener('mousedown', startHorizontalDrag);
+            colResizer.addEventListener('touchstart', startHorizontalDrag, { passive: true });
+        }
+        if (rowResizer) {
+            rowResizer.addEventListener('mousedown', startVerticalDrag);
+            rowResizer.addEventListener('touchstart', startVerticalDrag, { passive: true });
+        }
+
+        function startHorizontalDrag(e) {
+            activeResizer = 'horizontal';
+            if (colResizer) colResizer.classList.add('dragging');
+            document.body.classList.add('dragging-active');
+            
+            const event = e.touches ? e.touches[0] : e;
+            const startX = event.clientX;
+            const startWidth = editorPane ? editorPane.getBoundingClientRect().width : 400;
+
+            function drag(e) {
+                if (activeResizer !== 'horizontal') return;
+                const currentEvent = e.touches ? e.touches[0] : e;
+                const deltaX = currentEvent.clientX - startX;
+                const containerWidth = mainContainer ? mainContainer.getBoundingClientRect().width : window.innerWidth;
+                const newWidth = Math.max(200, Math.min(containerWidth - 200, startWidth + deltaX));
+                if (editorPane) editorPane.style.width = `${newWidth}px`;
+                redrawTimeline();
+            }
+
+            function stopDrag() {
+                activeResizer = null;
+                if (colResizer) colResizer.classList.remove('dragging');
+                document.body.classList.remove('dragging-active');
+                window.removeEventListener('mousemove', drag);
+                window.removeEventListener('mouseup', stopDrag);
+                window.removeEventListener('touchmove', drag);
+                window.removeEventListener('touchend', stopDrag);
+            }
+
+            window.addEventListener('mousemove', drag);
+            window.addEventListener('mouseup', stopDrag);
+            window.addEventListener('touchmove', drag, { passive: true });
+            window.addEventListener('touchend', stopDrag);
+        }
+
+        function startVerticalDrag(e) {
+            activeResizer = 'vertical';
+            if (rowResizer) rowResizer.classList.add('dragging');
+            document.body.classList.add('dragging-active');
+
+            const event = e.touches ? e.touches[0] : e;
+            const startY = event.clientY;
+            const startHeight = metricsPane ? metricsPane.getBoundingClientRect().height : 330;
+
+            function drag(e) {
+                if (activeResizer !== 'vertical') return;
+                const currentEvent = e.touches ? e.touches[0] : e;
+                const deltaY = currentEvent.clientY - startY;
+                const containerHeight = previewPane ? previewPane.getBoundingClientRect().height : window.innerHeight;
+                const newHeight = Math.max(190, Math.min(containerHeight - 100, startHeight - deltaY));
+                if (metricsPane) metricsPane.style.height = `${newHeight}px`;
+                redrawTimeline();
+            }
+
+            function stopDrag() {
+                activeResizer = null;
+                if (rowResizer) rowResizer.classList.remove('dragging');
+                document.body.classList.remove('dragging-active');
+                window.removeEventListener('mousemove', drag);
+                window.removeEventListener('mouseup', stopDrag);
+                window.removeEventListener('touchmove', drag);
+                window.removeEventListener('touchend', stopDrag);
+            }
+
+            window.addEventListener('mousemove', drag);
+            window.addEventListener('mouseup', stopDrag);
+            window.addEventListener('touchmove', drag, { passive: true });
+            window.addEventListener('touchend', stopDrag);
+        }
+
+        // ----- Line Numbers Sync -----
+        function updateLineNumbers() {
+            if (!input || !lineNumbers) return;
+            const lines = input.value.split('\n');
+            const lineCount = Math.max(1, lines.length);
+            let numbersHtml = '';
+            for (let i = 1; i <= lineCount; i++) {
+                numbersHtml += `<div>${i}</div>`;
+            }
+            lineNumbers.innerHTML = numbersHtml;
+            syncScroll();
+        }
+
+        function syncScroll() {
+            if (input && lineNumbers) lineNumbers.scrollTop = input.scrollTop;
+        }
+
+        if (input) input.addEventListener('scroll', syncScroll);
+
+        // ----- Theme Configuration -----
+        let selectedSyllableColor = '#a2d2ff';
+        let selectedWordColor = '#b5ead7';
+        let selectedThirdColor = '#fcf6bd';
+        let activeSelectionTarget = null;
+
+        function hexToRgba(hex, alpha) {
+            hex = hex.replace('#', '');
+            if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        const PALETTE = ['#FF2D55', '#00FF66', '#00D2FF', '#FFCC00', '#FF9500', '#AF52DE', '#FF3B30', '#00E5FF', '#E5A4F4', '#FF5E3A', '#007AFF', '#CCFF00', '#E0FE00', '#B57CFF', '#00FFC4'];
+        let colorIndex = 0;
+        const rhymeColorMap = new Map();
+
+        function getColorForRhyme(key) {
+            if (!rhymeColorMap.has(key)) {
+                const color = PALETTE[colorIndex % PALETTE.length];
+                colorIndex++;
+                rhymeColorMap.set(key, color);
+            }
+            return rhymeColorMap.get(key);
+        }
+
+        function populateColorPickerGrid() {
+            if (!pickerGrid) return;
+            pickerGrid.innerHTML = '';
+            PALETTE.forEach(color => {
+                const dot = document.createElement('div');
+                dot.className = 'color-picker-dot';
+                dot.style.backgroundColor = color;
+                dot.setAttribute('tabindex', '0');
+                dot.setAttribute('role', 'button');
+                dot.setAttribute('aria-label', `Select color ${color}`);
+                
+                dot.addEventListener('click', () => selectColor(color));
+                dot.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectColor(color); }
+                });
+                pickerGrid.appendChild(dot);
+            });
+        }
+
+        function openColorPicker(target, element, e) {
+            e.stopPropagation();
+            activeSelectionTarget = target;
+            if (sqSyllables) sqSyllables.classList.remove('active-target');
+            if (sqWords) sqWords.classList.remove('active-target');
+            if (sqThird) sqThird.classList.remove('active-target');
+            if (element) element.classList.add('active-target');
+            
+            const headerRect = document.getElementById('gimpColorPicker').getBoundingClientRect();
+            const panelRect = metricsPane ? metricsPane.getBoundingClientRect() : { top: 0 };
+            if (colorPickerPopup) {
+                colorPickerPopup.style.display = 'block';
+                colorPickerPopup.style.right = `${window.innerWidth - headerRect.right}px`;
+                colorPickerPopup.style.top = `${headerRect.bottom - panelRect.top + 6}px`;
+            }
+        }
+
+        function selectColor(color) {
+            if (activeSelectionTarget === 'syllables') {
+                selectedSyllableColor = color;
+                if (sqSyllables) sqSyllables.style.backgroundColor = color;
+                if (avgSyllablesBar) avgSyllablesBar.style.backgroundColor = color;
+                if (labelSylTimeline) labelSylTimeline.style.color = color;
+                if (showSylCheck) showSylCheck.style.accentColor = color;
+            } else if (activeSelectionTarget === 'words') {
+                selectedWordColor = color;
+                if (sqWords) sqWords.style.backgroundColor = color;
+                if (rhymeDensityBar) rhymeDensityBar.style.backgroundColor = color;
+                if (labelRhymeTimeline) labelRhymeTimeline.style.color = color;
+                if (showRhymeCheck) showRhymeCheck.style.accentColor = color;
+            } else if (activeSelectionTarget === 'third') {
+                selectedThirdColor = color;
+                if (sqThird) sqThird.style.backgroundColor = color;
+                if (labelWordsLineTimeline) labelWordsLineTimeline.style.color = color;
+                if (showWordsLineCheck) showWordsLineCheck.style.accentColor = color;
+            }
+            if (colorPickerPopup) colorPickerPopup.style.display = 'none';
+            debouncedMetricsAndAPI();
+        }
+
+        if (sqSyllables) {
+            sqSyllables.addEventListener('dblclick', (e) => { e.stopPropagation(); selectColor('#a2d2ff'); });
+            sqSyllables.addEventListener('click', (e) => openColorPicker('syllables', sqSyllables, e));
+        }
+        if (sqWords) {
+            sqWords.addEventListener('dblclick', (e) => { e.stopPropagation(); selectColor('#b5ead7'); });
+            sqWords.addEventListener('click', (e) => openColorPicker('words', sqWords, e));
+        }
+        if (sqThird) {
+            sqThird.addEventListener('dblclick', (e) => { e.stopPropagation(); selectColor('#fcf6bd'); });
+            sqThird.addEventListener('click', (e) => openColorPicker('third', sqThird, e));
+        }
+        document.addEventListener('click', () => { if (colorPickerPopup) colorPickerPopup.style.display = 'none'; });
+        if (colorPickerPopup) colorPickerPopup.addEventListener('click', (e) => { e.stopPropagation(); });
+
+        // ----- Linguistics & Syllables Engine (Bilingual) -----
+        function getSyllableCount(word) {
+            const clean = word.toLowerCase().replace(/[^a-zäöüß']/g, '');
+            if (OFFLINE_DICT[clean]) return OFFLINE_DICT[clean][0];
+
+            if (currentLang === 'de') {
+                return countGermanSyllables(word);
+            } else {
+                return countSyllablesLocalFallback(word);
+            }
+        }
+
+        function getRhymeKey(word) {
+            const clean = word.toLowerCase().replace(/[^a-zäöüß']/g, '');
+            if (OFFLINE_DICT[clean]) return OFFLINE_DICT[clean][1];
+
+            if (currentLang === 'de') {
+                return getGermanRhymeKey(word);
+            } else {
+                return getRhymeKeyLocalFallback(word);
+            }
+        }
+
+        function countGermanSyllables(word) {
+            const cleaned = word.toLowerCase().replace(/[^a-zäöüß]/g, '');
+            if (cleaned.length <= 3) return 1;
+            const vowels = cleaned.match(/[aeiouyäöü]{1,2}/g);
+            return vowels ? vowels.length : 1;
+        }
+
+        function getGermanRhymeKey(word) {
+            const lower = word.toLowerCase().replace(/[^a-zäöüß]/g, '');
+            const vowels = 'aeiouyäöü';
+            let lastVowelIdx = -1;
+            for (let i = lower.length - 1; i >= 0; i--) {
+                if (vowels.includes(lower[i])) { lastVowelIdx = i; break; }
+            }
+            if (lastVowelIdx === -1) {
+                return word.slice(-2).toUpperCase();
+            }
+            return lower.slice(lastVowelIdx).toUpperCase();
+        }
+
+        function getRhymeKeyLocalFallback(word) {
+            const lower = word.toLowerCase();
+            const vowels = 'aeiouy';
+            let effective = lower;
+            if (lower.length > 1 && lower.endsWith('e') && !vowels.includes(lower[lower.length - 2])) {
+                effective = lower.slice(0, -1);
+            }
+            let lastVowelIdx = -1;
+            for (let i = effective.length - 1; i >= 0; i--) {
+                if (vowels.includes(effective[i])) { lastVowelIdx = i; break; }
+            }
+            if (lastVowelIdx === -1) {
+                if (word.length >= 2 && /[a-z]/i.test(word.slice(-2))) return word.slice(-2).toLowerCase();
+                return word.toLowerCase();
+            }
+            return word.slice(lastVowelIdx).toUpperCase();
+        }
+
+        function countSyllablesLocalFallback(word) {
+            let cleaned = word.toLowerCase().replace(/[^a-z]/g, '');
+            if (cleaned.length <= 3) return 1;
+            cleaned = cleaned.replace(/(?:es|ed|(?<!g)es|(?<![aeiouy])e)$/, '');
+            cleaned = cleaned.replace(/^y/, '');
+            const vowels = cleaned.match(/[aeiouy]{1,2}/g);
+            let count = vowels ? vowels.length : 1;
+            if (cleaned.endsWith('le') && cleaned.length > 2 && !/[aeiou]le$/.test(cleaned)) count++;
+            return count;
+        }
+
+        // Integrated Datamuse + Offline Predictions
+        async function fetchEditorRhymes(word) {
+            if (!word || !rhymesList || !rhymesLabel) return;
+            
+            const cleanWord = word.trim().toLowerCase().replace(/[^a-zäöüß']/g, '');
+            if (!cleanWord) return;
+            
+            rhymesLabel.innerHTML = `${I18N[currentLang].rhymes.replace(':', '')} <span style="color: #ffffff; font-weight:600;">"${cleanWord}"</span>:`;
+            
+            const targetRhymeKey = getRhymeKey(cleanWord);
+            const offlineMatches = Object.keys(OFFLINE_DICT).filter(w => OFFLINE_DICT[w][1] === targetRhymeKey && w !== cleanWord);
+            
+            renderSuggestionBadges(rhymesList, offlineMatches.slice(0, 8), cleanWord);
+            
+            if (currentLang === 'de') {
+                if (offlineMatches.length === 0) {
+                    rhymesList.innerHTML = `<span style="color: #555555; font-style: italic; font-size: 0.72rem;">${I18N[currentLang].noCatalogMatch}</span>`;
+                }
+                return;
+            }
+
+            try {
+                let apiMatches = apiCache.rhymes[cleanWord];
+                if (!apiMatches) {
+                    const res = await fetch(`https://api.datamuse.com/words?rel_rhy=${cleanWord}&max=10`);
+                    const data = await res.json();
+                    apiMatches = data.map(d => d.word);
+                    apiCache.rhymes[cleanWord] = apiMatches;
+                }
+                const allMatches = [...new Set([...offlineMatches, ...apiMatches])].slice(0, 10);
+                if (allMatches.length > 0) {
+                    renderSuggestionBadges(rhymesList, allMatches, cleanWord);
+                } else {
+                    rhymesList.innerHTML = `<span style="color: #555555; font-style: italic; font-size: 0.72rem;">${I18N[currentLang].noMatchAcoustic}</span>`;
+                }
+            } catch (err) {
+                if (offlineMatches.length === 0) {
+                    rhymesList.innerHTML = `<span style="color: #555555; font-style: italic; font-size: 0.72rem;">${I18N[currentLang].noCatalogMatch}</span>`;
+                }
+            }
+        }
+
+        async function fetchEditorDefinitions(word) {
+            if (!word || !definitionsList || !definitionsLabel) return;
+
+            const cleanWord = word.trim().toLowerCase().replace(/[^a-zäöüß']/g, '');
+            if (!cleanWord) return;
+
+            definitionsLabel.innerHTML = `${I18N[currentLang].definition.replace(':', '')} <span style="color: #ffffff; font-weight:600;">"${cleanWord}"</span>:`;
+
+            if (OFFLINE_DICT[cleanWord]) {
+                const [_, __, def, pos] = OFFLINE_DICT[cleanWord];
+                definitionsList.innerHTML = `
+                    <span style="color: #ffffff; font-style: italic; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; margin-right: 4px;">[${pos}]</span>
+                    <span style="color: #f0f0f0; font-size: 0.75rem;">${escapeHTML(def)}</span>
+                `;
+                return;
+            }
+
+            if (currentLang === 'de') {
+                const estSyl = getSyllableCount(cleanWord);
+                const estRhyme = getRhymeKey(cleanWord);
+                definitionsList.innerHTML = `
+                    <span style="color: #ffffff; font-style: italic; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; margin-right: 4px;">[${I18N[currentLang].unregistered}]</span>
+                    <span style="color: #a5a5a5; font-size: 0.72rem;">${I18N[currentLang].offlineAcoustic}: Vokale: <strong style="color: #f0f0f0;">${estSyl}</strong>, Reim-Endung: <strong style="color: #f0f0f0;">"${estRhyme}"</strong></span>
+                `;
+                return;
+            }
+
+            try {
+                let apiDef = apiCache.defs[cleanWord];
+                if (apiDef === undefined) {
+                    const res = await fetch(`https://api.datamuse.com/words?sp=${cleanWord}&md=d&max=1`);
+                    const data = await res.json();
+                    if (data.length > 0 && data[0].defs) {
+                        apiDef = data[0].defs[0];
+                    } else {
+                        apiDef = null;
+                    }
+                    apiCache.defs[cleanWord] = apiDef;
+                }
+
+                if (apiDef) {
+                    const parts = apiDef.split('\t');
+                    const pos = parts.length > 1 ? parts[0] : 'word';
+                    const def = parts.length > 1 ? parts[1] : apiDef;
+                    
+                    definitionsList.innerHTML = `
+                        <span style="color: #ffffff; font-style: italic; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; margin-right: 4px;">[${pos}]</span>
+                        <span style="color: #f0f0f0; font-size: 0.75rem;">${escapeHTML(def)}</span>
+                    `;
+                    return;
+                }
+            } catch (err) {}
+
+            const estSyl = getSyllableCount(cleanWord);
+            const estRhyme = getRhymeKey(cleanWord);
+            definitionsList.innerHTML = `
+                <span style="color: #ffffff; font-style: italic; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; margin-right: 4px;">[${I18N[currentLang].unregistered}]</span>
+                <span style="color: #a5a5a5; font-size: 0.72rem;">${I18N[currentLang].offlineAcoustic}: Vowels: <strong style="color: #f0f0f0;">${estSyl}</strong>, Rhyme Key: <strong style="color: #f0f0f0;">"${estRhyme}"</strong></span>
+            `;
+        }
+
+        function renderSuggestionBadges(container, wordsArray, cleanWord) {
+            if (!container) return;
+            container.innerHTML = wordsArray.map(item => {
+                return `<span class="suggestion-badge" tabindex="0" role="button" aria-label="Insert ${escapeHTML(item)}" data-word="${escapeHTML(item)}">${escapeHTML(item)}</span>`;
+            }).join(' ');
+
+            container.querySelectorAll('.suggestion-badge').forEach(badge => {
+                badge.addEventListener('click', () => insertPrediction(badge.getAttribute('data-word')));
+                badge.addEventListener('keydown', triggerClickOnEnter);
+            });
+        }
+
+        function insertPrediction(completedWord) {
+            if (!input) return;
+            const val = input.value;
+            const caretPos = input.selectionStart;
+            const textBeforeCaret = val.substring(0, caretPos);
+            const textAfterCaret = val.substring(caretPos);
+
+            const match = textBeforeCaret.match(/[\wäöüß']+/i);
+            if (match) {
+                const partialWord = match[0];
+                const startReplaceIdx = caretPos - partialWord.length;
+                input.value = val.substring(0, startReplaceIdx) + completedWord + " " + textAfterCaret;
+                const newCaretPos = startReplaceIdx + completedWord.length + 1;
+                input.setSelectionRange(newCaretPos, newCaretPos);
+            } else {
+                input.value = textBeforeCaret + completedWord + " " + textAfterCaret;
+                const newCaretPos = caretPos + completedWord.length + 1;
+                input.setSelectionRange(newCaretPos, newCaretPos);
+            }
+
+            input.focus();
+            updateLivePreviewText();
+            debouncedMetricsAndAPI();
+        }
+
+        function triggerContextLookups() {
+            if (!input) return;
+            const val = input.value;
+            updateUILanguage(detectLanguage(val));
+
+            let lyricTarget = "";
+            const selection = val.substring(input.selectionStart, input.selectionEnd).trim();
+            if (selection) {
+                lyricTarget = selection;
+            } else {
+                const caretPos = input.selectionStart;
+                const textBeforeCaret = val.substring(0, caretPos);
+                const wordsBefore = textBeforeCaret.match(/[\wäöüß']+/gi);
+                if (wordsBefore && wordsBefore.length > 0) {
+                    lyricTarget = wordsBefore[wordsBefore.length - 1];
+                }
+            }
+            
+            if (lyricTarget) {
+                fetchEditorRhymes(lyricTarget);
+                fetchEditorDefinitions(lyricTarget);
+            } else {
+                if (rhymesList) rhymesList.innerHTML = `<span style="color: #555555; font-style: italic;">${I18N[currentLang].noWord}</span>`;
+                if (rhymesLabel) rhymesLabel.innerHTML = I18N[currentLang].rhymes;
+                if (definitionsList) definitionsList.innerHTML = `<span style="color: #555555; font-style: italic;">${I18N[currentLang].noWord}</span>`;
+                if (definitionsLabel) definitionsLabel.innerHTML = I18N[currentLang].definition;
+            }
+        }
+
+        const debouncedMetricsAndAPI = debounce(() => {
+            calculateMetricsAndGrids();
+            triggerContextLookups();
+        }, 300);
+
+        function updateLivePreviewText() {
+            if (!input || !output) return;
+            const text = input.value;
+            updateUILanguage(detectLanguage(text));
+            
+            if (toolSaveBtn) {
+                if (!text.trim()) {
+                    toolSaveBtn.style.opacity = "0.4";
+                    toolSaveBtn.style.cursor = "not-allowed";
+                    toolSaveBtn.style.pointerEvents = "none";
+                } else {
+                    toolSaveBtn.style.opacity = "1";
+                    toolSaveBtn.style.cursor = "pointer";
+                    toolSaveBtn.style.pointerEvents = "auto";
+                }
+            }
+
+            const lines = text.split('\n');
+            const processedLines = lines.map(line => processLine(line));
+            
+            output.innerHTML = processedLines.join('\n');
+            updateLineNumbers();
+        }
+
+        if (input) {
+            input.addEventListener('input', () => {
+                updateLivePreviewText();
+                debouncedMetricsAndAPI();
+            });
+            
+            input.addEventListener('select', debouncedMetricsAndAPI);
+            input.addEventListener('click', debouncedMetricsAndAPI);
+            input.addEventListener('keyup', (e) => {
+                if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+                    debouncedMetricsAndAPI();
+                }
+            });
+        }
+
+        // ----- Word Definitions floating popover -----
+        let hoverTimeout = null;
+        let activeHoverWord = null;
+        const tooltip = document.createElement('div');
+        tooltip.id = 'definitionTooltip';
+        document.body.appendChild(tooltip);
+
+        if (output) {
+            output.addEventListener('mouseover', (e) => {
+                const wordEl = e.target.closest('.preview-word');
+                if (wordEl) {
+                    const word = wordEl.getAttribute('data-word');
+                    if (activeHoverWord === word) return;
+                    
+                    clearTimeout(hoverTimeout);
+                    activeHoverWord = word;
+                    hoverTimeout = setTimeout(() => showDefinitionTooltip(word, wordEl), 1500); 
+                }
+            });
+
+            output.addEventListener('mouseout', (e) => {
+                const wordEl = e.target.closest('.preview-word');
+                if (wordEl) {
+                    const related = e.relatedTarget;
+                    if (!related || !wordEl.contains(related)) {
+                        clearTimeout(hoverTimeout);
+                        activeHoverWord = null;
+                        hideDefinitionTooltip();
+                    }
+                }
+            });
+            
+            output.addEventListener('scroll', () => {
+                clearTimeout(hoverTimeout);
+                activeHoverWord = null;
+                hideDefinitionTooltip();
+            });
+        }
+
+        async function showDefinitionTooltip(word, targetEl) {
+            const cleanWord = word.trim().toLowerCase().replace(/[^a-zäöüß']/g, '');
+            if (!cleanWord || !tooltip) return;
+
+            tooltip.style.display = 'block';
+            const rect = targetEl.getBoundingClientRect();
+            let leftPos = rect.left + window.scrollX;
+            let topPos = rect.bottom + window.scrollY + 6;
+            
+            if (leftPos + 280 > window.innerWidth) leftPos = window.innerWidth - 290;
+            
+            tooltip.style.left = `${Math.max(10, leftPos)}px`;
+            tooltip.style.top = `${topPos}px`;
+            tooltip.style.opacity = '1';
+
+            if (OFFLINE_DICT[cleanWord]) {
+                const [_, __, def, pos] = OFFLINE_DICT[cleanWord];
+                tooltip.innerHTML = `<strong style="color: #ffffff;">${cleanWord}</strong> <span style="color: #ffffff; font-style: italic; font-size: 0.65rem; text-transform: uppercase; margin-left: 2px;">[${pos}]</span><br/><span style="color: #cccccc;">${escapeHTML(def)}</span>`;
+            } else if (apiCache.defs[cleanWord]) {
+                 const apiDef = apiCache.defs[cleanWord];
+                 const parts = apiDef.split('\t');
+                 const pos = parts.length > 1 ? parts[0] : 'word';
+                 const def = parts.length > 1 ? parts[1] : apiDef;
+                 tooltip.innerHTML = `<strong style="color: #ffffff;">${cleanWord}</strong> <span style="color: #ffffff; font-style: italic; font-size: 0.65rem; text-transform: uppercase; margin-left: 2px;">[${pos}]</span><br/><span style="color: #cccccc;">${escapeHTML(def)}</span>`;
+            } else {
+                const estSyl = getSyllableCount(cleanWord);
+                const estRhyme = getRhymeKey(cleanWord);
+                tooltip.innerHTML = `<strong style="color: #ffffff;">${cleanWord}</strong> <span style="color: #ffffff; font-style: italic; font-size: 0.65rem; text-transform: uppercase; margin-left: 2px;">[${I18N[currentLang].unregistered}]</span><br/><span style="color: #a5a5a5;">Acoustic estimation: Vokale: ${estSyl}, Reim-Endung: "${estRhyme}"</span>`;
+            }
+        }
+
+        function hideDefinitionTooltip() {
+            if (!tooltip) return;
+            tooltip.style.display = 'none';
+            tooltip.style.opacity = '0';
+        }
+
+        function openConfirmModal(titleText, bodyText, onConfirm) {
+            if (!modalBackdrop || !modalTitle || !modalDescription) return;
+            modalTitle.innerText = titleText;
+            modalDescription.innerText = bodyText;
+            modalBackdrop.style.display = 'flex';
+            currentModalConfirmCallback = onConfirm;
+        }
+
+        function closeConfirmModal() {
+            if (modalBackdrop) modalBackdrop.style.display = 'none';
+            currentModalConfirmCallback = null;
+        }
+
+        if (btnModalCancel) btnModalCancel.addEventListener('click', closeConfirmModal);
+        if (btnModalConfirm) btnModalConfirm.addEventListener('click', () => {
+            if (currentModalConfirmCallback) currentModalConfirmCallback();
+            closeConfirmModal();
+        });
+        if (modalBackdrop) {
+            modalBackdrop.addEventListener('click', (e) => {
+                if (e.target === modalBackdrop) closeConfirmModal();
+            });
+        }
+
+        if (toolClearBtn) {
+            toolClearBtn.addEventListener('click', () => {
+                if (!input || !input.value.trim()) return;
+                openConfirmModal(I18N[currentLang].clearModalTitle, I18N[currentLang].clearModalDesc, () => {
+                    input.value = "";
+                    updateLivePreviewText();
+                    debouncedMetricsAndAPI();
+                });
+            });
+        }
+
+        if (scrollLeftBtn) scrollLeftBtn.addEventListener('click', () => { if (letterContainer) letterContainer.scrollBy({ left: -120, behavior: 'smooth' }); });
+        if (scrollRightBtn) scrollRightBtn.addEventListener('click', () => { if (letterContainer) letterContainer.scrollBy({ left: 120, behavior: 'smooth' }); });
+
+        if (showSylCheck) showSylCheck.addEventListener('change', debouncedMetricsAndAPI);
+        if (showRhymeCheck) showRhymeCheck.addEventListener('change', debouncedMetricsAndAPI);
+        if (showWordsLineCheck) showWordsLineCheck.addEventListener('change', debouncedMetricsAndAPI);
+
+        if (toolSaveBtn) {
+            toolSaveBtn.addEventListener('click', () => {
+                if (!input) return;
+                const text = input.value;
+                if (!text.trim()) return; 
+
+                openConfirmModal(
+                    I18N[currentLang].saveModalTitle, 
+                    I18N[currentLang].saveModalDesc, 
+                    () => {
+                        const lines = text.split('\n');
+                        const mdLines = lines.map(line => {
+                            const tokens = line.match(/[\wäöüß']+|[^\wäöüß']/gi) || [];
+                            return tokens.map(token => {
+                                if (/[a-zäöüß]/i.test(token)) {
+                                    const key = getRhymeKey(token);
+                                    const color = getColorForRhyme(key);
+                                    const lowerToken = token.toLowerCase();
+                                    const lowerKey = key.toLowerCase();
+                                    let suffixStart = lowerToken.lastIndexOf(lowerKey);
+                                    if (suffixStart === -1) suffixStart = 0;
+                                    const prefix = token.slice(0, suffixStart);
+                                    const suffix = token.slice(suffixStart);
+                                    return `${prefix}<span style="color:${color};font-weight:bold;">${suffix}</span>`;
+                                } else {
+                                    return token;
+                                }
+                            }).join('');
+                        });
+                        const markdownContent = mdLines.join('\n\n');
+                        downloadFile(markdownContent, 'lyrics_flow_sheet.md', 'text/markdown;charset=utf-8');
+                        window.closeConfirmModalOverride();
+                    },
+                    I18N[currentLang].saveMarkdownBtn
+                );
+
+                const modalActions = document.querySelector('.modal-actions');
+                if (modalActions && !document.getElementById('btnModalTextExport')) {
+                    const textBtn = document.createElement('button');
+                    textBtn.id = 'btnModalTextExport';
+                    textBtn.className = 'btn-modal btn-modal-confirm';
+                    textBtn.style.backgroundColor = '#252525';
+                    textBtn.style.color = '#f0f0f0';
+                    textBtn.style.border = '1px solid #333333';
+                    textBtn.innerText = I18N[currentLang].saveTextBtn;
+                    textBtn.addEventListener('click', () => {
+                        downloadFile(text, 'lyrics_flow_sheet.txt', 'text/plain;charset=utf-8');
+                        window.closeConfirmModalOverride();
+                    });
+                    modalActions.insertBefore(textBtn, modalActions.firstChild);
+                }
+            });
+        }
+
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        const originalCloseModal = closeConfirmModal;
+        window.closeConfirmModalOverride = function() {
+            const textBtn = document.getElementById('btnModalTextExport');
+            if (textBtn) textBtn.remove();
+            originalCloseModal();
+        };
+
+        if (btnModalCancel) {
+            btnModalCancel.removeEventListener('click', closeConfirmModal);
+            btnModalCancel.addEventListener('click', window.closeConfirmModalOverride);
+        }
+        if (modalBackdrop) {
+            modalBackdrop.removeEventListener('click', closeConfirmModal);
+            modalBackdrop.addEventListener('click', (e) => {
+                if (e.target === modalBackdrop) window.closeConfirmModalOverride();
+            });
+        }
+
+        function processLine(line) {
+            const tokens = line.match(/[\wäöüß']+|[^\wäöüß']/gi) || [];
+            return tokens.map(token => {
+                if (/[a-zäöüß]/i.test(token)) {
+                    const key = getRhymeKey(token);
+                    const color = getColorForRhyme(key); 
+                    const lowerToken = token.toLowerCase();
+                    const lowerKey = key.toLowerCase();
+                    let suffixStart = lowerToken.lastIndexOf(lowerKey);
+                    if (suffixStart === -1) suffixStart = 0;
+                    const prefix = token.slice(0, suffixStart);
+                    const suffix = token.slice(suffixStart);
+                    const cleanDataAttr = token.replace(/['"]/g, ''); 
+                    return `<span class="preview-word" data-word="${escapeHTML(cleanDataAttr)}" tabindex="0" role="button"><span class="rhyme-prefix">${escapeHTML(prefix)}</span><span class="rhyme-suffix" style="color:${color}">${escapeHTML(suffix)}</span></span>`;
+                } else {
+                    return escapeHTML(token);
+                }
+            }).join('');
+        }
+
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function updateTimelineSize() {
+            if (!timelinePlotContainer || !timelineCanvas) return;
+            const rect = timelinePlotContainer.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            
+            timelineCanvas.style.width = `${rect.width}px`;
+            timelineCanvas.style.height = `64px`;
+            
+            timelineCanvas.width = rect.width * dpr;
+            timelineCanvas.height = 64 * dpr;
+            
+            const ctx = timelineCanvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            
+            timelineCanvas._plotW = rect.width;
+            timelineCanvas._plotH = 64;
+        }
+
+        function redrawTimeline() {
+            if (!showTimeline || !timelineCanvas) return;
+            updateTimelineSize();
+            drawTimelinePlot(lastWordsList, lastKeyCounts);
+        }
+
+        function drawTimelinePlot(wordsList, keyCounts) {
+            if (!timelineCanvas) return;
+            const ctx = timelineCanvas.getContext('2d');
+            const width = timelineCanvas._plotW || 300;
+            const height = timelineCanvas._plotH || 64;
+
+            ctx.clearRect(0, 0, width, height);
+
+            if (!wordsList || wordsList.length < 2) {
+                ctx.fillStyle = '#666';
+                ctx.font = '11px "JetBrains Mono"';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(currentLang === 'de' ? 'Beginne zu schreiben, um Vokale & Reime zu analysieren...' : 'Begin writing to plot vowels & rhymes patterns in real-time...', width / 2, height / 2);
+                return;
+            }
+
+            const padX = 15;
+            const padY = 12;
+            const plotW = width - (padX * 2);
+            const plotH = height - (padY * 2);
+            const pointsCount = wordsList.length;
+            const xStep = plotW / (pointsCount - 1);
+
+            const syllables = wordsList.map(w => getSyllableCount(w));
+            const rhymes = wordsList.map(w => {
+                const key = getRhymeKey(w);
+                return keyCounts.get(key) >= 2 ? 1 : 0;
+            });
+
+            const smoothRhymes = [];
+            for (let i = 0; i < pointsCount; i++) {
+                let sum = 0, count = 0;
+                for (let offset = -2; offset <= 2; offset++) {
+                    const idx = i + offset;
+                    if (idx >= 0 && idx < pointsCount) { sum += rhymes[idx]; count++; }
+                }
+                smoothRhymes.push(sum / count);
+            }
+
+            const lines = input ? input.value.split('\n') : [];
+            const wordsPerLineTimeline = [];
+            lines.forEach(line => {
+                const lineWords = (line.match(/[\wäöüß']+/gi) || []).filter(tok => /[a-zäöüß]/i.test(tok));
+                lineWords.forEach(() => wordsPerLineTimeline.push(lineWords.length));
+            });
+
+            const maxSyl = Math.max(...syllables, 4);
+            const maxLineWords = Math.max(...wordsPerLineTimeline, 4);
+
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padX, padY); ctx.lineTo(width - padX, padY);
+            ctx.moveTo(padX, padY + (plotH / 2)); ctx.lineTo(width - padX, padY + (plotH / 2));
+            ctx.moveTo(padX, padY + plotH); ctx.lineTo(width - padX, padY + plotH);
+            ctx.stroke();
+
+            if (showRhymeCheck && showRhymeCheck.checked) {
+                ctx.fillStyle = hexToRgba(selectedWordColor, 0.12);
+                ctx.beginPath();
+                ctx.moveTo(padX, padY + plotH);
+                for (let i = 0; i < pointsCount; i++) {
+                    ctx.lineTo(padX + (i * xStep), padY + plotH - (smoothRhymes[i] * plotH));
+                }
+                ctx.lineTo(padX + plotW, padY + plotH);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = selectedWordColor;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                for (let i = 0; i < pointsCount; i++) {
+                    const x = padX + (i * xStep);
+                    const y = padY + plotH - (smoothRhymes[i] * plotH);
+                    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+
+            if (showSylCheck && showSylCheck.checked) {
+                ctx.strokeStyle = selectedSyllableColor;
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                for (let i = 0; i < pointsCount; i++) {
+                    const x = padX + (i * xStep);
+                    const y = padY + plotH - ((syllables[i] / maxSyl) * plotH);
+                    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+
+                if (pointsCount < 40) {
+                    ctx.fillStyle = selectedSyllableColor;
+                    for (let i = 0; i < pointsCount; i++) {
+                        ctx.beginPath();
+                        ctx.arc(padX + (i * xStep), padY + plotH - ((syllables[i] / maxSyl) * plotH), 3.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+
+            if (showWordsLineCheck && showWordsLineCheck.checked && wordsPerLineTimeline.length === pointsCount) {
+                ctx.strokeStyle = selectedThirdColor;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                for (let i = 0; i < pointsCount; i++) {
+                    const x = padX + (i * xStep);
+                    const y = padY + plotH - ((wordsPerLineTimeline[i] / maxLineWords) * plotH);
+                    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+
+        function updateMetricsLayoutState() {
+            if (timelinePlotContainer) timelinePlotContainer.style.display = showTimeline ? 'flex' : 'none';
+            if (gridsRow) gridsRow.style.display = showGrids ? 'flex' : 'none';
+            if (metricsStatsRow) metricsStatsRow.style.display = showStats ? 'flex' : 'none';
+
+            if (toggleTimelineBtn) toggleTimelineBtn.classList.toggle('active', showTimeline);
+            if (toggleGridsBtn) toggleGridsBtn.classList.toggle('active', showGrids);
+            if (toggleStatsBtn) toggleStatsBtn.classList.toggle('active', showStats);
+            
+            if (toggleTimelineBtn) toggleTimelineBtn.setAttribute('aria-pressed', showTimeline);
+            if (toggleGridsBtn) toggleGridsBtn.setAttribute('aria-pressed', showGrids);
+            if (toggleStatsBtn) toggleStatsBtn.setAttribute('aria-pressed', showStats);
+
+            if (metricsPane) {
+                if (!showTimeline && !showGrids && !showStats) {
+                    if (metricsPane.style.height !== '86px' && metricsPane.style.height !== '') savedMetricsPaneHeight = metricsPane.style.height;
+                    metricsPane.style.height = '86px';
+                    metricsPane.style.minHeight = '86px';
+                    if (rowResizer) rowResizer.style.display = 'none';
+                } else {
+                    metricsPane.style.minHeight = '190px';
+                    if (rowResizer) rowResizer.style.display = 'block';
+                    if (metricsPane.style.height === '86px') metricsPane.style.height = savedMetricsPaneHeight;
+                }
+            }
+            redrawTimeline();
+        }
+
+        function randomizeAllFlowColors() {
+            const PASTEL_PALETTE = ['#a2d2ff', '#ffb7b2', '#b5ead7', '#fcf6bd', '#ffdac1', '#dec0f1', '#e2cfea', '#e2f0cb'];
+            const shuffled = [...PASTEL_PALETTE].sort(() => 0.5 - Math.random());
+            
+            selectedSyllableColor = shuffled[0];
+            selectedWordColor = shuffled[1];
+            selectedThirdColor = shuffled[2];
+
+            if (sqSyllables) sqSyllables.style.backgroundColor = selectedSyllableColor;
+            if (sqWords) sqWords.style.backgroundColor = selectedWordColor;
+            if (sqThird) sqThird.style.backgroundColor = selectedThirdColor;
+
+            if (avgSyllablesBar) avgSyllablesBar.style.backgroundColor = selectedSyllableColor;
+            if (rhymeDensityBar) rhymeDensityBar.style.backgroundColor = selectedWordColor;
+            if (labelSylTimeline) labelSylTimeline.style.color = selectedSyllableColor;
+            if (labelRhymeTimeline) labelRhymeTimeline.style.color = selectedWordColor;
+            if (labelWordsLineTimeline) labelWordsLineTimeline.style.color = selectedThirdColor;
+            if (showSylCheck) showSylCheck.style.accentColor = selectedSyllableColor;
+            if (showRhymeCheck) showRhymeCheck.style.accentColor = selectedWordColor;
+            if (showWordsLineCheck) showWordsLineCheck.style.accentColor = selectedThirdColor;
+
+            debouncedMetricsAndAPI();
+        }
+
+        if (toggleTimelineBtn) toggleTimelineBtn.addEventListener('click', () => { showTimeline = !showTimeline; updateMetricsLayoutState(); });
+        if (toggleGridsBtn) toggleGridsBtn.addEventListener('click', () => { showGrids = !showGrids; updateMetricsLayoutState(); });
+        if (toggleStatsBtn) toggleStatsBtn.addEventListener('click', () => { showStats = !showStats; updateMetricsLayoutState(); });
+        if (toggleVowelLettersBtn) {
+            toggleVowelLettersBtn.addEventListener('click', () => {
+                showVowelLetters = !showVowelLetters;
+                toggleVowelLettersBtn.classList.toggle('active', showVowelLetters);
+                debouncedMetricsAndAPI();
+            });
+        }
+        if (btnRandomizeColors) btnRandomizeColors.addEventListener('click', (e) => { e.stopPropagation(); randomizeAllFlowColors(); });
+
+        function calculateMetricsAndGrids() {
+            if (!input) return;
+            const text = input.value;
+            const lines = text.split('\n');
+            const wordsList = [];
+            let totalSyllables = 0;
+            const keyCounts = new Map();
+            const linesOfWords = [];
+            let maxWords = 0;
+            const lineSyllableCounts = [];
+
+            lines.forEach(line => {
+                const tokens = line.match(/[\wäöüß']+/gi) || [];
+                const lineWords = tokens.filter(tok => /[a-zäöüß]/i.test(tok));
+                linesOfWords.push(lineWords);
+
+                if (lineWords.length > maxWords) maxWords = lineWords.length;
+
+                let lineSyl = 0;
+                lineWords.forEach(tok => {
+                    wordsList.push(tok);
+                    const key = getRhymeKey(tok);
+                    keyCounts.set(key, (keyCounts.get(key) || 0) + 1);
+                    const syl = getSyllableCount(tok);
+                    totalSyllables += syl;
+                    lineSyl += syl;
+                });
+                if (lineWords.length > 0) lineSyllableCounts.push(lineSyl);
+            });
+
+            lastWordsList = wordsList;
+            lastKeyCounts = keyCounts;
+
+            if (infoLines) infoLines.innerText = lines.length;
+            if (infoWords) infoWords.innerText = wordsList.length;
+
+            const upperText = text.toUpperCase();
+            const letterFreq = {};
+            for (let i = 0; i < upperText.length; i++) {
+                const char = upperText[i];
+                if ((char >= 'A' && char <= 'Z') || ['Ä','Ö','Ü','ß'].includes(char)) {
+                    letterFreq[char] = (letterFreq[char] || 0) + 1;
+                }
+            }
+            const activeSortedLetters = Object.keys(letterFreq).sort();
+            
+            if (letterContainer) {
+                if (activeSortedLetters.length === 0) {
+                    letterContainer.innerHTML = `<span style="color: #555555; font-style: italic;">${I18N[currentLang].noLetters}</span>`;
+                    letterContainer.removeAttribute('title');
+                } else {
+                    letterContainer.innerHTML = activeSortedLetters.map(letter => `<span style="color: #999999; font-weight: 500;">${letter}:</span><span style="color: #ffffff; font-weight: 600;">${letterFreq[letter]}</span>`).join(' <span style="color: #222222;">|</span> ');
+                    letterContainer.title = "Active Letter Frequencies:\n" + activeSortedLetters.map(letter => `  ${letter}: ${letterFreq[letter]}`).join('\n');
+                }
+            }
+
+            const validLinesCount = lines.filter(l => l.trim().length > 0).length;
+            const avgSyl = validLinesCount > 0 ? (totalSyllables / validLinesCount) : 0;
+            if (avgSyllablesVal) avgSyllablesVal.innerText = avgSyl.toFixed(1);
+            if (avgSyllablesBar) avgSyllablesBar.style.width = `${Math.min((avgSyl / 20) * 100, 100)}%`;
+
+            let rhymedWordsCount = 0;
+            wordsList.forEach(w => {
+                if (keyCounts.get(getRhymeKey(w)) >= 2) rhymedWordsCount++;
+            });
+
+            const density = wordsList.length > 0 ? Math.round((rhymedWordsCount / wordsList.length) * 100) : 0;
+            if (rhymeDensityVal) rhymeDensityVal.innerText = `${density}%`;
+            if (rhymeDensityBar) rhymeDensityBar.style.width = `${density}%`;
+
+            const uniqueWords = new Set(wordsList.map(w => w.toLowerCase()));
+            const lexicalDensity = wordsList.length > 0 ? (uniqueWords.size / wordsList.length) * 100 : 0;
+
+            let stdDev = 0;
+            if (lineSyllableCounts.length > 0) {
+                const meanSyl = lineSyllableCounts.reduce((a, b) => a + b, 0) / lineSyllableCounts.length;
+                const variance = lineSyllableCounts.reduce((sum, val) => sum + Math.pow(val - meanSyl, 2), 0) / lineSyllableCounts.length;
+                stdDev = Math.sqrt(variance);
+            }
+            const cadenceConsistency = lineSyllableCounts.length > 1 ? Math.max(0, 100 - (stdDev * 15)) : 100;
+
+            const rhymeContrib = wordsList.length > 0 ? Math.round(0.50 * density) : 0;
+            const cadenceContrast = wordsList.length > 0 ? Math.round(0.35 * cadenceConsistency) : 0;
+            const lexicalContrib = wordsList.length > 0 ? Math.round(0.15 * lexicalDensity) : 0;
+
+            const flowScoreVal = rhymeContrib + cadenceContrast + lexicalContrib;
+            let grade = "D-Class";
+            if (flowScoreVal >= 90) grade = "S-Class";
+            else if (flowScoreVal >= 75) grade = "A-Class";
+            else if (flowScoreVal >= 55) grade = "B-Class";
+            else if (flowScoreVal >= 35) grade = "C-Class";
+
+            if (lyricalFlowScore) lyricalFlowScore.innerText = wordsList.length > 0 ? `${flowScoreVal} (${grade})` : "0 (C)";
+            if (flowScoreBar) flowScoreBar.style.width = `${flowScoreVal}%`;
+            if (hintRhyme) hintRhyme.innerText = rhymeContrib;
+            if (hintCadence) hintCadence.innerText = cadenceContrast;
+            if (hintDiversity) hintDiversity.innerText = lexicalContrib;
+
+            drawTimelinePlot(wordsList, keyCounts);
+
+            if (rhythmGrid) {
+                rhythmGrid.innerHTML = '';
+                if (wordsList.length === 0) {
+                    rhythmGrid.innerHTML = `<span style="font-size:0.75rem; color:#555555; font-style:italic;">${currentLang === 'de' ? 'Warte auf Eingaben...' : 'Awaiting inputs...'}</span>`;
+                } else {
+                    lines.forEach((line) => {
+                        const lineWords = (line.match(/[\wäöüß']+/gi) || []).filter(tok => /[a-zäöüß]/i.test(tok));
+                        const rowDiv = document.createElement('div');
+                        rowDiv.className = 'rhythm-row';
+
+                        if (lineWords.length > 0) {
+                            lineWords.forEach(w => {
+                                const vowelsInWord = w.match(/[aeiouyäöü]/gi) || [];
+                                const key = getRhymeKey(w);
+                                const isRhymed = keyCounts.get(key) >= 2;
+
+                                vowelsInWord.forEach((vowelChar) => {
+                                    const tile = document.createElement('span');
+                                    tile.className = 'rhythm-tile';
+                                    const shouldHighlight = isRhymed && ['a', 'e', 'i', 'o', 'u', 'ä', 'ö', 'ü'].includes(vowelChar.toLowerCase());
+                                    tile.style.backgroundColor = shouldHighlight ? getColorForRhyme(key) : 'rgba(255, 255, 255, 0.08)';
+                                    tile.style.color = shouldHighlight ? '#121212' : '#6c6c6c';
+                                    tile.innerText = showVowelLetters ? vowelChar.toUpperCase() : '';
+                                    tile.title = `${w} (Vokal: ${vowelChar.toUpperCase()})`;
+                                    rowDiv.appendChild(tile);
+                                });
+                            });
+                        } else {
+                            rowDiv.style.visibility = 'hidden';
+                        }
+                        rhythmGrid.appendChild(rowDiv);
+                    });
+                }
+            }
+
+            if (wordGrid) {
+                wordGrid.innerHTML = '';
+                if (wordsList.length === 0 || maxWords === 0) {
+                    wordGrid.innerHTML = `<span style="font-size:0.75rem; color:#555555; font-style:italic;">${currentLang === 'de' ? 'Warte auf Eingaben...' : 'Awaiting inputs...'}</span>`;
+                } else {
+                    wordGrid.style.gridTemplateColumns = `repeat(${maxWords}, 12px)`;
+                    linesOfWords.forEach((lineWords, lineIdx) => {
+                        for (let i = 0; i < maxWords; i++) {
+                            const tile = document.createElement('span');
+                            tile.className = 'word-tile';
+                            if (i < lineWords.length) {
+                                const key = getRhymeKey(lineWords[i]);
+                                tile.style.backgroundColor = (keyCounts.get(key) >= 2) ? getColorForRhyme(key) : 'rgba(255, 255, 255, 0.05)';
+                                tile.title = `${lineWords[i]} (Zeile ${lineIdx + 1})`;
+                            } else {
+                                tile.style.backgroundColor = 'rgba(255, 255, 255, 0.02)';
+                            }
+                            wordGrid.appendChild(tile);
+                        }
+                    });
+                }
+            }
+        }
+
+        // ----- Initial Setup -----
+        if (input) input.value = "";
+        if (sqSyllables) sqSyllables.style.backgroundColor = selectedSyllableColor;
+        if (sqWords) sqWords.style.backgroundColor = selectedWordColor;
+        if (sqThird) sqThird.style.backgroundColor = selectedThirdColor;
+        if (avgSyllablesBar) avgSyllablesBar.style.backgroundColor = selectedSyllableColor;
+        if (rhymeDensityBar) rhymeDensityBar.style.backgroundColor = selectedWordColor;
+        if (labelSylTimeline) labelSylTimeline.style.color = selectedSyllableColor;
+        if (labelRhymeTimeline) labelRhymeTimeline.style.color = selectedWordColor;
+        if (labelWordsLineTimeline) labelWordsLineTimeline.style.color = selectedThirdColor;
+        if (showSylCheck) showSylCheck.style.accentColor = selectedSyllableColor;
+        if (showRhymeCheck) showRhymeCheck.style.accentColor = selectedWordColor;
+        if (showWordsLineCheck) showWordsLineCheck.style.accentColor = selectedThirdColor;
+
+        populateColorPickerGrid();
+        updateTimelineSize();
+        updateLivePreviewText();
+        debouncedMetricsAndAPI();
+
+        window.addEventListener('resize', redrawTimeline);
+    })();
+</script>
+</body>
+</html>
