@@ -280,15 +280,14 @@
             triggerPixelExplosion(centerCol, groundY);
         }
 
-        // --- MOD EXPLOSION: trigger explosion at word position ---
+        // --- trigger explosion at word position (for ANY word) ---
         function triggerWordExplosion(word) {
             if (!word || !word.element) return;
             const rect = word.element.getBoundingClientRect();
             const playRect = playfield.getBoundingClientRect();
             const cx = rect.left + rect.width/2 - playRect.left;
             const cy = rect.top + rect.height/2 - playRect.top;
-            // Use a bright color for the explosion effect
-            triggerPixelExplosion(cx, cy, '#fbbf24'); // yellow/gold
+            triggerPixelExplosion(cx, cy, '#fbbf24'); // gold/yellow for clear visibility
         }
 
         themeToggleBtn.addEventListener('click', () => {
@@ -582,15 +581,17 @@
         });
 
         function completeWord(word) {
-            // --- trigger explosion effect for the word itself (if special modifier is active) ---
+            // --- MOD EXPLOSION: trigger explosion for every correctly typed word ---
             if (activeModifier === 'EXPLODE_CHAIN') {
                 triggerWordExplosion(word);
             }
 
+            // --- Score and special handling ---
             score += word.text.length * (word.isSpecial ? 25 : 10);
             totalCharsTyped += word.text.length;
             scoreVal.textContent = score;
 
+            // Only special words grant new modifiers
             if (word.isSpecial) {
                 const modifiers = ['AUTO_TYPE', 'EXPLODE_CHAIN'];
                 activeModifier = modifiers[Math.floor(Math.random() * modifiers.length)];
@@ -599,7 +600,7 @@
                 modifierBadge.classList.remove('hidden');
             }
 
-            // Execute modifier actions cleanly without recursion
+            // Execute modifier actions (AUTO_TYPE or EXPLODE_CHAIN)
             if (activeModifier === 'AUTO_TYPE') {
                 const others = wordsOnScreen.filter(w => w.id !== word.id);
                 if (others.length > 0) {
@@ -613,8 +614,10 @@
                         }
                     }
                     if (closest) {
-                        // trigger explosion for the auto-typed word as well
-                        triggerWordExplosion(closest);
+                        // Auto-type also triggers explosion if EXPLODE_CHAIN is active
+                        if (activeModifier === 'EXPLODE_CHAIN') {
+                            triggerWordExplosion(closest);
+                        }
                         score += closest.text.length * 10;
                         totalCharsTyped += closest.text.length;
                         closest.destroy();
