@@ -188,12 +188,81 @@
     .escape-hint.show {
       opacity: 1;
     }
+
+    /* CEO paragraph styling */
+    #ceo-paragraph {
+      font-family: 'Geist Mono', 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      line-height: 1.7;
+      color: #b0b0b0;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+      transition: opacity 0.3s ease;
+      letter-spacing: 0.01em;
+    }
+
+    #ceo-paragraph .highlight {
+      color: #e0e0e0;
+      font-weight: 400;
+    }
+
+    #ceo-paragraph .tag {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.1rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.6rem;
+      color: #777;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-right: 0.3rem;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .ceo-footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      padding-top: 1.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .ceo-refresh-btn {
+      background: none;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #666;
+      padding: 0.3rem 1.2rem;
+      border-radius: 30px;
+      font-size: 0.7rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .ceo-refresh-btn:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #ccc;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .ceo-label {
+      font-size: 0.55rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #444;
+      margin-bottom: 0.5rem;
+      font-weight: 300;
+    }
   </style>
 </head>
-<body class="min-h-screen bg-black text-zinc-100 p-8 md:p-12">
+<body class="min-h-screen bg-black text-zinc-100 p-8 md:p-12 flex flex-col">
 
   <!-- Main Grid/Flex layout matching Top Left & Top Right requirement -->
-  <div class="w-full flex flex-col sm:flex-row justify-between items-start gap-6">
+  <div class="w-full flex flex-col sm:flex-row justify-between items-start gap-6 flex-shrink-0">
 
     <!-- TOP LEFT: Dynamic Title & Combined Subtitle -->
     <div class="flex flex-col space-y-2">
@@ -218,10 +287,24 @@
   </div>
 
   <!-- GRID: List of HTML files dynamically loaded -->
-  <div class="mt-12 w-full">
+  <div class="mt-12 w-full flex-shrink-0">
     <div id="grid-container" class="flex flex-wrap gap-4 items-center">
       <!-- Items will be injected here -->
       <div class="loading-text">Loading resources...</div>
+    </div>
+  </div>
+
+  <!-- NEW: CEO-style random paragraph (from rndAbout.json) -->
+  <div class="mt-12 w-full flex-grow flex flex-col items-center justify-start">
+    <div class="w-full max-w-4xl">
+      <div class="ceo-label">✦ strategic narrative</div>
+      <div id="ceo-paragraph">
+        <span id="ceo-text" class="block">Loading...</span>
+        <div class="ceo-footer flex justify-between items-center">
+          <span class="text-[0.5rem] text-zinc-600 tracking-widest uppercase">generated · rndAbout</span>
+          <button id="refresh-ceo" class="ceo-refresh-btn">⟳ refresh</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -351,9 +434,12 @@
     const overlayWrapper = document.getElementById('overlay-wrapper');
     const overlayIframe = document.getElementById('overlay-iframe');
     const escapeHint = document.getElementById('escape-hint');
+    const ceoText = document.getElementById('ceo-text');
+    const refreshBtn = document.getElementById('refresh-ceo');
 
     // --- STATE ---
     let currentItemPath = '';
+    let rndAboutData = null; // will hold the JSON
 
     // --- UTILITY FUNCTIONS ---
     function getRandomItem(array) {
@@ -381,26 +467,103 @@
       document.getElementById('live-date').innerText = now.toLocaleDateString(undefined, options);
     }
 
+    // --- CEO PARAGRAPH GENERATOR (using rndAbout.json) ---
+    function generateCEOParagraph(data) {
+      if (!data) return '⚠️ rndAbout.json not loaded.';
+
+      try {
+        // pick random opener, transition, verb, adjective, noun, phrase, subject, generic, businessArea, stakeholder, metric, lesson, humble, contrast, future, closer
+        const opener = getRandomItem(data.openers);
+        const transition = getRandomItem(data.transitions);
+        const verb = getRandomItem(data.verbs);
+        const adjective = getRandomItem(data.adjectives);
+        const noun = getRandomItem(data.nouns);
+        const phrase = getRandomItem(data.phrases);
+        const subject = getRandomItem(data.technology.subjects);
+        const generic = getRandomItem(data.technology.generic);
+        const businessArea = getRandomItem(data.businessAreas);
+        const stakeholder = getRandomItem(data.stakeholders);
+        const metric = getRandomItem(data.metrics);
+        const lesson = getRandomItem(data.leadershipLessons);
+        const humble = getRandomItem(data.humbleBrags);
+        const contrast = getRandomItem(data.corporateContrasts);
+        const future = getRandomItem(data.future);
+        const closer = getRandomItem(data.closers);
+
+        // pick a paragraph template
+        const template = getRandomItem(data.paragraphTemplates);
+
+        // replace placeholders
+        let paragraph = template
+          .replace(/\{opener\}/g, opener)
+          .replace(/\{transition\}/g, transition)
+          .replace(/\{verb\}/g, verb)
+          .replace(/\{adjective\}/g, adjective)
+          .replace(/\{noun\}/g, noun)
+          .replace(/\{phrase\}/g, phrase)
+          .replace(/\{subject\}/g, subject)
+          .replace(/\{generic\}/g, generic)
+          .replace(/\{businessArea\}/g, businessArea)
+          .replace(/\{stakeholder\}/g, stakeholder)
+          .replace(/\{metric\}/g, metric)
+          .replace(/\{lesson\}/g, lesson)
+          .replace(/\{humble\}/g, humble)
+          .replace(/\{contrast\}/g, contrast)
+          .replace(/\{future\}/g, future)
+          .replace(/\{closer\}/g, closer)
+          .replace(/\{stakeholderSentence\}/g, getRandomItem(data.sentenceFragments.stakeholderSentence))
+          .replace(/\{metricSentence\}/g, getRandomItem(data.sentenceFragments.metricSentence));
+
+        // clean up extra spaces
+        paragraph = paragraph.replace(/\s+/g, ' ').trim();
+
+        // add a subtle tag
+        return paragraph;
+      } catch (e) {
+        console.warn('Error generating CEO paragraph:', e);
+        return '⚠️ Error generating paragraph. Please refresh.';
+      }
+    }
+
+    function refreshCEOParagraph() {
+      if (rndAboutData) {
+        const newParagraph = generateCEOParagraph(rndAboutData);
+        ceoText.innerText = newParagraph;
+      } else {
+        ceoText.innerText = '⏳ Loading rndAbout.json...';
+      }
+    }
+
     // --- LOAD HTML LIST FROM JSON ---
     async function loadHtmlList() {
       try {
-        // Using lowercase "resources" as specified
         const response = await fetch('resources/htmlList.json');
-        
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        
         const data = await response.json();
-        
-        // Validate that we got an array
         if (!Array.isArray(data)) {
           throw new Error('JSON data is not an array');
         }
-        
         return data;
       } catch (error) {
         console.error('Failed to load resources/htmlList.json:', error);
+        return null;
+      }
+    }
+
+    // --- LOAD RNDABOUT.JSON ---
+    async function loadRndAbout() {
+      try {
+        const response = await fetch('resources/rndAbout.json');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const data = await response.json();
+        rndAboutData = data;
+        return data;
+      } catch (error) {
+        console.error('Failed to load resources/rndAbout.json:', error);
         return null;
       }
     }
@@ -424,14 +587,12 @@
         return;
       }
 
-      // Sort alphabetically for consistency
       const sorted = [...items].sort((a, b) => a.localeCompare(b));
 
       sorted.forEach((path) => {
         const div = document.createElement('div');
         div.className = 'grid-item';
 
-        // Extract filename from path for display
         const fileName = path.split('/').pop() || path;
         const displayName = fileName.replace(/\.html$/i, '');
 
@@ -459,7 +620,6 @@
 
     function closeOverlay() {
       if (overlayIframe.src !== 'about:blank') {
-        // Ask for confirmation before closing
         if (confirm('Are you sure you want to close this page?')) {
           overlayIframe.src = 'about:blank';
           overlayWrapper.classList.remove('active');
@@ -475,12 +635,13 @@
     }
 
     // --- EVENT LISTENERS ---
-    // Keyboard shortcut: Escape to close
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && overlayWrapper.classList.contains('active')) {
         closeOverlay();
       }
     });
+
+    refreshBtn.addEventListener('click', refreshCEOParagraph);
 
     // --- INITIALIZATION ---
     window.onload = async function() {
@@ -491,9 +652,13 @@
       updateClock();
       setInterval(updateClock, 1000);
 
-      // Load HTML list from JSON (lowercase "resources")
+      // Load HTML list
       const htmlItems = await loadHtmlList();
       renderGrid(htmlItems);
+
+      // Load rndAbout.json and generate initial CEO paragraph
+      await loadRndAbout();
+      refreshCEOParagraph();
     }
   </script>
 </body>
