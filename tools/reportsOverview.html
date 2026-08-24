@@ -587,11 +587,33 @@
                 const xmlText = await docFile.async('string');
                 
                 const textMatches = xmlText.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
-                const texts = textMatches.map(m => m.replace(/<[^>]*>/g, '').trim()).filter(t => t.length > 0);
+                let texts = textMatches.map(m => m.replace(/<[^>]*>/g, '').trim()).filter(t => t.length > 0);
+                
+                // Filter out signature-related content
+                const excludePatterns = [
+                    /unterschrift/i,
+                    /signature/i,
+                    /datum.*unterschrift/i,
+                    /auszubildende.*r/i,
+                    /ausbildende.*r/i,
+                    /ausbilder.*in/i,
+                    /bestätigt/i,
+                    /richtigkeit/i,
+                    /vollständigkeit/i,
+                    /nachfolgende.*unterschrift/i
+                ];
+                
+                texts = texts.filter(text => {
+                    const lower = text.toLowerCase();
+                    return !excludePatterns.some(pattern => pattern.test(lower));
+                });
+                
                 const fullText = texts.join(' ').replace(/\s+/g, ' ').trim();
                 
-                const days = extractDaysFromTable(fullText);
-                return { text: fullText, days };
+                // Also filter out date lines that look like signature dates
+                const filteredText = fullText.replace(/\d{2}\.\d{2}\.\d{4}\s*(?:Datum|Unterschrift|Signature|Bestätigt|Auszubildende|Ausbildende)/gi, '');
+                const days = extractDaysFromTable(filteredText);
+                return { text: filteredText, days };
             } catch (e) {
                 console.warn('DOCX Parse error:', e);
                 return { text: '⚠️ Fehler beim Parsen', days: {} };
@@ -601,7 +623,7 @@
         function extractDaysFromTable(text) {
             const days = {};
             const lang = currentLang;
-            const dayNames = translations[lang].daysList; // Only Monday-Friday
+            const dayNames = translations[lang].daysList;
             
             for (let i = 0; i < dayNames.length; i++) {
                 const dayName = dayNames[i];
@@ -613,6 +635,7 @@
                 const match = text.match(regex);
                 if (match) {
                     let content = match[1].trim();
+                    // Extract hours
                     let hours = '8';
                     const hourMatch = content.match(/(\d+)\s*(?:h|Std\.|Stunden)/i);
                     if (hourMatch) {
@@ -625,10 +648,14 @@
                         content = content.replace(/\s*\d+\s*(?:h|Std\.|Stunden)?\s*$/, '').trim();
                     }
                     
+                    // Clean up content
                     content = content.replace(/[–\-]\s*Selbständig.*$/gim, '').trim();
                     content = content.replace(/Selbstständiges\s*Lernen/gi, '').trim();
                     content = content.replace(/\s+/g, ' ').trim();
                     content = content.replace(/^[\s\-•]*/, '').trim();
+                    
+                    // Remove any date-like patterns at the end
+                    content = content.replace(/\d{2}\.\d{2}\.\d{4}\s*$/, '').trim();
                     
                     if (content.length > 0) {
                         days[dayName] = { content, hours };
@@ -655,6 +682,7 @@
                     content = content.replace(/[–\-]\s*Selbständig.*$/gim, '').trim();
                     content = content.replace(/Selbstständiges\s*Lernen/gi, '').trim();
                     content = content.replace(/\s+/g, ' ').trim();
+                    content = content.replace(/\d{2}\.\d{2}\.\d{4}\s*$/, '').trim();
                     if (content.length > 0) {
                         days[m[1].trim()] = { content, hours };
                     }
@@ -680,13 +708,11 @@
                 const reports = docFiles.map(item => {
                     const fileName = item.name;
                     const rawUrl = `${BASE_RAW_URL}/${encodeURIComponent(fileName)}`;
-                    // Extract date range from filename
                     const weekMatch = fileName.match(/(\d{1,2}\.\d{1,2}\.\d{4})\s*-\s*(\d{1,2}\.\d{1,2}\.\d{4})/);
                     let weekLabel = '';
                     if (weekMatch) {
                         weekLabel = `${weekMatch[1]} – ${weekMatch[2]}`;
                     } else {
-                        // Try to get just the date
                         const dateMatch = fileName.match(/(\d{1,2}\.\d{1,2}\.\d{4})/);
                         weekLabel = dateMatch ? dateMatch[1] : '';
                     }
@@ -752,7 +778,7 @@
         function render(reports) {
             const lang = currentLang;
             const t = translations[lang];
-            const dayNames = t.daysList; // Only Monday-Friday
+            const dayNames = t.daysList;
 
             if (reports.length === 0) {
                 grid.innerHTML = `
@@ -769,7 +795,6 @@
             let totalDays = 0;
             for (const report of reports) {
                 const dayEntries = Object.entries(report.days);
-                // Only count days that have actual content (not empty or '—')
                 const validDays = dayEntries.filter(([day, data]) => data.content && data.content !== '—' && data.content.trim().length > 0);
                 totalDays += validDays.length;
 
@@ -843,7 +868,6 @@
             weekCount.textContent = weeks.size;
             let days = 0;
             reports.forEach(r => {
-                // Count only valid days (content exists and not '—')
                 const validDays = Object.entries(r.days).filter(([day, data]) => 
                     data.content && data.content !== '—' && data.content.trim().length > 0
                 );
