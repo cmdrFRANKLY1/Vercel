@@ -311,24 +311,11 @@
             let files = [];
             
             try {
-                // Attempt to fetch from the local directory
-                const response = await fetch('../resources/riddleMeThis/');
+                // Call the Vercel Serverless Function instead of the static directory
+                const response = await fetch('/api/topics');
                 if (!response.ok) throw new Error('Network response was not ok');
                 
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.includes("application/json")) {
-                    // If an API endpoint served JSON
-                    files = await response.json();
-                } else {
-                    // If a static directory listing was served, scrape it for file names
-                    const text = await response.text();
-                    const matches = text.match(/topicRMT\.[a-zA-Z0-9_]+\.json/g);
-                    if (matches) {
-                        files = [...new Set(matches)]; // Ensure uniqueness
-                    } else {
-                        throw new Error('No valid JSON files found');
-                    }
-                }
+                files = await response.json();
             } catch (error) {
                 console.warn("Dynamic fetch failed or returned no items. Displaying Back fallback.");
                 files = []; // Ensure it triggers the fallback logic
