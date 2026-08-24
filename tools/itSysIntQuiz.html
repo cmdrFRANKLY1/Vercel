@@ -1,4008 +1,276 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IT SysInfo Roguelite Quiz</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Share+Tech+Mono&display=swap');
-        
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #020617; /* slate-950 */
-            color: #f8fafc; /* slate-50 */
-            overflow: hidden;
-            user-select: none;
         }
-
         .font-mono {
             font-family: 'Share Tech Mono', monospace;
         }
-
-        /* Screen shake for errors */
-        .shake {
-            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
-        }
-
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-2px, 0, 0); }
-            20%, 80% { transform: translate3d(4px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
-            40%, 60% { transform: translate3d(6px, 0, 0); }
-        }
-
-        /* Success & Error Flashes */
-        .flash-correct {
-            animation: flashSuccess 0.6s ease-out;
-        }
-        @keyframes flashSuccess {
-            0% { background-color: rgba(255, 255, 255, 0.2); }
-            100% { background-color: transparent; }
-        }
-
-        .flash-error {
-            animation: flashError 0.6s ease-out;
-        }
-        @keyframes flashError {
-            0% { background-color: rgba(255, 0, 0, 0.1); }
-            100% { background-color: transparent; }
-        }
-        
-        .flash-warning {
-            animation: flashWarning 0.8s ease-out;
-        }
-        @keyframes flashWarning {
-            0% { background-color: rgba(234, 88, 12, 0.3); }
-            100% { background-color: transparent; }
-        }
-
-        .unlock-flash {
-            animation: unlockFlash 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-        @keyframes unlockFlash {
-            0% { box-shadow: 0 0 30px #3b82f6; background-color: #1e3a8a; border-color: #60a5fa; transform: scale(1.15); z-index: 10; }
-            100% { box-shadow: 0 0 0px transparent; transform: scale(1); z-index: 1;}
-        }
-
-        .score-bump {
-            animation: scoreBump 0.4s ease-out;
-        }
-        @keyframes scoreBump {
-            0% { transform: scale(1.5); color: #fde047; text-shadow: 0 0 20px rgba(253,224,71,0.8); }
-            100% { transform: scale(1); color: #fff; text-shadow: none; }
-        }
-
-        /* Heart pulse */
-        .flash-heart {
-            animation: heartPulse 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        @keyframes heartPulse {
-            0% { transform: scale(1); filter: drop-shadow(0 0 0px #fff); }
-            50% { transform: scale(1.6); filter: drop-shadow(0 0 10px #fff); }
-            100% { transform: scale(1); filter: drop-shadow(0 0 0px #fff); }
-        }
-
-        /* Ambient Glitch / Scanline */
-        .glitch-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            background: repeating-linear-gradient(
-                0deg,
-                rgba(255, 255, 255, 0.015),
-                rgba(255, 255, 255, 0.015) 1px,
-                transparent 1px,
-                transparent 2px
-            );
-            z-index: 50;
-            opacity: 0.5;
-        }
-
-        /* Canvas for Confetti & Particles */
-        #confetti-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 40;
-        }
-
-        /* Floating text animation */
-        .floating-text {
-            position: fixed;
-            pointer-events: none;
-            z-index: 100;
-            font-family: 'Share Tech Mono', monospace;
-            font-weight: bold;
-            font-size: 1.5rem;
-            text-shadow: 0 0 10px rgba(0,0,0,0.8);
-            animation: floatUp 1s ease-out forwards;
-        }
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-50px) scale(1.2); }
-        }
-
-        /* UI Enhancements */
         .glass-panel {
-            background: rgba(30, 41, 59, 0.7); /* slate-800 with opacity */
+            background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(51, 65, 85, 0.5);
         }
-        
         .btn-hover-fx {
-            transition: all 0.2s ease;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .btn-hover-fx:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px -10px rgba(255, 255, 255, 0.2);
-            background: rgba(255, 255, 255, 0.95);
-            color: #0f172a;
-            border-color: transparent;
-        }
-        .btn-hover-fx:active:not(:disabled) {
-            transform: translateY(1px);
-        }
-
-        /* Abilities */
-        .ability-btn {
-            transition: all 0.3s ease;
-        }
-        .ability-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
+            border-color: rgba(96, 165, 250, 0.8);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
         }
         .ability-btn:not(:disabled) {
             box-shadow: 0 0 15px rgba(255,255,255,0.1);
             animation: pulseGlow 2s infinite alternate;
         }
         @keyframes pulseGlow {
-            from { box-shadow: 0 0 5px rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
-            to { box-shadow: 0 0 15px rgba(255,255,255,0.3); border-color: rgba(255,255,255,0.6); }
+            from { box-shadow: 0 0 5px rgba(59,130,246,0.2); border-color: rgba(59,130,246,0.3); }
+            to { box-shadow: 0 0 20px rgba(59,130,246,0.6); border-color: rgba(96,165,250,0.8); }
         }
-
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .floating-text {
+            position: absolute;
+            font-family: 'Share Tech Mono', monospace;
+            font-weight: bold;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            z-index: 50;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-40px) scale(1.2); }
+        }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col items-center justify-center relative bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 to-slate-950 text-slate-200">
+<body class="h-[100dvh] w-screen flex flex-col items-center justify-center relative bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 to-slate-950 text-slate-200 overflow-hidden">
     
-    <div class="glitch-overlay"></div>
     <canvas id="confetti-canvas"></canvas>
 
-    <div class="relative z-10 w-full max-w-4xl p-4 sm:p-6 h-full flex flex-col justify-center">
+    <div class="relative z-10 w-full max-w-4xl p-2 sm:p-6 h-full flex flex-col hide-scrollbar overflow-y-auto overflow-x-hidden mx-auto">
         
         <!-- Start Screen -->
-        <div id="start-screen" class="relative text-center flex flex-col items-center justify-center h-full glass-panel rounded-3xl p-8 sm:p-12 shadow-2xl">
-            <h1 class="text-5xl sm:text-6xl font-mono font-bold mb-10 tracking-widest uppercase border-b border-slate-600 pb-6 inline-block text-white">SYS_INFO<br/><span class="text-3xl text-slate-400">ROGUELITE</span></h1>
+        <div id="start-screen" class="relative text-center flex flex-col items-center justify-center min-h-full h-auto glass-panel rounded-3xl p-6 sm:p-12 shadow-2xl my-auto">
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-mono font-bold mb-6 sm:mb-10 tracking-widest uppercase border-b border-slate-600 pb-4 sm:pb-6 inline-block text-white">SYS_INFO<br/><span class="text-2xl sm:text-3xl text-slate-400">ROGUELITE</span></h1>
             
-            <button id="start-btn" disabled class="font-sans font-bold rounded-xl border border-slate-500 px-10 py-4 text-xl tracking-widest btn-hover-fx bg-slate-800 text-white uppercase shadow-lg">
-                LOADING...
+            <button id="start-btn" onclick="startGame()" class="font-sans font-bold rounded-xl border border-slate-500 px-8 py-3 sm:px-10 sm:py-4 text-lg sm:text-xl tracking-widest btn-hover-fx bg-slate-800 text-white uppercase shadow-lg">
+                [ START ]
             </button>
-            <div id="start-msg" class="mt-4 font-sans text-sm text-slate-400 text-center max-w-md"></div>
         </div>
 
         <!-- Game Screen -->
-        <div id="game-ui" class="w-full flex-col h-full hidden justify-between py-4 sm:py-8">
+        <div id="game-ui" class="w-full flex-col min-h-full h-auto hidden py-4 sm:py-8">
             
             <!-- Top HUD -->
-            <div class="flex justify-between items-start mb-6 font-mono tracking-widest uppercase">
-                <div class="flex flex-col gap-3">
-                    <div class="flex items-center gap-6">
-                    <div id="lives-display" class="flex gap-2 text-2xl drop-shadow-md text-red-500">
-                        <!-- Hearts injected here -->
-                    </div>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span class="text-slate-500 text-xs">SYS_TIME</span>
-                        <span id="global-timer" class="text-slate-300 font-mono text-lg drop-shadow-md">00:00</span>
-                    </div>
-                </div>
-            </div>
-            <div class="text-right flex flex-col gap-2 glass-panel px-6 py-3 rounded-2xl relative">
-                <div id="multiplier-badge" class="absolute -top-3 -left-4 bg-blue-600 border border-blue-400 text-white text-[11px] font-mono tracking-widest font-bold px-2 py-1 rounded-lg shadow-[0_0_10px_rgba(37,99,235,0.8)] transition-all opacity-0 scale-90">x1 MULTI</div>
-                <div id="score-display" class="text-2xl sm:text-3xl font-bold text-white transition-all transform origin-right">000</div>
-                <div class="text-xs text-slate-400">SCORE</div>
-            </div>
-        </div>
-
-        <!-- Main Question Area -->
-        <div class="flex-grow flex flex-col justify-center max-w-3xl mx-auto w-full">
-            
-            <!-- Abilities HUD -->
-            <div id="abilities-hud" class="mb-4 flex flex-col items-center">
-                <div class="text-xs font-mono tracking-widest text-slate-400 mb-2">STREAK ENERGY</div>
-                    
-                    <!-- Streak Progress Bar -->
-                    <div class="flex gap-2 mb-4 h-3" id="streak-bar">
-                        <div class="w-12 rounded-full bg-slate-800 border border-slate-700 transition-colors duration-300"></div>
-                        <div class="w-12 rounded-full bg-slate-800 border border-slate-700 transition-colors duration-300"></div>
-                        <div class="w-12 rounded-full bg-slate-800 border border-slate-700 transition-colors duration-300"></div>
-                        <div class="w-12 rounded-full bg-slate-800 border border-slate-700 transition-colors duration-300"></div>
-                        <div class="w-12 rounded-full bg-slate-800 border border-slate-700 transition-colors duration-300"></div>
-                    </div>
-
-                    <!-- Ability Buttons -->
-                    <div class="flex gap-3 w-full justify-center font-mono text-xs sm:text-sm">
-                        <button onclick="useAbility('remove1')" id="ab-remove1" disabled class="ability-btn flex-1 max-w-[120px] bg-slate-800 border border-slate-600 rounded-xl py-2 px-1 flex flex-col items-center gap-1">
-                            <span class="text-[10px] text-slate-400">COST 2</span>
-                            <span>-1 WRONG</span>
-                        </button>
-                        <button onclick="useAbility('remove2')" id="ab-remove2" disabled class="ability-btn flex-1 max-w-[120px] bg-slate-800 border border-slate-600 rounded-xl py-2 px-1 flex flex-col items-center gap-1">
-                            <span class="text-[10px] text-slate-400">COST 3</span>
-                            <span>50 / 50</span>
-                        </button>
-                        <button onclick="useAbility('skip')" id="ab-skip" disabled class="ability-btn flex-1 max-w-[120px] bg-slate-800 border border-slate-600 rounded-xl py-2 px-1 flex flex-col items-center gap-1">
-                            <span class="text-[10px] text-slate-400">COST 4</span>
-                            <span>SKIP</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div id="question-panel" class="glass-panel p-6 sm:p-10 rounded-3xl shadow-xl w-full">
-                    
-                    <!-- Question Timer -->
-                    <div class="mb-6 flex flex-col gap-2">
-                        <div class="flex justify-between text-[10px] sm:text-xs font-mono text-slate-400 tracking-widest">
-                            <span>SYS_TIMER</span>
-                            <span id="question-timer-text">30s</span>
+            <div class="flex justify-between items-start mb-4 sm:mb-6 font-mono tracking-widest uppercase shrink-0">
+                <div class="flex flex-col gap-2 sm:gap-3">
+                    <div class="flex items-center gap-3 sm:gap-6">
+                        <div id="lives-display" class="flex gap-1 sm:gap-2 text-xl sm:text-2xl drop-shadow-md text-red-500">
+                            <!-- Hearts injected here -->
                         </div>
-                        <div class="w-full bg-slate-900/80 h-1.5 rounded-full overflow-hidden border border-slate-700/50">
-                            <div id="question-timer-bar" class="h-full bg-blue-400 w-full shadow-[0_0_10px_rgba(96,165,250,0.5)]" style="transition: width 1s linear, background-color 0.3s ease;"></div>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-slate-500 text-[10px] sm:text-xs">SYS_ZEIT</span>
+                            <span id="global-timer" class="text-slate-300 font-mono text-base sm:text-lg drop-shadow-md">00:00</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right flex flex-col gap-1 sm:gap-2 glass-panel px-4 py-2 sm:px-6 sm:py-3 rounded-2xl relative">
+                    <div id="multiplier-badge" class="absolute -top-3 -left-4 bg-blue-600 border border-blue-400 text-white text-[9px] sm:text-[11px] font-mono tracking-widest font-bold px-2 py-1 rounded-lg shadow-[0_0_10px_rgba(37,99,235,0.8)] transition-all opacity-0 scale-90">x1 MULTI</div>
+                    <div id="score-display" class="text-xl sm:text-3xl font-bold text-white transition-transform origin-right">000</div>
+                    <div class="text-[10px] sm:text-xs text-slate-400">PUNKTE</div>
+                </div>
+            </div>
+
+            <!-- Main Question Area -->
+            <div class="flex-grow flex flex-col justify-center max-w-3xl mx-auto w-full min-h-0">
+                
+                <!-- Abilities HUD -->
+                <div id="abilities-hud" class="mb-4 flex flex-col items-center shrink-0 w-full">
+                    <div class="text-[10px] sm:text-xs font-mono tracking-widest text-slate-400 mb-2">STREAK-ENERGIE</div>
+                        
+                        <!-- Streak Progress Bar -->
+                        <div class="flex gap-1 sm:gap-2 mb-3 sm:mb-4 h-2 sm:h-3" id="streak-bar">
+                            <div class="w-8 sm:w-12 rounded-full bg-slate-800 border border-slate-700 transition-colors duration-300"></div>
+                            <div class="w-8 sm:w-12 rounded-full bg-slate-800 border border-slate-700 transition-colors duration-300"></div>
+                            <div class="w-8 sm:w-12 rounded-full bg-slate-800 border border-slate-700 transition-colors duration-300"></div>
+                            <div class="w-8 sm:w-12 rounded-full bg-slate-800 border border-slate-700 transition-colors duration-300"></div>
+                            <div class="w-8 sm:w-12 rounded-full bg-slate-800 border border-slate-700 transition-colors duration-300"></div>
+                        </div>
+
+                        <!-- Ability Buttons -->
+                        <div class="flex gap-1 sm:gap-3 w-full justify-center font-mono text-xs sm:text-sm">
+                            <button onclick="useAbility('remove1')" id="ab-remove1" disabled class="ability-btn flex-1 max-w-[140px] bg-slate-800 border border-slate-600 rounded-xl py-2 px-1 sm:px-2 flex flex-col items-center gap-0.5 opacity-50">
+                                <span class="text-[8px] sm:text-[10px] text-slate-400">KOSTEN 2</span>
+                                <span class="font-bold text-slate-100 text-[10px] sm:text-base">-1 FALSCH</span>
+                                <span class="text-[7px] sm:text-[9px] text-slate-500 normal-case text-center leading-tight font-sans mt-1">Entfernt 1 falsche Antwort</span>
+                            </button>
+                            <button onclick="useAbility('remove2')" id="ab-remove2" disabled class="ability-btn flex-1 max-w-[140px] bg-slate-800 border border-slate-600 rounded-xl py-2 px-1 sm:px-2 flex flex-col items-center gap-0.5 opacity-50">
+                                <span class="text-[8px] sm:text-[10px] text-slate-400">KOSTEN 3</span>
+                                <span class="font-bold text-slate-100 text-[10px] sm:text-base">50 / 50</span>
+                                <span class="text-[7px] sm:text-[9px] text-slate-500 normal-case text-center leading-tight font-sans mt-1">Entfernt 2 falsche Antworten</span>
+                            </button>
+                            <button onclick="useAbility('skip')" id="ab-skip" disabled class="ability-btn flex-1 max-w-[140px] bg-slate-800 border border-slate-600 rounded-xl py-2 px-1 sm:px-2 flex flex-col items-center gap-0.5 opacity-50">
+                                <span class="text-[8px] sm:text-[10px] text-slate-400">KOSTEN 4</span>
+                                <span class="font-bold text-slate-100 text-[10px] sm:text-base">ÜBERSPRINGEN</span>
+                                <span class="text-[7px] sm:text-[9px] text-slate-500 normal-case text-center leading-tight font-sans mt-1">Frage sicher überspringen</span>
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Question Container -->
-                    <div class="mb-8 min-h-[100px] flex items-center">
-                        <h2 id="question-text" class="text-xl sm:text-2xl leading-relaxed tracking-wide text-white font-semibold"></h2>
+                    <div id="question-panel" class="glass-panel p-4 sm:p-8 lg:p-10 rounded-2xl sm:rounded-3xl shadow-xl w-full flex-grow flex flex-col">
+                        
+                        <!-- Question Timer -->
+                        <div class="mb-4 sm:mb-6 flex flex-col gap-2 shrink-0">
+                            <div class="flex justify-between text-[10px] sm:text-xs font-mono text-slate-400 tracking-widest">
+                                <span>ZEITLIMIT</span>
+                                <span id="question-timer-text">30s</span>
+                            </div>
+                            <div class="w-full bg-slate-900/80 h-1.5 rounded-full overflow-hidden border border-slate-700/50">
+                                <div id="question-timer-bar" class="h-full bg-blue-400 w-full shadow-[0_0_10px_rgba(96,165,250,0.5)]" style="transition: width 1s linear, background-color 0.3s ease;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Question Container -->
+                        <div class="mb-6 sm:mb-8 min-h-[60px] sm:min-h-[80px] flex items-center shrink-0">
+                            <h2 id="question-text" class="text-lg sm:text-xl lg:text-2xl leading-relaxed tracking-wide text-white font-semibold"></h2>
+                        </div>
+
+                        <!-- Answers Container -->
+                        <div id="answers-container" class="grid grid-cols-1 gap-2 sm:gap-4 opacity-0 transition-opacity duration-500 pb-2 sm:pb-4 flex-grow content-center">
+                            <!-- Buttons injected via JS -->
+                        </div>
                     </div>
 
-                    <!-- Answers Container -->
-                    <div id="answers-container" class="grid grid-cols-1 gap-3 sm:gap-4 opacity-0 transition-opacity duration-500">
-                        <!-- Buttons injected via JS -->
+                    <!-- Minigame Panel -->
+                    <div id="minigame-panel" class="hidden glass-panel p-4 sm:p-10 rounded-2xl sm:rounded-3xl shadow-xl w-full border-orange-500/50 border-2 bg-orange-950/20 my-auto">
+                        <div class="text-orange-400 font-mono text-xs sm:text-sm tracking-widest mb-4 animate-pulse border-b border-orange-500/30 pb-2 flex items-center gap-2">
+                            <span>⚠️</span> SYSTEM-OVERRIDE // DRINGENDE AUFGABE
+                        </div>
+                        <div class="flex justify-between items-center mb-4 sm:mb-6">
+                            <h2 id="minigame-title" class="text-lg sm:text-2xl text-white font-bold tracking-wide">TASK_NAME</h2>
+                            <div id="minigame-timer" class="text-orange-400 font-mono text-lg sm:text-2xl shadow-[0_0_10px_rgba(234,88,12,0.5)] px-3 py-1 bg-slate-900 rounded-lg">8.0s</div>
+                        </div>
+                        <div id="minigame-content" class="w-full h-48 sm:h-56 relative bg-slate-950 rounded-xl overflow-hidden border border-slate-700 shadow-inner">
+                            <!-- Content -->
+                        </div>
                     </div>
+
                 </div>
-
-                <!-- Minigame Panel -->
-                <div id="minigame-panel" class="hidden glass-panel p-6 sm:p-10 rounded-3xl shadow-xl w-full border-orange-500/50 border-2 bg-orange-950/20">
-                    <div class="text-orange-400 font-mono text-sm tracking-widest mb-4 animate-pulse border-b border-orange-500/30 pb-2 flex items-center gap-2">
-                        <span>⚠️</span> SYSTEM OVERRIDE // URGENT TASK
-                    </div>
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 id="minigame-title" class="text-xl sm:text-2xl text-white font-bold tracking-wide">TASK_NAME</h2>
-                        <div id="minigame-timer" class="text-orange-400 font-mono text-xl sm:text-2xl shadow-[0_0_10px_rgba(234,88,12,0.5)] px-3 py-1 bg-slate-900 rounded-lg">8.0s</div>
-                    </div>
-                    <div id="minigame-content" class="w-full h-48 sm:h-56 relative bg-slate-950 rounded-xl overflow-hidden border border-slate-700 shadow-inner">
-                        <!-- Content -->
-                    </div>
-                </div>
-
             </div>
-        </div>
 
-        <!-- Game Over Screen -->
-        <div id="game-over-screen" class="hidden text-center flex flex-col items-center justify-center h-full glass-panel rounded-3xl p-8 sm:p-12 shadow-2xl">
-            <h1 class="text-5xl sm:text-7xl font-mono font-bold mb-6 tracking-widest text-white drop-shadow-lg">SYS_FAIL</h1>
-            <p class="text-xl sm:text-2xl mb-2 font-mono tracking-widest text-slate-400">FINAL SCORE</p>
-            <p id="final-score" class="text-6xl sm:text-8xl font-bold mb-12 font-mono text-white">000</p>
-            
-            <button onclick="startGame()" class="font-mono rounded-xl border border-slate-500 px-10 py-4 text-xl tracking-widest btn-hover-fx bg-slate-800 text-white">
-                [ REBOOT SYSTEM ]
-            </button>
+            <!-- Game Over Screen -->
+            <div id="game-over-screen" class="hidden text-center flex-col items-center justify-center min-h-full h-auto glass-panel rounded-3xl p-6 sm:p-12 shadow-2xl my-auto">
+                <h1 class="text-4xl sm:text-6xl lg:text-7xl font-mono font-bold mb-4 sm:mb-6 tracking-widest text-red-500 drop-shadow-lg">SYSTEMAUSFALL</h1>
+                <p class="text-lg sm:text-2xl mb-2 font-mono tracking-widest text-slate-400">ENDSTAND</p>
+                <p id="final-score" class="text-5xl sm:text-8xl font-bold mb-8 sm:mb-12 font-mono text-white">000</p>
+                
+                <button onclick="startGame()" class="font-sans font-bold rounded-xl border border-slate-500 px-8 py-3 sm:px-10 sm:py-4 text-lg sm:text-xl tracking-widest btn-hover-fx bg-slate-800 text-white uppercase shadow-lg">
+                    [ SYSTEM NEU STARTEN ]
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
         const rawQuestions = [
-  {
-    "id": 1,
-    "frage": "Welche Aufgabe hat ein DHCP-Server?",
-    "richtigeAntwort": "Er vergibt automatisch IP-Konfigurationen an Clients.",
-    "falscheAntworten": [
-      "Er übersetzt Domainnamen in IP-Adressen.",
-      "Er verschlüsselt sämtliche Netzwerkpakete.",
-      "Er speichert Webseiten für Benutzer."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 2,
-    "frage": "Welche Aufgabe hat ein DNS-Server?",
-    "richtigeAntwort": "Er löst Domainnamen in IP-Adressen auf.",
-    "falscheAntworten": [
-      "Er vergibt automatisch MAC-Adressen.",
-      "Er verschlüsselt Festplatten.",
-      "Er verteilt Arbeitsspeicher an Clients."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 3,
-    "frage": "Welche IP-Adresse gehört zum privaten IPv4-Netz 192.168.0.0/16?",
-    "richtigeAntwort": "192.168.10.25",
-    "falscheAntworten": [
-      "8.8.8.8",
-      "172.300.10.1",
-      "200.100.50.1"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 4,
-    "frage": "Wie viele Bits besitzt eine IPv4-Adresse?",
-    "richtigeAntwort": "32 Bit",
-    "falscheAntworten": [
-      "16 Bit",
-      "64 Bit",
-      "128 Bit"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 5,
-    "frage": "Wie viele Bits besitzt eine IPv6-Adresse?",
-    "richtigeAntwort": "128 Bit",
-    "falscheAntworten": [
-      "32 Bit",
-      "64 Bit",
-      "256 Bit"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 6,
-    "frage": "Welche Aufgabe übernimmt ein Router?",
-    "richtigeAntwort": "Er verbindet unterschiedliche Netzwerke und leitet Pakete weiter.",
-    "falscheAntworten": [
-      "Er speichert ausschließlich Benutzerpasswörter.",
-      "Er ersetzt automatisch jede Netzwerkkarte.",
-      "Er dient ausschließlich als Dateiserver."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 7,
-    "frage": "Welche Aufgabe hat ein Switch?",
-    "richtigeAntwort": "Er verbindet Geräte innerhalb eines lokalen Netzwerks.",
-    "falscheAntworten": [
-      "Er übersetzt Domainnamen.",
-      "Er ersetzt das Betriebssystem eines Servers.",
-      "Er verschlüsselt automatisch alle Dateien."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 8,
-    "frage": "Was bezeichnet eine MAC-Adresse?",
-    "richtigeAntwort": "Eine Hardwareadresse einer Netzwerkschnittstelle.",
-    "falscheAntworten": [
-      "Eine öffentliche Internetadresse.",
-      "Ein Benutzername eines Servers.",
-      "Eine Verschlüsselungsmethode."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 9,
-    "frage": "Welche Protokollfamilie wird im Internet hauptsächlich verwendet?",
-    "richtigeAntwort": "TCP/IP",
-    "falscheAntworten": [
-      "USB/PCI",
-      "HTML/CSS",
-      "BIOS/UEFI"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 10,
-    "frage": "Was bedeutet LAN?",
-    "richtigeAntwort": "Local Area Network",
-    "falscheAntworten": [
-      "Large Access Node",
-      "Linked Application Network",
-      "Local Authentication Number"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 11,
-    "frage": "Was bedeutet WAN?",
-    "richtigeAntwort": "Wide Area Network",
-    "falscheAntworten": [
-      "Wireless Access Network",
-      "Web Authentication Node",
-      "Windows Area Network"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 12,
-    "frage": "Welches Protokoll wird typischerweise für verschlüsselte Webseiten verwendet?",
-    "richtigeAntwort": "HTTPS",
-    "falscheAntworten": [
-      "HTTP ohne TLS",
-      "FTP",
-      "Telnet"
-    ],
-    "kategorie": "Netzwerksicherheit",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 13,
-    "frage": "Welches Protokoll verwendet Port 443 typischerweise?",
-    "richtigeAntwort": "HTTPS",
-    "falscheAntworten": [
-      "FTP",
-      "DNS",
-      "SMTP"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 14,
-    "frage": "Welcher Port wird standardmäßig für DNS verwendet?",
-    "richtigeAntwort": "53",
-    "falscheAntworten": [
-      "21",
-      "80",
-      "3389"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 15,
-    "frage": "Welcher Port wird standardmäßig für HTTP verwendet?",
-    "richtigeAntwort": "80",
-    "falscheAntworten": [
-      "22",
-      "443",
-      "25"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 16,
-    "frage": "Welcher Port wird standardmäßig für SSH verwendet?",
-    "richtigeAntwort": "22",
-    "falscheAntworten": [
-      "21",
-      "23",
-      "53"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 17,
-    "frage": "Was ist ein VLAN?",
-    "richtigeAntwort": "Eine logische Segmentierung eines Netzwerks.",
-    "falscheAntworten": [
-      "Eine spezielle Festplattenart.",
-      "Ein Verschlüsselungsalgorithmus.",
-      "Ein Betriebssystem für Router."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 18,
-    "frage": "Was ist eine Firewall?",
-    "richtigeAntwort": "Ein System zur Kontrolle und Filterung von Netzwerkverkehr.",
-    "falscheAntworten": [
-      "Ein Programm zur Textverarbeitung.",
-      "Ein Ersatz für einen Arbeitsspeicher.",
-      "Ein Dateisystem."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 19,
-    "frage": "Was ist ein VPN?",
-    "richtigeAntwort": "Eine geschützte Verbindung über ein nicht vertrauenswürdiges Netzwerk.",
-    "falscheAntworten": [
-      "Ein lokaler Festplattentyp.",
-      "Ein spezieller Prozessor.",
-      "Ein Dateiformat."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 20,
-    "frage": "Was ist der Zweck einer Subnetzmaske?",
-    "richtigeAntwort": "Sie bestimmt, welcher Teil einer IP-Adresse Netzwerk- und welcher Hostanteil ist.",
-    "falscheAntworten": [
-      "Sie verschlüsselt IP-Adressen.",
-      "Sie ersetzt die MAC-Adresse.",
-      "Sie bestimmt das Benutzerpasswort."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 21,
-    "frage": "Was ist ein Server?",
-    "richtigeAntwort": "Ein System, das Dienste oder Ressourcen für andere Systeme bereitstellt.",
-    "falscheAntworten": [
-      "Ausschließlich ein besonders großer Monitor.",
-      "Eine spezielle Tastatur.",
-      "Ein Gerät, das nur für Spiele verwendet wird."
-    ],
-    "kategorie": "Server",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 22,
-    "frage": "Was ist ein Webserver?",
-    "richtigeAntwort": "Ein Server, der Webinhalte über HTTP oder HTTPS bereitstellt.",
-    "falscheAntworten": [
-      "Ein Server ausschließlich für E-Mails.",
-      "Ein Gerät zur Stromversorgung.",
-      "Ein Server zur Verwaltung von BIOS-Einstellungen."
-    ],
-    "kategorie": "Server",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 23,
-    "frage": "Was ist Active Directory?",
-    "richtigeAntwort": "Ein Verzeichnisdienst von Microsoft zur zentralen Verwaltung von Ressourcen und Identitäten.",
-    "falscheAntworten": [
-      "Eine Linux-Distribution.",
-      "Ein Netzwerkprotokoll für Webseiten.",
-      "Ein Dateiformat für Backups."
-    ],
-    "kategorie": "Windows Server",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 24,
-    "frage": "Was ist eine Domäne in einer Windows-Umgebung?",
-    "richtigeAntwort": "Ein zentral verwalteter Bereich für Benutzer, Computer und Ressourcen.",
-    "falscheAntworten": [
-      "Ein einzelner USB-Anschluss.",
-      "Eine Festplattenpartition.",
-      "Ein Grafikkartentreiber."
-    ],
-    "kategorie": "Windows Server",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 25,
-    "frage": "Was ist ein Domain Controller?",
-    "richtigeAntwort": "Ein Server, der unter anderem die Authentifizierung innerhalb einer Windows-Domäne übernimmt.",
-    "falscheAntworten": [
-      "Ein Gerät zur Kühlung eines Servers.",
-      "Ein Server ausschließlich für Webseiten.",
-      "Ein Programm zur Datenträgerbereinigung."
-    ],
-    "kategorie": "Windows Server",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 26,
-    "frage": "Was ist eine Gruppenrichtlinie?",
-    "richtigeAntwort": "Eine Möglichkeit, Einstellungen zentral für Benutzer und Computer zu verwalten.",
-    "falscheAntworten": [
-      "Eine Hardwarekomponente eines Servers.",
-      "Ein Netzwerkstecker.",
-      "Eine Datenbanktabelle."
-    ],
-    "kategorie": "Windows Server",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 27,
-    "frage": "Welches Betriebssystem ist Open Source und basiert auf dem Linux-Kernel?",
-    "richtigeAntwort": "Ubuntu",
-    "falscheAntworten": [
-      "Windows 11",
-      "macOS",
-      "iOS"
-    ],
-    "kategorie": "Linux",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 28,
-    "frage": "Welcher Befehl zeigt unter Linux den aktuellen Inhalt eines Verzeichnisses?",
-    "richtigeAntwort": "ls",
-    "falscheAntworten": [
-      "dirx",
-      "showfiles",
-      "listall"
-    ],
-    "kategorie": "Linux",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 29,
-    "frage": "Welcher Linux-Befehl wechselt das aktuelle Verzeichnis?",
-    "richtigeAntwort": "cd",
-    "falscheAntworten": [
-      "mvdir",
-      "switch",
-      "goto"
-    ],
-    "kategorie": "Linux",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 30,
-    "frage": "Welcher Linux-Befehl zeigt den aktuellen Pfad an?",
-    "richtigeAntwort": "pwd",
-    "falscheAntworten": [
-      "path",
-      "where",
-      "location"
-    ],
-    "kategorie": "Linux",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 31,
-    "frage": "Was ist Virtualisierung?",
-    "richtigeAntwort": "Der Betrieb virtueller Systeme auf physischer Hardware.",
-    "falscheAntworten": [
-      "Die Vergrößerung eines Monitors.",
-      "Die automatische Reparatur einer Festplatte.",
-      "Die Verschlüsselung eines Netzwerkkabels."
-    ],
-    "kategorie": "Virtualisierung",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 32,
-    "frage": "Was ist ein Hypervisor?",
-    "richtigeAntwort": "Eine Software- oder Firmware-Schicht zur Verwaltung virtueller Maschinen.",
-    "falscheAntworten": [
-      "Ein Virenscanner.",
-      "Ein Netzwerkstecker.",
-      "Ein Dateisystem."
-    ],
-    "kategorie": "Virtualisierung",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 33,
-    "frage": "Was ist eine virtuelle Maschine?",
-    "richtigeAntwort": "Ein softwarebasiertes Computersystem, das auf einem Hostsystem ausgeführt wird.",
-    "falscheAntworten": [
-      "Eine physische Netzwerkkarte.",
-      "Ein spezieller USB-Stick.",
-      "Ein Druckertreiber."
-    ],
-    "kategorie": "Virtualisierung",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 34,
-    "frage": "Was ist Docker hauptsächlich?",
-    "richtigeAntwort": "Eine Plattform zum Erstellen und Ausführen von Containern.",
-    "falscheAntworten": [
-      "Ein BIOS-Hersteller.",
-      "Ein Festplattenformat.",
-      "Ein Netzwerkprotokoll."
-    ],
-    "kategorie": "Virtualisierung",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 35,
-    "frage": "Was ist ein Container?",
-    "richtigeAntwort": "Eine isolierte Umgebung zur Ausführung von Anwendungen mit gemeinsam genutztem Betriebssystemkern.",
-    "falscheAntworten": [
-      "Eine physische Serverfestplatte.",
-      "Ein Netzwerkanschluss.",
-      "Ein Hardware-BIOS."
-    ],
-    "kategorie": "Virtualisierung",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 36,
-    "frage": "Was bedeutet RAID?",
-    "richtigeAntwort": "Redundant Array of Independent Disks",
-    "falscheAntworten": [
-      "Remote Access Internet Device",
-      "Random Application Integration Data",
-      "Reliable Automated Internet Directory"
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 37,
-    "frage": "Welchen Vorteil bietet RAID 1?",
-    "richtigeAntwort": "Daten werden gespiegelt und dadurch gegen den Ausfall eines Laufwerks abgesichert.",
-    "falscheAntworten": [
-      "Es verdoppelt automatisch die Netzwerkbandbreite.",
-      "Es ersetzt jede Form von Backup.",
-      "Es verschlüsselt alle Dateien."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 38,
-    "frage": "Was ist RAM?",
-    "richtigeAntwort": "Ein flüchtiger Arbeitsspeicher.",
-    "falscheAntworten": [
-      "Ein dauerhafter Datenspeicher.",
-      "Ein Netzwerkprotokoll.",
-      "Eine CPU-Schnittstelle."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 39,
-    "frage": "Welche Komponente führt hauptsächlich Rechenoperationen aus?",
-    "richtigeAntwort": "CPU",
-    "falscheAntworten": [
-      "SSD",
-      "Netzteil",
-      "Gehäuselüfter"
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 40,
-    "frage": "Welche Eigenschaft ist typisch für eine SSD?",
-    "richtigeAntwort": "Sie besitzt keine mechanisch beweglichen Schreib-/Leseköpfe.",
-    "falscheAntworten": [
-      "Sie benötigt zwingend Magnetbänder.",
-      "Sie arbeitet ausschließlich mit CDs.",
-      "Sie besteht ausschließlich aus mechanischen Zahnrädern."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 41,
-    "frage": "Was bedeutet DSGVO?",
-    "richtigeAntwort": "Datenschutz-Grundverordnung",
-    "falscheAntworten": [
-      "Deutsche Sicherheits- und Geschäftsverordnung",
-      "Digitale System-Grundverordnung",
-      "Datenspeicher-Gesetzesverordnung"
-    ],
-    "kategorie": "Datenschutz",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 42,
-    "frage": "Was sind personenbezogene Daten?",
-    "richtigeAntwort": "Informationen, die sich auf eine identifizierte oder identifizierbare Person beziehen.",
-    "falscheAntworten": [
-      "Nur Daten über Computerhardware.",
-      "Ausschließlich öffentliche Webseiten.",
-      "Nur Daten ohne jeden Personenbezug."
-    ],
-    "kategorie": "Datenschutz",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 43,
-    "frage": "Was bedeutet Datenminimierung?",
-    "richtigeAntwort": "Es sollen nur die für den jeweiligen Zweck erforderlichen personenbezogenen Daten verarbeitet werden.",
-    "falscheAntworten": [
-      "Alle Daten müssen dauerhaft gespeichert werden.",
-      "Daten müssen grundsätzlich öffentlich zugänglich sein.",
-      "Jede Datei muss automatisch komprimiert werden."
-    ],
-    "kategorie": "Datenschutz",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 44,
-    "frage": "Was ist ein starkes Passwort?",
-    "richtigeAntwort": "Ein langes, einzigartiges Passwort, das nicht für andere Dienste wiederverwendet wird.",
-    "falscheAntworten": [
-      "Der eigene Vorname mit Geburtsjahr.",
-      "12345678",
-      "Das gleiche Passwort für alle Konten."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 45,
-    "frage": "Was ist Multi-Faktor-Authentifizierung?",
-    "richtigeAntwort": "Die Anmeldung mit mindestens zwei unterschiedlichen Authentifizierungsfaktoren.",
-    "falscheAntworten": [
-      "Die Verwendung desselben Passworts auf mehreren Geräten.",
-      "Die Anmeldung ohne Benutzerkonto.",
-      "Die Verschlüsselung einer Festplatte."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 46,
-    "frage": "Was ist Phishing?",
-    "richtigeAntwort": "Der Versuch, Personen durch Täuschung zur Herausgabe vertraulicher Informationen zu bringen.",
-    "falscheAntworten": [
-      "Eine Methode zur Kühlung von Servern.",
-      "Ein Verfahren zur Datenkompression.",
-      "Eine Technik zur Beschleunigung von CPUs."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 47,
-    "frage": "Was ist Malware?",
-    "richtigeAntwort": "Schädliche Software.",
-    "falscheAntworten": [
-      "Ein Netzwerkstandard.",
-      "Eine Backup-Hardware.",
-      "Eine Programmiersprache."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 48,
-    "frage": "Was ist Ransomware?",
-    "richtigeAntwort": "Schadsoftware, die Daten oder Systeme beispielsweise verschlüsseln kann, um Lösegeld zu fordern.",
-    "falscheAntworten": [
-      "Ein Programm zur automatischen Datensicherung.",
-      "Ein Netzwerkprotokoll.",
-      "Ein Betriebssystem für Server."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 49,
-    "frage": "Was ist Social Engineering?",
-    "richtigeAntwort": "Die Manipulation von Menschen, um Informationen oder Aktionen zu erlangen.",
-    "falscheAntworten": [
-      "Die automatische Optimierung eines Prozessors.",
-      "Die Planung eines Serverraums.",
-      "Die Verschlüsselung eines WLANs."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 50,
-    "frage": "Warum sind regelmäßige Sicherheitsupdates wichtig?",
-    "richtigeAntwort": "Sie können bekannte Sicherheitslücken schließen.",
-    "falscheAntworten": [
-      "Sie erhöhen immer automatisch die Festplattenkapazität.",
-      "Sie ersetzen grundsätzlich jedes Backup.",
-      "Sie machen Passwörter überflüssig."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 51,
-    "frage": "Was ist ein Backup?",
-    "richtigeAntwort": "Eine zusätzliche Kopie von Daten zur Wiederherstellung.",
-    "falscheAntworten": [
-      "Eine Netzwerkadresse.",
-      "Ein Benutzerkonto.",
-      "Ein Prozessorcache."
-    ],
-    "kategorie": "Backup",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 52,
-    "frage": "Was besagt die 3-2-1-Backup-Regel grundsätzlich?",
-    "richtigeAntwort": "Mindestens drei Kopien auf zwei unterschiedlichen Medientypen, davon eine Kopie an einem anderen Ort.",
-    "falscheAntworten": [
-      "Drei Benutzer verwenden zwei Passwörter auf einem Server.",
-      "Ein Backup wird dreimal pro Stunde erstellt.",
-      "Drei Server müssen immer dieselbe Festplatte verwenden."
-    ],
-    "kategorie": "Backup",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 53,
-    "frage": "Was ist ein Restore?",
-    "richtigeAntwort": "Die Wiederherstellung von Daten oder Systemzuständen aus einer Sicherung.",
-    "falscheAntworten": [
-      "Die Verschlüsselung einer Datei.",
-      "Die Installation eines Monitors.",
-      "Die Vergabe einer IP-Adresse."
-    ],
-    "kategorie": "Backup",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 54,
-    "frage": "Warum sollte ein Backup regelmäßig getestet werden?",
-    "richtigeAntwort": "Damit überprüft werden kann, ob Daten tatsächlich wiederhergestellt werden können.",
-    "falscheAntworten": [
-      "Damit der Server schneller startet.",
-      "Damit die IP-Adresse geändert wird.",
-      "Damit keine Passwörter mehr benötigt werden."
-    ],
-    "kategorie": "Backup",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 55,
-    "frage": "Was ist eine Datenbank?",
-    "richtigeAntwort": "Ein strukturiertes System zur Speicherung und Verwaltung von Daten.",
-    "falscheAntworten": [
-      "Ein Netzwerkstecker.",
-      "Ein Betriebssystemtreiber.",
-      "Ein Serverlüfter."
-    ],
-    "kategorie": "Datenbanken",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 56,
-    "frage": "Welche Sprache wird häufig zur Abfrage relationaler Datenbanken verwendet?",
-    "richtigeAntwort": "SQL",
-    "falscheAntworten": [
-      "HTML",
-      "CSS",
-      "SMTP"
-    ],
-    "kategorie": "Datenbanken",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 57,
-    "frage": "Was ist ein Primärschlüssel?",
-    "richtigeAntwort": "Ein Feld oder eine Kombination von Feldern, die einen Datensatz eindeutig identifiziert.",
-    "falscheAntworten": [
-      "Das Passwort für den Serverraum.",
-      "Eine IP-Adresse des Routers.",
-      "Eine Datei zur Datensicherung."
-    ],
-    "kategorie": "Datenbanken",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 58,
-    "frage": "Welche SQL-Anweisung wird verwendet, um Daten abzufragen?",
-    "richtigeAntwort": "SELECT",
-    "falscheAntworten": [
-      "PULL",
-      "FETCHDATA",
-      "READTABLE"
-    ],
-    "kategorie": "Datenbanken",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 59,
-    "frage": "Welche SQL-Anweisung fügt neue Datensätze ein?",
-    "richtigeAntwort": "INSERT",
-    "falscheAntworten": [
-      "ADDROW",
-      "NEWDATA",
-      "APPENDTABLE"
-    ],
-    "kategorie": "Datenbanken",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 60,
-    "frage": "Was ist ein Projekt?",
-    "richtigeAntwort": "Ein zeitlich begrenztes Vorhaben mit einem definierten Ziel.",
-    "falscheAntworten": [
-      "Eine dauerhaft unveränderte Routineaufgabe.",
-      "Ein einzelnes Computerprogramm.",
-      "Ein Netzwerkprotokoll."
-    ],
-    "kategorie": "Projektmanagement",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 61,
-    "frage": "Welche Aufgabe hat ein Projektmanager?",
-    "richtigeAntwort": "Er plant, koordiniert und überwacht die Durchführung eines Projekts.",
-    "falscheAntworten": [
-      "Er programmiert grundsätzlich jede Software selbst.",
-      "Er wartet ausschließlich die Serverhardware.",
-      "Er erstellt ausschließlich Benutzerkonten."
-    ],
-    "kategorie": "Projektmanagement",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 62,
-    "frage": "Was ist ein Meilenstein?",
-    "richtigeAntwort": "Ein wichtiger definierter Zeitpunkt oder Zwischenpunkt innerhalb eines Projekts.",
-    "falscheAntworten": [
-      "Ein Netzwerkgerät.",
-      "Eine Serverfestplatte.",
-      "Ein Verschlüsselungsalgorithmus."
-    ],
-    "kategorie": "Projektmanagement",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 63,
-    "frage": "Was ist ein Gantt-Diagramm?",
-    "richtigeAntwort": "Eine grafische Darstellung von Aufgaben und deren zeitlicher Planung.",
-    "falscheAntworten": [
-      "Eine Methode zur Verschlüsselung.",
-      "Ein Netzwerkprotokoll.",
-      "Ein Dateisystem."
-    ],
-    "kategorie": "Projektmanagement",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 64,
-    "frage": "Was bezeichnet ein Projekt-Risiko?",
-    "richtigeAntwort": "Ein mögliches zukünftiges Ereignis, das den Projektverlauf negativ oder positiv beeinflussen kann.",
-    "falscheAntworten": [
-      "Ein bereits abgeschlossener Arbeitsschritt.",
-      "Ein Benutzerkonto.",
-      "Ein Serverbetriebssystem."
-    ],
-    "kategorie": "Projektmanagement",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 65,
-    "frage": "Was gehört typischerweise zu einer Projektplanung?",
-    "richtigeAntwort": "Ziele, Aufgaben, Termine, Ressourcen und Verantwortlichkeiten.",
-    "falscheAntworten": [
-      "Nur die Farbe der Servergehäuse.",
-      "Ausschließlich private Passwörter.",
-      "Nur die Seriennummer eines Monitors."
-    ],
-    "kategorie": "Projektmanagement",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 66,
-    "frage": "Was bedeutet SLA?",
-    "richtigeAntwort": "Service Level Agreement",
-    "falscheAntworten": [
-      "Server Login Authentication",
-      "System License Access",
-      "Secure Local Application"
-    ],
-    "kategorie": "IT-Service",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 67,
-    "frage": "Was ist ein Ticketsystem?",
-    "richtigeAntwort": "Ein System zur Erfassung, Bearbeitung und Nachverfolgung von Supportanfragen.",
-    "falscheAntworten": [
-      "Ein System zur CPU-Kühlung.",
-      "Ein Dateisystem für SSDs.",
-      "Ein Netzwerkprotokoll für Router."
-    ],
-    "kategorie": "IT-Service",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 68,
-    "frage": "Was bedeutet First-Level-Support?",
-    "richtigeAntwort": "Die erste Anlaufstelle für Benutzer bei Supportanfragen.",
-    "falscheAntworten": [
-      "Der Hersteller eines Prozessors.",
-      "Die höchste technische Eskalationsstufe.",
-      "Ein spezieller Servertyp."
-    ],
-    "kategorie": "IT-Service",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 69,
-    "frage": "Was ist eine Eskalation im IT-Support?",
-    "richtigeAntwort": "Die Weitergabe eines Problems an eine zuständige höhere Supportstufe.",
-    "falscheAntworten": [
-      "Das Löschen eines Benutzerkontos.",
-      "Das Formatieren jeder Festplatte.",
-      "Das Abschalten des Internets."
-    ],
-    "kategorie": "IT-Service",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 70,
-    "frage": "Was ist PowerShell?",
-    "richtigeAntwort": "Eine Kommandozeilen-Shell und Skriptsprache von Microsoft.",
-    "falscheAntworten": [
-      "Ein Festplattenformat.",
-      "Ein Netzwerkstecker.",
-      "Ein Prozessorhersteller."
-    ],
-    "kategorie": "Scripting",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 71,
-    "frage": "Was ist Bash?",
-    "richtigeAntwort": "Eine weit verbreitete Unix-Shell.",
-    "falscheAntworten": [
-      "Eine Windows-Festplatte.",
-      "Ein Netzwerkprotokoll.",
-      "Ein Virenscanner."
-    ],
-    "kategorie": "Scripting",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 72,
-    "frage": "Was ist ein Skript?",
-    "richtigeAntwort": "Eine Folge von Befehlen, die automatisiert ausgeführt werden kann.",
-    "falscheAntworten": [
-      "Ein Hardwarebauteil.",
-      "Eine Netzwerkdose.",
-      "Ein Datenträger."
-    ],
-    "kategorie": "Scripting",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 73,
-    "frage": "Welche Sprache wird häufig zur Automatisierung und Administration eingesetzt?",
-    "richtigeAntwort": "Python",
-    "falscheAntworten": [
-      "JPEG",
-      "Ethernet",
-      "HDMI"
-    ],
-    "kategorie": "Programmierung",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 74,
-    "frage": "Was ist ein Algorithmus?",
-    "richtigeAntwort": "Eine eindeutige Folge von Schritten zur Lösung eines Problems.",
-    "falscheAntworten": [
-      "Eine Hardwarekomponente.",
-      "Ein Netzwerkstecker.",
-      "Ein Dateisystem."
-    ],
-    "kategorie": "Programmierung",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 75,
-    "frage": "Was ist eine Variable in der Programmierung?",
-    "richtigeAntwort": "Ein benannter Speicherbereich für einen Wert.",
-    "falscheAntworten": [
-      "Ein physisches Netzwerkkabel.",
-      "Ein Servergehäuse.",
-      "Ein Druckertreiber."
-    ],
-    "kategorie": "Programmierung",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 76,
-    "frage": "Was ist Cloud Computing?",
-    "richtigeAntwort": "Die bedarfsgerechte Nutzung von IT-Ressourcen über ein Netzwerk, häufig das Internet.",
-    "falscheAntworten": [
-      "Die Speicherung aller Daten ausschließlich auf USB-Sticks.",
-      "Ein Verfahren zur CPU-Übertaktung.",
-      "Ein spezielles Netzwerkkabel."
-    ],
-    "kategorie": "Cloud",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 77,
-    "frage": "Was bedeutet IaaS?",
-    "richtigeAntwort": "Infrastructure as a Service",
-    "falscheAntworten": [
-      "Internet as an Application System",
-      "Internal Access Authentication Service",
-      "Information and Application Security"
-    ],
-    "kategorie": "Cloud",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 78,
-    "frage": "Was bedeutet SaaS?",
-    "richtigeAntwort": "Software as a Service",
-    "falscheAntworten": [
-      "Server as an Application System",
-      "Secure Access and Storage",
-      "System Administration as Service"
-    ],
-    "kategorie": "Cloud",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 79,
-    "frage": "Was bedeutet PaaS?",
-    "richtigeAntwort": "Platform as a Service",
-    "falscheAntworten": [
-      "Protocol as a Security",
-      "Private Application Access Service",
-      "Processor as an Application System"
-    ],
-    "kategorie": "Cloud",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 80,
-    "frage": "Was ist eine IP-Adresse?",
-    "richtigeAntwort": "Eine logische Adresse zur Identifikation eines Geräts bzw. einer Schnittstelle in einem IP-Netzwerk.",
-    "falscheAntworten": [
-      "Eine physische Festplatte.",
-      "Ein Benutzerpasswort.",
-      "Eine Bildschirmauflösung."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 81,
-    "frage": "Was ist localhost?",
-    "richtigeAntwort": "Eine Bezeichnung für das eigene System.",
-    "falscheAntworten": [
-      "Der Router des Internetproviders.",
-      "Der DNS-Server des Unternehmens.",
-      "Ein öffentlicher Webserver."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 82,
-    "frage": "Welche IPv4-Adresse bezeichnet typischerweise localhost?",
-    "richtigeAntwort": "127.0.0.1",
-    "falscheAntworten": [
-      "192.168.0.1",
-      "8.8.8.8",
-      "255.255.255.255"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 83,
-    "frage": "Was ist eine Default Route?",
-    "richtigeAntwort": "Eine Route, die verwendet wird, wenn keine spezifischere Route vorhanden ist.",
-    "falscheAntworten": [
-      "Ein Standardpasswort für Router.",
-      "Eine feste DNS-Adresse.",
-      "Eine automatische Firewallregel."
-    ],
-    "kategorie": "Routing",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 84,
-    "frage": "Was macht der Befehl ping?",
-    "richtigeAntwort": "Er kann die Erreichbarkeit eines Ziels über ICMP testen.",
-    "falscheAntworten": [
-      "Er formatiert eine Festplatte.",
-      "Er erstellt automatisch einen Benutzer.",
-      "Er installiert ein Betriebssystem."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 85,
-    "frage": "Was zeigt traceroute bzw. tracert?",
-    "richtigeAntwort": "Den Weg bzw. die Zwischenstationen eines Netzwerkpakets zum Ziel.",
-    "falscheAntworten": [
-      "Alle Benutzerpasswörter.",
-      "Die Dateien eines Servers.",
-      "Die Temperatur jedes Prozessors."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 86,
-    "frage": "Was ist eine Netzwerkkarte?",
-    "richtigeAntwort": "Eine Hardware- oder Schnittstellenkomponente zur Netzwerkkommunikation.",
-    "falscheAntworten": [
-      "Eine Grafikkarte.",
-      "Eine Festplattenpartition.",
-      "Ein Betriebssystem."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 87,
-    "frage": "Was ist Ethernet?",
-    "richtigeAntwort": "Eine Familie von Technologien für kabelgebundene lokale Netzwerke.",
-    "falscheAntworten": [
-      "Eine Programmiersprache.",
-      "Ein Verschlüsselungsalgorithmus.",
-      "Ein Serverbetriebssystem."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 88,
-    "frage": "Was ist Glasfaser?",
-    "richtigeAntwort": "Ein Übertragungsmedium, das Daten mithilfe von Lichtsignalen überträgt.",
-    "falscheAntworten": [
-      "Ein Kupferkabel mit höherer Spannung.",
-      "Ein WLAN-Protokoll.",
-      "Ein Festplattentyp."
-    ],
-    "kategorie": "Netzwerktechnik",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 89,
-    "frage": "Was bedeutet CIA-Triade in der IT-Sicherheit?",
-    "richtigeAntwort": "Confidentiality, Integrity und Availability.",
-    "falscheAntworten": [
-      "Control, Internet und Authentication.",
-      "Computer, Identity und Access.",
-      "Cloud, Infrastructure und Application."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 90,
-    "frage": "Was bedeutet Vertraulichkeit bei der IT-Sicherheit?",
-    "richtigeAntwort": "Informationen sollen nur für berechtigte Personen zugänglich sein.",
-    "falscheAntworten": [
-      "Alle Daten müssen öffentlich sein.",
-      "Daten müssen immer gelöscht werden.",
-      "Systeme müssen jederzeit ausgeschaltet sein."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 91,
-    "frage": "Was bedeutet Integrität bei der IT-Sicherheit?",
-    "richtigeAntwort": "Daten sollen korrekt und vor unbefugter Veränderung geschützt sein.",
-    "falscheAntworten": [
-      "Daten müssen öffentlich zugänglich sein.",
-      "Daten müssen grundsätzlich verschlüsselt gelöscht werden.",
-      "Ein System darf niemals aktualisiert werden."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 92,
-    "frage": "Was bedeutet Verfügbarkeit bei der IT-Sicherheit?",
-    "richtigeAntwort": "Informationen und Systeme sollen bei Bedarf verfügbar sein.",
-    "falscheAntworten": [
-      "Alle Informationen müssen anonym sein.",
-      "Alle Daten müssen gelöscht werden.",
-      "Nur Administratoren dürfen das System abschalten."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 93,
-    "frage": "Was ist ein Benutzerkonto?",
-    "richtigeAntwort": "Eine Identität, über die ein Benutzer auf Systeme und Ressourcen zugreifen kann.",
-    "falscheAntworten": [
-      "Ein physischer Netzwerkanschluss.",
-      "Ein CPU-Kern.",
-      "Ein Festplattencontroller."
-    ],
-    "kategorie": "Administration",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 94,
-    "frage": "Was bedeutet das Prinzip der geringsten Rechte?",
-    "richtigeAntwort": "Benutzer und Systeme erhalten nur die Rechte, die sie für ihre Aufgaben benötigen.",
-    "falscheAntworten": [
-      "Jeder Benutzer erhält Administratorrechte.",
-      "Passwörter werden grundsätzlich abgeschafft.",
-      "Alle Dateien werden öffentlich freigegeben."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 95,
-    "frage": "Warum sollte man Administratorrechte nicht dauerhaft für normale Benutzer verwenden?",
-    "richtigeAntwort": "Weil dadurch das Risiko von Fehlbedienungen und Sicherheitsvorfällen erhöht werden kann.",
-    "falscheAntworten": [
-      "Weil Administratoren keine Dateien öffnen können.",
-      "Weil Windows sonst keine Netzwerkverbindung erlaubt.",
-      "Weil dadurch die CPU automatisch langsamer wird."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 96,
-    "frage": "Was ist Dokumentation in der IT?",
-    "richtigeAntwort": "Die strukturierte Aufzeichnung wichtiger Informationen über Systeme, Prozesse und Änderungen.",
-    "falscheAntworten": [
-      "Das Löschen alter Benutzerkonten.",
-      "Das Übertakten eines Prozessors.",
-      "Das Verschlüsseln jedes Netzwerkpakets."
-    ],
-    "kategorie": "Dokumentation",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 97,
-    "frage": "Warum ist eine Netzwerkdokumentation wichtig?",
-    "richtigeAntwort": "Sie erleichtert Betrieb, Fehlersuche, Wartung und Änderungen am Netzwerk.",
-    "falscheAntworten": [
-      "Sie ersetzt automatisch jede Firewall.",
-      "Sie erhöht die CPU-Taktfrequenz.",
-      "Sie macht Backups unnötig."
-    ],
-    "kategorie": "Dokumentation",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 98,
-    "frage": "Was ist eine IP-Adressplanung?",
-    "richtigeAntwort": "Die strukturierte Planung der IP-Netze und Adressbereiche für Geräte und Systeme.",
-    "falscheAntworten": [
-      "Die Planung von Benutzerpasswörtern.",
-      "Die Auswahl von Monitorgrößen.",
-      "Die automatische Installation eines Browsers."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 99,
-    "frage": "Was ist Monitoring?",
-    "richtigeAntwort": "Die Überwachung von Systemen, Diensten und deren Zuständen.",
-    "falscheAntworten": [
-      "Das Formatieren eines Servers.",
-      "Das Verschlüsseln von Benutzerkonten.",
-      "Das Ersetzen eines Netzwerkkabels."
-    ],
-    "kategorie": "IT-Service",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 100,
-    "frage": "Warum ist Monitoring in einer IT-Infrastruktur wichtig?",
-    "richtigeAntwort": "Probleme und Ausfälle können frühzeitig erkannt werden.",
-    "falscheAntworten": [
-      "Es ersetzt jedes Betriebssystem.",
-      "Es verhindert grundsätzlich jeden Hardwaredefekt.",
-      "Es macht Benutzerverwaltung überflüssig."
-    ],
-    "kategorie": "IT-Service",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 101,
-    "frage": "Welche Funktion hat das ARP-Protokoll in einem IPv4-Netzwerk?",
-    "richtigeAntwort": "Es ermittelt die MAC-Adresse zu einer bekannten IPv4-Adresse.",
-    "falscheAntworten": [
-      "Es verschlüsselt die Kommunikation zwischen zwei Routern.",
-      "Es vergibt automatisch öffentliche IP-Adressen.",
-      "Es übersetzt Domainnamen in Webseiten."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 102,
-    "frage": "Was ist eine Broadcast-Adresse?",
-    "richtigeAntwort": "Eine Adresse, mit der alle Hosts eines bestimmten IPv4-Netzes angesprochen werden können.",
-    "falscheAntworten": [
-      "Eine Adresse, die ausschließlich einen einzelnen Host erreicht.",
-      "Die MAC-Adresse eines Routers.",
-      "Die Adresse eines DNS-Servers."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 103,
-    "frage": "Welche Adresse wird bei IPv4 häufig als Standard-Gateway eines Clients eingetragen?",
-    "richtigeAntwort": "Die IP-Adresse des Routers im lokalen Netzwerk.",
-    "falscheAntworten": [
-      "Die MAC-Adresse des Clients.",
-      "Die IP-Adresse des DNS-Namens des Computers.",
-      "Die Broadcast-Adresse des Internets."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 104,
-    "frage": "Was passiert typischerweise, wenn ein Client kein Standard-Gateway besitzt?",
-    "richtigeAntwort": "Er kann sein lokales Netzwerk erreichen, aber normalerweise keine anderen IP-Netze über einen Router.",
-    "falscheAntworten": [
-      "Der Computer kann grundsätzlich keine Dateien mehr speichern.",
-      "Die Netzwerkkarte wird automatisch deaktiviert.",
-      "DNS funktioniert dadurch immer vollständig ohne Einschränkungen."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 105,
-    "frage": "Was bedeutet CIDR?",
-    "richtigeAntwort": "Classless Inter-Domain Routing",
-    "falscheAntworten": [
-      "Central Internet Data Routing",
-      "Computer Internal Domain Resolution",
-      "Classified Internet Device Registration"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 106,
-    "frage": "Wie viele nutzbare Hostadressen besitzt ein IPv4-Netz mit /24 in der klassischen Subnetzbetrachtung?",
-    "richtigeAntwort": "254",
-    "falscheAntworten": [
-      "256",
-      "252",
-      "128"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 107,
-    "frage": "Welche Subnetzmaske entspricht einem /24-Netz?",
-    "richtigeAntwort": "255.255.255.0",
-    "falscheAntworten": [
-      "255.255.0.0",
-      "255.255.255.128",
-      "255.0.0.0"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 108,
-    "frage": "Welche Subnetzmaske entspricht einem /16-Netz?",
-    "richtigeAntwort": "255.255.0.0",
-    "falscheAntworten": [
-      "255.255.255.0",
-      "255.0.255.0",
-      "255.255.255.252"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 109,
-    "frage": "Welche Technologie wird verwendet, um mehrere VLANs über eine Verbindung zwischen Switches zu übertragen?",
-    "richtigeAntwort": "VLAN-Trunking",
-    "falscheAntworten": [
-      "Port Mirroring",
-      "NAT",
-      "DHCP Relay"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 110,
-    "frage": "Was ist der Zweck von NAT?",
-    "richtigeAntwort": "Es übersetzt Netzwerkadressen zwischen verschiedenen Adressbereichen.",
-    "falscheAntworten": [
-      "Es ersetzt das DNS-System.",
-      "Es verschlüsselt jede TCP-Verbindung.",
-      "Es verwaltet ausschließlich Benutzerrechte."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 111,
-    "frage": "Welche Eigenschaft besitzt TCP im Vergleich zu UDP?",
-    "richtigeAntwort": "TCP stellt eine verbindungsorientierte und zuverlässige Übertragung bereit.",
-    "falscheAntworten": [
-      "TCP ist immer schneller als UDP.",
-      "TCP benötigt grundsätzlich keine Ports.",
-      "TCP kann ausschließlich innerhalb eines LANs verwendet werden."
-    ],
-    "kategorie": "Netzwerkprotokolle",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 112,
-    "frage": "Warum wird UDP häufig für Echtzeitanwendungen verwendet?",
-    "richtigeAntwort": "UDP hat einen geringeren Protokoll-Overhead und wartet nicht auf eine zuverlässige Zustellung jedes einzelnen Pakets.",
-    "falscheAntworten": [
-      "UDP verschlüsselt automatisch alle Daten.",
-      "UDP garantiert die Reihenfolge aller Pakete.",
-      "UDP benötigt keine IP-Adressen."
-    ],
-    "kategorie": "Netzwerkprotokolle",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 113,
-    "frage": "Was ist ein TCP-Port?",
-    "richtigeAntwort": "Eine logische Nummer zur Zuordnung von Netzwerkverbindungen zu Anwendungen oder Diensten.",
-    "falscheAntworten": [
-      "Eine physische Buchse am Computer.",
-      "Eine IP-Adresse des Routers.",
-      "Eine MAC-Adresse des Servers."
-    ],
-    "kategorie": "Netzwerkprotokolle",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 114,
-    "frage": "Welcher Dienst verwendet typischerweise TCP-Port 25?",
-    "richtigeAntwort": "SMTP",
-    "falscheAntworten": [
-      "SSH",
-      "DNS",
-      "DHCP"
-    ],
-    "kategorie": "Netzwerkprotokolle",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 115,
-    "frage": "Welcher Dienst verwendet typischerweise TCP-Port 3389?",
-    "richtigeAntwort": "Remote Desktop Protocol (RDP)",
-    "falscheAntworten": [
-      "HTTPS",
-      "FTP",
-      "DNS"
-    ],
-    "kategorie": "Netzwerkprotokolle",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 116,
-    "frage": "Welche Aufgabe hat ICMP?",
-    "richtigeAntwort": "Es dient unter anderem zur Übermittlung von Fehler- und Diagnoseinformationen im IP-Netzwerk.",
-    "falscheAntworten": [
-      "Es speichert Benutzerdateien.",
-      "Es verwaltet Festplattenpartitionen.",
-      "Es ersetzt Ethernet."
-    ],
-    "kategorie": "Netzwerkprotokolle",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 117,
-    "frage": "Was bedeutet MTU?",
-    "richtigeAntwort": "Maximum Transmission Unit",
-    "falscheAntworten": [
-      "Maximum Transfer User",
-      "Managed Transmission Utility",
-      "Multi Terminal Unit"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 118,
-    "frage": "Was kann eine falsche MTU-Einstellung verursachen?",
-    "richtigeAntwort": "Probleme bei der Übertragung bestimmter Netzwerkpakete.",
-    "falscheAntworten": [
-      "Eine automatisch beschädigte CPU.",
-      "Eine Änderung des Monitorformats.",
-      "Eine Löschung aller Benutzerkonten."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 119,
-    "frage": "Was ist Port Mirroring?",
-    "richtigeAntwort": "Das Weiterleiten des Netzwerkverkehrs eines Ports an einen anderen Port zur Analyse.",
-    "falscheAntworten": [
-      "Das Kopieren einer Festplatte auf eine SSD.",
-      "Das Spiegeln von Benutzerkonten.",
-      "Das Erstellen eines zweiten DNS-Servers."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 120,
-    "frage": "Wofür wird Wireshark verwendet?",
-    "richtigeAntwort": "Zur Analyse und Aufzeichnung von Netzwerkverkehr.",
-    "falscheAntworten": [
-      "Zur Partitionierung von Festplatten.",
-      "Zur Erstellung von Benutzerkonten.",
-      "Zur Verwaltung von BIOS-Passwörtern."
-    ],
-    "kategorie": "Netzwerkanalyse",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 121,
-    "frage": "Was ist ein DHCP Lease?",
-    "richtigeAntwort": "Eine zeitlich begrenzte Zuweisung einer IP-Konfiguration an einen Client.",
-    "falscheAntworten": [
-      "Ein dauerhafter Kauf einer IP-Adresse.",
-      "Ein Benutzerkonto auf einem DNS-Server.",
-      "Eine Verschlüsselung eines Netzwerkpakets."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 122,
-    "frage": "Was bedeutet DHCP Reservation?",
-    "richtigeAntwort": "Eine feste Zuordnung einer bestimmten IP-Adresse zu einem Client anhand seiner Hardwareadresse.",
-    "falscheAntworten": [
-      "Eine Reservierung eines Servers im Rechenzentrum.",
-      "Eine Verschlüsselung von DHCP-Paketen.",
-      "Eine Sperrung sämtlicher IP-Adressen."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 123,
-    "frage": "Was ist ein DNS-A-Record?",
-    "richtigeAntwort": "Ein DNS-Eintrag, der einen Hostnamen auf eine IPv4-Adresse verweist.",
-    "falscheAntworten": [
-      "Ein Eintrag für eine MAC-Adresse.",
-      "Ein Eintrag für ein Benutzerpasswort.",
-      "Ein Eintrag für eine IPv6-Adresse."
-    ],
-    "kategorie": "DNS",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 124,
-    "frage": "Welcher DNS-Record verweist typischerweise auf eine IPv6-Adresse?",
-    "richtigeAntwort": "AAAA",
-    "falscheAntworten": [
-      "A",
-      "MX",
-      "PTR"
-    ],
-    "kategorie": "DNS",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 125,
-    "frage": "Wofür wird ein MX-Record verwendet?",
-    "richtigeAntwort": "Zur Angabe von Mailservern für eine Domain.",
-    "falscheAntworten": [
-      "Zur Angabe von DNS-Rootservern.",
-      "Zur Speicherung von Benutzerpasswörtern.",
-      "Zur Definition eines VLANs."
-    ],
-    "kategorie": "DNS",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 126,
-    "frage": "Was ist RAID 5?",
-    "richtigeAntwort": "Ein RAID-Level mit Striping und verteilter Paritätsinformation.",
-    "falscheAntworten": [
-      "Eine reine Spiegelung von zwei Laufwerken.",
-      "Ein Verfahren ohne Redundanz und ohne Striping.",
-      "Eine Verschlüsselungsmethode für Festplatten."
-    ],
-    "kategorie": "Storage",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 127,
-    "frage": "Was ist der Hauptunterschied zwischen RAID und Backup?",
-    "richtigeAntwort": "RAID dient unter anderem der Verfügbarkeit und Ausfallsicherheit, während ein Backup der Wiederherstellung von Daten dient.",
-    "falscheAntworten": [
-      "RAID und Backup sind immer dasselbe.",
-      "Ein Backup kann niemals Daten wiederherstellen.",
-      "RAID ersetzt automatisch jede externe Sicherung."
-    ],
-    "kategorie": "Storage",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 128,
-    "frage": "Was ist ein NAS?",
-    "richtigeAntwort": "Ein Network Attached Storage stellt Speicher über ein Netzwerk bereit.",
-    "falscheAntworten": [
-      "Ein Netzwerkverschlüsselungsprotokoll.",
-      "Ein CPU-Typ.",
-      "Ein Betriebssystemkernel."
-    ],
-    "kategorie": "Storage",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 129,
-    "frage": "Was ist ein SAN?",
-    "richtigeAntwort": "Ein Storage Area Network ist ein spezialisiertes Netzwerk für den Zugriff auf Speichersysteme.",
-    "falscheAntworten": [
-      "Ein lokales WLAN.",
-      "Ein DNS-Server.",
-      "Ein Backup-Dateiformat."
-    ],
-    "kategorie": "Storage",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 130,
-    "frage": "Was ist IOPS?",
-    "richtigeAntwort": "Input/Output Operations Per Second",
-    "falscheAntworten": [
-      "Internet Operations Per Server",
-      "Internal Operating System",
-      "Input Output Protocol Standard"
-    ],
-    "kategorie": "Storage",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 131,
-    "frage": "Was ist UEFI?",
-    "richtigeAntwort": "Eine moderne Firmware-Schnittstelle, die unter anderem den Start eines Computers ermöglicht.",
-    "falscheAntworten": [
-      "Ein Netzwerkprotokoll.",
-      "Ein Datenbankserver.",
-      "Ein Dateisystem für Webserver."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 132,
-    "frage": "Welche Aufgabe übernimmt POST beim Systemstart?",
-    "richtigeAntwort": "Es überprüft grundlegende Hardwarekomponenten während des Startvorgangs.",
-    "falscheAntworten": [
-      "Es installiert automatisch Windows.",
-      "Es verschlüsselt die Festplatte.",
-      "Es vergibt IP-Adressen."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 133,
-    "frage": "Was ist ECC-RAM?",
-    "richtigeAntwort": "Arbeitsspeicher mit Funktionen zur Erkennung und teilweise Korrektur von Speicherfehlern.",
-    "falscheAntworten": [
-      "Eine besonders schnelle SSD.",
-      "Eine Netzwerkkarte mit WLAN.",
-      "Ein Prozessor ohne Cache."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 134,
-    "frage": "Was ist Hot-Swap?",
-    "richtigeAntwort": "Das Austauschen bestimmter Hardwarekomponenten während des laufenden Betriebs.",
-    "falscheAntworten": [
-      "Das automatische Übertakten eines Prozessors.",
-      "Das Löschen eines Benutzerkontos.",
-      "Das Ändern einer IP-Adresse."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 135,
-    "frage": "Was bedeutet TDP bei Prozessoren?",
-    "richtigeAntwort": "Thermal Design Power und beschreibt eine thermische Auslegungsgröße.",
-    "falscheAntworten": [
-      "Total Data Protocol.",
-      "Transfer Device Performance.",
-      "Terminal Display Port."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 136,
-    "frage": "Was ist ein Prozess?",
-    "richtigeAntwort": "Eine laufende Instanz eines Programms.",
-    "falscheAntworten": [
-      "Ein physischer CPU-Kern.",
-      "Eine Netzwerkadresse.",
-      "Eine Festplattenpartition."
-    ],
-    "kategorie": "Betriebssysteme",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 137,
-    "frage": "Was ist ein Dienst unter einem Betriebssystem?",
-    "richtigeAntwort": "Ein Programm oder Prozess, der bestimmte Funktionen im Hintergrund bereitstellt.",
-    "falscheAntworten": [
-      "Eine physische Netzwerkkarte.",
-      "Eine Festplattenverschlüsselung.",
-      "Ein Monitoranschluss."
-    ],
-    "kategorie": "Betriebssysteme",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 138,
-    "frage": "Was ist ein Kernel?",
-    "richtigeAntwort": "Der zentrale Bestandteil eines Betriebssystems, der unter anderem Hardware und Systemressourcen verwaltet.",
-    "falscheAntworten": [
-      "Ein Webbrowser.",
-      "Eine Datenbanktabelle.",
-      "Ein Netzwerkstecker."
-    ],
-    "kategorie": "Betriebssysteme",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 139,
-    "frage": "Was ist Paging?",
-    "richtigeAntwort": "Eine Speicherverwaltungstechnik, bei der Speicher in Seiten organisiert wird.",
-    "falscheAntworten": [
-      "Eine Methode zum Formatieren von Netzwerkkarten.",
-      "Eine Verschlüsselung von DNS.",
-      "Eine Hardwaretechnik für Festplatten."
-    ],
-    "kategorie": "Betriebssysteme",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 140,
-    "frage": "Was versteht man unter einem Dateisystem?",
-    "richtigeAntwort": "Eine Struktur und Regeln zur Organisation und Speicherung von Dateien auf einem Datenträger.",
-    "falscheAntworten": [
-      "Ein Netzwerkprotokoll.",
-      "Eine CPU-Architektur.",
-      "Eine Firewallregel."
-    ],
-    "kategorie": "Betriebssysteme",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 141,
-    "frage": "Welches Dateisystem wird häufig unter Windows verwendet?",
-    "richtigeAntwort": "NTFS",
-    "falscheAntworten": [
-      "EXT9",
-      "APFS2",
-      "XFS-W"
-    ],
-    "kategorie": "Betriebssysteme",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 142,
-    "frage": "Welches Dateisystem ist unter vielen Linux-Systemen verbreitet?",
-    "richtigeAntwort": "ext4",
-    "falscheAntworten": [
-      "NTFSX",
-      "FAT99",
-      "LINUXFS32"
-    ],
-    "kategorie": "Linux",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 143,
-    "frage": "Was bedeutet chmod unter Linux?",
-    "richtigeAntwort": "Der Befehl verändert Zugriffsrechte von Dateien oder Verzeichnissen.",
-    "falscheAntworten": [
-      "Er startet einen Netzwerkrouter.",
-      "Er ändert die IP-Adresse.",
-      "Er löscht den Linux-Kernel."
-    ],
-    "kategorie": "Linux",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 144,
-    "frage": "Was macht der Linux-Befehl grep?",
-    "richtigeAntwort": "Er sucht nach Textmustern in Eingaben oder Dateien.",
-    "falscheAntworten": [
-      "Er partitioniert Festplatten.",
-      "Er startet den DNS-Dienst.",
-      "Er ändert die MAC-Adresse."
-    ],
-    "kategorie": "Linux",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 145,
-    "frage": "Was macht sudo unter Linux typischerweise?",
-    "richtigeAntwort": "Es ermöglicht berechtigten Benutzern die Ausführung von Befehlen mit erweiterten Rechten.",
-    "falscheAntworten": [
-      "Es verschlüsselt automatisch jede Datei.",
-      "Es startet ausschließlich den Webbrowser.",
-      "Es ersetzt den Kernel."
-    ],
-    "kategorie": "Linux",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 146,
-    "frage": "Was ist eine Active-Directory-Organisationseinheit?",
-    "richtigeAntwort": "Ein Container zur strukturierten Organisation von Objekten innerhalb einer Domäne.",
-    "falscheAntworten": [
-      "Eine physische Serverfestplatte.",
-      "Ein Internetprotokoll.",
-      "Ein spezieller Netzwerkstecker."
-    ],
-    "kategorie": "Windows Server",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 147,
-    "frage": "Was ist Kerberos?",
-    "richtigeAntwort": "Ein Netzwerkprotokoll zur Authentifizierung, das beispielsweise in Active-Directory-Umgebungen eingesetzt wird.",
-    "falscheAntworten": [
-      "Ein Festplattenformat.",
-      "Ein Routermodell.",
-      "Eine Backupstrategie."
-    ],
-    "kategorie": "Windows Server",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 148,
-    "frage": "Was ist LDAP?",
-    "richtigeAntwort": "Ein Protokoll für den Zugriff auf Verzeichnisdienste.",
-    "falscheAntworten": [
-      "Ein Verschlüsselungsverfahren für SSDs.",
-      "Ein Netzwerkstecker.",
-      "Eine CPU-Befehlssatzarchitektur."
-    ],
-    "kategorie": "Server",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 149,
-    "frage": "Was ist eine Sicherheitsgruppe in Active Directory?",
-    "richtigeAntwort": "Eine Gruppe, die zur Vergabe von Berechtigungen und zur Organisation von Benutzern oder Computern verwendet werden kann.",
-    "falscheAntworten": [
-      "Eine Gruppe physischer Server.",
-      "Eine Sammlung von Netzwerksteckern.",
-      "Ein spezielles RAID-Level."
-    ],
-    "kategorie": "Windows Server",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 150,
-    "frage": "Warum sind Gruppen bei der Rechteverwaltung sinnvoll?",
-    "richtigeAntwort": "Berechtigungen können zentral einer Gruppe zugewiesen werden, statt jeden Benutzer einzeln zu verwalten.",
-    "falscheAntworten": [
-      "Gruppen ersetzen grundsätzlich Passwörter.",
-      "Gruppen erhöhen automatisch die CPU-Leistung.",
-      "Gruppen machen Firewalls überflüssig."
-    ],
-    "kategorie": "Windows Server",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 151,
-    "frage": "Was ist ein Fileserver?",
-    "richtigeAntwort": "Ein Server, der Dateien und Verzeichnisse über ein Netzwerk bereitstellt.",
-    "falscheAntworten": [
-      "Ein Server ausschließlich für DNS.",
-      "Ein Server zur Stromversorgung.",
-      "Ein Router ohne Speicher."
-    ],
-    "kategorie": "Server",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 152,
-    "frage": "Was ist ein Printserver?",
-    "richtigeAntwort": "Ein Server, der Drucker zentral im Netzwerk verwalten und bereitstellen kann.",
-    "falscheAntworten": [
-      "Ein Server zur Verwaltung von Prozessoren.",
-      "Ein DNS-Server.",
-      "Ein Server zur Verschlüsselung von Festplatten."
-    ],
-    "kategorie": "Server",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 153,
-    "frage": "Was ist ein Proxyserver?",
-    "richtigeAntwort": "Ein Server, der als Vermittler zwischen Client und Zielsystem fungieren kann.",
-    "falscheAntworten": [
-      "Ein Server ausschließlich für Backups.",
-      "Eine Netzwerkkarte.",
-      "Ein Prozessorcache."
-    ],
-    "kategorie": "Server",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 154,
-    "frage": "Was ist ein Reverse Proxy?",
-    "richtigeAntwort": "Ein Vermittler, der typischerweise vor mehreren Backend-Servern steht und Anfragen an diese weiterleitet.",
-    "falscheAntworten": [
-      "Ein Client ohne Betriebssystem.",
-      "Ein Ersatz für RAM.",
-      "Ein spezieller Festplattentyp."
-    ],
-    "kategorie": "Server",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 155,
-    "frage": "Was ist Load Balancing?",
-    "richtigeAntwort": "Die Verteilung von Anfragen oder Last auf mehrere Systeme.",
-    "falscheAntworten": [
-      "Die Verschlüsselung einer Festplatte.",
-      "Die Vergabe von Benutzerpasswörtern.",
-      "Das Ersetzen eines DNS-Servers."
-    ],
-    "kategorie": "Server",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 156,
-    "frage": "Was bedeutet Hochverfügbarkeit?",
-    "richtigeAntwort": "Ein System ist so ausgelegt, dass Ausfallzeiten möglichst gering gehalten werden.",
-    "falscheAntworten": [
-      "Ein System besitzt besonders viel Speicherplatz.",
-      "Ein Server besitzt ausschließlich eine CPU.",
-      "Ein Netzwerk verwendet nur WLAN."
-    ],
-    "kategorie": "Server",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 157,
-    "frage": "Was ist Failover?",
-    "richtigeAntwort": "Die automatische oder manuelle Übernahme eines Dienstes durch ein alternatives System bei einem Ausfall.",
-    "falscheAntworten": [
-      "Das Löschen eines Backups.",
-      "Die Änderung eines DNS-Namens.",
-      "Das Formatieren einer Festplatte."
-    ],
-    "kategorie": "Server",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 158,
-    "frage": "Was ist ein Single Point of Failure?",
-    "richtigeAntwort": "Eine einzelne Komponente, deren Ausfall zum Ausfall eines gesamten Dienstes führen kann.",
-    "falscheAntworten": [
-      "Ein besonders schneller Server.",
-      "Eine sichere Backupkopie.",
-      "Eine zusätzliche redundante Komponente."
-    ],
-    "kategorie": "Server",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 159,
-    "frage": "Warum werden Netzteile in manchen Servern redundant ausgelegt?",
-    "richtigeAntwort": "Damit beim Ausfall eines Netzteils der Betrieb weitergeführt werden kann.",
-    "falscheAntworten": [
-      "Damit die IP-Adresse automatisch geändert wird.",
-      "Damit der Server weniger RAM benötigt.",
-      "Damit DNS schneller arbeitet."
-    ],
-    "kategorie": "Server",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 160,
-    "frage": "Was ist USV?",
-    "richtigeAntwort": "Eine unterbrechungsfreie Stromversorgung.",
-    "falscheAntworten": [
-      "Ein universelles Serverprotokoll.",
-      "Ein USB-Verschlüsselungsstandard.",
-      "Eine Benutzerverwaltungssoftware."
-    ],
-    "kategorie": "Server",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 161,
-    "frage": "Was ist Hashing?",
-    "richtigeAntwort": "Die Berechnung eines festen Hashwerts aus Daten mithilfe einer Hashfunktion.",
-    "falscheAntworten": [
-      "Eine reversible Standardverschlüsselung.",
-      "Eine Methode zur IP-Adressvergabe.",
-      "Eine Hardwaretechnik für RAM."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 162,
-    "frage": "Warum werden Passwörter häufig gehasht gespeichert?",
-    "richtigeAntwort": "Damit nicht das ursprüngliche Passwort direkt gespeichert werden muss.",
-    "falscheAntworten": [
-      "Damit Passwörter automatisch öffentlich werden.",
-      "Damit Benutzer keine Authentifizierung benötigen.",
-      "Damit die Festplatte schneller wird."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 163,
-    "frage": "Was ist ein Salt beim Passwort-Hashing?",
-    "richtigeAntwort": "Ein zusätzlicher Wert, der in die Passwortableitung einbezogen wird.",
-    "falscheAntworten": [
-      "Ein Ersatz für ein Benutzerkonto.",
-      "Eine Firewallregel.",
-      "Eine Netzwerkadresse."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 164,
-    "frage": "Was ist Verschlüsselung?",
-    "richtigeAntwort": "Die Umwandlung von Daten in eine Form, die ohne passenden Schlüssel nicht sinnvoll gelesen werden kann.",
-    "falscheAntworten": [
-      "Das Löschen von Daten.",
-      "Das Komprimieren ohne Informationsänderung.",
-      "Die Vergabe einer IP-Adresse."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 165,
-    "frage": "Was ist der Unterschied zwischen symmetrischer und asymmetrischer Verschlüsselung?",
-    "richtigeAntwort": "Symmetrische Verfahren verwenden denselben geheimen Schlüssel, asymmetrische Verfahren ein Schlüsselpaar.",
-    "falscheAntworten": [
-      "Symmetrische Verfahren benötigen keine Schlüssel.",
-      "Asymmetrische Verfahren verwenden ausschließlich Passwörter.",
-      "Beide Verfahren funktionieren immer mit demselben Schlüssel."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 166,
-    "frage": "Was ist ein digitales Zertifikat?",
-    "richtigeAntwort": "Ein elektronischer Nachweis, der unter anderem einen öffentlichen Schlüssel einer Identität zuordnen kann.",
-    "falscheAntworten": [
-      "Ein physischer USB-Stecker.",
-      "Eine lokale IP-Adresse.",
-      "Ein Festplattenbackup."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 167,
-    "frage": "Welche Aufgabe hat eine Certificate Authority?",
-    "richtigeAntwort": "Sie stellt digitale Zertifikate aus und kann deren Vertrauenswürdigkeit ermöglichen.",
-    "falscheAntworten": [
-      "Sie verteilt DHCP-Adressen.",
-      "Sie ersetzt einen Router.",
-      "Sie speichert ausschließlich Backups."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 168,
-    "frage": "Was ist TLS?",
-    "richtigeAntwort": "Ein Protokoll zur Absicherung von Netzwerkkommunikation.",
-    "falscheAntworten": [
-      "Ein Dateisystem.",
-      "Ein RAID-Level.",
-      "Eine CPU-Architektur."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 169,
-    "frage": "Was ist eine Brute-Force-Attacke?",
-    "richtigeAntwort": "Das systematische Ausprobieren vieler möglicher Zugangsdaten oder Schlüssel.",
-    "falscheAntworten": [
-      "Eine Methode zur Datenkompression.",
-      "Eine Art von Backup.",
-      "Eine Technik zur Kühlung von Servern."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 170,
-    "frage": "Was ist ein Exploit?",
-    "richtigeAntwort": "Ein Mittel oder Code, mit dem eine Schwachstelle ausgenutzt werden kann.",
-    "falscheAntworten": [
-      "Ein Backupmedium.",
-      "Ein Netzwerkstecker.",
-      "Eine Benutzerrolle."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 171,
-    "frage": "Was ist eine Sicherheitslücke?",
-    "richtigeAntwort": "Eine Schwachstelle, die die Sicherheit eines Systems beeinträchtigen kann.",
-    "falscheAntworten": [
-      "Ein zusätzlicher Schutzmechanismus.",
-      "Eine Backupstrategie.",
-      "Eine Netzwerkadresse."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 172,
-    "frage": "Was ist Patch Management?",
-    "richtigeAntwort": "Die Planung, Prüfung und Installation von Software- und Sicherheitsupdates.",
-    "falscheAntworten": [
-      "Die Verwaltung von Netzwerkkabeln.",
-      "Die Einrichtung eines RAID-Systems.",
-      "Die Planung von Benutzerpasswörtern."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 173,
-    "frage": "Was bedeutet Hardening?",
-    "richtigeAntwort": "Das Absichern eines Systems durch Reduzierung unnötiger Angriffsflächen und sichere Konfiguration.",
-    "falscheAntworten": [
-      "Das Erhöhen der CPU-Taktfrequenz.",
-      "Das Ersetzen eines Servers durch einen Router.",
-      "Das Komprimieren von Backups."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 174,
-    "frage": "Was ist eine DMZ?",
-    "richtigeAntwort": "Ein Netzwerkbereich, in dem öffentlich erreichbare Systeme gegenüber internen Netzen abgeschirmt werden können.",
-    "falscheAntworten": [
-      "Eine Festplattenpartition.",
-      "Ein Passwortmanager.",
-      "Ein Linux-Dateisystem."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 175,
-    "frage": "Was ist Network Segmentation?",
-    "richtigeAntwort": "Die Aufteilung eines Netzwerks in getrennte Bereiche zur Verbesserung von Sicherheit und Verwaltung.",
-    "falscheAntworten": [
-      "Das Ersetzen aller Router durch Switches.",
-      "Das Verschlüsseln einer einzelnen Datei.",
-      "Das Verdoppeln des RAMs."
-    ],
-    "kategorie": "IT-Sicherheit",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 176,
-    "frage": "Was ist eine Datenschutz-Folgenabschätzung?",
-    "richtigeAntwort": "Eine systematische Bewertung möglicher Risiken einer Verarbeitung für die Rechte und Freiheiten betroffener Personen.",
-    "falscheAntworten": [
-      "Eine Prüfung der CPU-Leistung.",
-      "Eine Netzwerkdiagnose.",
-      "Eine Kontrolle der Festplattengeschwindigkeit."
-    ],
-    "kategorie": "Datenschutz",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 177,
-    "frage": "Was ist ein Auftragsverarbeiter im Sinne der DSGVO?",
-    "richtigeAntwort": "Eine Stelle, die personenbezogene Daten im Auftrag des Verantwortlichen verarbeitet.",
-    "falscheAntworten": [
-      "Jede Person, die einen Computer besitzt.",
-      "Ausschließlich ein Internetprovider.",
-      "Ein Hersteller von Netzwerkkabeln."
-    ],
-    "kategorie": "Datenschutz",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 178,
-    "frage": "Was bedeutet Zweckbindung im Datenschutz?",
-    "richtigeAntwort": "Personenbezogene Daten sollen für festgelegte und legitime Zwecke erhoben und verarbeitet werden.",
-    "falscheAntworten": [
-      "Daten dürfen ohne Einschränkung für jeden Zweck verwendet werden.",
-      "Alle Daten müssen dauerhaft gespeichert werden.",
-      "Nur technische Daten dürfen verarbeitet werden."
-    ],
-    "kategorie": "Datenschutz",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 179,
-    "frage": "Was ist ein Datenschutzvorfall?",
-    "richtigeAntwort": "Ein Vorfall, bei dem die Sicherheit personenbezogener Daten beeinträchtigt wurde.",
-    "falscheAntworten": [
-      "Ein normaler Neustart eines PCs.",
-      "Eine Änderung der Bildschirmauflösung.",
-      "Eine erfolgreiche Softwareinstallation."
-    ],
-    "kategorie": "Datenschutz",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 180,
-    "frage": "Warum sollten personenbezogene Daten nicht unnötig lange gespeichert werden?",
-    "richtigeAntwort": "Weil personenbezogene Daten grundsätzlich nicht länger als für den jeweiligen Zweck erforderlich gespeichert werden sollen.",
-    "falscheAntworten": [
-      "Weil Festplatten personenbezogene Daten nicht speichern können.",
-      "Weil Backups dadurch grundsätzlich verboten sind.",
-      "Weil personenbezogene Daten immer öffentlich sein müssen."
-    ],
-    "kategorie": "Datenschutz",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 181,
-    "frage": "Was ist ein Lastenheft?",
-    "richtigeAntwort": "Eine Beschreibung der Anforderungen und Ziele aus Sicht des Auftraggebers.",
-    "falscheAntworten": [
-      "Eine Liste aller Serverpasswörter.",
-      "Eine technische Anleitung für Netzwerkkabel.",
-      "Ein Backup einer Datenbank."
-    ],
-    "kategorie": "Projektmanagement",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 182,
-    "frage": "Was ist ein Pflichtenheft?",
-    "richtigeAntwort": "Eine Beschreibung, wie der Auftragnehmer die Anforderungen des Lastenhefts umsetzen will.",
-    "falscheAntworten": [
-      "Eine Liste aller Benutzerkonten.",
-      "Ein Verzeichnis aller IP-Adressen des Internets.",
-      "Ein Protokoll eines Serverneustarts."
-    ],
-    "kategorie": "Projektmanagement",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 183,
-    "frage": "Was bedeutet Soll-Ist-Vergleich?",
-    "richtigeAntwort": "Der Vergleich eines geplanten Zustands mit dem tatsächlich erreichten Zustand.",
-    "falscheAntworten": [
-      "Die Verschlüsselung einer Datei.",
-      "Die Prüfung einer Netzwerkkarte.",
-      "Die Installation eines Betriebssystems."
-    ],
-    "kategorie": "Projektmanagement",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 184,
-    "frage": "Was ist ein Projektbudget?",
-    "richtigeAntwort": "Der geplante finanzielle Rahmen eines Projekts.",
-    "falscheAntworten": [
-      "Die Anzahl der Netzwerkports.",
-      "Die Größe eines Arbeitsspeichers.",
-      "Die Anzahl der Benutzerkonten."
-    ],
-    "kategorie": "Projektmanagement",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 185,
-    "frage": "Was ist eine Projektphase?",
-    "richtigeAntwort": "Ein abgegrenzter Abschnitt innerhalb des Projektverlaufs mit bestimmten Aufgaben und Zielen.",
-    "falscheAntworten": [
-      "Ein spezielles Serverprotokoll.",
-      "Eine Netzwerkkarte.",
-      "Eine Festplattenpartition."
-    ],
-    "kategorie": "Projektmanagement",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 186,
-    "frage": "Was bedeutet TCO?",
-    "richtigeAntwort": "Total Cost of Ownership",
-    "falscheAntworten": [
-      "Technical Computer Operation",
-      "Total Configuration Output",
-      "Trusted Cloud Operation"
-    ],
-    "kategorie": "IT-Wirtschaft",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 187,
-    "frage": "Was berücksichtigt TCO bei einer IT-Investition?",
-    "richtigeAntwort": "Nicht nur Anschaffungskosten, sondern auch weitere Kosten während des Betriebs.",
-    "falscheAntworten": [
-      "Nur die Farbe der Hardware.",
-      "Ausschließlich die Geschwindigkeit des Prozessors.",
-      "Nur die Anzahl der Benutzer."
-    ],
-    "kategorie": "IT-Wirtschaft",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 188,
-    "frage": "Was ist eine Abschreibung?",
-    "richtigeAntwort": "Die buchhalterische Verteilung der Anschaffungskosten eines Wirtschaftsguts über dessen Nutzungsdauer.",
-    "falscheAntworten": [
-      "Die Verschlüsselung eines Servers.",
-      "Die Löschung eines Benutzerkontos.",
-      "Die Änderung einer IP-Adresse."
-    ],
-    "kategorie": "IT-Wirtschaft",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 189,
-    "frage": "Was ist eine Lizenz in der Softwarewelt?",
-    "richtigeAntwort": "Eine rechtliche Erlaubnis zur Nutzung von Software unter bestimmten Bedingungen.",
-    "falscheAntworten": [
-      "Eine technische IP-Adresse.",
-      "Ein Hardwaretreiber.",
-      "Ein Netzwerkanschluss."
-    ],
-    "kategorie": "IT-Wirtschaft",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 190,
-    "frage": "Was bedeutet Open Source Software?",
-    "richtigeAntwort": "Software, deren Quellcode unter den Bedingungen einer entsprechenden Lizenz zugänglich ist.",
-    "falscheAntworten": [
-      "Software ohne jegliche Lizenzbedingungen.",
-      "Software, die ausschließlich offline funktioniert.",
-      "Software, die nur auf einem Server installiert werden darf."
-    ],
-    "kategorie": "IT-Wirtschaft",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 191,
-    "frage": "Was ist Incident Management?",
-    "richtigeAntwort": "Die Bearbeitung und Wiederherstellung eines normalen IT-Servicebetriebs nach Störungen.",
-    "falscheAntworten": [
-      "Die Planung eines neuen Prozessors.",
-      "Die Entwicklung eines Betriebssystems.",
-      "Die Herstellung von Netzwerkkabeln."
-    ],
-    "kategorie": "IT-Service",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 192,
-    "frage": "Was ist Problem Management?",
-    "richtigeAntwort": "Die Identifikation und Bearbeitung der Ursachen von Störungen.",
-    "falscheAntworten": [
-      "Die Vergabe von IP-Adressen.",
-      "Die Installation von Druckertreibern.",
-      "Die Erstellung von Benutzerpasswörtern."
-    ],
-    "kategorie": "IT-Service",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 193,
-    "frage": "Was ist Change Management?",
-    "richtigeAntwort": "Die kontrollierte Planung und Durchführung von Änderungen an IT-Systemen und Services.",
-    "falscheAntworten": [
-      "Das zufällige Ändern von Serverkonfigurationen.",
-      "Das Löschen aller alten Backups.",
-      "Die automatische Erstellung von Benutzerkonten."
-    ],
-    "kategorie": "IT-Service",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 194,
-    "frage": "Was ist ein Rollback?",
-    "richtigeAntwort": "Das Zurücksetzen einer Änderung auf einen vorherigen funktionierenden Zustand.",
-    "falscheAntworten": [
-      "Das Verschlüsseln eines Servers.",
-      "Das Erstellen eines neuen Benutzerkontos.",
-      "Das Erhöhen der Netzwerkbandbreite."
-    ],
-    "kategorie": "IT-Service",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 195,
-    "frage": "Was bedeutet Root Cause Analysis?",
-    "richtigeAntwort": "Die systematische Suche nach der grundlegenden Ursache eines Problems.",
-    "falscheAntworten": [
-      "Die Suche nach der schnellsten CPU.",
-      "Die Auswahl eines neuen Monitors.",
-      "Die Einrichtung eines WLAN-Passworts."
-    ],
-    "kategorie": "IT-Service",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 196,
-    "frage": "Was ist ein Monitoring-Agent?",
-    "richtigeAntwort": "Eine Softwarekomponente, die Informationen über ein überwachte System sammelt und weitergibt.",
-    "falscheAntworten": [
-      "Ein physischer Netzwerkstecker.",
-      "Ein Ersatz für ein Betriebssystem.",
-      "Ein RAID-Controller."
-    ],
-    "kategorie": "Monitoring",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 197,
-    "frage": "Welche Kennzahl kann beim Server-Monitoring überwacht werden?",
-    "richtigeAntwort": "CPU-Auslastung",
-    "falscheAntworten": [
-      "Tastaturfarbe",
-      "Gehäuseform",
-      "Herstellerlogo"
-    ],
-    "kategorie": "Monitoring",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 198,
-    "frage": "Was ist ein Logfile?",
-    "richtigeAntwort": "Eine Datei, in der Ereignisse und Informationen eines Systems oder Programms protokolliert werden können.",
-    "falscheAntworten": [
-      "Eine Netzwerkdose.",
-      "Eine CPU-Erweiterung.",
-      "Eine Backupfestplatte."
-    ],
-    "kategorie": "Monitoring",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 199,
-    "frage": "Warum sind Logs bei der Fehlersuche hilfreich?",
-    "richtigeAntwort": "Sie können Hinweise auf Ereignisse, Fehler und zeitliche Abläufe liefern.",
-    "falscheAntworten": [
-      "Sie erhöhen automatisch die RAM-Kapazität.",
-      "Sie ersetzen jede Firewall.",
-      "Sie verhindern grundsätzlich Hardwareausfälle."
-    ],
-    "kategorie": "Monitoring",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 200,
-    "frage": "Was ist Alerting?",
-    "richtigeAntwort": "Das automatische Informieren über definierte Ereignisse oder Grenzwertüberschreitungen.",
-    "falscheAntworten": [
-      "Das Formatieren eines Servers.",
-      "Das Verschlüsseln einer Festplatte.",
-      "Das Ändern einer MAC-Adresse."
-    ],
-    "kategorie": "Monitoring",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 201,
-    "frage": "Was ist ein Motherboard?",
-    "richtigeAntwort": "Die zentrale Platine eines Computers, die alle Komponenten verbindet.",
-    "falscheAntworten": [
-      "Ein externes Speichermedium.",
-      "Ein Netzwerkprotokoll.",
-      "Ein Betriebssystem."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 202,
-    "frage": "Welcher Steckplatz wird typischerweise für eine Grafikkarte verwendet?",
-    "richtigeAntwort": "PCI-Express (PCIe)",
-    "falscheAntworten": [
-      "ISA",
-      "SATA",
-      "USB"
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 203,
-    "frage": "Was ist der Unterschied zwischen DDR3- und DDR4-RAM?",
-    "richtigeAntwort": "DDR4 hat eine höhere Taktfrequenz, geringere Spannung und einen anderen Steckplatz als DDR3.",
-    "falscheAntworten": [
-      "DDR3 ist immer schneller als DDR4.",
-      "DDR4 kann nur in Servern verwendet werden.",
-      "Es gibt keinen Unterschied zwischen DDR3 und DDR4."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 204,
-    "frage": "Was ist M.2?",
-    "richtigeAntwort": "Ein Formfaktor für SSDs und andere Erweiterungskarten, der direkt auf das Mainboard gesteckt wird.",
-    "falscheAntworten": [
-      "Ein Prozessortyp.",
-      "Ein Netzwerkprotokoll.",
-      "Ein Betriebssystem."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 205,
-    "frage": "Welche Funktion hat der CPU-Kühler?",
-    "richtigeAntwort": "Er leitet die Abwärme des Prozessors ab und verhindert eine Überhitzung.",
-    "falscheAntworten": [
-      "Er versorgt den Computer mit Strom.",
-      "Er vergrößert den Arbeitsspeicher.",
-      "Er verschlüsselt die Festplatte."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 206,
-    "frage": "Was ist ein Netzteil und welche Aufgabe hat es?",
-    "richtigeAntwort": "Es wandelt Netzspannung in die benötigten Betriebsspannungen für den Computer um.",
-    "falscheAntworten": [
-      "Es speichert Daten dauerhaft.",
-      "Es verbindet den Computer mit dem Internet.",
-      "Es ersetzt die Grafikkarte."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 207,
-    "frage": "Was ist ein Formfaktor bei Mainboards?",
-    "richtigeAntwort": "Die standardisierte Größe und Anordnung der Befestigungspunkte und Anschlüsse eines Mainboards.",
-    "falscheAntworten": [
-      "Die Farbe des Mainboards.",
-      "Die Anzahl der USB-Anschlüsse.",
-      "Der Herstellername."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 208,
-    "frage": "Welche gängigen Mainboard-Formfaktoren gibt es?",
-    "richtigeAntwort": "ATX, Micro-ATX und Mini-ITX.",
-    "falscheAntworten": [
-      "USB-A, USB-B und USB-C.",
-      "SATA 1, SATA 2 und SATA 3.",
-      "DDR3, DDR4 und DDR5."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 209,
-    "frage": "Was ist der Unterschied zwischen HDD und SSD?",
-    "richtigeAntwort": "Eine HDD verwendet mechanische Teile (rotierende Magnetscheiben), eine SSD arbeitet mit Flash-Speicher ohne bewegliche Teile.",
-    "falscheAntworten": [
-      "Eine SSD ist immer teurer und langsamer als eine HDD.",
-      "Eine HDD hat keine Speicherbegrenzung.",
-      "SSDs können nur in Servern verwendet werden."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 210,
-    "frage": "Was ist der Unterschied zwischen SATA und NVMe?",
-    "richtigeAntwort": "SATA ist ein älterer Anschlussstandard für Festplatten und SSDs, NVMe ist ein moderneres, schnelleres Protokoll für SSDs über PCIe.",
-    "falscheAntworten": [
-      "SATA ist immer schneller als NVMe.",
-      "NVMe kann nur für HDDs verwendet werden.",
-      "Es gibt keinen Unterschied zwischen SATA und NVMe."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 211,
-    "frage": "Was ist die Aufgabe des Chipsatzes auf einem Mainboard?",
-    "richtigeAntwort": "Er steuert den Datenverkehr zwischen CPU, Arbeitsspeicher, Erweiterungskarten und Peripheriegeräten.",
-    "falscheAntworten": [
-      "Er speichert das Betriebssystem.",
-      "Er vergibt IP-Adressen.",
-      "Er ist für die Stromversorgung zuständig."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 212,
-    "frage": "Was bedeutet die Abkürzung SATA?",
-    "richtigeAntwort": "Serial Advanced Technology Attachment",
-    "falscheAntworten": [
-      "System Advanced Transfer Adapter",
-      "Simple Automated Terminal Access",
-      "Serial ATA Interface"
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 213,
-    "frage": "Welche Übertragungsraten sind typisch für SATA III?",
-    "richtigeAntwort": "Bis zu 6 Gbit/s (ca. 600 MB/s).",
-    "falscheAntworten": [
-      "Bis zu 1 Gbit/s.",
-      "Bis zu 20 Gbit/s.",
-      "Bis zu 100 MB/s."
-    ],
-    "kategorie": "Hardware",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 214,
-    "frage": "Was ist ein Treiber (Driver)?",
-    "richtigeAntwort": "Eine Software, die die Kommunikation zwischen Betriebssystem und Hardware ermöglicht.",
-    "falscheAntworten": [
-      "Ein physisches Kabel.",
-      "Ein Netzwerkprotokoll.",
-      "Ein Benutzerkonto."
-    ],
-    "kategorie": "Betriebssysteme",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 215,
-    "frage": "Warum ist es wichtig, Treiber aktuell zu halten?",
-    "richtigeAntwort": "Aktualisierte Treiber können Fehler beheben, die Leistung verbessern und Sicherheitslücken schließen.",
-    "falscheAntworten": [
-      "Treiber-Updates erhöhen immer die Festplattenkapazität.",
-      "Treiber-Updates sind nicht notwendig.",
-      "Treiber-Updates machen eine Neuinstallation des Betriebssystems überflüssig."
-    ],
-    "kategorie": "Betriebssysteme",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 216,
-    "frage": "Was ist das BIOS und wie unterscheidet es sich von UEFI?",
-    "richtigeAntwort": "BIOS ist eine ältere Firmware-Schnittstelle, UEFI ist die moderne Nachfolgetechnologie mit mehr Funktionen.",
-    "falscheAntworten": [
-      "BIOS ist ein Betriebssystem, UEFI ist eine Software.",
-      "UEFI ist älter als BIOS.",
-      "BIOS und UEFI haben keine Unterschiede."
-    ],
-    "kategorie": "Betriebssysteme",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 217,
-    "frage": "Was ist der Unterschied zwischen einer 32-Bit- und einer 64-Bit-Betriebssystemversion?",
-    "richtigeAntwort": "Ein 64-Bit-Betriebssystem kann mehr Arbeitsspeicher (über 4 GB) und größere Dateien verarbeiten.",
-    "falscheAntworten": [
-      "32-Bit-Systeme sind immer schneller.",
-      "64-Bit-Systeme benötigen keine Grafikkarte.",
-      "Ein 64-Bit-System kann nur auf 64-Bit-Hardware installiert werden."
-    ],
-    "kategorie": "Betriebssysteme",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 218,
-    "frage": "Was ist der Unterschied zwischen einer Windows-Pro und Windows-Home-Lizenz?",
-    "richtigeAntwort": "Pro bietet zusätzliche Funktionen wie BitLocker, Domänenbeitritt und erweiterte Verwaltungswerkzeuge.",
-    "falscheAntworten": [
-      "Home ist immer teurer als Pro.",
-      "Pro kann keine Spiele ausführen.",
-      "Home benötigt weniger Arbeitsspeicher."
-    ],
-    "kategorie": "Betriebssysteme",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 219,
-    "frage": "Was ist ein Virtual Desktop Infrastructure (VDI)?",
-    "richtigeAntwort": "Eine Technologie, bei der virtuelle Desktops zentral auf Servern bereitgestellt und von Clients genutzt werden.",
-    "falscheAntworten": [
-      "Ein physischer Desktop-Computer.",
-      "Eine Art von Festplatte.",
-      "Ein Programm zur Bildbearbeitung."
-    ],
-    "kategorie": "Virtualisierung",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 220,
-    "frage": "Welche Vorteile bietet die Virtualisierung in Unternehmen?",
-    "richtigeAntwort": "Geringerer Hardwarebedarf, einfachere Verwaltung, bessere Auslastung der Ressourcen und höhere Flexibilität.",
-    "falscheAntworten": [
-      "Virtualisierung macht Backups überflüssig.",
-      "Virtualisierung erhöht die Hardwarekosten.",
-      "Virtualisierung verringert die Systemsicherheit."
-    ],
-    "kategorie": "Virtualisierung",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 221,
-    "frage": "Welche Hypervisor-Lösungen gibt es?",
-    "richtigeAntwort": "Beispiele: VMware ESXi, Microsoft Hyper-V, Proxmox VE, Citrix XenServer.",
-    "falscheAntworten": [
-      "Windows 10, Linux, macOS.",
-      "Google Chrome, Firefox, Edge.",
-      "SATA, USB, HDMI."
-    ],
-    "kategorie": "Virtualisierung",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 222,
-    "frage": "Was ist der Unterschied zwischen einem Container und einer virtuellen Maschine?",
-    "richtigeAntwort": "Container teilen den Host-Kernel und sind leichter, VMs haben ein eigenes Betriebssystem und sind ressourcenintensiver.",
-    "falscheAntworten": [
-      "Container sind immer langsamer als VMs.",
-      "Container benötigen immer mehr Speicher als VMs.",
-      "Container können keine Anwendungen ausführen."
-    ],
-    "kategorie": "Virtualisierung",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 223,
-    "frage": "Was ist der Befehl ipconfig und wofür wird er verwendet?",
-    "richtigeAntwort": "Ein Windows-Befehl zur Anzeige der aktuellen IP-Konfiguration aller Netzwerkadapter.",
-    "falscheAntworten": [
-      "Er startet den DHCP-Server neu.",
-      "Er installiert einen Druckertreiber.",
-      "Er löscht alle Dateien auf der Festplatte."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 224,
-    "frage": "Was macht der Befehl ipconfig /release und ipconfig /renew?",
-    "richtigeAntwort": "/release gibt die aktuelle DHCP-Lease frei, /renew fordert eine neue IP-Konfiguration vom DHCP-Server an.",
-    "falscheAntworten": [
-      "Sie installieren Windows neu.",
-      "Sie starten den Computer neu.",
-      "Sie verschlüsseln die Festplatte."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 225,
-    "frage": "Was ist der Unterschied zwischen einem Managed und einem Unmanaged Switch?",
-    "richtigeAntwort": "Ein Managed Switch bietet erweiterte Konfigurationsmöglichkeiten (VLAN, QoS, Monitoring), ein Unmanaged Switch nicht.",
-    "falscheAntworten": [
-      "Managed Switches sind immer langsamer.",
-      "Unmanaged Switches können keine Pakete weiterleiten.",
-      "Managed Switches haben keine Ports."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 226,
-    "frage": "Was ist der Zweck eines VLANs in einem Unternehmensnetzwerk?",
-    "richtigeAntwort": "VLANs ermöglichen die logische Trennung von Netzwerksegmenten, um Sicherheit zu erhöhen und Broadcast-Domänen zu verkleinern.",
-    "falscheAntworten": [
-      "VLANs erhöhen die physische Netzwerkgeschwindigkeit.",
-      "VLANs ersetzen Router.",
-      "VLANs speichern Dateien."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 227,
-    "frage": "Was ist Spanning Tree Protocol (STP)?",
-    "richtigeAntwort": "Ein Protokoll, das Schleifen in redundanten Netzwerkstrukturen verhindert, indem es bestimmte Pfade blockiert.",
-    "falscheAntworten": [
-      "Es verschlüsselt den Netzwerkverkehr.",
-      "Es verteilt IP-Adressen.",
-      "Es startet den Router neu."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 228,
-    "frage": "Was ist Link Aggregation (LACP)?",
-    "richtigeAntwort": "Die Zusammenfassung mehrerer Netzwerkverbindungen zu einer logischen Verbindung für mehr Bandbreite und Redundanz.",
-    "falscheAntworten": [
-      "Ein Protokoll zur IP-Adressvergabe.",
-      "Eine Methode zur Datensicherung.",
-      "Ein Verschlüsselungsverfahren."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 229,
-    "frage": "Was ist der Unterschied zwischen einem Hub, Switch und Router?",
-    "richtigeAntwort": "Ein Hub verteilt Daten an alle Ports, ein Switch leitet gezielt an den Zielport weiter, ein Router verbindet verschiedene Netzwerke.",
-    "falscheAntworten": [
-      "Ein Router kann nur WLAN bereitstellen.",
-      "Ein Switch ist schneller als ein Router.",
-      "Hub, Switch und Router haben die gleiche Funktion."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 230,
-    "frage": "Welche IP-Adresse gehört zum privaten IPv4-Bereich 10.0.0.0/8?",
-    "richtigeAntwort": "10.10.10.1",
-    "falscheAntworten": [
-      "8.8.8.8",
-      "192.168.1.1",
-      "172.16.1.1"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 231,
-    "frage": "Was ist ein IPv6-Anycast-Adressbereich?",
-    "richtigeAntwort": "Eine Adresse, die mehreren Geräten zugeordnet ist, wobei das nächstgelegene Gerät antwortet.",
-    "falscheAntworten": [
-      "Eine Adresse für lokale Netzwerke.",
-      "Eine Adresse für Broadcasts.",
-      "Eine Adresse, die nur für Router reserviert ist."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 232,
-    "frage": "Was ist der Unterschied zwischen IPv4 und IPv6?",
-    "richtigeAntwort": "IPv6 hat 128-Bit-Adressen (gegenüber 32-Bit bei IPv4), bietet mehr Adressen und integrierte Sicherheitsfunktionen.",
-    "falscheAntworten": [
-      "IPv6 ist langsamer als IPv4.",
-      "IPv6 kann keine Daten übertragen.",
-      "IPv6 und IPv4 sind identisch."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 233,
-    "frage": "Was ist die Loopback-Adresse in IPv6?",
-    "richtigeAntwort": "::1",
-    "falscheAntworten": [
-      "127.0.0.1",
-      "0.0.0.0",
-      "255.255.255.255"
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 234,
-    "frage": "Was macht der Befehl netstat?",
-    "richtigeAntwort": "Er zeigt aktive Netzwerkverbindungen, Routing-Tabellen und Netzwerkstatistiken an.",
-    "falscheAntworten": [
-      "Er verschlüsselt den Netzwerkverkehr.",
-      "Er formatiert die Festplatte.",
-      "Er startet den Computer neu."
-    ],
-    "kategorie": "Netzwerke",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 235,
-    "frage": "Was ist ein Leased Line?",
-    "richtigeAntwort": "Eine dedizierte, feste Netzwerkverbindung, die von einem Provider bereitgestellt wird.",
-    "falscheAntworten": [
-      "Eine WLAN-Verbindung.",
-      "Eine Verbindung, die nur einmalig genutzt wird.",
-      "Eine normale DSL-Verbindung."
-    ],
-    "kategorie": "Netzwerktechnik",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 236,
-    "frage": "Was ist eine Kundenbedarfsanalyse?",
-    "richtigeAntwort": "Die systematische Erfassung und Bewertung der Anforderungen und Wünsche eines Kunden.",
-    "falscheAntworten": [
-      "Die Analyse von Serverprotokollen.",
-      "Die Überprüfung von Netzwerkkabeln.",
-      "Die Bewertung von Prozessorleistung."
-    ],
-    "kategorie": "Kundenservice",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 237,
-    "frage": "Welche Techniken zur Kommunikation mit Kunden gibt es im IT-Support?",
-    "richtigeAntwort": "Telefon, E-Mail, Chat, Ticketsysteme und Remote-Support-Tools.",
-    "falscheAntworten": [
-      "Nur persönliche Besuche.",
-      "Nur Briefe.",
-      "Nur soziale Medien."
-    ],
-    "kategorie": "Kundenservice",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 238,
-    "frage": "Was ist ein Service Level Agreement (SLA)?",
-    "richtigeAntwort": "Eine Vereinbarung über die Qualität und den Umfang von Dienstleistungen, z.B. Reaktionszeiten im Support.",
-    "falscheAntworten": [
-      "Ein Vertrag für Hardwarekäufe.",
-      "Eine Lizenzvereinbarung.",
-      "Ein Dokument über die Unternehmensgeschichte."
-    ],
-    "kategorie": "Kundenservice",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 239,
-    "frage": "Was ist Eskalation im Kundenservice?",
-    "richtigeAntwort": "Die Weitergabe eines komplexen Problems an einen spezialisierteren oder höher qualifizierten Mitarbeiter.",
-    "falscheAntworten": [
-      "Die Kündigung eines Kundenvertrags.",
-      "Das Schließen eines Tickets ohne Lösung.",
-      "Die Ablehnung einer Supportanfrage."
-    ],
-    "kategorie": "Kundenservice",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 240,
-    "frage": "Warum ist aktives Zuhören im Kundengespräch wichtig?",
-    "richtigeAntwort": "Um das Problem des Kunden genau zu verstehen und passende Lösungen anbieten zu können.",
-    "falscheAntworten": [
-      "Um den Kunden zu beeindrucken.",
-      "Um das Gespräch schnell zu beenden.",
-      "Um den Kunden zu unterbrechen."
-    ],
-    "kategorie": "Kundenservice",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 241,
-    "frage": "Was ist die Datenschutz-Grundverordnung (DSGVO)?",
-    "richtigeAntwort": "Eine EU-Verordnung zum Schutz natürlicher Personen bei der Verarbeitung personenbezogener Daten.",
-    "falscheAntworten": [
-      "Ein deutsches Gesetz zur Steuererhöhung.",
-      "Eine Richtlinie zur Hardware-Herstellung.",
-      "Ein Standard für Netzwerkkabel."
-    ],
-    "kategorie": "Datenschutz",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 242,
-    "frage": "Welche Rechte haben betroffene Personen gemäß DSGVO?",
-    "richtigeAntwort": "Auskunftsrecht, Recht auf Löschung, Recht auf Berichtigung, Widerspruchsrecht und Recht auf Datenübertragbarkeit.",
-    "falscheAntworten": [
-      "Das Recht auf kostenlose Hardware.",
-      "Das Recht auf uneingeschränkte Verwendung aller Daten.",
-      "Das Recht auf persönliche Daten von anderen Personen."
-    ],
-    "kategorie": "Datenschutz",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 243,
-    "frage": "Was ist eine Auftragsverarbeitung im Sinne der DSGVO?",
-    "richtigeAntwort": "Die Verarbeitung personenbezogener Daten durch einen externen Dienstleister im Auftrag eines Verantwortlichen.",
-    "falscheAntworten": [
-      "Die Verarbeitung von Daten durch den Verantwortlichen selbst.",
-      "Die Verarbeitung von Daten ohne Vertrag.",
-      "Die Speicherung von Daten auf einem USB-Stick."
-    ],
-    "kategorie": "Datenschutz",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 244,
-    "frage": "Welche technischen Maßnahmen zum Datenschutz gibt es?",
-    "richtigeAntwort": "Verschlüsselung, Zugangskontrollen, Pseudonymisierung, Anonymisierung und Firewalls.",
-    "falscheAntworten": [
-      "Das Speichern aller Daten im Klartext.",
-      "Die Weitergabe von Passwörtern.",
-      "Die Veröffentlichung von Kundendaten."
-    ],
-    "kategorie": "Datenschutz",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 245,
-    "frage": "Was ist ein Datenschutzverstoß und welche Konsequenzen kann er haben?",
-    "richtigeAntwort": "Ein Verstoß gegen datenschutzrechtliche Vorschriften, der zu Bußgeldern und Reputationsschäden führen kann.",
-    "falscheAntworten": [
-      "Ein Verstoß hat keine Konsequenzen.",
-      "Ein Verstoß führt immer zum sofortigen Unternehmenstod.",
-      "Ein Verstoß ist gesetzlich erlaubt."
-    ],
-    "kategorie": "Datenschutz",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 246,
-    "frage": "Was ist eine Projektumgebung im Rahmen eines IT-Projekts?",
-    "richtigeAntwort": "Alle Rahmenbedingungen und Einflüsse, die ein Projekt beeinflussen können.",
-    "falscheAntworten": [
-      "Die Farbe der Servergehäuse.",
-      "Die Art der Netzwerkkabel.",
-      "Die Größe der Festplatten."
-    ],
-    "kategorie": "Projektmanagement",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 247,
-    "frage": "Was ist eine Stakeholder-Analyse?",
-    "richtigeAntwort": "Die Identifikation und Bewertung von Personen oder Gruppen, die ein Projekt beeinflussen oder von ihm betroffen sind.",
-    "falscheAntworten": [
-      "Die Analyse von Hardwarekomponenten.",
-      "Die Prüfung von Netzwerkprotokollen.",
-      "Die Bewertung von Softwarelizenzen."
-    ],
-    "kategorie": "Projektmanagement",
-    "schwierigkeit": "schwer"
-  },
-  {
-    "id": 248,
-    "frage": "Was ist ein Projektrisiko?",
-    "richtigeAntwort": "Ein mögliches zukünftiges Ereignis, das den Projekterfolg negativ oder positiv beeinflussen kann.",
-    "falscheAntworten": [
-      "Ein bereits eingetretener Fehler.",
-      "Ein festgelegtes Projektergebnis.",
-      "Ein bestimmtes Projektbudget."
-    ],
-    "kategorie": "Projektmanagement",
-    "schwierigkeit": "mittel"
-  },
-  {
-    "id": 249,
-    "frage": "Was ist die Projektabschlussphase?",
-    "richtigeAntwort": "Die letzte Phase eines Projekts, in der das Ergebnis übergeben wird und das Projekt formal abgeschlossen wird.",
-    "falscheAntworten": [
-      "Die Phase der Projektplanung.",
-      "Die Durchführung der Projektarbeiten.",
-      "Die Testphase."
-    ],
-    "kategorie": "Projektmanagement",
-    "schwierigkeit": "leicht"
-  },
-  {
-    "id": 250,
-    "frage": "Was ist ein Angebot im IT-Vertrieb?",
-    "richtigeAntwort": "Ein schriftliches Dokument, das einem Kunden eine Preis- und Leistungszusammenstellung für IT-Produkte oder -Dienstleistungen unterbreitet.",
-    "falscheAntworten": [
-      "Eine Rechnung für bereits erbrachte Leistungen.",
-      "Ein Werbeflyer.",
-      "Ein technisches Handbuch."
-    ],
-    "kategorie": "IT-Wirtschaft",
-    "schwierigkeit": "leicht"
-  }
-];
+          {
+            "id": 1,
+            "frage": "Welche Aufgabe hat ein DHCP-Server?",
+            "richtigeAntwort": "Er vergibt automatisch IP-Konfigurationen an Clients.",
+            "falscheAntworten": [
+              "Er übersetzt Domainnamen in IP-Adressen.",
+              "Er verschlüsselt sämtliche Netzwerkpakete.",
+              "Er speichert Webseiten für Benutzer."
+            ],
+            "kategorie": "Netzwerke",
+            "schwierigkeit": "leicht"
+          },
+          {
+            "id": 2,
+            "frage": "Welche Aufgabe hat ein DNS-Server?",
+            "richtigeAntwort": "Er löst Domainnamen in IP-Adressen auf.",
+            "falscheAntworten": [
+              "Er vergibt automatisch MAC-Adressen.",
+              "Er verschlüsselt Festplatten.",
+              "Er verteilt Arbeitsspeicher an Clients."
+            ],
+            "kategorie": "Netzwerke",
+            "schwierigkeit": "leicht"
+          },
+          {
+            "id": 3,
+            "frage": "Welche IP-Adresse gehört zum privaten IPv4-Netz 192.168.0.0/16?",
+            "richtigeAntwort": "192.168.10.25",
+            "falscheAntworten": [
+              "8.8.8.8",
+              "172.300.10.1",
+              "200.100.50.1"
+            ],
+            "kategorie": "Netzwerke",
+            "schwierigkeit": "leicht"
+          },
+          {
+            "id": 4,
+            "frage": "Wie viele Bits besitzt eine IPv4-Adresse?",
+            "richtigeAntwort": "32 Bit",
+            "falscheAntworten": [
+              "16 Bit",
+              "64 Bit",
+              "128 Bit"
+            ],
+            "kategorie": "Netzwerke",
+            "schwierigkeit": "leicht"
+          },
+          {
+            "id": 5,
+            "frage": "Wie viele Bits besitzt eine IPv6-Adresse?",
+            "richtigeAntwort": "128 Bit",
+            "falscheAntworten": [
+              "32 Bit",
+              "64 Bit",
+              "256 Bit"
+            ],
+            "kategorie": "Netzwerke",
+            "schwierigkeit": "leicht"
+          }
+        ];
 
         let questions = [];
         let currentQuestionIndex = 0;
         let score = 0;
         let lives = 3;
-        let maxLives = 5;
         let streak = 0;
-        let isTransitioning = false;
-        
-        let globalMultiplier = 1;
-        let correctStreak = 0;
-        let minigameInterval = null;
-        let mgTime = 0;
+        let multiplier = 1;
+        let globalTimer = null;
+        let globalSeconds = 0;
+        let questionTimer = null;
+        let questionSecondsLeft = 30;
+        let minigameActive = false;
+        let minigameTimer = null;
+        let minigameTimeLeft = 0;
 
-        let globalTime = 0;
-        let questionTime = 30;
-        let globalInterval = null;
-        let questionInterval = null;
-
-        const startScreen = document.getElementById('start-screen');
-        const gameUI = document.getElementById('game-ui');
-        const gameOverScreen = document.getElementById('game-over-screen');
-        const questionText = document.getElementById('question-text');
-        const answersContainer = document.getElementById('answers-container');
-        const livesDisplay = document.getElementById('lives-display');
-        const scoreDisplay = document.getElementById('score-display');
-        const finalScore = document.getElementById('final-score');
-        
-        // Ability Buttons & HUD
-        const abRemove1 = document.getElementById('ab-remove1');
-        const abRemove2 = document.getElementById('ab-remove2');
-        const abSkip = document.getElementById('ab-skip');
-        const streakBars = document.getElementById('streak-bar').children;
-
-        window.addEventListener('DOMContentLoaded', () => {
-            const startBtn = document.getElementById('start-btn');
-            startBtn.textContent = "START";
-            startBtn.disabled = false;
-            startBtn.onclick = startGame;
-        });
-
-        function startGame() {
-            questions = [...rawQuestions].sort(() => Math.random() - 0.5);
-            currentQuestionIndex = 0;
-            score = 0;
-            lives = 3;
-            streak = 0;
-            correctStreak = 0;
-            globalMultiplier = 1;
-            isTransitioning = false;
-
-            startScreen.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-            gameUI.classList.remove('hidden');
-            gameUI.classList.add('flex');
-            
-            document.getElementById('minigame-panel').classList.add('hidden');
-            document.getElementById('abilities-hud').classList.remove('hidden');
-            document.getElementById('question-panel').classList.remove('hidden');
-
-            startGlobalTimer();
-            updateUI();
-            displayQuestion();
-        }
-
-        function updateUI() {
-            // Render Hearts
-            livesDisplay.innerHTML = '';
-            for (let i = 0; i < lives; i++) {
-                const heart = document.createElement('span');
-                heart.innerHTML = '♥';
-                livesDisplay.appendChild(heart);
-            }
-            
-            scoreDisplay.textContent = score.toString().padStart(3, '0');
-
-            // Render Streak Bar
-            for(let i=0; i<5; i++) {
-                if (i < streak) {
-                    streakBars[i].className = "w-12 rounded-full bg-blue-400 shadow-[0_0_10px_#60a5fa] transition-colors duration-300";
-                } else {
-                    streakBars[i].className = "w-12 rounded-full bg-slate-800 border border-slate-700 transition-colors duration-300";
-                }
-            }
-            
-            scoreDisplay.textContent = score.toString().padStart(3, '0');
-            
-            const badge = document.getElementById('multiplier-badge');
-            if (globalMultiplier > 1) {
-                badge.textContent = `x${globalMultiplier} MULTI`;
-                if(globalMultiplier >= 4) {
-                    badge.className = "absolute -top-3 -left-4 bg-orange-600 border border-orange-400 text-white text-[11px] font-mono tracking-widest font-bold px-2 py-1 rounded-lg shadow-[0_0_15px_rgba(234,88,12,0.8)] transition-all opacity-100 scale-100 animate-pulse z-10";
-                } else {
-                    badge.className = "absolute -top-3 -left-4 bg-blue-600 border border-blue-400 text-white text-[11px] font-mono tracking-widest font-bold px-2 py-1 rounded-lg shadow-[0_0_10px_rgba(37,99,235,0.8)] transition-all opacity-100 scale-100 z-10";
-                }
-            } else {
-                badge.className = "absolute -top-3 -left-4 bg-blue-600 border border-blue-400 text-white text-[11px] font-mono tracking-widest font-bold px-2 py-1 rounded-lg shadow-[0_0_10px_rgba(37,99,235,0.8)] transition-all opacity-0 scale-90 -z-10";
-            }
-
-            // Update Ability Buttons
-            abRemove1.disabled = streak < 2;
-            abRemove2.disabled = streak < 3;
-            abSkip.disabled = streak < 4;
-        }
-
-        function startGlobalTimer() {
-            clearInterval(globalInterval);
-            globalTime = 0;
-            updateGlobalTimerUI();
-            globalInterval = setInterval(() => {
-                globalTime++;
-                updateGlobalTimerUI();
-            }, 1000);
-        }
-
-        function updateGlobalTimerUI() {
-            const m = Math.floor(globalTime / 60).toString().padStart(2, '0');
-            const s = (globalTime % 60).toString().padStart(2, '0');
-            document.getElementById('global-timer').textContent = `${m}:${s}`;
-        }
-
-        function startQuestionTimer() {
-            clearInterval(questionInterval);
-            questionTime = 30;
-            updateQuestionTimerUI();
-            
-            setTimeout(() => {
-                questionInterval = setInterval(() => {
-                    questionTime--;
-                    updateQuestionTimerUI();
-                    if (questionTime <= 0) {
-                        clearInterval(questionInterval);
-                        handleTimeout();
-                    }
-                }, 1000);
-            }, 300); // Slight delay to sync with answer fade-in
-        }
-
-        function updateQuestionTimerUI() {
-            document.getElementById('question-timer-text').textContent = `${questionTime}s`;
-            const pct = (questionTime / 30) * 100;
-            const bar = document.getElementById('question-timer-bar');
-            bar.style.width = `${pct}%`;
-            
-            // Turn red when 5 seconds or less remain
-            if (questionTime <= 5) {
-                bar.classList.remove('bg-blue-400', 'shadow-[0_0_10px_rgba(96,165,250,0.5)]');
-                bar.classList.add('bg-red-500', 'shadow-[0_0_10px_rgba(239,68,68,0.8)]');
-            } else {
-                bar.classList.add('bg-blue-400', 'shadow-[0_0_10px_rgba(96,165,250,0.5)]');
-                bar.classList.remove('bg-red-500', 'shadow-[0_0_10px_rgba(239,68,68,0.8)]');
-            }
-        }
-
-        function handleTimeout() {
-            if (isTransitioning) return;
-            isTransitioning = true;
-            
-            correctStreak = 0;
-            globalMultiplier = 1;
-            streak = 0;
-            lives--;
-            
-            document.body.classList.add('shake', 'flash-error');
-            setTimeout(() => document.body.classList.remove('shake', 'flash-error'), 400);
-            
-            const buttons = answersContainer.querySelectorAll('button');
-            buttons.forEach(btn => btn.disabled = true);
-            
-            // Highlight the correct answer since they ran out of time
-            buttons.forEach(btn => {
-                if(btn.dataset.correct === 'true') {
-                    btn.classList.add('border-white', 'text-white', 'bg-slate-700');
-                }
-            });
-
-            updateUI();
-
-            setTimeout(() => {
-                nextStep();
-            }, 1500);
-        }
-
-        function displayQuestion() {
-            if (lives <= 0) return;
-            if (currentQuestionIndex >= questions.length) {
-                endGame();
-                return;
-            }
-
-            const q = questions[currentQuestionIndex];
-            
-            answersContainer.style.opacity = '0';
-            answersContainer.innerHTML = '';
-            
-            questionText.textContent = `> ${q.frage}`;
-            
-            startQuestionTimer();
-
-            // Brief pause before fading in answers
-            setTimeout(() => {
-                renderAnswers(q);
-            }, 300);
-        }
-
-        function renderAnswers(q) {
-            let answers = [...q.falscheAntworten, q.richtigeAntwort];
-            answers = answers.sort(() => Math.random() - 0.5);
-
-            answers.forEach((ans) => {
-                const btn = document.createElement('button');
-                btn.className = 'w-full text-left bg-slate-800/80 border border-slate-600 rounded-xl p-4 sm:p-5 text-sm sm:text-base transition-all duration-300 btn-hover-fx translate-y-2 opacity-0 shadow-lg';
-                btn.textContent = ans;
-                btn.dataset.correct = (ans === q.richtigeAntwort);
-                
-                btn.onclick = (e) => {
-                    if(!isTransitioning) handleAnswer(btn.dataset.correct === 'true', btn, e);
-                };
-                answersContainer.appendChild(btn);
-            });
-
-            answersContainer.style.opacity = '1';
-            
-            // Staggered fade in
-            const buttons = answersContainer.querySelectorAll('button');
-            buttons.forEach((btn, index) => {
-                setTimeout(() => {
-                    btn.classList.remove('translate-y-2', 'opacity-0');
-                }, index * 100 + 50);
-            });
-        }
-
-        function handleAnswer(isCorrect, selectedBtn, event) {
-            isTransitioning = true;
-            
-            clearInterval(questionInterval);
-            
-            const buttons = answersContainer.querySelectorAll('button');
-            buttons.forEach(btn => btn.disabled = true); // Prevent double clicking / ability use
-
-            let oldStreak = streak;
-
-            if (isCorrect) {
-                correctStreak++;
-                globalMultiplier = Math.min(1 + Math.floor(correctStreak / 3), 5); // Max x5 multiplier
-                
-                const points = 10 * globalMultiplier;
-                score += points;
-                streak++;
-                
-                // Bump Score
-                const sd = document.getElementById('score-display');
-                sd.classList.remove('score-bump');
-                void sd.offsetWidth; // trigger reflow
-                sd.classList.add('score-bump');
-
-                document.body.classList.add('flash-correct');
-                setTimeout(() => document.body.classList.remove('flash-correct'), 600);
-
-                // Show floating text
-                showFloatingText(`+${points}`, event.clientX, event.clientY, '#4ade80'); // Green
-                
-                // Ability Unlocks
-                if (oldStreak < 2 && streak >= 2) triggerAbilityUnlock('ab-remove1', 'REMOVER READY');
-                if (oldStreak < 3 && streak >= 3) triggerAbilityUnlock('ab-remove2', '50/50 READY');
-                if (oldStreak < 4 && streak >= 4) triggerAbilityUnlock('ab-skip', 'SKIP READY');
-
-                if (streak >= 5) {
-                    lives++;
-                    triggerConfetti(200); // Big explosion
-                    const hearts = livesDisplay.querySelectorAll('span');
-                    hearts.forEach(h => {
-                        h.classList.add('flash-heart');
-                        setTimeout(() => h.classList.remove('flash-heart'), 800);
-                    });
-                    showFloatingText("+1 LIFE", window.innerWidth/2, window.innerHeight/3, '#f87171'); // Red
-                    streak = 0; // Reset streak after getting life
-                }
-                
-                selectedBtn.classList.add('bg-green-600', 'text-white', 'border-green-400', 'shadow-[0_0_20px_rgba(34,197,94,0.6)]');
-            } else {
-                correctStreak = 0;
-                globalMultiplier = 1;
-                streak = 0;
-                lives--;
-                
-                document.body.classList.add('shake', 'flash-error');
-                setTimeout(() => document.body.classList.remove('shake', 'flash-error'), 400);
-                
-                selectedBtn.classList.remove('hover:bg-white', 'hover:text-black');
-                selectedBtn.classList.add('bg-red-950', 'text-red-300', 'border-red-900', 'opacity-50'); 
-                
-                // Highlight correct answer
-                buttons.forEach(btn => {
-                    if(btn.dataset.correct === 'true') {
-                        btn.classList.add('border-white', 'text-white', 'bg-slate-700');
-                    }
-                });
-            }
-
-            updateUI();
-
-            setTimeout(() => {
-                nextStep();
-            }, 1200);
-        }
-
-        function triggerAbilityUnlock(id, text) {
-            const btn = document.getElementById(id);
-            btn.classList.add('unlock-flash');
-            setTimeout(() => btn.classList.remove('unlock-flash'), 800);
-            
-            // Random offset for text to not perfectly overlap if multiple happen
-            const offsetX = (Math.random() - 0.5) * 40;
-            const offsetY = (Math.random() - 0.5) * 40;
-            showFloatingText(text, window.innerWidth/2 + offsetX, window.innerHeight/2 + 50 + offsetY, '#60a5fa'); // Blue
-        }
-
-        function useAbility(type) {
-            if (isTransitioning) return;
-            
-            if (type === 'remove1' && streak >= 2) {
-                streak -= 2;
-                hideWrongAnswers(1);
-            } else if (type === 'remove2' && streak >= 3) {
-                streak -= 3;
-                hideWrongAnswers(2);
-            } else if (type === 'skip' && streak >= 4) {
-                streak -= 4;
-                isTransitioning = true;
-                
-                clearInterval(questionInterval);
-                
-                // Visual feedback for skip
-                const buttons = answersContainer.querySelectorAll('button');
-                buttons.forEach(btn => btn.disabled = true);
-                
-                showFloatingText("SKIPPED", window.innerWidth/2, window.innerHeight/2, '#94a3b8'); // Slate
-                triggerConfetti(50);
-                updateUI();
-
-                setTimeout(() => {
-                    nextStep();
-                }, 1000);
-                return; // Return early, handled
-            }
-            updateUI();
-        }
-
-        function hideWrongAnswers(count) {
-            const buttons = Array.from(answersContainer.querySelectorAll('button'));
-            const wrongBtns = buttons.filter(btn => btn.dataset.correct === 'false' && !btn.disabled);
-            
-            // Shuffle wrong buttons so the removed ones are random
-            wrongBtns.sort(() => Math.random() - 0.5);
-            
-            for (let i = 0; i < count && i < wrongBtns.length; i++) {
-                wrongBtns[i].disabled = true;
-                wrongBtns[i].classList.remove('bg-slate-800/80', 'border-slate-600', 'shadow-lg');
-                wrongBtns[i].classList.add('opacity-20', 'bg-slate-900', 'border-slate-800', 'cursor-not-allowed');
-            }
-        }
-
-        function nextStep(skipMinigameCheck = false) {
-            if (lives <= 0) {
-                endGame();
-                return;
-            }
-            
-            if (!skipMinigameCheck) {
-                currentQuestionIndex++;
-            }
-            
-            if (currentQuestionIndex >= questions.length) {
-                endGame();
-                return;
-            }
-            
-            // 20% chance for a minigame if we have at least 1 correct streak (so it doesn't pop up immediately after dying)
-            if (!skipMinigameCheck && correctStreak > 0 && Math.random() < 0.20) {
-                startMinigame(); 
-            } else {
-                isTransitioning = false;
-                displayQuestion();
-            }
-        }
-
-        function startMinigame() {
-            isTransitioning = true;
-            clearInterval(questionInterval);
-            
-            document.body.classList.add('flash-warning');
-            setTimeout(() => document.body.classList.remove('flash-warning'), 800);
-
-            document.getElementById('abilities-hud').classList.add('hidden');
-            document.getElementById('question-panel').classList.add('hidden');
-            document.getElementById('minigame-panel').classList.remove('hidden');
-            
-            const types = ['nodes', 'upload', 'stratagem', 'shields', 'wires'];
-            const type = types[Math.floor(Math.random() * types.length)];
-            
-            mgTime = 80; // 8.0 seconds
-            
-            if(type === 'nodes') setupNodesGame();
-            else if(type === 'upload') setupUploadGame();
-            else if(type === 'stratagem') setupStratagemGame();
-            else if(type === 'shields') setupShieldsGame();
-            else if(type === 'wires') setupWiresGame();
-            
-            document.getElementById('minigame-timer').textContent = (mgTime/10).toFixed(1) + 's';
-            
-            clearInterval(minigameInterval);
-            minigameInterval = setInterval(() => {
-                mgTime--;
-                document.getElementById('minigame-timer').textContent = (mgTime/10).toFixed(1) + 's';
-                if(mgTime <= 0) {
-                    endMinigame(false);
-                }
-            }, 100);
-        }
-
-        let expectedNode = 1;
-        function setupNodesGame() {
-            document.getElementById('minigame-title').textContent = "CALIBRATE NODES (1-5)";
-            const content = document.getElementById('minigame-content');
-            content.innerHTML = '';
-            expectedNode = 1;
-            
-            for(let i=1; i<=5; i++) {
-                let btn = document.createElement('button');
-                btn.className = 'absolute w-12 h-12 bg-slate-800 border-2 border-orange-500 rounded-full text-white font-bold flex items-center justify-center transition-colors shadow-lg';
-                btn.style.left = Math.random() * 80 + '%';
-                btn.style.top = Math.random() * 60 + 10 + '%';
-                btn.textContent = i;
-                
-                btn.onclick = () => {
-                    if(i === expectedNode) {
-                        btn.classList.replace('bg-slate-800', 'bg-green-600');
-                        btn.classList.replace('border-orange-500', 'border-green-400');
-                        expectedNode++;
-                        if(expectedNode > 5) endMinigame(true);
-                    } else if (i > expectedNode) {
-                        // wrong sequence - flash red and reset
-                        content.classList.add('shake', 'bg-red-900/50');
-                        setTimeout(() => content.classList.remove('shake', 'bg-red-900/50'), 300);
-                        setupNodesGame();
-                    }
-                };
-                content.appendChild(btn);
-            }
-        }
-
-        let uploadClicks = 0;
-        function setupUploadGame() {
-            document.getElementById('minigame-title').textContent = "MASH TO UPLOAD";
-            const content = document.getElementById('minigame-content');
-            content.innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full gap-5 w-full">
-                    <button id="upload-btn" class="bg-orange-600 hover:bg-orange-500 active:bg-orange-700 active:scale-95 text-white px-8 py-3 rounded-xl font-mono font-bold text-lg transition-transform border border-orange-400 shadow-[0_0_15px_rgba(234,88,12,0.5)]">
-                        [ UPLOAD DATA ]
-                    </button>
-                    <div class="w-3/4 max-w-sm bg-slate-900 rounded-full h-4 border border-slate-700 p-0.5 relative overflow-hidden">
-                        <div id="upload-bar" class="absolute left-0 top-0 bg-orange-500 h-full rounded-full w-0 transition-all duration-75 shadow-[0_0_10px_rgba(234,88,12,0.8)]"></div>
-                    </div>
-                </div>
-            `;
-            uploadClicks = 0;
-            document.getElementById('upload-btn').onclick = () => {
-                uploadClicks++;
-                const pct = Math.min((uploadClicks / 15) * 100, 100);
-                document.getElementById('upload-bar').style.width = pct + '%';
-                if(uploadClicks >= 15) {
-                    endMinigame(true);
-                }
-            };
-        }
-
-        let stratSequence = [];
-        let stratIndex = 0;
-        let isStratagemActive = false;
-        const stratArrows = { 'UP': '▲', 'DOWN': '▼', 'LEFT': '◀', 'RIGHT': '▶' };
-        const stratKeys = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
-
-        function setupStratagemGame() {
-            document.getElementById('minigame-title').textContent = "INPUT SEQUENCE";
-            const content = document.getElementById('minigame-content');
-            
-            isStratagemActive = true;
-            stratSequence = Array.from({length: 6}, () => stratKeys[Math.floor(Math.random() * 4)]);
-            stratIndex = 0;
-            
-            renderStratagemUI();
-        }
-
-        function renderStratagemUI() {
-            const content = document.getElementById('minigame-content');
-            let sequenceHTML = stratSequence.map((dir, i) => {
-                if (i < stratIndex) {
-                    return `<div class="w-8 h-8 sm:w-10 sm:h-10 border border-green-400 flex items-center justify-center text-white rounded text-lg sm:text-xl bg-green-600 shadow-[0_0_10px_#22c55e] transition-all">${stratArrows[dir]}</div>`;
-                } else if (i === stratIndex) {
-                    return `<div class="w-8 h-8 sm:w-10 sm:h-10 border-2 border-yellow-400 flex items-center justify-center text-yellow-400 rounded text-lg sm:text-xl bg-slate-800 animate-pulse transition-all">${stratArrows[dir]}</div>`;
-                } else {
-                    return `<div class="w-8 h-8 sm:w-10 sm:h-10 border border-slate-700 flex items-center justify-center text-slate-600 rounded text-lg sm:text-xl bg-slate-900 transition-all">${stratArrows[dir]}</div>`;
-                }
-            }).join('');
-
-            content.innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full gap-3 sm:gap-5 w-full pt-2">
-                    <div class="flex gap-1 sm:gap-2 mb-2">
-                       ${sequenceHTML}
-                    </div>
-                    
-                    <div class="grid grid-cols-3 gap-1 sm:gap-2 w-32 sm:w-40 mx-auto">
-                        <div class="col-start-2">
-                            <button onclick="handleStratInput('UP')" class="w-10 h-10 sm:w-12 sm:h-12 bg-slate-800 border border-slate-600 rounded-lg shadow hover:bg-slate-700 active:bg-slate-600 active:scale-95 flex items-center justify-center text-white text-xl transition-all">▲</button>
-                        </div>
-                        <div class="col-start-1 row-start-2">
-                            <button onclick="handleStratInput('LEFT')" class="w-10 h-10 sm:w-12 sm:h-12 bg-slate-800 border border-slate-600 rounded-lg shadow hover:bg-slate-700 active:bg-slate-600 active:scale-95 flex items-center justify-center text-white text-xl transition-all">◀</button>
-                        </div>
-                        <div class="col-start-2 row-start-2">
-                            <button onclick="handleStratInput('DOWN')" class="w-10 h-10 sm:w-12 sm:h-12 bg-slate-800 border border-slate-600 rounded-lg shadow hover:bg-slate-700 active:bg-slate-600 active:scale-95 flex items-center justify-center text-white text-xl transition-all">▼</button>
-                        </div>
-                        <div class="col-start-3 row-start-2">
-                            <button onclick="handleStratInput('RIGHT')" class="w-10 h-10 sm:w-12 sm:h-12 bg-slate-800 border border-slate-600 rounded-lg shadow hover:bg-slate-700 active:bg-slate-600 active:scale-95 flex items-center justify-center text-white text-xl transition-all">▶</button>
-                        </div>
-                    </div>
-                    <div class="text-[10px] text-slate-500 font-mono">USE ARROWS, WASD, OR TAP</div>
-                </div>
-            `;
-        }
-
-        window.handleStratInput = function(dir) {
-            if(!isStratagemActive) return;
-
-            if(stratSequence[stratIndex] === dir) {
-                stratIndex++;
-                renderStratagemUI();
-                if(stratIndex >= stratSequence.length) {
-                    isStratagemActive = false;
-                    setTimeout(() => endMinigame(true), 150);
-                }
-            } else {
-                stratIndex = 0; // reset
-                renderStratagemUI();
-                const content = document.getElementById('minigame-content');
-                content.classList.add('shake', 'bg-red-900/50');
-                setTimeout(() => content.classList.remove('shake', 'bg-red-900/50'), 300);
-            }
-        };
-
-        // Keyboard support for Stratagem
-        document.addEventListener('keydown', (e) => {
-            if (!isStratagemActive) return;
-            if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') handleStratInput('UP');
-            if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') handleStratInput('DOWN');
-            if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') handleStratInput('LEFT');
-            if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') handleStratInput('RIGHT');
-        });
-
-        let shieldsRemaining = 0;
-        function setupShieldsGame() {
-            document.getElementById('minigame-title').textContent = "PRIME SHIELDS";
-            const content = document.getElementById('minigame-content');
-            content.innerHTML = `<div class="grid grid-cols-3 gap-3 p-4 h-full max-w-sm mx-auto" id="shields-container"></div>`;
-            const container = document.getElementById('shields-container');
-            
-            shieldsRemaining = 0;
-            for(let i=0; i<6; i++) {
-                const isRed = Math.random() > 0.3; // 70% chance to be red
-                if(isRed) shieldsRemaining++;
-                
-                const btn = document.createElement('button');
-                btn.className = `w-full h-full rounded-xl border-2 transition-colors shadow-md ${isRed ? 'bg-red-900 border-red-500 hover:bg-red-800' : 'bg-slate-800 border-slate-600'}`;
-                btn.onclick = () => {
-                    if(btn.classList.contains('bg-red-900')) {
-                        btn.className = 'w-full h-full rounded-xl border-2 transition-colors shadow-md bg-slate-800 border-slate-600';
-                        shieldsRemaining--;
-                        if(shieldsRemaining <= 0) endMinigame(true);
-                    }
-                };
-                container.appendChild(btn);
-            }
-            if(shieldsRemaining === 0) endMinigame(true);
-        }
-
-        let wireColors = ['#ef4444', '#3b82f6', '#eab308', '#22c55e'];
-        let wiresLeft = [];
-        let wiresRight = [];
-        let selectedLeft = null;
-        let matchedCount = 0;
-        
-        function setupWiresGame() {
-            document.getElementById('minigame-title').textContent = "CONNECT WIRES";
-            const content = document.getElementById('minigame-content');
-            
-            wiresLeft = [...wireColors].sort(() => Math.random() - 0.5);
-            wiresRight = [...wireColors].sort(() => Math.random() - 0.5);
-            selectedLeft = null;
-            matchedCount = 0;
-            
-            let html = `<div class="flex justify-between items-center h-full px-10 sm:px-16 relative">
-                <div class="flex flex-col justify-around h-full py-3" id="wires-left">`;
-            wiresLeft.forEach((color, i) => {
-                html += `<button id="wl-${i}" onclick="selectWireL(${i}, '${color}')" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white/50 shadow-[0_0_15px_${color}] hover:scale-110 transition-transform" style="background-color: ${color}"></button>`;
-            });
-            html += `</div>
-                <div class="flex flex-col justify-around h-full py-3" id="wires-right">`;
-            wiresRight.forEach((color, i) => {
-                html += `<button id="wr-${i}" onclick="selectWireR(${i}, '${color}')" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white/50 shadow-[0_0_15px_${color}] hover:scale-110 transition-transform" style="background-color: ${color}"></button>`;
-            });
-            html += `</div></div>`;
-            content.innerHTML = html;
-        }
-        
-        window.selectWireL = function(idx, color) {
-            for(let i=0; i<4; i++) {
-                let el = document.getElementById('wl-'+i);
-                if(el) el.classList.remove('border-4', 'border-white');
-            }
-            let el = document.getElementById('wl-'+idx);
-            if(el) el.classList.add('border-4', 'border-white');
-            selectedLeft = {idx, color};
-        };
-        
-        window.selectWireR = function(idx, color) {
-            if(!selectedLeft) return;
-            if(selectedLeft.color === color) {
-                let elL = document.getElementById('wl-'+selectedLeft.idx);
-                let elR = document.getElementById('wr-'+idx);
-                if(elL) { elL.style.opacity = '0.2'; elL.onclick = null; elL.classList.remove('border-4', 'border-white'); }
-                if(elR) { elR.style.opacity = '0.2'; elR.onclick = null; }
-                selectedLeft = null;
-                matchedCount++;
-                if(matchedCount >= 4) endMinigame(true);
-            } else {
-                const content = document.getElementById('minigame-content');
-                content.classList.add('shake', 'bg-red-900/50');
-                setTimeout(() => content.classList.remove('shake', 'bg-red-900/50'), 300);
-                selectedLeft = null;
-                for(let i=0; i<4; i++) {
-                    let el = document.getElementById('wl-'+i);
-                    if(el) el.classList.remove('border-4', 'border-white');
-                }
-            }
-        };
-
-        function endMinigame(success) {
-            clearInterval(minigameInterval);
-            isStratagemActive = false; // Ensure it disables keyboard hooking
-            
-            if (success) {
-                const points = 50 * globalMultiplier;
-                score += points;
-                
-                // Bump Score
-                const sd = document.getElementById('score-display');
-                sd.classList.remove('score-bump');
-                void sd.offsetWidth; 
-                sd.classList.add('score-bump');
-
-                showFloatingText(`TASK COMPLETE +${points}`, window.innerWidth/2, window.innerHeight/2, '#4ade80'); // Green
-                document.body.classList.add('flash-correct');
-                setTimeout(() => document.body.classList.remove('flash-correct'), 600);
-                updateUI();
-            } else {
-                showFloatingText("TASK FAILED", window.innerWidth/2, window.innerHeight/2, '#f87171'); // Red
-                document.body.classList.add('shake', 'flash-error');
-                setTimeout(() => document.body.classList.remove('shake', 'flash-error'), 400);
-            }
-            
-            setTimeout(() => {
-                document.getElementById('minigame-panel').classList.add('hidden');
-                document.getElementById('abilities-hud').classList.remove('hidden');
-                document.getElementById('question-panel').classList.remove('hidden');
-                
-                isTransitioning = false;
-                nextStep(true); // Pass true to skip a back-to-back minigame
-            }, 1200);
-        }
-
-        function showFloatingText(text, x, y, colorCode = '#fff') {
-            const el = document.createElement('div');
-            el.className = 'floating-text';
-            el.style.color = colorCode;
-            el.textContent = text;
-            el.style.left = (x - 40) + 'px'; // Better centering
-            el.style.top = y + 'px';
-            document.body.appendChild(el);
-            setTimeout(() => el.remove(), 1000);
-        }
-
-        function endGame() {
-            clearInterval(globalInterval);
-            clearInterval(questionInterval);
-            
-            gameUI.classList.add('hidden');
-            gameUI.classList.remove('flex');
-            gameOverScreen.classList.remove('hidden');
-            gameOverScreen.classList.add('flex');
-            finalScore.textContent = score.toString().padStart(3, '0');
-        }
-
+        // Confetti System
         const canvas = document.getElementById('confetti-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
@@ -4014,61 +282,472 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        class Particle {
-            constructor() {
-                this.x = canvas.width / 2;
-                this.y = canvas.height / 2;
-                this.vx = (Math.random() - 0.5) * 25;
-                this.vy = (Math.random() - 0.5) * 25;
-                this.size = Math.random() * 5 + 2;
-                this.life = 1;
-                this.decay = Math.random() * 0.02 + 0.01;
-                
-                // Nice premium colors: whites, light blues, silvers
-                const colors = [
-                    '255, 255, 255', // White
-                    '148, 163, 184', // slate-400
-                    '56, 189, 248',  // light blue
-                    '226, 232, 240'  // slate-200
-                ];
-                const baseColor = colors[Math.floor(Math.random() * colors.length)];
-                this.color = `rgba(${baseColor}, `;
-            }
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vy += 0.2; // Gravity
-                this.life -= this.decay;
-            }
-            draw() {
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = "rgba(255, 255, 255, 0.5)";
-                ctx.fillStyle = this.color + this.life + ")";
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
+        function triggerConfetti() {
+            for (let i = 0; i < 60; i++) {
+                particles.push({
+                    x: window.innerWidth / 2,
+                    y: window.innerHeight / 2,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.7) * 12,
+                    size: Math.random() * 6 + 4,
+                    color: ['#60a5fa', '#34d399', '#f43f5e', '#fbbf24', '#a855f7'][Math.floor(Math.random() * 5)],
+                    alpha: 1
+                });
             }
         }
 
-        function triggerConfetti(amount = 100) {
-            for (let i = 0; i < amount; i++) {
-                particles.push(new Particle());
-            }
-        }
-
-        function animateParticles() {
+        function updateConfetti() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i];
-                p.update();
-                p.draw();
-                if (p.life <= 0) {
-                    particles.splice(i, 1);
+            particles.forEach((p, index) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.4; // gravity
+                p.alpha -= 0.015;
+                if (p.alpha <= 0) {
+                    particles.splice(index, 1);
+                    return;
                 }
-            }
-            requestAnimationFrame(animateParticles);
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+                ctx.restore();
+            });
+            requestAnimationFrame(updateConfetti);
         }
-        animateParticles();
+        updateConfetti();
+
+        function spawnFloatingText(text, x, y, color = '#60a5fa') {
+            const el = document.createElement('div');
+            el.className = 'floating-text';
+            el.textContent = text;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            el.style.color = color;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 1000);
+        }
+
+        function startGame() {
+            questions = [...rawQuestions].sort(() => Math.random() - 0.5);
+            currentQuestionIndex = 0;
+            score = 0;
+            lives = 3;
+            streak = 0;
+            multiplier = 1;
+            globalSeconds = 0;
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.add('hidden');
+            document.getElementById('game-ui').classList.remove('hidden');
+            document.getElementById('game-ui').classList.add('flex');
+
+            if (globalTimer) clearInterval(globalTimer);
+            globalTimer = setInterval(() => {
+                globalSeconds++;
+                const mins = Math.floor(globalSeconds / 60).toString().padStart(2, '0');
+                const secs = (globalSeconds % 60).toString().padStart(2, '0');
+                document.getElementById('global-timer').textContent = `${mins}:${secs}`;
+            }, 1000);
+
+            loadNextQuestion();
+        }
+
+        function loadNextQuestion() {
+            if (lives <= 0) {
+                gameOver();
+                return;
+            }
+
+            if (currentQuestionIndex >= questions.length) {
+                questions = [...rawQuestions].sort(() => Math.random() - 0.5);
+                currentQuestionIndex = 0;
+            }
+
+            // 20% Chance for a Minigame before question
+            if (Math.random() < 0.2) {
+                triggerMinigame();
+                return;
+            }
+
+            const q = questions[currentQuestionIndex];
+            currentQuestionIndex++;
+
+            document.getElementById('question-panel').classList.remove('hidden');
+            document.getElementById('minigame-panel').classList.add('hidden');
+
+            document.getElementById('question-text').textContent = q.frage;
+
+            const answersContainer = document.getElementById('answers-container');
+            answersContainer.innerHTML = '';
+            answersContainer.style.opacity = '0';
+
+            let answers = [...q.falscheAntworten, q.richtigeAntwort];
+            answers = answers.sort(() => Math.random() - 0.5);
+
+            answers.forEach((ans) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left bg-slate-800/80 border border-slate-600 rounded-xl p-3 sm:p-5 text-sm sm:text-base transition-all duration-300 btn-hover-fx shadow-lg text-slate-100 hover:bg-slate-700';
+                btn.textContent = ans;
+                btn.dataset.correct = (ans === q.richtigeAntwort);
+                btn.onclick = () => handleAnswer(btn.dataset.correct === 'true', btn);
+                answersContainer.appendChild(btn);
+            });
+
+            setTimeout(() => {
+                answersContainer.style.opacity = '1';
+            }, 50);
+
+            startQuestionTimer();
+            updateUI();
+        }
+
+        function startQuestionTimer() {
+            if (questionTimer) clearInterval(questionTimer);
+            questionSecondsLeft = 30;
+            const bar = document.getElementById('question-timer-bar');
+            const text = document.getElementById('question-timer-text');
+            
+            bar.style.width = '100%';
+            bar.style.backgroundColor = '#60a5fa';
+            text.textContent = '30s';
+
+            questionTimer = setInterval(() => {
+                questionSecondsLeft--;
+                text.textContent = `${questionSecondsLeft}s`;
+                const pct = (questionSecondsLeft / 30) * 100;
+                bar.style.width = `${pct}%`;
+
+                if (questionSecondsLeft <= 10) {
+                    bar.style.backgroundColor = '#f43f5e';
+                }
+
+                if (questionSecondsLeft <= 0) {
+                    clearInterval(questionTimer);
+                    handleAnswer(false, null, true); // Timeout
+                }
+            }, 1000);
+        }
+
+        function handleAnswer(isCorrect, btnElement, isTimeout = false) {
+            if (questionTimer) clearInterval(questionTimer);
+            
+            const buttons = document.querySelectorAll('#answers-container button');
+            buttons.forEach(b => b.disabled = true);
+
+            if (isCorrect) {
+                streak++;
+                score += 100 * multiplier;
+                if (btnElement) {
+                    btnElement.className = 'w-full text-left bg-green-900/60 border border-green-500 rounded-xl p-3 sm:p-5 text-sm sm:text-base shadow-lg text-green-200 transition-all';
+                    const rect = btnElement.getBoundingClientRect();
+                    spawnFloatingText(`+${100 * multiplier}P`, rect.x + rect.width / 2, rect.y, '#34d399');
+                }
+                
+                // Multiplier check (every 3 streak)
+                if (streak > 0 && streak % 3 === 0 && multiplier < 5) {
+                    multiplier++;
+                }
+
+                if (streak >= 5) {
+                    streak = 0;
+                    lives++;
+                    triggerConfetti();
+                    spawnFloatingText('+1 LEBEN!', window.innerWidth / 2, window.innerHeight / 2, '#f43f5e');
+                }
+            } else {
+                streak = 0;
+                multiplier = 1;
+                lives--;
+                if (btnElement) {
+                    btnElement.className = 'w-full text-left bg-red-900/60 border border-red-500 rounded-xl p-3 sm:p-5 text-sm sm:text-base shadow-lg text-red-200 transition-all';
+                }
+                // Highlight correct answer
+                buttons.forEach(b => {
+                    if (b.dataset.correct === 'true') {
+                        b.className = 'w-full text-left bg-green-900/40 border border-green-600 rounded-xl p-3 sm:p-5 text-sm sm:text-base shadow-lg text-green-300 transition-all';
+                    }
+                });
+            }
+
+            updateUI();
+
+            setTimeout(() => {
+                loadNextQuestion();
+            }, 1200);
+        }
+
+        function updateUI() {
+            const livesDisplay = document.getElementById('lives-display');
+            livesDisplay.innerHTML = '♥'.repeat(Math.max(0, lives));
+
+            document.getElementById('score-display').textContent = score.toString().padStart(3, '0');
+
+            const multiBadge = document.getElementById('multiplier-badge');
+            if (multiplier > 1) {
+                multiBadge.textContent = `x${multiplier} MULTI`;
+                multiBadge.classList.remove('opacity-0', 'scale-90');
+            } else {
+                multiBadge.classList.add('opacity-0', 'scale-90');
+            }
+
+            const streakBars = document.querySelectorAll('#streak-bar div');
+            streakBars.forEach((bar, i) => {
+                if (i < streak) {
+                    bar.className = "w-8 sm:w-12 rounded-full bg-blue-400 shadow-[0_0_10px_#60a5fa] transition-colors duration-300";
+                } else {
+                    bar.className = "w-8 sm:w-12 rounded-full bg-slate-800 border border-slate-700 transition-colors duration-300";
+                }
+            });
+
+            // Abilities availability
+            const ab1 = document.getElementById('ab-remove1');
+            const ab2 = document.getElementById('ab-remove2');
+            const ab3 = document.getElementById('ab-skip');
+
+            const prevAb1State = !ab1.disabled;
+            const prevAb2State = !ab2.disabled;
+            const prevAb3State = !ab3.disabled;
+
+            ab1.disabled = streak < 2;
+            ab1.classList.toggle('opacity-50', streak < 2);
+            if (!prevAb1State && streak >= 2) spawnFloatingText('FÄHIGKEIT FREIGESCHALTET!', window.innerWidth / 2 - 100, 150, '#60a5fa');
+
+            ab2.disabled = streak < 3;
+            ab2.classList.toggle('opacity-50', streak < 3);
+            if (!prevAb2State && streak >= 3) spawnFloatingText('FÄHIGKEIT FREIGESCHALTET!', window.innerWidth / 2, 150, '#60a5fa');
+
+            ab3.disabled = streak < 4;
+            ab3.classList.toggle('opacity-50', streak < 4);
+            if (!prevAb3State && streak >= 4) spawnFloatingText('FÄHIGKEIT FREIGESCHALTET!', window.innerWidth / 2 + 100, 150, '#60a5fa');
+        }
+
+        function useAbility(type) {
+            const buttons = document.querySelectorAll('#answers-container button');
+            const wrongButtons = Array.from(buttons).filter(b => b.dataset.correct === 'false' && !b.disabled);
+
+            if (type === 'remove1' && streak >= 2) {
+                streak -= 2;
+                if (wrongButtons.length > 0) {
+                    const target = wrongButtons[Math.floor(Math.random() * wrongButtons.length)];
+                    target.disabled = true;
+                    target.style.opacity = '0.2';
+                }
+            } else if (type === 'remove2' && streak >= 3) {
+                streak -= 3;
+                wrongButtons.slice(0, 2).forEach(b => {
+                    b.disabled = true;
+                    b.style.opacity = '0.2';
+                });
+            } else if (type === 'skip' && streak >= 4) {
+                streak -= 4;
+                if (questionTimer) clearInterval(questionTimer);
+                spawnFloatingText('FRAGE ÜBERSPRUNGEN', window.innerWidth / 2, window.innerHeight / 2, '#fbbf24');
+                loadNextQuestion();
+                return;
+            }
+            updateUI();
+        }
+
+        function triggerMinigame() {
+            if (questionTimer) clearInterval(questionTimer);
+            document.getElementById('question-panel').classList.add('hidden');
+            const panel = document.getElementById('minigame-panel');
+            panel.classList.remove('hidden');
+
+            const minigames = [setupWiresGame, setupShieldsGame, setupStratagemGame];
+            const chosen = minigames[Math.floor(Math.random() * minigames.length)];
+            chosen();
+        }
+
+        function startMinigameTimer(duration, onComplete) {
+            minigameTimeLeft = duration;
+            const timerEl = document.getElementById('minigame-timer');
+            timerEl.textContent = `${minigameTimeLeft.toFixed(1)}s`;
+
+            if (minigameTimer) clearInterval(minigameTimer);
+            minigameTimer = setInterval(() => {
+                minigameTimeLeft -= 0.1;
+                timerEl.textContent = `${Math.max(0, minigameTimeLeft).toFixed(1)}s`;
+
+                if (minigameTimeLeft <= 0) {
+                    clearInterval(minigameTimer);
+                    onComplete(false);
+                }
+            }, 100);
+        }
+
+        function endMinigame(success) {
+            if (minigameTimer) clearInterval(minigameTimer);
+            if (success) {
+                score += 250 * multiplier;
+                triggerConfetti();
+                spawnFloatingText(`+${250 * multiplier}P (TASK ERFOLGREICH)`, window.innerWidth / 2, window.innerHeight / 2, '#34d399');
+            } else {
+                lives--;
+                spawnFloatingText('TASK FEHLGESCHLAGEN (-1 LEBEN)', window.innerWidth / 2, window.innerHeight / 2, '#f43f5e');
+            }
+            updateUI();
+            setTimeout(() => {
+                loadNextQuestion();
+            }, 1000);
+        }
+
+        // Minigame 1: Wires
+        let wireColors = ['#f43f5e', '#3b82f6', '#22c55e', '#eab308'];
+        let wiresLeft = [], wiresRight = [], selectedLeft = null, matchedCount = 0;
+
+        function setupWiresGame() {
+            document.getElementById('minigame-title').textContent = "KABEL VERBINDEN";
+            const content = document.getElementById('minigame-content');
+            
+            wiresLeft = [...wireColors].sort(() => Math.random() - 0.5);
+            wiresRight = [...wireColors].sort(() => Math.random() - 0.5);
+            selectedLeft = null;
+            matchedCount = 0;
+
+            let html = `<div class="flex justify-between items-center h-full px-4 sm:px-16 relative"><div class="flex flex-col justify-around h-full py-3" id="wires-left">`;
+            wiresLeft.forEach((col, i) => {
+                html += `<button onclick="selectWireLeft('${col}', this)" class="w-10 h-10 rounded-full border-2 border-slate-600 flex items-center justify-center shadow-lg" style="background:${col}"></button>`;
+            });
+            html += `</div><div class="flex flex-col justify-around h-full py-3" id="wires-right">`;
+            wiresRight.forEach((col, i) => {
+                html += `<button onclick="selectWireRight('${col}', this)" class="w-10 h-10 rounded-full border-2 border-slate-600 flex items-center justify-center shadow-lg" style="background:${col}"></button>`;
+            });
+            html += `</div></div>`;
+            content.innerHTML = html;
+
+            startMinigameTimer(8.0, (res) => endMinigame(res));
+        }
+
+        function selectWireLeft(col, el) {
+            document.querySelectorAll('#wires-left button').forEach(b => b.classList.remove('ring-4', 'ring-white'));
+            el.classList.add('ring-4', 'ring-white');
+            selectedLeft = col;
+        }
+
+        function selectWireRight(col, el) {
+            if (!selectedLeft) return;
+            if (selectedLeft === col) {
+                el.style.opacity = '0.2';
+                el.disabled = true;
+                // find corresponding left
+                document.querySelectorAll('#wires-left button').forEach(b => {
+                    if (b.style.backgroundColor === selectedLeft || b.style.background === selectedLeft) {
+                        b.style.opacity = '0.2';
+                        b.disabled = true;
+                    }
+                });
+                matchedCount++;
+                selectedLeft = null;
+                if (matchedCount === 4) {
+                    endMinigame(true);
+                }
+            } else {
+                selectedLeft = null;
+                document.querySelectorAll('#wires-left button').forEach(b => b.classList.remove('ring-4', 'ring-white'));
+            }
+        }
+
+        // Minigame 2: Shields
+        let shieldsNodes = [];
+        function setupShieldsGame() {
+            document.getElementById('minigame-title').textContent = "SCHILDE PRIMEN";
+            const content = document.getElementById('minigame-content');
+            shieldsNodes = [false, false, false, false, false, false];
+
+            let html = `<div class="grid grid-cols-3 gap-3 h-full p-6 place-items-center">`;
+            shieldsNodes.forEach((active, i) => {
+                const isActive = Math.random() < 0.6;
+                shieldsNodes[i] = isActive;
+                const bg = isActive ? 'bg-red-500 shadow-[0_0_15px_#ef4444]' : 'bg-slate-800 border border-slate-600';
+                html += `<button id="shield-${i}" onclick="toggleShield(${i})" class="w-16 h-16 rounded-xl ${bg} transition-all flex items-center justify-center font-mono text-white font-bold">${isActive ? '⚡' : '✓'}</button>`;
+            });
+            html += `</div>`;
+            content.innerHTML = html;
+
+            startMinigameTimer(6.0, (res) => endMinigame(res));
+        }
+
+        function toggleShield(i) {
+            shieldsNodes[i] = false;
+            const btn = document.getElementById(`shield-${i}`);
+            btn.className = "w-16 h-16 rounded-xl bg-slate-800 border border-slate-600 transition-all flex items-center justify-center font-mono text-white font-bold";
+            btn.textContent = "✓";
+
+            if (shieldsNodes.every(n => !n)) {
+                endMinigame(true);
+            }
+        }
+
+        // Minigame 3: Helldivers Stratagem
+        let stratSequence = [];
+        let stratIndex = 0;
+        const stratArrows = { 'UP': '▲', 'DOWN': '▼', 'LEFT': '◀', 'RIGHT': '▶' };
+        const stratKeys = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
+
+        function setupStratagemGame() {
+            document.getElementById('minigame-title').textContent = "STRATAGEM EINGABE";
+            const content = document.getElementById('minigame-content');
+            
+            stratSequence = [];
+            for (let i = 0; i < 5; i++) {
+                stratSequence.push(stratKeys[Math.floor(Math.random() * stratKeys.length)]);
+            }
+            stratIndex = 0;
+
+            renderStratagemUI();
+            startMinigameTimer(7.0, (res) => endMinigame(res));
+        }
+
+        function renderStratagemUI() {
+            const content = document.getElementById('minigame-content');
+            let sequenceHTML = stratSequence.map((dir, i) => {
+                if (i < stratIndex) {
+                    return `<div class="w-8 h-8 border border-green-400 flex items-center justify-center text-white rounded text-lg bg-green-600 shadow-[0_0_10px_#22c55e]">${stratArrows[dir]}</div>`;
+                } else if (i === stratIndex) {
+                    return `<div class="w-8 h-8 border-2 border-yellow-400 flex items-center justify-center text-yellow-400 rounded text-lg bg-slate-800 animate-pulse">${stratArrows[dir]}</div>`;
+                } else {
+                    return `<div class="w-8 h-8 border border-slate-700 flex items-center justify-center text-slate-600 rounded text-lg bg-slate-900">${stratArrows[dir]}</div>`;
+                }
+            }).join('');
+
+            content.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full gap-4 w-full">
+                    <div class="flex gap-2 mb-2">${sequenceHTML}</div>
+                    <div class="grid grid-cols-3 gap-2 w-36 mx-auto">
+                        <div class="col-start-2"><button onclick="handleStratInput('UP')" class="w-10 h-10 bg-slate-800 border border-slate-600 rounded-lg shadow hover:bg-slate-700 text-white text-lg">▲</button></div>
+                        <div class="col-start-1 row-start-2"><button onclick="handleStratInput('LEFT')" class="w-10 h-10 bg-slate-800 border border-slate-600 rounded-lg shadow hover:bg-slate-700 text-white text-lg">◀</button></div>
+                        <div class="col-start-2 row-start-2"><button onclick="handleStratInput('DOWN')" class="w-10 h-10 bg-slate-800 border border-slate-600 rounded-lg shadow hover:bg-slate-700 text-white text-lg">▼</button></div>
+                        <div class="col-start-3 row-start-2"><button onclick="handleStratInput('RIGHT')" class="w-10 h-10 bg-slate-800 border border-slate-600 rounded-lg shadow hover:bg-slate-700 text-white text-lg">▶</button></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleStratInput(dir) {
+            if (dir === stratSequence[stratIndex]) {
+                stratIndex++;
+                renderStratagemUI();
+                if (stratIndex === stratSequence.length) {
+                    endMinigame(true);
+                }
+            } else {
+                stratIndex = 0; // reset sequence on mistake
+                renderStratagemUI();
+            }
+        }
+
+        function gameOver() {
+            if (globalTimer) clearInterval(globalTimer);
+            if (questionTimer) clearInterval(questionTimer);
+            if (minigameTimer) clearInterval(minigameTimer);
+
+            document.getElementById('game-ui').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.remove('hidden');
+            document.getElementById('game-over-screen').classList.add('flex');
+            document.getElementById('final-score').textContent = score.toString().padStart(3, '0');
+        }
     </script>
 </body>
 </html>
