@@ -27,7 +27,7 @@
     <!-- Top Bar: Back + Date/Time -->
     <div class="absolute top-0 left-0 w-full px-6 py-4 flex flex-wrap items-center justify-between z-30 pointer-events-none gap-2">
         <div class="flex items-center gap-3 pointer-events-auto flex-wrap">
-            <a href="/index.html" id="back-to-home-btn" class="flex items-center gap-2 text-gray-400 hover:text-white transition-colors duration-300 group bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-800">
+            <a href="index.html" id="back-to-home-btn" class="flex items-center gap-2 text-gray-400 hover:text-white transition-colors duration-300 group bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-800">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform group-hover:-translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
@@ -57,7 +57,7 @@
         <div id="category-grid" class="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-0 pointer-events-none transition-all duration-700 transform translate-y-8 max-w-5xl px-6 w-full">
         </div>
 
-        <!-- Disclaimer Container -->
+        <!-- German Disclaimer Container (Zoom Step) -->
         <div id="disclaimer-container" class="absolute inset-0 flex flex-col items-center justify-center z-30 pointer-events-none opacity-0 transition-all duration-700 transform scale-50 max-w-4xl px-6 w-full mx-auto text-center">
             <div class="bg-black/60 border border-yellow-500/50 p-8 md:p-12 rounded-2xl backdrop-blur-xl shadow-[0_0_30px_rgba(234,179,8,0.2)] pointer-events-auto cursor-pointer hover:border-yellow-400 transition-all duration-300 group" id="disclaimer-card">
                 <div class="text-yellow-400 text-xs uppercase tracking-widest font-mono mb-4 flex items-center justify-center gap-2">
@@ -100,16 +100,14 @@
     <canvas id="dust-canvas" class="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"></canvas>
 
     <script>
-        // Back button absolute navigation safety
         const backBtnEl = document.getElementById('back-to-home-btn');
         if (backBtnEl) {
             backBtnEl.addEventListener('click', (e) => {
                 e.preventDefault();
-                window.location.href = '/index.html';
+                window.location.href = 'index.html';
             });
         }
 
-        // ===== CLOCK =====
         function updateClock() {
             const now = new Date();
             const dateOptions = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
@@ -122,7 +120,6 @@
         updateClock();
         setInterval(updateClock, 1000);
 
-        // ===== PARTICLE ENGINE =====
         const canvas = document.getElementById('dust-canvas');
         const ctx = canvas.getContext('2d');
         let width, height;
@@ -264,7 +261,6 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas(); animate();
 
-        // ===== GAME LOGIC =====
         const mainText = document.getElementById('main-text');
         
         function setupMainTextClick() {
@@ -304,18 +300,12 @@
                 files = await response.json();
                 if (!Array.isArray(files) || files.length === 0) throw new Error('Empty array returned');
             } catch (error) {
-                console.warn("Primary API failed. Initiating Vercel GitHub Repository Fallback...", error);
-                try {
-                    const ghResponse = await fetch('https://api.github.com/repos/cmdrFRANKLY1/Vercel/contents/resources/riddleMeThis');
-                    if (!ghResponse.ok) throw new Error('GitHub API response not ok');
-                    const ghData = await ghResponse.json();
-                    if (Array.isArray(ghData)) {
-                        files = ghData.map(item => item.name);
-                    }
-                } catch (ghError) {
-                    console.error("GitHub fallback failed as well.", ghError);
-                    files = [];
-                }
+                console.warn("Primary API failed. Using local fallback files...", error);
+                files = [
+                    "topicRMT.IT_System_Integration.json",
+                    "topicRMT.Linux_Terminal.json",
+                    "topicRMT.Networking.json"
+                ];
             }
             cachedCategories = files.filter(f => typeof f === 'string' && f.startsWith('topicRMT.') && f.endsWith('.json'));
             return cachedCategories;
@@ -425,20 +415,15 @@
             
             try {
                 const response = await fetch(`../resources/riddleMeThis/${filename}`);
-                if (!response.ok) throw new Error('Failed to fetch local JSON');
+                if (!response.ok) throw new Error('Failed to fetch Vercel JSON');
                 const textData = await response.text();
                 questions = safeParseJSON(textData);
             } catch (error) {
-                console.warn("Local fetch failed. Fetching Raw JSON from GitHub Fallback...", error);
-                try {
-                    const ghResponse = await fetch(`https://raw.githubusercontent.com/cmdrFRANKLY1/Vercel/main/resources/riddleMeThis/${filename}`);
-                    if (!ghResponse.ok) throw new Error('Failed to fetch GitHub Raw Data');
-                    const ghText = await ghResponse.text();
-                    questions = safeParseJSON(ghText);
-                } catch (ghError) {
-                    console.error("Error loading question data from GitHub:", ghError);
-                    questions = [];
-                }
+                console.warn("Vercel resource fetch failed. Using fallback questions...", error);
+                questions = [
+                    { frage: "Was bedeutet IP in der Netzwerktechnik?", richtigeAntwort: "Internet Protocol", falscheAntworten: ["Internal Port", "Interconnected Program", "Instant Packet"] },
+                    { frage: "Welches Linux-Kommando listet Dateien auf?", richtigeAntwort: "ls", falscheAntworten: ["list", "show", "dirlist"] }
+                ];
             }
 
             if (!Array.isArray(questions) || questions.length === 0) {
