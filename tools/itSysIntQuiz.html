@@ -223,6 +223,40 @@
         </div>
 
     <script>
+        // Fallback-Datenbank direkt im Code für eigenständige Ausführung (z.B. Vercel Preview / Offline)
+        const FALLBACK_QUESTIONS = [
+            {
+                "kategorie": "IT-Systeme",
+                "frage": "Welche Hauptkomponente ist für die Ausführung von Programmbefehlen in einem Computersystem zuständig?",
+                "richtigeAntwort": "CPU (Prozessor)",
+                "falscheAntworten": ["GPU", "RAM", "Netzteil"]
+            },
+            {
+                "kategorie": "IT-Sicherheit",
+                "frage": "Was versteht man unter Phishing?",
+                "richtigeAntwort": "Das Abfischen von sensiblen Daten über gefälschte E-Mails oder Webseiten",
+                "falscheAntworten": ["Eine Methode zur Datenkompression", "Das Beschleunigen von Netzwerkkabeln", "Ein Hardware-Fehler im Arbeitsspeicher"]
+            },
+            {
+                "kategorie": "Netzwertechnik",
+                "frage": "Welches Protokoll wird standardmäßig für die verschlüsselte Übertragung von Webseiten im Browser verwendet?",
+                "richtigeAntwort": "HTTPS",
+                "falscheAntworten": ["HTTP", "FTP", "SMTP"]
+            },
+            {
+                "kategorie": "Betriebssysteme",
+                "frage": "Wie nennt man den Kern eines Betriebssystems, der die Hardwareverwaltung übernimmt?",
+                "richtigeAntwort": "Kernel",
+                "falscheAntworten": ["Shell", "Daemon", "Compiler"]
+            },
+            {
+                "kategorie": "Datensicherung",
+                "frage": "Welche Backup-Strategie sichert nur die Daten, die seit dem letzten vollständigen Backup geändert wurden?",
+                "richtigeAntwort": "Differentielles Backup",
+                "falscheAntworten": ["Vollständiges Backup", "Inkrementelles Backup", "Spiegel-Backup"]
+            }
+        ];
+
         let rawQuestions = [];
         let clusters = [];
         let questions = [];
@@ -252,26 +286,29 @@
                 '../resources/itSysIntQuestions.json'
             ];
 
+            let loaded = false;
             for (let path of pathsToTry) {
                 try {
                     const res = await fetch(path);
                     if (res.ok) {
                         rawQuestions = await res.json();
-                        initMenu();
-                        return; // Erfolgreich geladen, Schleife abbrechen
+                        loaded = true;
+                        break;
                     }
                 } catch (err) {
                     console.warn(`Pfad ${path} nicht gefunden, probiere nächsten...`);
                 }
             }
 
-            // Wenn alle Pfade fehlschlagen (z.B. in der Chat-Vorschau)
-            startBtn.textContent = '[ RELOAD ]';
-            startBtn.disabled = false;
-            startBtn.onclick = () => location.reload();
+            // Fallback greift, wenn keine JSON-Datei geladen werden konnte
+            if (!loaded || !rawQuestions || rawQuestions.length === 0) {
+                console.warn('Verwende integrierte Fallback-Fragen.');
+                rawQuestions = FALLBACK_QUESTIONS;
+            }
+
+            initMenu();
         }
 
-        // Kombiniert Kategorien dynamisch basierend auf Textüberschneidungen
         function getCommonPrefix(a, b) {
             let i = 0;
             while(i < a.length && i < b.length && a[i] === b[i]) i++;
@@ -282,17 +319,15 @@
             const infoEl = document.getElementById('total-questions-info');
             if (infoEl) infoEl.textContent = `DATENBANK: ${rawQuestions.length} FRAGEN GELADEN`;
             
-            // Sammle alle einzigartigen Kategorien
             const uniqueCats = [...new Set(rawQuestions.map(q => q.kategorie))];
             clusters = [];
             
-            // Clustere Kategorien basierend auf Namensähnlichkeiten (z.B. IT-Service, IT-Sicherheit)
             uniqueCats.forEach(cat => {
                 let added = false;
                 for (let cluster of clusters) {
                     let lcp = getCommonPrefix(cat.toUpperCase(), cluster.items[0].toUpperCase());
                     let isHyphenMatch = lcp.includes('-') && lcp.indexOf('-') >= 2;
-                    let isWordMatch = lcp.length >= 4; // Mindestens 4 gleiche Buchstaben
+                    let isWordMatch = lcp.length >= 4;
                     
                     if (isHyphenMatch || isWordMatch) {
                         cluster.items.push(cat);
@@ -378,7 +413,7 @@
             particles.forEach((p, index) => {
                 p.x += p.vx;
                 p.y += p.vy;
-                p.vy += 0.4; // Gravity
+                p.vy += 0.4;
                 p.alpha -= 0.015;
                 if (p.alpha <= 0) {
                     particles.splice(index, 1);
