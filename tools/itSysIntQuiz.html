@@ -124,7 +124,6 @@
 
     <div class="relative z-10 w-full max-w-4xl p-3 sm:p-6 h-full flex flex-col hide-scrollbar overflow-y-auto overflow-x-hidden mx-auto">
         
-        <!-- Start Screen -->
         <div id="start-screen" class="relative text-center flex flex-col items-center justify-center min-h-full h-auto glass-panel rounded-3xl p-6 sm:p-12 shadow-2xl my-auto">
             <h1 class="text-4xl sm:text-5xl lg:text-6xl font-mono font-bold mb-4 sm:mb-6 tracking-widest uppercase border-b border-slate-300 dark:border-slate-700 pb-4 sm:pb-6 inline-block text-slate-900 dark:text-white">
                 SYS_INFO<br/><span class="text-2xl sm:text-3xl text-slate-500 dark:text-slate-400">ROGUELITE</span>
@@ -138,13 +137,12 @@
             </div>
 
             <button id="start-btn" disabled class="font-sans font-bold rounded-xl border border-slate-400 dark:border-slate-500 px-8 py-3 sm:px-10 sm:py-4 text-lg sm:text-xl tracking-widest btn-hover-fx bg-slate-800 text-white uppercase shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-3">
-                <span id="start-btn-text">[ LADE JSON DATENBANK... ]</span>
+                <span id="start-btn-text">[ LADE VERCEL JSON... ]</span>
                 <span id="start-btn-spinner" class="loading-spinner"></span>
             </button>
-            <div id="total-questions-info" class="mt-6 font-mono text-xs sm:text-sm text-slate-500 dark:text-slate-400 tracking-wider">VERBINDE MIT GITHUB...</div>
+            <div id="total-questions-info" class="mt-6 font-mono text-xs sm:text-sm text-slate-500 dark:text-slate-400 tracking-wider">VERBINDE MIT VERCEL DEPLOYMENT...</div>
         </div>
 
-        <!-- Game UI -->
         <div id="game-ui" class="w-full flex-col min-h-full h-auto hidden py-2 sm:py-6">
             
             <!-- Top HUD -->
@@ -266,10 +264,10 @@
         let isLoading = false;
 
         document.addEventListener('DOMContentLoaded', () => {
-            loadDatabase();
+            loadVercelDatabase();
         });
 
-        async function loadDatabase() {
+        async function loadVercelDatabase() {
             if (isLoading) return;
             isLoading = true;
             
@@ -279,33 +277,27 @@
             const btnText = document.getElementById('start-btn-text');
             
             if (spinner) spinner.style.display = 'inline-block';
-            btnText.textContent = '[ LADE JSON DATENBANK... ]';
-            infoEl.textContent = '⏳ LADE itSysIntQuestions.json...';
+            btnText.textContent = '[ LADE VERCEL JSON... ]';
+            infoEl.textContent = '⏳ LADE itSysIntQuestions.json VOM VERCEL SERVER...';
             infoEl.className = 'mt-6 font-mono text-xs sm:text-sm text-slate-500 dark:text-slate-400 tracking-wider';
             
-            // Direct GitHub raw and CORS proxy endpoints for 200+ questions JSON
-            const directGitHubUrl = 'https://raw.githubusercontent.com/cmdrFRANKLY1/Vercel/main/itSysIntQuestions.json';
-            const directGitHubUrlAlt = 'https://raw.githubusercontent.com/cmdrFRANKLY1/Vercel/main/resources/itSysIntQuestions.json';
-            
-            const pathsToTry = [
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(directGitHubUrl)}`,
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(directGitHubUrlAlt)}`,
-                `https://corsproxy.io/?${encodeURIComponent(directGitHubUrl)}`,
-                `https://corsproxy.io/?${encodeURIComponent(directGitHubUrlAlt)}`,
-                directGitHubUrl,
-                directGitHubUrlAlt,
-                'itSysIntQuestions.json',
+            // STRICTLY VERCEL SERVER FILES (relative & root paths)
+            const vercelPaths = [
                 './itSysIntQuestions.json',
-                'resources/itSysIntQuestions.json',
-                './resources/itSysIntQuestions.json'
+                '/itSysIntQuestions.json',
+                'itSysIntQuestions.json',
+                './resources/itSysIntQuestions.json',
+                '/resources/itSysIntQuestions.json',
+                'resources/itSysIntQuestions.json'
             ];
 
             let loaded = false;
             let loadErrors = [];
 
-            for (let path of pathsToTry) {
+            for (let path of vercelPaths) {
                 try {
-                    infoEl.textContent = `🔍 FRAGE AB: ${path.includes('allorigins') || path.includes('corsproxy') ? 'CORS Proxy' : path}`;
+                    infoEl.textContent = `🔍 PRÜFE VERCEL PFAD: ${path}`;
+                    console.log(`🔍 Fetching from Vercel: ${path}`);
                     
                     const res = await fetch(path, {
                         method: 'GET',
@@ -320,11 +312,12 @@
                         if (Array.isArray(data) && data.length > 0) {
                             rawQuestions = data;
                             loaded = true;
-                            infoEl.textContent = `✅ GITHUB JSON GELADEN: ${rawQuestions.length} FRAGEN`;
+                            console.log(`✅ Loaded successfully from Vercel: ${path} (${rawQuestions.length} questions)`);
+                            infoEl.textContent = `✅ VERCEL JSON GELADEN: ${rawQuestions.length} FRAGEN`;
                             infoEl.className = 'mt-6 font-mono text-xs sm:text-sm text-green-500 dark:text-green-400 tracking-wider';
                             break;
                         } else {
-                            loadErrors.push(`${path} (leer oder ungültig)`);
+                            loadErrors.push(`${path} (Leeres Array oder ungültiges JSON)`);
                         }
                     } else {
                         loadErrors.push(`${path} (HTTP ${res.status})`);
@@ -340,14 +333,14 @@
             if (loaded && rawQuestions.length > 0) {
                 initMenu();
             } else {
-                infoEl.textContent = '❌ FEHLER: JSON KANN NICHT GELADEN WERDEN';
+                infoEl.textContent = '❌ FEHLER: itSysIntQuestions.json AUF VERCEL NICHT GEFUNDEN';
                 infoEl.className = 'mt-6 font-mono text-xs sm:text-sm text-red-500 dark:text-red-400 tracking-wider status-error';
-                infoEl.title = `Fehlerdetails:\n${loadErrors.join('\n')}`;
+                infoEl.title = `Versuchte Vercel-Pfade:\n${loadErrors.join('\n')}`;
                 btnText.textContent = '[ ERNEUT VERSUCHEN ]';
                 startBtn.disabled = false;
                 startBtn.onclick = () => {
                     rawQuestions = [];
-                    loadDatabase();
+                    loadVercelDatabase();
                 };
             }
         }
