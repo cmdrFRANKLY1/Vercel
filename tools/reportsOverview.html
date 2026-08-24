@@ -424,13 +424,8 @@
 <div class="container">
     <!-- Header -->
     <div class="header">
-        <h1><i class="fas fa-calendar-day"></i> <span data-i18n="title">Berichtsheft · Detailansicht</span></h1>
+        <h1><i class="fas fa-calendar-day"></i> Berichtsheft · Detailansicht</h1>
         <div class="header-right">
-            <!-- Language Toggle -->
-            <div class="toggle-group" id="langToggle">
-                <button class="toggle-btn active" data-lang="de"><i class="fas fa-language"></i> DE</button>
-                <button class="toggle-btn" data-lang="en"><i class="fas fa-language"></i> EN</button>
-            </div>
             <!-- Theme Toggle -->
             <div class="toggle-group" id="themeToggle">
                 <button class="toggle-btn active" data-theme="light"><i class="fas fa-sun"></i></button>
@@ -449,27 +444,27 @@
     <div class="controls">
         <div class="search-box">
             <i class="fas fa-search"></i>
-            <input type="text" id="searchInput" placeholder="🔍 Suche nach Woche, Thema, Tag ..." data-i18n-placeholder="search" />
+            <input type="text" id="searchInput" placeholder="🔍 Suche nach Woche, Thema, Tag ..." />
         </div>
         <div class="controls-right">
-            <button class="refresh-btn" id="refreshBtn"><i class="fas fa-sync-alt"></i> <span data-i18n="refresh">Aktualisieren</span></button>
+            <button class="refresh-btn" id="refreshBtn"><i class="fas fa-sync-alt"></i> Aktualisieren</button>
         </div>
     </div>
 
     <!-- Stats -->
     <div class="stats-bar" id="statsBar">
-        <div class="stat-item"><i class="fas fa-file-word"></i> <span data-i18n="reports">Berichte</span>: <strong id="totalCount">0</strong></div>
-        <div class="stat-item"><i class="fas fa-calendar-week"></i> <span data-i18n="weeks">Wochen</span>: <strong id="weekCount">0</strong></div>
-        <div class="stat-item"><i class="fas fa-tasks"></i> <span data-i18n="days">Tage mit Einträgen</span>: <strong id="dayCount">0</strong></div>
+        <div class="stat-item"><i class="fas fa-file-word"></i> Berichte: <strong id="totalCount">0</strong></div>
+        <div class="stat-item"><i class="fas fa-calendar-week"></i> Wochen: <strong id="weekCount">0</strong></div>
+        <div class="stat-item"><i class="fas fa-tasks"></i> Tage mit Einträgen: <strong id="dayCount">0</strong></div>
     </div>
 
     <!-- Grid -->
     <div id="cardGrid" class="card-grid">
-        <div class="loader"><i class="fas fa-spinner fa-pulse"></i><br><span data-i18n="loading">Lade Berichte …</span></div>
+        <div class="loader"><i class="fas fa-spinner fa-pulse"></i><br>Lade Berichte …</div>
     </div>
 
     <div class="footer-note">
-        <i class="fas fa-chevron-circle-down"></i> <span data-i18n="footer">Tag-für-Tag Übersicht aller Ausbildungsnachweise.</span>
+        <i class="fas fa-chevron-circle-down"></i> Tag-für-Tag Übersicht aller Ausbildungsnachweise.
     </div>
 </div>
 
@@ -477,43 +472,8 @@
     (function() {
         "use strict";
 
-        // ===== TRANSLATIONS =====
-        const translations = {
-            de: {
-                title: 'Berichtsheft · Detailansicht',
-                search: 'Suche nach Woche, Thema, Tag ...',
-                refresh: 'Aktualisieren',
-                reports: 'Berichte',
-                weeks: 'Wochen',
-                days: 'Tage mit Einträgen',
-                loading: 'Lade Berichte …',
-                footer: 'Tag-für-Tag Übersicht aller Ausbildungsnachweise.',
-                noReports: 'Keine Berichte gefunden',
-                noData: 'Keine .docx Dateien gefunden',
-                error: 'Fehler beim Laden',
-                retry: '🔄 Neu laden',
-                open: 'Datei öffnen',
-                daysList: ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag']
-            },
-            en: {
-                title: 'Training Log · Detailed View',
-                search: 'Search by week, topic, day ...',
-                refresh: 'Refresh',
-                reports: 'Reports',
-                weeks: 'Weeks',
-                days: 'Days with entries',
-                loading: 'Loading reports …',
-                footer: 'Day-by-day overview of all training records.',
-                noReports: 'No reports found',
-                noData: 'No .docx files found',
-                error: 'Error loading',
-                retry: '🔄 Retry',
-                open: 'Open file',
-                daysList: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-            }
-        };
-
-        let currentLang = 'de';
+        // ===== DAY NAMES (German only) =====
+        const DAY_NAMES = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag'];
 
         // ===== CONFIG =====
         const REPO_OWNER = 'cmdrFRANKLY1';
@@ -546,35 +506,6 @@
         function initTheme() {
             const saved = localStorage.getItem('viona-theme') || 'light';
             setTheme(saved);
-        }
-
-        // ===== LANGUAGE =====
-        function setLanguage(lang) {
-            currentLang = lang;
-            localStorage.setItem('viona-lang', lang);
-            document.querySelectorAll('#langToggle .toggle-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.lang === lang);
-            });
-            // Update all i18n elements
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.dataset.i18n;
-                if (translations[lang] && translations[lang][key]) {
-                    el.textContent = translations[lang][key];
-                }
-            });
-            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-                const key = el.dataset.i18nPlaceholder;
-                if (translations[lang] && translations[lang][key]) {
-                    el.placeholder = translations[lang][key];
-                }
-            });
-            // Re-render to update day names
-            applyFilters();
-        }
-
-        function initLanguage() {
-            const saved = localStorage.getItem('viona-lang') || 'de';
-            setLanguage(saved);
         }
 
         // ===== DOCX PARSER =====
@@ -622,8 +553,7 @@
 
         function extractDaysFromTable(text) {
             const days = {};
-            const lang = currentLang;
-            const dayNames = translations[lang].daysList;
+            const dayNames = DAY_NAMES;
             
             for (let i = 0; i < dayNames.length; i++) {
                 const dayName = dayNames[i];
@@ -776,15 +706,13 @@
 
         // ===== RENDER =====
         function render(reports) {
-            const lang = currentLang;
-            const t = translations[lang];
-            const dayNames = t.daysList;
+            const dayNames = DAY_NAMES;
 
             if (reports.length === 0) {
                 grid.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-inbox"></i>
-                        <h3>${t.noReports}</h3>
+                        <h3>Keine Berichte gefunden</h3>
                     </div>
                 `;
                 updateStats([]);
@@ -838,9 +766,9 @@
                         </div>
 
                         <div class="card-footer">
-                            <span class="badge"><i class="fas fa-list"></i> ${validDays.length} ${t.days}</span>
+                            <span class="badge"><i class="fas fa-list"></i> ${validDays.length} Tage</span>
                             <a href="${report.url}" target="_blank" class="download-link" download>
-                                <i class="fas fa-download"></i> ${t.open}
+                                <i class="fas fa-download"></i> Datei öffnen
                             </a>
                         </div>
                     </div>
@@ -853,11 +781,11 @@
 
         function getDayIcon(day) {
             const map = {
-                'Montag': 'moon', 'Monday': 'moon',
-                'Dienstag': 'fire', 'Tuesday': 'fire',
-                'Mittwoch': 'cloud', 'Wednesday': 'cloud',
-                'Donnerstag': 'bolt', 'Thursday': 'bolt',
-                'Freitag': 'star', 'Friday': 'star'
+                'Montag': 'moon',
+                'Dienstag': 'fire',
+                'Mittwoch': 'cloud',
+                'Donnerstag': 'bolt',
+                'Freitag': 'star'
             };
             return map[day] || 'calendar-day';
         }
@@ -896,14 +824,11 @@
 
         // ===== LOAD =====
         async function loadData(showLoader = true) {
-            const lang = currentLang;
-            const t = translations[lang];
-
             if (showLoader) {
                 grid.innerHTML = `
                     <div class="loader">
                         <i class="fas fa-spinner fa-pulse"></i><br>
-                        ${t.loading}
+                        Lade Berichte …
                     </div>
                 `;
             }
@@ -914,7 +839,7 @@
                     grid.innerHTML = `
                         <div class="empty-state">
                             <i class="fas fa-folder-open"></i>
-                            <h3>${t.noData}</h3>
+                            <h3>Keine .docx Dateien gefunden</h3>
                         </div>
                     `;
                     allReports = [];
@@ -936,13 +861,12 @@
 
             } catch (err) {
                 console.error(err);
-                const tErr = translations[lang];
                 grid.innerHTML = `
                     <div class="empty-state" style="border-color:#f1c0c0;">
                         <i class="fas fa-exclamation-triangle" style="color:#b91c1c;"></i>
-                        <h3>${tErr.error}</h3>
+                        <h3>Fehler beim Laden</h3>
                         <p>${err.message || 'Netzwerkfehler. Versuche später erneut.'}</p>
-                        <button onclick="location.reload();" style="margin-top:1.2rem; background:var(--accent-color); border:none; color:white; padding:0.4rem 2rem; border-radius:60px; font-weight:500; cursor:pointer;">${tErr.retry}</button>
+                        <button onclick="location.reload();" style="margin-top:1.2rem; background:var(--accent-color); border:none; color:white; padding:0.4rem 2rem; border-radius:60px; font-weight:500; cursor:pointer;">🔄 Neu laden</button>
                     </div>
                 `;
             }
@@ -956,20 +880,6 @@
 
         refreshBtn.addEventListener('click', () => loadData(true));
 
-        document.querySelectorAll('#langToggle .toggle-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const lang = this.dataset.lang;
-                setLanguage(lang);
-                for (const report of allReports) {
-                    if (report.rawText) {
-                        const result = extractDaysFromTable(report.rawText);
-                        report.days = result || {};
-                    }
-                }
-                applyFilters();
-            });
-        });
-
         document.querySelectorAll('#themeToggle .toggle-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const theme = this.dataset.theme;
@@ -979,7 +889,6 @@
 
         // ===== INIT =====
         initTheme();
-        initLanguage();
         loadData(true);
     })();
 </script>
