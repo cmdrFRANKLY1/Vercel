@@ -1,0 +1,557 @@
+<!-- ... existing code ... -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT-SYS Topic Wordle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; touch-action: manipulation; user-select: none; }
+        .tile-pop { animation: pop 0.15s ease-in-out; }
+        @keyframes pop { 0% { transform: scale(0.8); opacity: 0.5; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+        .tile-flip { animation: flip 0.6s ease forwards; }
+        @keyframes flip { 0% { transform: rotateX(0deg); } 50% { transform: rotateX(90deg); } 100% { transform: rotateX(0deg); } }
+        .shake { animation: shake 0.4s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+    </style>
+</head>
+<body id="bodyRoot" class="bg-black text-slate-100 h-screen w-screen overflow-hidden flex flex-col justify-between select-none">
+
+    <header id="headerNav" class="w-full border-b border-slate-900 bg-black/90 backdrop-blur shrink-0 px-3 py-2 flex items-center justify-between z-10">
+        <div class="flex items-center gap-2">
+            <button onclick="returnToTopicSelect()" id="backBtn" class="hidden text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-md transition font-medium flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-arrow-left"></i> <span id="backBtnText">Topics</span>
+            </button>
+            <h1 class="text-sm sm:text-base font-black tracking-wider flex items-center gap-1.5 uppercase font-mono">
+                <i class="fa-solid fa-terminal text-cyan-400"></i> <span id="appTitleText">Topic Wordle</span>
+            </h1>
+        </div>
+        <div class="flex items-center gap-1.5">
+            <button onclick="openModal('helpModal')" class="w-7 h-7 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 transition" title="Help">
+                <i class="fa-solid fa-circle-question text-xs"></i>
+            </button>
+            <button onclick="openModal('statsModal')" class="w-7 h-7 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 transition" title="Stats">
+                <i class="fa-solid fa-chart-simple text-xs"></i>
+            </button>
+            <button onclick="toggleTheme()" class="w-7 h-7 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-800 flex items-center justify-center transition" title="Toggle Theme">
+                <i id="themeIcon" class="fa-solid fa-moon text-xs text-cyan-400"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 w-full max-w-lg mx-auto flex flex-col items-center justify-center p-2 sm:p-4 overflow-hidden relative">
+        
+        <!-- Topic Selection Screen -->
+        <div id="topicSelectScreen" class="w-full h-full flex flex-col items-center justify-center p-2 max-w-md">
+            <div class="text-center mb-4">
+                <h2 id="topicHeaderTitle" class="text-base sm:text-lg font-bold tracking-tight mb-1">Select a Topic</h2>
+                <p id="topicHeaderSub" class="text-[11px] sm:text-xs text-slate-400">Choose a category from sources to start guessing</p>
+            </div>
+            <div id="topicListContainer" class="w-full space-y-2 overflow-y-auto max-h-[60vh] pr-1">
+                <div class="text-center text-xs text-slate-500 py-6">Loading topics from sources...</div>
+            </div>
+        </div>
+
+        <!-- Game Board Screen -->
+        <div id="gameScreen" class="w-full h-full flex flex-col items-center justify-between hidden py-1">
+            
+            <!-- Category & Word Length Banner -->
+            <div class="w-full flex items-center justify-between px-2 py-1 bg-slate-900/60 rounded-lg border border-slate-800/80 text-[11px] shrink-0">
+                <span id="activeTopicLabel" class="font-bold text-cyan-400 truncate max-w-[200px]">Topic: --</span>
+                <span id="wordLengthLabel" class="text-slate-400 font-mono">Length: 0</span>
+            </div>
+
+            <!-- Definition Box -->
+            <div id="definitionBox" class="hidden w-full bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-[10px] sm:text-[11px] text-slate-300 shadow-md shrink-0">
+                <span class="font-bold text-cyan-400">Definition:</span> <span id="definitionText">--</span>
+            </div>
+
+            <!-- Wordle Grid Container -->
+            <div id="boardContainer" class="flex-1 w-full flex items-center justify-center overflow-hidden my-1">
+                <div id="wordleBoard" class="grid gap-1.5 items-center justify-center"></div>
+            </div>
+
+            <!-- Message Toast -->
+            <div id="messageToast" class="absolute top-12 left-1/2 -translate-x-1/2 bg-slate-900 border border-cyan-500 text-cyan-300 px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg opacity-0 transition-opacity pointer-events-none z-30"></div>
+        </div>
+
+    </main>
+
+    <footer id="footerNav" class="w-full bg-black/95 border-t border-slate-900 py-1.5 px-2 shrink-0 flex flex-col items-center justify-center z-10">
+        <div id="keyboardContainer" class="w-full max-w-lg flex flex-col gap-1 items-center"></div>
+    </footer>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden p-4">
+        <div id="helpModalBox" class="bg-slate-950 border border-slate-800 rounded-xl max-w-sm w-full p-4 shadow-2xl relative text-slate-100">
+            <button onclick="closeModal('helpModal')" class="absolute top-3 right-3 text-slate-400 hover:text-slate-100"><i class="fa-solid fa-xmark text-base"></i></button>
+            <h2 id="modalHelpTitle" class="text-xs sm:text-sm font-bold mb-2 flex items-center gap-1.5"><i class="fa-solid fa-circle-question text-cyan-400"></i> How To Play</h2>
+            <p id="modalHelpDesc" class="text-[11px] mb-3 leading-relaxed opacity-90">Guess the target term in 6 tries. Word length adapts dynamically based on the chosen topic item.</p>
+            <div class="space-y-2 mb-3 text-[11px]">
+                <div class="flex gap-2.5 items-center">
+                    <div class="w-6 h-6 rounded bg-emerald-600 flex items-center justify-center text-white font-mono font-bold shrink-0 text-xs">A</div>
+                    <p><strong>Green:</strong> Correct letter & spot.</p>
+                </div>
+                <div class="flex gap-2.5 items-center">
+                    <div class="w-6 h-6 rounded bg-amber-600 flex items-center justify-center text-white font-mono font-bold shrink-0 text-xs">B</div>
+                    <p><strong>Yellow:</strong> Letter in word, wrong spot.</p>
+                </div>
+                <div class="flex gap-2.5 items-center">
+                    <div class="w-6 h-6 rounded bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 font-mono font-bold shrink-0 text-xs">C</div>
+                    <p><strong>Gray:</strong> Not in the word.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Modal -->
+    <div id="statsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden p-4">
+        <div id="statsModalBox" class="bg-slate-950 border border-slate-800 rounded-xl max-w-xs w-full p-4 shadow-2xl relative text-center text-slate-100">
+            <button onclick="closeModal('statsModal')" class="absolute top-3 right-3 text-slate-400 hover:text-slate-100"><i class="fa-solid fa-xmark text-base"></i></button>
+            <h2 id="modalStatsTitle" class="text-xs sm:text-sm font-bold mb-3 flex items-center justify-center gap-1.5"><i class="fa-solid fa-chart-simple text-cyan-400"></i> Statistics</h2>
+            
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-800">
+                    <div id="statPlayed" class="text-base sm:text-lg font-bold font-mono text-cyan-400">0</div>
+                    <div class="text-[9px] opacity-75 uppercase mt-0.5">Played</div>
+                </div>
+                <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-800">
+                    <div id="statWinRate" class="text-base sm:text-lg font-bold font-mono text-emerald-400">0%</div>
+                    <div class="text-[9px] opacity-75 uppercase mt-0.5">Win %</div>
+                </div>
+                <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-800">
+                    <div id="statStreak" class="text-base sm:text-lg font-bold font-mono text-amber-400">0</div>
+                    <div class="text-[9px] opacity-75 uppercase mt-0.5">Streak</div>
+                </div>
+            </div>
+
+            <button id="modalPlayNextBtn" onclick="nextWordInTopic(); closeModal('statsModal');" class="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-2 rounded-lg transition text-xs shadow-md">
+                Next Word
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Topic sources list pointing to ~/resources/wordle/sources/
+        const TOPIC_SOURCES = [
+            { name: "IT System Integration", file: "IT System Integration.json" },
+            { name: "Networking & Protocols", file: "Networking.json" },
+            { name: "Cybersecurity & Cloud", file: "Security Cloud.json" },
+            { name: "Linux & OS Administration", file: "Linux OS Admin.json" }
+        ];
+
+        let currentTheme = localStorage.getItem('itsys_theme') || 'black';
+        let stats = { played: 0, wins: 0, streak: 0 };
+        
+        let activeTopic = null;
+        let wordList = [];
+        let targetWord = "";
+        let targetDefinition = "";
+        let wordLen = 5;
+        let maxGuesses = 6;
+        let guesses = [];
+        let currentGuess = "";
+        let isGameOver = false;
+
+        window.onload = function() {
+            loadStats();
+            applyTheme();
+            fetchTopicList();
+        };
+
+        function loadStats() {
+            const saved = localStorage.getItem('itsys_topic_wordle_stats');
+            if (saved) { try { stats = JSON.parse(saved); } catch(e){} }
+            updateStatsUI();
+        }
+
+        function saveStats() {
+            localStorage.setItem('itsys_topic_wordle_stats', JSON.stringify(stats));
+            updateStatsUI();
+        }
+
+        function updateStatsUI() {
+            document.getElementById('statPlayed').innerText = stats.played;
+            const winRate = stats.played > 0 ? Math.round((stats.wins / stats.played) * 100) : 0;
+            document.getElementById('statWinRate').innerText = winRate + '%';
+            document.getElementById('statStreak').innerText = stats.streak;
+        }
+
+        function toggleTheme() {
+            currentTheme = currentTheme === 'black' ? 'light' : 'black';
+            localStorage.setItem('itsys_theme', currentTheme);
+            applyTheme();
+        }
+
+        function applyTheme() {
+            const body = document.getElementById('bodyRoot');
+            const header = document.getElementById('headerNav');
+            const footer = document.getElementById('footerNav');
+            const themeIcon = document.getElementById('themeIcon');
+            const helpModalBox = document.getElementById('helpModalBox');
+            const statsModalBox = document.getElementById('statsModalBox');
+            const defBox = document.getElementById('definitionBox');
+
+            if (currentTheme === 'black') {
+                body.className = "bg-black text-slate-100 h-screen w-screen overflow-hidden flex flex-col justify-between select-none";
+                header.className = "w-full border-b border-slate-900 bg-black/90 backdrop-blur shrink-0 px-3 py-2 flex items-center justify-between z-10";
+                footer.className = "w-full bg-black/95 border-t border-slate-900 py-1.5 px-2 shrink-0 flex flex-col items-center justify-center z-10";
+                themeIcon.className = "fa-solid fa-moon text-xs text-cyan-400";
+                helpModalBox.className = "bg-slate-950 border border-slate-800 rounded-xl max-w-sm w-full p-4 shadow-2xl relative text-slate-100";
+                statsModalBox.className = "bg-slate-950 border border-slate-800 rounded-xl max-w-xs w-full p-4 shadow-2xl relative text-center text-slate-100";
+                defBox.className = "hidden w-full bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-[10px] sm:text-[11px] text-slate-300 shadow-md shrink-0";
+            } else {
+                body.className = "bg-slate-100 text-slate-900 h-screen w-screen overflow-hidden flex flex-col justify-between select-none";
+                header.className = "w-full border-b border-slate-200 bg-white/90 backdrop-blur shrink-0 px-3 py-2 flex items-center justify-between z-10";
+                footer.className = "w-full bg-white/95 border-t border-slate-200 py-1.5 px-2 shrink-0 flex flex-col items-center justify-center z-10";
+                themeIcon.className = "fa-solid fa-sun text-xs text-amber-500";
+                helpModalBox.className = "bg-white border border-slate-300 rounded-xl max-w-sm w-full p-4 shadow-2xl relative text-slate-900";
+                statsModalBox.className = "bg-white border border-slate-300 rounded-xl max-w-xs w-full p-4 shadow-2xl relative text-center text-slate-900";
+                defBox.className = "hidden w-full bg-white border border-slate-300 rounded-lg p-2 text-[10px] sm:text-[11px] text-slate-700 shadow-md shrink-0";
+            }
+            if (activeTopic) updateBoardUI();
+        }
+
+        async function fetchTopicList() {
+            const container = document.getElementById('topicListContainer');
+            container.innerHTML = `<div class="text-center text-xs text-slate-500 py-6"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading topics from sources...</div>`;
+
+            let loadedTopics = [];
+            for (const src of TOPIC_SOURCES) {
+                try {
+                    const response = await fetch(`~/resources/wordle/sources/${src.file}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (Array.isArray(data) && data.length > 0) {
+                            loadedTopics.push({ ...src, data });
+                        }
+                    }
+                } catch(e) {}
+            }
+
+            if (loadedTopics.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-8 text-center gap-3">
+                        <div class="text-xs text-rose-400 font-medium">Failed to load topic sources from ~/resources/wordle/sources/</div>
+                        <button onclick="fetchTopicList()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-lg text-xs transition flex items-center gap-2 shadow-md">
+                            <i class="fa-solid fa-rotate-right"></i> Reload Topics
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = "";
+            loadedTopics.forEach(src => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-3 rounded-lg bg-slate-900/60 hover:bg-slate-800 border border-slate-800 transition flex items-center justify-between group shadow-sm";
+                btn.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-md bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-mono text-xs group-hover:bg-cyan-500 group-hover:text-black transition">
+                            <i class="fa-solid fa-folder-open"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-xs sm:text-sm text-slate-100">${src.name}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">~/resources/wordle/sources/${src.file} (${src.data.length} words)</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-xs text-slate-500 group-hover:text-cyan-400 transition"></i>
+                `;
+                btn.onclick = () => selectTopic(src);
+                container.appendChild(btn);
+            });
+        }
+
+        async function selectTopic(source) {
+            activeTopic = source;
+            document.getElementById('activeTopicLabel').innerText = `Topic: ${source.name}`;
+            
+            wordList = source.data;
+            initNewWord();
+
+            document.getElementById('topicSelectScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            document.getElementById('backBtn').classList.remove('hidden');
+        }
+
+        function returnToTopicSelect() {
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('backBtn').classList.add('hidden');
+            document.getElementById('topicSelectScreen').classList.remove('hidden');
+            document.getElementById('definitionBox').classList.add('hidden');
+            activeTopic = null;
+            fetchTopicList();
+        }
+
+        function initNewWord() {
+            const randomIndex = Math.floor(Math.random() * wordList.length);
+            const item = wordList[randomIndex];
+            targetWord = (item.word || item.term || "ROUTER").toUpperCase().trim();
+            targetDefinition = item.definition || item.desc || "No definition available.";
+            
+            wordLen = targetWord.length;
+            document.getElementById('wordLengthLabel').innerText = `Length: ${wordLen}`;
+            
+            guesses = [];
+            currentGuess = "";
+            isGameOver = false;
+
+            document.getElementById('definitionBox').classList.add('hidden');
+            buildBoard();
+            buildKeyboard();
+        }
+
+        function nextWordInTopic() {
+            initNewWord();
+        }
+
+        function buildBoard() {
+            const board = document.getElementById('wordleBoard');
+            board.innerHTML = "";
+            board.style.gridTemplateColumns = `repeat(${wordLen}, minmax(0, 1fr))`;
+            
+            const maxH = window.innerHeight * 0.45;
+            const tileSize = Math.min(Math.floor((maxH / maxGuesses) - 6), 46);
+
+            for (let r = 0; r < maxGuesses; r++) {
+                for (let c = 0; c < wordLen; c++) {
+                    const tile = document.createElement('div');
+                    tile.id = `tile-${r}-${c}`;
+                    tile.style.width = `${Math.max(tileSize, 32)}px`;
+                    tile.style.height = `${Math.max(tileSize, 32)}px`;
+                    tile.className = `flex items-center justify-center rounded-md font-mono font-bold text-sm sm:text-lg border-2 transition-all uppercase ${
+                        currentTheme === 'black' 
+                            ? 'bg-slate-950 border-slate-800 text-slate-100' 
+                            : 'bg-white border-slate-300 text-slate-900'
+                    }`;
+                    board.appendChild(tile);
+                }
+            }
+        }
+
+        function buildKeyboard() {
+            const container = document.getElementById('keyboardContainer');
+            container.innerHTML = "";
+
+            const rows = [
+                ['Q','W','E','R','T','Y','U','I','O','P'],
+                ['A','S','D','F','G','H','J','K','L'],
+                ['ENTER','Z','X','C','V','B','N','M','BACK']
+            ];
+
+            rows.forEach(row => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = "flex gap-1 justify-center w-full";
+                row.forEach(key => {
+                    const btn = document.createElement('button');
+                    btn.id = `key-${key}`;
+                    btn.innerText = key === 'BACK' ? '⌫' : key;
+                    btn.className = `font-mono font-bold rounded transition flex items-center justify-center text-xs sm:text-sm ${
+                        key === 'ENTER' || key === 'BACK' ? 'px-2.5 sm:px-3 py-2 bg-slate-800 text-slate-200' : 'w-7 sm:w-9 h-9 sm:h-10 bg-slate-800 text-slate-200'
+                    } ${currentTheme === 'black' ? 'bg-slate-900 border border-slate-800 text-slate-200 hover:bg-slate-800' : 'bg-slate-200 border border-slate-300 text-slate-800 hover:bg-slate-300'}`;
+                    
+                    btn.onclick = () => handleKeyInput(key);
+                    rowDiv.appendChild(btn);
+                });
+                container.appendChild(rowDiv);
+            });
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (!activeTopic || isGameOver) return;
+            if (e.key === 'Enter') handleKeyInput('ENTER');
+            else if (e.key === 'Backspace') handleKeyInput('BACK');
+            else {
+                const upper = e.key.toUpperCase();
+                if (/^[A-ZÄÖÜß]$/.test(upper)) handleKeyInput(upper);
+            }
+        });
+
+        function handleKeyInput(key) {
+            if (isGameOver) return;
+
+            if (key === 'BACK') {
+                if (currentGuess.length > 0) {
+                    currentGuess = currentGuess.slice(0, -1);
+                    updateBoardUI();
+                }
+            } else if (key === 'ENTER') {
+                if (currentGuess.length < wordLen) {
+                    showToast(`Word must be ${wordLen} letters!`);
+                    shakeBoard(guesses.length);
+                    return;
+                }
+                submitGuess();
+            } else {
+                if (currentGuess.length < wordLen) {
+                    currentGuess += key;
+                    updateBoardUI();
+                    const activeTile = document.getElementById(`tile-${guesses.length}-${currentGuess.length - 1}`);
+                    if (activeTile) activeTile.classList.add('tile-pop');
+                    setTimeout(() => {
+                        if (activeTile) activeTile.classList.remove('tile-pop');
+                    }, 150);
+                }
+            }
+        }
+
+        function updateBoardUI() {
+            const r = guesses.length;
+            for (let c = 0; c < wordLen; c++) {
+                const tile = document.getElementById(`tile-${r}-${c}`);
+                if (!tile) continue;
+                if (c < currentGuess.length) {
+                    tile.innerText = currentGuess[c];
+                    tile.className = `flex items-center justify-center rounded-md font-mono font-bold text-sm sm:text-lg border-2 transition-all uppercase ${
+                        currentTheme === 'black' 
+                            ? 'bg-slate-900 border-cyan-500/60 text-slate-100' 
+                            : 'bg-slate-100 border-cyan-600 text-slate-900'
+                    }`;
+                } else {
+                    tile.innerText = "";
+                    tile.className = `flex items-center justify-center rounded-md font-mono font-bold text-sm sm:text-lg border-2 transition-all uppercase ${
+                        currentTheme === 'black' 
+                            ? 'bg-slate-950 border-slate-800 text-slate-100' 
+                            : 'bg-white border-slate-300 text-slate-900'
+                    }`;
+                }
+            }
+        }
+
+        function submitGuess() {
+            const r = guesses.length;
+            const guess = currentGuess;
+            guesses.push(guess);
+
+            const targetChars = targetWord.split('');
+            const guessChars = guess.split('');
+            const status = Array(wordLen).fill('absent');
+
+            // Pass 1: Check Correct spots (Green)
+            for (let c = 0; c < wordLen; c++) {
+                if (guessChars[c] === targetChars[c]) {
+                    status[c] = 'correct';
+                    targetChars[c] = null;
+                    guessChars[c] = null;
+                }
+            }
+
+            // Pass 2: Check Wrong spots (Yellow)
+            for (let c = 0; c < wordLen; c++) {
+                if (guessChars[c] !== null) {
+                    const idx = targetChars.indexOf(guessChars[c]);
+                    if (idx !== -1) {
+                        status[c] = 'present';
+                        targetChars[idx] = null;
+                    }
+                }
+            }
+
+            // Animate and apply colors
+            for (let c = 0; c < wordLen; c++) {
+                const tile = document.getElementById(`tile-${r}-${c}`);
+                if (tile) {
+                    tile.style.animationDelay = `${c * 0.1}s`;
+                    tile.classList.add('tile-flip');
+                    
+                    setTimeout(() => {
+                        if (status[c] === 'correct') {
+                            tile.className = "flex items-center justify-center rounded-md font-mono font-bold text-sm sm:text-lg border-2 border-emerald-600 bg-emerald-600 text-white";
+                            updateKeyColor(guess[c], 'correct');
+                        } else if (status[c] === 'present') {
+                            tile.className = "flex items-center justify-center rounded-md font-mono font-bold text-sm sm:text-lg border-2 border-amber-600 bg-amber-600 text-white";
+                            updateKeyColor(guess[c], 'present');
+                        } else {
+                            tile.className = `flex items-center justify-center rounded-md font-mono font-bold text-sm sm:text-lg border-2 ${
+                                currentTheme === 'black' ? 'bg-slate-900 border-slate-800 text-slate-500' : 'bg-slate-300 border-slate-400 text-slate-600'
+                            }`;
+                            updateKeyColor(guess[c], 'absent');
+                        }
+                    }, 300);
+                }
+            }
+
+            if (guess === targetWord) {
+                isGameOver = true;
+                stats.played++;
+                stats.wins++;
+                stats.streak++;
+                saveStats();
+                setTimeout(() => {
+                    showDefinitionBox();
+                    openModal('statsModal');
+                }, 1000);
+                return;
+            }
+
+            if (guesses.length >= maxGuesses) {
+                isGameOver = true;
+                stats.played++;
+                stats.streak = 0;
+                saveStats();
+                setTimeout(() => {
+                    showToast(`Word was: ${targetWord}`);
+                    showDefinitionBox();
+                    openModal('statsModal');
+                }, 1000);
+                return;
+            }
+
+            currentGuess = "";
+        }
+
+        function updateKeyColor(char, state) {
+            const btn = document.getElementById(`key-${char}`);
+            if (!btn) return;
+            const currentState = btn.dataset.state;
+            if (currentState === 'correct') return;
+            if (currentState === 'present' && state === 'absent') return;
+
+            btn.dataset.state = state;
+            if (state === 'correct') {
+                btn.className = "font-mono font-bold rounded transition flex items-center justify-center text-xs sm:text-sm bg-emerald-600 text-white border border-emerald-500 " + (btn.innerText.length > 1 ? 'px-2.5 sm:px-3 py-2' : 'w-7 sm:w-9 h-9 sm:h-10');
+            } else if (state === 'present') {
+                btn.className = "font-mono font-bold rounded transition flex items-center justify-center text-xs sm:text-sm bg-amber-600 text-white border border-amber-500 " + (btn.innerText.length > 1 ? 'px-2.5 sm:px-3 py-2' : 'w-7 sm:w-9 h-9 sm:h-10');
+            } else {
+                btn.className = "font-mono font-bold rounded transition flex items-center justify-center text-xs sm:text-sm bg-slate-800 text-slate-400 border border-slate-700 " + (btn.innerText.length > 1 ? 'px-2.5 sm:px-3 py-2' : 'w-7 sm:w-9 h-9 sm:h-10');
+            }
+        }
+
+        function showDefinitionBox() {
+            document.getElementById('definitionText').innerText = targetDefinition;
+            document.getElementById('definitionBox').classList.remove('hidden');
+        }
+
+        function shakeBoard(row) {
+            for (let c = 0; c < wordLen; c++) {
+                const tile = document.getElementById(`tile-${row}-${c}`);
+                if (tile) {
+                    tile.classList.add('shake');
+                    setTimeout(() => tile.classList.remove('shake'), 400);
+                }
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('messageToast');
+            toast.innerText = msg;
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0');
+            }, 2000);
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
