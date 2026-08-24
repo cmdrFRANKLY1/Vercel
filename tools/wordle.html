@@ -1,6 +1,5 @@
-<!-- ... existing code ... -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" id="htmlRoot">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,9 +16,9 @@
         @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
     </style>
 </head>
-<body id="bodyRoot" class="bg-black text-slate-100 h-screen w-screen overflow-hidden flex flex-col justify-between select-none">
+<body id="bodyRoot" class="bg-black text-slate-100 h-screen w-screen overflow-hidden flex flex-col justify-between select-none transition-colors duration-200">
 
-    <header id="headerNav" class="w-full border-b border-slate-900 bg-black/90 backdrop-blur shrink-0 px-3 py-2 flex items-center justify-between z-10">
+    <header id="headerNav" class="w-full border-b border-slate-800 bg-black/90 backdrop-blur shrink-0 px-3 py-2 flex items-center justify-between z-10">
         <div class="flex items-center gap-2">
             <button onclick="returnToTopicSelect()" id="backBtn" class="hidden text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-md transition font-medium flex items-center gap-1.5 shadow-sm">
                 <i class="fa-solid fa-arrow-left"></i> <span id="backBtnText">Topics</span>
@@ -29,6 +28,10 @@
             </h1>
         </div>
         <div class="flex items-center gap-1.5">
+            <!-- Language Toggle Button -->
+            <button onclick="toggleLanguage()" id="langToggleBtn" class="px-2 py-1 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-mono font-bold text-cyan-400 transition" title="Toggle Language (EN/DE)">
+                EN
+            </button>
             <button onclick="openModal('helpModal')" class="w-7 h-7 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 transition" title="Help">
                 <i class="fa-solid fa-circle-question text-xs"></i>
             </button>
@@ -47,10 +50,10 @@
         <div id="topicSelectScreen" class="w-full h-full flex flex-col items-center justify-center p-2 max-w-md">
             <div class="text-center mb-4">
                 <h2 id="topicHeaderTitle" class="text-base sm:text-lg font-bold tracking-tight mb-1">Select a Topic</h2>
-                <p id="topicHeaderSub" class="text-[11px] sm:text-xs text-slate-400">Choose a category from sources to start guessing</p>
+                <p id="topicHeaderSub" class="text-[11px] sm:text-xs text-slate-400">Choose a category file from sources to start guessing</p>
             </div>
             <div id="topicListContainer" class="w-full space-y-2 overflow-y-auto max-h-[60vh] pr-1">
-                <div class="text-center text-xs text-slate-500 py-6">Loading topics from sources...</div>
+                <div class="text-center text-xs text-slate-500 py-6"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading topics from sources...</div>
             </div>
         </div>
 
@@ -58,14 +61,14 @@
         <div id="gameScreen" class="w-full h-full flex flex-col items-center justify-between hidden py-1">
             
             <!-- Category & Word Length Banner -->
-            <div class="w-full flex items-center justify-between px-2 py-1 bg-slate-900/60 rounded-lg border border-slate-800/80 text-[11px] shrink-0">
+            <div id="bannerBox" class="w-full flex items-center justify-between px-3 py-1.5 bg-slate-900/60 rounded-lg border border-slate-800 text-[11px] shrink-0">
                 <span id="activeTopicLabel" class="font-bold text-cyan-400 truncate max-w-[200px]">Topic: --</span>
                 <span id="wordLengthLabel" class="text-slate-400 font-mono">Length: 0</span>
             </div>
 
-            <!-- Definition Box -->
+            <!-- Definition / Hint Box -->
             <div id="definitionBox" class="hidden w-full bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-[10px] sm:text-[11px] text-slate-300 shadow-md shrink-0">
-                <span class="font-bold text-cyan-400">Definition:</span> <span id="definitionText">--</span>
+                <span id="hintTitleLabel" class="font-bold text-cyan-400">Hint:</span> <span id="definitionText">--</span>
             </div>
 
             <!-- Wordle Grid Container -->
@@ -79,7 +82,7 @@
 
     </main>
 
-    <footer id="footerNav" class="w-full bg-black/95 border-t border-slate-900 py-1.5 px-2 shrink-0 flex flex-col items-center justify-center z-10">
+    <footer id="footerNav" class="w-full bg-black/95 border-t border-slate-800 py-1.5 px-2 shrink-0 flex flex-col items-center justify-center z-10">
         <div id="keyboardContainer" class="w-full max-w-lg flex flex-col gap-1 items-center"></div>
     </footer>
 
@@ -88,19 +91,19 @@
         <div id="helpModalBox" class="bg-slate-950 border border-slate-800 rounded-xl max-w-sm w-full p-4 shadow-2xl relative text-slate-100">
             <button onclick="closeModal('helpModal')" class="absolute top-3 right-3 text-slate-400 hover:text-slate-100"><i class="fa-solid fa-xmark text-base"></i></button>
             <h2 id="modalHelpTitle" class="text-xs sm:text-sm font-bold mb-2 flex items-center gap-1.5"><i class="fa-solid fa-circle-question text-cyan-400"></i> How To Play</h2>
-            <p id="modalHelpDesc" class="text-[11px] mb-3 leading-relaxed opacity-90">Guess the target term in 6 tries. Word length adapts dynamically based on the chosen topic item.</p>
+            <p id="modalHelpDesc" class="text-[11px] mb-3 leading-relaxed opacity-90">Guess the target IT term in 6 tries. Word length adapts dynamically based on the chosen topic entry.</p>
             <div class="space-y-2 mb-3 text-[11px]">
                 <div class="flex gap-2.5 items-center">
                     <div class="w-6 h-6 rounded bg-emerald-600 flex items-center justify-center text-white font-mono font-bold shrink-0 text-xs">A</div>
-                    <p><strong>Green:</strong> Correct letter & spot.</p>
+                    <p id="helpGreenDesc"><strong>Green:</strong> Correct letter & spot.</p>
                 </div>
                 <div class="flex gap-2.5 items-center">
                     <div class="w-6 h-6 rounded bg-amber-600 flex items-center justify-center text-white font-mono font-bold shrink-0 text-xs">B</div>
-                    <p><strong>Yellow:</strong> Letter in word, wrong spot.</p>
+                    <p id="helpYellowDesc"><strong>Yellow:</strong> Letter in word, wrong spot.</p>
                 </div>
                 <div class="flex gap-2.5 items-center">
                     <div class="w-6 h-6 rounded bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 font-mono font-bold shrink-0 text-xs">C</div>
-                    <p><strong>Gray:</strong> Not in the word.</p>
+                    <p id="helpGrayDesc"><strong>Gray:</strong> Not in the word.</p>
                 </div>
             </div>
         </div>
@@ -113,17 +116,17 @@
             <h2 id="modalStatsTitle" class="text-xs sm:text-sm font-bold mb-3 flex items-center justify-center gap-1.5"><i class="fa-solid fa-chart-simple text-cyan-400"></i> Statistics</h2>
             
             <div class="grid grid-cols-3 gap-2 mb-4">
-                <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-800">
+                <div id="statPlayedBox" class="bg-slate-900/50 p-2 rounded-lg border border-slate-800">
                     <div id="statPlayed" class="text-base sm:text-lg font-bold font-mono text-cyan-400">0</div>
-                    <div class="text-[9px] opacity-75 uppercase mt-0.5">Played</div>
+                    <div id="statPlayedLabel" class="text-[9px] opacity-75 uppercase mt-0.5">Played</div>
                 </div>
-                <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-800">
+                <div id="statWinBox" class="bg-slate-900/50 p-2 rounded-lg border border-slate-800">
                     <div id="statWinRate" class="text-base sm:text-lg font-bold font-mono text-emerald-400">0%</div>
-                    <div class="text-[9px] opacity-75 uppercase mt-0.5">Win %</div>
+                    <div id="statWinLabel" class="text-[9px] opacity-75 uppercase mt-0.5">Win %</div>
                 </div>
-                <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-800">
+                <div id="statStreakBox" class="bg-slate-900/50 p-2 rounded-lg border border-slate-800">
                     <div id="statStreak" class="text-base sm:text-lg font-bold font-mono text-amber-400">0</div>
-                    <div class="text-[9px] opacity-75 uppercase mt-0.5">Streak</div>
+                    <div id="statStreakLabel" class="text-[9px] opacity-75 uppercase mt-0.5">Streak</div>
                 </div>
             </div>
 
@@ -143,21 +146,74 @@
         ];
 
         let currentTheme = localStorage.getItem('itsys_theme') || 'black';
+        let currentLang = localStorage.getItem('itsys_lang') || 'en';
         let stats = { played: 0, wins: 0, streak: 0 };
         
         let activeTopic = null;
         let wordList = [];
         let targetWord = "";
-        let targetDefinition = "";
+        let targetItem = null;
         let wordLen = 5;
         let maxGuesses = 6;
         let guesses = [];
         let currentGuess = "";
         let isGameOver = false;
 
+        const i18n = {
+            en: {
+                appTitle: "Topic Wordle",
+                topics: "Topics",
+                selectTopic: "Select a Topic",
+                selectSub: "Choose a category file from sources to start guessing",
+                loadingTopics: "Loading topics from sources...",
+                reloadTopics: "Reload Topics",
+                failedSources: "Failed to load topic sources from ../resources/wordle/sources/",
+                topicLabel: "Topic:",
+                lengthLabel: "Length:",
+                hintTitle: "Hint:",
+                howToPlay: "How To Play",
+                helpDesc: "Guess the target IT term in 6 tries. Word length adapts dynamically based on the chosen topic entry.",
+                greenDesc: "<strong>Green:</strong> Correct letter & spot.",
+                yellowDesc: "<strong>Yellow:</strong> Letter in word, wrong spot.",
+                grayDesc: "<strong>Gray:</strong> Not in the word.",
+                statsTitle: "Statistics",
+                played: "Played",
+                winRate: "Win %",
+                streak: "Streak",
+                nextWord: "Next Word",
+                wordMustBe: "Word must be {len} letters!",
+                wordWas: "Word was: {word}"
+            },
+            de: {
+                appTitle: "Themen-Wordle",
+                topics: "Themen",
+                selectTopic: "Thema auswählen",
+                selectSub: "Wähle eine Kategoriesdatei aus, um zu raten",
+                loadingTopics: "Lade Themen aus Quellen...",
+                reloadTopics: "Themen neu laden",
+                failedSources: "Fehler beim Laden der Quellen aus ../resources/wordle/sources/",
+                topicLabel: "Thema:",
+                lengthLabel: "Länge:",
+                hintTitle: "Hinweis:",
+                howToPlay: "Spielanleitung",
+                helpDesc: "Errate den IT-Begriff in 6 Versuchen. Die Wortlänge passt sich dynamisch an.",
+                greenDesc: "<strong>Grün:</strong> Richtiger Buchstabe & Platz.",
+                yellowDesc: "<strong>Gelb:</strong> Buchstabe im Wort, falscher Platz.",
+                grayDesc: "<strong>Grau:</strong> Nicht im Wort.",
+                statsTitle: "Statistik",
+                played: "Gespielt",
+                winRate: "Siege %",
+                streak: "Serie",
+                nextWord: "Nächstes Wort",
+                wordMustBe: "Wort muss {len} Buchstaben haben!",
+                wordWas: "Gesuchtes Wort: {word}"
+            }
+        };
+
         window.onload = function() {
             loadStats();
             applyTheme();
+            applyLanguage();
             fetchTopicList();
         };
 
@@ -186,6 +242,7 @@
         }
 
         function applyTheme() {
+            const html = document.getElementById('htmlRoot');
             const body = document.getElementById('bodyRoot');
             const header = document.getElementById('headerNav');
             const footer = document.getElementById('footerNav');
@@ -193,68 +250,126 @@
             const helpModalBox = document.getElementById('helpModalBox');
             const statsModalBox = document.getElementById('statsModalBox');
             const defBox = document.getElementById('definitionBox');
+            const bannerBox = document.getElementById('bannerBox');
+            const langBtn = document.getElementById('langToggleBtn');
 
             if (currentTheme === 'black') {
-                body.className = "bg-black text-slate-100 h-screen w-screen overflow-hidden flex flex-col justify-between select-none";
-                header.className = "w-full border-b border-slate-900 bg-black/90 backdrop-blur shrink-0 px-3 py-2 flex items-center justify-between z-10";
-                footer.className = "w-full bg-black/95 border-t border-slate-900 py-1.5 px-2 shrink-0 flex flex-col items-center justify-center z-10";
+                body.className = "bg-black text-slate-100 h-screen w-screen overflow-hidden flex flex-col justify-between select-none transition-colors duration-200";
+                header.className = "w-full border-b border-slate-800 bg-black/90 backdrop-blur shrink-0 px-3 py-2 flex items-center justify-between z-10";
+                footer.className = "w-full bg-black/95 border-t border-slate-800 py-1.5 px-2 shrink-0 flex flex-col items-center justify-center z-10";
                 themeIcon.className = "fa-solid fa-moon text-xs text-cyan-400";
                 helpModalBox.className = "bg-slate-950 border border-slate-800 rounded-xl max-w-sm w-full p-4 shadow-2xl relative text-slate-100";
                 statsModalBox.className = "bg-slate-950 border border-slate-800 rounded-xl max-w-xs w-full p-4 shadow-2xl relative text-center text-slate-100";
                 defBox.className = "hidden w-full bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-[10px] sm:text-[11px] text-slate-300 shadow-md shrink-0";
+                bannerBox.className = "w-full flex items-center justify-between px-3 py-1.5 bg-slate-900/60 rounded-lg border border-slate-800 text-[11px] shrink-0";
+                langBtn.className = "px-2 py-1 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-mono font-bold text-cyan-400 transition";
             } else {
-                body.className = "bg-slate-100 text-slate-900 h-screen w-screen overflow-hidden flex flex-col justify-between select-none";
+                body.className = "bg-slate-100 text-slate-900 h-screen w-screen overflow-hidden flex flex-col justify-between select-none transition-colors duration-200";
                 header.className = "w-full border-b border-slate-200 bg-white/90 backdrop-blur shrink-0 px-3 py-2 flex items-center justify-between z-10";
                 footer.className = "w-full bg-white/95 border-t border-slate-200 py-1.5 px-2 shrink-0 flex flex-col items-center justify-center z-10";
                 themeIcon.className = "fa-solid fa-sun text-xs text-amber-500";
                 helpModalBox.className = "bg-white border border-slate-300 rounded-xl max-w-sm w-full p-4 shadow-2xl relative text-slate-900";
                 statsModalBox.className = "bg-white border border-slate-300 rounded-xl max-w-xs w-full p-4 shadow-2xl relative text-center text-slate-900";
                 defBox.className = "hidden w-full bg-white border border-slate-300 rounded-lg p-2 text-[10px] sm:text-[11px] text-slate-700 shadow-md shrink-0";
+                bannerBox.className = "w-full flex items-center justify-between px-3 py-1.5 bg-white rounded-lg border border-slate-300 text-[11px] shrink-0 shadow-sm";
+                langBtn.className = "px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-mono font-bold text-cyan-600 transition";
             }
-            if (activeTopic) updateBoardUI();
+            if (activeTopic) {
+                updateBoardUI();
+                rebuildKeyboardColors();
+            }
+            refreshTopicListUI();
         }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'de' : 'en';
+            localStorage.setItem('itsys_lang', currentLang);
+            applyLanguage();
+        }
+
+        function applyLanguage() {
+            const t = i18n[currentLang];
+            document.getElementById('langToggleBtn').innerText = currentLang.toUpperCase();
+            document.getElementById('backBtnText').innerText = t.topics;
+            document.getElementById('appTitleText').innerText = t.appTitle;
+            document.getElementById('topicHeaderTitle').innerText = t.selectTopic;
+            document.getElementById('topicHeaderSub').innerText = t.selectSub;
+            document.getElementById('modalHelpTitle').innerHTML = `<i class="fa-solid fa-circle-question text-cyan-400"></i> ${t.howToPlay}`;
+            document.getElementById('modalHelpDesc').innerText = t.helpDesc;
+            document.getElementById('helpGreenDesc').innerHTML = t.greenDesc;
+            document.getElementById('helpYellowDesc').innerHTML = t.yellowDesc;
+            document.getElementById('helpGrayDesc').innerHTML = t.grayDesc;
+            document.getElementById('modalStatsTitle').innerHTML = `<i class="fa-solid fa-chart-simple text-cyan-400"></i> ${t.statsTitle}`;
+            document.getElementById('statPlayedLabel').innerText = t.played;
+            document.getElementById('statWinLabel').innerText = t.winRate;
+            document.getElementById('statStreakLabel').innerText = t.streak;
+            document.getElementById('modalPlayNextBtn').innerText = t.nextWord;
+            document.getElementById('hintTitleLabel').innerText = t.hintTitle;
+
+            if (activeTopic) {
+                document.getElementById('activeTopicLabel').innerText = `${t.topicLabel} ${activeTopic.name}`;
+                document.getElementById('wordLengthLabel').innerText = `${t.lengthLabel} ${wordLen}`;
+                updateDefinitionText();
+            }
+            refreshTopicListUI();
+        }
+
+        let loadedTopicCache = [];
 
         async function fetchTopicList() {
             const container = document.getElementById('topicListContainer');
-            container.innerHTML = `<div class="text-center text-xs text-slate-500 py-6"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading topics from sources...</div>`;
+            const t = i18n[currentLang];
+            container.innerHTML = `<div class="text-center text-xs text-slate-500 py-6"><i class="fa-solid fa-spinner fa-spin mr-2"></i> ${t.loadingTopics}</div>`;
 
-            let loadedTopics = [];
+            loadedTopicCache = [];
             for (const src of TOPIC_SOURCES) {
                 try {
                     const response = await fetch(`../resources/wordle/sources/${src.file}`);
                     if (response.ok) {
                         const data = await response.json();
                         if (Array.isArray(data) && data.length > 0) {
-                            loadedTopics.push({ ...src, data });
+                            loadedTopicCache.push({ ...src, data });
                         }
                     }
                 } catch(e) {}
             }
 
-            if (loadedTopics.length === 0) {
-                container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center py-8 text-center gap-3">
-                        <div class="text-xs text-rose-400 font-medium">Failed to load topic sources from ../resources/wordle/sources/</div>
-                        <button onclick="fetchTopicList()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-lg text-xs transition flex items-center gap-2 shadow-md">
-                            <i class="fa-solid fa-rotate-right"></i> Reload Topics
-                        </button>
-                    </div>
-                `;
+            refreshTopicListUI();
+        }
+
+        function refreshTopicListUI() {
+            const container = document.getElementById('topicListContainer');
+            const t = i18n[currentLang];
+
+            if (loadedTopicCache.length === 0) {
+                // If cache is empty and we are not currently active in game screen
+                if (!activeTopic && document.getElementById('topicSelectScreen').classList.contains('hidden') === false) {
+                    container.innerHTML = `
+                        <div class="flex flex-col items-center justify-center py-8 text-center gap-3">
+                            <div class="text-xs text-rose-400 font-medium">${t.failedSources}</div>
+                            <button onclick="fetchTopicList()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-lg text-xs transition flex items-center gap-2 shadow-md">
+                                <i class="fa-solid fa-rotate-right"></i> ${t.reloadTopics}
+                            </button>
+                        </div>
+                    `;
+                }
                 return;
             }
 
             container.innerHTML = "";
-            loadedTopics.forEach(src => {
+            loadedTopicCache.forEach(src => {
                 const btn = document.createElement('button');
-                btn.className = "w-full text-left p-3 rounded-lg bg-slate-900/60 hover:bg-slate-800 border border-slate-800 transition flex items-center justify-between group shadow-sm";
+                btn.className = `w-full text-left p-3 rounded-lg border transition flex items-center justify-between group shadow-sm ${
+                    currentTheme === 'black' ? 'bg-slate-900/60 hover:bg-slate-800 border-slate-800 text-slate-100' : 'bg-white hover:bg-slate-50 border-slate-300 text-slate-900'
+                }`;
                 btn.innerHTML = `
                     <div class="flex items-center gap-2.5">
                         <div class="w-8 h-8 rounded-md bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-mono text-xs group-hover:bg-cyan-500 group-hover:text-black transition">
                             <i class="fa-solid fa-folder-open"></i>
                         </div>
                         <div>
-                            <div class="font-bold text-xs sm:text-sm text-slate-100">${src.name}</div>
-                            <div class="text-[10px] text-slate-400 font-mono">../resources/wordle/sources/${src.file} (${src.data.length} words)</div>
+                            <div class="font-bold text-xs sm:text-sm">${src.name}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">../resources/wordle/sources/${src.file} (${src.data.length} entries)</div>
                         </div>
                     </div>
                     <i class="fa-solid fa-chevron-right text-xs text-slate-500 group-hover:text-cyan-400 transition"></i>
@@ -266,7 +381,8 @@
 
         async function selectTopic(source) {
             activeTopic = source;
-            document.getElementById('activeTopicLabel').innerText = `Topic: ${source.name}`;
+            const t = i18n[currentLang];
+            document.getElementById('activeTopicLabel').innerText = `${t.topicLabel} ${source.name}`;
             
             wordList = source.data;
             initNewWord();
@@ -287,12 +403,12 @@
 
         function initNewWord() {
             const randomIndex = Math.floor(Math.random() * wordList.length);
-            const item = wordList[randomIndex];
-            targetWord = (item.word || item.term || "ROUTER").toUpperCase().trim();
-            targetDefinition = item.definition || item.desc || "No definition available.";
+            targetItem = wordList[randomIndex];
+            targetWord = (targetItem.word || targetItem.term || "ROUTER").toUpperCase().trim();
             
             wordLen = targetWord.length;
-            document.getElementById('wordLengthLabel').innerText = `Length: ${wordLen}`;
+            const t = i18n[currentLang];
+            document.getElementById('wordLengthLabel').innerText = `${t.lengthLabel} ${wordLen}`;
             
             guesses = [];
             currentGuess = "";
@@ -331,7 +447,10 @@
             }
         }
 
+        let keyStates = {};
+
         function buildKeyboard() {
+            keyStates = {};
             const container = document.getElementById('keyboardContainer');
             container.innerHTML = "";
 
@@ -348,14 +467,43 @@
                     const btn = document.createElement('button');
                     btn.id = `key-${key}`;
                     btn.innerText = key === 'BACK' ? '⌫' : key;
-                    btn.className = `font-mono font-bold rounded transition flex items-center justify-center text-xs sm:text-sm ${
-                        key === 'ENTER' || key === 'BACK' ? 'px-2.5 sm:px-3 py-2 bg-slate-800 text-slate-200' : 'w-7 sm:w-9 h-9 sm:h-10 bg-slate-800 text-slate-200'
-                    } ${currentTheme === 'black' ? 'bg-slate-900 border border-slate-800 text-slate-200 hover:bg-slate-800' : 'bg-slate-200 border border-slate-300 text-slate-800 hover:bg-slate-300'}`;
-                    
+                    btn.className = getKeyboardKeyClass(null, key);
                     btn.onclick = () => handleKeyInput(key);
                     rowDiv.appendChild(btn);
                 });
                 container.appendChild(rowDiv);
+            });
+        }
+
+        function getKeyboardKeyClass(state, key) {
+            const isSpecial = (key === 'ENTER' || key === 'BACK');
+            const baseSize = isSpecial ? 'px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-bold' : 'w-7 sm:w-9 h-9 sm:h-10 text-xs sm:text-sm font-bold font-mono';
+            
+            if (state === 'correct') {
+                return `${baseSize} rounded transition flex items-center justify-center bg-emerald-600 text-white border border-emerald-500 shadow-sm`;
+            } else if (state === 'present') {
+                return `${baseSize} rounded transition flex items-center justify-center bg-amber-600 text-white border border-amber-500 shadow-sm`;
+            } else if (state === 'absent') {
+                return `${baseSize} rounded transition flex items-center justify-center ${currentTheme === 'black' ? 'bg-slate-900 border border-slate-800 text-slate-500' : 'bg-slate-300 border border-slate-400 text-slate-600'}`;
+            } else {
+                return `${baseSize} rounded transition flex items-center justify-center ${currentTheme === 'black' ? 'bg-slate-900 border border-slate-800 text-slate-200 hover:bg-slate-800' : 'bg-slate-200 border border-slate-300 text-slate-800 hover:bg-slate-300'}`;
+            }
+        }
+
+        function rebuildKeyboardColors() {
+            const rows = [
+                ['Q','W','E','R','T','Y','U','I','O','P'],
+                ['A','S','D','F','G','H','J','K','L'],
+                ['ENTER','Z','X','C','V','B','N','M','BACK']
+            ];
+            rows.forEach(row => {
+                row.forEach(key => {
+                    const btn = document.getElementById(`key-${key}`);
+                    if (btn) {
+                        const st = keyStates[key] || null;
+                        btn.className = getKeyboardKeyClass(st, key);
+                    }
+                });
             });
         }
 
@@ -379,7 +527,8 @@
                 }
             } else if (key === 'ENTER') {
                 if (currentGuess.length < wordLen) {
-                    showToast(`Word must be ${wordLen} letters!`);
+                    const t = i18n[currentLang];
+                    showToast(t.wordMustBe.replace('{len}', wordLen));
                     shakeBoard(guesses.length);
                     return;
                 }
@@ -429,7 +578,7 @@
             const guessChars = guess.split('');
             const status = Array(wordLen).fill('absent');
 
-            // Pass 1: Check Correct spots (Green)
+            // Pass 1: Correct spots (Green)
             for (let c = 0; c < wordLen; c++) {
                 if (guessChars[c] === targetChars[c]) {
                     status[c] = 'correct';
@@ -438,7 +587,7 @@
                 }
             }
 
-            // Pass 2: Check Wrong spots (Yellow)
+            // Pass 2: Wrong spots (Yellow)
             for (let c = 0; c < wordLen; c++) {
                 if (guessChars[c] !== null) {
                     const idx = targetChars.indexOf(guessChars[c]);
@@ -458,10 +607,10 @@
                     
                     setTimeout(() => {
                         if (status[c] === 'correct') {
-                            tile.className = "flex items-center justify-center rounded-md font-mono font-bold text-sm sm:text-lg border-2 border-emerald-600 bg-emerald-600 text-white";
+                            tile.className = "flex items-center justify-center rounded-md font-mono font-bold text-sm sm:text-lg border-2 border-emerald-600 bg-emerald-600 text-white shadow-sm";
                             updateKeyColor(guess[c], 'correct');
                         } else if (status[c] === 'present') {
-                            tile.className = "flex items-center justify-center rounded-md font-mono font-bold text-sm sm:text-lg border-2 border-amber-600 bg-amber-600 text-white";
+                            tile.className = "flex items-center justify-center rounded-md font-mono font-bold text-sm sm:text-lg border-2 border-amber-600 bg-amber-600 text-white shadow-sm";
                             updateKeyColor(guess[c], 'present');
                         } else {
                             tile.className = `flex items-center justify-center rounded-md font-mono font-bold text-sm sm:text-lg border-2 ${
@@ -492,7 +641,8 @@
                 stats.streak = 0;
                 saveStats();
                 setTimeout(() => {
-                    showToast(`Word was: ${targetWord}`);
+                    const t = i18n[currentLang];
+                    showToast(t.wordWas.replace('{word}', targetWord));
                     showDefinitionBox();
                     openModal('statsModal');
                 }, 1000);
@@ -505,23 +655,28 @@
         function updateKeyColor(char, state) {
             const btn = document.getElementById(`key-${char}`);
             if (!btn) return;
-            const currentState = btn.dataset.state;
+            const currentState = keyStates[char];
             if (currentState === 'correct') return;
             if (currentState === 'present' && state === 'absent') return;
 
-            btn.dataset.state = state;
-            if (state === 'correct') {
-                btn.className = "font-mono font-bold rounded transition flex items-center justify-center text-xs sm:text-sm bg-emerald-600 text-white border border-emerald-500 " + (btn.innerText.length > 1 ? 'px-2.5 sm:px-3 py-2' : 'w-7 sm:w-9 h-9 sm:h-10');
-            } else if (state === 'present') {
-                btn.className = "font-mono font-bold rounded transition flex items-center justify-center text-xs sm:text-sm bg-amber-600 text-white border border-amber-500 " + (btn.innerText.length > 1 ? 'px-2.5 sm:px-3 py-2' : 'w-7 sm:w-9 h-9 sm:h-10');
-            } else {
-                btn.className = "font-mono font-bold rounded transition flex items-center justify-center text-xs sm:text-sm bg-slate-800 text-slate-400 border border-slate-700 " + (btn.innerText.length > 1 ? 'px-2.5 sm:px-3 py-2' : 'w-7 sm:w-9 h-9 sm:h-10');
-            }
+            keyStates[char] = state;
+            btn.className = getKeyboardKeyClass(state, char);
         }
 
         function showDefinitionBox() {
-            document.getElementById('definitionText').innerText = targetDefinition;
+            updateDefinitionText();
             document.getElementById('definitionBox').classList.remove('hidden');
+        }
+
+        function updateDefinitionText() {
+            if (!targetItem) return;
+            let desc = "";
+            if (currentLang === 'de') {
+                desc = targetItem.description_de || targetItem.description_en || targetItem.definition || targetItem.desc || "Keine Beschreibung verfügbar.";
+            } else {
+                desc = targetItem.description_en || targetItem.description_de || targetItem.definition || targetItem.desc || "No definition available.";
+            }
+            document.getElementById('definitionText').innerText = desc;
         }
 
         function shakeBoard(row) {
