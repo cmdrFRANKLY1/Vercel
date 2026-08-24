@@ -57,6 +57,16 @@
             transform: translateY(1px);
         }
 
+        /* Fade-in animation for answers */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+            opacity: 0; /* Ensure they start hidden */
+        }
+
         /* Custom scrollbar for long questions if needed on small screens */
         ::-webkit-scrollbar {
             width: 8px;
@@ -153,11 +163,6 @@
             <!-- Answers Grid -->
             <div id="answers-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Buttons injected by JS -->
-            </div>
-            
-            <!-- Progress indicator -->
-            <div class="text-center text-slate-500 text-sm">
-                Frage <span id="question-current">0</span> / <span id="question-total">0</span>
             </div>
         </div>
 
@@ -613,6 +618,7 @@
         let streak = 0;
         let score = 0;
         const STREAK_GOAL = 5;
+        let isTyping = false; // Flag to prevent clicking during CoD typewriter effect
 
         // DOM Elements
         const screens = {
@@ -624,10 +630,7 @@
             score: document.getElementById('score-display'),
             lives: document.getElementById('lives-display'),
             category: document.getElementById('category-display'),
-            streakIcon: document.getElementById('streak-icon'),
             streakBar: document.getElementById('streak-bar'),
-            questionNum: document.getElementById('question-current'),
-            questionTotal: document.getElementById('question-total'),
             finalScore: document.getElementById('final-score'),
             finalStats: document.getElementById('final-stats')
         };
@@ -650,6 +653,33 @@
             return array;
         }
 
+        // Shuffle Text Effect (Call of Duty Mission Intro Style)
+        async function shuffleText(finalText, element, speed = 25) {
+            element.textContent = '';
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
+            let iterations = finalText.length;
+            
+            return new Promise(resolve => {
+                let currentIteration = 0;
+                const interval = setInterval(() => {
+                    let displayedText = finalText.split('').map((char, index) => {
+                        if (index < currentIteration) return char;
+                        if (char === ' ') return ' ';
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    }).join('');
+                    
+                    element.textContent = displayedText;
+                    
+                    if (currentIteration >= iterations) {
+                        clearInterval(interval);
+                        resolve();
+                    }
+                    
+                    currentIteration += 1/3; // Adjust for decode speed
+                }, speed);
+            });
+        }
+
         function startGame() {
             // Reset state
             lives = 3;
@@ -659,7 +689,6 @@
             
             // Clone and shuffle questions
             currentQuestions = shuffleArray([...allQuestions]);
-            displays.questionTotal.textContent = currentQuestions.length;
             
             updateHUD();
             
@@ -667,26 +696,33 @@
             screens.start.classList.add('hidden');
             screens.end.classList.add('hidden');
             screens.game.classList.remove('hidden');
-            screens.game.classList.add('flex'); // Ensure flex display
+            screens.game.classList.add('flex');
 
             loadQuestion();
         }
 
-        function loadQuestion() {
+        async function loadQuestion() {
             if (currentQuestionIndex >= currentQuestions.length || lives <= 0) {
                 endGame();
                 return;
             }
 
+            isTyping = true;
             const q = currentQuestions[currentQuestionIndex];
             
-            // Update UI text
-            displays.questionNum.textContent = currentQuestionIndex + 1;
+            // Update UI categories
             displays.category.textContent = q.kategorie;
-            questionArea.text.textContent = q.frage;
+            
+            // Reset containers
+            questionArea.grid.innerHTML = '';
+            questionArea.text.textContent = '';
+            questionArea.container.className = "p-6 md:p-8 min-h-[120px] flex items-start justify-start border-l-4 border-zinc-700 bg-zinc-900/30 transition-all duration-200";
 
-            // Reset container styling
-            questionArea.container.className = "bg-slate-700/30 p-6 md:p-8 rounded-xl border border-slate-600 min-h-[150px] flex items-center justify-center text-center transition-colors duration-300";
+            // 1. Shuffle in the Question
+            await shuffleText(q.frage, questionArea.text, 15);
+            
+            // Short pause before answers appear
+            await new Promise(r => setTimeout(r, 200));
 
             // Prepare answers
             const answers = [
@@ -695,18 +731,28 @@
             ];
             shuffleArray(answers);
 
-            // Render buttons
-            questionArea.grid.innerHTML = '';
-            answers.forEach(ans => {
+            // 2. Answers fade in instantly (no text effects)
+            for(let i = 0; i < answers.length; i++) {
+                const ans = answers[i];
                 const btn = document.createElement('button');
-                btn.className = "btn-game w-full text-left p-4 bg-slate-800 border border-slate-600 rounded-lg text-slate-200 hover:bg-slate-700 hover:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors shadow-sm";
-                btn.textContent = ans.text;
+                
+                // Monochrome button style with fade-in animation
+                btn.className = "btn-game fade-in w-full text-left p-4 bg-black border-2 border-zinc-800 text-zinc-400 hover:text-white uppercase text-sm md:text-base font-bold disabled:opacity-50 disabled:cursor-not-allowed";
                 btn.onclick = () => handleAnswer(btn, ans.isCorrect);
+                btn.textContent = `[ 0${i+1} ] ${ans.text}`;
+                
+                // Staggered fade in
+                btn.style.animationDelay = `${i * 0.1}s`;
+                
                 questionArea.grid.appendChild(btn);
-            });
+            }
+
+            isTyping = false;
         }
 
         function handleAnswer(selectedBtn, isCorrect) {
+            if(isTyping) return; // Prevent clicking while typing effect is active
+
             // Disable all buttons to prevent double clicking
             const allBtns = questionArea.grid.querySelectorAll('button');
             allBtns.forEach(b => b.disabled = true);
@@ -716,9 +762,9 @@
                 score += 100 + (streak * 20); // Bonus points for streak
                 streak++;
                 
-                selectedBtn.classList.remove('bg-slate-800', 'border-slate-600');
-                selectedBtn.classList.add('bg-emerald-600', 'border-emerald-400', 'text-white');
-                questionArea.container.classList.add('bg-emerald-900/30', 'border-emerald-700');
+                selectedBtn.classList.remove('bg-black', 'border-zinc-800', 'text-zinc-400', 'hover:text-black');
+                selectedBtn.classList.add('bg-white', 'text-black', 'border-white');
+                questionArea.container.classList.add('border-white', 'bg-white/10');
 
                 // Check for streak bonus (+1 Life)
                 if (streak === STREAK_GOAL) {
@@ -726,12 +772,13 @@
                     streak = 0; // Reset streak after earning life
                     triggerLifeUpAnimation();
                 } else {
-                    // Small celebration for correct answer
+                    // Monochrome confetti
                     confetti({
-                        particleCount: 30,
-                        spread: 60,
+                        particleCount: 20,
+                        spread: 40,
                         origin: { y: 0.8 },
-                        colors: ['#34d399', '#38bdf8']
+                        colors: ['#ffffff', '#888888', '#444444'],
+                        disableForReducedMotion: true
                     });
                 }
             } else {
@@ -739,21 +786,21 @@
                 lives--;
                 streak = 0;
                 
-                selectedBtn.classList.remove('bg-slate-800', 'border-slate-600');
-                selectedBtn.classList.add('bg-red-600', 'border-red-400', 'text-white');
-                questionArea.container.classList.add('bg-red-900/30', 'border-red-700', 'shake');
+                selectedBtn.classList.remove('bg-black', 'text-zinc-400', 'hover:text-black');
+                selectedBtn.classList.add('bg-zinc-900', 'text-zinc-600', 'line-through');
+                questionArea.container.classList.add('shake', 'border-zinc-500');
                 
-                // Remove shake class after animation completes so it can be re-applied
+                // Remove shake class after animation completes
                 setTimeout(() => {
                     questionArea.container.classList.remove('shake');
-                }, 500);
+                }, 400);
 
-                // Highlight correct answer
+                // Highlight correct answer in monochrome inverse
                 const q = currentQuestions[currentQuestionIndex];
                 allBtns.forEach(b => {
-                    if (b.textContent === q.richtigeAntwort) {
-                        b.classList.remove('bg-slate-800');
-                        b.classList.add('bg-emerald-900/50', 'border-emerald-500', 'text-emerald-200');
+                    if (b.textContent.includes(q.richtigeAntwort)) {
+                        b.classList.remove('bg-black', 'border-zinc-800', 'text-zinc-400');
+                        b.classList.add('bg-zinc-200', 'text-black', 'border-zinc-200');
                     }
                 });
             }
@@ -768,54 +815,60 @@
                     currentQuestionIndex++;
                     loadQuestion();
                 }
-            }, 1500);
+            }, 1800);
+        }
+
+        // Add visual padding to score
+        function padScore(num) {
+            return num.toString().padStart(4, '0');
         }
 
         function updateHUD() {
-            displays.score.textContent = score;
+            displays.score.textContent = padScore(score);
             
-            // Update Lives Display (Hearts)
-            displays.lives.innerHTML = Array(lives).fill('❤️').join(' ');
-            if (lives === 1) {
-                displays.lives.classList.add('animate-pulse');
-            } else {
-                displays.lives.classList.remove('animate-pulse');
+            // Lives Display: ❤️ style
+            let lifeBlocks = [];
+            for(let i=0; i<3; i++) {
+                if(i < lives) lifeBlocks.push('❤️');
+                else lifeBlocks.push('🖤'); // empty slot if standard lives are lost
             }
+            // If they have more than 3 lives, show them all filled
+            if(lives > 3) {
+                lifeBlocks = Array(lives).fill('❤️');
+            }
+            displays.lives.textContent = lifeBlocks.join(' ');
 
-            // Update Streak Bar
-            const dots = displays.streakBar.children;
-            for (let i = 0; i < dots.length; i++) {
+            // Streak Bar Update
+            const streakSlots = [];
+            for (let i = 0; i < STREAK_GOAL; i++) {
                 if (i < streak) {
-                    dots[i].className = "w-4 h-4 rounded-full bg-orange-500 border border-orange-400 shadow-[0_0_8px_rgba(249,115,22,0.8)]";
+                    streakSlots.push('<span class="text-white">█</span>');
                 } else {
-                    dots[i].className = "w-4 h-4 rounded-full bg-slate-700 border border-slate-600";
+                    streakSlots.push('<span class="text-zinc-700">-</span>');
                 }
             }
-            
-            displays.streakIcon.textContent = streak > 0 ? '🔥' : '⚪';
-            if(streak > 0) displays.streakIcon.classList.add('animate-bounce');
-            else displays.streakIcon.classList.remove('animate-bounce');
+            displays.streakBar.innerHTML = streakSlots.join('');
         }
 
         function triggerLifeUpAnimation() {
-            // Big Confetti
-            var duration = 2000;
+            // Flashy Monochrome Confetti for Extra Life
+            var duration = 1500;
             var end = Date.now() + duration;
 
             (function frame() {
                 confetti({
-                    particleCount: 5,
+                    particleCount: 4,
                     angle: 60,
                     spread: 55,
                     origin: { x: 0 },
-                    colors: ['#facc15', '#f87171']
+                    colors: ['#ffffff', '#aaaaaa']
                 });
                 confetti({
-                    particleCount: 5,
+                    particleCount: 4,
                     angle: 120,
                     spread: 55,
                     origin: { x: 1 },
-                    colors: ['#facc15', '#f87171']
+                    colors: ['#ffffff', '#aaaaaa']
                 });
 
                 if (Date.now() < end) {
@@ -827,7 +880,7 @@
             displays.lives.classList.add('life-up');
             setTimeout(() => {
                 displays.lives.classList.remove('life-up');
-            }, 1000);
+            }, 800);
         }
 
         function endGame() {
@@ -836,12 +889,12 @@
             screens.end.classList.remove('hidden');
             screens.end.classList.add('flex');
 
-            displays.finalScore.textContent = score;
+            displays.finalScore.textContent = padScore(score);
             
             let message = "";
-            if (currentQuestionIndex === 0) message = "Autsch. Das war ein kurzer Ausflug.";
-            else if (currentQuestionIndex === currentQuestions.length) message = "SYSTEM GEMEISTERT! Du hast alle Fragen überlebt!";
-            else message = `Du hast ${currentQuestionIndex} Fragen überlebt.`;
+            if (currentQuestionIndex === 0) message = "MISSION ABORTED IMMEDIATELY.";
+            else if (currentQuestionIndex === currentQuestions.length) message = "FULL DATABASE EXHAUSTED. SYSTEM CLEARED.";
+            else message = `SURVIVED ${currentQuestionIndex} QUERIES.`;
             
             displays.finalStats.textContent = message;
 
@@ -849,7 +902,8 @@
                 confetti({
                     particleCount: 150,
                     spread: 100,
-                    origin: { y: 0.6 }
+                    origin: { y: 0.6 },
+                    colors: ['#ffffff', '#888888', '#444444']
                 });
             }
         }
