@@ -223,40 +223,6 @@
         </div>
 
     <script>
-        // Fallback-Datenbank direkt im Code für eigenständige Ausführung (z.B. Vercel Preview / Offline)
-        const FALLBACK_QUESTIONS = [
-            {
-                "kategorie": "IT-Systeme",
-                "frage": "Welche Hauptkomponente ist für die Ausführung von Programmbefehlen in einem Computersystem zuständig?",
-                "richtigeAntwort": "CPU (Prozessor)",
-                "falscheAntworten": ["GPU", "RAM", "Netzteil"]
-            },
-            {
-                "kategorie": "IT-Sicherheit",
-                "frage": "Was versteht man unter Phishing?",
-                "richtigeAntwort": "Das Abfischen von sensiblen Daten über gefälschte E-Mails oder Webseiten",
-                "falscheAntworten": ["Eine Methode zur Datenkompression", "Das Beschleunigen von Netzwerkkabeln", "Ein Hardware-Fehler im Arbeitsspeicher"]
-            },
-            {
-                "kategorie": "Netzwertechnik",
-                "frage": "Welches Protokoll wird standardmäßig für die verschlüsselte Übertragung von Webseiten im Browser verwendet?",
-                "richtigeAntwort": "HTTPS",
-                "falscheAntworten": ["HTTP", "FTP", "SMTP"]
-            },
-            {
-                "kategorie": "Betriebssysteme",
-                "frage": "Wie nennt man den Kern eines Betriebssystems, der die Hardwareverwaltung übernimmt?",
-                "richtigeAntwort": "Kernel",
-                "falscheAntworten": ["Shell", "Daemon", "Compiler"]
-            },
-            {
-                "kategorie": "Datensicherung",
-                "frage": "Welche Backup-Strategie sichert nur die Daten, die seit dem letzten vollständigen Backup geändert wurden?",
-                "richtigeAntwort": "Differentielles Backup",
-                "falscheAntworten": ["Vollständiges Backup", "Inkrementelles Backup", "Spiegel-Backup"]
-            }
-        ];
-
         let rawQuestions = [];
         let clusters = [];
         let questions = [];
@@ -279,36 +245,45 @@
 
         async function loadDatabase() {
             const startBtn = document.getElementById('start-btn');
+            const infoEl = document.getElementById('total-questions-info');
+            
+            // Liste aller zu testenden Pfade (lokal & GitHub Repository)
             const pathsToTry = [
                 '/resources/itSysIntQuestions.json',
                 'resources/itSysIntQuestions.json',
                 './resources/itSysIntQuestions.json',
-                '../resources/itSysIntQuestions.json'
+                '../resources/itSysIntQuestions.json',
+                'https://raw.githubusercontent.com/cmdrFRANKLY1/Vercel/main/resources/itSysIntQuestions.json'
             ];
 
             let loaded = false;
             for (let path of pathsToTry) {
                 try {
+                    infoEl.textContent = `VERSUCHE LADEN: ${path}`;
                     const res = await fetch(path);
                     if (res.ok) {
                         rawQuestions = await res.json();
-                        loaded = true;
-                        break;
+                        if (Array.isArray(rawQuestions) && rawQuestions.length > 0) {
+                            loaded = true;
+                            break;
+                        }
                     }
                 } catch (err) {
-                    console.warn(`Pfad ${path} nicht gefunden, probiere nächsten...`);
+                    console.warn(`Pfad ${path} fehlgeschlagen:`, err);
                 }
             }
 
-            // Fallback greift, wenn keine JSON-Datei geladen werden konnte
-            if (!loaded || !rawQuestions || rawQuestions.length === 0) {
-                console.warn('Verwende integrierte Fallback-Fragen.');
-                rawQuestions = FALLBACK_QUESTIONS;
+            if (loaded && rawQuestions.length > 0) {
+                initMenu();
+            } else {
+                infoEl.textContent = 'FEHLER: KEINE FRAGEN-JSON GEFUNDEN';
+                startBtn.textContent = '[ ERNEUT VERSUCHEN ]';
+                startBtn.disabled = false;
+                startBtn.onclick = () => location.reload();
             }
-
-            initMenu();
         }
 
+        // Kombiniert Kategorien dynamisch basierend auf Textüberschneidungen
         function getCommonPrefix(a, b) {
             let i = 0;
             while(i < a.length && i < b.length && a[i] === b[i]) i++;
@@ -319,6 +294,7 @@
             const infoEl = document.getElementById('total-questions-info');
             if (infoEl) infoEl.textContent = `DATENBANK: ${rawQuestions.length} FRAGEN GELADEN`;
             
+            // Sammle alle einzigartigen Kategorien
             const uniqueCats = [...new Set(rawQuestions.map(q => q.kategorie))];
             clusters = [];
             
