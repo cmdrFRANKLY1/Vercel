@@ -12,7 +12,7 @@
             height: 100%;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Prevent scrollbars from particles */
+            overflow: hidden; 
             background-color: #000;
             color: #fff;
             font-family: 'Inter', sans-serif;
@@ -25,7 +25,6 @@
 <body class="relative w-full h-full">
 
     <div class="absolute inset-0 p-6 flex justify-between items-start z-10 pointer-events-none">
-        
         <!-- Top Left: Back Button -->
         <a href="index.html" class="pointer-events-auto flex items-center gap-2 text-gray-400 hover:text-white transition-colors duration-300 group bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-800">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform group-hover:-translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -39,7 +38,6 @@
             <div id="time-display" class="text-xl font-light tracking-widest font-mono text-gray-200 mb-1">--:--:--</div>
             <div id="date-display" class="text-xs text-gray-400 tracking-widest uppercase">--</div>
         </div>
-
     </div>
 
     <!-- Center Text for Interaction -->
@@ -48,17 +46,16 @@
             Are you ready?
         </h1>
         
-        <!-- Category Grid (Initially Hidden) -->
+        <!-- Category Grid -->
         <div id="category-grid" class="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-0 pointer-events-none transition-all duration-700 transform translate-y-8 max-w-5xl px-6 w-full">
-            <!-- Dynamically populated buttons will go here -->
         </div>
 
-        <!-- Question Container (Initially Hidden) -->
+        <!-- Question Container -->
         <div id="question-container" class="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none opacity-0 transition-all duration-700 transform translate-y-8 max-w-5xl px-6 w-full mx-auto">
-            <h2 id="question-text" class="text-2xl md:text-4xl font-semibold tracking-wide text-center drop-shadow-md mb-12 text-gray-100">
+            <h2 id="question-text" class="text-2xl md:text-4xl font-semibold tracking-wide text-center drop-shadow-md mb-12 text-gray-100 px-4">
                 <!-- Question populates here -->
             </h2>
-            <div id="answer-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl">
+            <div id="answer-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl px-4">
                 <!-- Answers populate here -->
             </div>
             
@@ -68,46 +65,32 @@
         </div>
     </div>
 
-    <!-- Fixed position to ensure it spans the entire viewport perfectly -->
     <canvas id="dust-canvas" class="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"></canvas>
 
     <script>
+        // Clock Logic
         function updateClock() {
             const now = new Date();
-            
-            // Format Date: e.g., Mon, Aug 24, 2026
             const dateOptions = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
             document.getElementById('date-display').textContent = now.toLocaleDateString('en-US', dateOptions);
-            
-            // Format Time (24-hour): e.g., 18:20:44
             const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
             document.getElementById('time-display').textContent = now.toLocaleTimeString('en-US', timeOptions);
         }
-
-        // Initialize and set interval for the clock
         updateClock();
         setInterval(updateClock, 1000);
 
+        // Particle Engine Logic
         const canvas = document.getElementById('dust-canvas');
         const ctx = canvas.getContext('2d');
-
         let width, height;
         let particles = [];
-        const particleCount = 700; // Increased density for depth
-        
-        // Variables for lightspeed effect
-        let warpSpeed = 0;
-        let targetWarpSpeed = 0;
-        let isWarping = false;
-
-        // Variables for interactive mouse parallax
-        let mouseX = 0;
-        let mouseY = 0;
-        let targetMouseX = 0;
-        let targetMouseY = 0;
+        const particleCount = 700;
+        let warpSpeed = 0, targetWarpSpeed = 0, isWarping = false;
+        let mouseX = 0, mouseY = 0, targetMouseX = 0, targetMouseY = 0;
+        let warpColorOverride = null;
+        let activeQuestions = [];
 
         window.addEventListener('mousemove', (e) => {
-            // Calculate mouse offset from the center of the screen
             targetMouseX = (e.clientX - width / 2) * 0.05;
             targetMouseY = (e.clientY - height / 2) * 0.05;
         });
@@ -117,7 +100,6 @@
             height = window.innerHeight;
             canvas.width = width;
             canvas.height = height;
-            // Full re-initialization on resize guarantees perfectly even coverage across the entire screen
             initParticles();
         }
 
@@ -128,90 +110,56 @@
                 this.prevX = this.x;
                 this.prevY = this.y;
                 
-                // Assign to one of 3 distinct Z-layers for parallax
                 const layerRandom = Math.random();
                 if (layerRandom > 0.90) {
-                    // Layer 3: Foreground (fastest, largest, brightest)
-                    this.layer = 3;
-                    this.z = 1.0; 
-                    this.radius = Math.random() * 1.5 + 1.2;
-                    this.baseAlpha = Math.random() * 0.5 + 0.5;
+                    this.layer = 3; this.z = 1.0; this.radius = Math.random() * 1.5 + 1.2; this.baseAlpha = Math.random() * 0.5 + 0.5;
                 } else if (layerRandom > 0.40) {
-                    // Layer 2: Midground (medium speed and size)
-                    this.layer = 2;
-                    this.z = 0.5;
-                    this.radius = Math.random() * 0.8 + 0.6;
-                    this.baseAlpha = Math.random() * 0.4 + 0.2;
+                    this.layer = 2; this.z = 0.5; this.radius = Math.random() * 0.8 + 0.6; this.baseAlpha = Math.random() * 0.4 + 0.2;
                 } else {
-                    // Layer 1: Deep Background (slowest, smallest, dimmest)
-                    this.layer = 1;
-                    this.z = 0.2;
-                    this.radius = Math.random() * 0.4 + 0.2;
-                    this.baseAlpha = Math.random() * 0.2 + 0.1;
+                    this.layer = 1; this.z = 0.2; this.radius = Math.random() * 0.4 + 0.2; this.baseAlpha = Math.random() * 0.2 + 0.1;
                 }
                 
-                // Base drifting velocity scales with Z-index
                 this.vx = (Math.random() - 0.5) * 0.2 * this.z;
-                this.vy = (Math.random() - 0.5) * 0.2 * this.z - (0.1 * this.z); // Slight upward drift
+                this.vy = (Math.random() - 0.5) * 0.2 * this.z - (0.1 * this.z);
 
                 const colors = ['255, 255, 255', '210, 230, 255', '255, 240, 210'];
                 this.color = colors[Math.floor(Math.random() * colors.length)];
-
                 this.alpha = Math.random() * this.baseAlpha;
                 this.alphaChange = (Math.random() - 0.5) * 0.015;
             }
 
             update() {
-                this.prevX = this.x;
-                this.prevY = this.y;
+                this.prevX = this.x; this.prevY = this.y;
+                this.x += this.vx; this.y += this.vy;
 
-                // Apply constant drift
-                this.x += this.vx;
-                this.y += this.vy;
-
-                // Apply warp speed (radial expansion or contraction)
                 if (warpSpeed !== 0) {
-                    const dx = this.x - width / 2;
-                    const dy = this.y - height / 2;
-                    this.x += dx * warpSpeed * this.z * 0.005;
-                    this.y += dy * warpSpeed * this.z * 0.005;
+                    const dx = this.x - width / 2; const dy = this.y - height / 2;
+                    this.x += dx * warpSpeed * this.z * 0.005; this.y += dy * warpSpeed * this.z * 0.005;
 
-                    // If zooming out, reset particles that get too close to the center
                     if (warpSpeed < -2) {
                         const distSq = dx * dx + dy * dy;
                         if (distSq < 100) {
-                            const angle = Math.random() * Math.PI * 2;
-                            const dist = Math.max(width, height) * 0.7; 
-                            this.x = width / 2 + Math.cos(angle) * dist;
-                            this.y = height / 2 + Math.sin(angle) * dist;
-                            this.prevX = this.x;
-                            this.prevY = this.y;
+                            const angle = Math.random() * Math.PI * 2; const dist = Math.max(width, height) * 0.7; 
+                            this.x = width / 2 + Math.cos(angle) * dist; this.y = height / 2 + Math.sin(angle) * dist;
+                            this.prevX = this.x; this.prevY = this.y;
                         }
                     }
                 }
 
-                // Screen wrapping for infinite universe effect
                 if (this.x < -50 || this.x > width + 50 || this.y < -50 || this.y > height + 50) {
                     if (warpSpeed > 2) {
-                        // Spawn near center during warp in to simulate zoom
-                        const angle = Math.random() * Math.PI * 2;
-                        const dist = Math.random() * (Math.min(width, height) * 0.15); 
-                        this.x = width / 2 + Math.cos(angle) * dist;
-                        this.y = height / 2 + Math.sin(angle) * dist;
+                        const angle = Math.random() * Math.PI * 2; const dist = Math.random() * (Math.min(width, height) * 0.15); 
+                        this.x = width / 2 + Math.cos(angle) * dist; this.y = height / 2 + Math.sin(angle) * dist;
                     } else if (warpSpeed < -2) {
-                        // Ignore standard wrapping during reverse warp (moving inwards)
                     } else {
-                        // Standard screen wrapping
                         if (this.x < -10) this.x = width + 10;
                         if (this.x > width + 10) this.x = -10;
                         if (this.y < -10) this.y = height + 10;
                         if (this.y > height + 10) this.y = -10;
                     }
-                    this.prevX = this.x;
-                    this.prevY = this.y;
+                    this.prevX = this.x; this.prevY = this.y;
                 }
 
-                // Twinkle effect
                 this.alpha += this.alphaChange;
                 if (this.alpha <= 0.05 || this.alpha >= this.baseAlpha) {
                     this.alphaChange = -this.alphaChange;
@@ -219,33 +167,29 @@
             }
 
             draw(parallaxOffsetX, parallaxOffsetY) {
-                // Calculate final position by applying the parallax offset scaled by the Z-layer
                 const drawX = this.x + (parallaxOffsetX * this.z);
                 const drawY = this.y + (parallaxOffsetY * this.z);
                 const drawPrevX = this.prevX + (parallaxOffsetX * this.z);
                 const drawPrevY = this.prevY + (parallaxOffsetY * this.z);
 
+                const activeColor = warpColorOverride ? warpColorOverride : this.color;
+
                 if (Math.abs(warpSpeed) > 1) {
-                    // Lightspeed streak
                     ctx.beginPath();
-                    ctx.moveTo(drawPrevX, drawPrevY);
-                    ctx.lineTo(drawX, drawY);
-                    ctx.strokeStyle = `rgba(${this.color}, ${Math.max(0, this.alpha)})`;
+                    ctx.moveTo(drawPrevX, drawPrevY); ctx.lineTo(drawX, drawY);
+                    ctx.strokeStyle = `rgba(${activeColor}, ${Math.max(0, this.alpha)})`;
                     ctx.lineWidth = this.radius * (this.layer === 3 ? 2 : 1);
-                    ctx.lineCap = 'round';
-                    ctx.stroke();
+                    ctx.lineCap = 'round'; ctx.stroke();
                 } else {
-                    // Draw core star
                     ctx.beginPath();
                     ctx.arc(drawX, drawY, this.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(${this.color}, ${Math.max(0, this.alpha)})`;
+                    ctx.fillStyle = `rgba(${activeColor}, ${Math.max(0, this.alpha)})`;
                     ctx.fill();
                     
-                    // Ambient glow for foreground stars
                     if (this.layer === 3) {
                         ctx.beginPath();
                         ctx.arc(drawX, drawY, this.radius * 2.5, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(${this.color}, ${Math.max(0, this.alpha * 0.2)})`;
+                        ctx.fillStyle = `rgba(${activeColor}, ${Math.max(0, this.alpha * 0.2)})`;
                         ctx.fill();
                     }
                 }
@@ -254,70 +198,44 @@
 
         function initParticles() {
             particles = [];
-            for (let i = 0; i < particleCount; i++) {
-                particles.push(new Particle());
-            }
+            for (let i = 0; i < particleCount; i++) { particles.push(new Particle()); }
         }
 
         function animate() {
-            // Leave a slight trail during warp for extra motion blur
-            if (Math.abs(warpSpeed) > 1) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-                ctx.fillRect(0, 0, width, height);
-            } else {
-                ctx.clearRect(0, 0, width, height);
-            }
+            if (Math.abs(warpSpeed) > 1) { ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; ctx.fillRect(0, 0, width, height); } 
+            else { ctx.clearRect(0, 0, width, height); }
             
-            // Smoothly interpolate the mouse parallax offset and warp speed
             mouseX += (targetMouseX - mouseX) * 0.05;
             mouseY += (targetMouseY - mouseY) * 0.05;
-            warpSpeed += (targetWarpSpeed - warpSpeed) * 0.15; // Increased acceleration to fit shorter time
+            warpSpeed += (targetWarpSpeed - warpSpeed) * 0.15;
             
-            particles.forEach(p => {
-                p.update();
-                p.draw(mouseX, mouseY);
-            });
-
+            particles.forEach(p => { p.update(); p.draw(mouseX, mouseY); });
             requestAnimationFrame(animate);
         }
-
-        // Setup
         window.addEventListener('resize', resizeCanvas);
-        
-        // Interaction Logic
+        resizeCanvas(); animate();
+
+        // Game/UI Logic
         const mainText = document.getElementById('main-text');
         mainText.addEventListener('click', () => {
             if (isWarping) return;
             isWarping = true;
-            
-            // Fade out current text
             mainText.style.opacity = 0;
             mainText.style.transform = 'scale(0.8)';
-            
-            // Trigger lightspeed jump
             targetWarpSpeed = 40;
             
             setTimeout(() => {
-                // Change text and drop out of lightspeed
                 mainText.textContent = "Pick a Category";
                 targetWarpSpeed = 0;
-                
-                // Fade in new text and move it up slightly to make room for grid
                 mainText.style.opacity = 1;
                 mainText.style.transform = 'scale(1) translateY(-20px)';
-                mainText.style.pointerEvents = 'none'; // Disable further clicks on title
-                
-                // Fetch and display the categories
+                mainText.style.pointerEvents = 'none';
                 loadCategories();
-            }, 525); // Decreased length by another 30% (750ms * 0.7)
+            }, 525); 
         });
 
-        // Formats "topicRMT.IT_System_Integration.json" into "IT System Integration"
         function formatTopicName(filename) {
-            return filename
-                .replace('topicRMT.', '')
-                .replace('.json', '')
-                .replace(/_/g, ' ');
+            return filename.replace('topicRMT.', '').replace('.json', '').replace(/_/g, ' ');
         }
 
         async function loadCategories() {
@@ -325,215 +243,233 @@
             let files = [];
             
             try {
-                // Call the Vercel Serverless Function instead of the static directory
+                // Primary Fetch: Vercel API
                 const response = await fetch('/api/topics');
                 if (!response.ok) throw new Error('Network response was not ok');
-                
                 files = await response.json();
+                if (!Array.isArray(files) || files.length === 0) throw new Error('Empty array returned');
             } catch (error) {
-                console.warn("Dynamic fetch failed or returned no items. Displaying Back fallback.");
-                files = []; // Ensure it triggers the fallback logic
+                console.warn("Primary API failed. Initiating GitHub Fallback...", error);
+                try {
+                    // Fallback Fetch: GitHub API Directory Listing
+                    const ghResponse = await fetch('https://api.github.com/repos/cmdrFRANKLY1/Vercel/contents/resources/riddleMeThis');
+                    if (!ghResponse.ok) throw new Error('GitHub API response not ok');
+                    const ghData = await ghResponse.json();
+                    
+                    if (Array.isArray(ghData)) {
+                        // Extract just the filenames from the GitHub payload
+                        files = ghData.map(item => item.name);
+                    }
+                } catch (ghError) {
+                    console.error("GitHub fallback failed as well.", ghError);
+                    files = [];
+                }
             }
 
-            // Reveal the grid container (we unhide it before adding buttons so animations play properly)
             grid.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-8');
             grid.classList.add('opacity-100');
             
+            // Filter strictly for our specific json files
+            files = files.filter(f => typeof f === 'string' && f.startsWith('topicRMT.') && f.endsWith('.json'));
+
             if (files.length === 0) {
-                // No files found: Display fallback "Back" button
+                // Fallback UI if NO files were successfully fetched
                 const btn = document.createElement('button');
-                // Use col-span logic to center it
                 btn.className = "pointer-events-auto px-6 py-4 bg-black/40 border border-gray-700 rounded-xl backdrop-blur-md text-white font-semibold tracking-wider hover:bg-gray-800/80 transition-all duration-300 hover:-translate-y-1 opacity-0 col-span-1 md:col-start-2";
-                btn.textContent = "Back";
+                btn.textContent = "Back (Failed to connect to Databanks)";
                 btn.style.animation = `fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.1s`;
-                
-                btn.onclick = () => {
-                    // Trigger Zoom out effect
-                    isWarping = true;
-                    targetWarpSpeed = -40; // Negative warp speed means flying backwards
-                    
-                    // Fade out current state
-                    mainText.style.opacity = 0;
-                    mainText.style.transform = 'scale(0.8) translateY(-20px)';
-                    grid.classList.add('opacity-0', 'pointer-events-none', 'translate-y-8');
-                    grid.classList.remove('opacity-100');
-                    
-                    setTimeout(() => {
-                        grid.innerHTML = ''; // Clear grid
-                        
-                        // Drop out of reverse lightspeed
-                        targetWarpSpeed = 0;
-                        mainText.textContent = "Are you ready?";
-                        
-                        // Fade in initial text
-                        mainText.style.opacity = 1;
-                        mainText.style.transform = 'scale(1)';
-                        
-                        // Re-enable clicks shortly after animation completes
-                        setTimeout(() => {
-                            mainText.style.pointerEvents = 'auto';
-                            isWarping = false;
-                        }, 100);
-                    }, 525);
-                };
+                btn.onclick = () => { triggerReverseWarp(); };
                 grid.appendChild(btn);
                 return;
             }
 
-            // Normal file population logic
-            files = files.filter(f => f.startsWith('topicRMT.') && f.endsWith('.json'));
-
+            // Populate Grid with real categories
             files.forEach((file, index) => {
-                    const topicName = formatTopicName(file);
-                    
-                    const btn = document.createElement('button');
-                    btn.className = "pointer-events-auto px-6 py-4 bg-black/40 border border-gray-700 rounded-xl backdrop-blur-md text-white font-semibold tracking-wider hover:bg-blue-900/40 hover:border-blue-400 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(96,165,250,0.4)] opacity-0 flex items-center justify-center text-center h-full";
-                    btn.textContent = topicName;
-                    
-                    // Staggered fade in animation
-                    btn.style.animation = `fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards ${index * 0.1}s`;
-                    
-                    // Click handler for when a user selects a category
-                    btn.onclick = () => {
-                        console.log(`Loading topic logic for: ${file} (../resources/riddleMeThis/${file})`);
-                        // Visual feedback on click
-                        btn.style.transform = 'scale(0.95)';
-                        btn.classList.add('bg-blue-600/60', 'border-blue-400');
-                        
-                        // Trigger Question Load
-                        loadQuestion(file);
-                    };
-                    
-                    grid.appendChild(btn);
-                });
+                const btn = document.createElement('button');
+                btn.className = "pointer-events-auto px-6 py-4 bg-black/40 border border-gray-700 rounded-xl backdrop-blur-md text-white font-semibold tracking-wider hover:bg-blue-900/40 hover:border-blue-400 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(96,165,250,0.4)] opacity-0 flex items-center justify-center text-center h-full break-words";
+                btn.textContent = formatTopicName(file);
+                btn.style.animation = `fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards ${index * 0.1}s`;
+                
+                btn.onclick = () => {
+                    btn.style.transform = 'scale(0.95)';
+                    btn.classList.add('bg-blue-600/60', 'border-blue-400');
+                    loadQuestion(file);
+                };
+                grid.appendChild(btn);
+            });
         }
 
-        // --- NEW: Question Loading & Game Logic ---
         async function loadQuestion(filename) {
             if (isWarping) return;
             isWarping = true;
-            
-            // Trigger forward warp effect
             targetWarpSpeed = 40;
+            warpColorOverride = null;
             
-            // Fade out category grid & text
             const grid = document.getElementById('category-grid');
             const mainText = document.getElementById('main-text');
             grid.classList.add('opacity-0', 'pointer-events-none', 'translate-y-8');
             grid.classList.remove('opacity-100');
             mainText.style.opacity = 0; 
             
+            let questions = [];
+            
             try {
-                // Fetch the specific JSON file from the resources folder
-                // (Assumes this HTML is in /tools/ and resources is in /resources/)
+                // Primary Fetch: Local Folder
                 const response = await fetch(`../resources/riddleMeThis/${filename}`);
-                if (!response.ok) throw new Error('Failed to fetch question JSON');
-                const questions = await response.json();
-                
-                // Pick a random question
-                const q = questions[Math.floor(Math.random() * questions.length)];
-                
-                // Combine right and wrong answers, then shuffle them
-                const allAnswers = [q.richtigeAntwort, ...q.falscheAntworten];
-                allAnswers.sort(() => Math.random() - 0.5); 
-                
-                // Populate the UI
-                document.getElementById('question-text').textContent = q.frage;
-                const answerGrid = document.getElementById('answer-grid');
-                answerGrid.innerHTML = ''; // Clear previous answers
-                
-                allAnswers.forEach(ans => {
-                    const btn = document.createElement('button');
-                    btn.className = "pointer-events-auto px-6 py-4 bg-black/40 border border-gray-600 rounded-xl backdrop-blur-md text-gray-200 font-medium text-lg hover:bg-white/10 hover:border-gray-400 transition-all duration-300 w-full text-center md:text-left min-h-[80px] shadow-lg";
-                    btn.textContent = ans;
-                    
-                    btn.onclick = () => {
-                        // Disable all buttons once an answer is chosen
-                        const buttons = answerGrid.querySelectorAll('button');
-                        buttons.forEach(b => {
-                            b.disabled = true;
-                            b.classList.remove('hover:bg-white/10', 'hover:border-gray-400', 'pointer-events-auto');
-                            b.classList.add('cursor-not-allowed', 'opacity-60');
-                        });
-                        
-                        // Check if correct
-                        if (ans === q.richtigeAntwort) {
-                            btn.classList.remove('bg-black/40', 'border-gray-600', 'opacity-60');
-                            btn.classList.add('bg-green-600/80', 'border-green-400', 'text-white', 'opacity-100', 'scale-105');
-                        } else {
-                            btn.classList.remove('bg-black/40', 'border-gray-600', 'opacity-60');
-                            btn.classList.add('bg-red-600/80', 'border-red-400', 'text-white', 'opacity-100');
-                            
-                            // Highlight the correct answer for the user
-                            buttons.forEach(b => {
-                                if(b.textContent === q.richtigeAntwort) {
-                                    b.classList.remove('bg-black/40', 'border-gray-600', 'opacity-60');
-                                    b.classList.add('bg-green-600/80', 'border-green-400', 'text-white', 'opacity-100');
-                                }
-                            });
-                        }
-                        
-                        // Reveal the "Back to Categories" button
-                        const backBtn = document.getElementById('back-to-categories-btn');
-                        backBtn.classList.remove('opacity-0', 'pointer-events-none');
-                        backBtn.classList.add('opacity-100', 'pointer-events-auto');
-                    };
-                    answerGrid.appendChild(btn);
-                });
-                
-            } catch (err) {
-                console.error("Error loading question data:", err);
-                document.getElementById('question-text').textContent = "Failed to communicate with the databanks.";
-                document.getElementById('answer-grid').innerHTML = '';
+                if (!response.ok) throw new Error('Failed to fetch local JSON');
+                questions = await response.json();
+            } catch (error) {
+                console.warn("Local fetch failed. Fetching Raw JSON from GitHub Fallback...", error);
+                try {
+                    // Fallback Fetch: Raw GitHub File
+                    const ghResponse = await fetch(`https://raw.githubusercontent.com/cmdrFRANKLY1/Vercel/main/resources/riddleMeThis/${filename}`);
+                    if (!ghResponse.ok) throw new Error('Failed to fetch GitHub Raw Data');
+                    questions = await ghResponse.json();
+                } catch (ghError) {
+                    console.error("Error loading question data from GitHub:", ghError);
+                }
             }
 
-            // Sync UI reveal with the end of the lightspeed timeout
+            // Shuffle all loaded questions
+            activeQuestions = questions.sort(() => Math.random() - 0.5);
+
             setTimeout(() => {
-                targetWarpSpeed = 0;
-                
-                // Show question container
-                const qContainer = document.getElementById('question-container');
-                qContainer.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-8');
-                qContainer.classList.add('opacity-100', 'pointer-events-auto');
-                
-                setTimeout(() => { isWarping = false; }, 100);
+                presentNextQuestion(null);
             }, 525);
         }
 
-        // Logic for Back to Categories Button
+        function presentNextQuestion(colorOverride = null) {
+            const qContainer = document.getElementById('question-container');
+            const answerGrid = document.getElementById('answer-grid');
+            const questionText = document.getElementById('question-text');
+            const backBtn = document.getElementById('back-to-categories-btn');
+            
+            // If warping between questions, trigger effects
+            if (colorOverride) {
+                isWarping = true;
+                targetWarpSpeed = 40;
+                warpColorOverride = colorOverride;
+                qContainer.classList.add('opacity-0', 'pointer-events-none', 'translate-y-8');
+                qContainer.classList.remove('opacity-100', 'pointer-events-auto');
+            }
+
+            // Wait for warp visual to peak before updating text
+            setTimeout(() => {
+                answerGrid.innerHTML = '';
+                
+                if (!activeQuestions || activeQuestions.length === 0) {
+                    questionText.textContent = "Category Complete!";
+                    backBtn.classList.remove('opacity-0', 'pointer-events-none');
+                    backBtn.classList.add('opacity-100', 'pointer-events-auto');
+                } else {
+                    const q = activeQuestions.pop();
+                    const allAnswers = [q.richtigeAntwort, ...q.falscheAntworten].sort(() => Math.random() - 0.5); 
+                    
+                    questionText.textContent = q.frage;
+                    backBtn.classList.add('opacity-0', 'pointer-events-none');
+                    backBtn.classList.remove('opacity-100', 'pointer-events-auto');
+                    
+                    allAnswers.forEach(ans => {
+                        const btn = document.createElement('button');
+                        btn.className = "pointer-events-auto px-6 py-4 bg-black/40 border border-gray-600 rounded-xl backdrop-blur-md text-gray-200 font-medium text-lg hover:bg-white/10 hover:border-gray-400 transition-all duration-300 w-full text-center md:text-left min-h-[80px] shadow-lg break-words";
+                        btn.textContent = ans;
+                        
+                        btn.onclick = () => {
+                            const buttons = answerGrid.querySelectorAll('button');
+                            buttons.forEach(b => {
+                                b.disabled = true;
+                                b.classList.remove('hover:bg-white/10', 'hover:border-gray-400', 'pointer-events-auto');
+                                b.classList.add('cursor-not-allowed', 'opacity-60');
+                            });
+                            
+                            const isCorrect = ans === q.richtigeAntwort;
+                            
+                            if (isCorrect) {
+                                btn.classList.remove('bg-black/40', 'border-gray-600', 'opacity-60');
+                                btn.classList.add('bg-green-600/80', 'border-green-400', 'text-white', 'opacity-100', 'scale-105');
+                            } else {
+                                btn.classList.remove('bg-black/40', 'border-gray-600', 'opacity-60');
+                                btn.classList.add('bg-red-600/80', 'border-red-400', 'text-white', 'opacity-100');
+                                buttons.forEach(b => {
+                                    if(b.textContent === q.richtigeAntwort) {
+                                        b.classList.remove('bg-black/40', 'border-gray-600', 'opacity-60');
+                                        b.classList.add('bg-green-600/80', 'border-green-400', 'text-white', 'opacity-100');
+                                    }
+                                });
+                            }
+                            
+                            // Delay to let user see the answer, then warp to next
+                            setTimeout(() => {
+                                presentNextQuestion(isCorrect ? '34, 197, 94' : '239, 68, 68'); 
+                            }, 1200);
+                        };
+                        answerGrid.appendChild(btn);
+                    });
+                }
+
+                targetWarpSpeed = 0;
+                qContainer.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-8');
+                qContainer.classList.add('opacity-100', 'pointer-events-auto');
+                
+                // End Warp
+                setTimeout(() => { 
+                    isWarping = false; 
+                    warpColorOverride = null;
+                }, 100);
+
+            }, colorOverride ? 525 : 0);
+        }
+
+        // Standard Reverse Warp Logic
+        function triggerReverseWarp() {
+            if (isWarping) return;
+            isWarping = true;
+            targetWarpSpeed = -40; 
+            
+            const grid = document.getElementById('category-grid');
+            mainText.style.opacity = 0;
+            mainText.style.transform = 'scale(0.8) translateY(-20px)';
+            grid.classList.add('opacity-0', 'pointer-events-none', 'translate-y-8');
+            grid.classList.remove('opacity-100');
+            
+            setTimeout(() => {
+                grid.innerHTML = '';
+                targetWarpSpeed = 0;
+                mainText.textContent = "Are you ready?";
+                mainText.style.opacity = 1;
+                mainText.style.transform = 'scale(1)';
+                
+                setTimeout(() => {
+                    mainText.style.pointerEvents = 'auto';
+                    isWarping = false;
+                }, 100);
+            }, 525);
+        }
+
         document.getElementById('back-to-categories-btn').addEventListener('click', () => {
             if (isWarping) return;
             isWarping = true;
-            
-            // Reverse warp (Zoom out)
             targetWarpSpeed = -40;
             
-            // Hide question UI
             const qContainer = document.getElementById('question-container');
             qContainer.classList.add('opacity-0', 'pointer-events-none', 'translate-y-8');
             qContainer.classList.remove('opacity-100', 'pointer-events-auto');
             
-            // Hide this button for the next round
             const backBtn = document.getElementById('back-to-categories-btn');
             backBtn.classList.add('opacity-0', 'pointer-events-none');
             backBtn.classList.remove('opacity-100', 'pointer-events-auto');
             
             setTimeout(() => {
                 targetWarpSpeed = 0;
-                
-                // Restore main text
                 const mainText = document.getElementById('main-text');
                 mainText.textContent = "Pick a Category";
                 mainText.style.opacity = 1;
-                
-                // Reload categories
                 loadCategories(); 
                 
                 setTimeout(() => { isWarping = false; }, 100);
             }, 525);
         });
 
-        // Add CSS keyframes dynamically for the staggered button reveal
         const style = document.createElement('style');
         style.innerHTML = `
             @keyframes fadeInUp {
@@ -542,10 +478,6 @@
             }
         `;
         document.head.appendChild(style);
-
-        // Call resizeCanvas initially to set dimensions and initialize particles
-        resizeCanvas();
-        animate();
     </script>
 </body>
 </html>
