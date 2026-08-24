@@ -245,31 +245,36 @@
         let isFirstQuestion = true;
 
         document.addEventListener('DOMContentLoaded', () => {
-            const startBtn = document.getElementById('start-btn');
-            
-            try {
-                fetch('resources/itSysIntQuestions.json')
-                    .then(res => {
-                        if (!res.ok) throw new Error("HTTP error " + res.status);
-                        return res.json();
-                    })
-                    .then(data => {
-                        rawQuestions = data;
-                        initMenu();
-                    })
-                    .catch(err => {
-                        // Konsolenfehler leise abfangen, um rote Warnungen in der Vorschau zu vermeiden
-                        startBtn.textContent = '[ RELOAD ]';
-                        startBtn.disabled = false;
-                        startBtn.onclick = () => location.reload();
-                    });
-            } catch (err) {
-                // Fängt synchrone URL-Fehler in isolierten Umgebungen (wie der Vorschau) ab
-                startBtn.textContent = '[ RELOAD ]';
-                startBtn.disabled = false;
-                startBtn.onclick = () => location.reload();
-            }
+            loadDatabase();
         });
+
+        async function loadDatabase() {
+            const startBtn = document.getElementById('start-btn');
+            const pathsToTry = [
+                '/resources/itSysIntQuestions.json',
+                'resources/itSysIntQuestions.json',
+                './resources/itSysIntQuestions.json',
+                '../resources/itSysIntQuestions.json'
+            ];
+
+            for (let path of pathsToTry) {
+                try {
+                    const res = await fetch(path);
+                    if (res.ok) {
+                        rawQuestions = await res.json();
+                        initMenu();
+                        return; // Erfolgreich geladen, Schleife abbrechen
+                    }
+                } catch (err) {
+                    console.warn(`Pfad ${path} nicht gefunden, probiere nächsten...`);
+                }
+            }
+
+            // Wenn alle Pfade fehlschlagen (z.B. in der Chat-Vorschau)
+            startBtn.textContent = '[ RELOAD ]';
+            startBtn.disabled = false;
+            startBtn.onclick = () => location.reload();
+        }
 
         // Kombiniert Kategorien dynamisch basierend auf Textüberschneidungen
         function getCommonPrefix(a, b) {
