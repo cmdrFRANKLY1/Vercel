@@ -95,6 +95,19 @@
             0%, 100% { background-color: transparent; }
             50% { background-color: rgba(234, 88, 12, 0.25); border-color: rgba(234, 88, 12, 0.8); }
         }
+        .loading-spinner {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top: 3px solid #ffffff;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="h-[100dvh] w-screen flex flex-col items-center justify-center relative bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-200 overflow-hidden">
@@ -115,8 +128,9 @@
                 </select>
             </div>
 
-            <button id="start-btn" disabled class="font-sans font-bold rounded-xl border border-slate-400 dark:border-slate-500 px-8 py-3 sm:px-10 sm:py-4 text-lg sm:text-xl tracking-widest btn-hover-fx bg-slate-800 text-white uppercase shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-                [ VERBINDE MIT DATENBANK... ]
+            <button id="start-btn" disabled class="font-sans font-bold rounded-xl border border-slate-400 dark:border-slate-500 px-8 py-3 sm:px-10 sm:py-4 text-lg sm:text-xl tracking-widest btn-hover-fx bg-slate-800 text-white uppercase shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-3">
+                <span id="start-btn-text">[ VERBINDE MIT DATENBANK... ]</span>
+                <span id="start-btn-spinner" class="loading-spinner"></span>
             </button>
             <div id="total-questions-info" class="mt-6 font-mono text-xs sm:text-sm text-slate-500 dark:text-slate-400 tracking-wider">LADE DATEI...</div>
         </div>
@@ -243,41 +257,144 @@
             loadDatabase();
         });
 
+        // FALLBACK QUESTIONS - falls JSON nicht geladen werden kann
+        const FALLBACK_QUESTIONS = [
+            {
+                "kategorie": "Netzwerkgrundlagen",
+                "frage": "Was ist die Standard-IP-Adresse für localhost?",
+                "richtigeAntwort": "127.0.0.1",
+                "falscheAntworten": ["192.168.1.1", "10.0.0.1", "0.0.0.0"]
+            },
+            {
+                "kategorie": "Netzwerkgrundlagen",
+                "frage": "Welches Protokoll wird für die Übertragung von Webseiten verwendet?",
+                "richtigeAntwort": "HTTP/HTTPS",
+                "falscheAntworten": ["FTP", "SMTP", "SSH"]
+            },
+            {
+                "kategorie": "Betriebssysteme",
+                "frage": "Welcher Befehl zeigt in Linux die laufenden Prozesse an?",
+                "richtigeAntwort": "ps",
+                "falscheAntworten": ["ls", "cd", "mkdir"]
+            },
+            {
+                "kategorie": "Betriebssysteme",
+                "frage": "Was ist der Kernel eines Betriebssystems?",
+                "richtigeAntwort": "Der Kern des Betriebssystems, der Hardware und Software verwaltet",
+                "falscheAntworten": ["Eine Benutzeroberfläche", "Ein Dateisystem", "Ein Treiber"]
+            },
+            {
+                "kategorie": "Datenbanken",
+                "frage": "Welche Sprache wird für Datenbankabfragen verwendet?",
+                "richtigeAntwort": "SQL",
+                "falscheAntworten": ["HTML", "CSS", "JavaScript"]
+            },
+            {
+                "kategorie": "Datenbanken",
+                "frage": "Was ist eine Primary Key in einer Datenbank?",
+                "richtigeAntwort": "Ein eindeutiger Identifikator für einen Datensatz",
+                "falscheAntworten": ["Ein Fremdschlüssel", "Ein Index", "Eine Tabelle"]
+            },
+            {
+                "kategorie": "Netzwerksicherheit",
+                "frage": "Was ist eine Firewall?",
+                "richtigeAntwort": "Eine Sicherheitsvorrichtung, die Netzwerkverkehr kontrolliert",
+                "falscheAntworten": ["Ein Virenscanner", "Ein Passwort-Manager", "Ein Backup-System"]
+            },
+            {
+                "kategorie": "Netzwerksicherheit",
+                "frage": "Was ist eine DDoS-Attacke?",
+                "richtigeAntwort": "Distributed Denial of Service - Überlastung eines Servers",
+                "falscheAntworten": ["Ein Virenangriff", "Ein Phishing-Versuch", "Ein Passwort-Angriff"]
+            }
+        ];
+
         async function loadDatabase() {
             const startBtn = document.getElementById('start-btn');
             const infoEl = document.getElementById('total-questions-info');
+            const spinner = document.getElementById('start-btn-spinner');
+            const btnText = document.getElementById('start-btn-text');
             
-            // Liste aller zu testenden Pfade (lokal & GitHub Repository)
+            // Liste aller Pfade (optimiert für Vercel)
             const pathsToTry = [
-                '/resources/itSysIntQuestions.json',
+                // 1. Direkt im selben Verzeichnis (einfachste Lösung)
+                'itSysIntQuestions.json',
+                './itSysIntQuestions.json',
+                
+                // 2. Im resources-Ordner
                 'resources/itSysIntQuestions.json',
                 './resources/itSysIntQuestions.json',
-                '../resources/itSysIntQuestions.json',
-                'https://raw.githubusercontent.com/cmdrFRANKLY1/Vercel/main/resources/itSysIntQuestions.json'
+                
+                // 3. Im public-Ordner (Vercel Standard)
+                'public/resources/itSysIntQuestions.json',
+                './public/resources/itSysIntQuestions.json',
+                
+                // 4. Mit Slash davor (Root-Pfad)
+                '/itSysIntQuestions.json',
+                '/resources/itSysIntQuestions.json',
+                
+                // 5. GitHub Raw (Fallback)
+                'https://raw.githubusercontent.com/cmdrFRANKLY1/Vercel/main/itSysIntQuestions.json',
+                'https://raw.githubusercontent.com/cmdrFRANKLY1/Vercel/main/resources/itSysIntQuestions.json',
+                'https://raw.githubusercontent.com/cmdrFRANKLY1/Vercel/main/public/resources/itSysIntQuestions.json'
             ];
 
             let loaded = false;
+            let loadErrors = [];
+
             for (let path of pathsToTry) {
                 try {
-                    infoEl.textContent = `VERSUCHE LADEN: ${path}`;
-                    const res = await fetch(path);
-                    if (res.ok) {
-                        rawQuestions = await res.json();
-                        if (Array.isArray(rawQuestions) && rawQuestions.length > 0) {
-                            loaded = true;
-                            break;
+                    infoEl.textContent = `🔍 VERSUCHE: ${path}`;
+                    console.log(`Versuche zu laden: ${path}`);
+                    
+                    const res = await fetch(path, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
                         }
+                    });
+                    
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (Array.isArray(data) && data.length > 0) {
+                            rawQuestions = data;
+                            loaded = true;
+                            console.log(`✅ Erfolgreich geladen von: ${path}`);
+                            infoEl.textContent = `✅ GELADEN: ${rawQuestions.length} FRAGEN`;
+                            break;
+                        } else {
+                            console.warn(`⚠️ Leere oder ungültige JSON von: ${path}`);
+                        }
+                    } else {
+                        console.warn(`❌ HTTP ${res.status} von: ${path}`);
+                        loadErrors.push(`${path} (${res.status})`);
                     }
                 } catch (err) {
-                    console.warn(`Pfad ${path} fehlgeschlagen:`, err);
+                    console.warn(`❌ Fehler bei ${path}:`, err.message);
+                    loadErrors.push(`${path} (${err.message})`);
                 }
             }
 
-            if (loaded && rawQuestions.length > 0) {
+            // Wenn keine JSON geladen werden konnte, Fallback verwenden
+            if (!loaded || rawQuestions.length === 0) {
+                console.warn('⚠️ Verwende Fallback-Fragen');
+                rawQuestions = FALLBACK_QUESTIONS;
+                infoEl.textContent = `⚠️ FALLBACK: ${rawQuestions.length} FRAGEN (JSON NICHT GEFUNDEN)`;
+                
+                // Zeige Fehlerdetails im Tooltip
+                if (loadErrors.length > 0) {
+                    infoEl.title = `Fehler beim Laden:\n${loadErrors.join('\n')}`;
+                }
+            }
+
+            // Spinner ausblenden
+            if (spinner) spinner.style.display = 'none';
+            
+            if (rawQuestions.length > 0) {
                 initMenu();
             } else {
-                infoEl.textContent = 'FEHLER: KEINE FRAGEN-JSON GEFUNDEN';
-                startBtn.textContent = '[ ERNEUT VERSUCHEN ]';
+                infoEl.textContent = '❌ KEINE FRAGEN VERFÜGBAR';
+                btnText.textContent = '[ NEU LADEN ]';
                 startBtn.disabled = false;
                 startBtn.onclick = () => location.reload();
             }
@@ -292,7 +409,7 @@
 
         function initMenu() {
             const infoEl = document.getElementById('total-questions-info');
-            if (infoEl) infoEl.textContent = `DATENBANK: ${rawQuestions.length} FRAGEN GELADEN`;
+            if (infoEl) infoEl.textContent = `📊 DATENBANK: ${rawQuestions.length} FRAGEN GELADEN`;
             
             // Sammle alle einzigartigen Kategorien
             const uniqueCats = [...new Set(rawQuestions.map(q => q.kategorie))];
@@ -321,7 +438,7 @@
             const selectEl = document.getElementById('category-select');
             
             if (selectContainer && selectEl) {
-                selectEl.innerHTML = '<option value="all">ZUFÄLLIG (ALLE)</option>';
+                selectEl.innerHTML = '<option value="all">🎲 ZUFÄLLIG (ALLE)</option>';
                 
                 clusters.forEach((c) => {
                     let pfx = c.prefix;
@@ -343,7 +460,8 @@
             }
 
             const startBtn = document.getElementById('start-btn');
-            startBtn.textContent = '[ START ]';
+            const btnText = document.getElementById('start-btn-text');
+            btnText.textContent = '[ 🚀 START ]';
             startBtn.disabled = false;
             startBtn.onclick = startGame;
         }
@@ -356,7 +474,7 @@
                 const cluster = clusters[val];
                 count = rawQuestions.filter(q => cluster.items.includes(q.kategorie)).length;
             }
-            document.getElementById('total-questions-info').textContent = `DATENBANK: ${count} FRAGEN GEFILTERT`;
+            document.getElementById('total-questions-info').textContent = `📊 DATENBANK: ${count} FRAGEN GEFILTERT`;
         }
 
         const canvas = document.getElementById('confetti-canvas');
@@ -425,7 +543,14 @@
             }
 
             questions = [...filtered].sort(() => Math.random() - 0.5);
-            if (questions.length === 0) return;
+            if (questions.length === 0) {
+                // Wenn keine Fragen gefiltert wurden, alle nehmen
+                questions = [...rawQuestions].sort(() => Math.random() - 0.5);
+                if (questions.length === 0) {
+                    alert('Keine Fragen verfügbar!');
+                    return;
+                }
+            }
 
             currentQuestionIndex = 0;
             score = 0;
