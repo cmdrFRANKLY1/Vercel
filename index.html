@@ -253,7 +253,7 @@
         <div class="ceo-label">✦ strategic narrative</div>
         <span id="ceo-text" class="block">Loading...</span>
         <div class="ceo-footer flex justify-between items-center">
-          <span class="meta">generated · rndAbout</span>
+          <span class="meta" id="ceo-meta">generated · rndAbout</span>
         </div>
       </div>
     </div>
@@ -279,6 +279,7 @@
       const overlayIframe = document.getElementById('overlay-iframe');
       const escapeHint = document.getElementById('escape-hint');
       const ceoText = document.getElementById('ceo-text');
+      const ceoMeta = document.getElementById('ceo-meta');
       const mainTitle = document.getElementById('main-title');
       const combinedSubtitle = document.getElementById('combined-subtitle');
       const liveTime = document.getElementById('live-time');
@@ -288,6 +289,7 @@
       let rndAboutData = null;
       let rndTitles = null;
       let rndSubtitles = null;
+      let listOfNames = null; // for the meta tag
 
       // --- UTILITY ---
       function getRandomItem(arr) {
@@ -305,16 +307,20 @@
       // --- LOAD ALL RESOURCES ---
       async function loadAllResources() {
         try {
-          const [titles, subtitles, about] = await Promise.all([
+          // Load all four JSON files
+          const [titles, subtitles, about, names] = await Promise.all([
             fetchJson('resources/rndIndexTitles.json'),
             fetchJson('resources/rndIndexSubtitles.json'),
-            fetchJson('resources/rndAbout.json')
+            fetchJson('resources/rndAbout.json'),
+            fetchJson('resources/dnd/listOfNames.json')
           ]);
 
           rndTitles = titles;
           rndSubtitles = subtitles;
           rndAboutData = about;
+          listOfNames = names;
 
+          // Update title & subtitle
           if (rndTitles && rndTitles.length) {
             mainTitle.textContent = getRandomItem(rndTitles);
           } else {
@@ -329,7 +335,12 @@
             combinedSubtitle.textContent = 'tools • accessibility';
           }
 
+          // Update meta footer with two random names from listOfNames
+          updateMetaFooter();
+
+          // Generate CEO paragraph
           generateCEOParagraph();
+
           return true;
         } catch (err) {
           console.error('Failed to load resources:', err);
@@ -337,6 +348,24 @@
           combinedSubtitle.textContent = 'check console';
           ceoText.textContent = '❌ Could not load rndAbout.json';
           return false;
+        }
+      }
+
+      // --- UPDATE META FOOTER with two random names ---
+      function updateMetaFooter() {
+        if (listOfNames && Array.isArray(listOfNames) && listOfNames.length >= 2) {
+          // Get two random distinct names
+          const idx1 = Math.floor(Math.random() * listOfNames.length);
+          let idx2 = Math.floor(Math.random() * listOfNames.length);
+          // Ensure we don't pick the same name twice (if possible)
+          while (idx2 === idx1 && listOfNames.length > 1) {
+            idx2 = Math.floor(Math.random() * listOfNames.length);
+          }
+          const name1 = listOfNames[idx1] || 'anon';
+          const name2 = listOfNames[idx2] || 'anon';
+          ceoMeta.textContent = `generated · ${name1} · ${name2}`;
+        } else {
+          ceoMeta.textContent = 'generated · rndAbout';
         }
       }
 
