@@ -986,61 +986,59 @@
             }
 
             async function fetchRetiredApps() {
-                try {
-                    // Fetch directory listing or check files from ~\retired\
-                    let retiredFiles = [];
+                let retiredFiles = [];
+                const pathsToTry = ['./retired/', 'retired/'];
+
+                for (const path of pathsToTry) {
                     try {
-                        const response = await fetch('~\\retired\\');
+                        const response = await fetch(path, { headers: { 'Accept': 'text/html,application/xhtml+xml' } });
                         if (response.ok) {
                             const text = await response.text();
                             const parser = new DOMParser();
                             const doc = parser.parseFromString(text, 'text/html');
                             const links = doc.querySelectorAll('a');
+                            
                             links.forEach(link => {
                                 const href = link.getAttribute('href');
-                                if (href && href.endsWith('.html') && !href.includes('?')) {
-                                    const filename = href.split('/').pop().split('\\').pop();
-                                    retiredFiles.push({
-                                        name: filename,
-                                        title: filename.replace('.html', '').replace(/([A-Z])/g, ' $1').trim()
-                                    });
+                                if (href && href.toLowerCase().endsWith('.html') && !href.includes('?') && !href.includes('..')) {
+                                    const cleanHref = href.split('/').pop().split('\\').pop();
+                                    if (cleanHref && !retiredFiles.some(f => f.name.toLowerCase() === cleanHref.toLowerCase())) {
+                                        retiredFiles.push({
+                                            name: cleanHref,
+                                            path: path + cleanHref,
+                                            title: cleanHref.replace('.html', '').replace(/([A-Z])/g, ' $1').trim()
+                                        });
+                                    }
                                 }
                             });
+
+                            if (retiredFiles.length > 0) break;
                         }
                     } catch (err) {
-                        // If direct directory fetching is restricted or unavailable in sandbox, retiredFiles remains empty (no fallback)
+                        // Continue to next path candidate if CORS/fetch fails
                     }
+                }
 
-                    if (retiredListContainer) {
-                        retiredListContainer.innerHTML = '';
-                        if (retiredFiles.length === 0) {
-                            const emptyMsg = document.createElement('div');
-                            emptyMsg.style.cssText = 'padding: 10px 14px; font-size: 13px; color: var(--sub-color); text-align: center;';
-                            emptyMsg.setAttribute('data-i18n-key', 'nothingToShow');
-                            emptyMsg.textContent = i18n[currentLang].nothingToShow;
-                            retiredListContainer.appendChild(emptyMsg);
-                        } else {
-                            retiredFiles.forEach(app => {
-                                const a = document.createElement('a');
-                                a.href = `~\\retired\\${app.name}`;
-                                a.target = '_blank';
-                                a.className = 'grid-item';
-                                a.innerHTML = `
-                                    <svg class="monochrome-icon" style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
-                                    <span>${app.title}</span>
-                                `;
-                                retiredListContainer.appendChild(a);
-                            });
-                        }
-                    }
-                } catch (e) {
-                    if (retiredListContainer) {
-                        retiredListContainer.innerHTML = '';
+                if (retiredListContainer) {
+                    retiredListContainer.innerHTML = '';
+                    if (retiredFiles.length === 0) {
                         const emptyMsg = document.createElement('div');
                         emptyMsg.style.cssText = 'padding: 10px 14px; font-size: 13px; color: var(--sub-color); text-align: center;';
                         emptyMsg.setAttribute('data-i18n-key', 'nothingToShow');
                         emptyMsg.textContent = i18n[currentLang].nothingToShow;
                         retiredListContainer.appendChild(emptyMsg);
+                    } else {
+                        retiredFiles.forEach(app => {
+                            const a = document.createElement('a');
+                            a.href = app.path;
+                            a.target = '_blank';
+                            a.className = 'grid-item';
+                            a.innerHTML = `
+                                <svg class="monochrome-icon" style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                                <span>${app.title}</span>
+                            `;
+                            retiredListContainer.appendChild(a);
+                        });
                     }
                 }
             }
@@ -1156,7 +1154,6 @@
             setInterval(updateDateTime, 1000);
             setInterval(updateRetentionTimer, 1000);
             
-            // Ensure initial global text and toggle button state match English
             if (langToggleBtn) langToggleBtn.textContent = i18n[currentLang].label;
             updateTexts();
 
