@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-black text-zinc-100 select-none">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minimalist Index</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts for premium Sans look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #000000;
+      font-weight: 300;
+      letter-spacing: -0.01em;
+    }
+
+    /* Overlay wrapper - hidden by default */
+    #overlay-wrapper {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 5px;
+      animation: fadeIn 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    #overlay-wrapper.active {
+      display: flex;
+    }
+
+    #overlay-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      background: #111;
+      border-radius: 12px;
+      border: 1px solid #2a2a2a;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      overflow: hidden;
+      animation: slideUp 0.3s ease;
+    }
+
+    #overlay-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #fff;
+      display: block;
+    }
+
+    /* Grid items styling */
+    .grid-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 18px 24px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      text-align: center;
+      min-width: 180px;
+      flex: 0 1 auto;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .grid-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+
+    .grid-item .item-name {
+      font-size: 15px;
+      font-weight: 400;
+      color: #e8e8e8;
+      letter-spacing: -0.01em;
+    }
+
+    .grid-item .item-path {
+      font-size: 10px;
+      color: #555;
+      margin-top: 4px;
+      font-weight: 300;
+      letter-spacing: 0.2px;
+    }
+
+    /* New tab icon — subtle, positioned top-right */
+    .grid-item .open-new-tab {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      font-size: 14px;
+      color: #555;
+      opacity: 0;
+      transition: opacity 0.2s ease, color 0.2s ease;
+      line-height: 1;
+      cursor: pointer;
+      background: rgba(0,0,0,0.4);
+      border-radius: 6px;
+      padding: 0 4px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .grid-item:hover .open-new-tab {
+      opacity: 0.7;
+    }
+
+    .grid-item .open-new-tab:hover {
+      opacity: 1 !important;
+      color: #e0e0e0;
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.15);
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Loading state */
+    .loading-text {
+      color: #444;
+      font-size: 14px;
+      letter-spacing: 1px;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+
+    /* Empty state */
+    .empty-state {
+      color: #333;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Error state */
+    .error-state {
+      color: #c0392b;
+      font-size: 13px;
+      letter-spacing: 0.3px;
+      border: 1px solid #c0392b33;
+      padding: 12px 20px;
+      border-radius: 8px;
+      background: #c0392b11;
+    }
+
+    /* Escape hint */
+    .escape-hint {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.15);
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 1002;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      font-weight: 300;
+    }
+
+    #overlay-wrapper.active ~ .escape-hint {
+      opacity: 1;
+    }
+
+    .escape-hint.show {
+      opacity: 1;
+    }
+
+    /* CEO paragraph styling — clean, readable, all the way at the bottom */
+    #ceo-paragraph {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 0.95rem;
+      line-height: 1.8;
+      color: #b8b8b8;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      padding: 2rem 2.5rem;
+      max-width: 900px;
+      margin: 0 auto;
+      letter-spacing: -0.01em;
+      font-weight: 300;
+    }
+
+    #ceo-paragraph .ceo-label {
+      font-size: 0.6rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #444;
+      margin-bottom: 0.75rem;
+      font-weight: 400;
+    }
+
+    #ceo-text {
+      display: block;
+    }
+
+    .ceo-footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      padding-top: 1.25rem;
+      margin-top: 1rem;
+    }
+
+    .ceo-footer .meta {
+      font-size: 1.1rem;
+      color: #c8c8c8;
+      letter-spacing: 0.5px;
+      font-weight: 400;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-black text-zinc-100 p-8 md:p-12 flex flex-col">
+
+  <!-- Main Grid/Flex layout -->
+  <div class="w-full flex flex-col sm:flex-row justify-between items-start gap-6 flex-shrink-0">
+
+    <!-- TOP LEFT: Dynamic Title & Combined Subtitle -->
+    <div class="flex flex-col space-y-2">
+      <h1 id="main-title" class="text-2xl md:text-3xl font-light tracking-tight text-white select-none">
+        Loading...
+      </h1>
+      <p id="combined-subtitle" class="text-xs md:text-sm text-zinc-400 font-light tracking-wide pl-4 border-l border-zinc-800">
+        Loading...
+      </p>
+    </div>
+
+    <!-- TOP RIGHT: User Local Date & Time with Seconds -->
+    <div class="flex flex-col items-start sm:items-end text-left sm:text-right font-normal space-y-1">
+      <div id="live-time" class="text-xl md:text-2xl font-light tracking-wider text-zinc-100 tabular-nums">
+        00:00:00
+      </div>
+      <div id="live-date" class="text-xs tracking-widest text-zinc-500 uppercase font-medium">
+        Loading date...
+      </div>
+    </div>
+
+  </div>
+
+  <!-- GRID: List of HTML files dynamically loaded -->
+  <div class="mt-12 w-full flex-shrink-0">
+    <div id="grid-container" class="flex flex-wrap gap-4 items-center">
+      <div class="loading-text">Loading resources...</div>
+    </div>
+  </div>
+
+  <!-- Spacer to push CEO paragraph to the bottom -->
+  <div class="flex-1 min-h-[2rem]"></div>
+
+  <!-- CEO-style random paragraph (from rndAbout.json) — all the way at the bottom -->
+  <div class="mt-8 w-full flex-shrink-0">
+    <div class="w-full max-w-4xl mx-auto">
+      <div id="ceo-paragraph">
+        <div class="ceo-label">ABOUT US</div>
+        <span id="ceo-text" class="block">Loading...</span>
+        <div class="ceo-footer flex justify-between items-center">
+          <span class="meta" id="ceo-meta">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY WRAPPER -->
+  <div id="overlay-wrapper">
+    <div id="overlay-container">
+      <iframe id="overlay-iframe" src="about:blank"></iframe>
+    </div>
+  </div>
+
+  <!-- ESCAPE HINT -->
+  <div class="escape-hint" id="escape-hint">Press ESC to close</div>
+
+  <script>
+    (function() {
+      "use strict";
+
+      // --- DOM REFS ---
+      const gridContainer = document.getElementById('grid-container');
+      const overlayWrapper = document.getElementById('overlay-wrapper');
+      const overlayIframe = document.getElementById('overlay-iframe');
+      const escapeHint = document.getElementById('escape-hint');
+      const ceoText = document.getElementById('ceo-text');
+      const ceoMeta = document.getElementById('ceo-meta');
+      const mainTitle = document.getElementById('main-title');
+      const combinedSubtitle = document.getElementById('combined-subtitle');
+      const liveTime = document.getElementById('live-time');
+      const liveDate = document.getElementById('live-date');
+
+      // --- STATE ---
+      let rndAboutData = null;
+      let rndTitles = null;
+      let rndSubtitles = null;
+      let listOfNames = null;
+
+      // --- UTILITY ---
+      function getRandomItem(arr) {
+        if (!arr || !arr.length) return null;
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      // --- FETCH HELPERS ---
+      async function fetchJson(url) {
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status} fetching ${url}`);
+        return resp.json();
+      }
+
+      // --- LOAD ALL RESOURCES ---
+      async function loadAllResources() {
+        try {
+          const [titles, subtitles, about, names] = await Promise.all([
+            fetchJson('resources/rndIndexTitles.json'),
+            fetchJson('resources/rndIndexSubtitles.json'),
+            fetchJson('resources/rndAbout.json'),
+            fetchJson('resources/dnd/listOfNames.json')
+          ]);
+
+          rndTitles = titles;
+          rndSubtitles = subtitles;
+          rndAboutData = about;
+          listOfNames = names;
+
+          // Update title & subtitle
+          if (rndTitles && rndTitles.length) {
+            mainTitle.textContent = getRandomItem(rndTitles);
+          } else {
+            mainTitle.textContent = 'Index';
+          }
+
+          if (rndSubtitles && rndSubtitles["Niche Tools"] && rndSubtitles["Accessibility Features"]) {
+            const niche = getRandomItem(rndSubtitles["Niche Tools"]);
+            const access = getRandomItem(rndSubtitles["Accessibility Features"]);
+            combinedSubtitle.textContent = `${niche} • ${access}`;
+          } else {
+            combinedSubtitle.textContent = 'tools • accessibility';
+          }
+
+          // Update meta footer with random names + random year
+          updateMetaFooter();
+
+          // Generate CEO paragraph
+          generateCEOParagraph();
+
+          return true;
+        } catch (err) {
+          console.error('Failed to load resources:', err);
+          mainTitle.textContent = '⚠️ Load error';
+          combinedSubtitle.textContent = 'check console';
+          ceoText.textContent = '❌ Could not load rndAbout.json';
+          return false;
+        }
+      }
+
+      // --- UPDATE META FOOTER with names + random year ---
+      function updateMetaFooter() {
+        let displayText = '·';
+        if (listOfNames && Array.isArray(listOfNames) && listOfNames.length >= 2) {
+          const idx1 = Math.floor(Math.random() * listOfNames.length);
+          let idx2 = Math.floor(Math.random() * listOfNames.length);
+          while (idx2 === idx1 && listOfNames.length > 1) {
+            idx2 = Math.floor(Math.random() * listOfNames.length);
+          }
+          const name1 = listOfNames[idx1] || '';
+          const name2 = listOfNames[idx2] || '';
+          // Random year between 1800 and current year
+          const currentYear = new Date().getFullYear();
+          const year = Math.floor(Math.random() * (currentYear - 1800 + 1)) + 1800;
+          displayText = `${name1} ${name2} (${year})`;
+        }
+        ceoMeta.textContent = displayText;
+      }
+
+      // --- CEO GENERATOR ---
+      function generateCEOParagraph() {
+        if (!rndAboutData) {
+          ceoText.textContent = '⏳ rndAbout.json not loaded.';
+          return;
+        }
+
+        try {
+          const data = rndAboutData;
+          const opener = getRandomItem(data.openers) || '';
+          const transition = getRandomItem(data.transitions) || '';
+          const verb = getRandomItem(data.verbs) || 'transform';
+          const adjective = getRandomItem(data.adjectives) || 'strategic';
+          const noun = getRandomItem(data.nouns) || 'innovation';
+          const phrase = getRandomItem(data.phrases) || 'creating value';
+          const subject = getRandomItem(data.technology.subjects) || 'AI';
+          const generic = getRandomItem(data.technology.generic) || 'our platform';
+          const businessArea = getRandomItem(data.businessAreas) || 'operations';
+          const stakeholder = getRandomItem(data.stakeholders) || 'our customers';
+          const metric = getRandomItem(data.metrics) || 'significant gains';
+          const lesson = getRandomItem(data.leadershipLessons) || 'Leadership is about creating conditions.';
+          const humble = getRandomItem(data.humbleBrags) || 'We\'re still early.';
+          const contrast = getRandomItem(data.corporateContrasts) || 'not complexity, but clarity';
+          const future = getRandomItem(data.future) || 'The future is bright.';
+          const closer = getRandomItem(data.closers) || 'Onward.';
+
+          const template = getRandomItem(data.paragraphTemplates) || 
+            '{opener} {technologySentence} {transition}, we can {verb} {phrase}. {lesson} {humble} {future}';
+
+          function getTechnologySentence() {
+            const pattern = getRandomItem(data.technologyPatterns) || '{subject} is changing how we work.';
+            return pattern
+              .replace(/\{subject\}/g, subject)
+              .replace(/\{businessArea\}/g, businessArea)
+              .replace(/\{stakeholder\}/g, stakeholder)
+              .replace(/\{noun\}/g, noun)
+              .replace(/\{generic\}/g, generic)
+              .replace(/\{verb\}/g, verb)
+              .replace(/\{adjective\}/g, adjective)
+              .replace(/\{phrase\}/g, phrase);
+          }
+
+          let paragraph = template
+            .replace(/\{opener\}/g, opener)
+            .replace(/\{transition\}/g, transition)
+            .replace(/\{verb\}/g, verb)
+            .replace(/\{adjective\}/g, adjective)
+            .replace(/\{noun\}/g, noun)
+            .replace(/\{phrase\}/g, phrase)
+            .replace(/\{subject\}/g, subject)
+            .replace(/\{generic\}/g, generic)
+            .replace(/\{businessArea\}/g, businessArea)
+            .replace(/\{stakeholder\}/g, stakeholder)
+            .replace(/\{metric\}/g, metric)
+            .replace(/\{lesson\}/g, lesson)
+            .replace(/\{humble\}/g, humble)
+            .replace(/\{contrast\}/g, contrast)
+            .replace(/\{future\}/g, future)
+            .replace(/\{closer\}/g, closer)
+            .replace(/\{technologySentence\}/g, getTechnologySentence());
+
+          if (data.sentenceFragments) {
+            const stSen = getRandomItem(data.sentenceFragments.stakeholderSentence) || '';
+            const metSen = getRandomItem(data.sentenceFragments.metricSentence) || '';
+            paragraph = paragraph
+              .replace(/\{stakeholderSentence\}/g, stSen)
+              .replace(/\{metricSentence\}/g, metSen.replace(/\{metric\}/g, metric));
+          }
+
+          paragraph = paragraph.replace(/\s+/g, ' ').trim();
+          ceoText.textContent = paragraph || '⚠️ Empty paragraph generated.';
+        } catch (e) {
+          console.warn('Error generating CEO paragraph:', e);
+          ceoText.textContent = '⚠️ Error generating paragraph.';
+        }
+      }
+
+      // --- LOAD HTML LIST ---
+      async function loadHtmlList() {
+        try {
+          const data = await fetchJson('resources/htmlList.json');
+          if (!Array.isArray(data)) throw new Error('htmlList.json is not an array');
+          return data;
+        } catch (error) {
+          console.error('Failed to load resources/htmlList.json:', error);
+          return null;
+        }
+      }
+
+      // --- RENDER GRID ---
+      function renderGrid(items) {
+        gridContainer.innerHTML = '';
+
+        if (!items) {
+          gridContainer.innerHTML = `
+            <div class="error-state">
+              ⚠️ Failed to load resources/htmlList.json<br>
+              <span style="font-size:11px;color:#666;">Make sure the file exists at: resources/htmlList.json</span>
+            </div>
+          `;
+          return;
+        }
+
+        if (items.length === 0) {
+          gridContainer.innerHTML = `<div class="empty-state">📭 No resources found in htmlList.json</div>`;
+          return;
+        }
+
+        const sorted = [...items].sort((a, b) => a.localeCompare(b));
+
+        sorted.forEach((path) => {
+          const div = document.createElement('div');
+          div.className = 'grid-item';
+
+          const fileName = path.split('/').pop() || path;
+          const displayName = fileName.replace(/\.html$/i, '');
+
+          // inner content: name + path + new-tab icon
+          div.innerHTML = `
+            <div class="item-name">${displayName}</div>
+            <div class="item-path">${path}</div>
+            <a href="${path}" target="_blank" title="Open in new tab" class="open-new-tab" onclick="event.stopPropagation();">↗</a>
+          `;
+
+          // click on the item itself opens overlay
+          div.addEventListener('click', (e) => {
+            // ignore if the click originated from the new-tab link
+            if (e.target.closest('.open-new-tab')) return;
+            openOverlay(path);
+          });
+
+          gridContainer.appendChild(div);
+        });
+      }
+
+      // --- OVERLAY ---
+      function openOverlay(path) {
+        overlayIframe.src = path;
+        overlayWrapper.classList.add('active');
+        escapeHint.classList.add('show');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeOverlay() {
+        if (overlayIframe.src !== 'about:blank') {
+          if (confirm('Are you sure you want to close this page?')) {
+            overlayIframe.src = 'about:blank';
+            overlayWrapper.classList.remove('active');
+            escapeHint.classList.remove('show');
+            document.body.style.overflow = '';
+          }
+        } else {
+          overlayWrapper.classList.remove('active');
+          escapeHint.classList.remove('show');
+          document.body.style.overflow = '';
+        }
+      }
+
+      // --- CLOCK ---
+      function updateClock() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        liveTime.textContent = `${hours}:${minutes}:${seconds}`;
+        const options = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+        liveDate.textContent = now.toLocaleDateString(undefined, options);
+      }
+
+      // --- EVENTS ---
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && overlayWrapper.classList.contains('active')) {
+          closeOverlay();
+        }
+      });
+
+      // --- INIT ---
+      window.onload = async function() {
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        await loadAllResources();
+
+        const htmlItems = await loadHtmlList();
+        renderGrid(htmlItems);
+      };
+
+    })();
+  </script>
+</body>
+</html>
