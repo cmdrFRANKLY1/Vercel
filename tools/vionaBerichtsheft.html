@@ -168,7 +168,6 @@
             transition: all 0.2s ease;
         }
         .profile-pic-wrapper:hover { border-color: var(--border-hover); }
-        .profile-pic { width: 100%; height: 100%; object-fit: cover; display: none; }
         .profile-fallback-icon { width: 24px; height: 24px; fill: var(--sub-color); }
 
         .main-content {
@@ -500,8 +499,11 @@
                         adjektive: "Adjectives (Eigenschaftswörter)",
                         artikel: "Articles (Begleiter)",
                         pronomen: "Pronouns (Fürwörter)",
+                        adverbien: "Adverbs (Umstandswörter)",
                         praepositionen: "Prepositions (Verhältniswörter)",
                         konjunktionen: "Conjunctions (Bindewörter)",
+                        interjektionen: "Interjections (Ausrufewörter)",
+                        numerale: "Numerals (Zahlwörter)",
                         sonstige: "Other / Unclassified"
                     }
                 }, 
@@ -527,8 +529,11 @@
                         adjektive: "Adjektive (Eigenschaftswörter)",
                         artikel: "Artikel (Begleiter)",
                         pronomen: "Pronomen (Fürwörter)",
+                        adverbien: "Adverbien (Umstandswörter)",
                         praepositionen: "Präpositionen (Verhältniswörter)",
                         konjunktionen: "Konjunktionen (Bindewörter)",
+                        interjektionen: "Interjektionen (Ausrufewörter)",
+                        numerale: "Numerale (Zahlwörter)",
                         sonstige: "Sonstige / Unklassifiziert"
                     }
                 } 
@@ -898,10 +903,13 @@
                 });
 
                 const { min, max } = getMinMaxDates();
-                document.getElementById('prevMonthBtn').disabled = (calendarYear < min.getFullYear() || (calendarYear === min.getFullYear() && calendarMonth <= min.getMonth()));
-                document.getElementById('firstMonthBtn').disabled = document.getElementById('prevMonthBtn').disabled;
-                document.getElementById('nextMonthBtn').disabled = (calendarYear > max.getFullYear() || (calendarYear === max.getFullYear() && calendarMonth >= max.getMonth()));
-                document.getElementById('lastMonthBtn').disabled = document.getElementById('nextMonthBtn').disabled;
+                const atMin = calendarYear < min.getFullYear() || (calendarYear === min.getFullYear() && calendarMonth <= min.getMonth());
+                const atMax = calendarYear > max.getFullYear() || (calendarYear === max.getFullYear() && calendarMonth >= max.getMonth());
+
+                document.getElementById('prevMonthBtn').disabled = atMin;
+                document.getElementById('firstMonthBtn').disabled = atMin;
+                document.getElementById('nextMonthBtn').disabled = atMax;
+                document.getElementById('lastMonthBtn').disabled = atMax;
             }
 
             function getEarliestDate() {
@@ -1009,15 +1017,12 @@
                 ];
 
                 let html = '';
-                let hasResults = false;
-
                 for (const posKey of orderedKeys) {
                     const wordMap = computedWordCountsByPOS[posKey] || {};
                     const filteredEntries = Object.entries(wordMap)
                         .filter(([word]) => !term || word.includes(term))
                         .sort((a, b) => b[1] - a[1]);
 
-                    hasResults = true;
                     html += `
                         <div class="pos-section">
                             <div class="pos-title">
