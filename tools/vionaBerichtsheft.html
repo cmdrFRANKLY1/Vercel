@@ -50,8 +50,9 @@
             --calendar-border: #e2e8f0;
             --calendar-today-bg: #eff6ff;
             --calendar-today-border: #3b82f6;
-            --calendar-search-match: #fef08a;
-            --calendar-search-match-dark: #713f12;
+            --calendar-search-match: #374151; /* Dark gray for light mode search match */
+            --calendar-search-match-text: #ffffff;
+            --timer-color: #0f172a; /* Dark timer text in light mode */
         }
 
         [data-theme="dark"] {
@@ -72,8 +73,9 @@
             --calendar-border: #3c4043;
             --calendar-today-bg: rgba(138, 180, 248, 0.1);
             --calendar-today-border: #8ab4f8;
-            --calendar-search-match: #422006;
-            --calendar-search-match-dark: #fef08a;
+            --calendar-search-match: #9aa0a6; /* Light gray for dark mode search match */
+            --calendar-search-match-text: #121212;
+            --timer-color: #ffffff; /* White timer text in dark mode */
         }
 
         body {
@@ -219,7 +221,7 @@
             transition: background 0.2s ease;
         }
         .card-header:hover { background: var(--hover-bg); }
-        .report-card:not(.collapsed) .card-header { border-bottom: 1px solid var(--border-color); }
+        .report-card.collapsed .card-header { border-bottom: 1px solid var(--border-color); }
         .card-body { padding: 24px; display: block; }
         .report-card.collapsed .card-body { display: none; }
 
@@ -296,7 +298,7 @@
         .analytics-card h3 svg { width: 20px; height: 20px; fill: var(--border-hover); }
         .timer-display {
             font-family: "JetBrains Mono", monospace; font-size: 22px; font-weight: 700;
-            color: #ffffff; padding: 16px; background: var(--input-bg);
+            color: var(--timer-color); padding: 16px; background: var(--input-bg);
             border: 1px solid var(--border-color); border-radius: 8px; text-align: center;
         }
 
@@ -366,8 +368,8 @@
             <span id="viewToggleText">Calendar View</span>
         </button>
         <button class="view-tab" id="detailViewBtn">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
-            <span id="detailToggleText">Detailed View</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+            <span id="detailToggleText">Time Tables</span>
         </button>
     </div>
 
@@ -428,44 +430,58 @@
                 <div class="analytics-card">
                     <h3>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
-                        <span id="lblTimePassed">Ausbildungs Beginn</span>
+                        <span id="lblStart">Ausbildungsbeginn</span>
                     </h3>
-                    <div id="timePassedDisplay" class="timer-display">0 days, 00h 00m 00s</div>
-                </div>
-                <div class="analytics-card">
-                    <h3>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-                        <span id="lblCountdownTarget">Ausbildungs Ende</span>
-                    </h3>
-                    <div id="countdownDisplay" class="timer-display">0 days, 00h 00m 00s</div>
+                    <div id="timerStart" class="timer-display">0 days ago</div>
                 </div>
                 <div class="analytics-card">
                     <h3>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                        <span id="lblTopicProject">Last time we learned about Project Management</span>
+                        <span id="lblCompletion">Ausbildungsende</span>
                     </h3>
-                    <div id="timerProject" class="timer-display">0 days, 00h 00m 00s</div>
+                    <div id="timerCompletion" class="timer-display">in 0 days</div>
+                </div>
+                <div class="analytics-card">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                        <span id="lblFeierabend">Zeit bis zum Feierabend</span>
+                    </h3>
+                    <div id="timerFeierabend" class="timer-display">00h 00m 00s</div>
+                </div>
+                <div class="analytics-card">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+                        <span id="lblWeekend">Time to next Weekend</span>
+                    </h3>
+                    <div id="timerWeekend" class="timer-display">00h 00m 00s</div>
+                </div>
+                <div class="analytics-card">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                        <span id="lblTopicProject">Project Management</span>
+                    </h3>
+                    <div id="timerProject" class="timer-display">00h 00m 00s ago</div>
                 </div>
                 <div class="analytics-card">
                     <h3>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
                         <span id="lblTopicSelfLearning">Last independent learning</span>
                     </h3>
-                    <div id="timerSelfLearning" class="timer-display">0 days, 00h 00m 00s</div>
+                    <div id="timerSelfLearning" class="timer-display">00h 00m 00s ago</div>
                 </div>
                 <div class="analytics-card">
                     <h3>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
-                        <span id="lblTopicSecurity">Last time we learned about IT-Security</span>
+                        <span id="lblTopicSecurity">IT-Security</span>
                     </h3>
-                    <div id="timerSecurity" class="timer-display">0 days, 00h 00m 00s</div>
+                    <div id="timerSecurity" class="timer-display">00h 00m 00s ago</div>
                 </div>
                 <div class="analytics-card">
                     <h3>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
-                        <span id="lblTopicTechnology">Last time we learned about IT-Technology</span>
+                        <span id="lblTopicTechnology">IT-Technology</span>
                     </h3>
-                    <div id="timerTechnology" class="timer-display">0 days, 00h 00m 00s</div>
+                    <div id="timerTechnology" class="timer-display">00h 00m 00s ago</div>
                 </div>
             </div>
         </div>
@@ -499,15 +515,18 @@
                     monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
                     noReports: "No Reports Found", errorLoading: "Error Loading Data",
                     reportBooks: "Report Books", trainingRecord: "Training Record",
-                    calendarView: "Calendar View", detailedView: "Detailed View", today: "Today", prev: "‹ Prev", next: "Next ›",
+                    calendarView: "Calendar View", detailedView: "Time Tables", today: "Today", prev: "‹ Prev", next: "Next ›",
                     first: "« First", last: "Last »",
-                    timePassed: "Apprenticeship start",
-                    countdownTarget: "Apprenticeship completion",
+                    start: "Apprenticeship start",
+                    completion: "Apprenticeship completion",
+                    feierabend: "Time until end of workday",
+                    weekend: "Time to next Weekend",
                     topicProject: "Last time we learned about Project Management",
                     topicSelfLearning: "Last independent learning",
                     topicSecurity: "Last time we learned about IT-Security",
                     topicTechnology: "Last time we learned about IT-Technology",
-                    neverLogged: "Never logged"
+                    neverLogged: "Never logged",
+                    weekendReached: "Weekend is here!"
                 }, 
                 de: { 
                     label: "DE", searchPlaceholder: "Suche nach Woche, Thema, Tag...", refresh: "Aktualisieren",
@@ -517,15 +536,18 @@
                     monthNames: ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"],
                     noReports: "Keine Berichte gefunden", errorLoading: "Fehler beim Laden der Daten",
                     reportBooks: "Berichtshefte", trainingRecord: "Ausbildungsnachweis",
-                    calendarView: "Kalenderansicht", detailedView: "Detailansicht", today: "Heute", prev: "‹ Zurück", next: "Weiter ›",
+                    calendarView: "Kalenderansicht", detailedView: "Zeittabellen", today: "Heute", prev: "‹ Zurück", next: "Weiter ›",
                     first: "« Erste", last: "Letzte »",
-                    timePassed: "Ausbildungs Beginn",
-                    countdownTarget: "Ausbildungs Ende",
-                    topicProject: "Letztes Mal Projektmanagement",
-                    topicSelfLearning: "Letztes Mal selbstständiges Lernen",
-                    topicSecurity: "Letztes Mal IT-Security",
-                    topicTechnology: "Letztes Mal IT-Technology",
-                    neverLogged: "Noch nie erfasst"
+                    start: "Ausbildungsbeginn",
+                    completion: "Ausbildungsende",
+                    feierabend: "Zeit bis zum Feierabend",
+                    weekend: "Zeit bis zum nächsten Wochenende",
+                    topicProject: "Last time we learned about Project Management",
+                    topicSelfLearning: "Last independent learning",
+                    topicSecurity: "Last time we learned about IT-Security",
+                    topicTechnology: "Last time we learned about IT-Technology",
+                    neverLogged: "Noch nie erfasst",
+                    weekendReached: "Wochenende ist da!"
                 } 
             };
             
@@ -534,6 +556,7 @@
             let allReports = [];
             let filteredReports = [];
             let searchTerm = '';
+            let searchDebounceTimer = null;
             let expandedCards = new Set();
             let currentView = 'list';
 
@@ -594,8 +617,10 @@
                 document.getElementById('firstMonthBtn').textContent = lang.first;
                 document.getElementById('lastMonthBtn').textContent = lang.last;
 
-                document.getElementById('lblTimePassed').textContent = lang.timePassed;
-                document.getElementById('lblCountdownTarget').textContent = lang.countdownTarget;
+                document.getElementById('lblStart').textContent = lang.start;
+                document.getElementById('lblCompletion').textContent = lang.completion;
+                document.getElementById('lblFeierabend').textContent = lang.feierabend;
+                document.getElementById('lblWeekend').textContent = lang.weekend;
                 document.getElementById('lblTopicProject').textContent = lang.topicProject;
                 document.getElementById('lblTopicSelfLearning').textContent = lang.topicSelfLearning;
                 document.getElementById('lblTopicSecurity').textContent = lang.topicSecurity;
@@ -618,6 +643,7 @@
                 document.getElementById("themeIcon").innerHTML = isDark ?
                     '<path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>' :
                     '<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>';
+                if (currentView === 'calendar') renderCalendarView();
             });
 
             setInterval(() => {
@@ -642,6 +668,9 @@
             detailViewBtn.addEventListener('click', () => switchView('detailed'));
 
             function switchView(view) {
+                if (window.scrollY > 0) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
                 currentView = view;
                 listViewBtn.classList.remove('active-tab');
                 calViewBtn.classList.remove('active-tab');
@@ -734,6 +763,7 @@
                             
                             content = content.replace(/(?:\s+\b8\b[\s\S]*)$/, '').trim();
                             content = content.replace(/\s+8\s*$/, '').trim();
+                            content = content.replace(/\s+\b8\b.*$/gm, '').trim();
 
                             let formattedLines = [];
                             for (let line of content.split('\n').map(l => l.trim()).filter(l => l.length > 0)) {
@@ -869,6 +899,7 @@
                 let html = lang.shortDays.map(d => '<div class="cal-day-header">' + d + '</div>').join('');
                 for (let i = 0; i < offset; i++) html += '<div class="cal-cell empty"></div>';
 
+                const isDark = body.getAttribute("data-theme") === "dark";
                 for (let i = 1; i <= daysInMonth; i++) {
                     const isToday = now.getFullYear() === calendarYear && now.getMonth() === calendarMonth && now.getDate() === i;
                     const key = calendarYear + '-' + calendarMonth + '-' + i;
@@ -879,9 +910,18 @@
                         isSearchMatch = content.toLowerCase().includes(searchTerm);
                     }
                     
-                    html += '<div class="cal-cell ' + (isToday ? 'today' : '') + ' ' + (content ? 'has-entry' : '') + '" ' + (content ? 'data-key="' + key + '"' : '') + ' ' + (isSearchMatch ? 'style="border: 2px solid var(--calendar-today-border); background-color: var(--calendar-search-match);"' : '') + '>' +
-                            '<div class="cal-date">' + i + '</div>' +
-                            (content ? '<div class="cal-preview">' + content.replace(/<[^>]*>?/gm, '') + '</div>' : '') +
+                    let highlightStyle = '';
+                    if (isSearchMatch) {
+                        if (isDark) {
+                            highlightStyle = 'style="background-color: #9aa0a6; color: #121212; border-color: #9aa0a6;"';
+                        } else {
+                            highlightStyle = 'style="background-color: #374151; color: #ffffff; border-color: #374151;"';
+                        }
+                    }
+
+                    html += '<div class="cal-cell ' + (isToday ? 'today' : '') + ' ' + (content ? 'has-entry' : '') + '" ' + (content ? 'data-key="' + key + '"' : '') + ' ' + highlightStyle + '>' +
+                            '<div class="cal-date" ' + (isSearchMatch && !isDark ? 'style="color: #ffffff;"' : '') + '>' + i + '</div>' +
+                            (content ? '<div class="cal-preview" ' + (isSearchMatch && !isDark ? 'style="color: #ffffff; opacity: 0.9;"' : '') + '>' + content.replace(/<[^>]*>?/gm, '') + '</div>' : '') +
                             '</div>';
                 }
                 
@@ -933,59 +973,87 @@
                 return latestDate;
             }
 
-            function formatDurationSince(dateObj) {
-                if (!dateObj) return i18n[currentLang].neverLogged;
-                const now = new Date();
-                const diffMs = now.getTime() - dateObj.getTime();
-                if (diffMs < 0) return "0 days, 00h 00m 00s";
-                
-                const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                const hrs = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
-                const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-                const secs = Math.floor((diffMs % (1000 * 60)) / 1000).toString().padStart(2, '0');
-                return days + ' days, ' + hrs + 'h ' + mins + 'm ' + secs + 's';
+            function formatHoursMinutesSecondsAgo(diffMs) {
+                if (diffMs < 0) return currentLang === 'en' ? "00h 00m 00s ago" : "vor 00h 00m 00s";
+                const totalSecs = Math.floor(diffMs / 1000);
+                const totalHours = Math.floor(totalSecs / 3600);
+                const mins = Math.floor((totalSecs % 3600) / 60).toString().padStart(2, '0');
+                const secs = (totalSecs % 60).toString().padStart(2, '0');
+                const core = totalHours + 'h ' + mins + 'm ' + secs + 's';
+                return currentLang === 'en' ? core + ' ago' : 'vor ' + core;
+            }
+
+            function formatCountdownHoursMinutesSeconds(diffMs) {
+                if (diffMs <= 0) return i18n[currentLang].weekendReached;
+                const totalSecs = Math.floor(diffMs / 1000);
+                const totalHours = Math.floor(totalSecs / 3600);
+                const mins = Math.floor((totalSecs % 3600) / 60).toString().padStart(2, '0');
+                const secs = (totalSecs % 60).toString().padStart(2, '0');
+                return totalHours + 'h ' + mins + 'm ' + secs + 's';
             }
 
             function updateDetailedTimers() {
+                const lang = i18n[currentLang];
                 const earliest = getEarliestDate();
                 const now = new Date();
                 
                 const diffMs = now.getTime() - earliest.getTime();
+                let startedDays = 0;
                 if (diffMs >= 0) {
-                    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                    const hrs = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
-                    const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-                    const secs = Math.floor((diffMs % (1000 * 60)) / 1000).toString().padStart(2, '0');
-                    document.getElementById('timePassedDisplay').textContent = days + ' days, ' + hrs + 'h ' + mins + 'm ' + secs + 's';
-                } else {
-                    document.getElementById('timePassedDisplay').textContent = '0 days, 00h 00m 00s';
+                    startedDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
                 }
 
                 const target = new Date(earliest);
                 target.setFullYear(target.getFullYear() + 2);
                 const targetMs = target.getTime() - now.getTime();
                 
+                let endDays = 0;
                 if (targetMs >= 0) {
-                    const tDays = Math.floor(targetMs / (1000 * 60 * 60 * 24));
-                    const tHrs = Math.floor((targetMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
-                    const tMins = Math.floor((targetMs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-                    const tSecs = Math.floor((targetMs % (1000 * 60)) / 1000).toString().padStart(2, '0');
-                    document.getElementById('countdownDisplay').textContent = tDays + ' days, ' + tHrs + 'h ' + tMins + 'm ' + tSecs + 's';
-                } else {
-                    document.getElementById('countdownDisplay').textContent = 'Target reached!';
+                    endDays = Math.floor(targetMs / (1000 * 60 * 60 * 24));
                 }
 
+                if (currentLang === 'en') {
+                    document.getElementById('timerStart').textContent = startedDays + ' days ago';
+                    document.getElementById('timerCompletion').textContent = 'in ' + endDays + ' days';
+                } else {
+                    document.getElementById('timerStart').textContent = 'vor ' + startedDays + ' Tagen';
+                    document.getElementById('timerCompletion').textContent = 'in ' + endDays + ' Tagen';
+                }
+
+                // Feierabend countdown (Monday-Friday, target 16:00)
+                const dayOfWeek = now.getDay();
+                if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                    const feierabendTarget = new Date(now);
+                    feierabendTarget.setHours(16, 0, 0, 0);
+                    const feierDiff = feierabendTarget.getTime() - now.getTime();
+                    document.getElementById('timerFeierabend').textContent = formatCountdownHoursMinutesSeconds(feierDiff);
+                } else {
+                    document.getElementById('timerFeierabend').textContent = currentLang === 'en' ? 'Weekend!' : 'Wochenende!';
+                }
+
+                // Time to next Weekend (Friday 16:00)
+                const nextWeekend = new Date(now);
+                const currentDay = now.getDay();
+                let daysUntilFriday = (5 - currentDay + 7) % 7;
+                if (daysUntilFriday === 0 && (now.getHours() > 16 || (now.getHours() === 16 && now.getMinutes() > 0))) {
+                    daysUntilFriday = 7;
+                }
+                nextWeekend.setDate(now.getDate() + daysUntilFriday);
+                nextWeekend.setHours(16, 0, 0, 0);
+                const weekendDiff = nextWeekend.getTime() - now.getTime();
+                document.getElementById('timerWeekend').textContent = formatCountdownHoursMinutesSeconds(weekendDiff);
+
                 const projectDate = findLatestDateForTopic(/\b(?:projektmanagement|projekt\s+management|projectmanagement|project\s+management)\b/i);
-                document.getElementById('timerProject').textContent = formatDurationSince(projectDate);
+                document.getElementById('timerProject').textContent = projectDate ? formatHoursMinutesSecondsAgo(now.getTime() - projectDate.getTime()) : lang.neverLogged;
 
                 const selfLearningDate = findLatestDateForTopic(/\b(?:selbstständiges\s*lernen|selbstaendiges\s*lernen|eigenstudium|recherche)\b/i);
-                document.getElementById('timerSelfLearning').textContent = formatDurationSince(selfLearningDate);
+                document.getElementById('timerSelfLearning').textContent = selfLearningDate ? formatHoursMinutesSecondsAgo(now.getTime() - selfLearningDate.getTime()) : lang.neverLogged;
 
                 const securityDate = findLatestDateForTopic(/\b(?:it\s*[-–]?\s*security|i\s+t\s+security|it\s*[-–]?\s*sicherheit|i\s+t\s+sicherheit)\b/i);
-                document.getElementById('timerSecurity').textContent = formatDurationSince(securityDate);
+                document.getElementById('timerSecurity').textContent = securityDate ? formatHoursMinutesSecondsAgo(now.getTime() - securityDate.getTime()) : lang.neverLogged;
 
                 const technologyDate = findLatestDateForTopic(/\b(?:it\s*[-–]?\s*technology|i\s+t\s+technology|it\s*[-–]?\s*technologie|i\s+t\s+technologie)\b/i);
-                document.getElementById('timerTechnology').textContent = formatDurationSince(technologyDate);
+                document.getElementById('timerTechnology').textContent = technologyDate ? formatHoursMinutesSecondsAgo(now.getTime() - technologyDate.getTime()) : lang.neverLogged;
             }
 
             function renderDetailedView() {
@@ -1038,6 +1106,12 @@
                 document.getElementById('calendarModal').style.display = 'none';
             });
 
+            document.getElementById('calendarModal').addEventListener('click', (e) => {
+                if (e.target.id === 'calendarModal') {
+                    document.getElementById('calendarModal').style.display = 'none';
+                }
+            });
+
             document.getElementById('copyModalBtn').addEventListener('click', () => {
                 const title = document.getElementById('modalTitle').textContent;
                 const content = document.getElementById('modalContent').textContent;
@@ -1067,8 +1141,15 @@
                     r.name.toLowerCase().includes(searchTerm) || 
                     Object.values(r.days).map(d => d.content).join(' ').toLowerCase().includes(searchTerm)
                 ) : [...allReports];
-                if (currentView === 'list') render(filteredReports);
-                if (currentView === 'calendar') renderCalendarView();
+                
+                if (currentView === 'list') {
+                    render(filteredReports);
+                } else if (currentView === 'calendar') {
+                    clearTimeout(searchDebounceTimer);
+                    searchDebounceTimer = setTimeout(() => {
+                        renderCalendarView();
+                    }, 1000);
+                }
             });
 
             document.getElementById('refreshBtn').addEventListener('click', loadData);
