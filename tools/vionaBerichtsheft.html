@@ -104,7 +104,7 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 84px; /* Covers the 20px offset + 44px buttons + padding */
+            height: 84px;
             background-color: var(--bg-color);
             z-index: 900;
             transition: background-color 0.2s;
@@ -157,9 +157,7 @@
             border-color: var(--border-hover);
         }
 
-        .retention-part { font-weight: 600; color: var(--text-color); }
-        .date-part { font-weight: 600; color: var(--text-color); }
-        .time-part { font-weight: 600; color: var(--text-color); }
+        .retention-part, .date-part, .time-part { font-weight: 600; color: var(--text-color); }
 
         .lang-toggle {
             background: var(--lang-toggle-bg);
@@ -316,7 +314,7 @@
         .profile-action-btn:hover { background: var(--hover-bg); border-color: var(--border-hover); }
 
         .main-content {
-            margin-top: 84px; /* Offset to start right below the fixed body::before background */
+            margin-top: 84px;
             padding: 0 24px 60px 24px;
             max-width: 1600px;
             margin-left: auto;
@@ -331,18 +329,14 @@
             flex-wrap: wrap;
             gap: 16px;
             align-items: center;
-            
-            /* Sticky Configuration */
             position: sticky;
-            top: 84px; /* Stick exactly at the edge of the fixed background */
+            top: 84px;
             z-index: 900;
-            background-color: var(--bg-color); /* Hide scrolling cards */
-            
-            /* Visual padding & pulling to container edges */
+            background-color: var(--bg-color);
             padding: 20px 24px 24px 24px; 
             margin: 0 -24px; 
             transition: background-color 0.2s;
-            border-bottom: 1px solid var(--border-color); /* Optional: distinct line separating stuck header */
+            border-bottom: 1px solid var(--border-color);
         }
 
         .search-wrapper {
@@ -636,16 +630,12 @@
             .day-grid { grid-template-columns: repeat(3, 1fr); }
         }
         @media (max-width: 900px) {
-            body::before { display: none; } /* Disable fixed header background on mobile */
+            body::before { display: none; }
             .day-grid { grid-template-columns: repeat(2, 1fr); }
             .top-left { max-width: 100%; position: relative; top: 0; left: 0; padding: 20px 24px 0; justify-content: center;}
             .top-right { max-width: 100%; position: relative; top: 0; right: 0; padding: 20px 24px 0; justify-content: center; }
             .main-content { margin-top: 0; padding-top: 24px; }
-            .controls-row { 
-                top: 0; /* Sticky to very top of viewport */
-                padding-top: 16px; 
-                margin-top: -24px; /* Pull into padding */
-            }
+            .controls-row { top: 0; padding-top: 16px; margin-top: -24px; }
         }
         @media (max-width: 600px) {
             .day-grid { grid-template-columns: 1fr; }
@@ -665,11 +655,10 @@
     </div>
 
     <div class="top-left">
-        <a href="../index.html" class="dynamic-title-box" style="text-decoration: none;">
+        <a href="../index.html" class="dynamic-title-box" style="text-decoration: none;" title="Back">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            Back
         </a>
-        <div class="dynamic-subtitle-box">Berichtsheft · Viona</div>
+        <div class="dynamic-subtitle-box" id="appTitle">VIONA Report Book</div>
     </div>
 
     <div class="top-right">
@@ -739,6 +728,7 @@
             const i18n = { 
                 en: { 
                     label: "EN",
+                    appTitle: "VIONA Report Book",
                     searchPlaceholder: "Search by week, topic, day...",
                     refresh: "Refresh",
                     reports: "Reports:",
@@ -754,6 +744,7 @@
                 }, 
                 de: { 
                     label: "DE",
+                    appTitle: "VIONA Berichtsheft",
                     searchPlaceholder: "Suche nach Woche, Thema, Tag...",
                     refresh: "Aktualisieren",
                     reports: "Berichte:",
@@ -771,7 +762,7 @@
             
             let currentLang = "en";
             let timeLocale = "en-US";
-            let dateLocale = "en-US";
+            let dateLocale = "en-GB"; // Using en-GB to default to clean DD/MM/YYYY formatting in English
             let retentionSeconds = 0;
 
             const langToggleBtn = document.getElementById("langToggle");
@@ -842,6 +833,8 @@
 
             function updateStaticUIText() {
                 const lang = i18n[currentLang];
+                const appTitle = document.getElementById('appTitle');
+                if (appTitle) appTitle.textContent = lang.appTitle;
                 document.getElementById('searchInput').placeholder = lang.searchPlaceholder;
                 document.getElementById('lblRefresh').textContent = lang.refresh;
                 document.getElementById('lblReports').textContent = lang.reports;
@@ -854,7 +847,7 @@
                     currentLang = currentLang === "en" ? "de" : "en";
                     langToggleBtn.textContent = i18n[currentLang].label;
                     timeLocale = currentLang === "en" ? "en-US" : "de-DE";
-                    dateLocale = currentLang === "en" ? "en-US" : "de-DE";
+                    dateLocale = currentLang === "en" ? "en-GB" : "de-DE"; // Adapts correctly based on selected lang
                     updateDateTime();
                     updateStaticUIText();
                     if (filteredReports) render(filteredReports);
@@ -930,7 +923,6 @@
                     if (!docFile) return { text: '', days: {} };
                     const xmlText = await docFile.async('string');
                     
-                    // Extract text by paragraphs (<w:p>) to preserve natural line breaks
                     const paragraphs = [];
                     const pRegex = /<w:p[^>]*>([\s\S]*?)<\/w:p>/g;
                     let pMatch;
@@ -951,7 +943,6 @@
                     
                     const filteredParagraphs = paragraphs.filter(p => !excludePatterns.some(pat => pat.test(p.toLowerCase())));
                     
-                    // Join with standard line breaks rather than smashing together
                     const fullText = filteredParagraphs.join('\n');
                     const filteredText = fullText.replace(/\d{2}\.\d{2}\.\d{4}\s*(?:Datum|Unterschrift|Signature|Bestätigt|Auszubildende|Ausbildende)/gi, '');
                     
@@ -970,11 +961,9 @@
                 for (let i = 0; i < dayNames.length; i++) {
                     const dayName = dayNames[i];
                     
-                    // Match the day and safely capture content until the next known day starting on a new line
                     const regex = new RegExp('(?:^|\\n)\\s*' + dayName + '[\\s\\-:;]*([\\s\\S]*?)(?=\\n\\s*(?:' + daysPattern + ')|$)', 'i');
                     let match = text.match(regex);
                     
-                    // Fallback search if strict newline parsing missed it
                     if (!match) {
                         const fallbackRegex = new RegExp(dayName + '[\\s\\-:;]*([\\s\\S]*?)(?=' + daysPattern + '|$)', 'i');
                         match = text.match(fallbackRegex);
@@ -984,7 +973,6 @@
                         let content = match[1].trim();
                         let hours = '8';
                         
-                        // Extract hours mapping safely
                         const hourMatch = content.match(/(\d+)\s*(?:h|Std\.|Stunden)/i);
                         if (hourMatch) {
                             hours = hourMatch[1];
@@ -997,33 +985,26 @@
                             }
                         }
 
-                        // Strip residual non-content tags
                         content = content
                             .replace(/[–\-]\s*Selbständig.*$/gim, '')
                             .replace(/Selbstständiges\s*Lernen/gi, '')
                             .replace(/\d{2}\.\d{2}\.\d{4}\s*$/g, '');
 
-                        // Text Formatting & Dash Cleanup
                         let lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                         let formattedLines = [];
 
                         for (let line of lines) {
-                            // 1. Swap multiple hyphens ("--", "---") for a single standard hyphen
                             line = line.replace(/-{2,}/g, '-');
-                            
-                            // 2. Standardize starting list symbols (*, -, •, +) to a clean •
                             if (/^[-*•+]\s/.test(line)) {
                                 line = line.replace(/^[-*•+]\s*/, '• ');
                             } else if (/^[-*•+]/.test(line)) {
                                 line = line.replace(/^[-*•+]/, '• ');
                             }
 
-                            // 3. Turn inline separated lists ("Task 1 - Task 2") into multi-line bullets
                             if (line.includes(' - ')) {
                                 const parts = line.split(' - ').filter(p => p.trim().length > 0);
                                 if (parts.length > 1) {
                                     parts.forEach((p, idx) => {
-                                        // Carry over the bullet context for clean formatting
                                         if (idx === 0 && p.startsWith('• ')) {
                                             formattedLines.push(p.trim());
                                         } else {
@@ -1036,7 +1017,6 @@
                             formattedLines.push(line);
                         }
                         
-                        // Drop leftover artifacts (like a single line that just says "•")
                         formattedLines = formattedLines.filter(l => l !== '•' && l !== '-' && l !== '• ' && l.trim().length > 0);
                         
                         content = formattedLines.join('\n').trim();
@@ -1054,20 +1034,57 @@
                 
                 const reports = docFiles.map(item => {
                     const rawUrl = `${BASE_RAW_URL}/${encodeURIComponent(item.name)}`;
-                    const weekMatch = item.name.match(/(\d{1,2}\.\d{1,2}\.\d{4})\s*-\s*(\d{1,2}\.\d{1,2}\.\d{4})/);
-                    const weekLabel = weekMatch ? `${weekMatch[1]} – ${weekMatch[2]}` : (item.name.match(/(\d{1,2}\.\d{1,2}\.\d{4})/) ? item.name.match(/(\d{1,2}\.\d{1,2}\.\d{4})/)[1] : '');
+                    
+                    let weekLabel = item.name.replace(/\.docx?$/i, ''); // Fallback to filename
+                    let mondayDate = null;
+                    let yearStr = new Date().getFullYear().toString();
+                    
+                    // Match date ranges like: 16.10. - 20.10.2023 or 16.10.23-20.10.23
+                    const rangeMatch = item.name.match(/(\d{1,2})\.\s*(\d{1,2})\.?\s*(?:(\d{2,4})\s*)?-\s*(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{2,4})/);
+                    
+                    if (rangeMatch) {
+                        let startYear = rangeMatch[3];
+                        let endYear = rangeMatch[6];
+                        if (!startYear) startYear = endYear;
+                        if (startYear.length === 2) startYear = '20' + startYear;
+                        if (endYear.length === 2) endYear = '20' + endYear;
+                        
+                        yearStr = startYear;
+                        weekLabel = `${rangeMatch[1].padStart(2, '0')}.${rangeMatch[2].padStart(2, '0')}.${startYear} – ${rangeMatch[4].padStart(2, '0')}.${rangeMatch[5].padStart(2, '0')}.${endYear}`;
+                        
+                        const parsedDate = new Date(parseInt(startYear), parseInt(rangeMatch[2]) - 1, parseInt(rangeMatch[1]));
+                        const day = parsedDate.getDay();
+                        const diff = parsedDate.getDate() - day + (day === 0 ? -6 : 1); // Anchor to Monday
+                        mondayDate = new Date(parsedDate.setDate(diff));
+                    } else {
+                        // Match single date like: 16.10.2023 or 16.10.23
+                        const singleMatch = item.name.match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{2,4})/);
+                        if (singleMatch) {
+                            let year = singleMatch[3];
+                            if (year.length === 2) year = '20' + year;
+                            yearStr = year;
+                            weekLabel = `${singleMatch[1].padStart(2, '0')}.${singleMatch[2].padStart(2, '0')}.${year}`;
+                            
+                            const parsedDate = new Date(parseInt(year), parseInt(singleMatch[2]) - 1, parseInt(singleMatch[1]));
+                            const day = parsedDate.getDay();
+                            const diff = parsedDate.getDate() - day + (day === 0 ? -6 : 1);
+                            mondayDate = new Date(parsedDate.setDate(diff));
+                        }
+                    }
+
                     return {
                         name: item.name,
                         url: rawUrl,
                         week: weekLabel,
-                        year: '2026',
+                        mondayDate: mondayDate,
+                        year: yearStr,
                         isFisi: item.name.toLowerCase().includes('fisi'),
                         days: {},
                         rawText: ''
                     };
                 });
                 return reports.sort((a, b) => {
-                    const getStart = r => (r.week && r.week.includes('–')) ? new Date(r.week.split('–')[0].trim().split('.').reverse().join('-')) : new Date(0);
+                    const getStart = r => r.mondayDate ? r.mondayDate.getTime() : 0;
                     return getStart(a) - getStart(b);
                 });
             }
@@ -1114,7 +1131,6 @@
                                 <div class="card-badges">
                                     ${report.week ? `<span class="badge">📅 ${report.week}</span>` : ''}
                                     ${report.isFisi ? '<span class="badge badge-primary">💻 FISI</span>' : ''}
-                                    <span class="badge">⏱️ ${report.year}</span>
                                     <svg class="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                 </div>
                             </div>
@@ -1124,11 +1140,23 @@
                                         const displayDay = lang.daysList[idx];
                                         const data = report.days[parseDay];
                                         const hasContent = data && data.content && data.content !== '—';
+                                        
+                                        let dateString = '';
+                                        if (report.mondayDate && !isNaN(report.mondayDate.getTime())) {
+                                            const dayDate = new Date(report.mondayDate);
+                                            dayDate.setDate(dayDate.getDate() + idx);
+                                            dateString = dayDate.toLocaleDateString(dateLocale, { day: '2-digit', month: '2-digit', year: 'numeric' });
+                                        }
+
                                         return `
                                             <div class="day-card">
-                                                <div class="day-name">
-                                                    ${DAY_EMOJIS[idx]} ${displayDay}
-                                                    ${data && data.hours ? `<span class="day-hours">${data.hours}h</span>` : ''}
+                                                <div class="day-name" style="align-items: flex-start;">
+                                                    <div style="display: flex; flex-direction: column; gap: 3px;">
+                                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                                            ${DAY_EMOJIS[idx]} ${displayDay}
+                                                        </div>
+                                                        ${dateString ? `<span style="font-size: 11px; font-weight: 500; color: var(--sub-color); margin-left: 24px; line-height: 1;">${dateString}</span>` : ''}
+                                                    </div>
                                                 </div>
                                                 <div class="day-content">
                                                     ${hasContent ? data.content : `<span class="day-empty">No entries logged.</span>`}
