@@ -929,32 +929,17 @@
                     const docFile = zip.file('word/document.xml');
                     if (!docFile) return { text: '', days: {} };
                     const xmlText = await docFile.async('string');
+                    const textMatches = xmlText.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
+                    let texts = textMatches.map(m => m.replace(/<[^>]*>/g, '').trim()).filter(t => t.length > 0);
                     
-                    // Extract text by paragraphs (<w:p>) to preserve natural line breaks
-                    const paragraphs = [];
-                    const pRegex = /<w:p[^>]*>([\s\S]*?)<\/w:p>/g;
-                    let pMatch;
-                    while ((pMatch = pRegex.exec(xmlText)) !== null) {
-                        const pContent = pMatch[1];
-                        const tMatches = pContent.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
-                        const pText = tMatches.map(m => m.replace(/<[^>]*>/g, '').trim()).filter(t => t.length > 0).join(' ');
-                        if (pText) {
-                            paragraphs.push(pText);
-                        }
-                    }
-
                     const excludePatterns = [
                         /unterschrift/i, /signature/i, /datum.*unterschrift/i,
                         /auszubildende.*r/i, /ausbildende.*r/i, /ausbilder.*in/i,
                         /bestätigt/i, /richtigkeit/i, /vollständigkeit/i, /nachfolgende.*unterschrift/i
                     ];
-                    
-                    const filteredParagraphs = paragraphs.filter(p => !excludePatterns.some(pat => pat.test(p.toLowerCase())));
-                    
-                    // Join with standard line breaks rather than smashing together
-                    const fullText = filteredParagraphs.join('\n');
+                    texts = texts.filter(t => !excludePatterns.some(p => p.test(t.toLowerCase())));
+                    const fullText = texts.join(' ').replace(/\s+/g, ' ').trim();
                     const filteredText = fullText.replace(/\d{2}\.\d{2}\.\d{4}\s*(?:Datum|Unterschrift|Signature|Bestätigt|Auszubildende|Ausbildende)/gi, '');
-                    
                     const days = extractDaysFromTable(filteredText);
                     return { text: filteredText, days };
                 } catch (e) {
@@ -964,83 +949,42 @@
 
             function extractDaysFromTable(text) {
                 const days = {};
-                const dayNames = PARSE_DAY_NAMES; 
-                const daysPattern = dayNames.join('|');
-
-                for (let i = 0; i < dayNames.length; i++) {
-                    const dayName = dayNames[i];
-                    
-                    // Match the day and safely capture content until the next known day starting on a new line
-                    const regex = new RegExp('(?:^|\\n)\\s*' + dayName + '[\\s\\-:;]*([\\s\\S]*?)(?=\\n\\s*(?:' + daysPattern + ')|$)', 'i');
-                    let match = text.match(regex);
-                    
-                    // Fallback search if strict newline parsing missed it
-                    if (!match) {
-                        const fallbackRegex = new RegExp(dayName + '[\\s\\-:;]*([\\s\\S]*?)(?=' + daysPattern + '|$)', 'i');
-                        match = text.match(fallbackRegex);
-                    }
-
+                for (let i = 0; i < PARSE_DAY_NAMES.length; i++) {
+                    const dayName = PARSE_DAY_NAMES[i];
+                    const nextDay = i < PARSE_DAY_NAMES.length - 1 ? PARSE_DAY_NAMES[i + 1] : '$';
+                    const regex = new RegExp(dayName + '[\\s\\-:;]*([\\s\\S]*?)(?=' + nextDay + '|$)', 'i');
+                    const match = text.match(regex);
                     if (match) {
                         let content = match[1].trim();
                         let hours = '8';
-                        
-                        // Extract hours mapping safely
                         const hourMatch = content.match(/(\d+)\s*(?:h|Std\.|Stunden)/i);
                         if (hourMatch) {
                             hours = hourMatch[1];
                             content = content.replace(hourMatch[0], '').trim();
-                        } else {
-                            const hourMatch2 = content.match(/\b(\d+)\s*$|\b(\d+)\s*(?:h|Std)/i);
-                            if (hourMatch2) {
-                                hours = hourMatch2[1] || hourMatch2[2] || '8';
-                                content = content.replace(/\s*\d+\s*(?:h|Std\.|Stunden)?\s*$/, '').trim();
-                            }
                         }
-
-                        // Strip residual non-content tags
-                        content = content
-                            .replace(/[–\-]\s*Selbständig.*$/gim, '')
-                            .replace(/Selbstständiges\s*Lernen/gi, '')
-                            .replace(/\d{2}\.\d{2}\.\d{4}\s*$/g, '');
-
-                        // Text Formatting & Dash Cleanup
-                        let lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-                        let formattedLines = [];
-
-                        for (let line of lines) {
-                            // 1. Swap multiple hyphens ("--", "---") for a single standard hyphen
-                            line = line.replace(/-{2,}/g, '-');
-                            
-                            // 2. Standardize starting list symbols (*, -, •, +) to a clean •
-                            if (/^[-*•+]\s/.test(line)) {
-                                line = line.replace(/^[-*•+]\s*/, '• ');
-                            } else if (/^[-*•+]/.test(line)) {
-                                line = line.replace(/^[-*•+]/, '• ');
-                            }
-
-                            // 3. Turn inline separated lists ("Task 1 - Task 2") into multi-line bullets
-                            if (line.includes(' - ')) {
-                                const parts = line.split(' - ').filter(p => p.trim().length > 0);
-                                if (parts.length > 1) {
-                                    parts.forEach((p, idx) => {
-                                        // Carry over the bullet context for clean formatting
-                                        if (idx === 0 && p.startsWith('• ')) {
-                                            formattedLines.push(p.trim());
-                                        } else {
-                                            formattedLines.push('• ' + p.replace(/^[-*•+]\s*/, '').trim());
-                                        }
-                                    });
-                                    continue;
-                                }
-                            }
-                            formattedLines.push(line);
+                        const hourMatch2 = content.match(/\b(\d+)\s*$|\b(\d+)\s*(?:h|Std)/i);
+                        if (hourMatch2 && !hourMatch) {
+                            hours = hourMatch2[1] || hourMatch2[2] || '8';
+                            content = content.replace(/\s*\d+\s*(?:h|Std\.|Stunden)?\s*$/, '').trim();
                         }
-                        
-                        // Drop leftover artifacts (like a single line that just says "•")
-                        formattedLines = formattedLines.filter(l => l !== '•' && l !== '-' && l !== '• ' && l.trim().length > 0);
-                        
-                        content = formattedLines.join('\n').trim();
+                        content = content.replace(/[–\-]\s*Selbständig.*$/gim, '').trim()
+                                       .replace(/Selbstständiges\s*Lernen/gi, '').trim()
+                                       .replace(/\s+/g, ' ').trim()
+                                       .replace(/^[\s\-•]*/, '').trim()
+                                       .replace(/\d{2}\.\d{2}\.\d{4}\s*$/, '').trim();
                         days[dayName] = { content: content.length > 0 ? content : '—', hours };
+                    }
+                }
+                if (Object.keys(days).length === 0) {
+                    const simpleRegex = new RegExp('(' + PARSE_DAY_NAMES.join('|') + ')\\s*[:;]?\\s*([^\\n]+)', 'gi');
+                    let m;
+                    while ((m = simpleRegex.exec(text)) !== null) {
+                        let content = m[2].trim();
+                        let hours = '8';
+                        const hMatch = content.match(/(\d+)\s*(?:h|Std)/i);
+                        if (hMatch) { hours = hMatch[1]; content = content.replace(hMatch[0], '').trim(); }
+                        content = content.replace(/[–\-]\s*Selbständig.*$/gim, '').trim().replace(/Selbstständiges\s*Lernen/gi, '').trim().replace(/\s+/g, ' ').trim().replace(/\d{2}\.\d{2}\.\d{4}\s*$/, '').trim();
+                        if (content.length > 0) days[m[1].trim()] = { content, hours };
                     }
                 }
                 return days;
