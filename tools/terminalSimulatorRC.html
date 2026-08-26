@@ -121,25 +121,14 @@
             cursor: default; pointer-events: none;
         }
 
-        .back-btn {
-            width: 44px; padding: 0; justify-content: center;
-        }
-        .back-btn svg {
-            width: 20px; height: 20px; fill: currentColor; transition: transform 0.2s;
-        }
-        .back-btn:hover svg {
-            transform: translateX(-3px);
-        }
-
+        .back-btn { width: 44px; padding: 0; justify-content: center; fill: var(--text-color); }
+        .back-btn svg { width: 24px; height: 24px; }
+        
         .achievement-toggle-btn {
             width: 44px; height: 44px; padding: 0; justify-content: center; font-weight: 700; font-size: 16px;
         }
-        .achievement-toggle-btn.active, .achievement-toggle-btn.active:hover {
-            border-color: var(--term-text); color: var(--term-text); background: transparent;
-        }
-
-        .info-modal-btn {
-            height: 44px; padding: 0 16px; justify-content: center; font-weight: 700; font-size: 13px;
+        .achievement-toggle-btn.active {
+            border-color: var(--term-text); color: var(--term-text); background: var(--hover-bg);
         }
 
         .retention-part, .date-part, .time-part { font-weight: 600; }
@@ -181,9 +170,6 @@
             width: 100%;
         }
         .split-layout.right-panel-active {
-            grid-template-columns: 1fr 1fr;
-        }
-        .split-layout.dual-right-active {
             grid-template-columns: 1fr 1fr;
         }
 
@@ -236,8 +222,7 @@
             height: calc(100vh - 120px);
             min-height: 550px;
         }
-        .split-layout.right-panel-active .right-column,
-        .split-layout.dual-right-active .right-column {
+        .split-layout.right-panel-active .right-column {
             display: flex;
         }
 
@@ -432,21 +417,36 @@
         .modal-message { font-size: 14px; color: var(--sub-color); line-height: 1.5; }
         .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
 
-        /* New Info Modal Card Styles */
-        .info-card {
+        .info-section {
             background: var(--hover-bg); border: 1px solid var(--border-color);
-            border-radius: 8px; padding: 16px; margin-bottom: 12px; font-size: 13.5px;
+            border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;
         }
-        .info-card:last-child { margin-bottom: 0; }
-        .info-card-header {
-            display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
-            font-weight: 700; color: var(--text-color); font-size: 15px;
-        }
+        .info-section-title { font-weight: 700; color: var(--text-color); font-size: 14px; margin-bottom: 2px; }
         .info-badge {
             background: var(--btn-bg); border: 1px solid var(--border-color);
             border-radius: 4px; padding: 2px 6px; font-family: var(--font-family-base);
             font-size: 12px; color: var(--hint-color); display: inline-block; margin: 2px 0;
         }
+
+        .quest-card {
+            display: flex; align-items: center; gap: 12px;
+            background: var(--btn-bg); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 12px;
+            transition: all 0.2s; cursor: pointer;
+        }
+        .quest-card:hover {
+            border-color: var(--border-hover); background: var(--hover-bg); transform: translateY(-1px);
+        }
+        .quest-card.completed {
+            border-color: #4ade80; opacity: 0.6; background: rgba(74, 222, 128, 0.05);
+        }
+        .quest-icon {
+            font-size: 24px; flex-shrink: 0; width: 32px; text-align: center;
+        }
+        .quest-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+        .quest-title { font-weight: 700; color: var(--text-color); font-size: 14.5px; }
+        .quest-card.completed .quest-title { text-decoration: line-through; color: var(--sub-color); }
+        .quest-desc { font-size: 13px; color: var(--sub-color); }
 
         .custom-tooltip {
             position: fixed; background: var(--btn-bg); border: 1px solid var(--border-color);
@@ -468,7 +468,7 @@
             .top-right { max-width: 100%; position: relative; top: 0; right: 0; padding: 20px 24px 0; justify-content: center; }
             .main-content { margin-top: 0; padding-top: 24px; }
             
-            .split-layout.right-panel-active, .split-layout.dual-right-active { grid-template-columns: 1fr; }
+            .split-layout.right-panel-active { grid-template-columns: 1fr; }
             .right-column { height: 80vh; min-height: 500px; }
             .nano-card, .mc-card { min-height: 350px; }
             .terminal-card { height: 60vh; min-height: 400px; }
@@ -481,7 +481,8 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
         </a>
         <div class="clickable-dt no-hover" id="appTitle">Terminal Simulator</div>
-        <button class="clickable-dt info-modal-btn" id="infoModalBtn" title="Commands & Apps Info">Info</button>
+        <button class="clickable-dt" id="questsModalBtn" title="Quests">Quests</button>
+        <button class="clickable-dt" id="infoModalBtn" title="Commands & Apps Info">Info</button>
         <button class="clickable-dt achievement-toggle-btn" id="achievementToggleBtn" title="Toggle Achievements">A</button>
     </div>
 
@@ -590,7 +591,6 @@
                 <!-- Midnight Commander Card -->
                 <div class="mc-card" id="mcCard">
                     <div class="mc-panels-wrapper">
-                        <!-- MC Left Panel -->
                         <div class="mc-panel active" id="mcLeftPanel">
                             <div class="mc-panel-header" id="mcLeftHeader" title="Click to activate">/home/user</div>
                             <div class="mc-panel-cols">
@@ -598,7 +598,6 @@
                             </div>
                             <div class="mc-panel-content" id="mcLeftContent" tabindex="0"></div>
                         </div>
-                        <!-- MC Right Panel -->
                         <div class="mc-panel" id="mcRightPanel">
                             <div class="mc-panel-header" id="mcRightHeader" title="Click to activate">/etc</div>
                             <div class="mc-panel-cols">
@@ -628,7 +627,6 @@
         </div>
     </div>
 
-    <!-- Achievement Toast Container -->
     <div class="achievement-container" id="achievementContainer"></div>
 
     <div class="modal-overlay" id="confirmModal">
@@ -642,7 +640,7 @@
         </div>
     </div>
 
-    <!-- Info Modal for Commands & Apps Overview -->
+    <!-- Info Modal -->
     <div class="modal-overlay" id="infoModal">
         <div class="modal-card" style="max-width: 650px; max-height: 85vh; overflow-y: auto;">
             <div class="modal-title" id="infoModalTitle">Commands & Apps Overview</div>
@@ -651,6 +649,34 @@
             </div>
             <div class="modal-actions">
                 <button class="clickable-dt" id="infoModalCloseBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quests Modal -->
+    <div class="modal-overlay" id="questsModal">
+        <div class="modal-card" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
+            <div class="modal-title" id="questsModalTitle">Active Quests</div>
+            <div class="modal-message" id="questsModalBody" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Filled dynamically via JS -->
+            </div>
+            <div class="modal-actions">
+                <button class="clickable-dt" id="questsModalCloseBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quest Detail Modal -->
+    <div class="modal-overlay" id="questDetailModal" style="z-index: 2100;">
+        <div class="modal-card" style="max-width: 450px;">
+            <div class="modal-title" id="questDetailTitle">Quest Details</div>
+            <div class="modal-message" style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="font-weight: 700; color: var(--term-text); font-size: 16px; font-family: var(--font-family-base);" id="questDetailCmd">> command</div>
+                <div id="questDetailDesc" style="color: var(--text-color); font-size: 14px; line-height: 1.5;"></div>
+                <div style="background: var(--term-bg); padding: 10px 12px; border-radius: 6px; border: 1px solid var(--border-color); font-family: var(--font-family-base); color: var(--term-text); font-size: 13px;" id="questDetailExample"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="clickable-dt" id="questDetailCloseBtn">Close</button>
             </div>
         </div>
     </div>
@@ -691,8 +717,7 @@
                     cannotCreate: "cannot create directory",
                     cannotRemove: "cannot remove",
                     readPkg: "Reading package lists... Done",
-                    simulatingUpdate: "Simulating updating process...",
-                    simulatingInstall: "Simulating install for package: {pkg}...",
+                    simulatingUpdate: "Simulating Updating Process...",
                     pkgInstalling: "Installing / upgrading package {i} of {total} ({name})...",
                     pkgNotFoundDebian: "E: Unable to locate package",
                     pkgNotFoundArch: "error: target not found:",
@@ -703,6 +728,36 @@
                     cmdSuccess: "Command executed successfully.",
                     switchedTo: "Switched to",
                     envReset: "Environment reset. Type 'help' for available commands.",
+                    achievementsEnabled: "Achievements Enabled",
+                    achievementsDisabled: "Achievements Disabled",
+                    achToggleMsg: "Notifications will now appear for achievements.",
+                    questsBtn: "Quests",
+                    questsTitle: "Active Quests",
+                    questCompleted: "Quest Completed",
+                    infoTitle: "Commands & Apps Overview",
+                    infoUiTitle: "UI Toggles",
+                    infoUiDescSyntax: "Adds live bash autocomplete suggestions in the input field.",
+                    infoUiDescTags: "Highlights syntax and flags hoverable tooltips with command explanations.",
+                    infoCoreTitle: "Core Commands",
+                    infoPkgTitle: "Package Managers",
+                    infoAppsTitle: "Apps & Tools (installable)",
+                    infoAppsNano: "Terminal text editor (^O / ^S to save, ^X to exit)",
+                    infoAppsMc: "Midnight Commander (dual-pane file manager)",
+                    infoAppsZip: "Extract and create zip archives (e.g. passwordProtected.zip)",
+                    infoAppsSamba: "Network file sharing & smbclient with editable /etc/samba/smb.conf",
+                    infoSpecTitle: "Special Features",
+                    infoSpecSudo: "Executes commands with admin rights (with 5s live countdown)",
+                    infoSpecSystemctl: "Manage mock services like smbd (start, stop, status, etc.)",
+                    infoSpecUpdate: "System-specific update check required before installing any app",
+                    sysCtlNotRoot: "Failed to perform action: Authentication is required. (use sudo)",
+                    sysCtlUnknown: "Failed to start {srv}.service: Unit not found.",
+                    sysCtlStart: "Started {srv}.service.",
+                    sysCtlStop: "Stopped {srv}.service.",
+                    sysCtlRestart: "Restarted {srv}.service.",
+                    sysCtlEnable: "Created symlink /etc/systemd/system/multi-user.target.wants/{srv}.service -> /lib/systemd/system/{srv}.service.",
+                    sysCtlDisable: "Removed /etc/systemd/system/multi-user.target.wants/{srv}.service.",
+                    sysCtlStatusAct: "Active: active (running)",
+                    sysCtlStatusInact: "Active: inactive (dead)",
                     ttCmd: "Command",
                     ttPkg: "Package Mgr",
                     ttFlag: "Flag / Option",
@@ -754,17 +809,7 @@
                     nanoSave: "Save",
                     nanoExit: "Exit",
                     nanoSaved: "[ Wrote {lines} lines ]",
-                    nanoErrDir: "is a directory",
-                    achievementsEnabled: "Achievements Enabled",
-                    achievementsDisabled: "Achievements Disabled",
-                    achToggleMsg: "Notifications will now appear for achievements.",
-                    infoTitle: "Commands & Apps Overview",
-                    infoUiTitle: "UI Toggles",
-                    infoUiDesc: "Enhance your terminal view using the top bar tools.",
-                    infoCoreTitle: "Core Commands",
-                    infoPkgTitle: "Package Managers",
-                    infoAppsTitle: "Apps & Tools (installable)",
-                    infoSpecTitle: "Special Features"
+                    nanoErrDir: "is a directory"
                 },
                 de: {
                     label: "DE",
@@ -789,7 +834,6 @@
                     cannotRemove: "kann nicht entfernen",
                     readPkg: "Paketlisten werden gelesen... Fertig",
                     simulatingUpdate: "Aktualisierungsprozess wird simuliert...",
-                    simulatingInstall: "Simuliere Installation für Paket: {pkg}...",
                     pkgInstalling: "Installiere / aktualisiere Paket {i} von {total} ({name})...",
                     pkgNotFoundDebian: "E: Paket konnte nicht gefunden werden",
                     pkgNotFoundArch: "error: Ziel nicht gefunden:",
@@ -800,6 +844,36 @@
                     cmdSuccess: "Befehl erfolgreich ausgeführt.",
                     switchedTo: "Gewechselt zu",
                     envReset: "Umgebung zurückgesetzt. Tippe 'help' für verfügbare Befehle.",
+                    achievementsEnabled: "Erfolge Aktiviert",
+                    achievementsDisabled: "Erfolge Deaktiviert",
+                    achToggleMsg: "Benachrichtigungen für Erfolge werden nun angezeigt.",
+                    questsBtn: "Quests",
+                    questsTitle: "Aktive Quests",
+                    questCompleted: "Quest Abgeschlossen",
+                    infoTitle: "Befehle & Apps Übersicht",
+                    infoUiTitle: "UI Schalter",
+                    infoUiDescSyntax: "Fügt automatische Bash-Vorschläge direkt im Eingabefeld hinzu.",
+                    infoUiDescTags: "Hebt Syntax hervor und zeigt interaktive Tooltips mit Befehlserklärungen an.",
+                    infoCoreTitle: "Kernbefehle",
+                    infoPkgTitle: "Paketmanager",
+                    infoAppsTitle: "Apps & Werkzeuge (installierbar)",
+                    infoAppsNano: "Terminal-Texteditor (^O / ^S speichern, ^X beenden)",
+                    infoAppsMc: "Midnight Commander (zwei geteilte Dateimanager-Fenster)",
+                    infoAppsZip: "Entpacken und Erstellen von ZIP-Archiven (z.B. der passwortgeschützten passwordProtected.zip)",
+                    infoAppsSamba: "Netzwerk-Dateifreigabe und smbclient mit bearbeitbarer /etc/samba/smb.conf",
+                    infoSpecTitle: "Besonderheiten",
+                    infoSpecSudo: "Führt Befehle mit Admin-Rechten aus (mit 5s Live-Countdown)",
+                    infoSpecSystemctl: "Verwaltet Mock-Dienste wie smbd (start, stop, status, etc.)",
+                    infoSpecUpdate: "System-spezifische Update-Prüfung vor jeder App-Installation",
+                    sysCtlNotRoot: "Aktion fehlgeschlagen: Authentifizierung erforderlich. (sudo verwenden)",
+                    sysCtlUnknown: "Fehler beim Starten von {srv}.service: Unit nicht gefunden.",
+                    sysCtlStart: "{srv}.service gestartet.",
+                    sysCtlStop: "{srv}.service gestoppt.",
+                    sysCtlRestart: "{srv}.service neu gestartet.",
+                    sysCtlEnable: "Symlink /etc/systemd/system/multi-user.target.wants/{srv}.service -> /lib/systemd/system/{srv}.service erstellt.",
+                    sysCtlDisable: "/etc/systemd/system/multi-user.target.wants/{srv}.service entfernt.",
+                    sysCtlStatusAct: "Aktiv: active (running)",
+                    sysCtlStatusInact: "Aktiv: inactive (dead)",
                     ttCmd: "Befehl",
                     ttPkg: "Paketmanager",
                     ttFlag: "Parameter",
@@ -851,17 +925,7 @@
                     nanoSave: "Speichern",
                     nanoExit: "Beenden",
                     nanoSaved: "[ {lines} Zeilen geschrieben ]",
-                    nanoErrDir: "ist ein Verzeichnis",
-                    achievementsEnabled: "Erfolge Aktiviert",
-                    achievementsDisabled: "Erfolge Deaktiviert",
-                    achToggleMsg: "Benachrichtigungen für Erfolge werden nun angezeigt.",
-                    infoTitle: "Befehle & Apps Übersicht",
-                    infoUiTitle: "UI Schalter",
-                    infoUiDesc: "Erweitere deine Terminal-Ansicht über die obere Leiste.",
-                    infoCoreTitle: "Kernbefehle",
-                    infoPkgTitle: "Paketmanager",
-                    infoAppsTitle: "Apps & Werkzeuge (installierbar)",
-                    infoSpecTitle: "Besonderheiten"
+                    nanoErrDir: "ist ein Verzeichnis"
                 }
             };
 
@@ -881,30 +945,74 @@
             let isNanoOpen = false;
             let isMcOpen = false;
 
+            const questDefinitions = {
+                use_nano: {
+                    en: { t: "Text Editor", d: "Open the nano text editor", cmd: "nano", descLong: "The nano command opens a terminal-based text editor. It allows you to create or modify text files directly in the command line.", example: "nano <fileName>" },
+                    de: { t: "Texteditor", d: "Öffne den nano Texteditor", cmd: "nano", descLong: "Der nano Befehl öffnet einen terminalbasierten Texteditor. Damit kannst du Textdateien direkt in der Kommandozeile erstellen oder bearbeiten.", example: "nano <fileName>" }
+                },
+                use_mc: {
+                    en: { t: "File Manager", d: "Open Midnight Commander (mc)", cmd: "mc", descLong: "Midnight Commander (mc) is a visual file manager with dual panes. It lets you easily copy, move, and manage files.", example: "mc" },
+                    de: { t: "Dateimanager", d: "Öffne Midnight Commander (mc)", cmd: "mc", descLong: "Midnight Commander (mc) ist ein visueller Dateimanager mit zwei Fenstern. Er erleichtert das Kopieren, Verschieben und Verwalten von Dateien.", example: "mc" }
+                },
+                create_dir: {
+                    en: { t: "Architect", d: "Create a directory using mkdir", cmd: "mkdir", descLong: "The mkdir (make directory) command is used to create new, empty folders at the specified location.", example: "mkdir <folderName>" },
+                    de: { t: "Architekt", d: "Erstelle ein Verzeichnis mit mkdir", cmd: "mkdir", descLong: "Der Befehl mkdir (make directory) wird verwendet, um neue, leere Ordner am angegebenen Ort zu erstellen.", example: "mkdir <folderName>" }
+                },
+                create_file: {
+                    en: { t: "Creator", d: "Create a file using touch", cmd: "touch", descLong: "The touch command creates a new empty file. If the file already exists, it updates its modification timestamp.", example: "touch <fileName>" },
+                    de: { t: "Erschaffer", d: "Erstelle eine Datei mit touch", cmd: "touch", descLong: "Der Befehl touch erstellt eine neue leere Datei. Wenn die Datei bereits existiert, aktualisiert er ihren Zeitstempel.", example: "touch <fileName>" }
+                },
+                delete_item: {
+                    en: { t: "Cleaner", d: "Delete a file/folder using rm", cmd: "rm", descLong: "The rm (remove) command permanently deletes files. It can also delete directories if specific flags are used.", example: "rm <fileName/folderName>" },
+                    de: { t: "Reiniger", d: "Lösche eine Datei/Ordner mit rm", cmd: "rm", descLong: "Der Befehl rm (remove) löscht Dateien dauerhaft. Er kann auch Verzeichnisse löschen, wenn spezielle Parameter verwendet werden.", example: "rm <fileName/folderName>" }
+                },
+                use_sudo: {
+                    en: { t: "I Am Root", d: "Execute a command with sudo privileges", cmd: "sudo", descLong: "The sudo (superuser do) command allows a permitted user to execute a command as the superuser or another user.", example: "sudo <command>" },
+                    de: { t: "Ich bin Root", d: "Führe einen Befehl mit sudo aus", cmd: "sudo", descLong: "Der sudo (superuser do) Befehl erlaubt es einem berechtigten Benutzer, einen Befehl mit Administratorrechten (Root) auszuführen.", example: "sudo <command>" }
+                },
+                install_pkg: {
+                    en: { t: "Software Engineer", d: "Install a package (apt/pacman)", cmd: "apt / pacman", descLong: "Package managers like apt (Debian) or pacman (Arch) allow you to download, install, and manage software packages.", example: "sudo apt install <packageName>" },
+                    de: { t: "Softwareentwickler", d: "Installiere ein Paket (apt/pacman)", cmd: "apt / pacman", descLong: "Paketmanager wie apt (Debian) oder pacman (Arch) ermöglichen das Herunterladen, Installieren und Verwalten von Software.", example: "sudo apt install <packageName>" }
+                },
+                read_file: {
+                    en: { t: "Reader", d: "Read a file using cat", cmd: "cat", descLong: "The cat (concatenate) command reads data from files and outputs their contents directly to the terminal screen.", example: "cat <fileName>" },
+                    de: { t: "Leser", d: "Lese eine Datei mit cat", cmd: "cat", descLong: "Der Befehl cat (concatenate) liest Daten aus Dateien und gibt ihren Inhalt direkt auf dem Terminalbildschirm aus.", example: "cat <fileName>" }
+                },
+                check_path: {
+                    en: { t: "Lost & Found", d: "Check working directory (pwd)", cmd: "pwd", descLong: "The pwd (print working directory) command displays the full absolute path of the folder you are currently located in.", example: "pwd" },
+                    de: { t: "Fundbüro", d: "Prüfe das Arbeitsverzeichnis (pwd)", cmd: "pwd", descLong: "Der Befehl pwd (print working directory) zeigt den vollständigen absoluten Pfad des Ordners an, in dem du dich gerade befindest.", example: "pwd" }
+                },
+                clear_screen: {
+                    en: { t: "Tabula Rasa", d: "Clear the terminal (clear)", cmd: "clear", descLong: "The clear command simply clears the terminal screen, pushing old output up and giving you a clean workspace.", example: "clear" },
+                    de: { t: "Tabula Rasa", d: "Leere das Terminal (clear)", cmd: "clear", descLong: "Der clear Befehl säubert einfach den Terminalbildschirm, schiebt alte Ausgaben nach oben und gibt dir einen sauberen Arbeitsbereich.", example: "clear" }
+                },
+                change_dir: {
+                    en: { t: "Traveler", d: "Change directory using cd", cmd: "cd", descLong: "The cd (change directory) command is used to navigate between different folders in the file system.", example: "cd <directoryPath>" },
+                    de: { t: "Reisender", d: "Wechsle das Verzeichnis mit cd", cmd: "cd", descLong: "Der Befehl cd (change directory) wird verwendet, um zwischen verschiedenen Ordnern im Dateisystem zu navigieren.", example: "cd <directoryPath>" }
+                },
+                list_files: {
+                    en: { t: "Observer", d: "List files using ls", cmd: "ls", descLong: "The ls (list) command shows all files and folders inside your current directory or a specified target directory.", example: "ls <directoryPath>" },
+                    de: { t: "Beobachter", d: "Liste Dateien mit ls auf", cmd: "ls", descLong: "Der Befehl ls (list) zeigt alle Dateien und Ordner in deinem aktuellen Verzeichnis oder einem angegebenen Zielverzeichnis an.", example: "ls <directoryPath>" }
+                }
+            };
+
+            const questPool = [
+                { id: "use_nano", icon: "📝" }, { id: "use_mc", icon: "📁" }, { id: "create_dir", icon: "📁" }, { id: "create_file", icon: "📄" },
+                { id: "delete_item", icon: "🗑️" }, { id: "use_sudo", icon: "🛡️" }, { id: "install_pkg", icon: "📦" }, { id: "read_file", icon: "📖" },
+                { id: "check_path", icon: "📍" }, { id: "clear_screen", icon: "🧹" }, { id: "change_dir", icon: "🚶" }, { id: "list_files", icon: "👀" }
+            ];
+
+            let activeQuests = [];
+            let shuffled = questPool.sort(() => 0.5 - Math.random());
+            activeQuests = shuffled.slice(0, 10).map(q => ({ ...q, completed: false }));
+
             let commandHistoryList = [];
             let historyIndex = -1;
 
             let fileSystem = {};
+            let runningServices = { "smbd": false, "nmbd": false, "ssh": true, "apache2": false };
 
             function updateOsFiles() {
-                const smbConfTemplate = `#======================= Global Settings =======================
-[global]
-   workgroup = WORKGROUP
-   server string = Samba Server %v
-   netbios name = debian-samba
-   security = user
-   map to guest = bad user
-   dns proxy = no
-
-#======================= Share Definitions =======================
-[shared_docs]
-   path = /home/user/Documents
-   browseable = yes
-   writable = yes
-   guest ok = yes
-   read only = no
-   create mask = 0755
-`;
                 fileSystem = {
                     "/": { type: "dir", children: ["home", "etc", "var", "usr"] },
                     "/home": { type: "dir", children: ["user"] },
@@ -913,12 +1021,9 @@
                     "/home/user/Desktop": { type: "dir", children: [] },
                     "/home/user/Documents/readme.txt": { type: "file", content: "Welcome to Terminal Simulator!\nExplore folders, edit files with nano, or manage files with mc." },
                     "/home/user/Documents/notes.txt": { type: "file", content: "Todo:\n1. Learn Linux commands\n2. Install nano & mc\n3. Setup Samba share" },
-                    "/etc": { type: "dir", children: ["samba", "systemd"] },
+                    "/etc": { type: "dir", children: ["samba"] },
                     "/etc/samba": { type: "dir", children: ["smb.conf"] },
-                    "/etc/samba/smb.conf": { type: "file", content: smbConfTemplate },
-                    "/etc/systemd": { type: "dir", children: ["system"] },
-                    "/etc/systemd/system": { type: "dir", children: ["smbd.service"] },
-                    "/etc/systemd/system/smbd.service": { type: "file", content: "[Unit]\nDescription=Samba SMB Daemon\n[Service]\nExecStart=/usr/sbin/smbd --foreground --no-process-group\n[Install]\nWantedBy=multi-user.target" },
+                    "/etc/samba/smb.conf": { type: "file", content: "#=======================\n# Global Parameters\n#=======================\n[global]\n   workgroup = WORKGROUP\n   server string = Samba Server\n   security = user\n   map to guest = Bad Password\n   dns proxy = no\n\n#=======================\n# Share Definitions\n#=======================\n[shared_docs]\n   path = /home/user/Documents\n   browseable = yes\n   writable = yes\n   guest ok = yes\n   read only = no" },
                     "/var": { type: "dir", children: ["log"] },
                     "/var/log": { type: "dir", children: ["syslog"] },
                     "/var/log/syslog": { type: "file", content: "Aug 26 03:00:00 terminal-simulator systemd[1]: Started Terminal Simulator core services." },
@@ -946,6 +1051,19 @@
             const infoModalCloseBtn = document.getElementById("infoModalCloseBtn");
             const infoModalBody = document.getElementById("infoModalBody");
             const infoModalTitle = document.getElementById("infoModalTitle");
+            const questsModalBtn = document.getElementById("questsModalBtn");
+            const questsModal = document.getElementById("questsModal");
+            const questsModalCloseBtn = document.getElementById("questsModalCloseBtn");
+            const questsModalBody = document.getElementById("questsModalBody");
+            const questsModalTitle = document.getElementById("questsModalTitle");
+            
+            const questDetailModal = document.getElementById("questDetailModal");
+            const questDetailCloseBtn = document.getElementById("questDetailCloseBtn");
+            const questDetailTitle = document.getElementById("questDetailTitle");
+            const questDetailCmd = document.getElementById("questDetailCmd");
+            const questDetailDesc = document.getElementById("questDetailDesc");
+            const questDetailExample = document.getElementById("questDetailExample");
+
             const achievementContainer = document.getElementById("achievementContainer");
             const body = document.body;
             const appTitle = document.getElementById("appTitle");
@@ -985,15 +1103,33 @@
                 achievementsEnabled = !achievementsEnabled;
                 achievementToggleBtn.classList.toggle("active", achievementsEnabled);
                 
-                const lang = i18n[currentLang];
-                const tempEnabled = achievementsEnabled;
-                achievementsEnabled = true; 
-                if (tempEnabled) {
-                    triggerAchievement(lang.achievementsEnabled, lang.achToggleMsg, "🔔");
-                } else {
-                    triggerAchievement(lang.achievementsDisabled, "", "🔕");
-                }
-                achievementsEnabled = tempEnabled;
+                const lang = currentLang;
+                const popup = document.createElement("div");
+                popup.className = "achievement-popup";
+                popup.innerHTML = `
+                    <div class="achievement-icon" style="${achievementsEnabled ? 'background: rgba(74, 222, 128, 0.1); border-color: #4ade80;' : 'background: rgba(248, 113, 113, 0.1); border-color: #f87171;'}">${achievementsEnabled ? '✅' : '❌'}</div>
+                    <div class="achievement-content">
+                        <div class="achievement-header">${achievementsEnabled ? i18n[lang].achievementsEnabled : i18n[lang].achievementsDisabled}</div>
+                        <div class="achievement-desc">${achievementsEnabled ? i18n[lang].achToggleMsg : ""}</div>
+                    </div>
+                    <button class="achievement-close">×</button>
+                `;
+                
+                const closeBtn = popup.querySelector(".achievement-close");
+                closeBtn.addEventListener("click", () => {
+                    popup.style.transform = "translateX(120%)";
+                    setTimeout(() => popup.remove(), 400);
+                });
+
+                achievementContainer.appendChild(popup);
+                setTimeout(() => popup.classList.add("show"), 50);
+
+                setTimeout(() => {
+                    if (popup.parentElement) {
+                        popup.style.transform = "translateX(120%)";
+                        setTimeout(() => popup.remove(), 400);
+                    }
+                }, 4000);
             });
 
             function triggerAchievement(title, desc, icon = "⭐") {
@@ -1027,6 +1163,98 @@
                 }, 15000);
             }
 
+            questsModalBtn.addEventListener("click", () => {
+                renderQuestsModalContent();
+                questsModal.style.display = "flex";
+            });
+
+            questsModalCloseBtn.addEventListener("click", () => {
+                questsModal.style.display = "none";
+            });
+
+            questsModal.addEventListener("click", (e) => {
+                if (e.target === questsModal) {
+                    questsModal.style.display = "none";
+                }
+            });
+
+            questDetailCloseBtn.addEventListener("click", () => {
+                questDetailModal.style.display = "none";
+            });
+
+            questDetailModal.addEventListener("click", (e) => {
+                if (e.target === questDetailModal) {
+                    questDetailModal.style.display = "none";
+                }
+            });
+
+            function renderQuestsModalContent() {
+                const lang = currentLang;
+                questsModalTitle.textContent = lang === "de" ? "Aktive Quests" : "Active Quests";
+                
+                questsModalBody.innerHTML = "";
+                activeQuests.forEach(q => {
+                    const qDef = questDefinitions[q.id][lang];
+                    const card = document.createElement("div");
+                    card.className = "quest-card " + (q.completed ? "completed" : "");
+                    card.innerHTML = `
+                        <div class="quest-icon">${q.completed ? '✅' : q.icon}</div>
+                        <div class="quest-info">
+                            <div class="quest-title">${qDef.t}</div>
+                            <div class="quest-desc">${qDef.d}</div>
+                        </div>
+                    `;
+                    card.addEventListener("click", () => {
+                        questDetailTitle.textContent = qDef.t;
+                        questDetailCmd.textContent = "> " + qDef.cmd;
+                        questDetailDesc.textContent = qDef.descLong;
+                        questDetailExample.textContent = qDef.example;
+                        questDetailModal.style.display = "flex";
+                    });
+                    questsModalBody.appendChild(card);
+                });
+            }
+            
+            function checkQuest(id) {
+                let quest = activeQuests.find(q => q.id === id);
+                if (quest && !quest.completed) {
+                    quest.completed = true;
+                    const lang = currentLang;
+                    const qDef = questDefinitions[id][lang];
+                    
+                    const popup = document.createElement("div");
+                    popup.className = "achievement-popup";
+                    popup.innerHTML = `
+                        <div class="achievement-icon" style="background: rgba(74, 222, 128, 0.1); border-color: #4ade80;">📜</div>
+                        <div class="achievement-content">
+                            <div class="achievement-header" style="color: #4ade80;">${i18n[lang].questCompleted}</div>
+                            <div class="achievement-title">${qDef.t}</div>
+                        </div>
+                        <button class="achievement-close">×</button>
+                    `;
+                    
+                    const closeBtn = popup.querySelector(".achievement-close");
+                    closeBtn.addEventListener("click", () => {
+                        popup.style.transform = "translateX(120%)";
+                        setTimeout(() => popup.remove(), 400);
+                    });
+
+                    document.getElementById("achievementContainer").appendChild(popup);
+                    setTimeout(() => popup.classList.add("show"), 50);
+
+                    setTimeout(() => {
+                        if (popup.parentElement) {
+                            popup.style.transform = "translateX(120%)";
+                            setTimeout(() => popup.remove(), 400);
+                        }
+                    }, 8000);
+
+                    if (questsModal.style.display === "flex") {
+                        renderQuestsModalContent();
+                    }
+                }
+            }
+
             infoModalBtn.addEventListener("click", () => {
                 renderInfoModalContent();
                 infoModal.style.display = "flex";
@@ -1043,46 +1271,53 @@
             });
 
             function renderInfoModalContent() {
-                const lang = i18n[currentLang];
-                infoModalTitle.textContent = lang.infoTitle;
+                const lang = currentLang;
+                const d = i18n[lang];
+                infoModalTitle.textContent = d.infoTitle;
                 
                 infoModalBody.innerHTML = `
-                    <div class="info-card">
-                        <div class="info-card-header">🛠️ ${lang.infoUiTitle}</div>
-                        <p style="margin-bottom: 8px;">${lang.infoUiDesc}</p>
-                        <ul style="margin-left: 20px; display: flex; flex-direction: column; gap: 4px;">
-                            <li><span class="info-badge">Syntax</span> — ${currentLang === 'de' ? 'Aktiviert Autovervollständigung mit Vorschlägen im Eingabefeld (Tab-Taste zum Ausfüllen).' : 'Enables auto-completion ghosts in the input field (Press Tab to complete).'}</li>
-                            <li><span class="info-badge">Tags</span> — ${currentLang === 'de' ? 'Hebt Befehle, Argumente und Pfade im Terminal farblich hervor und bietet Tooltips bei Hover.' : 'Colorizes commands, arguments, and paths in the terminal, and provides hover tooltips.'}</li>
-                        </ul>
-                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        
+                        <div class="info-section">
+                            <div class="info-section-title">${d.infoUiTitle}</div>
+                            <div style="font-size: 13.5px; color: var(--text-color);">
+                                <div><span class="info-badge">Syntax</span> ${d.infoUiDescSyntax}</div>
+                                <div style="margin-top: 6px;"><span class="info-badge">Tags</span> ${d.infoUiDescTags}</div>
+                            </div>
+                        </div>
 
-                    <div class="info-card">
-                        <div class="info-card-header">💻 ${lang.infoCoreTitle}</div>
-                        <div>help, ls, cd, pwd, cat, mkdir, touch, rm, clear, whoami, uname, date, echo, history, ping, ps, top, systemctl</div>
-                    </div>
+                        <div class="info-section">
+                            <div class="info-section-title">${d.infoCoreTitle}</div>
+                            <div style="font-size: 13.5px; color: var(--text-color); display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;">
+                                <span class="info-badge">help</span><span class="info-badge">ls</span><span class="info-badge">cd</span><span class="info-badge">pwd</span><span class="info-badge">cat</span><span class="info-badge">mkdir</span><span class="info-badge">touch</span><span class="info-badge">rm</span><span class="info-badge">clear</span><span class="info-badge">whoami</span><span class="info-badge">uname</span><span class="info-badge">date</span><span class="info-badge">echo</span><span class="info-badge">history</span><span class="info-badge">ping</span><span class="info-badge">ps</span><span class="info-badge">top</span>
+                            </div>
+                        </div>
 
-                    <div class="info-card">
-                        <div class="info-card-header">📦 ${lang.infoPkgTitle}</div>
-                        <div>apt / apt-get (Debian), pacman (Arch Linux)</div>
-                    </div>
+                        <div class="info-section">
+                            <div class="info-section-title">${d.infoPkgTitle}</div>
+                            <div style="font-size: 13.5px; color: var(--text-color); display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;">
+                                <span class="info-badge">apt / apt-get</span> (Debian) &nbsp; <span class="info-badge">pacman</span> (Arch Linux)
+                            </div>
+                        </div>
 
-                    <div class="info-card">
-                        <div class="info-card-header">🚀 ${lang.infoAppsTitle}</div>
-                        <ul style="margin-left: 20px; display: flex; flex-direction: column; gap: 4px;">
-                            <li><span class="info-badge">nano</span> — ${currentLang === "de" ? "Terminal-Texteditor (^O / ^S speichern, ^X beenden)" : "Terminal text editor (^O / ^S to save, ^X to exit)"}</li>
-                            <li><span class="info-badge">mc</span> — ${currentLang === "de" ? "Midnight Commander (zwei geteilte Dateimanager-Fenster)" : "Midnight Commander (dual-pane file manager)"}</li>
-                            <li><span class="info-badge">unzip / zip</span> — ${currentLang === "de" ? "Entpacken und Erstellen von ZIP-Archiven (z.B. passwordProtected.zip)" : "Extract and create zip archives (e.g. passwordProtected.zip)"}</li>
-                            <li><span class="info-badge">samba</span> — ${currentLang === "de" ? "Netzwerk-Dateifreigabe und smbclient mit bearbeitbarer /etc/samba/smb.conf" : "Network file sharing & smbclient with editable /etc/samba/smb.conf"}</li>
-                        </ul>
-                    </div>
+                        <div class="info-section">
+                            <div class="info-section-title">${d.infoAppsTitle}</div>
+                            <div style="font-size: 13.5px; color: var(--text-color); display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+                                <div><span class="info-badge">nano</span> ${d.infoAppsNano}</div>
+                                <div><span class="info-badge">mc</span> ${d.infoAppsMc}</div>
+                                <div><span class="info-badge">unzip / zip</span> ${d.infoAppsZip}</div>
+                                <div><span class="info-badge">samba</span> ${d.infoAppsSamba}</div>
+                            </div>
+                        </div>
 
-                    <div class="info-card">
-                        <div class="info-card-header">✨ ${lang.infoSpecTitle}</div>
-                        <ul style="margin-left: 20px; display: flex; flex-direction: column; gap: 4px;">
-                            <li><span class="info-badge">sudo</span> — ${currentLang === "de" ? "Führt Befehle mit Admin-Rechten aus (mit 5s Live-Countdown)" : "Executes commands with admin rights (with 5s live countdown)"}</li>
-                            <li>${currentLang === "de" ? "System-spezifische Update-Prüfung vor jeder App-Installation" : "System-specific update check required before installing any app"}</li>
-                            <li>${currentLang === "de" ? "Steam-ähnliche Erfolge ('A'-Knopf) & mehrsprachige Benutzeroberfläche (EN/DE)" : "Steam-like achievements ('A' button) & full EN/DE language support"}</li>
-                        </ul>
+                        <div class="info-section">
+                            <div class="info-section-title">${d.infoSpecTitle}</div>
+                            <div style="font-size: 13.5px; color: var(--text-color); display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+                                <div><span class="info-badge">sudo</span> ${d.infoSpecSudo}</div>
+                                <div><span class="info-badge">systemctl</span> ${d.infoSpecSystemctl}</div>
+                                <div><span class="info-badge">Updates</span> ${d.infoSpecUpdate}</div>
+                            </div>
+                        </div>
                     </div>
                 `;
             }
@@ -1094,6 +1329,9 @@
                 
                 if (infoModal.style.display === "flex") {
                     renderInfoModalContent();
+                }
+                if (questsModal.style.display === "flex") {
+                    renderQuestsModalContent();
                 }
                 
                 const hintDivs = terminalHistory.querySelectorAll(".command-hint, .command-error");
@@ -1140,6 +1378,9 @@
                 modalCancelBtn.textContent = lang.modalCancel;
                 modalConfirmBtn.textContent = lang.modalConfirm;
                 infoModalCloseBtn.textContent = currentLang === "de" ? "Schließen" : "Close";
+                document.getElementById("questsModalBtn").textContent = lang === "de" ? "Quests" : "Quests";
+                document.getElementById("questsModalCloseBtn").textContent = currentLang === "de" ? "Schließen" : "Close";
+                document.getElementById("questDetailCloseBtn").textContent = currentLang === "de" ? "Schließen" : "Close";
                 document.getElementById("lblNanoWriteOut").textContent = lang.nanoWriteOut;
                 document.getElementById("lblNanoSave").textContent = lang.nanoSave;
                 document.getElementById("lblNanoExit").textContent = lang.nanoExit;
@@ -1150,104 +1391,6 @@
                     welcomeDiv.textContent = lang.welcome;
                 }
             }
-
-            themeToggle.addEventListener("click", () => {
-                const isDark = body.getAttribute("data-theme") === "dark";
-                body.setAttribute("data-theme", isDark ? "light" : "dark");
-                document.getElementById("themeIcon").innerHTML = isDark ?
-                    '<path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>' :
-                    '<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>';
-            });
-
-            systemsDropdownBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                systemsMenu.classList.toggle("show");
-            });
-
-            document.addEventListener("click", () => {
-                systemsMenu.classList.remove("show");
-            });
-
-            systemsMenu.querySelectorAll(".term-dropdown-item").forEach(item => {
-                item.addEventListener("click", (e) => {
-                    const targetSys = e.target.getAttribute("data-sys");
-                    if (targetSys === currentSystem) return;
-                    pendingSystemTarget = targetSys;
-                    modalMessageText.textContent = i18n[currentLang].modalMsgBase.replace("{sys}", targetSys);
-                    confirmModal.style.display = "flex";
-                });
-            });
-
-            modalCancelBtn.addEventListener("click", () => {
-                confirmModal.style.display = "none";
-                pendingSystemTarget = null;
-            });
-
-            modalConfirmBtn.addEventListener("click", () => {
-                if (pendingSystemTarget) {
-                    currentSystem = pendingSystemTarget;
-                    currentSystemLabel.textContent = currentSystem;
-                    systemsMenu.querySelectorAll(".term-dropdown-item").forEach(i => {
-                        i.classList.toggle("active", i.getAttribute("data-sys") === currentSystem);
-                    });
-                    
-                    systemUpdated = false;
-                    let usrBin = fileSystem["/usr/bin"];
-                    if (usrBin && usrBin.children) {
-                        usrBin.children = usrBin.children.filter(c => c !== "nano" && c !== "mc" && c !== "unzip" && c !== "zip" && c !== "samba" && c !== "smbclient");
-                    }
-                    isNanoOpen = false;
-                    isMcOpen = false;
-                    updateDynamicLayout();
-
-                    updateOsFiles();
-                    terminalHistory.innerHTML = '';
-                    appendOutput(i18n[currentLang].switchedTo + " " + currentSystem + ". " + i18n[currentLang].envReset, "command-output");
-                    currentPath = "/home/user";
-                    updatePrompt();
-                    triggerAchievement("OS Switcher", "Switched operating system environment", "🔀");
-                }
-                confirmModal.style.display = "none";
-                pendingSystemTarget = null;
-            });
-
-            terminalBody.addEventListener("click", (e) => {
-                const selection = window.getSelection();
-                if (selection.toString().length === 0 && e.target !== terminalInput) {
-                    terminalInput.focus();
-                }
-            });
-
-            syntaxToggleBtn.addEventListener("click", () => {
-                syntaxEnabled = !syntaxEnabled;
-                syntaxToggleBtn.classList.toggle("active", syntaxEnabled);
-                if (!syntaxEnabled) suggestionOverlay.textContent = "";
-                else updateSuggestions();
-            });
-
-            highlightToggleBtn.addEventListener("click", () => {
-                highlightEnabled = !highlightEnabled;
-                highlightToggleBtn.classList.toggle("active", highlightEnabled);
-                
-                Array.from(terminalHistory.children).forEach(child => {
-                    const rawText = child.getAttribute("data-raw") || child.textContent;
-                    if (!child.hasAttribute("data-raw")) {
-                        child.setAttribute("data-raw", rawText);
-                    }
-                    if (highlightEnabled) {
-                        child.innerHTML = highlightText(rawText);
-                    } else {
-                        child.textContent = rawText;
-                    }
-                });
-
-                if (!highlightEnabled) {
-                    liveHighlightOverlay.innerHTML = "";
-                    terminalInput.classList.remove("transparent-text");
-                } else {
-                    updateLiveHighlight();
-                }
-            });
 
             fontDropdownBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
@@ -1286,6 +1429,7 @@
             document.addEventListener("click", () => {
                 fontMenu.classList.remove("show");
                 fontFamilyMenu.classList.remove("show");
+                systemsMenu.classList.remove("show");
             });
 
             setInterval(() => {
@@ -1301,7 +1445,101 @@
                 document.getElementById("retentionClick").textContent = hrs + ':' + mins + ':' + secs;
             }, 1000);
 
+            themeToggle.addEventListener("click", () => {
+                const isDark = body.getAttribute("data-theme") === "dark";
+                body.setAttribute("data-theme", isDark ? "light" : "dark");
+                document.getElementById("themeIcon").innerHTML = isDark ?
+                    '<path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>' :
+                    '<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>';
+            });
+
+            systemsDropdownBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                systemsMenu.classList.toggle("show");
+            });
+
+            systemsMenu.querySelectorAll(".term-dropdown-item").forEach(item => {
+                item.addEventListener("click", (e) => {
+                    const targetSys = e.target.getAttribute("data-sys");
+                    if (targetSys === currentSystem) return;
+                    pendingSystemTarget = targetSys;
+                    modalMessageText.textContent = i18n[currentLang].modalMsgBase.replace("{sys}", targetSys);
+                    confirmModal.style.display = "flex";
+                });
+            });
+
+            modalCancelBtn.addEventListener("click", () => {
+                confirmModal.style.display = "none";
+                pendingSystemTarget = null;
+            });
+
+            modalConfirmBtn.addEventListener("click", () => {
+                if (pendingSystemTarget) {
+                    currentSystem = pendingSystemTarget;
+                    currentSystemLabel.textContent = currentSystem;
+                    systemsMenu.querySelectorAll(".term-dropdown-item").forEach(i => {
+                        i.classList.toggle("active", i.getAttribute("data-sys") === currentSystem);
+                    });
+                    
+                    systemUpdated = false;
+                    let usrBin = fileSystem["/usr/bin"];
+                    if (usrBin && usrBin.children) {
+                        usrBin.children = usrBin.children.filter(c => c !== "nano" && c !== "mc" && c !== "unzip" && c !== "zip" && c !== "samba" && c !== "smbclient");
+                    }
+                    isNanoOpen = false;
+                    isMcOpen = false;
+                    updateDynamicLayout();
+
+                    updateOsFiles();
+                    runningServices = { "smbd": false, "nmbd": false, "ssh": true, "apache2": false };
+                    terminalHistory.innerHTML = '';
+                    appendOutput(i18n[currentLang].switchedTo + " " + currentSystem + ". " + i18n[currentLang].envReset, "command-output");
+                    currentPath = "/home/user";
+                    updatePrompt();
+                    triggerAchievement("OS Switcher", "Switched operating system environment", "🔀");
+                }
+                confirmModal.style.display = "none";
+                pendingSystemTarget = null;
+            });
+
+            syntaxToggleBtn.addEventListener("click", () => {
+                syntaxEnabled = !syntaxEnabled;
+                syntaxToggleBtn.classList.toggle("active", syntaxEnabled);
+                if (!syntaxEnabled) suggestionOverlay.textContent = "";
+                else updateSuggestions();
+            });
+
+            highlightToggleBtn.addEventListener("click", () => {
+                highlightEnabled = !highlightEnabled;
+                highlightToggleBtn.classList.toggle("active", highlightEnabled);
+                
+                Array.from(terminalHistory.children).forEach(child => {
+                    const rawText = child.getAttribute("data-raw") || child.textContent;
+                    if (!child.hasAttribute("data-raw")) {
+                        child.setAttribute("data-raw", rawText);
+                    }
+                    if (highlightEnabled) {
+                        child.innerHTML = highlightText(rawText);
+                    } else {
+                        child.textContent = rawText;
+                    }
+                });
+
+                if (!highlightEnabled) {
+                    liveHighlightOverlay.innerHTML = "";
+                    terminalInput.classList.remove("transparent-text");
+                } else {
+                    updateLiveHighlight();
+                }
+            });
+
             let currentPath = "/home/user";
+
+            terminalBody.addEventListener("click", (e) => {
+                if (!window.getSelection().toString()) {
+                    terminalInput.focus();
+                }
+            });
 
             function updateDynamicLayout() {
                 if (isNanoOpen) {
@@ -1320,7 +1558,7 @@
             }
 
             function getAvailableCommands() {
-                let base = ["help", "ls", "cd", "pwd", "cat", "mkdir", "touch", "rm", "clear", "whoami", "uname", "date", "echo", "history", "ping", "ps", "top", "sudo", "systemctl"];
+                let base = ["help", "ls", "cd", "pwd", "cat", "mkdir", "touch", "rm", "clear", "whoami", "uname", "date", "echo", "history", "ping", "ps", "top", "sudo"];
                 if (currentSystem === "Debian") {
                     base.push("apt");
                     base.push("apt-get");
@@ -1404,11 +1642,11 @@
                         case "ping": return { type: lang.ttCmd, desc: lang.descPing, ex: "ping google.com" };
                         case "ps": return { type: lang.ttCmd, desc: lang.descPs, ex: "ps aux" };
                         case "top": return { type: lang.ttCmd, desc: lang.descTop, ex: "top" };
-                        case "systemctl": return { type: lang.ttCmd, desc: "Controls the systemd system and service manager.", ex: "systemctl status smbd" };
                         case "nano": return { type: lang.ttCmd, desc: lang.descNano, ex: "nano <fileName>" };
                         case "mc": return { type: lang.ttCmd, desc: lang.descMc, ex: "mc" };
                         case "unzip": case "zip": return { type: lang.ttCmd, desc: lang.descUnzip, ex: "unzip archive.zip" };
                         case "smbclient": return { type: lang.ttCmd, desc: "Samba client tool to access shares.", ex: "smbclient -L localhost" };
+                        case "systemctl": return { type: lang.ttCmd, desc: "Control the systemd system and service manager.", ex: "sudo systemctl start smbd" };
                         case "sudo": return { type: lang.ttCmd, desc: "Executes command with elevated administrative privileges.", ex: "sudo apt update" };
                         case "apt": case "apt-get": case "pacman": 
                             return { type: lang.ttPkg, desc: lang.descPkg, ex: trimmed + " install <package>" };
@@ -1673,32 +1911,20 @@
                 const lang = i18n[currentLang];
                 appendOutput(lang.readPkg, "command-success");
                 setTimeout(() => {
-                    let totalPkgs, msg;
-                    if (targetPkg) {
-                        msg = lang.simulatingInstall.replace("{pkg}", targetPkg);
-                        totalPkgs = Math.floor(Math.random() * 3) + 2; 
-                    } else {
-                        msg = lang.simulatingUpdate;
-                        totalPkgs = Math.floor(Math.random() * 31) + 15;
-                    }
+                    appendOutput(lang.simulatingUpdate, "command-output");
                     
-                    appendOutput(msg, "command-output");
+                    let totalPkgs = targetPkg ? Math.floor(Math.random() * 3) + 2 : Math.floor(Math.random() * 31) + 15;
                     let maxTimeSec = targetPkg ? Math.floor(Math.random() * 3) + 2 : Math.floor(Math.random() * 51) + 10;
                     let intervalMs = (maxTimeSec * 1000) / totalPkgs;
                     let currentPkg = 1;
 
-                    const pkgNames = targetPkg ? 
-                        ["lib-deps", "core-utils", "bind-libs", targetPkg] : 
-                        ["linux-base", "systemd", "coreutils", "bash", "glibc", "openssl", "python3", "git", "curl", "libssl3", "zlib1g", "tar", "grep", "sed", "gawk", "procps", "util-linux", "vim-common"];
+                    const pkgNames = ["linux-base", "systemd", "coreutils", "bash", "glibc", "openssl", "python3", "nano", "mc", "unzip", "zip", "samba", "smbclient", "git", "curl", "libssl3", "zlib1g", "tar", "grep", "sed", "gawk", "procps", "util-linux", "vim-common"];
 
                     let timer = setInterval(() => {
                         if (currentPkg <= totalPkgs) {
-                            let randomName = targetPkg && currentPkg === totalPkgs ? 
-                                targetPkg : 
-                                pkgNames[Math.floor(Math.random() * pkgNames.length)] + "-" + (Math.floor(Math.random() * 3) + 1) + ".0";
-                            
-                            let installMsg = lang.pkgInstalling.replace("{i}", currentPkg).replace("{total}", totalPkgs).replace("{name}", randomName);
-                            appendOutput(installMsg, "command-output");
+                            let randomName = targetPkg && currentPkg === totalPkgs ? targetPkg : pkgNames[Math.floor(Math.random() * pkgNames.length)] + "-" + (Math.floor(Math.random() * 3) + 1) + ".0";
+                            let msg = lang.pkgInstalling.replace("{i}", currentPkg).replace("{total}", totalPkgs).replace("{name}", randomName);
+                            appendOutput(msg, "command-output");
                             currentPkg++;
                         } else {
                             clearInterval(timer);
@@ -1716,16 +1942,19 @@
                 let parts = line.split(/\s+/);
                 let cmd = parts[0];
                 let args = parts.slice(1);
-
                 const lang = i18n[currentLang];
 
+                let isSudo = false;
                 if (cmd === "sudo") {
                     if (args.length === 0) {
                         appendOutput("usage: sudo [-D level] [-u user] command", "command-error");
                         return;
                     }
-
+                    isSudo = true;
+                    cmd = args[0];
+                    args = args.slice(1);
                     triggerAchievement("Administrator", "Executed command with sudo", "🛡️");
+                    
                     let countdownDiv = document.createElement("div");
                     countdownDiv.className = "command-hint";
                     terminalHistory.appendChild(countdownDiv);
@@ -1747,14 +1976,19 @@
                         } else {
                             clearInterval(cdTimer);
                             countdownDiv.remove();
-                            let savedCmd = args.join(" ");
-                            executeCommand(savedCmd);
+                            let savedCmd = [cmd, ...args].join(" ");
+                            checkQuest("use_sudo");
+                            executeCommandInternal(cmd, args, true, savedCmd);
                         }
                     }, 1000);
                     return;
                 }
+                executeCommandInternal(cmd, args, isSudo, line);
+            }
 
+            function executeCommandInternal(cmd, args, isSudo, originalLine) {
                 let availableCmds = getAvailableCommands();
+                const lang = i18n[currentLang];
 
                 if (!availableCmds.includes(cmd)) {
                     appendOutput("bash: " + cmd + ": " + lang.cmdNotFound, "command-error");
@@ -1769,14 +2003,16 @@
                     }
                     case "clear": {
                         terminalHistory.innerHTML = "";
+                        checkQuest("clear_screen");
                         break;
                     }
                     case "pwd": {
                         appendOutput(currentPath, "command-output");
+                        checkQuest("check_path");
                         break;
                     }
                     case "whoami": {
-                        appendOutput("user", "command-output");
+                        appendOutput(isSudo ? "root" : "user", "command-output");
                         break;
                     }
                     case "uname": {
@@ -1796,39 +2032,52 @@
                         let node = fileSystem[targetLsPath];
                         if (node && node.type === "dir") {
                             appendOutput(node.children.join("   "), "command-success");
+                            checkQuest("list_files");
                         } else if (node && node.type === "file") {
                             appendOutput(args[0], "command-output");
+                            checkQuest("list_files");
                         } else {
                             appendOutput("ls: " + (args[0] || "") + ": " + lang.noSuchFile, "command-error");
                         }
                         break;
                     }
                     case "systemctl": {
-                        if (args.length < 2) {
-                            let msg = currentLang === 'de' ? 
-                                "systemctl: Fehlende Argumente. Nutzung: systemctl [start|stop|restart|enable|disable|status] <service>" : 
-                                "systemctl: missing arguments. Usage: systemctl [start|stop|restart|enable|disable|status] <service>";
-                            appendOutput(msg, "command-error");
+                        if (!isSudo) {
+                            appendOutput(lang.sysCtlNotRoot, "command-error");
                             break;
                         }
-                        const action = args[0];
-                        const service = args[1];
-
-                        if (["start", "stop", "restart", "enable", "disable"].includes(action)) {
-                            // systemctl start/stop usually fail silently on success
-                            triggerAchievement("SysAdmin", "Managed a system service via systemctl", "⚙️");
-                        } else if (action === "status") {
-                            let statusOutput = `● ${service} - Simulated Service\n`;
-                            statusOutput += `   Loaded: loaded (/lib/systemd/system/${service}; enabled; vendor preset: enabled)\n`;
-                            statusOutput += `   Active: active (running) since ${new Date().toLocaleTimeString()}\n`;
-                            statusOutput += ` Main PID: ${Math.floor(Math.random() * 5000) + 1000} (${service.split('.')[0]})\n`;
-                            statusOutput += `    Tasks: 1 (limit: 4613)\n`;
-                            statusOutput += `   CGroup: /system.slice/${service}`;
-                            appendOutput(statusOutput, "command-output");
-                        } else {
-                            let err = currentLang === 'de' ? `systemctl: Unbekannte Operation '${action}'.` : `systemctl: Unknown operation '${action}'.`;
-                            appendOutput(err, "command-error");
+                        if (args.length < 2) {
+                            appendOutput("systemctl: missing operation or service name. (e.g. systemctl start smbd)", "command-error");
+                            break;
                         }
+                        let op = args[0];
+                        let srv = args[1].replace(".service", "");
+                        if (!["smbd", "nmbd", "ssh", "apache2"].includes(srv)) {
+                            appendOutput(lang.sysCtlUnknown.replace("{srv}", srv), "command-error");
+                            break;
+                        }
+                        if (op === "start") {
+                            runningServices[srv] = true;
+                            appendOutput(lang.sysCtlStart.replace("{srv}", srv), "command-output");
+                        } else if (op === "stop") {
+                            runningServices[srv] = false;
+                            appendOutput(lang.sysCtlStop.replace("{srv}", srv), "command-output");
+                        } else if (op === "restart") {
+                            runningServices[srv] = true;
+                            appendOutput(lang.sysCtlRestart.replace("{srv}", srv), "command-output");
+                        } else if (op === "enable") {
+                            appendOutput(lang.sysCtlEnable.replace(/{srv}/g, srv), "command-success");
+                        } else if (op === "disable") {
+                            appendOutput(lang.sysCtlDisable.replace(/{srv}/g, srv), "command-success");
+                        } else if (op === "status") {
+                            let header = "● " + srv + ".service - " + srv.toUpperCase() + " Daemon\n";
+                            header += "     Loaded: loaded (/lib/systemd/system/" + srv + ".service; enabled)\n";
+                            let actLine = runningServices[srv] ? lang.sysCtlStatusAct : lang.sysCtlStatusInact;
+                            appendOutput(header + "     " + actLine, runningServices[srv] ? "command-success" : "command-error");
+                        } else {
+                            appendOutput("Unknown operation '" + op + "'.", "command-error");
+                        }
+                        triggerAchievement("Service Manager", "Manipulated a background service", "⚙️");
                         break;
                     }
                     case "nano": {
@@ -1846,7 +2095,7 @@
                             displayFilename = lang.nanoNewFile;
                         } else {
                             targetNanoPath = resolvePath(args[0]);
-                            if (!hasPermission(targetNanoPath) && !targetNanoPath.startsWith("/etc/samba")) {
+                            if (!isSudo && !hasPermission(targetNanoPath) && !targetNanoPath.startsWith("/etc/samba")) {
                                 appendOutput("bash: " + args[0] + ": " + lang.permDenied, "command-error");
                                 break;
                             }
@@ -1865,8 +2114,9 @@
                             }
                             displayFilename = args[0].split("/").pop();
                         }
-                        openNano(targetNanoPath, displayFilename);
+                        openNano(targetNanoPath, displayFilename, isSudo);
                         triggerAchievement("Text Editor", "Opened nano text editor", "📝");
+                        checkQuest("use_nano");
                         break;
                     }
                     case "mc": {
@@ -1878,6 +2128,7 @@
                         }
                         openMc();
                         triggerAchievement("File Manager", "Launched Midnight Commander", "📁");
+                        checkQuest("use_mc");
                         break;
                     }
                     case "unzip": {
@@ -1950,6 +2201,10 @@
                             appendOutput("bash: smbclient: command not found. You can install it using package manager (e.g., '" + installHint + "')", "command-error");
                             break;
                         }
+                        if (!runningServices["smbd"]) {
+                            appendOutput("Connection to localhost failed (Error NT_STATUS_CONNECTION_REFUSED)\nDid you start smbd.service?", "command-error");
+                            break;
+                        }
                         if (args[0] === "-L" || args[0] === "-l") {
                             appendOutput("Domain=[WORKGROUP] OS=[Unix] Server=[Samba 4.18.2]\n\n\tSharename       Type      Comment\n\t---------       ----      -------\n\thomes           Disk      Home Directories\n\tshared_docs     Disk      Public Shared Documents Folder\n\tIPC$            IPC      IPC Service (Samba Server)\n", "command-success");
                         } else {
@@ -1963,7 +2218,7 @@
                             appendOutput("touch: " + lang.missingFile, "command-error");
                         } else {
                             let target = resolvePath(args[0]);
-                            if (!hasPermission(target)) {
+                            if (!isSudo && !hasPermission(target)) {
                                 appendOutput("touch: " + args[0] + ": " + lang.permDenied, "command-error");
                                 break;
                             }
@@ -1974,6 +2229,7 @@
                                     fileSystem[target] = { type: "file", content: "" };
                                     if (!fileSystem[parent].children.includes(name)) fileSystem[parent].children.push(name);
                                 }
+                                checkQuest("create_file");
                             } else {
                                 appendOutput("touch: " + args[0] + ": " + lang.noSuchDir, "command-error");
                             }
@@ -1986,6 +2242,7 @@
                         if (cdNode && cdNode.type === "dir") {
                             currentPath = targetCd;
                             updatePrompt();
+                            checkQuest("change_dir");
                             if (isMcOpen) {
                                 mcState[mcState.activeSide].path = currentPath;
                                 refreshMcPanels();
@@ -2002,7 +2259,7 @@
                             appendOutput("mkdir: " + lang.missingOp, "command-error");
                         } else {
                             let target = resolvePath(args[0]);
-                            if (!hasPermission(target)) {
+                            if (!isSudo && !hasPermission(target)) {
                                 appendOutput("mkdir: " + args[0] + ": " + lang.permDenied, "command-error");
                                 break;
                             }
@@ -2013,6 +2270,7 @@
                             } else if (fileSystem[parent] && fileSystem[parent].type === "dir") {
                                 fileSystem[target] = { type: "dir", children: [] };
                                 fileSystem[parent].children.push(name);
+                                checkQuest("create_dir");
                                 if (isMcOpen) refreshMcPanels();
                             } else {
                                 appendOutput("mkdir: " + args[0] + ": " + lang.cannotCreate, "command-error");
@@ -2025,7 +2283,7 @@
                             appendOutput("rm: " + lang.missingOp, "command-error");
                         } else {
                             let target = resolvePath(args[0]);
-                            if (!hasPermission(target)) {
+                            if (!isSudo && !hasPermission(target)) {
                                 appendOutput("rm: " + args[0] + ": " + lang.permDenied, "command-error");
                                 break;
                             }
@@ -2036,6 +2294,7 @@
                                 fileSystem[parent].children = fileSystem[parent].children.filter(c => c !== name);
                                 if (isMcOpen) refreshMcPanels();
                                 triggerAchievement("Cleaner", "Permanently removed a file or directory", "🗑️");
+                                checkQuest("delete_item");
                             } else {
                                 appendOutput("rm: " + args[0] + ": " + lang.cannotRemove, "command-error");
                             }
@@ -2050,6 +2309,7 @@
                             let node = fileSystem[target];
                             if (node && node.type === "file") {
                                 appendOutput(node.content, "command-output");
+                                checkQuest("read_file");
                             } else if (node && node.type === "dir") {
                                 appendOutput("cat: " + args[0] + ": Is a directory", "command-error");
                             } else {
@@ -2083,6 +2343,7 @@
                                     }
                                     appendOutput("Setting up " + pkg + " (2:4.18.2+dfsg-1) ... Done.", "command-success");
                                     triggerAchievement("Software Installer", "Successfully installed package: " + pkg, "💿");
+                                    checkQuest("install_pkg");
                                 }, pkg);
                             }
                         } else if (sub === "remove" || sub === "purge") {
@@ -2136,6 +2397,7 @@
                                     }
                                     appendOutput("installing " + pkg + " [################################] 100%", "command-success");
                                     triggerAchievement("Software Installer", "Successfully installed package: " + pkg, "💿");
+                                    checkQuest("install_pkg");
                                 }, pkg);
                             }
                         } else if (sub === "-R") {
@@ -2198,10 +2460,12 @@
             
             let currentNanoPath = null;
             let currentNanoDisplay = null;
+            let currentNanoIsSudo = false;
 
-            function openNano(targetPath, displayFilename) {
+            function openNano(targetPath, displayFilename, isSudo = false) {
                 currentNanoPath = targetPath;
                 currentNanoDisplay = displayFilename;
+                currentNanoIsSudo = isSudo;
                 
                 const nanoTextarea = document.getElementById("nanoTextarea");
                 const nanoFilename = document.getElementById("nanoFilename");
@@ -2247,7 +2511,7 @@
                     document.getElementById("nanoFilename").textContent = currentNanoDisplay;
                 }
 
-                if (!hasPermission(currentNanoPath) && !currentNanoPath.startsWith("/etc/samba")) {
+                if (!currentNanoIsSudo && !hasPermission(currentNanoPath) && !currentNanoPath.startsWith("/etc/samba")) {
                     document.getElementById("nanoStatus").textContent = "[ Error: " + lang.permDenied + " ]";
                     return;
                 }
@@ -2426,7 +2690,7 @@
                     updatePrompt();
                     refreshMcPanels();
                 } else if (node && node.type === "file") {
-                    openNano(fullPath, selName);
+                    openNano(fullPath, selName, false);
                 }
             }
 
@@ -2510,7 +2774,7 @@
             document.getElementById("mcF4").addEventListener("click", () => {
                 let f = getMcSelectedFullPath();
                 if (f && fileSystem[f] && fileSystem[f].type === "file") {
-                    openNano(f, f.split("/").pop());
+                    openNano(f, f.split("/").pop(), false);
                 }
             });
             document.getElementById("mcF5").addEventListener("click", () => {
