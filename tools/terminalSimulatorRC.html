@@ -685,7 +685,7 @@
                 <!-- Filled dynamically via JS -->
             </div>
             <div class="modal-actions">
-                <button class="clickable-dt" id="questsModalReloadBtn">Reload</button>
+                <button class="clickable-dt" id="questsModalReloadBtn">Reload All</button>
                 <button class="clickable-dt" id="questsModalCloseBtn">Close</button>
             </div>
         </div>
@@ -767,13 +767,12 @@
                     envReset: "Environment reset. Type 'help' for available commands.",
                     achievementsEnabled: "Achievements Enabled",
                     achievementsDisabled: "Achievements Disabled",
-                    achToggleMsg: "Notifications will now appear for achievements.",
                     questsBtn: "Quests",
                     questsTitle: "Active Quests",
                     questCompleted: "Quest Completed",
-                    questsReload: "Reload",
+                    questsReload: "New Quest",
                     questsReloadAll: "Reload All",
-                    reloadQuestConfirm: "Are you sure you want to reset this quest and generate a new one?",
+                    reloadQuestConfirm: "Are you sure you want to reset this quest and generate a new random one?",
                     reloadAllConfirm: "Are you sure you want to generate all new random quests?",
                     infoTitle: "Commands & Apps Overview",
                     infoUiTitle: "UI Toggles",
@@ -887,13 +886,12 @@
                     envReset: "Umgebung zurückgesetzt. Tippe 'help' für verfügbare Befehle.",
                     achievementsEnabled: "Erfolge Aktiviert",
                     achievementsDisabled: "Erfolge Deaktiviert",
-                    achToggleMsg: "Benachrichtigungen für Erfolge werden nun angezeigt.",
                     questsBtn: "Quests",
                     questsTitle: "Aktive Quests",
                     questCompleted: "Quest Abgeschlossen",
-                    questsReload: "Neu laden",
+                    questsReload: "Neue Quest",
                     questsReloadAll: "Alle neu laden",
-                    reloadQuestConfirm: "Möchtest du diese Quest wirklich zurücksetzen und eine neue generieren?",
+                    reloadQuestConfirm: "Möchtest du diese Quest wirklich zurücksetzen und eine neue zufällige generieren?",
                     reloadAllConfirm: "Möchtest du alle neuen zufälligen Quests generieren?",
                     infoTitle: "Befehle & Apps Übersicht",
                     infoUiTitle: "UI Schalter",
@@ -1050,13 +1048,30 @@
                 list_files: {
                     en: { t: "Observer", d: "List files using ls", cmd: "ls", points: 15, descLong: "The ls (list) command shows all files and folders inside your current directory or a specified target directory.", example: "ls <directoryPath>" },
                     de: { t: "Beobachter", d: "Liste Dateien auf", cmd: "ls", points: 15, descLong: "Der Befehl ls zeigt alle Dateien und Ordner in deinem aktuellen Verzeichnis an.", example: "ls <directoryPath>" }
+                },
+                unzip_archive: {
+                    en: { t: "Unarchiver", d: "Extract a .zip archive using unzip", cmd: "unzip", points: 60, descLong: "The unzip command extracts compressed files from ZIP archives back into the file system.", example: "unzip passwordProtected.zip" },
+                    de: { t: "Entpacker", d: "Entpacke ein .zip-Archiv mit unzip", cmd: "unzip", points: 60, descLong: "Der Befehl unzip entpackt komprimierte Dateien aus ZIP-Archiven.", example: "unzip passwordProtected.zip" }
+                },
+                ping_server: {
+                    en: { t: "Network Specialist", d: "Test connectivity using ping", cmd: "ping", points: 40, descLong: "The ping command sends network test packets to a specified server to check latency and reachability.", example: "ping google.com" },
+                    de: { t: "Netzwerkspezialist", d: "Teste die Verbindung mit ping", cmd: "ping", points: 40, descLong: "Der Befehl ping sendet Netzwerk-Testpakete an einen Server, um die Latenz zu prüfen.", example: "ping google.com" },
+                },
+                service_control: {
+                    en: { t: "System Admin", d: "Manage a service using systemctl", cmd: "systemctl", points: 90, descLong: "The systemctl command is used to inspect and control systemd system and service manager daemons.", example: "sudo systemctl start smbd" },
+                    de: { t: "Systemadministrator", d: "Verwalte einen Dienst mit systemctl", cmd: "systemctl", points: 90, descLong: "Der systemctl Befehl steuert und überwacht Systemd-Dienste und Daemons.", example: "sudo systemctl start smbd" },
+                },
+                check_history: {
+                    en: { t: "Archivist", d: "Review past commands using history", cmd: "history", points: 20, descLong: "The history command outputs a numbered list of all commands previously typed during your session.", example: "history" },
+                    de: { t: "Archivar", d: "Überprüfe den Verlauf mit history", cmd: "history", points: 20, descLong: "Der history Befehl gibt eine nummerierte Liste aller zuvor eingegebenen Befehle aus.", example: "history" }
                 }
             };
 
             const questPool = [
                 { id: "use_nano", icon: "📝" }, { id: "use_mc", icon: "📁" }, { id: "create_dir", icon: "📁" }, { id: "create_file", icon: "📄" },
                 { id: "delete_item", icon: "🗑️" }, { id: "use_sudo", icon: "🛡️" }, { id: "install_pkg", icon: "📦" }, { id: "read_file", icon: "📖" },
-                { id: "check_path", icon: "📍" }, { id: "clear_screen", icon: "🧹" }, { id: "change_dir", icon: "🚶" }, { id: "list_files", icon: "👀" }
+                { id: "check_path", icon: "📍" }, { id: "clear_screen", icon: "🧹" }, { id: "change_dir", icon: "🚶" }, { id: "list_files", icon: "👀" },
+                { id: "unzip_archive", icon: "🗜️" }, { id: "ping_server", icon: "🌐" }, { id: "service_control", icon: "⚙️" }, { id: "check_history", icon: "📜" }
             ];
 
             let activeQuests = [];
@@ -1064,7 +1079,7 @@
                 let shuffled = [...questPool].sort(() => 0.5 - Math.random());
                 return shuffled.slice(0, count).map(q => ({ ...q, completed: false }));
             }
-            activeQuests = getRandomUnassignedQuests(10);
+            activeQuests = getRandomUnassignedQuests(12);
 
             let commandHistoryList = [];
             let historyIndex = -1;
@@ -1167,16 +1182,16 @@
             const nanoCard = document.getElementById("nanoCard");
             const mcCard = document.getElementById("mcCard");
 
-            function triggerAchievement(title, desc, icon = "⭐") {
+            function showNotification(headerText, titleText, descText, icon = "⭐") {
                 if (!achievementsEnabled) return;
                 const popup = document.createElement("div");
                 popup.className = "achievement-popup";
                 popup.innerHTML = `
                     <div class="achievement-icon">${icon}</div>
                     <div class="achievement-content">
-                        <div class="achievement-header">Achievement Unlocked</div>
-                        <div class="achievement-title">${title}</div>
-                        <div class="achievement-desc">${desc}</div>
+                        <div class="achievement-header">${headerText}</div>
+                        <div class="achievement-title">${titleText}</div>
+                        <div class="achievement-desc">${descText}</div>
                     </div>
                     <button class="achievement-close">×</button>
                 `;
@@ -1195,7 +1210,7 @@
                         popup.style.transform = "translateX(120%)";
                         setTimeout(() => popup.remove(), 400);
                     }
-                }, 15000);
+                }, 8000);
             }
 
             questsModalBtn.addEventListener("click", () => {
@@ -1230,9 +1245,7 @@
 
             questConfirmYesBtn.addEventListener("click", () => {
                 if (pendingQuestReloadId === 'all') {
-                    let unassigned = questPool.filter(qp => !activeQuests.some(aq => aq.id === qp.id));
-                    if (unassigned.length === 0) unassigned = [...questPool];
-                    activeQuests = getRandomUnassignedQuests(10);
+                    activeQuests = getRandomUnassignedQuests(12);
                 } else if (pendingQuestReloadId) {
                     let qIndex = activeQuests.findIndex(q => q.id === pendingQuestReloadId);
                     if (qIndex !== -1) {
@@ -1316,32 +1329,12 @@
                     
                     addScore(qDef.points);
 
-                    const popup = document.createElement("div");
-                    popup.className = "achievement-popup";
-                    popup.innerHTML = `
-                        <div class="achievement-icon" style="background: rgba(74, 222, 128, 0.1); border-color: #4ade80;">📜</div>
-                        <div class="achievement-content">
-                            <div class="achievement-header" style="color: #4ade80;">${i18n[lang].questCompleted} (+${qDef.points} pts)</div>
-                            <div class="achievement-title">${qDef.t}</div>
-                        </div>
-                        <button class="achievement-close">×</button>
-                    `;
-                    
-                    const closeBtn = popup.querySelector(".achievement-close");
-                    closeBtn.addEventListener("click", () => {
-                        popup.style.transform = "translateX(120%)";
-                        setTimeout(() => popup.remove(), 400);
-                    });
-
-                    document.getElementById("achievementContainer").appendChild(popup);
-                    setTimeout(() => popup.classList.add("show"), 50);
-
-                    setTimeout(() => {
-                        if (popup.parentElement) {
-                            popup.style.transform = "translateX(120%)";
-                            setTimeout(() => popup.remove(), 400);
-                        }
-                    }, 8000);
+                    showNotification(
+                        lang === "de" ? "Quest Abgeschlossen" : "Quest Completed",
+                        qDef.t,
+                        `+${qDef.points} pts`,
+                        "📜"
+                    );
 
                     setTimeout(triggerExplosion, 50);
 
@@ -1476,8 +1469,8 @@
                 modalCancelBtn.textContent = lang.modalCancel;
                 modalConfirmBtn.textContent = lang.modalConfirm;
                 infoModalCloseBtn.textContent = currentLang === "de" ? "Schließen" : "Close";
-                document.getElementById("questsModalBtn").textContent = lang === "de" ? "Quests" : "Quests";
-                questsModalReloadBtn.textContent = lang.questsReload;
+                document.getElementById("questsModalBtn").textContent = lang.questsBtn;
+                questsModalReloadBtn.textContent = lang.questsReloadAll;
                 document.getElementById("questsModalCloseBtn").textContent = currentLang === "de" ? "Schließen" : "Close";
                 document.getElementById("questDetailCloseBtn").textContent = currentLang === "de" ? "Schließen" : "Close";
                 document.getElementById("lblNanoWriteOut").textContent = lang.nanoWriteOut;
@@ -1595,7 +1588,7 @@
                     appendOutput(i18n[currentLang].switchedTo + " " + currentSystem + ". " + i18n[currentLang].envReset, "command-output");
                     currentPath = "/home/user";
                     updatePrompt();
-                    triggerAchievement("OS Switcher", "Switched operating system environment", "🔀");
+                    showNotification("Achievement Unlocked", "OS Switcher", "Switched operating system environment", "🔀");
                 }
                 confirmModal.style.display = "none";
                 pendingSystemTarget = null;
@@ -2029,7 +2022,7 @@
                             clearInterval(timer);
                             if (!targetPkg) {
                                 systemUpdated = true;
-                                triggerAchievement("System Upgraded", "Successfully updated system packages", "📦");
+                                showNotification("Achievement Unlocked", "System Upgraded", "Successfully updated system packages", "📦");
                             }
                             if (onComplete) onComplete();
                         }
@@ -2052,7 +2045,7 @@
                     isSudo = true;
                     cmd = args[0];
                     args = args.slice(1);
-                    triggerAchievement("Administrator", "Executed command with sudo", "🛡️");
+                    showNotification("Achievement Unlocked", "Administrator", "Executed command with sudo", "🛡️");
                     
                     let countdownDiv = document.createElement("div");
                     countdownDiv.className = "command-hint";
@@ -2094,7 +2087,6 @@
                     return;
                 }
 
-                // Reward score for correct valid command execution
                 addScore(5);
 
                 switch (cmd) {
@@ -2179,7 +2171,8 @@
                         } else {
                             appendOutput(lang.sysCtlUnknownOp.replace("{op}", op), "command-error");
                         }
-                        triggerAchievement("Service Manager", "Manipulated a background service", "⚙️");
+                        showNotification("Achievement Unlocked", "Service Manager", "Manipulated a background service", "⚙️");
+                        checkQuest("service_control");
                         break;
                     }
                     case "nano": {
@@ -2217,7 +2210,7 @@
                             displayFilename = args[0].split("/").pop();
                         }
                         openNano(targetNanoPath, displayFilename, isSudo);
-                        triggerAchievement("Text Editor", "Opened nano text editor", "📝");
+                        showNotification("Achievement Unlocked", "Text Editor", "Opened nano text editor", "📝");
                         checkQuest("use_nano");
                         break;
                     }
@@ -2229,7 +2222,7 @@
                             break;
                         }
                         openMc();
-                        triggerAchievement("File Manager", "Launched Midnight Commander", "📁");
+                        showNotification("Achievement Unlocked", "File Manager", "Launched Midnight Commander", "📁");
                         checkQuest("use_mc");
                         break;
                     }
@@ -2261,7 +2254,8 @@
                         }
                         appendOutput(lang.unzipInflate.replace("{file}", unzippedFileName), "command-success");
                         if (isMcOpen) refreshMcPanels();
-                        triggerAchievement("Archive Master", "Extracted a zip archive", "📦");
+                        showNotification("Achievement Unlocked", "Archive Master", "Extracted a zip archive", "📦");
+                        checkQuest("unzip_archive");
                         break;
                     }
                     case "zip": {
@@ -2293,7 +2287,7 @@
                         }
                         appendOutput(lang.zipAdd.replace("{file}", sourceFile), "command-success");
                         if (isMcOpen) refreshMcPanels();
-                        triggerAchievement("Archiver", "Created a zip archive", "🗜️");
+                        showNotification("Achievement Unlocked", "Archiver", "Created a zip archive", "🗜️");
                         break;
                     }
                     case "smbclient": {
@@ -2312,7 +2306,7 @@
                         } else {
                             appendOutput(lang.smbShell, "command-success");
                         }
-                        triggerAchievement("Network Share", "Connected to Samba network share", "🌐");
+                        showNotification("Achievement Unlocked", "Network Share", "Connected to Samba network share", "🌐");
                         break;
                     }
                     case "touch": {
@@ -2395,7 +2389,7 @@
                                 delete fileSystem[target];
                                 fileSystem[parent].children = fileSystem[parent].children.filter(c => c !== name);
                                 if (isMcOpen) refreshMcPanels();
-                                triggerAchievement("Cleaner", "Permanently removed a file or directory", "🗑️");
+                                showNotification("Achievement Unlocked", "Cleaner", "Permanently removed a file or directory", "🗑️");
                                 checkQuest("delete_item");
                             } else {
                                 appendOutput("rm: " + args[0] + ": " + lang.cannotRemove, "command-error");
@@ -2444,7 +2438,7 @@
                                         if (!usrBin.includes("smbclient")) usrBin.push("smbclient");
                                     }
                                     appendOutput(lang.aptSettingUp.replace("{pkg}", pkg), "command-success");
-                                    triggerAchievement("Software Installer", "Successfully installed package: " + pkg, "💿");
+                                    showNotification("Achievement Unlocked", "Software Installer", "Successfully installed package: " + pkg, "💿");
                                     checkQuest("install_pkg");
                                 }, pkg);
                             }
@@ -2467,7 +2461,7 @@
                                     if (pkg === "samba") fileSystem["/usr/bin"].children = fileSystem["/usr/bin"].children.filter(c => c !== "smbclient");
                                 }
                                 appendOutput(lang.aptRemoving.replace("{pkg}", pkg), "command-success");
-                                triggerAchievement("Uninstaller", "Removed package: " + pkg, "❌");
+                                showNotification("Achievement Unlocked", "Uninstaller", "Removed package: " + pkg, "❌");
                             }
                         } else {
                             appendOutput(lang.aptInvalid, "command-error");
@@ -2498,7 +2492,7 @@
                                         if (!usrBin.includes("smbclient")) usrBin.push("smbclient");
                                     }
                                     appendOutput(lang.pacInst.replace("{pkg}", pkg), "command-success");
-                                    triggerAchievement("Software Installer", "Successfully installed package: " + pkg, "💿");
+                                    showNotification("Achievement Unlocked", "Software Installer", "Successfully installed package: " + pkg, "💿");
                                     checkQuest("install_pkg");
                                 }, pkg);
                             }
@@ -2521,7 +2515,7 @@
                                     if (pkg === "samba") fileSystem["/usr/bin"].children = fileSystem["/usr/bin"].children.filter(c => c !== "smbclient");
                                 }
                                 appendOutput(lang.pacRm.replace("{pkg}", pkg), "command-success");
-                                triggerAchievement("Uninstaller", "Removed package: " + pkg, "❌");
+                                showNotification("Achievement Unlocked", "Uninstaller", "Removed package: " + pkg, "❌");
                             }
                         } else {
                             appendOutput(lang.pacInvalid, "command-error");
@@ -2534,6 +2528,7 @@
                             .filter(t => t.startsWith("user@") && !t.includes("history"))
                             .map((t, i) => "  " + (i + 1) + "  " + t.substring(t.indexOf("$") + 1).trim());
                         appendOutput(histLines.join("\n"), "command-output");
+                        checkQuest("check_history");
                         break;
                     }
                     case "ps": {
@@ -2551,6 +2546,7 @@
                             appendOutput(lang.pingStart.replace("{host}", args[0]), "command-output");
                             setTimeout(() => appendOutput(lang.pingReply.replace("{seq}", 1).replace("{time}", 14.2), "command-success"), 500);
                             setTimeout(() => appendOutput(lang.pingReply.replace("{seq}", 2).replace("{time}", 13.8), "command-success"), 1000);
+                            checkQuest("ping_server");
                         }
                         break;
                     }
@@ -2634,7 +2630,7 @@
                 let lines = nanoTextarea.value.split("\n").length;
                 document.getElementById("nanoStatus").textContent = lang.nanoSaved.replace("{lines}", lines);
                 if (isMcOpen) refreshMcPanels();
-                triggerAchievement("File Saved", "Successfully saved changes to file", "💾");
+                showNotification("Achievement Unlocked", "File Saved", "Successfully saved changes to file", "💾");
             }
 
             function closeNano() {
