@@ -946,13 +946,13 @@
                     completed: false,
                     en: {
                         t: "Connect to the Internet",
-                        d: "Establish a wireless network connection",
-                        explanation: "Your first major mission as system administrator is to establish wireless connectivity by scanning for available access points and connecting to the network.",
-                        descLong: "Search for available wireless networks in the surrounding area and establish a connection to 'myWlan' using its required security password."
+                        d: "Search and connect to a network using nmcli.",
+                        explanation: "Your first major mission as system administrator is to establish wireless connectivity by searching for available access points and establishing a connection.",
+                        descLong: "Scan for available wireless networks in the surrounding area and establish a connection to 'myWlan' using its required security password."
                     },
                     de: {
                         t: "Mit dem Internet verbinden",
-                        d: "Stelle eine drahtlose Netzwerkverbindung her",
+                        d: "Suche und verbinde dich mit einem Netzwerk über nmcli.",
                         explanation: "Deine erste große Admin-Aufgabe ist die Netzwerkeinrichtung. Suche nach WLAN-Netzwerken in der Umgebung und stelle eine Verbindung her.",
                         descLong: "Suche nach verfügbaren drahtlosen Netzwerken in der Umgebung und stelle eine Verbindung zu 'myWlan' mit dem dazugehörigen Passwort her."
                     }
@@ -1709,8 +1709,8 @@
                 if (displayPath.startsWith("/home/user")) {
                     displayPath = displayPath.replace("/home/user", "~");
                 }
-                let userLower = currentSystem.toLowerCase().replace(/\s+/g, '');
-                let promptStr = "user@" + userLower + ":" + displayPath + "$";
+                let userHost = currentSystem === "Arch Linux" ? "arch" : currentSystem.toLowerCase().replace(/\s+/g, '');
+                let promptStr = "user@" + userHost + ":" + displayPath + "$";
                 promptLabel.textContent = promptStr;
                 
                 const mcPrompt = document.getElementById("mcPromptLabel");
@@ -2189,14 +2189,16 @@
                             break;
                         }
 
-                        let length = 16;
-                        let count = 1;
+                        let length = 8;
+                        let count = 160;
                         let useSymbols = false;
                         let useCapitals = true;
                         let useNumbers = true;
                         let secureRandom = false;
                         let noVowels = false;
                         let noAmbiguous = false;
+                        let userSetLength = false;
+                        let userSetCount = false;
 
                         for (let arg of args) {
                             if (arg.startsWith("-")) {
@@ -2208,10 +2210,12 @@
                                 if (arg.includes("y")) useSymbols = true;
                             } else {
                                 if (!isNaN(arg)) {
-                                    if (length === 16 && args.indexOf(arg) === args.findIndex(a => !a.startsWith("-") && !isNaN(a))) {
+                                    if (!userSetLength) {
                                         length = parseInt(arg, 10);
-                                    } else {
+                                        userSetLength = true;
+                                    } else if (!userSetCount) {
                                         count = parseInt(arg, 10);
+                                        userSetCount = true;
                                     }
                                 }
                             }
@@ -2232,11 +2236,6 @@
                             nums = nums.replace(/[01]/g, '');
                         }
 
-                        let generatedPasswords = [];
-                        let vowels = "aeiou";
-                        let consonants = "bcdfghjklmnpqrstvwxyz";
-                        if (noVowels) vowels = "";
-
                         function getRandomInt(max) {
                             if (secureRandom && window.crypto && window.crypto.getRandomValues) {
                                 let array = new Uint32Array(1);
@@ -2247,28 +2246,51 @@
                             }
                         }
 
+                        let vowelsList = ["a", "e", "i", "o", "u", "ae", "ai", "au", "ea", "ee", "ei", "eu", "ia", "ie", "io", "oa", "oe", "oi", "oo", "ou", "ui"];
+                        let consonantsList = ["b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "qu", "r", "s", "t", "v", "w", "x", "y", "z", "ch", "sh", "ph", "th"];
+
+                        if (noVowels) {
+                            vowelsList = [];
+                            consonantsList = ["b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "r", "s", "t", "v", "w", "x", "y", "z", "tr", "st", "pr", "br"];
+                        }
+
+                        let generatedPasswords = [];
                         for (let c = 0; c < count; c++) {
                             let pwd = "";
-                            if (!secureRandom && !useSymbols && useCapitals && useNumbers && !noVowels && !noAmbiguous && length >= 6) {
-                                // Pronounceable password generation using syllables
-                                let syllables = Math.ceil(length / 2);
-                                for (let s = 0; s < syllables; s++) {
-                                    let cons = consonants[getRandomInt(consonants.length)];
-                                    let vow = vowels[getRandomInt(vowels.length)];
-                                    let part = cons + vow;
-                                    if (s === 0 && useCapitals) part = part.toUpperCase();
-                                    pwd += part;
+                            if (!secureRandom && !noVowels && length >= 4 && length <= 32) {
+                                let targetLen = length;
+                                let capitalize = useCapitals && getRandomInt(2) === 0;
+                                let addNum = useNumbers && getRandomInt(3) !== 0;
+                                let numVal = getRandomInt(10);
+
+                                while (pwd.length < targetLen) {
+                                    let cons = consonantsList[getRandomInt(consonantsList.length)];
+                                    let vow = vowelsList[getRandomInt(vowelsList.length)];
+                                    let chunk = cons + vow;
+                                    if (pwd.length === 0 && capitalize) {
+                                        chunk = chunk.charAt(0).toUpperCase() + chunk.slice(1);
+                                    } else if (getRandomInt(5) === 0 && useCapitals) {
+                                        chunk = chunk.charAt(0).toUpperCase() + chunk.slice(1);
+                                    }
+                                    pwd += chunk;
                                 }
-                                if (useNumbers) {
-                                    pwd += nums[getRandomInt(nums.length)] + nums[getRandomInt(nums.length)];
+
+                                pwd = pwd.substring(0, targetLen);
+
+                                if (addNum && targetLen >= 3) {
+                                    let replaceIdx = targetLen - 1 - getRandomInt(Math.min(2, targetLen - 1));
+                                    pwd = pwd.substring(0, replaceIdx) + numVal + pwd.substring(replaceIdx + 1);
                                 }
-                                pwd = pwd.substring(0, length);
+
+                                if (useSymbols && getRandomInt(3) === 0) {
+                                    let symIdx = getRandomInt(pwd.length);
+                                    pwd = pwd.substring(0, symIdx) + syms[getRandomInt(syms.length)] + pwd.substring(symIdx + 1);
+                                }
                             } else {
                                 let allowed = lower;
                                 if (useCapitals) allowed += upper;
                                 if (useNumbers) allowed += nums;
                                 if (useSymbols) allowed += syms;
-
                                 if (allowed.length === 0) allowed = "abcdefghijklmnopqrstuvwxyz";
 
                                 for (let l = 0; l < length; l++) {
@@ -2278,8 +2300,13 @@
                             generatedPasswords.push(pwd);
                         }
 
-                        appendOutput(generatedPasswords.join("  "), "command-success");
-                        showNotification("Achievement Unlocked", "Crypto Master", "Generated secure random passwords", "🔑");
+                        let formattedRows = [];
+                        for (let i = 0; i < generatedPasswords.length; i += 8) {
+                            formattedRows.push(generatedPasswords.slice(i, i + 8).join(" "));
+                        }
+
+                        appendOutput(formattedRows.join("\n"), "command-success");
+                        showNotification("Achievement Unlocked", "Crypto Master", "Generated authentic pronounceable passwords", "🔑");
                         checkSideQuest("use_pwgen");
                         break;
                     }
