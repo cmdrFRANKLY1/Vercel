@@ -122,10 +122,10 @@
         }
 
         .back-btn {
-            width: 44px; height: 44px; padding: 0; justify-content: center;
+            width: 44px; padding: 0; justify-content: center;
         }
         .back-btn svg {
-            transition: transform 0.2s ease;
+            width: 20px; height: 20px; fill: currentColor; transition: transform 0.2s;
         }
         .back-btn:hover svg {
             transform: translateX(-3px);
@@ -134,12 +134,12 @@
         .achievement-toggle-btn {
             width: 44px; height: 44px; padding: 0; justify-content: center; font-weight: 700; font-size: 16px;
         }
-        .achievement-toggle-btn.active {
-            border-color: var(--border-hover); color: var(--text-color); background: var(--hover-bg);
+        .achievement-toggle-btn.active, .achievement-toggle-btn.active:hover {
+            border-color: var(--term-text); color: var(--term-text); background: transparent;
         }
 
         .info-modal-btn {
-            width: 44px; height: 44px; padding: 0; justify-content: center; font-weight: 700; font-size: 16px;
+            height: 44px; padding: 0 16px; justify-content: center; font-weight: 700; font-size: 13px;
         }
 
         .retention-part, .date-part, .time-part { font-weight: 600; }
@@ -331,7 +331,7 @@
         .terminal-body {
             flex: 1; padding: 24px; overflow-y: auto; display: flex;
             flex-direction: column; justify-content: flex-start; gap: 8px; font-size: inherit;
-            line-height: 1.6; color: var(--term-output);
+            line-height: 1.6; color: var(--term-output); cursor: text;
         }
 
         .terminal-body::-webkit-scrollbar { width: 6px; }
@@ -432,6 +432,22 @@
         .modal-message { font-size: 14px; color: var(--sub-color); line-height: 1.5; }
         .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
 
+        /* New Info Modal Card Styles */
+        .info-card {
+            background: var(--hover-bg); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 16px; margin-bottom: 12px; font-size: 13.5px;
+        }
+        .info-card:last-child { margin-bottom: 0; }
+        .info-card-header {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+            font-weight: 700; color: var(--text-color); font-size: 15px;
+        }
+        .info-badge {
+            background: var(--btn-bg); border: 1px solid var(--border-color);
+            border-radius: 4px; padding: 2px 6px; font-family: var(--font-family-base);
+            font-size: 12px; color: var(--hint-color); display: inline-block; margin: 2px 0;
+        }
+
         .custom-tooltip {
             position: fixed; background: var(--btn-bg); border: 1px solid var(--border-color);
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2); border-radius: 8px; padding: 16px 20px;
@@ -461,14 +477,11 @@
 </head>
 <body data-theme="dark">
     <div class="top-left">
-        <a href="index.html" class="clickable-dt back-btn" title="Back to Index">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="19" y1="12" x2="5" y2="12"></line>
-                <polyline points="12 19 5 12 12 5"></polyline>
-            </svg>
+        <a href="index.html" class="clickable-dt back-btn" title="Go Back">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
         </a>
         <div class="clickable-dt no-hover" id="appTitle">Terminal Simulator</div>
-        <button class="clickable-dt info-modal-btn" id="infoModalBtn" title="Commands & Apps Info">I</button>
+        <button class="clickable-dt info-modal-btn" id="infoModalBtn" title="Commands & Apps Info">Info</button>
         <button class="clickable-dt achievement-toggle-btn" id="achievementToggleBtn" title="Toggle Achievements">A</button>
     </div>
 
@@ -557,6 +570,7 @@
                 </div>
             </div>
             
+            <!-- Right Column (Nano & MC Panels) -->
             <div class="right-column" id="rightColumn">
                 <!-- GNU Nano Card -->
                 <div class="nano-card" id="nanoCard">
@@ -614,6 +628,7 @@
         </div>
     </div>
 
+    <!-- Achievement Toast Container -->
     <div class="achievement-container" id="achievementContainer"></div>
 
     <div class="modal-overlay" id="confirmModal">
@@ -629,9 +644,9 @@
 
     <!-- Info Modal for Commands & Apps Overview -->
     <div class="modal-overlay" id="infoModal">
-        <div class="modal-card" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+        <div class="modal-card" style="max-width: 650px; max-height: 85vh; overflow-y: auto;">
             <div class="modal-title" id="infoModalTitle">Commands & Apps Overview</div>
-            <div class="modal-message" id="infoModalBody" style="display: flex; flex-direction: column; gap: 12px; font-size: 13.5px;">
+            <div class="modal-message" id="infoModalBody" style="display: flex; flex-direction: column;">
                 <!-- Filled dynamically via JS -->
             </div>
             <div class="modal-actions">
@@ -676,7 +691,8 @@
                     cannotCreate: "cannot create directory",
                     cannotRemove: "cannot remove",
                     readPkg: "Reading package lists... Done",
-                    simulatingUpdate: "Simulating Updating Process...",
+                    simulatingUpdate: "Simulating updating process...",
+                    simulatingInstall: "Simulating install for package: {pkg}...",
                     pkgInstalling: "Installing / upgrading package {i} of {total} ({name})...",
                     pkgNotFoundDebian: "E: Unable to locate package",
                     pkgNotFoundArch: "error: target not found:",
@@ -739,13 +755,16 @@
                     nanoExit: "Exit",
                     nanoSaved: "[ Wrote {lines} lines ]",
                     nanoErrDir: "is a directory",
-                    descSystemctl: "Control the systemd system and service manager.",
-                    sysCtlUsage: "Usage: systemctl [status|start|stop|restart|enable|disable] <service>",
-                    sysCtlNotFound: "Unit {srv}.service could not be found.",
-                    sysCtlStatusActive: "Active: active (running)",
-                    sysCtlStatusInactive: "Active: inactive (dead)",
-                    sysCtlEnable: "Created symlink /etc/systemd/system/multi-user.target.wants/{srv}.service -> /lib/systemd/system/{srv}.service.",
-                    sysCtlDisable: "Removed /etc/systemd/system/multi-user.target.wants/{srv}.service."
+                    achievementsEnabled: "Achievements Enabled",
+                    achievementsDisabled: "Achievements Disabled",
+                    achToggleMsg: "Notifications will now appear for achievements.",
+                    infoTitle: "Commands & Apps Overview",
+                    infoUiTitle: "UI Toggles",
+                    infoUiDesc: "Enhance your terminal view using the top bar tools.",
+                    infoCoreTitle: "Core Commands",
+                    infoPkgTitle: "Package Managers",
+                    infoAppsTitle: "Apps & Tools (installable)",
+                    infoSpecTitle: "Special Features"
                 },
                 de: {
                     label: "DE",
@@ -770,6 +789,7 @@
                     cannotRemove: "kann nicht entfernen",
                     readPkg: "Paketlisten werden gelesen... Fertig",
                     simulatingUpdate: "Aktualisierungsprozess wird simuliert...",
+                    simulatingInstall: "Simuliere Installation für Paket: {pkg}...",
                     pkgInstalling: "Installiere / aktualisiere Paket {i} von {total} ({name})...",
                     pkgNotFoundDebian: "E: Paket konnte nicht gefunden werden",
                     pkgNotFoundArch: "error: Ziel nicht gefunden:",
@@ -832,13 +852,16 @@
                     nanoExit: "Beenden",
                     nanoSaved: "[ {lines} Zeilen geschrieben ]",
                     nanoErrDir: "ist ein Verzeichnis",
-                    descSystemctl: "Steuert den systemd System- und Dienstmanager.",
-                    sysCtlUsage: "Aufruf: systemctl [status|start|stop|restart|enable|disable] <service>",
-                    sysCtlNotFound: "Unit {srv}.service konnte nicht gefunden werden.",
-                    sysCtlStatusActive: "Aktiv: active (running)",
-                    sysCtlStatusInactive: "Aktiv: inactive (dead)",
-                    sysCtlEnable: "Symlink /etc/systemd/system/multi-user.target.wants/{srv}.service -> /lib/systemd/system/{srv}.service erstellt.",
-                    sysCtlDisable: "/etc/systemd/system/multi-user.target.wants/{srv}.service entfernt."
+                    achievementsEnabled: "Erfolge Aktiviert",
+                    achievementsDisabled: "Erfolge Deaktiviert",
+                    achToggleMsg: "Benachrichtigungen für Erfolge werden nun angezeigt.",
+                    infoTitle: "Befehle & Apps Übersicht",
+                    infoUiTitle: "UI Schalter",
+                    infoUiDesc: "Erweitere deine Terminal-Ansicht über die obere Leiste.",
+                    infoCoreTitle: "Kernbefehle",
+                    infoPkgTitle: "Paketmanager",
+                    infoAppsTitle: "Apps & Werkzeuge (installierbar)",
+                    infoSpecTitle: "Besonderheiten"
                 }
             };
 
@@ -862,14 +885,26 @@
             let historyIndex = -1;
 
             let fileSystem = {};
-            let serviceStates = {};
 
             function updateOsFiles() {
-                serviceStates = {
-                    "ssh": { active: true, enabled: true, desc: "OpenBSD Secure Shell server" },
-                    "systemd-journald": { active: true, enabled: true, desc: "Journal Service" }
-                };
+                const smbConfTemplate = `#======================= Global Settings =======================
+[global]
+   workgroup = WORKGROUP
+   server string = Samba Server %v
+   netbios name = debian-samba
+   security = user
+   map to guest = bad user
+   dns proxy = no
 
+#======================= Share Definitions =======================
+[shared_docs]
+   path = /home/user/Documents
+   browseable = yes
+   writable = yes
+   guest ok = yes
+   read only = no
+   create mask = 0755
+`;
                 fileSystem = {
                     "/": { type: "dir", children: ["home", "etc", "var", "usr"] },
                     "/home": { type: "dir", children: ["user"] },
@@ -878,9 +913,12 @@
                     "/home/user/Desktop": { type: "dir", children: [] },
                     "/home/user/Documents/readme.txt": { type: "file", content: "Welcome to Terminal Simulator!\nExplore folders, edit files with nano, or manage files with mc." },
                     "/home/user/Documents/notes.txt": { type: "file", content: "Todo:\n1. Learn Linux commands\n2. Install nano & mc\n3. Setup Samba share" },
-                    "/etc": { type: "dir", children: ["samba"] },
+                    "/etc": { type: "dir", children: ["samba", "systemd"] },
                     "/etc/samba": { type: "dir", children: ["smb.conf"] },
-                    "/etc/samba/smb.conf": { type: "file", content: "# Samba config file created using terminal-simulator\n# For more info, see smb.conf(5)\n\n[global]\n   workgroup = WORKGROUP\n   server string = Samba Server %v\n   security = user\n   map to guest = bad user\n   dns proxy = no\n\n[shared_docs]\n   comment = Public Shared Documents Folder\n   path = /home/user/Documents\n   browseable = yes\n   writable = yes\n   guest ok = yes\n   read only = no" },
+                    "/etc/samba/smb.conf": { type: "file", content: smbConfTemplate },
+                    "/etc/systemd": { type: "dir", children: ["system"] },
+                    "/etc/systemd/system": { type: "dir", children: ["smbd.service"] },
+                    "/etc/systemd/system/smbd.service": { type: "file", content: "[Unit]\nDescription=Samba SMB Daemon\n[Service]\nExecStart=/usr/sbin/smbd --foreground --no-process-group\n[Install]\nWantedBy=multi-user.target" },
                     "/var": { type: "dir", children: ["log"] },
                     "/var/log": { type: "dir", children: ["syslog"] },
                     "/var/log/syslog": { type: "file", content: "Aug 26 03:00:00 terminal-simulator systemd[1]: Started Terminal Simulator core services." },
@@ -946,17 +984,26 @@
             achievementToggleBtn.addEventListener("click", () => {
                 achievementsEnabled = !achievementsEnabled;
                 achievementToggleBtn.classList.toggle("active", achievementsEnabled);
+                
+                const lang = i18n[currentLang];
+                const tempEnabled = achievementsEnabled;
+                achievementsEnabled = true; 
+                if (tempEnabled) {
+                    triggerAchievement(lang.achievementsEnabled, lang.achToggleMsg, "🔔");
+                } else {
+                    triggerAchievement(lang.achievementsDisabled, "", "🔕");
+                }
+                achievementsEnabled = tempEnabled;
             });
 
             function triggerAchievement(title, desc, icon = "⭐") {
                 if (!achievementsEnabled) return;
-                const lang = i18n[currentLang];
                 const popup = document.createElement("div");
                 popup.className = "achievement-popup";
                 popup.innerHTML = `
                     <div class="achievement-icon">${icon}</div>
                     <div class="achievement-content">
-                        <div class="achievement-header">${lang.achUnlocked}</div>
+                        <div class="achievement-header">Achievement Unlocked</div>
                         <div class="achievement-title">${title}</div>
                         <div class="achievement-desc">${desc}</div>
                     </div>
@@ -996,25 +1043,45 @@
             });
 
             function renderInfoModalContent() {
-                const lang = currentLang;
-                infoModalTitle.textContent = lang === "de" ? "Befehle & Apps Übersicht" : "Commands & Apps Overview";
+                const lang = i18n[currentLang];
+                infoModalTitle.textContent = lang.infoTitle;
                 
                 infoModalBody.innerHTML = `
-                    <div><strong>${lang === "de" ? "Kernbefehle:" : "Core Commands:"}</strong> help, ls, cd, pwd, cat, mkdir, touch, rm, clear, whoami, uname, date, echo, history, ping, ps, top, systemctl</div>
-                    <div><strong>${lang === "de" ? "Paketmanager:" : "Package Managers:"}</strong> apt / apt-get (Debian), pacman (Arch Linux)</div>
-                    <div><strong>${lang === "de" ? "Apps & Werkzeuge (installierbar):" : "Apps & Tools (installable):"}</strong>
-                        <ul style="margin-left: 20px; margin-top: 4px; display: flex; flex-direction: column; gap: 4px;">
-                            <li><code>nano</code> — ${lang === "de" ? "Terminal-Texteditor (^O / ^S speichern, ^X beenden)" : "Terminal text editor (^O / ^S to save, ^X to exit)"}</li>
-                            <li><code>mc</code> — ${lang === "de" ? "Midnight Commander (zwei geteilte Dateimanager-Fenster)" : "Midnight Commander (dual-pane file manager)"}</li>
-                            <li><code>unzip / zip</code> — ${lang === "de" ? "Entpacken und Erstellen von ZIP-Archiven (z.B. der passwortgeschützten passwordProtected.zip)" : "Extract and create zip archives (e.g. passwordProtected.zip)"}</li>
-                            <li><code>samba</code> — ${lang === "de" ? "Netzwerk-Dateifreigabe und smbclient mit bearbeitbarer /etc/samba/smb.conf" : "Network file sharing & smbclient with editable /etc/samba/smb.conf"}</li>
+                    <div class="info-card">
+                        <div class="info-card-header">🛠️ ${lang.infoUiTitle}</div>
+                        <p style="margin-bottom: 8px;">${lang.infoUiDesc}</p>
+                        <ul style="margin-left: 20px; display: flex; flex-direction: column; gap: 4px;">
+                            <li><span class="info-badge">Syntax</span> — ${currentLang === 'de' ? 'Aktiviert Autovervollständigung mit Vorschlägen im Eingabefeld (Tab-Taste zum Ausfüllen).' : 'Enables auto-completion ghosts in the input field (Press Tab to complete).'}</li>
+                            <li><span class="info-badge">Tags</span> — ${currentLang === 'de' ? 'Hebt Befehle, Argumente und Pfade im Terminal farblich hervor und bietet Tooltips bei Hover.' : 'Colorizes commands, arguments, and paths in the terminal, and provides hover tooltips.'}</li>
                         </ul>
                     </div>
-                    <div><strong>${lang === "de" ? "Besonderheiten:" : "Special Features:"}</strong>
-                        <ul style="margin-left: 20px; margin-top: 4px; display: flex; flex-direction: column; gap: 4px;">
-                            <li><code>sudo</code> — ${lang === "de" ? "Führt Befehle mit Admin-Rechten aus (mit 5s Live-Countdown)" : "Executes commands with admin rights (with 5s live countdown)"}</li>
-                            <li>${lang === "de" ? "System-spezifische Update-Prüfung vor jeder App-Installation" : "System-specific update check required before installing any app"}</li>
-                            <li>${lang === "de" ? "Steam-ähnliche Erfolge ('A'-Knopf) & mehrsprachige Benutzeroberfläche (EN/DE)" : "Steam-like achievements ('A' button) & full EN/DE language support"}</li>
+
+                    <div class="info-card">
+                        <div class="info-card-header">💻 ${lang.infoCoreTitle}</div>
+                        <div>help, ls, cd, pwd, cat, mkdir, touch, rm, clear, whoami, uname, date, echo, history, ping, ps, top, systemctl</div>
+                    </div>
+
+                    <div class="info-card">
+                        <div class="info-card-header">📦 ${lang.infoPkgTitle}</div>
+                        <div>apt / apt-get (Debian), pacman (Arch Linux)</div>
+                    </div>
+
+                    <div class="info-card">
+                        <div class="info-card-header">🚀 ${lang.infoAppsTitle}</div>
+                        <ul style="margin-left: 20px; display: flex; flex-direction: column; gap: 4px;">
+                            <li><span class="info-badge">nano</span> — ${currentLang === "de" ? "Terminal-Texteditor (^O / ^S speichern, ^X beenden)" : "Terminal text editor (^O / ^S to save, ^X to exit)"}</li>
+                            <li><span class="info-badge">mc</span> — ${currentLang === "de" ? "Midnight Commander (zwei geteilte Dateimanager-Fenster)" : "Midnight Commander (dual-pane file manager)"}</li>
+                            <li><span class="info-badge">unzip / zip</span> — ${currentLang === "de" ? "Entpacken und Erstellen von ZIP-Archiven (z.B. passwordProtected.zip)" : "Extract and create zip archives (e.g. passwordProtected.zip)"}</li>
+                            <li><span class="info-badge">samba</span> — ${currentLang === "de" ? "Netzwerk-Dateifreigabe und smbclient mit bearbeitbarer /etc/samba/smb.conf" : "Network file sharing & smbclient with editable /etc/samba/smb.conf"}</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-card">
+                        <div class="info-card-header">✨ ${lang.infoSpecTitle}</div>
+                        <ul style="margin-left: 20px; display: flex; flex-direction: column; gap: 4px;">
+                            <li><span class="info-badge">sudo</span> — ${currentLang === "de" ? "Führt Befehle mit Admin-Rechten aus (mit 5s Live-Countdown)" : "Executes commands with admin rights (with 5s live countdown)"}</li>
+                            <li>${currentLang === "de" ? "System-spezifische Update-Prüfung vor jeder App-Installation" : "System-specific update check required before installing any app"}</li>
+                            <li>${currentLang === "de" ? "Steam-ähnliche Erfolge ('A'-Knopf) & mehrsprachige Benutzeroberfläche (EN/DE)" : "Steam-like achievements ('A' button) & full EN/DE language support"}</li>
                         </ul>
                     </div>
                 `;
@@ -1073,31 +1140,9 @@
                 modalCancelBtn.textContent = lang.modalCancel;
                 modalConfirmBtn.textContent = lang.modalConfirm;
                 infoModalCloseBtn.textContent = currentLang === "de" ? "Schließen" : "Close";
-                
-                const backBtn = document.querySelector(".back-btn");
-                if (backBtn) backBtn.title = lang.backBtnTitle;
-                document.getElementById("infoModalBtn").title = lang.infoBtnTitle;
-                document.getElementById("achievementToggleBtn").title = lang.achieveBtnTitle;
-                document.getElementById("currentFontLabel").textContent = lang.fontLbl + " " + currentFontSize + "px";
-
                 document.getElementById("lblNanoWriteOut").textContent = lang.nanoWriteOut;
                 document.getElementById("lblNanoSave").textContent = lang.nanoSave;
                 document.getElementById("lblNanoExit").textContent = lang.nanoExit;
-                
-                document.querySelectorAll(".mc-col-name").forEach(el => el.textContent = lang.mcColName);
-                document.querySelectorAll(".mc-col-size").forEach(el => el.textContent = lang.mcColSize);
-                document.querySelectorAll(".mc-col-mtime").forEach(el => el.textContent = lang.mcColMtime);
-
-                document.getElementById("mcF1").innerHTML = `1<span class="k">${lang.mcF1Help}</span>`;
-                document.getElementById("mcF2").innerHTML = `2<span class="k">${lang.mcF2Menu}</span>`;
-                document.getElementById("mcF3").innerHTML = `3<span class="k">${lang.mcF3View}</span>`;
-                document.getElementById("mcF4").innerHTML = `4<span class="k">${lang.mcF4Edit}</span>`;
-                document.getElementById("mcF5").innerHTML = `5<span class="k">${lang.mcF5Copy}</span>`;
-                document.getElementById("mcF6").innerHTML = `6<span class="k">${lang.mcF6RenMov}</span>`;
-                document.getElementById("mcF7").innerHTML = `7<span class="k">${lang.mcF7Mkdir}</span>`;
-                document.getElementById("mcF8").innerHTML = `8<span class="k">${lang.mcF8Delete}</span>`;
-                document.getElementById("mcF9").innerHTML = `9<span class="k">${lang.mcF9PullDn}</span>`;
-                document.getElementById("mcF10").innerHTML = `10<span class="k">${lang.mcF10Quit}</span>`;
                 
                 const welcomeDiv = document.getElementById("welcomeMessage");
                 if (welcomeDiv) {
@@ -1105,58 +1150,6 @@
                     welcomeDiv.textContent = lang.welcome;
                 }
             }
-
-            fontDropdownBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                fontMenu.classList.toggle("show");
-                fontFamilyMenu.classList.remove("show");
-            });
-
-            fontMenu.querySelectorAll(".term-dropdown-item").forEach(item => {
-                item.addEventListener("click", (e) => {
-                    const size = e.target.getAttribute("data-size");
-                    currentFontSize = parseInt(size, 10);
-                    currentFontLabel.textContent = i18n[currentLang].fontLbl + " " + size + "px";
-                    document.documentElement.style.setProperty("--font-size-base", size + "px");
-                    fontMenu.querySelectorAll(".term-dropdown-item").forEach(i => i.classList.remove("active"));
-                    e.target.classList.add("active");
-                });
-            });
-
-            fontFamilyDropdownBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                fontFamilyMenu.classList.toggle("show");
-                fontMenu.classList.remove("show");
-            });
-
-            fontFamilyMenu.querySelectorAll(".term-dropdown-item").forEach(item => {
-                item.addEventListener("click", (e) => {
-                    const family = e.target.getAttribute("data-family");
-                    currentFontFamily = family;
-                    currentFontFamilyLabel.textContent = family;
-                    document.documentElement.style.setProperty("--font-family-base", `"${family}", monospace`);
-                    fontFamilyMenu.querySelectorAll(".term-dropdown-item").forEach(i => i.classList.remove("active"));
-                    e.target.classList.add("active");
-                });
-            });
-
-            document.addEventListener("click", () => {
-                fontMenu.classList.remove("show");
-                fontFamilyMenu.classList.remove("show");
-            });
-
-            setInterval(() => {
-                const now = new Date();
-                const locale = currentLang === "en" ? "en-US" : "de-DE";
-                document.getElementById("timeClick").textContent = now.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-                document.getElementById("dateClick").textContent = now.toLocaleDateString(locale, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
-                
-                retentionSeconds++;
-                const hrs = Math.floor(retentionSeconds / 3600).toString().padStart(2, '0');
-                const mins = Math.floor((retentionSeconds % 3600) / 60).toString().padStart(2, '0');
-                const secs = (retentionSeconds % 60).toString().padStart(2, '0');
-                document.getElementById("retentionClick").textContent = hrs + ':' + mins + ':' + secs;
-            }, 1000);
 
             themeToggle.addEventListener("click", () => {
                 const isDark = body.getAttribute("data-theme") === "dark";
@@ -1212,11 +1205,17 @@
                     appendOutput(i18n[currentLang].switchedTo + " " + currentSystem + ". " + i18n[currentLang].envReset, "command-output");
                     currentPath = "/home/user";
                     updatePrompt();
-                    const lang = i18n[currentLang];
-                    triggerAchievement(lang.achOsSwitcher, lang.achOsSwitcherDesc, "🔀");
+                    triggerAchievement("OS Switcher", "Switched operating system environment", "🔀");
                 }
                 confirmModal.style.display = "none";
                 pendingSystemTarget = null;
+            });
+
+            terminalBody.addEventListener("click", (e) => {
+                const selection = window.getSelection();
+                if (selection.toString().length === 0 && e.target !== terminalInput) {
+                    terminalInput.focus();
+                }
             });
 
             syntaxToggleBtn.addEventListener("click", () => {
@@ -1250,6 +1249,58 @@
                 }
             });
 
+            fontDropdownBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                fontMenu.classList.toggle("show");
+                fontFamilyMenu.classList.remove("show");
+            });
+
+            fontMenu.querySelectorAll(".term-dropdown-item").forEach(item => {
+                item.addEventListener("click", (e) => {
+                    const size = e.target.getAttribute("data-size");
+                    currentFontSize = parseInt(size, 10);
+                    currentFontLabel.textContent = "Font: " + size + "px";
+                    document.documentElement.style.setProperty("--font-size-base", size + "px");
+                    fontMenu.querySelectorAll(".term-dropdown-item").forEach(i => i.classList.remove("active"));
+                    e.target.classList.add("active");
+                });
+            });
+
+            fontFamilyDropdownBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                fontFamilyMenu.classList.toggle("show");
+                fontMenu.classList.remove("show");
+            });
+
+            fontFamilyMenu.querySelectorAll(".term-dropdown-item").forEach(item => {
+                item.addEventListener("click", (e) => {
+                    const family = e.target.getAttribute("data-family");
+                    currentFontFamily = family;
+                    currentFontFamilyLabel.textContent = family;
+                    document.documentElement.style.setProperty("--font-family-base", `"${family}", monospace`);
+                    fontFamilyMenu.querySelectorAll(".term-dropdown-item").forEach(i => i.classList.remove("active"));
+                    e.target.classList.add("active");
+                });
+            });
+
+            document.addEventListener("click", () => {
+                fontMenu.classList.remove("show");
+                fontFamilyMenu.classList.remove("show");
+            });
+
+            setInterval(() => {
+                const now = new Date();
+                const locale = currentLang === "en" ? "en-US" : "de-DE";
+                document.getElementById("timeClick").textContent = now.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                document.getElementById("dateClick").textContent = now.toLocaleDateString(locale, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+                
+                retentionSeconds++;
+                const hrs = Math.floor(retentionSeconds / 3600).toString().padStart(2, '0');
+                const mins = Math.floor((retentionSeconds % 3600) / 60).toString().padStart(2, '0');
+                const secs = (retentionSeconds % 60).toString().padStart(2, '0');
+                document.getElementById("retentionClick").textContent = hrs + ':' + mins + ':' + secs;
+            }, 1000);
+
             let currentPath = "/home/user";
 
             function updateDynamicLayout() {
@@ -1269,7 +1320,7 @@
             }
 
             function getAvailableCommands() {
-                let base = ["help", "ls", "cd", "pwd", "cat", "mkdir", "touch", "rm", "clear", "whoami", "uname", "date", "echo", "history", "ping", "ps", "top", "sudo"];
+                let base = ["help", "ls", "cd", "pwd", "cat", "mkdir", "touch", "rm", "clear", "whoami", "uname", "date", "echo", "history", "ping", "ps", "top", "sudo", "systemctl"];
                 if (currentSystem === "Debian") {
                     base.push("apt");
                     base.push("apt-get");
@@ -1353,7 +1404,7 @@
                         case "ping": return { type: lang.ttCmd, desc: lang.descPing, ex: "ping google.com" };
                         case "ps": return { type: lang.ttCmd, desc: lang.descPs, ex: "ps aux" };
                         case "top": return { type: lang.ttCmd, desc: lang.descTop, ex: "top" };
-                        case "systemctl": return { type: lang.ttCmd, desc: lang.descSystemctl, ex: "systemctl status smbd" };
+                        case "systemctl": return { type: lang.ttCmd, desc: "Controls the systemd system and service manager.", ex: "systemctl status smbd" };
                         case "nano": return { type: lang.ttCmd, desc: lang.descNano, ex: "nano <fileName>" };
                         case "mc": return { type: lang.ttCmd, desc: lang.descMc, ex: "mc" };
                         case "unzip": case "zip": return { type: lang.ttCmd, desc: lang.descUnzip, ex: "unzip archive.zip" };
@@ -1622,41 +1673,38 @@
                 const lang = i18n[currentLang];
                 appendOutput(lang.readPkg, "command-success");
                 setTimeout(() => {
-                    appendOutput(lang.simulatingUpdate, "command-output");
-                    
-                    let totalPkgs, maxTimeSec, pkgList;
-                    
+                    let totalPkgs, msg;
                     if (targetPkg) {
-                        // Specific app installation (App + a few fake dependencies)
+                        msg = lang.simulatingInstall.replace("{pkg}", targetPkg);
                         totalPkgs = Math.floor(Math.random() * 3) + 2; 
-                        maxTimeSec = Math.floor(Math.random() * 3) + 2; 
-                        pkgList = [];
-                        for(let i = 0; i < totalPkgs - 1; i++) {
-                            pkgList.push(`lib${targetPkg}-` + (Math.floor(Math.random() * 3) + 1) + ".0");
-                        }
-                        pkgList.push(targetPkg + "-" + (Math.floor(Math.random() * 5) + 1) + ".0");
                     } else {
-                        // Full system update simulation
-                        totalPkgs = Math.floor(Math.random() * 21) + 10;
-                        maxTimeSec = Math.floor(Math.random() * 11) + 5;
-                        const baseNames = ["linux-base", "systemd", "coreutils", "bash", "glibc", "openssl", "python3", "nano", "mc", "unzip", "zip", "samba", "smbclient", "git", "curl", "libssl3", "zlib1g", "tar", "grep", "sed", "gawk", "procps", "util-linux", "vim-common"];
-                        pkgList = Array.from({length: totalPkgs}, () => baseNames[Math.floor(Math.random() * baseNames.length)] + "-" + (Math.floor(Math.random() * 3) + 1) + ".0");
+                        msg = lang.simulatingUpdate;
+                        totalPkgs = Math.floor(Math.random() * 31) + 15;
                     }
-
+                    
+                    appendOutput(msg, "command-output");
+                    let maxTimeSec = targetPkg ? Math.floor(Math.random() * 3) + 2 : Math.floor(Math.random() * 51) + 10;
                     let intervalMs = (maxTimeSec * 1000) / totalPkgs;
                     let currentPkg = 1;
 
+                    const pkgNames = targetPkg ? 
+                        ["lib-deps", "core-utils", "bind-libs", targetPkg] : 
+                        ["linux-base", "systemd", "coreutils", "bash", "glibc", "openssl", "python3", "git", "curl", "libssl3", "zlib1g", "tar", "grep", "sed", "gawk", "procps", "util-linux", "vim-common"];
+
                     let timer = setInterval(() => {
                         if (currentPkg <= totalPkgs) {
-                            let pkgName = pkgList[currentPkg - 1];
-                            let msg = lang.pkgInstalling.replace("{i}", currentPkg).replace("{total}", totalPkgs).replace("{name}", pkgName);
-                            appendOutput(msg, "command-output");
+                            let randomName = targetPkg && currentPkg === totalPkgs ? 
+                                targetPkg : 
+                                pkgNames[Math.floor(Math.random() * pkgNames.length)] + "-" + (Math.floor(Math.random() * 3) + 1) + ".0";
+                            
+                            let installMsg = lang.pkgInstalling.replace("{i}", currentPkg).replace("{total}", totalPkgs).replace("{name}", randomName);
+                            appendOutput(installMsg, "command-output");
                             currentPkg++;
                         } else {
                             clearInterval(timer);
                             if (!targetPkg) {
                                 systemUpdated = true;
-                                triggerAchievement(lang.achSysUp, lang.achSysUpDesc, "📦");
+                                triggerAchievement("System Upgraded", "Successfully updated system packages", "📦");
                             }
                             if (onComplete) onComplete();
                         }
@@ -1673,11 +1721,11 @@
 
                 if (cmd === "sudo") {
                     if (args.length === 0) {
-                        appendOutput(lang.sudoUsage, "command-error");
+                        appendOutput("usage: sudo [-D level] [-u user] command", "command-error");
                         return;
                     }
 
-                    triggerAchievement(lang.achAdmin, lang.achAdminDesc, "🛡️");
+                    triggerAchievement("Administrator", "Executed command with sudo", "🛡️");
                     let countdownDiv = document.createElement("div");
                     countdownDiv.className = "command-hint";
                     terminalHistory.appendChild(countdownDiv);
@@ -1755,11 +1803,39 @@
                         }
                         break;
                     }
+                    case "systemctl": {
+                        if (args.length < 2) {
+                            let msg = currentLang === 'de' ? 
+                                "systemctl: Fehlende Argumente. Nutzung: systemctl [start|stop|restart|enable|disable|status] <service>" : 
+                                "systemctl: missing arguments. Usage: systemctl [start|stop|restart|enable|disable|status] <service>";
+                            appendOutput(msg, "command-error");
+                            break;
+                        }
+                        const action = args[0];
+                        const service = args[1];
+
+                        if (["start", "stop", "restart", "enable", "disable"].includes(action)) {
+                            // systemctl start/stop usually fail silently on success
+                            triggerAchievement("SysAdmin", "Managed a system service via systemctl", "⚙️");
+                        } else if (action === "status") {
+                            let statusOutput = `● ${service} - Simulated Service\n`;
+                            statusOutput += `   Loaded: loaded (/lib/systemd/system/${service}; enabled; vendor preset: enabled)\n`;
+                            statusOutput += `   Active: active (running) since ${new Date().toLocaleTimeString()}\n`;
+                            statusOutput += ` Main PID: ${Math.floor(Math.random() * 5000) + 1000} (${service.split('.')[0]})\n`;
+                            statusOutput += `    Tasks: 1 (limit: 4613)\n`;
+                            statusOutput += `   CGroup: /system.slice/${service}`;
+                            appendOutput(statusOutput, "command-output");
+                        } else {
+                            let err = currentLang === 'de' ? `systemctl: Unbekannte Operation '${action}'.` : `systemctl: Unknown operation '${action}'.`;
+                            appendOutput(err, "command-error");
+                        }
+                        break;
+                    }
                     case "nano": {
                         let usrBinFiles = fileSystem["/usr/bin"].children;
                         if (!usrBinFiles.includes("nano")) {
                             let installHint = currentSystem === "Debian" ? "sudo apt install nano" : "sudo pacman -S nano";
-                            appendOutput(lang.cmdNotFoundHint.replace("{cmd}", "nano").replace("{hint}", installHint), "command-error");
+                            appendOutput("bash: nano: command not found. You can install it using package manager (e.g., '" + installHint + "')", "command-error");
                             break;
                         }
 
@@ -1790,38 +1866,38 @@
                             displayFilename = args[0].split("/").pop();
                         }
                         openNano(targetNanoPath, displayFilename);
-                        triggerAchievement(lang.achNano, lang.achNanoDesc, "📝");
+                        triggerAchievement("Text Editor", "Opened nano text editor", "📝");
                         break;
                     }
                     case "mc": {
                         let usrBinFiles = fileSystem["/usr/bin"].children;
                         if (!usrBinFiles.includes("mc")) {
                             let installHint = currentSystem === "Debian" ? "sudo apt install mc" : "sudo pacman -S mc";
-                            appendOutput(lang.cmdNotFoundHint.replace("{cmd}", "mc").replace("{hint}", installHint), "command-error");
+                            appendOutput("bash: mc: command not found. You can install it using package manager (e.g., '" + installHint + "')", "command-error");
                             break;
                         }
                         openMc();
-                        triggerAchievement(lang.achMc, lang.achMcDesc, "📁");
+                        triggerAchievement("File Manager", "Launched Midnight Commander", "📁");
                         break;
                     }
                     case "unzip": {
                         let usrBinFiles = fileSystem["/usr/bin"].children;
                         if (!usrBinFiles.includes("unzip")) {
                             let installHint = currentSystem === "Debian" ? "sudo apt install unzip" : "sudo pacman -S unzip";
-                            appendOutput(lang.cmdNotFoundHint.replace("{cmd}", "unzip").replace("{hint}", installHint), "command-error");
+                            appendOutput("bash: unzip: command not found. You can install it using package manager (e.g., '" + installHint + "')", "command-error");
                             break;
                         }
                         if (!args[0]) {
-                            appendOutput(lang.zipNoArchive, "command-error");
+                            appendOutput("Archive:  (none specified)\nNo zipfile found.", "command-error");
                             break;
                         }
                         let targetZip = resolvePath(args[0]);
                         let node = fileSystem[targetZip];
                         if (!node || node.type !== "file") {
-                            appendOutput(lang.unzipCannotFind + args[0], "command-error");
+                            appendOutput("unzip: cannot find or open " + args[0], "command-error");
                             break;
                         }
-                        appendOutput(lang.archiveLbl + args[0], "command-output");
+                        appendOutput("Archive:  " + args[0], "command-output");
                         let parentDir = targetZip.substring(0, targetZip.lastIndexOf("/")) || "/";
                         let unzippedFileName = "file.txt";
                         let unzippedFullPath = parentDir === "/" ? "/" + unzippedFileName : parentDir + "/" + unzippedFileName;
@@ -1830,20 +1906,20 @@
                         if (fileSystem[parentDir] && !fileSystem[parentDir].children.includes(unzippedFileName)) {
                             fileSystem[parentDir].children.push(unzippedFileName);
                         }
-                        appendOutput(lang.inflatingLbl + unzippedFileName, "command-success");
+                        appendOutput("  inflating: " + unzippedFileName, "command-success");
                         if (isMcOpen) refreshMcPanels();
-                        triggerAchievement(lang.achUnzip, lang.achUnzipDesc, "📦");
+                        triggerAchievement("Archive Master", "Extracted a zip archive", "📦");
                         break;
                     }
                     case "zip": {
                         let usrBinFiles = fileSystem["/usr/bin"].children;
                         if (!usrBinFiles.includes("zip")) {
                             let installHint = currentSystem === "Debian" ? "sudo apt install zip" : "sudo pacman -S zip";
-                            appendOutput(lang.cmdNotFoundHint.replace("{cmd}", "zip").replace("{hint}", installHint), "command-error");
+                            appendOutput("bash: zip: command not found. You can install it using package manager (e.g., '" + installHint + "')", "command-error");
                             break;
                         }
                         if (args.length < 2) {
-                            appendOutput(lang.zipTooFew, "command-error");
+                            appendOutput("zip error: Too few arguments. Usage: zip archive.zip file.txt", "command-error");
                             break;
                         }
                         let archiveName = args[0];
@@ -1852,7 +1928,7 @@
                         let sourcePath = resolvePath(sourceFile);
 
                         if (!fileSystem[sourcePath]) {
-                            appendOutput(lang.zipWarnSource + sourceFile, "command-error");
+                            appendOutput("zip warning: Could not open source file: " + sourceFile, "command-error");
                             break;
                         }
                         let parentDir = targetArchPath.substring(0, targetArchPath.lastIndexOf("/")) || "/";
@@ -1862,16 +1938,16 @@
                         if (fileSystem[parentDir] && !fileSystem[parentDir].children.includes(archFileName)) {
                             fileSystem[parentDir].children.push(archFileName);
                         }
-                        appendOutput(lang.addingLbl + sourceFile + lang.deflatedLbl, "command-success");
+                        appendOutput("  adding: " + sourceFile + " (deflated 50%)", "command-success");
                         if (isMcOpen) refreshMcPanels();
-                        triggerAchievement(lang.achZip, lang.achZipDesc, "🗜️");
+                        triggerAchievement("Archiver", "Created a zip archive", "🗜️");
                         break;
                     }
                     case "smbclient": {
                         let usrBinFiles = fileSystem["/usr/bin"].children;
                         if (!usrBinFiles.includes("smbclient")) {
                             let installHint = currentSystem === "Debian" ? "sudo apt install samba" : "sudo pacman -S samba";
-                            appendOutput(lang.cmdNotFoundHint.replace("{cmd}", "smbclient").replace("{hint}", installHint), "command-error");
+                            appendOutput("bash: smbclient: command not found. You can install it using package manager (e.g., '" + installHint + "')", "command-error");
                             break;
                         }
                         if (args[0] === "-L" || args[0] === "-l") {
@@ -1879,7 +1955,7 @@
                         } else {
                             appendOutput("smbclient //localhost/shared_docs -U user\nDomain=[WORKGROUP] OS=[Unix] Server=[Samba 4.18.2]\nsmb: \\> ls\n  .                                   D        0  Wed Aug 26 03:00:00 2026\n  ..                                  D        0  Wed Aug 26 03:00:00 2026\n  report.pdf                          A    14220  Wed Aug 26 03:00:00 2026\n  resume.docx                         A     8410  Wed Aug 26 03:00:00 2026\n\n                52428800 blocks of size 1024. 41200120 blocks available", "command-success");
                         }
-                        triggerAchievement(lang.achSmb, lang.achSmbDesc, "🌐");
+                        triggerAchievement("Network Share", "Connected to Samba network share", "🌐");
                         break;
                     }
                     case "touch": {
@@ -1959,7 +2035,7 @@
                                 delete fileSystem[target];
                                 fileSystem[parent].children = fileSystem[parent].children.filter(c => c !== name);
                                 if (isMcOpen) refreshMcPanels();
-                                triggerAchievement(lang.achRm, lang.achRmDesc, "🗑️");
+                                triggerAchievement("Cleaner", "Permanently removed a file or directory", "🗑️");
                             } else {
                                 appendOutput("rm: " + args[0] + ": " + lang.cannotRemove, "command-error");
                             }
@@ -1995,7 +2071,7 @@
                                 break;
                             }
                             if (!pkg) {
-                                appendOutput(lang.aptNoPkg, "command-error");
+                                appendOutput("E: You must specify a package to install.", "command-error");
                             } else if (pkg !== "nano" && pkg !== "mc" && pkg !== "unzip" && pkg !== "zip" && pkg !== "samba") {
                                 appendOutput(lang.pkgNotFoundDebian + " " + pkg, "command-error");
                             } else {
@@ -2005,13 +2081,13 @@
                                     if (pkg === "samba") {
                                         if (!usrBin.includes("smbclient")) usrBin.push("smbclient");
                                     }
-                                    appendOutput(lang.aptSettingUp.replace("{pkg}", pkg), "command-success");
-                                    triggerAchievement(lang.achInstall, lang.achInstallDesc + pkg, "💿");
+                                    appendOutput("Setting up " + pkg + " (2:4.18.2+dfsg-1) ... Done.", "command-success");
+                                    triggerAchievement("Software Installer", "Successfully installed package: " + pkg, "💿");
                                 }, pkg);
                             }
                         } else if (sub === "remove" || sub === "purge") {
                             if (!pkg) {
-                                appendOutput(lang.aptNoPkg, "command-error");
+                                appendOutput("E: You must specify a package to remove.", "command-error");
                             } else {
                                 if (pkg === "nano") {
                                     fileSystem["/usr/bin"].children = fileSystem["/usr/bin"].children.filter(c => c !== "nano");
@@ -2027,11 +2103,11 @@
                                     fileSystem["/usr/bin"].children = fileSystem["/usr/bin"].children.filter(c => c !== pkg);
                                     if (pkg === "samba") fileSystem["/usr/bin"].children = fileSystem["/usr/bin"].children.filter(c => c !== "smbclient");
                                 }
-                                appendOutput(lang.aptRemoving.replace("{pkg}", pkg), "command-success");
-                                triggerAchievement(lang.achUninstall, lang.achUninstallDesc + pkg, "❌");
+                                appendOutput("Removing " + pkg + " (simulated) ... Done.", "command-success");
+                                triggerAchievement("Uninstaller", "Removed package: " + pkg, "❌");
                             }
                         } else {
-                            appendOutput(lang.aptInvalid, "command-error");
+                            appendOutput("E: Invalid apt operation. Try 'apt update', 'apt install <pkg>', or 'apt remove <pkg>'", "command-error");
                         }
                         break;
                     }
@@ -2040,7 +2116,7 @@
                         let pkg = args[1] || "";
                         if (sub === "-Syu" || sub === "-Syyu" || sub === "-Syy") {
                             simulatePackageUpdateOrInstall(() => {
-                                appendOutput(lang.pacSync, "command-success");
+                                appendOutput(":: Synchronizing package databases... Done.", "command-success");
                             });
                         } else if (sub === "-S") {
                             if (!systemUpdated) {
@@ -2048,7 +2124,7 @@
                                 break;
                             }
                             if (!pkg) {
-                                appendOutput(lang.pacNoTarget, "command-error");
+                                appendOutput("error: no targets specified (use -h for help)", "command-error");
                             } else if (pkg !== "nano" && pkg !== "mc" && pkg !== "unzip" && pkg !== "zip" && pkg !== "samba") {
                                 appendOutput(lang.pkgNotFoundArch + " " + pkg, "command-error");
                             } else {
@@ -2058,13 +2134,13 @@
                                     if (pkg === "samba") {
                                         if (!usrBin.includes("smbclient")) usrBin.push("smbclient");
                                     }
-                                    appendOutput(lang.pacInstalling.replace("{pkg}", pkg), "command-success");
-                                    triggerAchievement(lang.achInstall, lang.achInstallDesc + pkg, "💿");
+                                    appendOutput("installing " + pkg + " [################################] 100%", "command-success");
+                                    triggerAchievement("Software Installer", "Successfully installed package: " + pkg, "💿");
                                 }, pkg);
                             }
                         } else if (sub === "-R") {
                             if (!pkg) {
-                                appendOutput(lang.pacNoTarget, "command-error");
+                                appendOutput("error: no targets specified (use -h for help)", "command-error");
                             } else {
                                 if (pkg === "nano") {
                                     fileSystem["/usr/bin"].children = fileSystem["/usr/bin"].children.filter(c => c !== "nano");
@@ -2080,11 +2156,11 @@
                                     fileSystem["/usr/bin"].children = fileSystem["/usr/bin"].children.filter(c => c !== pkg);
                                     if (pkg === "samba") fileSystem["/usr/bin"].children = fileSystem["/usr/bin"].children.filter(c => c !== "smbclient");
                                 }
-                                appendOutput(lang.pacRemoving.replace("{pkg}", pkg), "command-success");
-                                triggerAchievement(lang.achUninstall, lang.achUninstallDesc + pkg, "❌");
+                                appendOutput("removing " + pkg + " [################################] 100%", "command-success");
+                                triggerAchievement("Uninstaller", "Removed package: " + pkg, "❌");
                             }
                         } else {
-                            appendOutput(lang.pacInvalid, "command-error");
+                            appendOutput("error: operation not supported or missing syntax. Try 'pacman -Syu' or 'pacman -S <pkg>'", "command-error");
                         }
                         break;
                     }
@@ -2111,65 +2187,6 @@
                             appendOutput("PING " + args[0] + " (93.184.216.34) 56(84) bytes of data.", "command-output");
                             setTimeout(() => appendOutput("64 bytes from 93.184.216.34: icmp_seq=1 ttl=54 time=14.2 ms", "command-success"), 500);
                             setTimeout(() => appendOutput("64 bytes from 93.184.216.34: icmp_seq=2 ttl=54 time=13.8 ms", "command-success"), 1000);
-                        }
-                        break;
-                    }
-                    case "systemctl": {
-                        let action = args[0];
-                        let srv = args[1];
-                        if (!action) {
-                            appendOutput(lang.sysCtlUsage, "command-error");
-                            break;
-                        }
-                        if (action === "daemon-reload") {
-                            break;
-                        }
-                        if (!srv) {
-                            appendOutput(lang.missingOp, "command-error");
-                            break;
-                        }
-                        
-                        let hasSamba = fileSystem["/usr/bin"].children.includes("samba") || (fileSystem["/etc/samba"] !== undefined);
-                        
-                        if (srv && !serviceStates[srv]) {
-                            if (srv === "smbd" && !hasSamba) {
-                                appendOutput(lang.sysCtlNotFound.replace("{srv}", srv), "command-error");
-                                break;
-                            } else if (srv === "smbd") {
-                                serviceStates["smbd"] = { active: false, enabled: false, desc: "Samba SMB Daemon" };
-                            } else {
-                                serviceStates[srv] = { active: false, enabled: false, desc: srv + " service" };
-                            }
-                        }
-
-                        let srvObj = serviceStates[srv];
-
-                        switch(action) {
-                            case "status":
-                                let statusColor = srvObj.active ? "command-success" : "command-output";
-                                let statusText = srvObj.active ? lang.sysCtlStatusActive : lang.sysCtlStatusInactive;
-                                let loadedText = `Loaded: loaded (/lib/systemd/system/${srv}.service; ${srvObj.enabled ? 'enabled' : 'disabled'}; vendor preset: enabled)`;
-                                appendOutput(`● ${srv}.service - ${srvObj.desc}\n   ${loadedText}\n   ${statusText}`, statusColor);
-                                break;
-                            case "start":
-                                srvObj.active = true;
-                                break;
-                            case "stop":
-                                srvObj.active = false;
-                                break;
-                            case "restart":
-                                srvObj.active = true;
-                                break;
-                            case "enable":
-                                srvObj.enabled = true;
-                                appendOutput(lang.sysCtlEnable.replace(/\{srv\}/g, srv), "command-output");
-                                break;
-                            case "disable":
-                                srvObj.enabled = false;
-                                appendOutput(lang.sysCtlDisable.replace(/\{srv\}/g, srv), "command-output");
-                                break;
-                            default:
-                                appendOutput("Unknown operation '" + action + "'.", "command-error");
                         }
                         break;
                     }
@@ -2239,7 +2256,7 @@
                 let filename = currentNanoPath.split("/").pop();
 
                 if (!fileSystem[parentPath]) {
-                    document.getElementById("nanoStatus").textContent = "[ Error: " + lang.nanoErrParentDir + " ]";
+                    document.getElementById("nanoStatus").textContent = "[ Error: Parent directory does not exist ]";
                     return;
                 }
 
@@ -2251,7 +2268,7 @@
                 let lines = nanoTextarea.value.split("\n").length;
                 document.getElementById("nanoStatus").textContent = lang.nanoSaved.replace("{lines}", lines);
                 if (isMcOpen) refreshMcPanels();
-                triggerAchievement(lang.achSave, lang.achSaveDesc, "💾");
+                triggerAchievement("File Saved", "Successfully saved changes to file", "💾");
             }
 
             function closeNano() {
@@ -2479,10 +2496,10 @@
             }
 
             document.getElementById("mcF1").addEventListener("click", () => {
-                appendOutput(i18n[currentLang].mcHelpMsg, "command-success");
+                appendOutput("MC Help: Use arrow keys to browse, Enter to open folders/files, Tab to switch panels, F4 to edit with nano.", "command-success");
             });
             document.getElementById("mcF2").addEventListener("click", () => {
-                appendOutput(i18n[currentLang].mcMenuMsg, "command-output");
+                appendOutput("MC User Menu: Simulated menu actions.", "command-output");
             });
             document.getElementById("mcF3").addEventListener("click", () => {
                 let f = getMcSelectedFullPath();
@@ -2498,11 +2515,11 @@
             });
             document.getElementById("mcF5").addEventListener("click", () => {
                 let f = getMcSelectedFullPath();
-                if (f) appendOutput(i18n[currentLang].mcCopied.replace('{f}', f), "command-success");
+                if (f) appendOutput("Copied " + f + " (Simulated)", "command-success");
             });
             document.getElementById("mcF6").addEventListener("click", () => {
                 let f = getMcSelectedFullPath();
-                if (f) appendOutput(i18n[currentLang].mcMoved.replace('{f}', f), "command-success");
+                if (f) appendOutput("Moved/Renamed " + f + " (Simulated)", "command-success");
             });
             document.getElementById("mcF7").addEventListener("click", () => {
                 let side = mcState.activeSide;
