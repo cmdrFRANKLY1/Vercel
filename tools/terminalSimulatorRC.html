@@ -368,6 +368,15 @@
         .hl-file { background: rgba(96, 165, 250, 0.2); color: #60a5fa; cursor: help; border-radius: 4px; outline: 1px solid rgba(96, 165, 250, 0.4); }
         .hl-flag { background: rgba(192, 132, 252, 0.2); color: #c084fc; cursor: help; border-radius: 4px; outline: 1px solid rgba(192, 132, 252, 0.4); }
 
+        @keyframes scorePulse {
+            0% { transform: scale(1); border-color: var(--btn-border); }
+            50% { transform: scale(1.08); border-color: #facc15; background: rgba(250, 204, 21, 0.15); }
+            100% { transform: scale(1); border-color: var(--btn-border); }
+        }
+        .score-pulse {
+            animation: scorePulse 0.4s ease-in-out;
+        }
+
         .achievement-container {
             position: fixed; bottom: 24px; right: 24px; z-index: 9999;
             display: flex; flex-direction: column-reverse; gap: 10px; pointer-events: none;
@@ -497,6 +506,7 @@
         <div class="clickable-dt no-hover" id="appTitle">Terminal Simulator</div>
         <button class="clickable-dt" id="infoModalBtn" title="Commands & Apps Info">Info</button>
         <button class="clickable-dt" id="questsModalBtn" title="Quests">Quests</button>
+        <div class="clickable-dt no-hover" id="scoreDisplay" style="color: #ffffff; font-weight: 700;">Score: <span id="scoreDigits" style="color: #facc15; margin-left: 4px;">0000</span></div>
     </div>
 
     <div class="top-right">
@@ -763,8 +773,8 @@
                     questCompleted: "Quest Completed",
                     questsReload: "Reload",
                     questsReloadAll: "Reload All",
-                    reloadQuestConfirm: "Are you sure you want to generate a new random quest?",
-                    reloadAllConfirm: "Are you sure you want to generate new random quests?",
+                    reloadQuestConfirm: "Are you sure you want to reset this quest and generate a new one?",
+                    reloadAllConfirm: "Are you sure you want to generate all new random quests?",
                     infoTitle: "Commands & Apps Overview",
                     infoUiTitle: "UI Toggles",
                     infoUiDescSyntax: "Adds live bash autocomplete suggestions in the input field.",
@@ -832,7 +842,7 @@
                     descPy: "A script containing executable programming instructions.",
                     descPdf: "A Portable Document Format (PDF) file.",
                     descConf: "A file containing system or application settings.",
-                    descGenericFile: "Eine System- oder Datendatei.",
+                    descGenericFile: "Eine System- eller Datendatei.",
                     descArg: "Additional input data or target for the command to process.",
                     execShell: "Executes the specified shell program.",
                     nanoNewFile: "New Buffer",
@@ -883,8 +893,8 @@
                     questCompleted: "Quest Abgeschlossen",
                     questsReload: "Neu laden",
                     questsReloadAll: "Alle neu laden",
-                    reloadQuestConfirm: "Möchtest du eine neue zufällige Quest generieren?",
-                    reloadAllConfirm: "Möchtest du neue zufällige Quests generieren?",
+                    reloadQuestConfirm: "Möchtest du diese Quest wirklich zurücksetzen und eine neue generieren?",
+                    reloadAllConfirm: "Möchtest du alle neuen zufälligen Quests generieren?",
                     infoTitle: "Befehle & Apps Übersicht",
                     infoUiTitle: "UI Schalter",
                     infoUiDescSyntax: "Fügt automatische Bash-Vorschläge direkt im Eingabefeld hinzu.",
@@ -970,7 +980,7 @@
             let syntaxEnabled = false;
             let highlightEnabled = false;
             let achievementsEnabled = true;
-            let unlockedAchievements = new Set();
+            let score = 0;
             let pendingSystemTarget = null;
             let inputIdleTimer = null;
             let currentFontSize = 14;
@@ -980,54 +990,66 @@
             let isNanoOpen = false;
             let isMcOpen = false;
 
+            function addScore(points) {
+                score += points;
+                const scoreDigits = document.getElementById("scoreDigits");
+                const scoreContainer = document.getElementById("scoreDisplay");
+                if (scoreDigits && scoreContainer) {
+                    scoreDigits.textContent = String(score).padStart(4, '0');
+                    scoreContainer.classList.remove("score-pulse");
+                    void scoreContainer.offsetWidth; // trigger reflow
+                    scoreContainer.classList.add("score-pulse");
+                }
+            }
+
             const questDefinitions = {
                 use_nano: {
-                    en: { t: "Text Editor", d: "Open the nano text editor", cmd: "nano", descLong: "The nano command opens a terminal-based text editor. It allows you to create or modify text files directly in the command line.", example: "nano <fileName>" },
-                    de: { t: "Texteditor", d: "Öffne den nano Texteditor", cmd: "nano", descLong: "Der nano Befehl öffnet einen terminalbasierten Texteditor. Damit kannst du Textdateien direkt in der Kommandozeile erstellen oder bearbeiten.", example: "nano <fileName>" }
+                    en: { t: "Text Editor", d: "Open the nano text editor", cmd: "nano", points: 50, descLong: "The nano command opens a terminal-based text editor. It allows you to create or modify text files directly in the command line.", example: "nano <fileName>" },
+                    de: { t: "Texteditor", d: "Öffne den nano Texteditor", cmd: "nano", points: 50, descLong: "Der nano Befehl öffnet einen terminalbasierten Texteditor. Damit kannst du Textdateien direkt in der Kommandozeile erstellen oder bearbeiten.", example: "nano <fileName>" }
                 },
                 use_mc: {
-                    en: { t: "File Manager", d: "Open Midnight Commander (mc)", cmd: "mc", descLong: "Midnight Commander (mc) is a visual file manager with dual panes. It lets you easily copy, move, and manage files.", example: "mc" },
-                    de: { t: "Dateimanager", d: "Öffne Midnight Commander (mc)", cmd: "mc", descLong: "Der Befehl mc ist ein visueller Dateimanager mit zwei Fenstern.", example: "mc" }
+                    en: { t: "File Manager", d: "Open Midnight Commander (mc)", cmd: "mc", points: 75, descLong: "Midnight Commander (mc) is a visual file manager with dual panes. It lets you easily copy, move, and manage files.", example: "mc" },
+                    de: { t: "Dateimanager", d: "Öffne Midnight Commander (mc)", cmd: "mc", points: 75, descLong: "Midnight Commander (mc) ist ein visueller Dateimanager mit zwei Fenstern. Er erleichtert das Kopieren, Verschieben und Verwalten von Dateien.", example: "mc" }
                 },
                 create_dir: {
-                    en: { t: "Architect", d: "Create a directory using mkdir", cmd: "mkdir", descLong: "The mkdir (make directory) command is used to create new, empty folders at the specified location.", example: "mkdir <folderName>" },
-                    de: { t: "Architekt", d: "Erstelle ein Verzeichnis mit mkdir", cmd: "mkdir", descLong: "Der Befehl mkdir erstellt neue Ordner.", example: "mkdir <folderName>" }
+                    en: { t: "Architect", d: "Create a directory using mkdir", cmd: "mkdir", points: 30, descLong: "The mkdir (make directory) command is used to create new, empty folders at the specified location.", example: "mkdir <folderName>" },
+                    de: { t: "Architekt", d: "Erstelle ein Verzeichnis mit mkdir", cmd: "mkdir", points: 30, descLong: "Der Befehl mkdir wird verwendet, um neue, leere Ordner am angegebenen Ort zu erstellen.", example: "mkdir <folderName>" }
                 },
                 create_file: {
-                    en: { t: "Creator", d: "Create a file using touch", cmd: "touch", descLong: "The touch command creates a new empty file.", example: "touch <fileName>" },
-                    de: { t: "Erschaffer", d: "Erstelle eine Datei mit touch", cmd: "touch", descLong: "Der Befehl touch erstellt eine neue leere Datei.", example: "touch <fileName>" }
+                    en: { t: "Creator", d: "Create a file using touch", cmd: "touch", points: 25, descLong: "The touch command creates a new empty file. If the file already exists, it updates its modification timestamp.", example: "touch <fileName>" },
+                    de: { t: "Erschaffer", d: "Erstelle eine Datei mit touch", cmd: "touch", points: 25, descLong: "Der Befehl touch erstellt eine neue leere Datei. Wenn die Datei bereits existiert, aktualisiert er ihren Zeitstempel.", example: "touch <fileName>" }
                 },
                 delete_item: {
-                    en: { t: "Cleaner", d: "Delete a file/folder using rm", cmd: "rm", descLong: "The rm (remove) command permanently deletes files.", example: "rm <fileName>" },
-                    de: { t: "Reiniger", d: "Lösche eine Datei/Ordner mit rm", cmd: "rm", descLong: "Der Befehl rm löscht Dateien dauerhaft.", example: "rm <fileName>" }
+                    en: { t: "Cleaner", d: "Delete a file/folder using rm", cmd: "rm", points: 30, descLong: "The rm (remove) command permanently deletes files. It can also delete directories if specific flags are used.", example: "rm <fileName/folderName>" },
+                    de: { t: "Reiniger", d: "Lösche eine Datei/Ordner mit rm", cmd: "rm", points: 30, descLong: "Der Befehl rm (remove) löscht Dateien dauerhaft.", example: "rm <fileName/folderName>" }
                 },
                 use_sudo: {
-                    en: { t: "I Am Root", d: "Execute a command with sudo privileges", cmd: "sudo", descLong: "The sudo command allows running commands as superuser.", example: "sudo <command>" },
-                    de: { t: "Ich bin Root", d: "Führe einen Befehl mit sudo aus", cmd: "sudo", descLong: "Der Befehl sudo führt Befehle mit Root-Rechten aus.", example: "sudo <command>" }
+                    en: { t: "I Am Root", d: "Execute a command with sudo privileges", cmd: "sudo", points: 100, descLong: "The sudo (superuser do) command allows a permitted user to execute a command as the superuser or another user.", example: "sudo <command>" },
+                    de: { t: "Ich bin Root", d: "Führe einen Befehl mit sudo aus", cmd: "sudo", points: 100, descLong: "Der sudo Befehl erlaubt es einem berechtigten Benutzer, einen Befehl mit Administratorrechten auszuführen.", example: "sudo <command>" }
                 },
                 install_pkg: {
-                    en: { t: "Software Engineer", d: "Install a package (apt/pacman)", cmd: "apt / pacman", descLong: "Package managers allow downloading and managing software.", example: "sudo apt install <packageName>" },
-                    de: { t: "Softwareentwickler", d: "Installiere ein Paket", cmd: "apt / pacman", descLong: "Paketmanager ermöglichen Softwareinstallationen.", example: "sudo apt install <packageName>" }
+                    en: { t: "Software Engineer", d: "Install a package (apt/pacman)", cmd: "apt / pacman", points: 150, descLong: "Package managers like apt (Debian) or pacman (Arch) allow you to download, install, and manage software packages.", example: "sudo apt install <packageName>" },
+                    de: { t: "Softwareentwickler", d: "Installiere ein Paket", cmd: "apt / pacman", points: 150, descLong: "Paketmanager wie apt oder pacman ermöglichen das Herunterladen und Installieren von Software.", example: "sudo apt install <packageName>" }
                 },
                 read_file: {
-                    en: { t: "Reader", d: "Read a file using cat", cmd: "cat", descLong: "The cat command outputs file contents to the terminal screen.", example: "cat <fileName>" },
-                    de: { t: "Leser", d: "Lese eine Datei mit cat", cmd: "cat", descLong: "Der cat Befehl liest Dateien aus.", example: "cat <fileName>" }
+                    en: { t: "Reader", d: "Read a file using cat", cmd: "cat", points: 20, descLong: "The cat (concatenate) command reads data from files and outputs their contents directly to the terminal screen.", example: "cat <fileName>" },
+                    de: { t: "Leser", d: "Lese eine Datei mit cat", cmd: "cat", points: 20, descLong: "Der Befehl cat liest Daten aus Dateien und gibt ihren Inhalt direkt auf dem Terminalbildschirm aus.", example: "cat <fileName>" }
                 },
                 check_path: {
-                    en: { t: "Lost & Found", d: "Check working directory (pwd)", cmd: "pwd", descLong: "Displays the absolute path of your current folder.", example: "pwd" },
-                    de: { t: "Fundbüro", d: "Prüfe das Arbeitsverzeichnis", cmd: "pwd", descLong: "Zeigt den aktuellen Ordnerpfad an.", example: "pwd" }
+                    en: { t: "Lost & Found", d: "Check working directory (pwd)", cmd: "pwd", points: 10, descLong: "The pwd (print working directory) command displays the full absolute path of the folder you are currently located in.", example: "pwd" },
+                    de: { t: "Fundbüro", d: "Prüfe das Arbeitsverzeichnis", cmd: "pwd", points: 10, descLong: "Der Befehl pwd zeigt den vollständigen absoluten Pfad des aktuellen Ordners an.", example: "pwd" }
                 },
                 clear_screen: {
-                    en: { t: "Tabula Rasa", d: "Clear the terminal (clear)", cmd: "clear", descLong: "Clears the terminal screen.", example: "clear" },
-                    de: { t: "Tabula Rasa", d: "Leere das Terminal", cmd: "clear", descLong: "Säubert den Terminalbildschirm.", example: "clear" }
+                    en: { t: "Tabula Rasa", d: "Clear the terminal (clear)", cmd: "clear", points: 10, descLong: "The clear command simply clears the terminal screen, pushing old output up and giving you a clean workspace.", example: "clear" },
+                    de: { t: "Tabula Rasa", d: "Leere das Terminal", cmd: "clear", points: 10, descLong: "Der clear Befehl säubert den Terminalbildschirm.", example: "clear" }
                 },
                 change_dir: {
-                    en: { t: "Traveler", d: "Change directory using cd", cmd: "cd", descLong: "Navigate between different folders in the file system.", example: "cd <directoryPath>" },
-                    de: { t: "Reisender", d: "Wechsle das Verzeichnis", cmd: "cd", descLong: "Navigiere zwischen Ordnern.", example: "cd <directoryPath>" }
+                    en: { t: "Traveler", d: "Change directory using cd", cmd: "cd", points: 15, descLong: "The cd (change directory) command is used to navigate between different folders in the file system.", example: "cd <directoryPath>" },
+                    de: { t: "Reisender", d: "Wechsle das Verzeichnis", cmd: "cd", points: 15, descLong: "Der Befehl cd wird verwendet, um zwischen verschiedenen Ordnern im Dateisystem zu navigieren.", example: "cd <directoryPath>" }
                 },
                 list_files: {
-                    en: { t: "Observer", d: "List files using ls", cmd: "ls", descLong: "Shows files and folders inside your directory.", example: "ls" },
-                    de: { t: "Beobachter", d: "Liste Dateien auf", cmd: "ls", descLong: "Zeigt Dateien und Ordner an.", example: "ls" }
+                    en: { t: "Observer", d: "List files using ls", cmd: "ls", points: 15, descLong: "The ls (list) command shows all files and folders inside your current directory or a specified target directory.", example: "ls <directoryPath>" },
+                    de: { t: "Beobachter", d: "Liste Dateien auf", cmd: "ls", points: 15, descLong: "Der Befehl ls zeigt alle Dateien und Ordner in deinem aktuellen Verzeichnis an.", example: "ls <directoryPath>" }
                 }
             };
 
@@ -1038,11 +1060,11 @@
             ];
 
             let activeQuests = [];
-            function generateNewQuests() {
+            function getRandomUnassignedQuests(count) {
                 let shuffled = [...questPool].sort(() => 0.5 - Math.random());
-                activeQuests = shuffled.slice(0, 10).map(q => ({ ...q, completed: false }));
+                return shuffled.slice(0, count).map(q => ({ ...q, completed: false }));
             }
-            generateNewQuests();
+            activeQuests = getRandomUnassignedQuests(10);
 
             let commandHistoryList = [];
             let historyIndex = -1;
@@ -1208,17 +1230,16 @@
 
             questConfirmYesBtn.addEventListener("click", () => {
                 if (pendingQuestReloadId === 'all') {
-                    generateNewQuests();
+                    let unassigned = questPool.filter(qp => !activeQuests.some(aq => aq.id === qp.id));
+                    if (unassigned.length === 0) unassigned = [...questPool];
+                    activeQuests = getRandomUnassignedQuests(10);
                 } else if (pendingQuestReloadId) {
-                    let oldQuestIndex = activeQuests.findIndex(q => q.id === pendingQuestReloadId);
-                    if (oldQuestIndex !== -1) {
+                    let qIndex = activeQuests.findIndex(q => q.id === pendingQuestReloadId);
+                    if (qIndex !== -1) {
                         let availablePool = questPool.filter(qp => !activeQuests.some(aq => aq.id === qp.id));
-                        if (availablePool.length > 0) {
-                            let newRand = availablePool[Math.floor(Math.random() * availablePool.length)];
-                            activeQuests[oldQuestIndex] = { ...newRand, completed: false };
-                        } else {
-                            activeQuests[oldQuestIndex].completed = false;
-                        }
+                        if (availablePool.length === 0) availablePool = [...questPool];
+                        let newQ = availablePool[Math.floor(Math.random() * availablePool.length)];
+                        activeQuests[qIndex] = { ...newQ, completed: false };
                     }
                 }
                 questConfirmModal.style.display = "none";
@@ -1246,28 +1267,33 @@
                     const card = document.createElement("div");
                     card.className = "quest-card " + (q.completed ? "completed" : "");
                     
-                    let reloadBtnHTML = `<button class="quest-reload-btn" title="${i18n[lang].questsReload}">🔄</button>`;
+                    let reloadBtnHTML = "";
+                    if (q.completed) {
+                        reloadBtnHTML = `<button class="quest-reload-btn" title="${i18n[lang].questsReload}">🔄</button>`;
+                    }
 
                     card.innerHTML = `
                         <div class="quest-icon">${q.completed ? '✅' : q.icon}</div>
                         <div class="quest-info">
-                            <div class="quest-title">${qDef.t}</div>
+                            <div class="quest-title">${qDef.t} <span style="font-size: 11px; color: #facc15; font-weight: normal;">(+${qDef.points} pts)</span></div>
                             <div class="quest-desc">${qDef.d}</div>
                         </div>
                         ${reloadBtnHTML}
                     `;
                     
-                    const reloadBtn = card.querySelector(".quest-reload-btn");
-                    if (reloadBtn) {
-                        reloadBtn.addEventListener("click", (e) => {
-                            e.stopPropagation(); 
-                            pendingQuestReloadId = q.id;
-                            questConfirmTitle.textContent = i18n[lang].questsReload;
-                            questConfirmMsg.textContent = i18n[lang].reloadQuestConfirm;
-                            questConfirmCancelBtn.textContent = i18n[lang].modalCancel;
-                            questConfirmYesBtn.textContent = i18n[lang].modalConfirm;
-                            questConfirmModal.style.display = "flex";
-                        });
+                    if (q.completed) {
+                        const reloadBtn = card.querySelector(".quest-reload-btn");
+                        if (reloadBtn) {
+                            reloadBtn.addEventListener("click", (e) => {
+                                e.stopPropagation(); 
+                                pendingQuestReloadId = q.id;
+                                questConfirmTitle.textContent = i18n[lang].questsReload;
+                                questConfirmMsg.textContent = i18n[lang].reloadQuestConfirm;
+                                questConfirmCancelBtn.textContent = i18n[lang].modalCancel;
+                                questConfirmYesBtn.textContent = i18n[lang].modalConfirm;
+                                questConfirmModal.style.display = "flex";
+                            });
+                        }
                     }
 
                     card.addEventListener("click", () => {
@@ -1288,12 +1314,14 @@
                     const lang = currentLang;
                     const qDef = questDefinitions[id][lang];
                     
+                    addScore(qDef.points);
+
                     const popup = document.createElement("div");
                     popup.className = "achievement-popup";
                     popup.innerHTML = `
                         <div class="achievement-icon" style="background: rgba(74, 222, 128, 0.1); border-color: #4ade80;">📜</div>
                         <div class="achievement-content">
-                            <div class="achievement-header" style="color: #4ade80;">${i18n[lang].questCompleted}</div>
+                            <div class="achievement-header" style="color: #4ade80;">${i18n[lang].questCompleted} (+${qDef.points} pts)</div>
                             <div class="achievement-title">${qDef.t}</div>
                         </div>
                         <button class="achievement-close">×</button>
@@ -2065,6 +2093,9 @@
                     appendOutput("bash: " + cmd + ": " + lang.cmdNotFound, "command-error");
                     return;
                 }
+
+                // Reward score for correct valid command execution
+                addScore(5);
 
                 switch (cmd) {
                     case "help": {
