@@ -124,13 +124,6 @@
         .back-btn { width: 44px; padding: 0; justify-content: center; fill: var(--text-color); }
         .back-btn svg { width: 24px; height: 24px; }
         
-        .achievement-toggle-btn {
-            width: 44px; height: 44px; padding: 0; justify-content: center; font-weight: 700; font-size: 16px;
-        }
-        .achievement-toggle-btn.active {
-            border-color: var(--term-text); color: var(--term-text); background: var(--hover-bg);
-        }
-
         .retention-part, .date-part, .time-part { font-weight: 600; }
 
         .lang-toggle, .theme-toggle {
@@ -179,12 +172,14 @@
             overflow: hidden; display: flex; flex-direction: column; height: calc(100vh - 120px);
             min-height: 550px; font-family: var(--font-family-base);
             font-size: var(--font-size-base);
+            position: relative; /* Essential for absolute canvas positioning */
         }
 
         .terminal-top-bar {
             display: flex; align-items: center; justify-content: space-between;
             background: rgba(0, 0, 0, 0.3); border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             padding: 10px 16px; flex-wrap: wrap; gap: 10px;
+            position: relative; z-index: 10;
         }
         .terminal-top-left {
             display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -317,6 +312,7 @@
             flex: 1; padding: 24px; overflow-y: auto; display: flex;
             flex-direction: column; justify-content: flex-start; gap: 8px; font-size: inherit;
             line-height: 1.6; color: var(--term-output); cursor: text;
+            position: relative; z-index: 10;
         }
 
         .terminal-body::-webkit-scrollbar { width: 6px; }
@@ -448,6 +444,14 @@
         .quest-card.completed .quest-title { text-decoration: line-through; color: var(--sub-color); }
         .quest-desc { font-size: 13px; color: var(--sub-color); }
 
+        .quest-reload-btn {
+            background: transparent; border: none; cursor: pointer;
+            font-size: 16px; padding: 4px; border-radius: 4px;
+            color: var(--sub-color); display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s, color 0.2s; z-index: 10;
+        }
+        .quest-reload-btn:hover { background: var(--hover-bg); color: var(--term-text); }
+
         .custom-tooltip {
             position: fixed; background: var(--btn-bg); border: 1px solid var(--border-color);
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2); border-radius: 8px; padding: 16px 20px;
@@ -461,6 +465,16 @@
         .tooltip-name { font-family: var(--font-family-base); font-size: 14px; font-weight: 700; color: var(--hint-color); }
         .tooltip-body { font-size: 14.5px; line-height: 1.6; color: var(--text-color); font-weight: 500; word-wrap: break-word; }
         .tooltip-example { font-family: var(--font-family-base); font-size: 13px; background: var(--hover-bg); padding: 8px 12px; border-radius: 6px; margin-top: 10px; color: var(--hint-color); border: 1px dashed var(--border-hover); }
+
+        #explosionCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50; /* Above text but below popups */
+        }
 
         @media (max-width: 900px) {
             body::before { display: none; }
@@ -481,9 +495,8 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
         </a>
         <div class="clickable-dt no-hover" id="appTitle">Terminal Simulator</div>
-        <button class="clickable-dt" id="questsModalBtn" title="Quests">Quests</button>
         <button class="clickable-dt" id="infoModalBtn" title="Commands & Apps Info">Info</button>
-        <button class="clickable-dt achievement-toggle-btn" id="achievementToggleBtn" title="Toggle Achievements">A</button>
+        <button class="clickable-dt" id="questsModalBtn" title="Quests">Quests</button>
     </div>
 
     <div class="top-right">
@@ -507,6 +520,7 @@
         <div class="split-layout" id="splitLayout">
             <!-- Left Terminal Card -->
             <div class="terminal-card" id="terminalCard">
+                <canvas id="explosionCanvas"></canvas>
                 <div class="terminal-top-bar">
                     <div class="terminal-top-left">
                         <div class="term-dropdown-container">
@@ -661,6 +675,7 @@
                 <!-- Filled dynamically via JS -->
             </div>
             <div class="modal-actions">
+                <button class="clickable-dt" id="questsModalReloadBtn">Reload</button>
                 <button class="clickable-dt" id="questsModalCloseBtn">Close</button>
             </div>
         </div>
@@ -677,6 +692,18 @@
             </div>
             <div class="modal-actions">
                 <button class="clickable-dt" id="questDetailCloseBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quest Confirm Modal -->
+    <div class="modal-overlay" id="questConfirmModal" style="z-index: 2200;">
+        <div class="modal-card" style="max-width: 400px;">
+            <div class="modal-title" id="questConfirmTitle">Reload Quest?</div>
+            <div class="modal-message" id="questConfirmMsg">Are you sure you want to reset this quest?</div>
+            <div class="modal-actions">
+                <button class="clickable-dt" id="questConfirmCancelBtn">Cancel</button>
+                <button class="clickable-dt" id="questConfirmYesBtn" style="border-color: var(--term-text); color: var(--hint-color);">Confirm</button>
             </div>
         </div>
     </div>
@@ -734,6 +761,10 @@
                     questsBtn: "Quests",
                     questsTitle: "Active Quests",
                     questCompleted: "Quest Completed",
+                    questsReload: "Reload",
+                    questsReloadAll: "Reload All",
+                    reloadQuestConfirm: "Are you sure you want to reset this quest?",
+                    reloadAllConfirm: "Are you sure you want to reset all completed quests?",
                     infoTitle: "Commands & Apps Overview",
                     infoUiTitle: "UI Toggles",
                     infoUiDescSyntax: "Adds live bash autocomplete suggestions in the input field.",
@@ -801,7 +832,7 @@
                     descPy: "A script containing executable programming instructions.",
                     descPdf: "A Portable Document Format (PDF) file.",
                     descConf: "A file containing system or application settings.",
-                    descGenericFile: "A system or data file.",
+                    descGenericFile: "Eine System- oder Datendatei.",
                     descArg: "Additional input data or target for the command to process.",
                     execShell: "Executes the specified shell program.",
                     nanoNewFile: "New Buffer",
@@ -850,6 +881,10 @@
                     questsBtn: "Quests",
                     questsTitle: "Aktive Quests",
                     questCompleted: "Quest Abgeschlossen",
+                    questsReload: "Neu laden",
+                    questsReloadAll: "Alle neu laden",
+                    reloadQuestConfirm: "Möchtest du diese Quest wirklich zurücksetzen?",
+                    reloadAllConfirm: "Möchtest du alle abgeschlossenen Quests wirklich zurücksetzen?",
                     infoTitle: "Befehle & Apps Übersicht",
                     infoUiTitle: "UI Schalter",
                     infoUiDescSyntax: "Fügt automatische Bash-Vorschläge direkt im Eingabefeld hinzu.",
@@ -934,7 +969,7 @@
             let currentSystem = "Debian";
             let syntaxEnabled = false;
             let highlightEnabled = false;
-            let achievementsEnabled = false;
+            let achievementsEnabled = true;
             let unlockedAchievements = new Set();
             let pendingSystemTarget = null;
             let inputIdleTimer = null;
@@ -1045,7 +1080,6 @@
 
             const langToggleBtn = document.getElementById("langToggle");
             const themeToggle = document.getElementById("themeToggle");
-            const achievementToggleBtn = document.getElementById("achievementToggleBtn");
             const infoModalBtn = document.getElementById("infoModalBtn");
             const infoModal = document.getElementById("infoModal");
             const infoModalCloseBtn = document.getElementById("infoModalCloseBtn");
@@ -1056,6 +1090,7 @@
             const questsModalCloseBtn = document.getElementById("questsModalCloseBtn");
             const questsModalBody = document.getElementById("questsModalBody");
             const questsModalTitle = document.getElementById("questsModalTitle");
+            const questsModalReloadBtn = document.getElementById("questsModalReloadBtn");
             
             const questDetailModal = document.getElementById("questDetailModal");
             const questDetailCloseBtn = document.getElementById("questDetailCloseBtn");
@@ -1064,9 +1099,17 @@
             const questDetailDesc = document.getElementById("questDetailDesc");
             const questDetailExample = document.getElementById("questDetailExample");
 
+            const questConfirmModal = document.getElementById("questConfirmModal");
+            const questConfirmTitle = document.getElementById("questConfirmTitle");
+            const questConfirmMsg = document.getElementById("questConfirmMsg");
+            const questConfirmCancelBtn = document.getElementById("questConfirmCancelBtn");
+            const questConfirmYesBtn = document.getElementById("questConfirmYesBtn");
+            let pendingQuestReloadId = null;
+
             const achievementContainer = document.getElementById("achievementContainer");
             const body = document.body;
             const appTitle = document.getElementById("appTitle");
+            const terminalCard = document.getElementById("terminalCard");
             const terminalBody = document.getElementById("terminalBody");
             const terminalHistory = document.getElementById("terminalHistory");
             const terminalInput = document.getElementById("terminalInput");
@@ -1098,39 +1141,6 @@
             const rightColumn = document.getElementById("rightColumn");
             const nanoCard = document.getElementById("nanoCard");
             const mcCard = document.getElementById("mcCard");
-
-            achievementToggleBtn.addEventListener("click", () => {
-                achievementsEnabled = !achievementsEnabled;
-                achievementToggleBtn.classList.toggle("active", achievementsEnabled);
-                
-                const lang = currentLang;
-                const popup = document.createElement("div");
-                popup.className = "achievement-popup";
-                popup.innerHTML = `
-                    <div class="achievement-icon" style="${achievementsEnabled ? 'background: rgba(74, 222, 128, 0.1); border-color: #4ade80;' : 'background: rgba(248, 113, 113, 0.1); border-color: #f87171;'}">${achievementsEnabled ? '✅' : '❌'}</div>
-                    <div class="achievement-content">
-                        <div class="achievement-header">${achievementsEnabled ? i18n[lang].achievementsEnabled : i18n[lang].achievementsDisabled}</div>
-                        <div class="achievement-desc">${achievementsEnabled ? i18n[lang].achToggleMsg : ""}</div>
-                    </div>
-                    <button class="achievement-close">×</button>
-                `;
-                
-                const closeBtn = popup.querySelector(".achievement-close");
-                closeBtn.addEventListener("click", () => {
-                    popup.style.transform = "translateX(120%)";
-                    setTimeout(() => popup.remove(), 400);
-                });
-
-                achievementContainer.appendChild(popup);
-                setTimeout(() => popup.classList.add("show"), 50);
-
-                setTimeout(() => {
-                    if (popup.parentElement) {
-                        popup.style.transform = "translateX(120%)";
-                        setTimeout(() => popup.remove(), 400);
-                    }
-                }, 4000);
-            });
 
             function triggerAchievement(title, desc, icon = "⭐") {
                 if (!achievementsEnabled) return;
@@ -1178,6 +1188,33 @@
                 }
             });
 
+            questsModalReloadBtn.addEventListener("click", () => {
+                const lang = currentLang;
+                pendingQuestReloadId = 'all';
+                questConfirmTitle.textContent = i18n[lang].questsReloadAll;
+                questConfirmMsg.textContent = i18n[lang].reloadAllConfirm;
+                questConfirmCancelBtn.textContent = i18n[lang].modalCancel;
+                questConfirmYesBtn.textContent = i18n[lang].modalConfirm;
+                questConfirmModal.style.display = "flex";
+            });
+
+            questConfirmCancelBtn.addEventListener("click", () => {
+                questConfirmModal.style.display = "none";
+                pendingQuestReloadId = null;
+            });
+
+            questConfirmYesBtn.addEventListener("click", () => {
+                if (pendingQuestReloadId === 'all') {
+                    activeQuests.forEach(q => q.completed = false);
+                } else if (pendingQuestReloadId) {
+                    let q = activeQuests.find(q => q.id === pendingQuestReloadId);
+                    if (q) q.completed = false;
+                }
+                questConfirmModal.style.display = "none";
+                pendingQuestReloadId = null;
+                renderQuestsModalContent();
+            });
+
             questDetailCloseBtn.addEventListener("click", () => {
                 questDetailModal.style.display = "none";
             });
@@ -1197,13 +1234,36 @@
                     const qDef = questDefinitions[q.id][lang];
                     const card = document.createElement("div");
                     card.className = "quest-card " + (q.completed ? "completed" : "");
+                    
+                    let reloadBtnHTML = "";
+                    if (q.completed) {
+                        reloadBtnHTML = `<button class="quest-reload-btn" title="${i18n[lang].questsReload}">🔄</button>`;
+                    }
+
                     card.innerHTML = `
                         <div class="quest-icon">${q.completed ? '✅' : q.icon}</div>
                         <div class="quest-info">
                             <div class="quest-title">${qDef.t}</div>
                             <div class="quest-desc">${qDef.d}</div>
                         </div>
+                        ${reloadBtnHTML}
                     `;
+                    
+                    if (q.completed) {
+                        const reloadBtn = card.querySelector(".quest-reload-btn");
+                        if (reloadBtn) {
+                            reloadBtn.addEventListener("click", (e) => {
+                                e.stopPropagation(); 
+                                pendingQuestReloadId = q.id;
+                                questConfirmTitle.textContent = i18n[lang].questsReload;
+                                questConfirmMsg.textContent = i18n[lang].reloadQuestConfirm;
+                                questConfirmCancelBtn.textContent = i18n[lang].modalCancel;
+                                questConfirmYesBtn.textContent = i18n[lang].modalConfirm;
+                                questConfirmModal.style.display = "flex";
+                            });
+                        }
+                    }
+
                     card.addEventListener("click", () => {
                         questDetailTitle.textContent = qDef.t;
                         questDetailCmd.textContent = "> " + qDef.cmd;
@@ -1249,10 +1309,15 @@
                         }
                     }, 8000);
 
+                    // Trigger the pixel explosion effect
+                    setTimeout(triggerExplosion, 50);
+
                     if (questsModal.style.display === "flex") {
                         renderQuestsModalContent();
                     }
+                    return true;
                 }
+                return false;
             }
 
             infoModalBtn.addEventListener("click", () => {
@@ -1379,6 +1444,7 @@
                 modalConfirmBtn.textContent = lang.modalConfirm;
                 infoModalCloseBtn.textContent = currentLang === "de" ? "Schließen" : "Close";
                 document.getElementById("questsModalBtn").textContent = lang === "de" ? "Quests" : "Quests";
+                questsModalReloadBtn.textContent = lang.questsReload;
                 document.getElementById("questsModalCloseBtn").textContent = currentLang === "de" ? "Schließen" : "Close";
                 document.getElementById("questDetailCloseBtn").textContent = currentLang === "de" ? "Schließen" : "Close";
                 document.getElementById("lblNanoWriteOut").textContent = lang.nanoWriteOut;
@@ -2047,7 +2113,7 @@
                             break;
                         }
                         if (args.length < 2) {
-                            appendOutput("systemctl: missing operation or service name. (e.g. systemctl start smbd)", "command-error");
+                            appendOutput(lang.sysCtlMissing, "command-error");
                             break;
                         }
                         let op = args[0];
@@ -2075,7 +2141,7 @@
                             let actLine = runningServices[srv] ? lang.sysCtlStatusAct : lang.sysCtlStatusInact;
                             appendOutput(header + "     " + actLine, runningServices[srv] ? "command-success" : "command-error");
                         } else {
-                            appendOutput("Unknown operation '" + op + "'.", "command-error");
+                            appendOutput(lang.sysCtlUnknownOp.replace("{op}", op), "command-error");
                         }
                         triggerAchievement("Service Manager", "Manipulated a background service", "⚙️");
                         break;
@@ -2083,8 +2149,8 @@
                     case "nano": {
                         let usrBinFiles = fileSystem["/usr/bin"].children;
                         if (!usrBinFiles.includes("nano")) {
-                            let installHint = currentSystem === "Debian" ? "sudo apt install nano" : "sudo pacman -S nano";
-                            appendOutput("bash: nano: command not found. You can install it using package manager (e.g., '" + installHint + "')", "command-error");
+                            let hint = currentSystem === "Debian" ? "sudo apt install nano" : "sudo pacman -S nano";
+                            appendOutput(lang.cmdNotFoundPkg.replace("{cmd}", "nano").replace("{hint}", hint), "command-error");
                             break;
                         }
 
@@ -2122,8 +2188,8 @@
                     case "mc": {
                         let usrBinFiles = fileSystem["/usr/bin"].children;
                         if (!usrBinFiles.includes("mc")) {
-                            let installHint = currentSystem === "Debian" ? "sudo apt install mc" : "sudo pacman -S mc";
-                            appendOutput("bash: mc: command not found. You can install it using package manager (e.g., '" + installHint + "')", "command-error");
+                            let hint = currentSystem === "Debian" ? "sudo apt install mc" : "sudo pacman -S mc";
+                            appendOutput(lang.cmdNotFoundPkg.replace("{cmd}", "mc").replace("{hint}", hint), "command-error");
                             break;
                         }
                         openMc();
@@ -2134,21 +2200,21 @@
                     case "unzip": {
                         let usrBinFiles = fileSystem["/usr/bin"].children;
                         if (!usrBinFiles.includes("unzip")) {
-                            let installHint = currentSystem === "Debian" ? "sudo apt install unzip" : "sudo pacman -S unzip";
-                            appendOutput("bash: unzip: command not found. You can install it using package manager (e.g., '" + installHint + "')", "command-error");
+                            let hint = currentSystem === "Debian" ? "sudo apt install unzip" : "sudo pacman -S unzip";
+                            appendOutput(lang.cmdNotFoundPkg.replace("{cmd}", "unzip").replace("{hint}", hint), "command-error");
                             break;
                         }
                         if (!args[0]) {
-                            appendOutput("Archive:  (none specified)\nNo zipfile found.", "command-error");
+                            appendOutput(lang.unzipNoTarget, "command-error");
                             break;
                         }
                         let targetZip = resolvePath(args[0]);
                         let node = fileSystem[targetZip];
                         if (!node || node.type !== "file") {
-                            appendOutput("unzip: cannot find or open " + args[0], "command-error");
+                            appendOutput(lang.unzipNotFound.replace("{file}", args[0]), "command-error");
                             break;
                         }
-                        appendOutput("Archive:  " + args[0], "command-output");
+                        appendOutput(lang.unzipArchive.replace("{file}", args[0]), "command-output");
                         let parentDir = targetZip.substring(0, targetZip.lastIndexOf("/")) || "/";
                         let unzippedFileName = "file.txt";
                         let unzippedFullPath = parentDir === "/" ? "/" + unzippedFileName : parentDir + "/" + unzippedFileName;
@@ -2157,7 +2223,7 @@
                         if (fileSystem[parentDir] && !fileSystem[parentDir].children.includes(unzippedFileName)) {
                             fileSystem[parentDir].children.push(unzippedFileName);
                         }
-                        appendOutput("  inflating: " + unzippedFileName, "command-success");
+                        appendOutput(lang.unzipInflate.replace("{file}", unzippedFileName), "command-success");
                         if (isMcOpen) refreshMcPanels();
                         triggerAchievement("Archive Master", "Extracted a zip archive", "📦");
                         break;
@@ -2165,12 +2231,12 @@
                     case "zip": {
                         let usrBinFiles = fileSystem["/usr/bin"].children;
                         if (!usrBinFiles.includes("zip")) {
-                            let installHint = currentSystem === "Debian" ? "sudo apt install zip" : "sudo pacman -S zip";
-                            appendOutput("bash: zip: command not found. You can install it using package manager (e.g., '" + installHint + "')", "command-error");
+                            let hint = currentSystem === "Debian" ? "sudo apt install zip" : "sudo pacman -S zip";
+                            appendOutput(lang.cmdNotFoundPkg.replace("{cmd}", "zip").replace("{hint}", hint), "command-error");
                             break;
                         }
                         if (args.length < 2) {
-                            appendOutput("zip error: Too few arguments. Usage: zip archive.zip file.txt", "command-error");
+                            appendOutput(lang.zipTooFew, "command-error");
                             break;
                         }
                         let archiveName = args[0];
@@ -2179,17 +2245,17 @@
                         let sourcePath = resolvePath(sourceFile);
 
                         if (!fileSystem[sourcePath]) {
-                            appendOutput("zip warning: Could not open source file: " + sourceFile, "command-error");
+                            appendOutput(lang.zipNoSource.replace("{file}", sourceFile), "command-error");
                             break;
                         }
                         let parentDir = targetArchPath.substring(0, targetArchPath.lastIndexOf("/")) || "/";
                         let archFileName = targetArchPath.split("/").pop();
 
-                        fileSystem[targetArchPath] = { type: "file", content: "[Zip Archive generated from " + sourceFile + "]" };
+                        fileSystem[targetArchPath] = { type: "file", content: lang.zipGen.replace("{file}", sourceFile) };
                         if (fileSystem[parentDir] && !fileSystem[parentDir].children.includes(archFileName)) {
                             fileSystem[parentDir].children.push(archFileName);
                         }
-                        appendOutput("  adding: " + sourceFile + " (deflated 50%)", "command-success");
+                        appendOutput(lang.zipAdd.replace("{file}", sourceFile), "command-success");
                         if (isMcOpen) refreshMcPanels();
                         triggerAchievement("Archiver", "Created a zip archive", "🗜️");
                         break;
@@ -2197,18 +2263,18 @@
                     case "smbclient": {
                         let usrBinFiles = fileSystem["/usr/bin"].children;
                         if (!usrBinFiles.includes("smbclient")) {
-                            let installHint = currentSystem === "Debian" ? "sudo apt install samba" : "sudo pacman -S samba";
-                            appendOutput("bash: smbclient: command not found. You can install it using package manager (e.g., '" + installHint + "')", "command-error");
+                            let hint = currentSystem === "Debian" ? "sudo apt install samba" : "sudo pacman -S samba";
+                            appendOutput(lang.cmdNotFoundPkg.replace("{cmd}", "smbclient").replace("{hint}", hint), "command-error");
                             break;
                         }
                         if (!runningServices["smbd"]) {
-                            appendOutput("Connection to localhost failed (Error NT_STATUS_CONNECTION_REFUSED)\nDid you start smbd.service?", "command-error");
+                            appendOutput(lang.smbNoConn, "command-error");
                             break;
                         }
                         if (args[0] === "-L" || args[0] === "-l") {
-                            appendOutput("Domain=[WORKGROUP] OS=[Unix] Server=[Samba 4.18.2]\n\n\tSharename       Type      Comment\n\t---------       ----      -------\n\thomes           Disk      Home Directories\n\tshared_docs     Disk      Public Shared Documents Folder\n\tIPC$            IPC      IPC Service (Samba Server)\n", "command-success");
+                            appendOutput(lang.smbL, "command-success");
                         } else {
-                            appendOutput("smbclient //localhost/shared_docs -U user\nDomain=[WORKGROUP] OS=[Unix] Server=[Samba 4.18.2]\nsmb: \\> ls\n  .                                   D        0  Wed Aug 26 03:00:00 2026\n  ..                                  D        0  Wed Aug 26 03:00:00 2026\n  report.pdf                          A    14220  Wed Aug 26 03:00:00 2026\n  resume.docx                         A     8410  Wed Aug 26 03:00:00 2026\n\n                52428800 blocks of size 1024. 41200120 blocks available", "command-success");
+                            appendOutput(lang.smbShell, "command-success");
                         }
                         triggerAchievement("Network Share", "Connected to Samba network share", "🌐");
                         break;
@@ -2248,7 +2314,7 @@
                                 refreshMcPanels();
                             }
                         } else if (cdNode && cdNode.type === "file") {
-                            appendOutput("bash: cd: " + args[0] + ": Not a directory", "command-error");
+                            appendOutput("bash: cd: " + args[0] + ": " + lang.notADir, "command-error");
                         } else {
                             appendOutput("bash: cd: " + args[0] + ": " + lang.noSuchDir, "command-error");
                         }
@@ -2311,7 +2377,7 @@
                                 appendOutput(node.content, "command-output");
                                 checkQuest("read_file");
                             } else if (node && node.type === "dir") {
-                                appendOutput("cat: " + args[0] + ": Is a directory", "command-error");
+                                appendOutput("cat: " + args[0] + ": " + lang.notADir, "command-error");
                             } else {
                                 appendOutput("cat: " + args[0] + ": " + lang.noSuchFile, "command-error");
                             }
@@ -2323,7 +2389,7 @@
                         let pkg = args[1] || "";
                         if (sub === "update" || sub === "upgrade" || sub === "dist-upgrade") {
                             simulatePackageUpdateOrInstall(() => {
-                                appendOutput("Done.", "command-success");
+                                appendOutput(lang.done, "command-success");
                             });
                         } else if (sub === "install") {
                             if (!systemUpdated) {
@@ -2331,7 +2397,7 @@
                                 break;
                             }
                             if (!pkg) {
-                                appendOutput("E: You must specify a package to install.", "command-error");
+                                appendOutput(lang.aptSpecInst, "command-error");
                             } else if (pkg !== "nano" && pkg !== "mc" && pkg !== "unzip" && pkg !== "zip" && pkg !== "samba") {
                                 appendOutput(lang.pkgNotFoundDebian + " " + pkg, "command-error");
                             } else {
@@ -2341,14 +2407,14 @@
                                     if (pkg === "samba") {
                                         if (!usrBin.includes("smbclient")) usrBin.push("smbclient");
                                     }
-                                    appendOutput("Setting up " + pkg + " (2:4.18.2+dfsg-1) ... Done.", "command-success");
+                                    appendOutput(lang.aptSettingUp.replace("{pkg}", pkg), "command-success");
                                     triggerAchievement("Software Installer", "Successfully installed package: " + pkg, "💿");
                                     checkQuest("install_pkg");
                                 }, pkg);
                             }
                         } else if (sub === "remove" || sub === "purge") {
                             if (!pkg) {
-                                appendOutput("E: You must specify a package to remove.", "command-error");
+                                appendOutput(lang.aptSpecRm, "command-error");
                             } else {
                                 if (pkg === "nano") {
                                     fileSystem["/usr/bin"].children = fileSystem["/usr/bin"].children.filter(c => c !== "nano");
@@ -2364,11 +2430,11 @@
                                     fileSystem["/usr/bin"].children = fileSystem["/usr/bin"].children.filter(c => c !== pkg);
                                     if (pkg === "samba") fileSystem["/usr/bin"].children = fileSystem["/usr/bin"].children.filter(c => c !== "smbclient");
                                 }
-                                appendOutput("Removing " + pkg + " (simulated) ... Done.", "command-success");
+                                appendOutput(lang.aptRemoving.replace("{pkg}", pkg), "command-success");
                                 triggerAchievement("Uninstaller", "Removed package: " + pkg, "❌");
                             }
                         } else {
-                            appendOutput("E: Invalid apt operation. Try 'apt update', 'apt install <pkg>', or 'apt remove <pkg>'", "command-error");
+                            appendOutput(lang.aptInvalid, "command-error");
                         }
                         break;
                     }
@@ -2377,7 +2443,7 @@
                         let pkg = args[1] || "";
                         if (sub === "-Syu" || sub === "-Syyu" || sub === "-Syy") {
                             simulatePackageUpdateOrInstall(() => {
-                                appendOutput(":: Synchronizing package databases... Done.", "command-success");
+                                appendOutput(lang.pacSync, "command-success");
                             });
                         } else if (sub === "-S") {
                             if (!systemUpdated) {
@@ -2385,7 +2451,7 @@
                                 break;
                             }
                             if (!pkg) {
-                                appendOutput("error: no targets specified (use -h for help)", "command-error");
+                                appendOutput(lang.pacNoTarget, "command-error");
                             } else if (pkg !== "nano" && pkg !== "mc" && pkg !== "unzip" && pkg !== "zip" && pkg !== "samba") {
                                 appendOutput(lang.pkgNotFoundArch + " " + pkg, "command-error");
                             } else {
@@ -2395,14 +2461,14 @@
                                     if (pkg === "samba") {
                                         if (!usrBin.includes("smbclient")) usrBin.push("smbclient");
                                     }
-                                    appendOutput("installing " + pkg + " [################################] 100%", "command-success");
+                                    appendOutput(lang.pacInst.replace("{pkg}", pkg), "command-success");
                                     triggerAchievement("Software Installer", "Successfully installed package: " + pkg, "💿");
                                     checkQuest("install_pkg");
                                 }, pkg);
                             }
                         } else if (sub === "-R") {
                             if (!pkg) {
-                                appendOutput("error: no targets specified (use -h for help)", "command-error");
+                                appendOutput(lang.pacNoTarget, "command-error");
                             } else {
                                 if (pkg === "nano") {
                                     fileSystem["/usr/bin"].children = fileSystem["/usr/bin"].children.filter(c => c !== "nano");
@@ -2418,11 +2484,11 @@
                                     fileSystem["/usr/bin"].children = fileSystem["/usr/bin"].children.filter(c => c !== pkg);
                                     if (pkg === "samba") fileSystem["/usr/bin"].children = fileSystem["/usr/bin"].children.filter(c => c !== "smbclient");
                                 }
-                                appendOutput("removing " + pkg + " [################################] 100%", "command-success");
+                                appendOutput(lang.pacRm.replace("{pkg}", pkg), "command-success");
                                 triggerAchievement("Uninstaller", "Removed package: " + pkg, "❌");
                             }
                         } else {
-                            appendOutput("error: operation not supported or missing syntax. Try 'pacman -Syu' or 'pacman -S <pkg>'", "command-error");
+                            appendOutput(lang.pacInvalid, "command-error");
                         }
                         break;
                     }
@@ -2435,20 +2501,20 @@
                         break;
                     }
                     case "ps": {
-                        appendOutput("  PID TTY          TIME CMD\n 1234 pts/0    00:00:00 bash\n 5678 pts/0    00:00:00 " + cmd, "command-output");
+                        appendOutput(lang.psHeader + "\n 1234 pts/0    00:00:00 bash\n 5678 pts/0    00:00:00 " + cmd, "command-output");
                         break;
                     }
                     case "top": {
-                        appendOutput("top - " + new Date().toLocaleTimeString() + " up 1 day,  1 user,  load average: 0.01, 0.02, 0.00\nTasks:  94 total,   1 running,  93 sleeping,   0 stopped,   0 zombie", "command-output");
+                        appendOutput(lang.topHeader.replace("{time}", new Date().toLocaleTimeString()), "command-output");
                         break;
                     }
                     case "ping": {
                         if (!args[0]) {
-                            appendOutput("ping: usage error: Destination address required", "command-error");
+                            appendOutput(lang.pingUsage, "command-error");
                         } else {
-                            appendOutput("PING " + args[0] + " (93.184.216.34) 56(84) bytes of data.", "command-output");
-                            setTimeout(() => appendOutput("64 bytes from 93.184.216.34: icmp_seq=1 ttl=54 time=14.2 ms", "command-success"), 500);
-                            setTimeout(() => appendOutput("64 bytes from 93.184.216.34: icmp_seq=2 ttl=54 time=13.8 ms", "command-success"), 1000);
+                            appendOutput(lang.pingStart.replace("{host}", args[0]), "command-output");
+                            setTimeout(() => appendOutput(lang.pingReply.replace("{seq}", 1).replace("{time}", 14.2), "command-success"), 500);
+                            setTimeout(() => appendOutput(lang.pingReply.replace("{seq}", 2).replace("{time}", 13.8), "command-success"), 1000);
                         }
                         break;
                     }
@@ -2859,6 +2925,98 @@
                     customTooltip.style.top = y + 'px';
                 }
             });
+
+            const expCanvas = document.getElementById('explosionCanvas');
+            const ctx = expCanvas.getContext('2d');
+            let particles = [];
+            let isAnimating = false;
+
+            function resizeCanvas() {
+                const rect = terminalCard.getBoundingClientRect();
+                expCanvas.width = rect.width;
+                expCanvas.height = rect.height;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            function triggerExplosion() {
+                resizeCanvas();
+                const cardRect = terminalCard.getBoundingClientRect();
+                let startX = cardRect.width / 2;
+                let startY = cardRect.height / 2;
+
+                // Try to find the most recent command execution line to originate the explosion from it
+                const historyItems = terminalHistory.querySelectorAll('.command-output');
+                const lastItem = historyItems[historyItems.length - 1];
+                
+                if (lastItem) {
+                    const itemRect = lastItem.getBoundingClientRect();
+                    // Offset origin roughly to where the command was typed based on prompt width
+                    startX = itemRect.left - cardRect.left + promptLabel.offsetWidth + 20; 
+                    startY = itemRect.top - cardRect.top + (itemRect.height / 2);
+                } else {
+                    const inputLine = document.querySelector('.terminal-input-line');
+                    if (inputLine) {
+                        const inputRect = inputLine.getBoundingClientRect();
+                        startX = inputRect.left - cardRect.left + promptLabel.offsetWidth + 20;
+                        startY = inputRect.top - cardRect.top + (inputRect.height / 2);
+                    }
+                }
+
+                // Retro terminal color palette for the particles
+                const colors = ['#4ade80', '#38bdf8', '#facc15', '#f87171', '#ffffff', '#c084fc'];
+
+                // Spawn dense cluster of particles
+                for (let i = 0; i < 80; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = Math.random() * 8 + 2;
+                    particles.push({
+                        x: startX,
+                        y: startY,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed - 3, // Initial upward burst bias
+                        size: Math.random() * 5 + 2,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        life: 1.0,
+                        decay: Math.random() * 0.02 + 0.015
+                    });
+                }
+
+                if (!isAnimating) {
+                    isAnimating = true;
+                    animateExplosion();
+                }
+            }
+
+            function animateExplosion() {
+                ctx.clearRect(0, 0, expCanvas.width, expCanvas.height);
+                let remaining = false;
+
+                for (let i = 0; i < particles.length; i++) {
+                    let p = particles[i];
+                    if (p.life > 0) {
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.25; // Apply gravity over time
+                        p.life -= p.decay;
+
+                        ctx.globalAlpha = Math.max(0, p.life);
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(p.x, p.y, p.size, p.size); // Blocky pixels
+                        remaining = true;
+                    }
+                }
+                
+                ctx.globalAlpha = 1.0; // Reset for next tick
+
+                if (remaining) {
+                    requestAnimationFrame(animateExplosion);
+                } else {
+                    particles = [];
+                    isAnimating = false;
+                    ctx.clearRect(0, 0, expCanvas.width, expCanvas.height);
+                }
+            }
 
         })();
     </script>
