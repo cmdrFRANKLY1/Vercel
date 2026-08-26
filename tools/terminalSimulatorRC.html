@@ -1729,28 +1729,46 @@
                 terminalBody.scrollTop = terminalBody.scrollHeight;
             }
 
-            function simulatePackageUpdateOrInstall(onComplete) {
+            function simulatePackageUpdateOrInstall(onComplete, targetPkg = null) {
                 const lang = i18n[currentLang];
                 appendOutput(lang.readPkg, "command-success");
                 setTimeout(() => {
                     appendOutput(lang.simulatingUpdate, "command-output");
-                    let totalPkgs = Math.floor(Math.random() * 31) + 15;
-                    let maxTimeSec = Math.floor(Math.random() * 51) + 10;
+                    
+                    let totalPkgs, maxTimeSec, pkgList;
+                    
+                    if (targetPkg) {
+                        // Specific app installation (App + a few fake dependencies)
+                        totalPkgs = Math.floor(Math.random() * 3) + 2; 
+                        maxTimeSec = Math.floor(Math.random() * 3) + 2; 
+                        pkgList = [];
+                        for(let i = 0; i < totalPkgs - 1; i++) {
+                            pkgList.push(`lib${targetPkg}-` + (Math.floor(Math.random() * 3) + 1) + ".0");
+                        }
+                        pkgList.push(targetPkg + "-" + (Math.floor(Math.random() * 5) + 1) + ".0");
+                    } else {
+                        // Full system update simulation
+                        totalPkgs = Math.floor(Math.random() * 21) + 10;
+                        maxTimeSec = Math.floor(Math.random() * 11) + 5;
+                        const baseNames = ["linux-base", "systemd", "coreutils", "bash", "glibc", "openssl", "python3", "nano", "mc", "unzip", "zip", "samba", "smbclient", "git", "curl", "libssl3", "zlib1g", "tar", "grep", "sed", "gawk", "procps", "util-linux", "vim-common"];
+                        pkgList = Array.from({length: totalPkgs}, () => baseNames[Math.floor(Math.random() * baseNames.length)] + "-" + (Math.floor(Math.random() * 3) + 1) + ".0");
+                    }
+
                     let intervalMs = (maxTimeSec * 1000) / totalPkgs;
                     let currentPkg = 1;
 
-                    const pkgNames = ["linux-base", "systemd", "coreutils", "bash", "glibc", "openssl", "python3", "nano", "mc", "unzip", "zip", "samba", "smbclient", "git", "curl", "libssl3", "zlib1g", "tar", "grep", "sed", "gawk", "procps", "util-linux", "vim-common"];
-
                     let timer = setInterval(() => {
                         if (currentPkg <= totalPkgs) {
-                            let randomName = pkgNames[Math.floor(Math.random() * pkgNames.length)] + "-" + (Math.floor(Math.random() * 3) + 1) + ".0";
-                            let msg = lang.pkgInstalling.replace("{i}", currentPkg).replace("{total}", totalPkgs).replace("{name}", randomName);
+                            let pkgName = pkgList[currentPkg - 1];
+                            let msg = lang.pkgInstalling.replace("{i}", currentPkg).replace("{total}", totalPkgs).replace("{name}", pkgName);
                             appendOutput(msg, "command-output");
                             currentPkg++;
                         } else {
                             clearInterval(timer);
-                            systemUpdated = true;
-                            triggerAchievement(lang.achSysUp, lang.achSysUpDesc, "📦");
+                            if (!targetPkg) {
+                                systemUpdated = true;
+                                triggerAchievement(lang.achSysUp, lang.achSysUpDesc, "📦");
+                            }
                             if (onComplete) onComplete();
                         }
                     }, intervalMs);
@@ -2100,7 +2118,7 @@
                                     }
                                     appendOutput(lang.aptSettingUp.replace("{pkg}", pkg), "command-success");
                                     triggerAchievement(lang.achInstall, lang.achInstallDesc + pkg, "💿");
-                                });
+                                }, pkg);
                             }
                         } else if (sub === "remove" || sub === "purge") {
                             if (!pkg) {
@@ -2153,7 +2171,7 @@
                                     }
                                     appendOutput(lang.pacInstalling.replace("{pkg}", pkg), "command-success");
                                     triggerAchievement(lang.achInstall, lang.achInstallDesc + pkg, "💿");
-                                });
+                                }, pkg);
                             }
                         } else if (sub === "-R") {
                             if (!pkg) {
