@@ -12,6 +12,13 @@ window.ColorAPI = window.ColorAPI || {};
         }
     }
 
+    // Helper function to register fonts
+    function registerFont(fontValue) {
+        if (window.ColorAPI.registerFont) {
+            window.ColorAPI.registerFont(fontValue);
+        }
+    }
+
     // ============================================
     // DARK THEMES
     // ============================================
@@ -499,6 +506,88 @@ window.ColorAPI = window.ColorAPI || {};
         modalBorder: '#bdc3c7',
         name: 'Breeze Light'
     });
+
+    // ============================================
+    // FONTS
+    // ============================================
+
+    // --- Monospace / Coding fonts ---
+    registerFont("'Courier New', Courier, monospace");
+    registerFont("Consolas, monospace");
+    registerFont("'Lucida Console', monospace");
+    registerFont("'Fira Code', monospace");
+    registerFont("'Cascadia Code', monospace");
+    registerFont("'Cascadia Mono', monospace");
+    registerFont("'JetBrains Mono', monospace");
+    registerFont("'Source Code Pro', monospace");
+    registerFont("'Ubuntu Mono', monospace");
+    registerFont("'Roboto Mono', monospace");
+    registerFont("'IBM Plex Mono', monospace");
+    registerFont("'Space Mono', monospace");
+    registerFont("'Inconsolata', monospace");
+    registerFont("'Anonymous Pro', monospace");
+    registerFont("'Hack', monospace");
+    registerFont("'Monaco', monospace");
+    registerFont("'Menlo', monospace");
+    registerFont("'DejaVu Sans Mono', monospace");
+    registerFont("'Droid Sans Mono', monospace");
+    registerFont("'PT Mono', monospace");
+    registerFont("'Overpass Mono', monospace");
+    registerFont("'Noto Sans Mono', monospace");
+    registerFont("'Red Hat Mono', monospace");
+    registerFont("'Victor Mono', monospace");
+    registerFont("'Fira Mono', monospace");
+    registerFont("'Input Mono', monospace");
+    registerFont("'Operator Mono', monospace");
+    registerFont("'Terminus', monospace");
+    registerFont("'Courier Prime', monospace");
+    registerFont("monospace");
+
+    // --- Sans-serif fonts ---
+    registerFont("Arial, sans-serif");
+    registerFont("Verdana, sans-serif");
+    registerFont("Tahoma, sans-serif");
+    registerFont("'Trebuchet MS', sans-serif");
+    registerFont("Helvetica, sans-serif");
+    registerFont("'Segoe UI', sans-serif");
+    registerFont("Calibri, sans-serif");
+    registerFont("'Century Gothic', sans-serif");
+    registerFont("Roboto, sans-serif");
+    registerFont("'Open Sans', sans-serif");
+    registerFont("Lato, sans-serif");
+    registerFont("Montserrat, sans-serif");
+    registerFont("'Noto Sans', sans-serif");
+    registerFont("Poppins, sans-serif");
+    registerFont("Inter, sans-serif");
+    registerFont("'Source Sans Pro', sans-serif");
+    registerFont("Ubuntu, sans-serif");
+    registerFont("Raleway, sans-serif");
+    registerFont("'Work Sans', sans-serif");
+    registerFont("Nunito, sans-serif");
+
+    // --- Serif fonts ---
+    registerFont("'Times New Roman', serif");
+    registerFont("Georgia, serif");
+    registerFont("Garamond, serif");
+    registerFont("'Palatino Linotype', serif");
+    registerFont("Cambria, serif");
+    registerFont("'Book Antiqua', serif");
+    registerFont("'Playfair Display', serif");
+    registerFont("Merriweather, serif");
+    registerFont("Lora, serif");
+    registerFont("'PT Serif', serif");
+
+    // --- Display / decorative fonts ---
+    registerFont("'Comic Sans MS', cursive");
+    registerFont("Impact, sans-serif");
+    registerFont("'Brush Script MT', cursive");
+    registerFont("Papyrus, fantasy");
+    registerFont("'Press Start 2P', monospace");
+    registerFont("'Bungee', cursive");
+    registerFont("'Orbitron', sans-serif");
+    registerFont("'Permanent Marker', cursive");
+    registerFont("'VT323', monospace");
+    registerFont("'Silkscreen', monospace");
 })();
 
 // Export for modular use

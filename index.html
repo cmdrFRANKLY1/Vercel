@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>sTerminal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #000000;
@@ -171,22 +174,15 @@
             font-size: max(11px, calc(var(--font-size) - 3px)); min-width: 130px;
         }
 
-        #theme-dropdown {
+        #theme-dropdown, #language-dropdown, #font-dropdown {
             position: absolute; background-color: var(--modal-bg); color: var(--text-color);
             border: 1px solid transparent; border-image: linear-gradient(90deg, var(--modal-border-start), var(--modal-border-end)) 1;
             display: none; flex-direction: column; z-index: 2001; font-family: var(--font-family);
             font-size: max(11px, calc(var(--font-size) - 3px)); min-width: 150px;
             max-height: 50vh; overflow-y: auto;
         }
-        #theme-dropdown::-webkit-scrollbar { width: 8px; }
-        #theme-dropdown::-webkit-scrollbar-thumb { background-color: var(--modal-border-end); }
-
-        #terminal-context-menu {
-            position: fixed; background-color: var(--modal-bg); color: var(--text-color);
-            border: 1px solid transparent; border-image: linear-gradient(90deg, var(--modal-border-start), var(--modal-border-end)) 1;
-            display: none; flex-direction: column; z-index: 9999; font-family: var(--font-family);
-            font-size: max(11px, calc(var(--font-size) - 3px)); min-width: 170px;
-        }
+        #theme-dropdown::-webkit-scrollbar, #language-dropdown::-webkit-scrollbar, #font-dropdown::-webkit-scrollbar { width: 8px; }
+        #theme-dropdown::-webkit-scrollbar-thumb, #language-dropdown::-webkit-scrollbar-thumb, #font-dropdown::-webkit-scrollbar-thumb { background-color: var(--modal-border-end); }
 
         .mc-menu-item {
             padding: 2px 5px; cursor: pointer; user-select: none; display: flex;
@@ -238,6 +234,7 @@
             display:flex; flex-direction:column; gap:3px; padding: 2px 0; border-bottom: 1px solid var(--modal-border);
         }
         #settings-window label:last-of-type { border-bottom: none; }
+        
         #settings-window input, #settings-window select {
             background: var(--bg-color); color: var(--text-color); border: 1px solid var(--modal-border);
             padding: 3px 5px; font-family:inherit; font-size:inherit; min-height: 22px; box-sizing:border-box;
@@ -269,46 +266,19 @@
         #wrapper-frame {
             width: 100%; flex: 1; background: #000; border: 0;
         }
-        /* dark/light toggle button */
+
         .theme-toggle-btn {
-            cursor: pointer;
-            font-weight: normal;
-            margin-right: 4px;
-            padding: 0 4px;
-            user-select: none;
-            transition: background-color 0.2s;
-            border-radius: 2px;
+            cursor: pointer; font-weight: normal; margin-right: 4px;
+            padding: 0 4px; user-select: none; transition: background-color 0.2s; border-radius: 2px;
         }
-        .theme-toggle-btn:hover {
-            background-color: var(--text-color);
-            color: var(--bg-color);
-        }
-        .infobar-theme-label {
-            display: flex;
-            align-items: center;
-            gap: 2px;
-        }
-        /* theme name clickable area */
-        .theme-name-click {
-            cursor: pointer;
-            padding: 0 2px;
-            border-radius: 2px;
-            transition: background-color 0.2s;
-        }
-        .theme-name-click:hover {
-            background-color: var(--text-color);
-            color: var(--bg-color);
-        }
-        /* hover highlight for the entire theme container */
-        .infobar-theme-label:hover {
-            background-color: var(--text-color);
-            color: var(--bg-color);
-        }
-        .infobar-theme-label:hover .theme-toggle-btn,
-        .infobar-theme-label:hover .theme-name-click {
-            background-color: var(--text-color);
-            color: var(--bg-color);
-        }
+        .theme-toggle-btn:hover { background-color: var(--text-color); color: var(--bg-color); }
+        .infobar-theme-label { display: flex; align-items: center; gap: 2px; }
+        .theme-name-click { cursor: pointer; padding: 0 2px; border-radius: 2px; transition: background-color 0.2s; }
+        .theme-name-click:hover { background-color: var(--text-color); color: var(--bg-color); }
+
+        .infobar-language-label { display: flex; align-items: center; gap: 2px; margin-left: 8px; }
+        .language-name-click { cursor: pointer; padding: 0 2px; border-radius: 2px; transition: background-color 0.2s; }
+        .language-name-click:hover { background-color: var(--text-color); color: var(--bg-color); }
     </style>
 </head>
 <body>
@@ -319,11 +289,29 @@
     
     <div id="wrapper-overlay"><div id="wrapper-window"><iframe id="wrapper-frame" title="Wrapper app"></iframe></div></div>
 
-    <div id="infobar"><div class="infobar-modules-left"><div id="infobar-options" class="infobar-btn" data-en="options">Options</div><div id="infobar-theme" class="infobar-btn infobar-theme-label"><span id="theme-toggle-btn" class="theme-toggle-btn">☀</span><span data-en="themeLabel">Theme:</span>&nbsp;<span id="infobar-theme-name" class="theme-name-click"></span></div></div><div class="infobar-modules-right"><span id="infobar-clock"></span></div></div>
+    <div id="infobar">
+        <div class="infobar-modules-left">
+            <div id="infobar-reset" class="infobar-btn theme-toggle-btn" title="Reset settings to defaults">↻</div>
+            <div id="theme-toggle-btn" class="infobar-btn theme-toggle-btn" title="Toggle Dark/Light Mode">☀</div>
+            <div id="infobar-theme" class="infobar-btn infobar-theme-label">
+                <span data-en="themeLabel">Theme:</span>&nbsp;<span id="infobar-theme-name" class="theme-name-click"></span>
+            </div>
+            <div id="infobar-language" class="infobar-btn infobar-language-label">
+                <span data-en="languageLabel">Language:</span>&nbsp;<span id="infobar-language-name" class="language-name-click"></span>
+            </div>
+            <div id="infobar-font" class="infobar-btn infobar-language-label">
+                <span data-en="fontLabel">Font:</span>&nbsp;<span id="infobar-font-name" class="language-name-click"></span>
+            </div>
+        </div>
+        <div class="infobar-modules-right"><span id="infobar-clock"></span></div>
+    </div>
+    
     <div id="tabs-bar"><div id="tabs-container"></div><div id="tab-add-btn" class="tab-add-btn" title="New stty tab">+</div></div>
     <div id="workspace-container"></div>
     
     <div id="theme-dropdown"></div>
+    <div id="language-dropdown"></div>
+    <div id="font-dropdown"></div>
 
     <div id="options-menu">
         <div class="mc-menu-item"><span data-en="terminal">Terminal</span><span class="arrow">▶</span>
@@ -344,42 +332,7 @@
         </div>
     </div>
 
-    <div id="terminal-context-menu">
-        <div class="mc-menu-item" id="ctx-copy"><span data-en="copy">Copy</span></div>
-        <div class="mc-menu-item"><span data-en="paste">Paste</span><span class="arrow">▶</span>
-            <div class="mc-submenu">
-                <div class="mc-submenu-item" id="ctx-paste" data-en="paste">Paste</div>
-                <div class="mc-submenu-item" id="ctx-paste-return" data-en="pasteReturn">Paste & Run</div>
-                <div class="mc-submenu-item" id="ctx-paste-term" data-en="pasteNewTerminal">Paste in new terminal</div>
-                <div class="mc-submenu-item" id="ctx-paste-term-return" data-en="pasteNewTerminalReturn">Paste in new terminal & Run</div>
-                <div class="mc-submenu-item" id="ctx-paste-tab" data-en="pasteNewTab">Paste in new tab</div>
-                <div class="mc-submenu-item" id="ctx-paste-tab-return" data-en="pasteNewTabReturn">Paste in new tab & Run</div>
-            </div>
-        </div>
-        <div class="mc-menu-item"><span data-en="tabs">Tabs</span><span class="arrow">▶</span><div class="mc-submenu"><div class="mc-submenu-item" id="ctx-open-tab" data-en="openNewTab">Open new tab</div><div class="mc-submenu-item" id="ctx-close-tab" data-en="closeTab">Close tab</div></div></div>
-        <div class="mc-menu-item"><span data-en="terminals">Terminals</span><span class="arrow">▶</span><div class="mc-submenu"><div class="mc-submenu-item" id="ctx-open-term" data-en="openNewTerminal">Open new terminal</div><div class="mc-submenu-item" id="ctx-close-term" data-en="closeTerminal">Close terminal</div></div></div>
-        <div class="mc-menu-item"><span data-en="options">Options</span><span class="arrow">▶</span>
-            <div class="mc-submenu">
-                <div class="mc-menu-item"><span data-en="terminal">Terminal</span><span class="arrow">▶</span>
-                    <div class="mc-submenu">
-                        <div class="mc-menu-item"><span data-en="fontSize">Font Size</span><input type="number" id="ctx-menu-fontsize" min="10" max="36" onclick="event.stopPropagation()"></div>
-                        <div class="mc-menu-item"><span data-en="font">Font</span><span class="arrow">▶</span><div class="mc-submenu" id="ctx-menu-font-submenu"></div></div>
-                        <div class="mc-menu-item" id="ctx-menu-colorscheme-parent" style="display:none;"><span data-en="colorScheme">Color Scheme</span><span class="arrow">▶</span><div class="mc-submenu" id="ctx-menu-colorscheme-submenu"></div></div>
-                        <div class="mc-menu-item" id="ctx-menu-system-parent" style="display:none;"><span data-en="systems">Systems</span><span class="arrow">▶</span><div class="mc-submenu" id="ctx-menu-system-submenu"></div></div>
-                    </div>
-                </div>
-                <div class="mc-menu-item"><span data-en="language">Language</span><span class="arrow">▶</span><div class="mc-submenu" id="ctx-menu-language-submenu"></div></div>
-                <div class="mc-menu-item"><span data-en="infobar">Infobar</span><span class="arrow">▶</span>
-                    <div class="mc-submenu">
-                        <div class="mc-menu-item"><span data-en="position">Position</span><span class="arrow">▶</span><div class="mc-submenu"><div class="mc-submenu-item" data-action="infobarposition" data-value="top" data-en="top">Top</div><div class="mc-submenu-item" data-action="infobarposition" data-value="bottom" data-en="bottom">Bottom</div></div></div>
-                        <div class="mc-menu-item"><span data-en="size">Size</span><input type="number" id="ctx-menu-infobarsize" min="16" max="60" onclick="event.stopPropagation()"></div>
-                        <div class="mc-menu-item"><span data-en="infobar">Infobar</span><span class="arrow">▶</span><div class="mc-submenu"><div class="mc-submenu-item" data-action="infobarshow" data-value="show" data-en="show">Show</div><div class="mc-submenu-item" data-action="infobarshow" data-value="hide" data-en="hide">Hide</div></div></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <script src="languages/langTerminal.js"></script>
     <script>
         window.Translations = {};
 
@@ -443,10 +396,16 @@
             themes: {
                 monochrome: { bg: '#000000', text: '#ffffff', user: '#ffffff', path: '#bbbbbb', hint: '#555555', modalBg: '#000000', modalBorder: '#ffffff', name: 'Monochrome' }
             },
+            fonts: ["'Orbitron', sans-serif", "monospace", "'Courier New', Courier, monospace"],
             registerTheme(name, themeObj) {
                 this.themes[name] = themeObj;
                 window.colorSchemes = this.themes;
                 if (typeof updateColorSchemeMenuUI === 'function') updateColorSchemeMenuUI();
+            },
+            registerFont(fontValue) {
+                if (!this.fonts.includes(fontValue)) this.fonts.push(fontValue);
+                window.fontsList = this.fonts;
+                if (typeof updateFontMenuUI === 'function') updateFontMenuUI();
             },
             getTheme(name) { return this.themes[name] || this.themes['monochrome']; },
             getHintColor() { const active = window.ColorAPI.getTheme(window.termSettings?.colorscheme || 'monochrome'); return active.hint || '#555555'; },
@@ -454,10 +413,12 @@
             getModalBorder() { const active = window.ColorAPI.getTheme(window.termSettings?.colorscheme || 'monochrome'); return active.modalBorder || active.text; }
         };
         window.colorSchemes = window.ColorAPI.themes;
+        window.fontsList = window.ColorAPI.fonts;
 
         window.systemsRegistry = {};
         window.packagesRegistry = {};
         window.wrapperRegistry = {};
+        window.guiRegistry = [];
 
         function openWrapperWindow(name, src) {
             const overlay = document.getElementById('wrapper-overlay');
@@ -490,6 +451,7 @@
             settings: "what is this command?\nsettings\n\nwhat is it used for?\nOpens a graphical settings window allowing you to customize all terminal, system, and infobar preferences.",
             set: "what is this command?\nset\n\nwhat is it used for?\nConfigures terminal settings such as text size, font, language, color scheme, system or infobar layout.",
             apt: "what is this command?\napt (Advanced Package Tool)\n\nwhat is it used for?\nInstalls, updates, or manages software packages from the packages directory.",
+            startx: "what is this command?\nstartx\n\nwhat is it used for?\nStarts a graphical desktop environment session from packages/gui.",
             clear: "what is this command?\nclear\n\nwhat is it used for?\nClears all previous text output from the terminal screen to give you a clean workspace."
         };
 
@@ -519,13 +481,13 @@
         let vfs = defaultVFS;
         try { const savedVFS = localStorage.getItem('sTerminal_vfs'); if (savedVFS) { const parsed = JSON.parse(savedVFS); if (parsed && typeof parsed === 'object') vfs = parsed; } } catch(e) {}
 
-        const termSettings = { fontsize: 15, font: "'Courier New', Courier, monospace", language: "en", colorscheme: "monochrome", infobarsize: 26, infobarposition: "top", infobarshow: "show", system: "default", borderGradientStart: '#ffffff', borderGradientEnd: '#555555' };
+        const termSettings = { fontsize: 15, font: "'Orbitron', sans-serif", language: "en", colorscheme: "monochrome", infobarsize: 26, infobarposition: "top", infobarshow: "show", system: "default", borderGradientStart: '#ffffff', borderGradientEnd: '#555555' };
         window.termSettings = termSettings;
         try { const savedSettings = localStorage.getItem('sTerminal_settings'); if (savedSettings) { const parsed = JSON.parse(savedSettings); if (parsed && typeof parsed === 'object') Object.assign(termSettings, parsed); } } catch(e) {}
         window.termSettings = termSettings;
 
         function updateColorSchemeMenuUI() {
-            ['menu-colorscheme-submenu', 'ctx-menu-colorscheme-submenu'].forEach(submenuId => {
+            ['menu-colorscheme-submenu'].forEach(submenuId => {
                 const submenu = document.getElementById(submenuId);
                 if (!submenu) return;
                 submenu.innerHTML = '';
@@ -550,7 +512,7 @@
         function updateSystemMenuUI() {
             const uiDict = window.Translations[termSettings.language]?.uiLabels || window.Translations['en']?.uiLabels || {};
             const defaultSystemLabel = uiDict.defaultSystem || 'Default OS';
-            ['menu-system-submenu', 'ctx-menu-system-submenu'].forEach(submenuId => {
+            ['menu-system-submenu'].forEach(submenuId => {
                 const submenu = document.getElementById(submenuId);
                 if (!submenu) return;
                 submenu.innerHTML = '';
@@ -581,7 +543,7 @@
             const langCodes = Object.keys(window.Translations);
             const langNames = { en: "English", de: "Deutsch", fr: "Français", it: "Italiano", tr: "Türkçe" };
 
-            ['menu-language-submenu', 'ctx-menu-language-submenu'].forEach(submenuId => {
+            ['menu-language-submenu'].forEach(submenuId => {
                 const submenu = document.getElementById(submenuId);
                 if (!submenu) return;
                 submenu.innerHTML = '';
@@ -602,7 +564,6 @@
 
             const settLangSelect = document.getElementById('sett-language');
             if (settLangSelect) {
-                const currentVal = settLangSelect.value;
                 settLangSelect.innerHTML = '';
                 const availableLangs = Object.keys(window.Translations).filter(code =>
                     window.Translations[code] && Object.keys(window.Translations[code]).length > 0
@@ -621,12 +582,9 @@
 
         async function loadDynamicModules() {
             try {
-                const termLangRes = await fetch('terminal.json');
-                if (termLangRes.ok) {
-                    const termJson = await termLangRes.json();
-
+                const termJson = window.langTerminal;
+                if (termJson) {
                     const langCodes = Object.keys(termJson.user || {});
-
                     langCodes.forEach(lang => {
                         window.Translations[lang] = window.Translations[lang] || {};
                     });
@@ -651,7 +609,7 @@
                     });
                 }
             } catch (e) {
-                console.warn('Could not load terminal.json:', e);
+                console.warn('Could not load languages/langTerminal.js:', e);
             }
 
             if (!window.Translations['en']) {
@@ -674,11 +632,6 @@
                         confirm: "Confirm",
                         copy: "Copy",
                         paste: "Paste",
-                        pasteReturn: "Paste & Run",
-                        pasteNewTerminal: "Paste in new terminal",
-                        pasteNewTerminalReturn: "Paste in new terminal & Run",
-                        pasteNewTab: "Paste in new tab",
-                        pasteNewTabReturn: "Paste in new tab & Run",
                         openNewTab: "Open new tab",
                         closeTab: "Close tab",
                         openNewTerminal: "Open new terminal",
@@ -698,21 +651,24 @@
                         terminals: "Terminals",
                         defaultSystem: "Default OS",
                         newTab: "New stty tab",
-                        themeLabel: "Theme:"
+                        themeLabel: "Theme:",
+                        languageLabel: "Language:",
+                        fontLabel: "Font:"
                     }
                 };
             }
 
             updateLanguageMenuUI();
 
-            // Updated base registry structure matched with new registry.json
             let registry = {
                 colors: [],
                 systems: [],
-                core: ['cat'], // Will map to registry.json "core" array
-                official: [],  // Will map to registry.json "official" array
+                gui: [],
+                core: [],
+                official: [],
                 custom: [],
-                wrapper: []
+                wrapper: [],
+                autorun: []
             };
 
             try {
@@ -726,6 +682,7 @@
             }
 
             window.systemRegistryConfig = registry;
+            window.guiRegistry = registry.gui || [];
 
             const loadScript = async (src) => {
                 try {
@@ -736,72 +693,56 @@
                         script.onerror = reject;
                         document.head.appendChild(script);
                     });
+                    return true;
                 } catch (e) {
-                    console.warn(`Failed to load script ${src}:`, e);
+                    return false;
                 }
             };
 
             const tryLoadPackage = async (pkg, candidates) => {
                 for (const src of candidates) {
-                    try {
-                        await new Promise((resolve, reject) => {
-                            const script = document.createElement('script');
-                            script.src = src;
-                            script.onload = () => resolve();
-                            script.onerror = () => reject(new Error(`Failed to load ${src}`));
-                            document.head.appendChild(script);
-                        });
-                        return true;
-                    } catch (e) {
-                        // keep trying other candidate paths
-                    }
+                    if (await loadScript(src)) return true;
                 }
-                console.warn(`Package not found: ${pkg}`);
                 return false;
             };
 
-            // Load the main monolithic color schemes file first
             await loadScript('colors/colorsTerminal.js');
 
-            // Load any additional color schemes from the colors folder via registry
             for (const name of (registry.colors || [])) {
-                // Skip the monolithic file or strange variants to prevent redundant fetch warnings
-                if (name === 'colorsTerminal.js' || name === 'colorsTerminal.html' || name === 'colorsTerminal') {
-                    continue;
-                }
-                
-                // Try multiple possible paths for individual theme packages
-                const loaded = await tryLoadPackage(name, [
+                if (name.includes('colorsTerminal')) continue;
+                await tryLoadPackage(name, [
                     `colors/dark/${name}.js`,
                     `colors/light/${name}.js`,
                     `colors/${name}.js`,
                     `${name}.js`
                 ]);
-                if (!loaded) console.warn(`Color package not found: ${name}`);
             }
             updateColorSchemeMenuUI();
+            updateFontMenuUI();
 
             for (const sys of (registry.systems || [])) {
-                await loadScript(`systems/system${sys}.js`);
+                await tryLoadPackage(sys, [
+                    `packages/systems/system${sys}.js`,
+                    `systems/system${sys}.js`,
+                    `packages/systems/${sys}.js`
+                ]);
             }
             updateSystemMenuUI();
 
             for (const pkg of (registry.core || registry.corePackages || [])) {
-                const loaded = await tryLoadPackage(pkg, [
+                await tryLoadPackage(pkg, [
                     `packages/core/${pkg}.js`,
-                    `packages/official/${pkg}.js`,
-                    `packages/${pkg}.js`
+                    `packages/core/${pkg}.mjs`,
+                    `packages/core/${pkg}.cjs`
                 ]);
-                if (!loaded) console.warn(`Core package not found: ${pkg}`);
             }
 
             for (const pkg of (registry.official || registry.packages || [])) {
-                const loaded = await tryLoadPackage(pkg, [
+                await tryLoadPackage(pkg, [
                     `packages/official/${pkg}.js`,
-                    `packages/${pkg}.js`,
-                    `packages/core/${pkg}.js`
+                    `packages/official/${pkg}.mjs`,
+                    `packages/official/${pkg}.cjs`
                 ]);
-                if (!loaded) console.warn(`Official package not found: ${pkg}`);
             }
 
             for (const pkg of (registry.custom || [])) {
@@ -815,38 +756,40 @@
             }
 
             for (const pkg of (registry.wrapper || [])) {
-                let found = null;
+                let foundType = null;
+                let foundSrc = null;
                 const wrapperCandidates = [
-                    `packages/wrapped/${pkg}.html`,
-                    `packages/wrapped/${pkg}.js`,
-                    `packages/wrapper/${pkg}.html`,
-                    `packages/wrapper/${pkg}.js`
+                    { src: `packages/wrapped/${pkg}.html`, type: 'html' },
+                    { src: `packages/wrapped/${pkg}.js`, type: 'js' },
+                    { src: `packages/wrapped/${pkg}.mjs`, type: 'js' },
+                    { src: `packages/wrapper/${pkg}.html`, type: 'html' },
+                    { src: `packages/wrapper/${pkg}.js`, type: 'js' }
                 ];
 
-                for (const src of wrapperCandidates) {
-                    try {
-                        await new Promise((resolve, reject) => {
-                            const script = document.createElement('script');
-                            script.src = src;
-                            script.onload = () => resolve();
-                            script.onerror = () => reject(new Error(`Failed to load ${src}`));
-                            document.head.appendChild(script);
-                        });
-                        found = src;
-                        break;
-                    } catch (e) {
-                        // keep trying other candidate paths
+                for (const candidate of wrapperCandidates) {
+                    if (candidate.type === 'js') {
+                        if (await loadScript(candidate.src)) {
+                            foundSrc = candidate.src;
+                            foundType = 'js';
+                            break;
+                        }
+                    } else {
+                        try {
+                            const res = await fetch(candidate.src, { method: 'HEAD' });
+                            if (res.ok) {
+                                foundSrc = candidate.src;
+                                foundType = 'html';
+                                break;
+                            }
+                        } catch(e) {}
                     }
                 }
 
-                if (!found) {
+                if (!foundSrc) {
                     console.warn(`Wrapper package not found: ${pkg}`);
                     continue;
                 }
-                window.wrapperRegistry[pkg] = { type: found.endsWith('.html') ? 'html' : 'js', src: found };
-                if (found.endsWith('.html')) {
-                    window.wrapperRegistry[pkg].src = found;
-                }
+                window.wrapperRegistry[pkg] = { type: foundType, src: foundSrc };
             }
 
             for (const [pkgKey, pkgObj] of Object.entries(window.packagesRegistry || {})) {
@@ -863,6 +806,64 @@
             refreshTerminalCommands();
             applySettings();
             refreshAllLanguageElements();
+
+            await loadAutorunScripts(registry.autorun || []);
+        }
+
+        async function loadAutorunScripts(autorunList) {
+            if (!autorunList || autorunList.length === 0) {
+                console.log('No autorun scripts specified in registry');
+                return;
+            }
+
+            console.log(`Loading and executing ${autorunList.length} autorun script(s)...`);
+
+            for (const scriptName of autorunList) {
+                const scriptSrc = `packages/autorun/${scriptName}.js`;
+                try {
+                    console.log(`Loading autorun script: ${scriptSrc}`);
+                    const script = document.createElement('script');
+                    script.src = scriptSrc;
+                    
+                    // Await script load completion
+                    const success = await new Promise((resolve) => {
+                        script.onload = () => {
+                            console.log(`Autorun script loaded successfully: ${scriptName}`);
+                            resolve(true);
+                        };
+                        script.onerror = () => {
+                            console.warn(`Failed to load autorun script: ${scriptName} (${scriptSrc})`);
+                            resolve(false);
+                        };
+                        document.head.appendChild(script);
+                    });
+
+                    // Auto-execute if script loaded and a terminal context is available
+                    if (success && typeof activeTab !== 'undefined' && activeTab?.activeTerminal) {
+                        const term = activeTab.activeTerminal;
+                        const isExecutable = window.wrapperRegistry[scriptName] || window.packagesRegistry[scriptName] || term.commands[scriptName];
+                        
+                        if (isExecutable) {
+                            if (window.packagesRegistry[scriptName]) {
+                                term.installedPackages.add(scriptName);
+                                refreshTerminalCommands();
+                            }
+                            
+                            // Visually log the autorun execution to the terminal
+                            const promptHTML = term.getPromptHTML();
+                            term.printHTML(`<div class="history-line"><span class="prompt">${promptHTML}</span> <span style="color:var(--hint-color); font-style:italic;">[autorun]</span> <span class="os-item" data-command="${scriptName}">${scriptName}</span></div>`);
+                            
+                            // Trigger the command execution
+                            await term.executeCommand(scriptName);
+                            term.scrollToBottom();
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`Error loading/executing autorun script ${scriptName}:`, e);
+                }
+            }
+
+            console.log('All autorun scripts processed');
         }
 
         function refreshTerminalCommands() {
@@ -871,10 +872,14 @@
                     tab.terminals.forEach(term => {
                         term.invalidateCommandCache();
                         for (const [pkgName, pkgObj] of Object.entries(window.packagesRegistry)) {
-                            if (pkgObj.preInstalledOn?.includes(termSettings.system) || term.installedPackages.has(pkgName)) {
-                                for (const [cmdName, cmdFunc] of Object.entries(pkgObj.commands || {})) {
-                                    if (!term.commands[cmdName]) {
-                                        term.commands[cmdName] = cmdFunc.bind(term);
+                            const isPreInstalled = pkgObj.preInstalledOn?.includes(termSettings.system);
+                            const isInstalled = term.installedPackages.has(pkgName);
+                            if (isPreInstalled || isInstalled) {
+                                if (pkgObj.commands) {
+                                    for (const [cmdName, cmdFunc] of Object.entries(pkgObj.commands)) {
+                                        if (!term.commands[cmdName]) {
+                                            term.commands[cmdName] = cmdFunc.bind(term);
+                                        }
                                     }
                                 }
                             }
@@ -928,9 +933,15 @@
                 el.innerText = t('messages.helpPrompt');
             });
 
-            const settLangSelect = document.getElementById('sett-language');
-            if (settLangSelect) {
-                settLangSelect.value = termSettings.language;
+            const langNamesLocal = { en: "English", de: "Deutsch", fr: "Français", it: "Italiano", tr: "Türkçe" };
+            const langNameEl = document.getElementById('infobar-language-name');
+            if (langNameEl) {
+                langNameEl.innerText = langNamesLocal[termSettings.language] || termSettings.language.toUpperCase();
+            }
+
+            const fontNameEl = document.getElementById('infobar-font-name');
+            if (fontNameEl) {
+                fontNameEl.innerText = termSettings.font.replace(/'/g, '').split(',')[0];
             }
 
             if (typeof tabs !== 'undefined') {
@@ -968,11 +979,21 @@
             const themeNameEl = document.getElementById('infobar-theme-name');
             if (themeNameEl) themeNameEl.innerText = activeScheme.name || (termSettings.colorscheme.charAt(0).toUpperCase() + termSettings.colorscheme.slice(1));
 
-            // Update toggle icon
             const toggleBtn = document.getElementById('theme-toggle-btn');
             if (toggleBtn) {
                 const isDark = isDarkTheme(termSettings.colorscheme);
                 toggleBtn.innerText = isDark ? '☽' : '☀';
+            }
+
+            const langNamesLocal = { en: "English", de: "Deutsch", fr: "Français", it: "Italiano", tr: "Türkçe" };
+            const langNameEl = document.getElementById('infobar-language-name');
+            if (langNameEl) {
+                langNameEl.innerText = langNamesLocal[termSettings.language] || termSettings.language.toUpperCase();
+            }
+
+            const fontNameEl = document.getElementById('infobar-font-name');
+            if (fontNameEl) {
+                fontNameEl.innerText = termSettings.font.replace(/'/g, '').split(',')[0];
             }
 
             const infobar = document.getElementById('infobar');
@@ -991,33 +1012,13 @@
             localStorage.setItem('sTerminal_settings', JSON.stringify(termSettings));
             updateInfobar();
             updateMenuSelectionUI();
-
-            if (typeof tabs !== 'undefined') {
-                tabs.forEach(tab => {
-                    tab.terminals.forEach(term => {
-                        term.updatePromptUser();
-                        const bannerEl = term.outputDiv.querySelector('.banner');
-                        if (bannerEl) {
-                            bannerEl.innerText = t('messages.helpPrompt');
-                        }
-                    });
-                });
-            }
-
             refreshAllLanguageElements();
-
-            const settLangSelect = document.getElementById('sett-language');
-            if (settLangSelect) {
-                settLangSelect.value = termSettings.language;
-            }
         }
 
-        // helper: determine if a theme is dark
         function isDarkTheme(themeName) {
             const t = window.ColorAPI.getTheme(themeName);
             if (!t) return true;
             const bg = t.bg || '#000000';
-            // simple luminance check
             const r = parseInt(bg.slice(1,3), 16);
             const g = parseInt(bg.slice(3,5), 16);
             const b = parseInt(bg.slice(5,7), 16);
@@ -1025,7 +1026,6 @@
             return lum < 0.5;
         }
 
-        // Get only dark or light themes
         function getThemesByMode(mode) {
             const all = Object.keys(window.ColorAPI.themes);
             return all.filter(key => {
@@ -1034,18 +1034,15 @@
             });
         }
 
-        // Toggle between dark and light mode (switch to first theme of opposite mode)
         function toggleDarkLight() {
             const currentIsDark = isDarkTheme(termSettings.colorscheme);
             const targetMode = currentIsDark ? 'light' : 'dark';
             const themes = getThemesByMode(targetMode);
             if (themes.length === 0) return;
-            // pick the first theme in the target mode
             termSettings.colorscheme = themes[0];
             applySettings();
         }
 
-        // Cycle only through themes of the current mode (dark or light)
         function cycleThemeInCurrentMode() {
             const currentIsDark = isDarkTheme(termSettings.colorscheme);
             const mode = currentIsDark ? 'dark' : 'light';
@@ -1058,10 +1055,7 @@
             applySettings();
         }
 
-        window.settingsWindowState = {
-            dirty: false,
-            snapshot: null
-        };
+        window.settingsWindowState = { dirty: false, snapshot: null };
 
         function getSettingsWindowSnapshot() {
             return {
@@ -1076,16 +1070,6 @@
                 borderGradientStart: document.getElementById('sett-border-start').value,
                 borderGradientEnd: document.getElementById('sett-border-end').value
             };
-        }
-
-        function refreshSettingsDirtyState() {
-            const snapshot = window.settingsWindowState.snapshot;
-            if (!snapshot) {
-                window.settingsWindowState.dirty = false;
-                return;
-            }
-            const current = getSettingsWindowSnapshot();
-            window.settingsWindowState.dirty = JSON.stringify(current) !== JSON.stringify(snapshot);
         }
 
         function focusSettingsWindow() {
@@ -1158,14 +1142,8 @@
                 || 'You have unsaved changes. Discard them?';
             modalText.innerText = discardMessage;
             modalOverlay.style.display = 'flex';
-            const handleConfirm = () => {
-                cleanupModal();
-                closeSettingsWindow();
-            };
-            const handleCancel = () => {
-                cleanupModal();
-                focusSettingsWindow();
-            };
+            const handleConfirm = () => { cleanupModal(); closeSettingsWindow(); };
+            const handleCancel = () => { cleanupModal(); focusSettingsWindow(); };
             const cleanupModal = () => {
                 modalOverlay.style.display = 'none';
                 modalConfirm.removeEventListener('click', handleConfirm);
@@ -1178,44 +1156,6 @@
         document.getElementById('settings-close-btn').addEventListener('click', () => promptCloseSettingsWindow());
         document.getElementById('settings-window-overlay').addEventListener('click', (e) => {
             if (e.target.id === 'settings-window-overlay') promptCloseSettingsWindow();
-        });
-        document.addEventListener('mousedown', (e) => {
-            const overlay = document.getElementById('settings-window-overlay');
-            const settingsWindow = document.getElementById('settings-window');
-            if (overlay && overlay.style.display !== 'none' && settingsWindow && !settingsWindow.contains(e.target)) {
-                e.preventDefault();
-                focusSettingsWindow();
-            }
-        });
-        window.addEventListener('keydown', (e) => {
-            const overlay = document.getElementById('settings-window-overlay');
-            if (overlay && overlay.style.display !== 'none') {
-                if (e.key === 'Escape') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    promptCloseSettingsWindow();
-                }
-            }
-        });
-        document.getElementById('settings-window').addEventListener('focusin', () => {
-            if (document.getElementById('settings-window-overlay')?.style.display !== 'none') {
-                refreshSettingsDirtyState();
-            }
-        });
-        document.getElementById('settings-window').addEventListener('input', () => {
-            refreshSettingsDirtyState();
-            focusSettingsWindow();
-        });
-        document.getElementById('settings-window').addEventListener('change', () => {
-            refreshSettingsDirtyState();
-            focusSettingsWindow();
-        });
-        document.getElementById('settings-window').addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                e.stopPropagation();
-                promptCloseSettingsWindow();
-            }
         });
 
         document.getElementById('settings-save-btn').addEventListener('click', () => {
@@ -1246,34 +1186,40 @@
             clockEl.innerText = now.toLocaleString(locale, { weekday: 'short', year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
         }
 
-        const fontsList = ["monospace", "Consolas", "'Courier New'", "'Lucida Console'", "'Fira Code'", "'Cascadia Code'", "'JetBrains Mono'", "'Source Code Pro'", "'Ubuntu Mono'", "Arial", "Verdana", "Tahoma", "'Comic Sans MS'", "'Times New Roman'"];
+        const fontsList = window.ColorAPI.fonts;
+
+        function updateFontMenuUI() {
+            ['menu-font-submenu'].forEach(submenuId => {
+                const fontSubmenu = document.getElementById(submenuId);
+                if (!fontSubmenu) return;
+                fontSubmenu.innerHTML = '';
+                fontsList.forEach(f => {
+                    let item = document.createElement('div');
+                    item.className = 'mc-submenu-item';
+                    item.dataset.action = 'font';
+                    item.dataset.value = f;
+                    item.innerText = f.replace(/'/g, '');
+                    if (f === termSettings.font) item.classList.add('active-setting');
+                    fontSubmenu.appendChild(item);
+                });
+            });
+            setupMenuActions();
+        }
 
         function setupMenu() {
             const menu = document.getElementById('options-menu');
-            const btn = document.getElementById('infobar-options');
-            ['menu-font-submenu', 'ctx-menu-font-submenu'].forEach(submenuId => {
-                const fontSubmenu = document.getElementById(submenuId);
-                if (fontSubmenu && fontSubmenu.children.length === 0) {
-                    fontsList.forEach(f => { let item = document.createElement('div'); item.className = 'mc-submenu-item'; item.dataset.action = 'font'; item.dataset.value = f; item.innerText = f.replace(/'/g, ''); fontSubmenu.appendChild(item); });
-                }
-            });
-            if (btn && menu) {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const ctxMenu = document.getElementById('terminal-context-menu');
-                    const themeMenu = document.getElementById('theme-dropdown');
-                    if (ctxMenu) ctxMenu.style.display = 'none';
-                    if (themeMenu) themeMenu.style.display = 'none';
-                    if (menu.style.display === 'none' || menu.style.display === '') { updateMenuSelectionUI(); menu.style.display = 'flex'; } else { menu.style.display = 'none'; }
-                });
-            }
+            updateFontMenuUI();
 
             const themeContainer = document.getElementById('infobar-theme');
             const themeDropdown = document.getElementById('theme-dropdown');
             const toggleBtn = document.getElementById('theme-toggle-btn');
             const themeNameEl = document.getElementById('infobar-theme-name');
+            
+            const langContainer = document.getElementById('infobar-language');
+            const langDropdown = document.getElementById('language-dropdown');
+            const langNameEl = document.getElementById('infobar-language-name');
+            const langNamesLocal = { en: "English", de: "Deutsch", fr: "Français", it: "Italiano", tr: "Türkçe" };
 
-            // Dark/Light toggle button
             if (toggleBtn) {
                 toggleBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -1281,7 +1227,18 @@
                 });
             }
 
-            // Left-click on theme name: cycle themes in current mode
+            const resetBtn = document.getElementById('infobar-reset');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    termSettings.colorscheme = 'monochrome';
+                    termSettings.language = 'en';
+                    termSettings.font = 'Arial, sans-serif';
+                    applySettings();
+                    refreshAllLanguageElements();
+                });
+            }
+
             if (themeNameEl) {
                 themeNameEl.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -1289,15 +1246,38 @@
                 });
             }
 
-            // Right-click on the theme container (or theme name area) to show dropdown
+            if (langNameEl) {
+                langNameEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const langs = Object.keys(window.Translations).filter(code => window.Translations[code] && Object.keys(window.Translations[code]).length > 0);
+                    const langsToCycle = langs.length > 0 ? langs : ['en', 'de', 'fr', 'it', 'tr'];
+                    let nextIdx = (langsToCycle.indexOf(termSettings.language) + 1) % langsToCycle.length;
+                    termSettings.language = langsToCycle[nextIdx] || 'en';
+                    applySettings();
+                    refreshAllLanguageElements();
+                });
+            }
+
+            const fontNameEl = document.getElementById('infobar-font-name');
+            const fontContainer = document.getElementById('infobar-font');
+            const fontDropdown = document.getElementById('font-dropdown');
+            if (fontNameEl) {
+                fontNameEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const fontsToCycle = window.fontsList && window.fontsList.length > 0 ? window.fontsList : ["'Courier New', Courier, monospace"];
+                    let nextIdx = (fontsToCycle.indexOf(termSettings.font) + 1) % fontsToCycle.length;
+                    termSettings.font = fontsToCycle[nextIdx] || fontsToCycle[0];
+                    applySettings();
+                });
+            }
+
             if (themeContainer && themeDropdown) {
                 themeContainer.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    
-                    const ctxMenu = document.getElementById('terminal-context-menu');
-                    if (ctxMenu) ctxMenu.style.display = 'none';
                     if (menu) menu.style.display = 'none';
+                    if (langDropdown) langDropdown.style.display = 'none';
+                    if (fontDropdown) fontDropdown.style.display = 'none';
 
                     themeDropdown.innerHTML = '';
                     const currentIsDark = isDarkTheme(termSettings.colorscheme);
@@ -1337,11 +1317,90 @@
                 });
             }
 
+            if (langContainer && langDropdown) {
+                langContainer.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (menu) menu.style.display = 'none';
+                    if (themeDropdown) themeDropdown.style.display = 'none';
+                    if (fontDropdown) fontDropdown.style.display = 'none';
+
+                    langDropdown.innerHTML = '';
+                    const availableLangs = Object.keys(window.Translations).filter(code =>
+                        window.Translations[code] && Object.keys(window.Translations[code]).length > 0
+                    );
+                    const langsToShow = availableLangs.length > 0 ? availableLangs : ['en', 'de', 'fr', 'it', 'tr'];
+
+                    langsToShow.forEach(code => {
+                        let item = document.createElement('div');
+                        item.className = 'mc-submenu-item';
+                        if (termSettings.language === code) item.classList.add('active-setting');
+                        item.innerText = langNamesLocal[code] || code.toUpperCase();
+                        item.addEventListener('click', (ev) => {
+                            ev.stopPropagation();
+                            termSettings.language = code;
+                            applySettings();
+                            refreshAllLanguageElements();
+                            langDropdown.style.display = 'none';
+                        });
+                        langDropdown.appendChild(item);
+                    });
+
+                    const rect = langContainer.getBoundingClientRect();
+                    if (termSettings.infobarposition === 'top') {
+                        langDropdown.style.top = rect.bottom + 'px';
+                        langDropdown.style.bottom = 'auto';
+                    } else {
+                        langDropdown.style.bottom = (window.innerHeight - rect.top) + 'px';
+                        langDropdown.style.top = 'auto';
+                    }
+                    langDropdown.style.left = rect.left + 'px';
+                    langDropdown.style.display = 'flex';
+                });
+            }
+
+            if (fontContainer && fontDropdown) {
+                fontContainer.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (menu) menu.style.display = 'none';
+                    if (themeDropdown) themeDropdown.style.display = 'none';
+                    if (langDropdown) langDropdown.style.display = 'none';
+
+                    fontDropdown.innerHTML = '';
+                    const fontsToShow = window.fontsList && window.fontsList.length > 0 ? window.fontsList : ["'Courier New', Courier, monospace"];
+                    fontsToShow.forEach(f => {
+                        let item = document.createElement('div');
+                        item.className = 'mc-submenu-item';
+                        if (termSettings.font === f) item.classList.add('active-setting');
+                        item.innerText = f.replace(/'/g, '').split(',')[0];
+                        item.addEventListener('click', (ev) => {
+                            ev.stopPropagation();
+                            termSettings.font = f;
+                            applySettings();
+                            fontDropdown.style.display = 'none';
+                        });
+                        fontDropdown.appendChild(item);
+                    });
+
+                    const rect = fontContainer.getBoundingClientRect();
+                    if (termSettings.infobarposition === 'top') {
+                        fontDropdown.style.top = rect.bottom + 'px';
+                        fontDropdown.style.bottom = 'auto';
+                    } else {
+                        fontDropdown.style.bottom = (window.innerHeight - rect.top) + 'px';
+                        fontDropdown.style.top = 'auto';
+                    }
+                    fontDropdown.style.left = rect.left + 'px';
+                    fontDropdown.style.display = 'flex';
+                });
+            }
+
             document.addEventListener('click', (e) => {
-                if (menu && !menu.contains(e.target) && e.target !== btn && menu.style.display === 'flex') menu.style.display = 'none';
-                const ctxMenu = document.getElementById('terminal-context-menu');
-                if (ctxMenu && !ctxMenu.contains(e.target)) ctxMenu.style.display = 'none';
+                if (menu && !menu.contains(e.target) && menu.style.display === 'flex') menu.style.display = 'none';
                 if (themeDropdown && !themeDropdown.contains(e.target) && e.target !== themeContainer && !themeContainer.contains(e.target)) themeDropdown.style.display = 'none';
+                if (langDropdown && !langDropdown.contains(e.target) && e.target !== langContainer && !langContainer.contains(e.target)) langDropdown.style.display = 'none';
+                if (fontDropdown && fontContainer && !fontDropdown.contains(e.target) && e.target !== fontContainer && !fontContainer.contains(e.target)) fontDropdown.style.display = 'none';
             });
             setupMenuActions();
         }
@@ -1358,12 +1417,10 @@
                         if (action === 'system') { triggerSystemLoad(val); } else { termSettings[action] = val; applySettings(); refreshAllLanguageElements(); }
                         const menu = document.getElementById('options-menu');
                         if (menu) menu.style.display = 'none';
-                        const ctxMenu = document.getElementById('terminal-context-menu');
-                        if (ctxMenu) ctxMenu.style.display = 'none';
                     }
                 });
             });
-            ['menu-infobarsize', 'ctx-menu-infobarsize'].forEach(id => {
+            ['menu-infobarsize'].forEach(id => {
                 const sizeInput = document.getElementById(id);
                 if (sizeInput && !sizeInput.dataset.bound) {
                     sizeInput.dataset.bound = 'true';
@@ -1371,7 +1428,7 @@
                     sizeInput.addEventListener('input', (e) => { let val = parseInt(e.target.value); if (!isNaN(val) && val >= 16 && val <= 60) { termSettings.infobarsize = val; applySettings(); } });
                 }
             });
-            ['menu-fontsize', 'ctx-menu-fontsize'].forEach(id => {
+            ['menu-fontsize'].forEach(id => {
                 const fontSizeInput = document.getElementById(id);
                 if (fontSizeInput && !fontSizeInput.dataset.bound) {
                     fontSizeInput.dataset.bound = 'true';
@@ -1388,22 +1445,12 @@
                 if (termSettings[action] === val) item.classList.add('active-setting');
                 else item.classList.remove('active-setting');
             });
-            ['menu-infobarsize', 'ctx-menu-infobarsize'].forEach(id => { const sizeInput = document.getElementById(id); if (sizeInput) sizeInput.value = termSettings.infobarsize; });
-            ['menu-fontsize', 'ctx-menu-fontsize'].forEach(id => { const fontSizeInput = document.getElementById(id); if (fontSizeInput) fontSizeInput.value = termSettings.fontsize; });
+            ['menu-infobarsize'].forEach(id => { const sizeInput = document.getElementById(id); if (sizeInput) sizeInput.value = termSettings.infobarsize; });
+            ['menu-fontsize'].forEach(id => { const fontSizeInput = document.getElementById(id); if (fontSizeInput) fontSizeInput.value = termSettings.fontsize; });
             updateLanguageMenuUI();
         }
 
         setInterval(updateInfobar, 1000);
-        const clockEl = document.getElementById('infobar-clock');
-        if (clockEl) {
-            clockEl.addEventListener('click', () => {
-                const langs = Object.keys(window.Translations);
-                let nextIdx = (langs.indexOf(termSettings.language) + 1) % langs.length;
-                termSettings.language = langs[nextIdx] || 'en';
-                applySettings();
-                refreshAllLanguageElements();
-            });
-        }
 
         function saveVFS() { localStorage.setItem('sTerminal_vfs', JSON.stringify(vfs)); }
 
@@ -1607,65 +1654,9 @@
 
         tabAddBtn.addEventListener('click', createTab);
 
-        const ctxMenu = document.getElementById('terminal-context-menu');
         document.addEventListener('contextmenu', (e) => {
-            const termInstance = e.target.closest('.terminal-instance');
-            if (termInstance) {
-                e.preventDefault();
-                const optionsMenu = document.getElementById('options-menu');
-                if (optionsMenu) optionsMenu.style.display = 'none';
-                updateMenuSelectionUI();
-                ctxMenu.style.display = 'flex';
-                ctxMenu.style.left = Math.min(window.innerWidth - 190, e.clientX) + 'px';
-                ctxMenu.style.top = Math.min(window.innerHeight - 250, e.clientY) + 'px';
-            } else ctxMenu.style.display = 'none';
+            e.preventDefault();
         });
-
-        document.getElementById('ctx-copy').addEventListener('click', () => {
-            ctxMenu.style.display = 'none';
-            const selectedText = window.getSelection().toString();
-            if (selectedText) {
-                const tempInput = document.createElement('textarea');
-                tempInput.value = selectedText;
-                document.body.appendChild(tempInput);
-                tempInput.select();
-                try { document.execCommand('copy'); } catch(err) {}
-                document.body.removeChild(tempInput);
-            }
-        });
-
-        async function handlePasteAction(mode) {
-            ctxMenu.style.display = 'none';
-            let clipboardText = '';
-            try { clipboardText = await navigator.clipboard.readText(); } catch(e) { clipboardText = prompt("Paste text:") || ''; }
-            if (!clipboardText) return;
-            let targetTab = activeTab;
-            let targetTerm = activeTab?.activeTerminal || null;
-            if (mode === 'term' || mode === 'term-return') {
-                if (activeTab && !activeTab.isWrapper && activeTab.terminals.length < 4) { activeTab.createTerminal(); targetTerm = activeTab.activeTerminal; }
-                else { createTab(); targetTab = activeTab; targetTerm = activeTab.activeTerminal; }
-            } else if (mode === 'tab' || mode === 'tab-return') { createTab(); targetTab = activeTab; targetTerm = activeTab.activeTerminal; }
-            if (targetTerm) {
-                targetTerm.cmdInput.value += clipboardText;
-                targetTerm.updateSuggestion();
-                targetTerm.cmdInput.focus();
-                if (mode.endsWith('return') || mode === 'term-return' || mode === 'tab-return') {
-                    const enterEvent = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
-                    targetTerm.cmdInput.dispatchEvent(enterEvent);
-                }
-            }
-        }
-
-        document.getElementById('ctx-paste').addEventListener('click', () => handlePasteAction('normal'));
-        document.getElementById('ctx-paste-return').addEventListener('click', () => handlePasteAction('normal-return'));
-        document.getElementById('ctx-paste-term').addEventListener('click', () => handlePasteAction('term'));
-        document.getElementById('ctx-paste-term-return').addEventListener('click', () => handlePasteAction('term-return'));
-        document.getElementById('ctx-paste-tab').addEventListener('click', () => handlePasteAction('tab'));
-        document.getElementById('ctx-paste-tab-return').addEventListener('click', () => handlePasteAction('tab-return'));
-        document.getElementById('ctx-open-tab').addEventListener('click', () => { ctxMenu.style.display = 'none'; createTab(); });
-        document.getElementById('ctx-close-tab').addEventListener('click', () => { ctxMenu.style.display = 'none'; if (activeTab) confirmCloseTab(activeTab); });
-        document.getElementById('ctx-open-term').addEventListener('click', () => { ctxMenu.style.display = 'none'; if (activeTab && !activeTab.isWrapper) activeTab.createTerminal(); });
-        document.getElementById('ctx-close-term').addEventListener('click', () => { ctxMenu.style.display = 'none'; if (activeTab?.activeTerminal && !activeTab.isWrapper) activeTab.closeTerminal(activeTab.activeTerminal); });
 
         function triggerSystemLoad(sysKey) {
             if (sysKey === 'default') {
@@ -1762,7 +1753,6 @@
                 if (this._commandCache && (now - this._cacheTimestamp) < this._cacheTTL) return this._commandCache;
                 const allCommands = new Set();
                 if (this.commands) Object.keys(this.commands).forEach(cmd => allCommands.add(cmd));
-                for (const wrapperName of Object.keys(window.wrapperRegistry || {})) allCommands.add(wrapperName);
                 if (this.installedPackages) {
                     for (const pkgName of this.installedPackages) {
                         const pkgObj = window.packagesRegistry[pkgName];
@@ -1923,6 +1913,50 @@
                 this.printTranslatable("messages.helpPrompt", 'banner');
             }
 
+            promptUserInput(promptText) {
+                return new Promise(resolve => {
+                    this.promptSpan.style.display = 'none';
+                    this.cmdSuggestion.style.display = 'none';
+                    const tempPrompt = document.createElement('span');
+                    tempPrompt.className = 'prompt';
+                    tempPrompt.innerText = promptText;
+                    this.inputLine.insertBefore(tempPrompt, this.el.querySelector('.input-wrapper'));
+                    
+                    const handleKeydown = (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            cleanup(this.cmdInput.value.trim());
+                        } else if (e.key === 'Escape' || (e.ctrlKey && e.key.toLowerCase() === 'c')) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            cleanup(null);
+                        } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Tab') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }
+                    };
+                    
+                    const cleanup = (val) => {
+                        this.cmdInput.removeEventListener('keydown', handleKeydown, true);
+                        this.cmdInput.value = '';
+                        tempPrompt.remove();
+                        this.promptSpan.style.display = '';
+                        this.cmdSuggestion.style.display = '';
+                        if (val !== null) {
+                            this.printHTML(`<div class="history-line"><span class="prompt">${promptText}</span> ${val}</div>`);
+                        } else {
+                            this.printHTML(`<div class="history-line"><span class="prompt">${promptText}</span> ^C</div>`);
+                        }
+                        this.scrollToBottom();
+                        resolve(val);
+                    };
+
+                    this.cmdInput.addEventListener('keydown', handleKeydown, true);
+                    this.cmdInput.focus();
+                });
+            }
+
             async installPackage(pkgKey) {
                 const pkgObj = window.packagesRegistry[pkgKey];
                 if (!pkgObj) { this.printTranslatable("errors.packageNotFound", 'error', false, [pkgKey]); return; }
@@ -1957,28 +1991,6 @@
             setupCommands() {
                 this.commands = {
                     help: (args) => {
-                        for (const [wrapperName, wrapperInfo] of Object.entries(window.wrapperRegistry || {})) {
-                            if (!this.commands[wrapperName]) {
-                                this.commands[wrapperName] = (cmdArgs) => {
-                                    const hasNt = cmdArgs && cmdArgs.includes('-nt');
-                                    const hasNw = cmdArgs && cmdArgs.includes('-nw');
-                                    const src = wrapperInfo.src;
-                                    if (hasNw) {
-                                        window.open(src, '_blank', 'width=1024,height=768,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes');
-                                    } else if (hasNt) {
-                                        window.open(src, '_blank');
-                                    } else {
-                                        let existingTab = tabs.find(t => t.isWrapper && t.wrapperName === wrapperName);
-                                        if (existingTab) {
-                                            switchTab(existingTab);
-                                        } else {
-                                            createWrapperTab(wrapperName, src);
-                                        }
-                                    }
-                                };
-                            }
-                        }
-                        
                         if (args?.length > 0 && args[0].toLowerCase() === 'set') {
                             if (args.length > 1 && args[1].toLowerCase() === 'font') {
                                 this.printTranslatable(`<br><strong class="os-item" data-command="help set font" data-en="helpSections.availableFonts">AVAILABLE FONTS:</strong>`, '', true);
@@ -2004,7 +2016,7 @@
                         
                         this.printTranslatable(`<br><strong data-en="helpSections.availableCommands">AVAILABLE COMMANDS:</strong>`, '', true);
 
-                        const builtIn = ['help', 'settings', 'set', 'clear', 'apt'];
+                        const builtIn = ['help', 'settings', 'set', 'clear', 'apt', 'startx'];
                         const formatCmdList = (cmds) => cmds.map(cmd => `<span class="os-item highlight-blue" data-command="${cmd}">${cmd}</span>`).join(', ');
 
                         this.printHTML(`  <span style="display:inline-block; width:100px; color:var(--hint-color);">Built-in:</span> ${formatCmdList(builtIn)}`);
@@ -2031,7 +2043,7 @@
                                 if (pkgObj?.commands) {
                                     installedCmds.push(...Object.keys(pkgObj.commands));
                                 } else {
-                                    installedCmds.push(pkg); // fallback if no commands defined
+                                    installedCmds.push(pkg);
                                 }
                             }
                             if (installedCmds.length > 0) {
@@ -2053,11 +2065,6 @@
                         }
                         if (coreAvailCmds.length > 0) {
                             this.printHTML(`  <span style="display:inline-block; width:100px; color:var(--hint-color);">Core:</span> ${formatCmdList(coreAvailCmds)}`);
-                        }
-
-                        const wrappers = Object.keys(window.wrapperRegistry || {});
-                        if (wrappers.length > 0) {
-                            this.printHTML(`  <span style="display:inline-block; width:100px; color:var(--hint-color);">Apps:</span> ${formatCmdList(wrappers)}`);
                         }
                     },
                     settings: () => { openSettingsWindow(); this.printTranslatable("messages.settingsOpened"); },
@@ -2092,6 +2099,41 @@
                             else if (sub === 'show' || sub === 'hide') { termSettings.infobarshow = sub; applySettings(); this.printTranslatable("successMessages.infobarSet", "", false, [sub]); }
                             else this.printTranslatable("errors.setInfobarMissingSubsetting", "error");
                         } else this.printTranslatable("errors.setUnknownSetting", "error");
+                    },
+                    startx: async (args) => {
+                        const guis = window.guiRegistry || [];
+                        if (guis.length === 0) {
+                            this.print("No GUI environments found in registry.json 'gui'.", "error");
+                            return;
+                        }
+
+                        let guiPromptText = "";
+                        guis.forEach((gName, i) => {
+                            guiPromptText += `[${i + 1}] ${gName}  `;
+                        });
+                        this.print(guiPromptText.trim());
+
+                        const choice = await this.promptUserInput(`Select GUI (1-${guis.length}): `);
+                        if (!choice) return;
+
+                        const idx = parseInt(choice) - 1;
+                        if (isNaN(idx) || idx < 0 || idx >= guis.length) {
+                            this.print("Invalid selection.", "error");
+                            return;
+                        }
+
+                        const selectedGui = guis[idx];
+                        const confirm = await this.promptUserInput("Starting graphical session will end this terminal session, r u sure [Y/n]: ");
+                        if (!confirm) return;
+
+                        if (confirm.toLowerCase() === 'y' || confirm.toLowerCase() === 'yes') {
+                            this.print(`Starting ${selectedGui}...`);
+                            setTimeout(() => {
+                                window.location.href = `packages/gui/${selectedGui.toLowerCase()}.html`;
+                            }, 400);
+                        } else {
+                            this.print("Cancelled.");
+                        }
                     },
                     clear: () => { this.killAllProcesses(); this.outputDiv.innerHTML = ''; }
                 };
@@ -2339,35 +2381,44 @@
                     return;
                 }
 
-                const pkgObj = window.packagesRegistry[cmd];
-                const isPreInstalled = pkgObj?.preInstalledOn?.includes(termSettings.system);
-                const isInstalled = this.installedPackages.has(cmd);
-
-                if (window.wrapperRegistry?.[cmd]) {
-                    try {
-                        const hasNt = args.includes('-nt');
-                        const hasNw = args.includes('-nw');
-                        const src = window.wrapperRegistry[cmd].src;
-
-                        if (hasNw) {
-                            window.open(src, '_blank', 'width=1024,height=768,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes');
-                        } else if (hasNt) {
-                            window.open(src, '_blank');
-                        } else {
-                            let existingTab = tabs.find(t => t.isWrapper && t.wrapperName === cmd);
-                            if (existingTab) {
-                                switchTab(existingTab);
-                            } else {
-                                createWrapperTab(cmd, src);
-                            }
-                        }
-                    } catch(err) { this.print(`Error: ${err.message}`, 'error'); }
+                if (window.wrapperRegistry[cmd]) {
+                    const wrapInfo = window.wrapperRegistry[cmd];
+                    createWrapperTab(cmd, wrapInfo.src);
+                    this.print(`Opened wrapper tab: ${cmd}`);
                     return;
                 }
 
-                if (pkgObj?.commands?.[cmd] && (isPreInstalled || isInstalled)) {
-                    try { pkgObj.commands[cmd].call(this, args); } catch(err) { this.print(`Error: ${err.message}`, 'error'); }
-                    return;
+                const pkgForCmd = this.getPackageForCommand(cmd);
+                if (pkgForCmd) {
+                    const pkgObj = window.packagesRegistry[pkgForCmd];
+                    if (pkgObj && pkgObj.commands && pkgObj.commands[cmd]) {
+                        try {
+                            await pkgObj.commands[cmd].call(this, args);
+                        } catch(err) {
+                            this.print(`Error: ${err.message}`, 'error');
+                        }
+                        return;
+                    }
+                }
+
+                if (window.packagesRegistry[cmd]) {
+                    const pkgObj = window.packagesRegistry[cmd];
+                    if (pkgObj.commands && pkgObj.commands.run) {
+                        try {
+                            await pkgObj.commands.run.call(this, args);
+                        } catch(err) {
+                            this.print(`Error: ${err.message}`, 'error');
+                        }
+                        return;
+                    }
+                    if (pkgObj.start) {
+                        try {
+                            await pkgObj.start.call(this, args);
+                        } catch(err) {
+                            this.print(`Error: ${err.message}`, 'error');
+                        }
+                        return;
+                    }
                 }
 
                 if (this.commands[cmd]) {
@@ -2400,10 +2451,6 @@
                 applySettings();
             }
         }, { passive: false, capture: true });
-
-        window.addEventListener('keydown', (e) => {
-            closeWrapperOnEscape(e);
-        }, { capture: true });
 
         window.onload = async () => {
             setupMenu();

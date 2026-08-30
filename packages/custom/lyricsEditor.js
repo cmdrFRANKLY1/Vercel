@@ -1,0 +1,942 @@
+window.packagesRegistry = window.packagesRegistry || {};
+window.wrapperRegistry = window.wrapperRegistry || {};
+
+window.packagesRegistry['lyricseditor'] = {
+    name: 'lyricseditor',
+    description: 'CFCC Lyrics Editor with real-time analysis, flow metrics, canvas plotter, and ColorAPI integration',
+    preInstalledOn: ['default'],
+    translations: {
+        en: {
+            lyricseditorUsage: "Usage: lyricseditor",
+            lyricseditorHelp: "Launches the interactive CFCC Lyrics Editor workspace with real-time rhyme analysis, syllable metering, cadence variance, canvas plot rendering, and flow score metrics."
+        },
+        de: {
+            lyricseditorUsage: "Verwendung: lyricseditor",
+            lyricseditorHelp: "Startet den interaktiven CFCC Lyrics Editor mit Echtzeit-Reimanalyse, Silbenmessung, Kadenz-Varianz, Canvas-Plot-Rendering und Flow-Score-Metriken."
+        }
+    },
+    commandInfo: {
+        en: "what is this command?\nlyricseditor\n\nwhat is it used for?\nLaunches the advanced interactive lyrics editor, rhyme analyzer, canvas flow plotter, and metrics workspace.",
+        de: "Was ist dieser Befehl?\nlyricseditor\n\nWofür wird er verwendet?\nStartet den interaktiven Liedtexter, Reimanalysator, Canvas-Flow-Plotter und Metriken-Arbeitsbereich."
+    },
+    commands: {
+        lyricseditor: function(args) {
+            this.print("Launching Lyrics Editor workspace...");
+            if (typeof openWrapperWindow === 'function') {
+                openWrapperWindow('lyricseditor', 'packages/wrapped/lyricseditor.html');
+            } else {
+                this.print("Error: Wrapper environment not available.", "error");
+            }
+        },
+        run: function(args) {
+            this.commands.lyricseditor.call(this, args);
+        }
+    }
+};
+
+window.wrapperRegistry['lyricseditor'] = {
+    type: 'html',
+    src: 'packages/wrapped/lyricseditor.html'
+};
+
+window.vfs = window.vfs || { type: 'dir', children: {} };
+(function() {
+    let curr = window.vfs;
+    const parts = ['packages', 'wrapped'];
+    for (const p of parts) {
+        if (!curr.children[p]) {
+            curr.children[p] = { type: 'dir', description: 'Directory', children: {} };
+        }
+        curr = curr.children[p];
+    }
+    
+    curr.children['lyricseditor.html'] = {
+        type: 'file',
+        description: 'Interactive Lyrics Editor Standalone App with Canvas Plotter',
+        content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CFCC · Lyrics Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+    input, textarea, .preview, .output, .metrics-content { user-select: text !important; -webkit-user-select: text !important; }
+    body, html {
+      height: 100vh; background: var(--bg-color, #000000); color: var(--text-color, #ffffff);
+      font-family: 'JetBrains Mono', monospace; font-size: 15px; line-height: 1.5; overflow: hidden;
+      transition: background-color 0.2s, color 0.2s;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-color, #000000); }
+    ::-webkit-scrollbar-thumb { background: var(--modal-border, #444444); border-radius: 2px; }
+
+    #app { display: flex; flex-direction: column; height: 100vh; width: 100vw; background: var(--bg-color, #000000); overflow: hidden; }
+
+    #waybar {
+      height: 32px; min-height: 32px; width: 100%; background: var(--modal-bg, #000000); color: var(--text-color, #ffffff);
+      display: flex; justify-content: space-between; align-items: center; padding: 0 14px; font-size: 12px;
+      border-bottom: 1px solid var(--modal-border, #444444); flex-shrink: 0; z-index: 100;
+    }
+    .waybar-btn {
+      cursor: pointer; padding: 0 10px; transition: background 0.15s, color 0.15s; height: 100%;
+      display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--text-color, #ffffff);
+      background: transparent; border: none; font-family: inherit; font-size: 12px;
+    }
+    .waybar-btn:hover { background: var(--text-color, #ffffff); color: var(--bg-color, #000000); }
+    .waybar-btn svg { width: 15px; height: 15px; stroke: currentColor; }
+
+    .container { display: flex; flex: 1; overflow: hidden; position: relative; background: var(--modal-border, #444444); gap: 1px; }
+
+    .editor, .preview { flex: 1; min-width: 200px; display: flex; flex-direction: column; background: var(--bg-color, #000000); overflow: hidden; }
+    
+    .pane-label {
+      padding: 6px 12px; background: var(--modal-bg, #000000); font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--hint-color, #888888); border-bottom: 1px solid var(--modal-border, #444444);
+    }
+
+    .editor-container { display: flex; flex: 1; overflow: hidden; background: var(--bg-color, #000000); }
+    
+    .line-numbers {
+      padding: 12px 6px 12px 0; background: var(--bg-color, #000000); color: var(--hint-color, #888888);
+      text-align: right; font-family: inherit; font-size: 13px; line-height: 1.6; overflow: hidden;
+      border-right: 1px solid var(--modal-border, #444444); width: 3rem; min-width: 3rem; flex-shrink: 0; user-select: none;
+    }
+    .line-numbers div { height: 1.6em; }
+
+    .editor textarea {
+      flex: 1; background: var(--bg-color, #000000); color: var(--text-color, #ffffff); border: none; padding: 12px;
+      font-family: inherit; font-size: 13px; line-height: 1.6; resize: none; outline: none; width: 100%; white-space: pre; overflow: auto;
+    }
+    .editor textarea::placeholder { color: var(--hint-color, #888888); }
+
+    .preview .output {
+      flex: 1; padding: 12px; font-family: inherit; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word;
+      overflow-y: auto; background: var(--bg-color, #000000); color: var(--text-color, #ffffff);
+    }
+    .preview-word { cursor: pointer; border-radius: 2px; transition: background 0.15s ease; display: inline-block; }
+    .preview-word:hover { background-color: rgba(255,255,255,0.1); }
+
+    .editor-sub-bar {
+      padding: 6px 12px; background: var(--modal-bg, #000000); font-size: 12px; display: flex; align-items: center;
+      gap: 8px; flex-wrap: wrap; min-height: 32px; flex-shrink: 0; border-top: 1px solid var(--modal-border, #444444);
+    }
+    .sub-bar-label { color: var(--hint-color, #888888); font-size: 10px; text-transform: uppercase; font-weight: 700; flex-shrink: 0; }
+    .suggestion-badge, .hint-badge {
+      background: var(--bg-color, #000000); color: var(--text-color, #ffffff); border-radius: 2px; padding: 2px 8px;
+      font-size: 11px; font-family: inherit; border: 1px solid var(--modal-border, #444444); cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .suggestion-badge:hover { border-color: var(--text-color, #ffffff); background: rgba(255,255,255,0.1); }
+
+    .metrics-panel {
+      background: var(--bg-color, #000000); height: 330px; min-height: 190px; flex-shrink: 0;
+      border-top: 1px solid var(--modal-border, #444444); display: flex; flex-direction: column; position: relative;
+    }
+    .metrics-header {
+      background: var(--modal-bg, #000000); padding: 6px 12px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--modal-border, #444444); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--hint-color, #888888);
+    }
+    
+    .ableton-toggles { display: flex; background: var(--bg-color, #000000); padding: 2px; border-radius: 2px; border: 1px solid var(--modal-border, #444444); gap: 2px; }
+    .btn-ableton {
+      background: transparent; border: 1px solid transparent; color: var(--hint-color, #888888); font-family: inherit;
+      font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 2px; cursor: pointer; letter-spacing: 0.05em;
+    }
+    .btn-ableton:hover { color: var(--text-color, #ffffff); background: rgba(255,255,255,0.1); }
+    .btn-ableton.active { background: var(--modal-bg, #000000); color: var(--text-color, #ffffff); border-color: var(--modal-border, #444444); }
+
+    #timelinePlotContainer {
+      background: var(--modal-bg, #000000); height: 64px; border-bottom: 1px solid var(--modal-border, #444444);
+      position: relative; width: 100%; display: flex; flex-direction: column; justify-content: center; flex-shrink: 0;
+    }
+    #flowTimelineCanvas { width: 100%; height: 100%; display: block; }
+    .timeline-legend { position: absolute; top: 4px; left: 8px; font-size: 10px; font-weight: 600; display: flex; gap: 10px; z-index: 10; }
+    .timeline-legend label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+    .timeline-progress-label { position: absolute; bottom: 4px; right: 8px; font-size: 9px; color: var(--hint-color, #888888); text-transform: uppercase; font-weight: 700; }
+
+    .metrics-content { padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; }
+    .grids-row { display: flex; gap: 10px; flex: 1; overflow-y: auto; min-height: 0; }
+    
+    .grid-panel {
+      flex: 1; background: var(--modal-bg, #000000); border: 1px solid var(--modal-border, #444444);
+      border-radius: 2px; padding: 8px; display: flex; flex-direction: column; gap: 4px; min-width: 180px;
+    }
+    .rhythm-grid { display: flex; flex-direction: column; gap: 3px; flex: 1; overflow-y: auto; align-content: flex-start; }
+    .rhythm-row { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; min-height: 14px; }
+    .rhythm-tile {
+      width: 14px; height: 14px; border-radius: 2px; font-size: 9px; 
+      display: flex; align-items: center; justify-content: center; font-weight: bold;
+    }
+    
+    .word-grid-container { display: grid; gap: 3px; flex: 1; overflow: auto; align-content: flex-start; grid-auto-rows: 12px; }
+    .word-tile { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+
+    .metrics-stats-row {
+      display: flex; gap: 16px; flex-shrink: 0; padding-top: 6px;
+      border-top: 1px solid var(--modal-border, #444444); background: var(--bg-color, #000000); flex-wrap: wrap;
+    }
+    .metric-item { flex: 1; min-width: 120px; display: flex; flex-direction: column; gap: 4px; }
+    .metric-name { font-size: 10px; font-weight: 700; color: var(--hint-color, #888888); text-transform: uppercase; }
+    .metric-val-wrapper { display: flex; align-items: center; gap: 10px; }
+    .metric-value { font-size: 13px; font-weight: 700; color: var(--text-color, #ffffff); min-width: 45px; }
+    .progress-bar { flex: 1; height: 4px; background: var(--modal-border, #444444); border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 2px; transition: width 0.3s ease; }
+
+    .editor-status-bar {
+      padding: 4px 14px; background: var(--modal-bg, #000000); font-size: 11px; color: var(--hint-color, #888888);
+      border-top: 1px solid var(--modal-border, #444444); display: flex; align-items: center; gap: 10px; flex-shrink: 0; width: 100%; overflow: hidden;
+    }
+    #letterCountsContainer { display: flex; gap: 8px; align-items: center; flex-grow: 1; overflow-x: auto; scrollbar-width: none; }
+    #letterCountsContainer::-webkit-scrollbar { display: none; }
+    .scroll-arrow-btn { background: transparent; border: none; color: var(--hint-color, #888888); cursor: pointer; padding: 0 4px; font-size: 10px; }
+    .scroll-arrow-btn:hover { color: var(--text-color, #ffffff); }
+
+    .resizer { background: var(--modal-border, #444444); flex-shrink: 0; z-index: 10; }
+    .col-resizer { width: 2px; cursor: col-resize; height: 100%; }
+    .row-resizer { height: 2px; cursor: row-resize; width: 100%; }
+
+    .custom-modal-backdrop {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(2px);
+    }
+    .custom-modal {
+      background: var(--modal-bg, #000000); border: 1px solid var(--modal-border, #444444); border-radius: 2px;
+      padding: 20px; max-width: 420px; width: 90%; display: flex; flex-direction: column; gap: 12px;
+    }
+    .btn-modal {
+      background: var(--modal-bg, #000000); border: 1px solid var(--modal-border, #444444); color: var(--text-color, #ffffff);
+      padding: 8px 16px; border-radius: 2px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600;
+    }
+    .btn-modal:hover { background: var(--text-color, #ffffff); color: var(--bg-color, #000000); border-color: var(--text-color, #ffffff); }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <div id="waybar">
+    <div style="display:flex; align-items:center; gap:8px; height:100%;">
+      <span style="font-weight:700; letter-spacing:0.05em;" id="headerTitle">CFCC · LYRICS EDITOR</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; height:100%;">
+      <span id="retentionClick" style="font-weight:600; cursor:pointer;" title="Retention time (click to reset)">00:00:00</span>
+      <span id="dateClick" style="cursor:pointer;" title="Toggle date format">---</span>
+      <span id="timeClick" style="cursor:pointer;" title="Toggle time format">--:--:--</span>
+      <span style="color:var(--modal-border, #444444); margin: 0 4px;">|</span>
+      <button class="waybar-btn" id="langToggleBtn" title="Toggle Language">EN</button>
+      <button class="waybar-btn" id="themeToggle" title="Toggle Theme (ColorAPI)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+      </button>
+      <button class="waybar-btn" id="toolClearBtn" title="Clear">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
+      </button>
+      <button class="waybar-btn" id="toolSaveBtn" title="Save">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="container" id="mainContainer">
+    <div class="editor" id="editorPane">
+      <div class="pane-label" id="editorLabel">Editor</div>
+      <div class="editor-container">
+        <div class="line-numbers" id="lineNumbers" aria-hidden="true"></div>
+        <textarea id="lyricsInput" placeholder="Write lyrics here to begin analysis (English or German)..."></textarea>
+      </div>
+      <div class="editor-sub-bar" id="editorRhymesBar">
+        <span class="sub-bar-label" id="labelRhymes">Rhymes:</span>
+        <div id="rhymesList" style="display:flex;gap:6px;flex-wrap:wrap;">
+          <span style="color:var(--hint-color, #888888);font-style:italic;" id="noWordRhyme">No word detected.</span>
+        </div>
+      </div>
+      <div class="editor-sub-bar" id="editorDefinitionsBar">
+        <span class="sub-bar-label" id="labelDefinition">Definition:</span>
+        <div id="definitionsList" style="display:flex;gap:6px;flex-wrap:wrap;">
+          <span style="color:var(--hint-color, #888888);font-style:italic;" id="noWordDef">No word detected.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="resizer col-resizer" id="colResizer"></div>
+
+    <div class="preview" id="previewPane">
+      <div class="pane-label" id="previewLabel">Live Preview</div>
+      <div class="output" id="previewOutput"></div>
+
+      <div class="resizer row-resizer" id="rowResizer"></div>
+
+      <div class="metrics-panel" id="metricsPane">
+        <div class="metrics-header">
+          <span id="metricsTitle">📊 Flow Metrics & Density Map</span>
+          <div class="ableton-toggles">
+            <button id="toggleTimelineBtn" class="btn-ableton active">PLOT</button>
+            <button id="toggleGridsBtn" class="btn-ableton active">GRID</button>
+            <button id="toggleStatsBtn" class="btn-ableton active">STATS</button>
+          </div>
+        </div>
+
+        <div id="timelinePlotContainer">
+          <canvas id="flowTimelineCanvas"></canvas>
+          <div class="timeline-legend">
+            <label id="labelSylTimeline"><input type="checkbox" id="showSylCheck" checked> <span id="legendSyl">● Vowels</span></label>
+            <label id="labelRhymeTimeline"><input type="checkbox" id="showRhymeCheck" checked> <span id="legendRhyme">■ Rhymes</span></label>
+          </div>
+          <div class="timeline-progress-label" id="timelineProgLabel">Progression ➔</div>
+        </div>
+
+        <div class="metrics-content">
+          <div class="grids-row">
+            <div class="grid-panel">
+              <span style="font-size:10px; font-weight:700; color:var(--hint-color, #888888); margin-bottom:2px;" id="gridTitleVowels">Vowels</span>
+              <div class="rhythm-grid" id="visualRhythmGrid"></div>
+            </div>
+            <div class="grid-panel">
+              <span style="font-size:10px; font-weight:700; color:var(--hint-color, #888888); margin-bottom:2px;" id="gridTitleWords">Word Structure & Rhymes</span>
+              <div class="word-grid-container" id="visualWordGrid"></div>
+            </div>
+          </div>
+          
+          <div class="metrics-stats-row" id="metricsStatsRow">
+            <div class="metric-item">
+              <span class="metric-name" id="statAvgSyl">Avg. Vowels / Line</span>
+              <div class="metric-val-wrapper">
+                <span class="metric-value" id="avgSyllables">0.0</span>
+                <div class="progress-bar"><div class="progress-fill" id="avgSyllablesBar" style="width:0%;"></div></div>
+              </div>
+            </div>
+            <div class="metric-item">
+              <span class="metric-name" id="statRhymeDensity">Rhyme Density</span>
+              <div class="metric-val-wrapper">
+                <span class="metric-value" id="rhymeDensity">0%</span>
+                <div class="progress-bar"><div class="progress-fill" id="rhymeDensityBar" style="width:0%;"></div></div>
+              </div>
+            </div>
+            <div class="metric-item" style="flex:1.2;">
+              <span class="metric-name" id="statFlowScore">Live Flow Score</span>
+              <div class="metric-val-wrapper">
+                <span class="metric-value" id="lyricalFlowScore">0 (C)</span>
+                <div class="progress-bar"><div class="progress-fill" id="flowScoreBar" style="width:0%;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="editor-status-bar">
+    <div style="flex-shrink:0;display:flex;gap:8px;align-items:center;font-weight:600;">
+      <span id="statusLinesLabel">Lines:</span> <span id="infoLines" style="color:var(--text-color, #ffffff);">0</span>
+      <span style="color:var(--modal-border, #444444);">|</span>
+      <span id="statusWordsLabel">Words:</span> <span id="infoWords" style="color:var(--text-color, #ffffff);">0</span>
+    </div>
+    <div style="color:var(--modal-border, #444444);flex-shrink:0;margin-left:4px;">|</div>
+    <button class="scroll-arrow-btn" id="scrollLeftBtn">◀</button>
+    <div id="letterCountsContainer"><span style="color:var(--hint-color, #888888);font-style:italic;" id="noLettersText">No letters.</span></div>
+    <button class="scroll-arrow-btn" id="scrollRightBtn">▶</button>
+  </div>
+</div>
+
+<div class="custom-modal-backdrop" id="customModalBackdrop">
+  <div class="custom-modal">
+    <h3 id="modalTitle" style="font-size:15px; font-weight:700;">Export Lyrics</h3>
+    <p id="modalDescription" style="font-size:13px; color:var(--hint-color, #888888);">Choose your preferred file format:</p>
+    <div style="display:flex; gap:10px; margin-top: 4px;">
+      <button class="btn-modal" id="saveMarkdownBtn" style="flex:1;">📄 Markdown</button>
+      <button class="btn-modal" id="saveTextBtn" style="flex:1;">📄 Plain Text</button>
+    </div>
+    <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+      <button class="btn-modal" id="btnModalCancel" style="background:transparent; border-color:transparent;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="../../colors/colorsTerminal.js"></script>
+<script>
+  (function(){
+    "use strict";
+
+    const themeToggle = document.getElementById("themeToggle");
+    const langToggleBtn = document.getElementById("langToggleBtn");
+    const timeEl = document.getElementById("timeClick");
+    const dateEl = document.getElementById("dateClick");
+    const retentionEl = document.getElementById("retentionClick");
+
+    let currentAppLang = 'en';
+    let timeLocale = 'en-US';
+    let dateLocale = 'en-US';
+    let retentionSeconds = 0;
+
+    function applyTerminalTheme() {
+      if (window.ColorAPI && window.ColorAPI.getTheme) {
+        const activeTheme = window.ColorAPI.getTheme('matrix');
+        document.documentElement.style.setProperty('--bg-color', activeTheme.bg);
+        document.documentElement.style.setProperty('--text-color', activeTheme.text);
+        document.documentElement.style.setProperty('--hint-color', activeTheme.hint || '#888888');
+        document.documentElement.style.setProperty('--modal-bg', activeTheme.modalBg || activeTheme.bg);
+        document.documentElement.style.setProperty('--modal-border', activeTheme.modalBorder || '#444444');
+      }
+    }
+
+    if (themeToggle) {
+      themeToggle.addEventListener("click", () => {
+        if (window.ColorAPI && window.ColorAPI.themes) {
+          const keys = Object.keys(window.ColorAPI.themes);
+          let nextKey = keys[Math.floor(Math.random() * keys.length)];
+          const tObj = window.ColorAPI.getTheme(nextKey);
+          document.documentElement.style.setProperty('--bg-color', tObj.bg);
+          document.documentElement.style.setProperty('--text-color', tObj.text);
+          document.documentElement.style.setProperty('--hint-color', tObj.hint || '#888888');
+          document.documentElement.style.setProperty('--modal-bg', tObj.modalBg || tObj.bg);
+          document.documentElement.style.setProperty('--modal-border', tObj.modalBorder || '#444444');
+          redrawTimeline();
+        }
+      });
+    }
+
+    applyTerminalTheme();
+
+    function updateDateTime() {
+      try {
+        const now = new Date();
+        if (timeEl) timeEl.textContent = now.toLocaleTimeString(timeLocale, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        if (dateEl) dateEl.textContent = now.toLocaleDateString(dateLocale, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+      } catch (e) {}
+    }
+
+    function updateRetentionTimer() {
+      retentionSeconds++;
+      const hrs = Math.floor(retentionSeconds / 3600).toString().padStart(2, '0');
+      const mins = Math.floor((retentionSeconds % 3600) / 60).toString().padStart(2, '0');
+      const secs = (retentionSeconds % 60).toString().padStart(2, '0');
+      if (retentionEl) retentionEl.textContent = \`\${hrs}:\${mins}:\${secs}\`;
+    }
+
+    if (retentionEl) retentionEl.addEventListener("click", () => { retentionSeconds = 0; retentionEl.textContent = "00:00:00"; });
+    if (timeEl) timeEl.addEventListener("click", () => { timeLocale = timeLocale === "en-US" ? "de-DE" : "en-US"; updateDateTime(); });
+    if (dateEl) dateEl.addEventListener("click", () => { dateLocale = dateLocale === "en-US" ? "de-DE" : "en-US"; updateDateTime(); });
+
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+    setInterval(updateRetentionTimer, 1000);
+
+    const TRANSLATIONS = {
+      en: {
+        editorLabel: "Editor", previewLabel: "Live Preview",
+        textareaPlaceholder: "Write lyrics here to begin analysis (English or German)...",
+        labelRhymes: "Rhymes:", labelDefinition: "Definition:",
+        noWord: "No word detected.", noCatalogRhymes: "No matching rhymes in catalog.", noLetters: "No letters.",
+        metricsTitle: "📊 Flow Metrics & Density Map", plot: "PLOT", grid: "GRID", stats: "STATS",
+        legendSyl: "● Vowels", legendRhyme: "■ Rhymes", timelineProgLabel: "Progression ➔",
+        gridTitleVowels: "Vowels", gridTitleWords: "Word Structure & Rhymes",
+        statAvgSyl: "Avg. Vowels / Line", statRhymeDensity: "Rhyme Density", statFlowScore: "Live Flow Score",
+        statusLines: "Lines:", statusWords: "Words:", exportTitle: "Export Lyrics", exportDesc: "Choose format:",
+        markdown: "📄 Markdown", plainText: "📄 Plain Text", cancel: "Cancel",
+        clearConfirm: "Clear all lyrics? This cannot be undone."
+      },
+      de: {
+        editorLabel: "Editor", previewLabel: "Live-Vorschau",
+        textareaPlaceholder: "Schreibe hier Songtexte zur Analyse...",
+        labelRhymes: "Reime:", labelDefinition: "Definition:",
+        noWord: "Kein Wort erkannt.", noCatalogRhymes: "Keine passenden Reime im Katalog.", noLetters: "Keine Buchstaben.",
+        metricsTitle: "📊 Flow-Metriken & Dichte-Karte", plot: "PLOT", grid: "GITTER", stats: "STATS",
+        legendSyl: "● Vokale", legendRhyme: "■ Reime", timelineProgLabel: "Fortschritt ➔",
+        gridTitleVowels: "Vokale", gridTitleWords: "Wortstruktur & Reime",
+        statAvgSyl: "Ø Vokale / Zeile", statRhymeDensity: "Reimdichte", statFlowScore: "Live-Flow-Score",
+        statusLines: "Zeilen:", statusWords: "Wörter:", exportTitle: "Exportieren", exportDesc: "Wähle Format:",
+        markdown: "📄 Markdown", plainText: "📄 Reiner Text", cancel: "Abbrechen",
+        clearConfirm: "Alle Liedtexte löschen? Dies kann nicht rückgängig gemacht werden."
+      }
+    };
+
+    function updateLanguageUI() {
+      const t = TRANSLATIONS[currentAppLang];
+      document.getElementById("editorLabel").innerText = t.editorLabel;
+      document.getElementById("previewLabel").innerText = t.previewLabel;
+      document.getElementById("lyricsInput").placeholder = t.textareaPlaceholder;
+      document.getElementById("labelRhymes").innerText = t.labelRhymes;
+      document.getElementById("labelDefinition").innerText = t.labelDefinition;
+      document.getElementById("metricsTitle").innerText = t.metricsTitle;
+      document.getElementById("toggleTimelineBtn").innerText = t.plot;
+      document.getElementById("toggleGridsBtn").innerText = t.grid;
+      document.getElementById("toggleStatsBtn").innerText = t.stats;
+      document.getElementById("legendSyl").innerText = t.legendSyl;
+      document.getElementById("legendRhyme").innerText = t.legendRhyme;
+      document.getElementById("timelineProgLabel").innerText = t.timelineProgLabel;
+      document.getElementById("gridTitleVowels").innerText = t.gridTitleVowels;
+      document.getElementById("gridTitleWords").innerText = t.gridTitleWords;
+      document.getElementById("statAvgSyl").innerText = t.statAvgSyl;
+      document.getElementById("statRhymeDensity").innerText = t.statRhymeDensity;
+      document.getElementById("statFlowScore").innerText = t.statFlowScore;
+      document.getElementById("statusLinesLabel").innerText = t.statusLines;
+      document.getElementById("statusWordsLabel").innerText = t.statusWords;
+      document.getElementById("modalTitle").innerText = t.exportTitle;
+      document.getElementById("modalDescription").innerText = t.exportDesc;
+      document.getElementById("saveMarkdownBtn").innerText = t.markdown;
+      document.getElementById("saveTextBtn").innerText = t.plainText;
+      document.getElementById("btnModalCancel").innerText = t.cancel;
+      langToggleBtn.innerText = currentAppLang.toUpperCase();
+    }
+
+    langToggleBtn.addEventListener("click", () => {
+      currentAppLang = currentAppLang === 'en' ? 'de' : 'en';
+      updateLanguageUI();
+      triggerContextLookups();
+    });
+
+    const OFFLINE_DICT = {
+      "rhyme":[1,"AYM","correspondence of sound between words","noun"],
+      "time":[1,"AYM","indefinite continued progress of existence","noun"],
+      "dime":[1,"AYM","a ten-cent coin","noun"],
+      "chime":[1,"AYM","a bell or sound of a bell ringing","noun"],
+      "climb":[1,"AYM","go upward","verb"],
+      "light":[1,"AYT","natural agent that stimulates sight","noun"],
+      "night":[1,"AYT","period of darkness","noun"],
+      "flow":[1,"OW","steady continuous stream","noun"],
+      "glow":[1,"OW","give out steady light without flame","verb"],
+      "show":[1,"OW","allow or cause to be visible","verb"]
+    };
+
+    function debounce(fn, ms) { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); }; }
+
+    const input = document.getElementById('lyricsInput');
+    const output = document.getElementById('previewOutput');
+    const avgSyllablesVal = document.getElementById('avgSyllables');
+    const avgSyllablesBar = document.getElementById('avgSyllablesBar');
+    const rhymeDensityVal = document.getElementById('rhymeDensity');
+    const rhymeDensityBar = document.getElementById('rhymeDensityBar');
+    const rhythmGrid = document.getElementById('visualRhythmGrid');
+    const wordGrid = document.getElementById('visualWordGrid');
+    const lineNumbers = document.getElementById('lineNumbers');
+    const infoLines = document.getElementById('infoLines');
+    const infoWords = document.getElementById('infoWords');
+    const rhymesList = document.getElementById('rhymesList');
+    const definitionsList = document.getElementById('definitionsList');
+    const timelineCanvas = document.getElementById('flowTimelineCanvas');
+    const showSylCheck = document.getElementById('showSylCheck');
+    const showRhymeCheck = document.getElementById('showRhymeCheck');
+    const lyricalFlowScore = document.getElementById('lyricalFlowScore');
+    const flowScoreBar = document.getElementById('flowScoreBar');
+    const toolClearBtn = document.getElementById('toolClearBtn');
+    const toolSaveBtn = document.getElementById('toolSaveBtn');
+    const toggleTimelineBtn = document.getElementById('toggleTimelineBtn');
+    const toggleGridsBtn = document.getElementById('toggleGridsBtn');
+    const toggleStatsBtn = document.getElementById('toggleStatsBtn');
+    const timelinePlotContainer = document.getElementById('timelinePlotContainer');
+    const gridsRow = document.querySelector('.grids-row');
+    const metricsStatsRow = document.getElementById('metricsStatsRow');
+    const modalBackdrop = document.getElementById('customModalBackdrop');
+    const btnModalCancel = document.getElementById('btnModalCancel');
+    const saveMarkdownBtn = document.getElementById('saveMarkdownBtn');
+    const saveTextBtn = document.getElementById('saveTextBtn');
+    const colResizer = document.getElementById('colResizer');
+    const rowResizer = document.getElementById('rowResizer');
+    const letterContainer = document.getElementById('letterCountsContainer');
+    const scrollLeftBtn = document.getElementById('scrollLeftBtn');
+    const scrollRightBtn = document.getElementById('scrollRightBtn');
+
+    let lastWordsList = [];
+    let lastKeyCounts = new Map();
+    let showTimeline = true, showGrids = true, showStats = true;
+    
+    const PALETTE = ['#00ff41','#00d2ff','#ffcc00','#ff2d55','#af52de','#ff9500'];
+    let colorIndex = 0;
+    const rhymeColorMap = new Map();
+
+    function getColorForRhyme(key) {
+      if (!rhymeColorMap.has(key)) {
+        rhymeColorMap.set(key, PALETTE[colorIndex % PALETTE.length]);
+        colorIndex++;
+      }
+      return rhymeColorMap.get(key);
+    }
+
+    function getSyllableCount(word) {
+      const clean = word.toLowerCase().replace(/[^a-zäöüß']/g,'');
+      if (OFFLINE_DICT[clean]) return OFFLINE_DICT[clean][0];
+      const vowels = clean.match(/[aeiouyäöü]{1,2}/g);
+      return vowels ? vowels.length : 1;
+    }
+
+    function getRhymeKey(word) {
+      const clean = word.toLowerCase().replace(/[^a-zäöüß']/g,'');
+      if (OFFLINE_DICT[clean]) return OFFLINE_DICT[clean][1];
+      const vowels='aeiouy';
+      let idx=-1;
+      for (let i=clean.length-1; i>=0; i--) { if (vowels.includes(clean[i])) { idx=i; break; } }
+      if (idx===-1) return clean.slice(-2).toUpperCase();
+      return clean.slice(idx).toUpperCase();
+    }
+
+    function openSaveModal() { if (modalBackdrop) modalBackdrop.style.display = 'flex'; }
+    function closeSaveModal() { if (modalBackdrop) modalBackdrop.style.display = 'none'; }
+
+    btnModalCancel.addEventListener('click', closeSaveModal);
+    modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) closeSaveModal(); });
+
+    saveMarkdownBtn.addEventListener('click', () => {
+      const text = input ? input.value : '';
+      if (!text.trim()) { closeSaveModal(); return; }
+      downloadFile(text, 'lyrics_flow_sheet.md', 'text/markdown;charset=utf-8');
+      closeSaveModal();
+    });
+
+    saveTextBtn.addEventListener('click', () => {
+      const text = input ? input.value : '';
+      if (!text.trim()) { closeSaveModal(); return; }
+      downloadFile(text, 'lyrics_flow_sheet.txt', 'text/plain;charset=utf-8');
+      closeSaveModal();
+    });
+
+    toolSaveBtn.addEventListener('click', () => {
+      if (!input || !input.value.trim()) return;
+      openSaveModal();
+    });
+
+    function downloadFile(content, filename, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    toolClearBtn.addEventListener('click', () => {
+      if (!input || !input.value.trim()) return;
+      const t = TRANSLATIONS[currentAppLang];
+      if (confirm(t.clearConfirm)) {
+        input.value = '';
+        updateLivePreviewText();
+        debouncedMetricsAndAPI();
+      }
+    });
+
+    function updateLineNumbers() {
+      if (!input || !lineNumbers) return;
+      const lines = input.value.split('\\n');
+      const count = Math.max(1, lines.length);
+      let html = '';
+      for (let i=1; i<=count; i++) html += \`<div>\${i}</div>\`;
+      lineNumbers.innerHTML = html;
+      if (lineNumbers) lineNumbers.scrollTop = input.scrollTop;
+    }
+    input.addEventListener('scroll', () => { if (lineNumbers) lineNumbers.scrollTop = input.scrollTop; });
+
+    function updateLivePreviewText() {
+      if (!input || !output) return;
+      const text = input.value;
+      const lines = text.split('\\n');
+      output.innerHTML = lines.map(line => {
+        const tokens = line.match(/[\\wäöüß']+|[^\\wäöüß']/gi) || [];
+        return tokens.map(token => {
+          if (/[a-zäöüß]/i.test(token)) {
+            const key = getRhymeKey(token);
+            const color = getColorForRhyme(key);
+            const lower = token.toLowerCase();
+            const lkey = key.toLowerCase();
+            let idx = lower.lastIndexOf(lkey);
+            if (idx === -1) idx = 0;
+            const prefix = token.slice(0, idx);
+            const suffix = token.slice(idx);
+            return \`<span class="preview-word"><span style="color:var(--text-color, #ffffff);">\${escapeHTML(prefix)}</span><span style="color:\${color};font-weight:700;">\${escapeHTML(suffix)}</span></span>\`;
+          }
+          return escapeHTML(token);
+        }).join('');
+      }).join('\\n');
+      updateLineNumbers();
+    }
+
+    function escapeHTML(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    function triggerContextLookups() {
+      if (!input) return;
+      const val = input.value;
+      let target = '';
+      const sel = val.substring(input.selectionStart, input.selectionEnd).trim();
+      if (sel) target = sel;
+      else {
+        const before = val.substring(0, input.selectionStart);
+        const words = before.match(/[\\wäöüß']+/gi);
+        if (words && words.length) target = words[words.length-1];
+      }
+      const t = TRANSLATIONS[currentAppLang];
+      if (target) {
+        const clean = target.toLowerCase().replace(/[^a-zäöüß']/g,'');
+        if (rhymesList) {
+          const key = getRhymeKey(clean);
+          const matches = Object.keys(OFFLINE_DICT).filter(w => OFFLINE_DICT[w][1] === key && w !== clean);
+          rhymesList.innerHTML = matches.slice(0,8).map(w =>
+            \`<span class="suggestion-badge" tabindex="0">\${w}</span>\`
+          ).join(' ');
+          if (matches.length === 0) rhymesList.innerHTML = \`<span style="color:var(--hint-color, #888888);font-style:italic;">\${t.noCatalogRhymes}</span>\`;
+        }
+        if (definitionsList) {
+          if (OFFLINE_DICT[clean]) {
+            const [,,def,pos] = OFFLINE_DICT[clean];
+            definitionsList.innerHTML = \`<span style="color:var(--text-color, #ffffff);font-weight:600;font-size:0.7rem;text-transform:uppercase;">[\${pos}]</span> <span style="color:var(--text-color, #ffffff);font-size:0.75rem;">\${escapeHTML(def)}</span>\`;
+          } else {
+            const syl = getSyllableCount(clean);
+            const key = getRhymeKey(clean);
+            definitionsList.innerHTML = \`<span style="color:var(--hint-color, #888888);font-size:0.72rem;">Acoustic: Vowels: <strong style="color:var(--text-color, #ffffff);">\${syl}</strong>, Rhyme Key: <strong style="color:var(--text-color, #ffffff);">"\${key}"</strong></span>\`;
+          }
+        }
+      } else {
+        if (rhymesList) rhymesList.innerHTML = \`<span style="color:var(--hint-color, #888888);font-style:italic;">\${t.noWord}</span>\`;
+        if (definitionsList) definitionsList.innerHTML = \`<span style="color:var(--hint-color, #888888);font-style:italic;">\${t.noWord}</span>\`;
+      }
+    }
+
+    function calculateMetricsAndGrids() {
+      if (!input) return;
+      const text = input.value;
+      const lines = text.split('\\n');
+      const wordsList = [];
+      const keyCounts = new Map();
+      const linesOfWords = [];
+      let maxWords = 0;
+      let totalSyllables = 0;
+
+      lines.forEach(line => {
+        const tokens = line.match(/[\\wäöüß']+/gi) || [];
+        const lw = tokens.filter(tok => /[a-zäöüß]/i.test(tok));
+        linesOfWords.push(lw);
+        if (lw.length > maxWords) maxWords = lw.length;
+        let ls = 0;
+        lw.forEach(w => {
+          wordsList.push(w);
+          const key = getRhymeKey(w);
+          keyCounts.set(key, (keyCounts.get(key)||0)+1);
+          const syl = getSyllableCount(w);
+          totalSyllables += syl;
+          ls += syl;
+        });
+      });
+
+      lastWordsList = wordsList;
+      lastKeyCounts = keyCounts;
+      if (infoLines) infoLines.innerText = lines.length;
+      if (infoWords) infoWords.innerText = wordsList.length;
+
+      const upper = text.toUpperCase();
+      const freq = {};
+      for (let ch of upper) {
+        if ((ch>='A'&&ch<='Z') || ['Ä','Ö','Ü','ß'].includes(ch)) freq[ch] = (freq[ch]||0)+1;
+      }
+      const sorted = Object.keys(freq).sort();
+      const t = TRANSLATIONS[currentAppLang];
+      if (letterContainer) {
+        if (sorted.length === 0) letterContainer.innerHTML = \`<span style="color:var(--hint-color, #888888);font-style:italic;">\${t.noLetters}</span>\`;
+        else letterContainer.innerHTML = sorted.map(ch => \`<span style="color:var(--hint-color, #888888);font-weight:500;">\${ch}:</span><span style="color:var(--text-color, #ffffff);font-weight:600;">\${freq[ch]}</span>\`).join(' <span style="color:var(--modal-border, #444444);">|</span> ');
+      }
+
+      const validLines = lines.filter(l => l.trim().length > 0).length;
+      const avgSyl = validLines > 0 ? totalSyllables / validLines : 0;
+      if (avgSyllablesVal) avgSyllablesVal.innerText = avgSyl.toFixed(1);
+      if (avgSyllablesBar) avgSyllablesBar.style.width = \`\${Math.min((avgSyl/20)*100,100)}%\`;
+
+      let rhymed = 0;
+      wordsList.forEach(w => { if (keyCounts.get(getRhymeKey(w)) >= 2) rhymed++; });
+      const density = wordsList.length > 0 ? Math.round((rhymed/wordsList.length)*100) : 0;
+      if (rhymeDensityVal) rhymeDensityVal.innerText = \`\${density}%\`;
+      if (rhymeDensityBar) rhymeDensityBar.style.width = \`\${density}%\`;
+
+      const flow = wordsList.length > 0 ? Math.min(100, density + 40) : 0;
+      let grade = flow >= 80 ? "S-Class" : flow >= 60 ? "A-Class" : "B-Class";
+      if (lyricalFlowScore) lyricalFlowScore.innerText = wordsList.length > 0 ? \`\${flow} (\${grade})\` : "0 (C)";
+      if (flowScoreBar) flowScoreBar.style.width = \`\${flow}%\`;
+
+      drawTimelinePlot(wordsList, keyCounts);
+
+      if (rhythmGrid) {
+        rhythmGrid.innerHTML = '';
+        if (wordsList.length === 0) {
+          rhythmGrid.innerHTML = \`<span style="font-size:0.75rem;color:var(--hint-color, #888888);font-style:italic;">Awaiting inputs...</span>\`;
+        } else {
+          lines.forEach(line => {
+            const lw = (line.match(/[\\wäöüß']+/gi)||[]).filter(tok=>/[a-zäöüß]/i.test(tok));
+            const row = document.createElement('div');
+            row.className = 'rhythm-row';
+            lw.forEach(w => {
+              const vowels = w.match(/[aeiouyäöü]/gi) || [];
+              const key = getRhymeKey(w);
+              const isRhymed = keyCounts.get(key) >= 2;
+              vowels.forEach(v => {
+                const tile = document.createElement('span');
+                tile.className = 'rhythm-tile';
+                if(isRhymed) {
+                    tile.style.backgroundColor = getColorForRhyme(key);
+                    tile.style.color = '#000';
+                } else {
+                    tile.style.backgroundColor = 'transparent';
+                    tile.style.border = '1px solid var(--modal-border, #444444)';
+                    tile.style.color = 'var(--hint-color, #888888)';
+                }
+                tile.innerText = v.toUpperCase();
+                row.appendChild(tile);
+              });
+            });
+            if (lw.length === 0) row.style.visibility = 'hidden';
+            rhythmGrid.appendChild(row);
+          });
+        }
+      }
+
+      if (wordGrid) {
+        wordGrid.innerHTML = '';
+        if (wordsList.length === 0 || maxWords === 0) {
+          wordGrid.innerHTML = \`<span style="font-size:0.75rem;color:var(--hint-color, #888888);font-style:italic;">Awaiting inputs...</span>\`;
+        } else {
+          wordGrid.style.gridTemplateColumns = \`repeat(\${maxWords}, 12px)\`;
+          linesOfWords.forEach((lw) => {
+            for (let i=0; i<maxWords; i++) {
+              const tile = document.createElement('span');
+              tile.className = 'word-tile';
+              if (i < lw.length) {
+                const key = getRhymeKey(lw[i]);
+                if(keyCounts.get(key) >= 2) {
+                    tile.style.backgroundColor = getColorForRhyme(key);
+                } else {
+                    tile.style.backgroundColor = 'transparent';
+                    tile.style.border = '1px solid var(--modal-border, #444444)';
+                }
+              } else {
+                tile.style.backgroundColor = 'transparent';
+              }
+              wordGrid.appendChild(tile);
+            }
+          });
+        }
+      }
+    }
+
+    const debouncedMetricsAndAPI = debounce(() => {
+      calculateMetricsAndGrids();
+      triggerContextLookups();
+    }, 250);
+
+    function updateTimelineSize() {
+      if (!timelinePlotContainer || !timelineCanvas) return;
+      const rect = timelinePlotContainer.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      timelineCanvas.style.width = \`\${rect.width}px\`;
+      timelineCanvas.style.height = \`64px\`;
+      timelineCanvas.width = rect.width * dpr;
+      timelineCanvas.height = 64 * dpr;
+      const ctx = timelineCanvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      timelineCanvas._plotW = rect.width;
+      timelineCanvas._plotH = 64;
+    }
+
+    function drawTimelinePlot(wordsList, keyCounts) {
+      if (!timelineCanvas) return;
+      updateTimelineSize();
+      const ctx = timelineCanvas.getContext('2d');
+      const width = timelineCanvas._plotW || 300;
+      const height = timelineCanvas._plotH || 64;
+      ctx.clearRect(0,0,width,height);
+
+      const dynamicSubColor = getComputedStyle(document.body).getPropertyValue('--hint-color').trim() || '#888888';
+      const dynamicBorderColor = getComputedStyle(document.body).getPropertyValue('--modal-border').trim() || '#444444';
+
+      if (!wordsList || wordsList.length < 2) {
+        ctx.fillStyle = dynamicSubColor;
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Begin writing to plot patterns...', width/2, height/2);
+        return;
+      }
+
+      const padX=15, padY=12;
+      const plotW=width-padX*2, plotH=height-padY*2;
+      const n=wordsList.length;
+      const xStep=plotW/(n-1);
+
+      const rhymes = wordsList.map(w => {
+        const key = getRhymeKey(w);
+        return keyCounts.get(key) >= 2 ? 1 : 0;
+      });
+      const smooth = [];
+      for (let i=0; i<n; i++) {
+        let s=0,c=0;
+        for (let off=-2; off<=2; off++) {
+          const idx=i+off;
+          if (idx>=0 && idx<n) { s += rhymes[idx]; c++; }
+        }
+        smooth.push(c>0 ? s/c : 0);
+      }
+
+      ctx.strokeStyle=dynamicBorderColor;
+      ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.moveTo(padX,padY); ctx.lineTo(width-padX,padY);
+      ctx.moveTo(padX,padY+plotH); ctx.lineTo(width-padX,padY+plotH);
+      ctx.stroke();
+
+      if (showRhymeCheck && showRhymeCheck.checked) {
+        ctx.strokeStyle = '#00ff41';
+        ctx.lineWidth=2;
+        ctx.beginPath();
+        for (let i=0; i<n; i++) {
+          const x=padX+i*xStep, y=padY+plotH - smooth[i]*plotH;
+          i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+      }
+    }
+
+    function updateMetricsLayoutState() {
+      if (timelinePlotContainer) timelinePlotContainer.style.display = showTimeline ? 'flex' : 'none';
+      if (gridsRow) gridsRow.style.display = showGrids ? 'flex' : 'none';
+      if (metricsStatsRow) metricsStatsRow.style.display = showStats ? 'flex' : 'none';
+      if (toggleTimelineBtn) toggleTimelineBtn.classList.toggle('active', showTimeline);
+      if (toggleGridsBtn) toggleGridsBtn.classList.toggle('active', showGrids);
+      if (toggleStatsBtn) toggleStatsBtn.classList.toggle('active', showStats);
+      redrawTimeline();
+    }
+
+    toggleTimelineBtn.addEventListener('click', ()=>{ showTimeline=!showTimeline; updateMetricsLayoutState(); });
+    toggleGridsBtn.addEventListener('click', ()=>{ showGrids=!showGrids; updateMetricsLayoutState(); });
+    toggleStatsBtn.addEventListener('click', ()=>{ showStats=!showStats; updateMetricsLayoutState(); });
+
+    function redrawTimeline() { drawTimelinePlot(lastWordsList, lastKeyCounts); }
+
+    scrollLeftBtn.addEventListener('click', () => letterContainer.scrollBy({ left: -120, behavior: 'smooth' }));
+    scrollRightBtn.addEventListener('click', () => letterContainer.scrollBy({ left: 120, behavior: 'smooth' }));
+
+    input.addEventListener('input', () => {
+      updateLivePreviewText();
+      debouncedMetricsAndAPI();
+    });
+    input.addEventListener('select', debouncedMetricsAndAPI);
+    input.addEventListener('click', debouncedMetricsAndAPI);
+
+    updateLanguageUI();
+    updateLivePreviewText();
+    debouncedMetricsAndAPI();
+    updateMetricsLayoutState();
+    window.addEventListener('resize', redrawTimeline);
+  })();
+</script>
+</body>
+</html>`
+};
+})();

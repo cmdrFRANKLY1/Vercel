@@ -5,15 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>KDE Plasma Desktop Experience</title>
     
-    <!-- Explicitly load the KDE colors first -->
     <script src="../../colors/colorsKde.js"></script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Configure Tailwind to ensure theme is applied -->
     <script>
-        // Fallback colors in case colorsKde.js fails to load
         const defaultKdeColors = {
             'kde-bg': '#1a1b1e', 
             'kde-panel': 'rgba(35, 38, 41, 0.85)', 
@@ -27,7 +24,6 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    // Use the globally exposed colors from colorsKde.js or the fallback
                     colors: window.kdeThemeColors || defaultKdeColors,
                     fontFamily: {
                         sans: ['Noto Sans', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
@@ -39,19 +35,17 @@
     
     <style>
         body {
-            overflow: hidden; /* Prevent scrolling on the desktop */
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); /* Default KDE-like wallpaper */
+            overflow: hidden;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
             background-size: cover;
             background-position: center;
         }
 
-        /* Glassmorphism for panel and menus */
         .glass-effect {
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
         }
 
-        /* Desktop Icon styling */
         .desktop-icon {
             transition: background-color 0.15s ease;
         }
@@ -60,7 +54,6 @@
             border-radius: 0.5rem;
         }
         
-        /* App Launcher Menu Animation */
         #app-launcher {
             transition: opacity 0.2s ease, transform 0.2s ease;
             transform-origin: bottom left;
@@ -76,7 +69,6 @@
             pointer-events: auto;
         }
 
-        /* Window animations and states */
         .window {
             box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px var(--tw-colors-kde-window-border);
             transition: transform 0.1s ease, box-shadow 0.1s ease;
@@ -88,11 +80,11 @@
             top: 0 !important;
             left: 0 !important;
             width: 100vw !important;
-            height: calc(100vh - 48px) !important; /* Minus panel height */
+            height: calc(100vh - 48px) !important;
             border-radius: 0 !important;
         }
         .window-header {
-            cursor: move; /* Indicate draggable area */
+            cursor: move;
         }
     </style>
 </head>
@@ -105,22 +97,19 @@
     </div>
 
     <div id="app-launcher" class="hidden absolute bottom-12 left-0 mb-1 ml-2 w-96 h-[32rem] bg-kde-panel glass-effect border border-gray-600/50 rounded-lg shadow-2xl z-50 flex flex-col text-sm text-gray-200">
-        <!-- Search bar -->
         <div class="p-3 border-b border-gray-600/50">
             <div class="bg-gray-800/80 rounded-full px-3 py-1.5 flex items-center border border-gray-600/30 focus-within:border-kde-accent focus-within:ring-1 focus-within:ring-kde-accent transition-all">
                 <i class="fa-solid fa-magnifying-glass text-gray-400 mr-2"></i>
-                <input type="text" placeholder="Search..." class="bg-transparent border-none outline-none w-full text-sm placeholder-gray-400">
+                <input type="text" id="app-search-input" placeholder="Search apps..." class="bg-transparent border-none outline-none w-full text-sm placeholder-gray-400" oninput="filterApps(this.value)">
             </div>
         </div>
         
         <div class="flex flex-1 overflow-hidden">
-            <!-- Categories Sidebar -->
             <div class="w-1/3 border-r border-gray-600/50 flex flex-col">
-                <button class="text-left px-4 py-2 hover:bg-white/10 bg-white/5 border-l-2 border-kde-accent"><i class="fa-solid fa-desktop w-6 text-gray-400"></i> Computer</button>
+                <button class="text-left px-4 py-2 hover:bg-white/10 bg-white/5 border-l-2 border-kde-accent"><i class="fa-solid fa-desktop w-6 text-gray-400"></i> Applications</button>
                 <button onclick="window.location.href='../../index.html'" class="text-left px-4 py-2 hover:bg-white/10 mt-auto"><i class="fa-solid fa-power-off w-6 text-red-400"></i> Leave</button>
             </div>
             
-            <!-- Items Area -->
             <div class="w-2/3 p-2 overflow-y-auto flex flex-col gap-1" id="apps-container">
                 <div class="p-4 text-center text-gray-500 italic mt-10" id="no-apps-message">
                     Loading applications...
@@ -128,7 +117,6 @@
             </div>
         </div>
         
-        <!-- User Info Footer -->
         <div class="p-3 border-t border-gray-600/50 flex justify-between items-center bg-gray-900/30 rounded-b-lg">
             <div class="flex items-center gap-2">
                 <div class="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center border border-gray-500">
@@ -138,34 +126,27 @@
             </div>
             <div class="flex gap-2 text-gray-400">
                 <button class="hover:text-white p-1"><i class="fa-solid fa-lock"></i></button>
-                <button class="hover:text-red-400 p-1"><i class="fa-solid fa-power-off"></i></button>
+                <button class="hover:text-red-400 p-1" onclick="window.location.href='../../index.html'"><i class="fa-solid fa-power-off"></i></button>
             </div>
         </div>
     </div>
 
     <div id="panel" class="absolute bottom-0 left-0 w-full h-12 bg-kde-panel glass-effect border-t border-white/5 flex items-center px-1 z-50">
         
-        <!-- Application Launcher Button -->
         <button id="launcher-btn" class="h-10 w-10 mx-1 flex items-center justify-center rounded hover:bg-kde-panel-hover transition-colors" onclick="toggleLauncher(event)">
-            <!-- Plasma Logo (Simplified SVG representation) -->
             <svg class="w-6 h-6 text-kde-accent drop-shadow-md" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
             </svg>
         </button>
 
-        <!-- Task Manager (Open Apps) -->
         <div id="task-manager" class="flex-1 h-full flex items-center px-2 gap-1 overflow-x-hidden">
-            <!-- Tasks will be injected here by JS -->
         </div>
 
-        <!-- System Tray -->
         <div class="flex items-center h-full px-2 gap-3 text-sm text-gray-300">
-            <!-- Volume -->
             <div class="cursor-pointer hover:text-white px-1 relative group">
                 <i class="fa-solid fa-volume-high"></i>
             </div>
 
-            <!-- Clock -->
             <div id="clock" class="font-semibold text-center cursor-pointer hover:bg-kde-panel-hover px-2 py-1 rounded select-none flex flex-col justify-center leading-tight">
                 <span id="time" class="text-[13px]">00:00 AM</span>
                 <span id="date" class="text-[10px] text-gray-400">Date</span>
@@ -174,7 +155,6 @@
     </div>
 
     <script>
-        // --- Clock Logic ---
         function updateClock() {
             const now = new Date();
             let hours = now.getHours();
@@ -182,11 +162,10 @@
             const ampm = hours >= 12 ? 'PM' : 'AM';
             
             hours = hours % 12;
-            hours = hours ? hours : 12; // the hour '0' should be '12'
+            hours = hours ? hours : 12;
             minutes = minutes < 10 ? '0' + minutes : minutes;
             
             const timeString = hours + ':' + minutes + ' ' + ampm;
-            
             const options = { weekday: 'short', month: 'short', day: 'numeric' };
             const dateString = now.toLocaleDateString(undefined, options);
 
@@ -195,26 +174,23 @@
         }
 
         setInterval(updateClock, 1000);
-        updateClock(); // Initial call
+        updateClock();
 
-        // --- App Launcher Logic ---
         const launcher = document.getElementById('app-launcher');
         const launcherBtn = document.getElementById('launcher-btn');
+        let availableApps = [];
 
         function toggleLauncher(e) {
             if(e) e.stopPropagation();
             if (launcher.classList.contains('hidden')) {
                 launcher.classList.remove('hidden');
-                // Small delay to allow display:block to apply before animation
                 setTimeout(() => launcher.classList.add('visible'), 10);
             } else {
                 launcher.classList.remove('visible');
-                // Wait for animation to finish before hiding
                 setTimeout(() => launcher.classList.add('hidden'), 200);
             }
         }
 
-        // Close launcher when clicking outside
         document.addEventListener('click', (event) => {
             if (launcher.classList.contains('visible') && 
                 !launcher.contains(event.target) && 
@@ -223,69 +199,116 @@
             }
         });
 
-        // Helper function to format camelCase to Title Case (e.g., helloMyNameIs -> Hello My Name Is)
         function formatAppName(name) {
             if (!name) return '';
             return name
-                .replace(/([a-z])([A-Z])/g, '$1 $2') // Insert space before capital letters
-                .replace(/^./, str => str.toUpperCase()); // Capitalize first letter
+                .replace(/([a-z])([A-Z])/g, '$1 $2')
+                .replace(/[-_]/g, ' ')
+                .replace(/^./, str => str.toUpperCase());
         }
 
-        // --- STREAMING_CHUNK:Fetching apps from registry.json ---
         document.addEventListener('DOMContentLoaded', () => {
             const appsContainer = document.getElementById('apps-container');
             const noAppsMessage = document.getElementById('no-apps-message');
             
             const fallbackRegistry = {
                 "apps": [
-                    "calculator"
+                    "lyricsEditor"
                 ]
             };
 
-            // Fetch registry.json to populate applications
-            fetch('../../registry.json')
-                .then(response => {
-                    if (!response.ok) throw new Error('Registry not found');
-                    return response.json();
-                })
-                .catch(error => {
-                    console.warn('Error loading registry via fetch, using fallback:', error);
-                    return fallbackRegistry;
-                })
-                .then(registry => {
-                    if (registry.apps && registry.apps.length > 0) {
-                        if (noAppsMessage) noAppsMessage.remove(); // Remove loading/no apps message
-                        
-                        registry.apps.forEach(app => {
-                            const btn = document.createElement('button');
-                            btn.className = 'text-left px-3 py-2 rounded hover:bg-white/10 flex items-center gap-3 transition-colors';
-                            btn.innerHTML = `
-                                <div class="w-8 h-8 rounded bg-gray-700 flex items-center justify-center text-kde-accent shadow-inner">
-                                    <i class="fa-solid fa-window-maximize"></i>
-                                </div>
-                                <span class="capitalize text-sm font-medium">${formatAppName(app)}</span>
-                            `;
-                            btn.onclick = () => {
-                                launchApp(app);
-                                toggleLauncher(); // Close start menu after launching
-                            };
-                            appsContainer.appendChild(btn);
-                        });
-                    } else {
-                        if (noAppsMessage) noAppsMessage.textContent = 'No applications installed';
-                    }
-                });
+            const possiblePaths = [
+                '../../registry.json',
+                '../registry.json',
+                './registry.json',
+                '/registry.json'
+            ];
+
+            async function loadRegistry() {
+                for (const path of possiblePaths) {
+                    try {
+                        const response = await fetch(path);
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data && data.apps) {
+                                return data;
+                            }
+                        }
+                    } catch (err) {}
+                }
+                return fallbackRegistry;
+            }
+
+            loadRegistry().then(registry => {
+                availableApps = registry.apps || [];
+                renderAppList(availableApps);
+            });
         });
 
-        // --- STREAMING_CHUNK:Handling window state and iframe lifecycle ---
+        function renderAppList(apps) {
+            const appsContainer = document.getElementById('apps-container');
+            const noAppsMessage = document.getElementById('no-apps-message');
+            
+            const existingItems = appsContainer.querySelectorAll('button:not(#no-apps-message)');
+            existingItems.forEach(item => item.remove());
+
+            if (apps && apps.length > 0) {
+                if (noAppsMessage) noAppsMessage.style.display = 'none';
+                
+                apps.forEach(app => {
+                    const btn = document.createElement('button');
+                    btn.className = 'text-left px-3 py-2 rounded hover:bg-white/10 flex items-center gap-3 transition-colors';
+                    btn.innerHTML = `
+                        <div class="w-8 h-8 rounded bg-gray-700 flex items-center justify-center text-kde-accent shadow-inner">
+                            <i class="fa-solid fa-window-maximize text-xs"></i>
+                        </div>
+                        <span class="capitalize text-sm font-medium">${formatAppName(app)}</span>
+                    `;
+                    btn.onclick = () => {
+                        launchApp(app);
+                        toggleLauncher();
+                    };
+                    appsContainer.appendChild(btn);
+                });
+            } else {
+                if (noAppsMessage) {
+                    noAppsMessage.style.display = 'block';
+                    noAppsMessage.textContent = 'No applications found';
+                }
+            }
+        }
+
+        function filterApps(query) {
+            const filtered = availableApps.filter(app => 
+                formatAppName(app).toLowerCase().includes(query.toLowerCase())
+            );
+            renderAppList(filtered);
+        }
+
+        // --- STREAMING_CHUNK:Robust path resolver for JavaScript app modules ---
         const windows = {};
         const zIndexBase = 100;
         let currentZIndex = zIndexBase;
 
-        function launchApp(appName) {
+        async function resolveAppJsUrl(appName) {
+            const paths = [
+                `../../packages/apps/${appName}.js`,
+                `../apps/${appName}.js`,
+                `./packages/apps/${appName}.js`,
+                `${appName}.js`
+            ];
+            for (const path of paths) {
+                try {
+                    const res = await fetch(path, { method: 'HEAD' });
+                    if (res.ok) return path;
+                } catch(e) {}
+            }
+            return `../../packages/apps/${appName}.js`;
+        }
+
+        async function launchApp(appName) {
             const winId = `window-${appName}`;
             
-            // If the window is already active/open, just focus it
             if (windows[winId]) {
                 if (windows[winId].isMinimized) {
                     openWindow(appName);
@@ -295,20 +318,17 @@
                 return;
             }
 
-            // Create window wrapper DOM dynamically
             const winDiv = document.createElement('div');
             winDiv.id = winId;
             winDiv.className = 'window absolute bg-kde-window-bg border border-kde-window-border rounded-lg shadow-2xl flex flex-col overflow-hidden transition-transform duration-100 ease-out pointer-events-auto';
             
-            // Default size and cascading position (so new windows stack cleanly)
             const offset = (Object.keys(windows).length * 30) + 50;
-            winDiv.style.width = '700px';
-            winDiv.style.height = '450px';
+            winDiv.style.width = '800px';
+            winDiv.style.height = '540px';
             winDiv.style.top = `${offset}px`;
             winDiv.style.left = `${offset}px`;
             
             winDiv.innerHTML = `
-                <!-- Window Header -->
                 <div class="window-header h-9 bg-gray-800 flex justify-between items-center select-none group border-b border-gray-900">
                     <div class="flex items-center gap-2 px-3 text-gray-300">
                         <i class="fa-solid fa-window-maximize text-kde-accent text-xs"></i>
@@ -320,17 +340,106 @@
                         <button onclick="closeApp('${winId}')" class="w-12 hover:bg-red-600 flex items-center justify-center transition-colors text-gray-400 hover:text-white" title="Close"><i class="fa-solid fa-xmark text-sm"></i></button>
                     </div>
                 </div>
-                <!-- Window Body (Iframe Wrapper) -->
-                <div class="flex-1 relative bg-white">
-                    <!-- Invisible glass stops iframe from swallowing mouse drag events -->
+                <div class="flex-1 relative bg-kde-window-bg">
                     <div class="iframe-glass absolute inset-0 z-10 hidden"></div>
-                    <iframe src="../../packages/apps/${appName}.html" class="w-full h-full border-none bg-white block"></iframe>
+                    <iframe id="iframe-${winId}" class="w-full h-full border-none bg-kde-window-bg block"></iframe>
                 </div>
             `;
             
             document.getElementById('windows-container').appendChild(winDiv);
             
-            // Register window state
+            const jsUrl = await resolveAppJsUrl(appName);
+            const iframe = winDiv.querySelector('iframe');
+            
+            // Construct a self-contained runtime document inside the iframe that loads Tailwind, KDE Theme colors, and the app script
+            const iframeContent = `<!DOCTYPE html>
+            <html lang="en" class="h-full">
+            <head>
+                <meta charset="UTF-8">
+                <script src="../../colors/colorsKde.js"><\/script>
+                <script src="https://cdn.tailwindcss.com"><\/script>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                <style>
+                    body { background-color: #31363b; color: #eff0f1; margin: 0; font-family: 'Noto Sans', sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+                    /* Ableton / Gimp / KDE Hybrid UI Tokens */
+                    #app { display: flex; flex-direction: column; height: 100vh; width: 100vw; box-sizing: border-box; }
+                    #menubar { display: flex; background: rgba(35, 38, 41, 0.95); border-bottom: 1px solid #1d2023; padding: 2px 6px; font-size: 12px; gap: 4px; user-select: none; }
+                    .menu-btn { background: transparent; border: none; color: #eff0f1; padding: 4px 8px; border-radius: 3px; cursor: pointer; }
+                    .menu-btn:hover { background: rgba(255,255,255,0.1); }
+                    .menu-dropdown { display: none; flex-direction: column; position: absolute; top: 100%; left: 0; background: #31363b; border: 1px solid #1d2023; border-radius: 4px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 100; min-width: 140px; padding: 4px; }
+                    .group:hover .menu-dropdown { display: flex; }
+                    .dropdown-item { background: transparent; border: none; color: #eff0f1; padding: 6px 10px; text-align: left; border-radius: 3px; cursor: pointer; font-size: 12px; display: flex; align-items: center; }
+                    .dropdown-item:hover { background: #3daee9; color: #000; }
+                    .menu-separator { height: 1px; background: #1d2023; margin: 3px 0; }
+                    .container { display: flex; flex: 1; overflow: hidden; position: relative; }
+                    .editor { flex: 1; display: flex; flex-direction: column; background: #1a1b1e; border-right: 1px solid #1d2023; min-width: 200px; }
+                    .pane-label { background: #232629; color: #9ca3af; font-size: 11px; font-weight: 600; padding: 4px 8px; border-bottom: 1px solid #1d2023; text-transform: uppercase; letter-spacing: 0.05em; }
+                    .editor-container { display: flex; flex: 1; position: relative; overflow: hidden; }
+                    .line-numbers { width: 36px; background: #1f2225; color: #6b7280; font-family: monospace; font-size: 12px; padding: 8px 4px; text-align: right; user-select: none; overflow: hidden; line-height: 1.5; }
+                    textarea { flex: 1; background: transparent; color: #eff0f1; border: none; outline: none; padding: 8px; font-family: monospace; font-size: 13px; resize: none; line-height: 1.5; }
+                    .editor-sub-bar { display: flex; align-items: center; padding: 4px 8px; background: #232629; border-top: 1px solid #1d2023; font-size: 11px; gap: 6px; min-height: 28px; }
+                    .sub-bar-label { color: #9ca3af; font-weight: 600; min-width: 75px; }
+                    #predictionsList, #rhymesList, #definitionsList, #hintsList { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; flex: 1; overflow: hidden; }
+                    .suggestion-badge { background: rgba(61, 174, 233, 0.15); border: 1px solid rgba(61, 174, 233, 0.4); color: #3daee9; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 11px; }
+                    .suggestion-badge:hover { background: #3daee9; color: #000; }
+                    .hint-badge { background: #1d2023; padding: 2px 6px; border-radius: 3px; color: #9ca3af; font-size: 11px; }
+                    .resizer { background: #1d2023; transition: background 0.2s; }
+                    .resizer:hover, .resizer.dragging { background: #3daee9; }
+                    .col-resizer { width: 5px; cursor: col-resize; }
+                    .row-resizer { height: 5px; cursor: row-resize; width: 100%; }
+                    .preview { flex: 1; display: flex; flex-direction: column; background: #31363b; min-width: 250px; }
+                    .output { flex: 1; padding: 12px; font-family: monospace; font-size: 13px; overflow-y: auto; white-space: pre-wrap; line-height: 1.5; color: #eff0f1; }
+                    .metrics-panel { display: flex; flex-direction: column; background: #232629; border-top: 1px solid #1d2023; height: 310px; min-height: 190px; }
+                    .metrics-header { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; background: #1d2023; font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; }
+                    .btn-ableton { background: #31363b; border: 1px solid #3a3f44; color: #9ca3af; padding: 2px 6px; border-radius: 3px; font-size: 10px; cursor: pointer; }
+                    .btn-ableton.active { background: #3daee9; color: #000; border-color: #3daee9; font-weight: 700; }
+                    .ableton-toggles { display: flex; gap: 3px; }
+                    .gimp-color-picker { display: flex; gap: 3px; align-items: center; position: relative; }
+                    .gimp-square { width: 12px; height: 12px; border-radius: 2px; cursor: pointer; border: 1px solid rgba(255,255,255,0.3); }
+                    .gimp-square.active-target { outline: 2px solid #fff; }
+                    .gimp-square-random { font-size: 10px; cursor: pointer; padding: 0 2px; }
+                    #timelinePlotContainer { position: relative; height: 64px; background: #1a1b1e; border-bottom: 1px solid #1d2023; display: flex; flex-direction: column; }
+                    .timeline-legend { position: absolute; top: 2px; right: 6px; display: flex; gap: 8px; font-size: 9px; pointer-events: none; }
+                    .timeline-legend label { display: flex; align-items: center; gap: 3px; pointer-events: auto; cursor: pointer; }
+                    .timeline-progress-label { position: absolute; bottom: 2px; right: 6px; font-size: 9px; color: #6b7280; pointer-events: none; }
+                    .metrics-content { display: flex; flex-direction: column; flex: 1; padding: 6px 10px; gap: 6px; overflow-y: auto; }
+                    .grids-row { display: flex; gap: 8px; height: 105px; }
+                    .grid-panel { flex: 1; background: #1a1b1e; border: 1px solid #1d2023; border-radius: 4px; padding: 6px; display: flex; flex-direction: column; overflow: hidden; }
+                    .rhythm-grid { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; flex: 1; }
+                    .rhythm-row { display: flex; gap: 2px; align-items: center; }
+                    .rhythm-tile { width: 16px; height: 16px; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; font-family: monospace; }
+                    .word-grid-container { display: grid; gap: 2px; overflow-y: auto; flex: 1; align-content: start; }
+                    .word-tile { width: 14px; height: 14px; border-radius: 2px; }
+                    .metrics-stats-row { display: flex; gap: 8px; }
+                    .metric-item { flex: 1; background: #1a1b1e; border: 1px solid #1d2023; border-radius: 4px; padding: 6px; display: flex; flex-direction: column; gap: 3px; }
+                    .metric-name { font-size: 10px; color: #9ca3af; }
+                    .metric-val-wrapper { display: flex; align-items: center; gap: 8px; }
+                    .metric-value { font-size: 13px; font-weight: 700; color: #eff0f1; min-width: 45px; }
+                    .progress-bar { flex: 1; height: 5px; background: #232629; border-radius: 3px; overflow: hidden; border: 1px solid #1d2023; }
+                    .progress-fill { height: 100%; width: 0%; background: #3daee9; transition: width 0.2s; }
+                    .editor-status-bar { display: flex; align-items: center; background: #232629; border-top: 1px solid #1d2023; padding: 3px 8px; font-size: 11px; color: #9ca3af; gap: 8px; }
+                    #letterCountsContainer { display: flex; gap: 6px; overflow-x: auto; flex: 1; white-space: nowrap; scrollbar-width: none; }
+                    #letterCountsContainer::-webkit-scrollbar { display: none; }
+                    .scroll-arrow-btn { background: transparent; border: none; color: #9ca3af; cursor: pointer; padding: 0 4px; }
+                    .scroll-arrow-btn:hover { color: #eff0f1; }
+                    .color-picker-popup { display: none; position: absolute; background: #31363b; border: 1px solid #1d2023; border-radius: 4px; padding: 6px; z-index: 1000; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+                    .color-picker-grid { display: grid; grid-template-columns: repeat(5, 1fr; gap: 4px; }
+                    .color-picker-dot { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); }
+                    .custom-modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+                    .custom-modal { background: #31363b; border: 1px solid #1d2023; border-radius: 6px; padding: 16px; width: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 12px; }
+                    .custom-modal h3 { font-size: 14px; font-weight: 700; color: #eff0f1; margin: 0; }
+                    .custom-modal p { font-size: 12px; color: #9ca3af; margin: 0; }
+                    .btn-modal { background: #3daee9; color: #000; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 600; font-size: 12px; cursor: pointer; width: 100%; text-align: center; }
+                    .btn-modal:hover { opacity: 0.9; }
+                </style>
+            </head>
+            <body>
+                <script src="${jsUrl}"><\/script>
+            </body>
+            </html>`;
+
+            iframe.srcdoc = iframeContent;
+
             windows[winId] = {
                 element: winDiv,
                 isOpen: true,
@@ -349,7 +458,6 @@
             bringToFront(winId);
         }
 
-        // --- STREAMING_CHUNK:Window focus and visibility management ---
         function openWindow(appName) {
             const winId = `window-${appName}`;
             if (!windows[winId]) return; 
@@ -362,9 +470,9 @@
 
         function closeApp(winId) {
             if (windows[winId]) {
-                windows[winId].element.remove(); // Destroy DOM elements fully
-                delete windows[winId];           // Remove from state memory
-                removeTaskbarItem(winId);        // Clean up taskbar
+                windows[winId].element.remove();
+                delete windows[winId];
+                removeTaskbarItem(winId);
             }
         }
 
@@ -401,7 +509,6 @@
             }
         }
 
-        // --- STREAMING_CHUNK:Creating and updating taskbar elements ---
         const taskManager = document.getElementById('task-manager');
 
         function createTaskbarItem(winId) {
@@ -418,10 +525,8 @@
                 if (winInfo.isMinimized) {
                     openWindow(winInfo.appName);
                 } else if (winInfo.element.style.zIndex == currentZIndex) {
-                    // It's the active top window, so minimize it
                     minimizeWindow(winId);
                 } else {
-                    // It's open but behind, bring to front
                     bringToFront(winId);
                 }
             };
@@ -436,66 +541,45 @@
         }
 
         function updateTaskbarItemState(winId) {
-            // Reset all taskbar items styles
             Object.keys(windows).forEach(id => {
                 const btn = document.getElementById(`task-${id}`);
                 if (btn) {
                     btn.className = `h-10 px-3 flex items-center gap-2 rounded transition-colors max-w-[150px] overflow-hidden whitespace-nowrap border-b-2 border-transparent hover:bg-kde-panel-hover text-gray-300 pointer-events-auto`;
                     
-                    // If this is the specific window we are updating
                     if (id === winId) {
                         if (windows[id].isMinimized) {
-                            // Minimized state
                             btn.classList.add('opacity-50');
                         } else if (windows[id].element.style.zIndex == currentZIndex) {
-                            // Active state
                             btn.classList.remove('border-transparent', 'hover:bg-kde-panel-hover', 'text-gray-300');
                             btn.classList.add('bg-white/10', 'border-kde-accent', 'text-white');
-                        } else {
-                            // Open but not focused (default style applied above)
                         }
-                    } else {
-                         // Logic to ensure previously active windows revert style
-                         if(!windows[id].isMinimized) {
-                              // Ensure it doesn't look active if it's not the top one
-                         }
                     }
                 }
             });
         }
 
-
-        // --- STREAMING_CHUNK:Adding draggable window behaviors ---
         function makeDraggable(element) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
             const header = element.querySelector('.window-header');
             
             if (header) {
-                // if present, the header is where you move the DIV from:
                 header.onmousedown = dragMouseDown;
             } else {
-                // otherwise, move the DIV from anywhere inside the DIV:
                 element.onmousedown = dragMouseDown;
             }
 
             function dragMouseDown(e) {
-                // Don't drag if maximizing/minimizing buttons are clicked
                 if(e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
-                
-                // Don't drag if window is maximized
                 const winId = element.id;
                 if(windows[winId] && windows[winId].isMaximized) return;
 
                 e = e || window.event;
                 e.preventDefault();
-                // get the mouse cursor position at startup:
                 pos3 = e.clientX;
                 pos4 = e.clientY;
                 document.onmouseup = closeDragElement;
-                // call a function whenever the cursor moves:
                 document.onmousemove = elementDrag;
                 
-                // Show invisible glass pane over iframe so it doesn't steal mouse events
                 const glass = element.querySelector('.iframe-glass');
                 if(glass) glass.classList.remove('hidden');
                 
@@ -505,33 +589,26 @@
             function elementDrag(e) {
                 e = e || window.event;
                 e.preventDefault();
-                // calculate the new cursor position:
                 pos1 = pos3 - e.clientX;
                 pos2 = pos4 - e.clientY;
                 pos3 = e.clientX;
                 pos4 = e.clientY;
                 
-                // Boundary checks to keep window header grabable
                 let newTop = element.offsetTop - pos2;
                 let newLeft = element.offsetLeft - pos1;
                 
-                // Prevent dragging above top of screen
                 if(newTop < 0) newTop = 0;
-                // Prevent dragging completely below taskbar
                 const panelHeight = document.getElementById('panel').offsetHeight;
                 if(newTop > window.innerHeight - panelHeight - 30) newTop = window.innerHeight - panelHeight - 30;
 
-                // set the element's new position:
                 element.style.top = newTop + "px";
                 element.style.left = newLeft + "px";
             }
 
             function closeDragElement() {
-                // stop moving when mouse button is released:
                 document.onmouseup = null;
                 document.onmousemove = null;
                 
-                // Hide invisible glass pane
                 const glass = element.querySelector('.iframe-glass');
                 if(glass) glass.classList.add('hidden');
             }
