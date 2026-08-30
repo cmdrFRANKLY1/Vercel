@@ -2026,61 +2026,42 @@
                         this.printTranslatable(`<br><strong data-en="helpSections.availableCommands">AVAILABLE COMMANDS:</strong>`, '', true);
 
                         const autorunList = window.systemRegistryConfig?.autorun || [];
-                        const formatCmdList = (cmds) => cmds.map(cmd => `<span class="os-item highlight-blue" data-command="${cmd}">${cmd}</span>`).join(', ');
+
+                        const getCmdsForRegistryList = (regList) => {
+                            let cmds = [];
+                            for (const pkgName of (regList || [])) {
+                                if (autorunList.includes(pkgName)) continue;
+                                const pkgObj = window.packagesRegistry[pkgName];
+                                if (pkgObj && pkgObj.commands) {
+                                    cmds.push(...Object.keys(pkgObj.commands).filter(cmd => !autorunList.includes(cmd)).map(cmd => cmd.toLowerCase()));
+                                } else {
+                                    cmds.push(pkgName.toLowerCase());
+                                }
+                            }
+                            return [...new Set(cmds)].sort();
+                        };
+
+                        const formatCategory = (label, list) => {
+                            if (!list || list.length === 0) return;
+                            const formatCmdList = list.map(cmd => `<span class="os-item highlight-blue" data-command="${cmd}">${cmd}</span>`).join(', ');
+                            this.printHTML(`  <span style="display:inline-block; width:100px; color:var(--hint-color);">${label}</span> ${formatCmdList}`);
+                        };
 
                         const builtInRaw = ['help', 'settings', 'set', 'clear', 'apt', 'startx', 'open'];
-                        const builtIn = builtInRaw.filter(cmd => !autorunList.includes(cmd));
-                        if (builtIn.length > 0) {
-                            this.printHTML(`  <span style="display:inline-block; width:100px; color:var(--hint-color);">Built-in:</span> ${formatCmdList(builtIn)}`);
-                        }
+                        const builtIn = builtInRaw.filter(cmd => !autorunList.includes(cmd)).sort();
+                        formatCategory("Built in:", builtIn);
 
-                        const coreCmds = [];
-                        for (const [pkgName, pkgObj] of Object.entries(window.packagesRegistry || {})) {
-                            if (autorunList.includes(pkgName)) continue;
-                            if (pkgObj.preInstalledOn?.includes(termSettings.system) && !this.installedPackages.has(pkgName)) {
-                                if (pkgObj.commands) {
-                                    coreCmds.push(...Object.keys(pkgObj.commands).filter(cmd => !autorunList.includes(cmd)));
-                                } else {
-                                    coreCmds.push(pkgName);
-                                }
-                            }
-                        }
-                        if (coreCmds.length > 0) {
-                            this.printHTML(`  <span style="display:inline-block; width:100px; color:var(--hint-color);">System:</span> ${formatCmdList(coreCmds)}`);
-                        }
+                        const systemCmds = getCmdsForRegistryList(window.systemRegistryConfig?.core || window.systemRegistryConfig?.corePackages);
+                        formatCategory("System:", systemCmds);
 
-                        const nonCoreInstalledPackages = Array.from(this.installedPackages).filter(pkg => !autorunList.includes(pkg));
-                        if (nonCoreInstalledPackages.length > 0) {
-                            let installedCmds = [];
-                            for (const pkg of nonCoreInstalledPackages) {
-                                const pkgObj = window.packagesRegistry[pkg];
-                                if (pkgObj?.commands) {
-                                    installedCmds.push(...Object.keys(pkgObj.commands).filter(cmd => !autorunList.includes(cmd)));
-                                } else {
-                                    installedCmds.push(pkg);
-                                }
-                            }
-                            if (installedCmds.length > 0) {
-                                this.printHTML(`  <span style="display:inline-block; width:100px; color:var(--hint-color);">Installed:</span> ${formatCmdList(installedCmds)}`);
-                            }
-                        }
+                        const officialCmds = getCmdsForRegistryList(window.systemRegistryConfig?.official || window.systemRegistryConfig?.packages);
+                        formatCategory("Official:", officialCmds);
 
-                        const corePkgList = window.systemRegistryConfig?.corePackages || window.systemRegistryConfig?.core || [];
-                        const coreAvailCmds = [];
-                        for (const pkgName of corePkgList) {
-                            if (autorunList.includes(pkgName)) continue;
-                            const pkgObj = window.packagesRegistry[pkgName];
-                            if (!pkgObj) continue;
-                            if (pkgObj.preInstalledOn?.includes(termSettings.system) || this.installedPackages.has(pkgName)) continue;
-                            if (pkgObj.commands) {
-                                coreAvailCmds.push(...Object.keys(pkgObj.commands).filter(cmd => !autorunList.includes(cmd)));
-                            } else {
-                                coreAvailCmds.push(pkgName);
-                            }
-                        }
-                        if (coreAvailCmds.length > 0) {
-                            this.printHTML(`  <span style="display:inline-block; width:100px; color:var(--hint-color);">Core:</span> ${formatCmdList(coreAvailCmds)}`);
-                        }
+                        const guiCmds = getCmdsForRegistryList(window.systemRegistryConfig?.gui);
+                        formatCategory("GUIs:", guiCmds);
+
+                        const customCmds = getCmdsForRegistryList(window.systemRegistryConfig?.custom);
+                        formatCategory("Custom:", customCmds);
                     },
                     settings: () => { openSettingsWindow(); this.printTranslatable("messages.settingsOpened"); },
                     open: (args) => {
