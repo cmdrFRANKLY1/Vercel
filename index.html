@@ -13,7 +13,7 @@
             --text-color: #ffffff;
             --prompt-user: #ffffff;
             --prompt-path: #bbbbbb;
-            --font-family: 'Courier New', Courier, monospace;
+            --font-family: Arial, sans-serif;
             --font-size: 15px;
             --infobar-size: 26px;
             --infobar-color: var(--bg-color);
@@ -396,7 +396,7 @@
             themes: {
                 monochrome: { bg: '#000000', text: '#ffffff', user: '#ffffff', path: '#bbbbbb', hint: '#555555', modalBg: '#000000', modalBorder: '#ffffff', name: 'Monochrome' }
             },
-            fonts: ["'Orbitron', sans-serif", "monospace", "'Courier New', Courier, monospace"],
+            fonts: ["Arial, sans-serif", "'Orbitron', sans-serif", "monospace", "'Courier New', Courier, monospace"],
             registerTheme(name, themeObj) {
                 this.themes[name] = themeObj;
                 window.colorSchemes = this.themes;
@@ -451,8 +451,9 @@
             settings: "what is this command?\nsettings\n\nwhat is it used for?\nOpens a graphical settings window allowing you to customize all terminal, system, and infobar preferences.",
             set: "what is this command?\nset\n\nwhat is it used for?\nConfigures terminal settings such as text size, font, language, color scheme, system or infobar layout.",
             apt: "what is this command?\napt (Advanced Package Tool)\n\nwhat is it used for?\nInstalls, updates, or manages software packages from the packages directory.",
-            startx: "what is this command?\nstartx\n\nwhat is it used for?\nStarts a graphical desktop environment session from packages/gui.",
-            clear: "what is this command?\nclear\n\nwhat is it used for?\nClears all previous text output from the terminal screen to give you a clean workspace."
+            startx: "what is this command?\nstartx\n\nwhat is it used for?\nStarts a graphical desktop environment session from packages/gui. It now opens safely in a new tab.",
+            clear: "what is this command?\nclear\n\nwhat is it used for?\nClears all previous text output from the terminal screen to give you a clean workspace.",
+            open: "what is this command?\nopen\n\nwhat is it used for?\nOpens a specific file or URL (like an HTML app) in a new terminal tab."
         };
 
         const defaultVFS = {
@@ -481,7 +482,7 @@
         let vfs = defaultVFS;
         try { const savedVFS = localStorage.getItem('sTerminal_vfs'); if (savedVFS) { const parsed = JSON.parse(savedVFS); if (parsed && typeof parsed === 'object') vfs = parsed; } } catch(e) {}
 
-        const termSettings = { fontsize: 15, font: "'Orbitron', sans-serif", language: "en", colorscheme: "monochrome", infobarsize: 26, infobarposition: "top", infobarshow: "show", system: "default", borderGradientStart: '#ffffff', borderGradientEnd: '#555555' };
+        const termSettings = { fontsize: 15, font: "Arial, sans-serif", language: "en", colorscheme: "monochrome", infobarsize: 26, infobarposition: "top", infobarshow: "show", system: "default", borderGradientStart: '#ffffff', borderGradientEnd: '#555555' };
         window.termSettings = termSettings;
         try { const savedSettings = localStorage.getItem('sTerminal_settings'); if (savedSettings) { const parsed = JSON.parse(savedSettings); if (parsed && typeof parsed === 'object') Object.assign(termSettings, parsed); } } catch(e) {}
         window.termSettings = termSettings;
@@ -825,7 +826,6 @@
                     const script = document.createElement('script');
                     script.src = scriptSrc;
                     
-                    // Await script load completion
                     const success = await new Promise((resolve) => {
                         script.onload = () => {
                             console.log(`Autorun script loaded successfully: ${scriptName}`);
@@ -838,7 +838,6 @@
                         document.head.appendChild(script);
                     });
 
-                    // Auto-execute if script loaded and a terminal context is available
                     if (success && typeof activeTab !== 'undefined' && activeTab?.activeTerminal) {
                         const term = activeTab.activeTerminal;
                         const isExecutable = window.wrapperRegistry[scriptName] || window.packagesRegistry[scriptName] || term.commands[scriptName];
@@ -849,11 +848,9 @@
                                 refreshTerminalCommands();
                             }
                             
-                            // Visually log the autorun execution to the terminal
                             const promptHTML = term.getPromptHTML();
                             term.printHTML(`<div class="history-line"><span class="prompt">${promptHTML}</span> <span style="color:var(--hint-color); font-style:italic;">[autorun]</span> <span class="os-item" data-command="${scriptName}">${scriptName}</span></div>`);
                             
-                            // Trigger the command execution
                             await term.executeCommand(scriptName);
                             term.scrollToBottom();
                         }
@@ -2016,7 +2013,7 @@
                         
                         this.printTranslatable(`<br><strong data-en="helpSections.availableCommands">AVAILABLE COMMANDS:</strong>`, '', true);
 
-                        const builtIn = ['help', 'settings', 'set', 'clear', 'apt', 'startx'];
+                        const builtIn = ['help', 'settings', 'set', 'clear', 'apt', 'startx', 'open'];
                         const formatCmdList = (cmds) => cmds.map(cmd => `<span class="os-item highlight-blue" data-command="${cmd}">${cmd}</span>`).join(', ');
 
                         this.printHTML(`  <span style="display:inline-block; width:100px; color:var(--hint-color);">Built-in:</span> ${formatCmdList(builtIn)}`);
@@ -2068,6 +2065,15 @@
                         }
                     },
                     settings: () => { openSettingsWindow(); this.printTranslatable("messages.settingsOpened"); },
+                    open: (args) => {
+                        if (args.length === 0) {
+                            this.print("Usage: open <url/file>", "error");
+                            return;
+                        }
+                        const target = args[0];
+                        createWrapperTab(`stty${tabs.length + 1} (${target})`, target);
+                        this.print(`Opened ${target} in a new tab.`);
+                    },
                     apt: (args) => {
                         if (!isDebianFamilySystem()) { this.printTranslatable("errors.aptNotFound", 'error'); return; }
                         if (args.length < 2 || args[0].toLowerCase() !== 'install') { this.printTranslatable("errors.aptUsage", "error"); return; }
@@ -2123,13 +2129,15 @@
                         }
 
                         const selectedGui = guis[idx];
-                        const confirm = await this.promptUserInput("Starting graphical session will end this terminal session, r u sure [Y/n]: ");
+                        const confirm = await this.promptUserInput("Starting graphical session will open a new tab, r u sure [Y/n]: ");
                         if (!confirm) return;
 
-                        if (confirm.toLowerCase() === 'y' || confirm.toLowerCase() === 'yes') {
+                        if (confirm.toLowerCase() === 'y' || confirm.toLowerCase() === 'yes' || confirm === '') {
                             this.print(`Starting ${selectedGui}...`);
                             setTimeout(() => {
-                                window.location.href = `packages/gui/${selectedGui.toLowerCase()}.html`;
+                                // Launch GUI inside a new tab instead of completely navigating away
+                                const targetUrl = selectedGui.toLowerCase() === 'kde' ? 'gui.htmls' : `packages/gui/${selectedGui.toLowerCase()}.html`;
+                                createWrapperTab(`stty${tabs.length + 1} (${selectedGui})`, targetUrl);
                             }, 400);
                         } else {
                             this.print("Cancelled.");
