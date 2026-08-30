@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>sTerminal</title>
+    <title>sTerminal + VFS Logging</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
@@ -369,8 +369,38 @@
             bootScreen.appendChild(line);
             bootScreen.scrollTop = bootScreen.scrollHeight;
             
-            // Random delay to simulate Linux boot sequence
+            // Log to VFS if available
+            if (typeof vfs !== 'undefined' && vfs) {
+                appendToLogFile(`[${status}] ${msg}\n`);
+            }
+            
             await delay(15 + Math.random() * 35);
+        }
+
+        // --- VFS Logging helper ---
+        function appendToLogFile(line) {
+            try {
+                const logPath = ['home', 'user', 'Documents', 'Logs'];
+                const logFileName = 'logTerminal.txt';
+                
+                // Ensure path exists
+                let node = vfs;
+                for (const part of logPath) {
+                    if (!node.children[part]) {
+                        node.children[part] = { type: 'dir', description: `Auto-created directory: ${part}`, children: {} };
+                    }
+                    node = node.children[part];
+                }
+                
+                if (!node.children[logFileName]) {
+                    node.children[logFileName] = { type: 'file', description: 'Terminal boot log', content: '' };
+                }
+                
+                node.children[logFileName].content += line;
+                saveVFS();
+            } catch(e) {
+                console.warn('VFS log write error:', e);
+            }
         }
 
         window.Translations = {};
@@ -501,7 +531,7 @@
                 'boot': { type: 'dir', description: 'Bootloader files and kernel images required for system startup.', children: {} },
                 'dev': { type: 'dir', description: 'Device files representing hardware components and pseudo-devices.', children: {} },
                 'etc': { type: 'dir', description: 'Configuration files specific to this machine.', children: { 'hostname': { type: 'file', description: 'Configuration file storing system hostname.', content: 'device\n' }, 'passwd': { type: 'file', description: 'User account database and access info.', content: 'root:x:0:0:root:/root:/bin/bash\nuser:x:1000:1000:user,,,:/home/user:/bin/bash\n' } } },
-                'home': { type: 'dir', description: 'Home directory containing user personal folders.', children: { 'user': { type: 'dir', description: 'Personal home folder for the current user.', children: { '.bashrc': { type: 'file', description: 'Initialization script for non-login shells.', content: '# ~/.bashrc\n' }, '.profile': { type: 'file', description: 'Initialization script for login shells.', content: '# ~/.profile\n' }, 'Desktop': { type: 'dir', description: 'Desktop items folder.', children: {} }, 'Documents': { type: 'dir', description: 'User documents and text files.', children: {} }, 'Downloads': { type: 'dir', description: 'Downloaded files storage.', children: {} }, 'Music': { type: 'dir', description: 'Audio tracks and music.', children: {} }, 'Pictures': { type: 'dir', description: 'Images and photos.', children: {} }, 'Videos': { type: 'dir', description: 'Video clips and recordings.', children: {} }, 'readme.txt': { type: 'file', description: 'Quick start guide file.', content: 'Type help to see available commands.' } } } } },
+                'home': { type: 'dir', description: 'Home directory containing user personal folders.', children: { 'user': { type: 'dir', description: 'Personal home folder for the current user.', children: { '.bashrc': { type: 'file', description: 'Initialization script for non-login shells.', content: '# ~/.bashrc\n' }, '.profile': { type: 'file', description: 'Initialization script for login shells.', content: '# ~/.profile\n' }, 'Desktop': { type: 'dir', description: 'Desktop items folder.', children: {} }, 'Documents': { type: 'dir', description: 'User documents and text files.', children: { 'Logs': { type: 'dir', description: 'System log files.', children: {} } } }, 'Downloads': { type: 'dir', description: 'Downloaded files storage.', children: {} }, 'Music': { type: 'dir', description: 'Audio tracks and music.', children: {} }, 'Pictures': { type: 'dir', description: 'Images and photos.', children: {} }, 'Videos': { type: 'dir', description: 'Video clips and recordings.', children: {} }, 'readme.txt': { type: 'file', description: 'Quick start guide file.', content: 'Type help to see available commands.' } } } } },
                 'lib': { type: 'dir', description: 'Shared library files.', children: {} },
                 'mnt': { type: 'dir', description: 'Temporary mount point.', children: {} },
                 'opt': { type: 'dir', description: 'Optional application packages.', children: {} },
@@ -917,7 +947,6 @@
 
                     if (success) {
                         await bootLog(`Autorun success: ${scriptName}`);
-                        // Auto-execute if script loaded and a terminal context is available
                         if (typeof activeTab !== 'undefined' && activeTab?.activeTerminal) {
                             const term = activeTab.activeTerminal;
                             const isExecutable = window.wrapperRegistry[scriptName] || window.packagesRegistry[scriptName] || term.commands[scriptName];
@@ -2552,25 +2581,20 @@
         }, { passive: false, capture: true });
 
         window.onload = async () => {
-            // We initiate behind the scenes while boot screen is on top.
             setupMenu();
             createTab(); 
             
-            // Perform loading sequence
             await loadDynamicModules();
             
-            // Artificial completion pause
             await bootLog("Starting graphical workspace...", " OK ", "ok");
             await delay(400); 
 
-            // Smooth transition away from the boot screen
             const bootScreen = document.getElementById('boot-screen');
             if (bootScreen) {
                 bootScreen.style.transition = 'opacity 0.6s ease';
                 bootScreen.style.opacity = '0';
                 setTimeout(() => {
                     bootScreen.style.display = 'none';
-                    // Re-focus the active terminal appropriately
                     if(activeTab && activeTab.activeTerminal) activeTab.activeTerminal.cmdInput.focus();
                 }, 600);
             }
