@@ -73,7 +73,7 @@
 '    :root {\n' +
 '      --bg-color: #000000;\n' +
 '      --text-color: #ffffff;\n' +
-'      --font-family: \'Courier New\', Courier, monospace;\n' +
+'      --font-family: Arial, Helvetica, sans-serif;\n' +
 '      --font-size: 15px;\n' +
 '      --border-start: #ffffff;\n' +
 '      --border-end: #555555;\n' +
@@ -583,10 +583,10 @@
 '  <!-- waybar -->\n' +
 '  <div id="waybar">\n' +
 '    <div style="display:flex; align-items:center; gap:4px; height: 100%; flex-wrap: wrap;">\n' +
-'      <span class="waybar-btn" id="viewListBtn">[LIST]</span>\n' +
-'      <span class="waybar-btn" id="viewCalBtn">[CAL]</span>\n' +
+'      <span class="waybar-btn" id="viewListBtn">[LISTVIEW]</span>\n' +
+'      <span class="waybar-btn" id="viewCalBtn">[CALENDER]</span>\n' +
 '      <span class="waybar-btn" id="viewDetailBtn">[TIMERS]</span>\n' +
-'      <span class="waybar-btn" id="viewStatsBtn">[STATS]</span>\n' +
+'      <span class="waybar-btn" id="viewStatsBtn">[STATISTICS]</span>\n' +
 '      <span class="waybar-btn" id="viewTimelineBtn">[TIMELINE]</span>\n' +
 '    </div>\n' +
 '    <div style="display:flex; align-items:center; gap:8px; height: 100%; flex-wrap: wrap;">\n' +

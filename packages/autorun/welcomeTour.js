@@ -1,56 +1,59 @@
 window.packagesRegistry = window.packagesRegistry || {};
 
-// Register the package
-window.packagesRegistry['infoPopup'] = {
-    name: 'infoPopup',
-    description: 'Steam-style interactive welcome tour with a dynamic color-shifting blue highlight guiding you through the interface',
+// Register the package under the new name
+window.packagesRegistry['welcomeTour'] = {
+    name: 'welcomeTour',
+    description: 'Welcome Tour with a dynamic color-shifting highlight guiding you through the interface',
     preInstalledOn: ['default'],
     translations: {
         en: {
-            infoPopupUsage: "Usage: infoPopup",
-            infoPopupHelp: "Launches an interactive Steam-style welcome tour highlighting workspace controls, themes, and inputs.",
+            welcomeTourUsage: "Usage: welcomeTour",
+            welcomeTourHelp: "Launches Welcome Tour highlighting workspace controls, themes, and inputs.",
             welcomeTitle: "Welcome to sTerminal · Tour",
             nextStep: "Next Step ➔",
             prevStep: "⬅ Back",
+            skipTour: "Skip",
             finishTour: "Start Exploring",
-            loadingInfo: "Launching Steam-style welcome tour..."
+            loadingInfo: "Launching Welcome Tour..."
         },
         de: {
-            infoPopupUsage: "Verwendung: infoPopup",
-            infoPopupHelp: "Startet eine interaktive Begrüßungstour im Steam-Stil zur Vorstellung von Simulation, Schaltern, Themes und Eingabefeld.",
-            welcomeTitle: "Willkommen bei sTerminal · Tour",
+            welcomeTourUsage: "Verwendung: welcomeTour",
+            welcomeTourHelp: "Startet eine Begrüßungstour zur Vorstellung von Simulation, Schaltern, Themes und Eingabefeld.",
+            welcomeTitle: "Welcome Tour",
             nextStep: "Weiter ➔",
             prevStep: "⬅ Zurück",
+            skipTour: "Überspringen",
             finishTour: "Loslegen",
-            loadingInfo: "Starte Begrüßungstour im Steam-Stil..."
+            loadingInfo: "Starte Begrüßungstour..."
         }
     },
     commandInfo: {
-        en: "what is this command?\ninfoPopup\n\nwhat is it used for?\nLaunches an interactive Steam-style welcome tour highlighting workspace controls, themes, and inputs.",
-        de: "Was ist dieser Befehl?\ninfoPopup\n\nWofür wird er verwendet?\nStartet eine interaktive Willkommenstour im Steam-Stil zur Erklärung von Bedienelementen, Themes und Eingabe."
+        en: "what is this command?\nwelcomeTour\n\nwhat is it used for?\nLaunches Welcome Tour highlighting workspace controls, themes, and inputs.",
+        de: "Was ist dieser Befehl?\nwelcomeTour\n\nWofür wird er verwendet?\nStartet eine Willkommenstour zur Erklärung von Bedienelementen, Themes und Eingabe."
     },
 
     commands: {
         // IMPORTANT: Terminal converts user input to lowercase. 
-        // We MUST define 'infopopup' in all lowercase for manual execution to work.
-        infopopup: function(args) {
+        // We MUST define 'welcometour' in all lowercase for manual execution to work.
+        welcometour: function(args) {
             // Hide the autorun command log to keep the terminal clean
             if (this.outputDiv) {
                 const historyLines = this.outputDiv.querySelectorAll('.history-line');
                 for (let i = historyLines.length - 1; i >= Math.max(0, historyLines.length - 3); i--) {
-                    if (historyLines[i].textContent.includes('[autorun]') && historyLines[i].textContent.includes('infoPopup')) {
+                    if (historyLines[i].textContent.includes('[autorun]') && historyLines[i].textContent.includes('welcomeTour')) {
                         historyLines[i].remove();
                         break;
                     }
                 }
             }
             
-            const existing = document.getElementById('steamWelcomeTourOverlay');
+            // Clean up old instances
+            const existing = document.getElementById('welcomeTourOverlay');
             if (existing) existing.remove();
 
-            // Create Steam-style dark backdrop with pointer-events: none so clicks pass through spotlight
+            // Create dark backdrop with pointer-events: none so clicks pass through spotlight
             const overlay = document.createElement('div');
-            overlay.id = 'steamWelcomeTourOverlay';
+            overlay.id = 'welcomeTourOverlay';
             overlay.style.cssText = `
                 position: fixed;
                 top: 0;
@@ -67,7 +70,7 @@ window.packagesRegistry['infoPopup'] = {
                 transition: background 0.35s cubic-bezier(0.16, 1, 0.3, 1);
             `;
 
-            // Spotlight box with dynamic color-shifting animation
+            // Spotlight box with dynamic color-shifting animations for spotlight and ALL borders
             const styleTag = document.createElement('style');
             styleTag.innerHTML = `
                 @keyframes spotlightGlow {
@@ -76,23 +79,48 @@ window.packagesRegistry['infoPopup'] = {
                     66% { border-color: #0088ff; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.78), 0 0 25px rgba(0, 136, 255, 0.6); }
                     100% { border-color: #00d2ff; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.78), 0 0 25px rgba(0, 210, 255, 0.6); }
                 }
+                @keyframes colorGlow {
+                    0% { border-color: #00d2ff; }
+                    33% { border-color: #00ff88; }
+                    66% { border-color: #0088ff; }
+                    100% { border-color: #00d2ff; }
+                }
                 .dynamic-spotlight {
                     animation: spotlightGlow 6s infinite ease-in-out;
                 }
+                /* Apply color shifting to ALL elements with this class */
+                .color-glow-border {
+                    animation: colorGlow 6s infinite ease-in-out !important;
+                }
                 #tourBodyContent strong {
-                    color: #00d2ff;
+                    animation: colorGlow 6s infinite ease-in-out;
+                    color: inherit; /* Let the animation control the color */
+                }
+                @keyframes textColorGlow {
+                    0% { color: #00d2ff; }
+                    33% { color: #00ff88; }
+                    66% { color: #0088ff; }
+                    100% { color: #00d2ff; }
+                }
+                .text-color-glow {
+                    animation: textColorGlow 6s infinite ease-in-out !important;
                 }
                 #tourCloseX:hover {
-                    color: #00d2ff !important;
+                    opacity: 0.7;
                 }
-                #tourPrevBtn:hover {
-                    background: rgba(255, 255, 255, 0.1);
+                #tourPrevBtn:hover, #tourSkipBtn:hover {
+                    background: rgba(255, 255, 255, 0.1) !important;
+                }
+                #tourNextBtn {
+                    animation: colorGlow 6s infinite ease-in-out;
+                    background: transparent;
+                    border: 1px solid transparent;
                 }
                 #tourNextBtn:hover {
-                    background: #00e5ff;
+                    background: rgba(255, 255, 255, 0.1) !important;
                     transform: scale(1.02);
                 }
-                #tourNextBtn, #tourPrevBtn {
+                #tourNextBtn, #tourPrevBtn, #tourSkipBtn {
                     transition: all 0.2s ease;
                 }
             `;
@@ -111,11 +139,13 @@ window.packagesRegistry['infoPopup'] = {
             overlay.appendChild(spotlight);
 
             const dialog = document.createElement('div');
+            dialog.className = 'color-glow-border';
             dialog.style.cssText = `
                 position: absolute;
                 background: var(--modal-bg, #1e1e1e);
                 color: var(--text-color, #ffffff);
-                border: 1px solid #00d2ff;
+                border: 1px solid #00d2ff; /* Initial state, animated by class */
+                border-bottom-width: 2px;
                 width: 420px;
                 padding: 24px;
                 border-radius: 6px;
@@ -130,13 +160,14 @@ window.packagesRegistry['infoPopup'] = {
             `;
 
             const header = document.createElement('div');
-            header.style.cssText = `display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--modal-border, #444444); padding-bottom: 10px;`;
+            header.className = 'color-glow-border';
+            header.style.cssText = `display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid; padding-bottom: 10px;`;
             header.innerHTML = `
                 <div>
-                    <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #00d2ff; font-weight: 700;">Welcome Tour · Step <span id="tourStepNum">1</span> of 5</div>
+                    <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;" class="text-color-glow">Welcome Tour · Step <span id="tourStepNum">1</span> of 5</div>
                     <div style="font-size: 16px; font-weight: 700; margin-top: 2px;" id="tourTitle">Hello!</div>
                 </div>
-                <button id="tourCloseX" style="background:transparent; border:none; color:var(--text-color,#fff); font-size:18px; cursor:pointer; padding: 4px 8px;">&times;</button>
+                <button id="tourCloseX" class="text-color-glow" style="background:transparent; border:none; font-size:18px; cursor:pointer; padding: 4px 8px;">&times;</button>
             `;
             dialog.appendChild(header);
 
@@ -146,10 +177,16 @@ window.packagesRegistry['infoPopup'] = {
             dialog.appendChild(bodyContent);
 
             const footer = document.createElement('div');
-            footer.style.cssText = `display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--modal-border, #444444); padding-top: 12px;`;
+            footer.className = 'color-glow-border';
+            footer.style.cssText = `display: flex; justify-content: space-between; align-items: center; border-top: 1px solid; padding-top: 12px;`;
+            
+            // Include the Skip button alongside Back and Next
             footer.innerHTML = `
-                <button id="tourPrevBtn" style="background: transparent; border: 1px solid var(--modal-border, #444444); color: var(--text-color, #ffffff); padding: 6px 14px; font-family: inherit; font-size: 12px; font-weight: 600; border-radius: 3px; cursor: pointer;">⬅ Back</button>
-                <button id="tourNextBtn" style="background: #00d2ff; color: #000000; border: none; padding: 6px 16px; font-family: inherit; font-size: 12px; font-weight: 700; border-radius: 3px; cursor: pointer;">Next Step ➔</button>
+                <button id="tourSkipBtn" class="color-glow-border" style="background: transparent; border: 1px solid; color: var(--text-color, #ffffff); padding: 6px 14px; font-family: inherit; font-size: 12px; font-weight: 600; border-radius: 3px; cursor: pointer;">Skip</button>
+                <div style="display: flex; gap: 8px;">
+                    <button id="tourPrevBtn" class="color-glow-border" style="background: transparent; border: 1px solid; color: var(--text-color, #ffffff); padding: 6px 14px; font-family: inherit; font-size: 12px; font-weight: 600; border-radius: 3px; cursor: pointer;">⬅ Back</button>
+                    <button id="tourNextBtn" class="color-glow-border text-color-glow" style="border: 1px solid; padding: 6px 16px; font-family: inherit; font-size: 12px; font-weight: 700; border-radius: 3px; cursor: pointer;">Next Step ➔</button>
+                </div>
             `;
             dialog.appendChild(footer);
             overlay.appendChild(dialog);
@@ -179,7 +216,7 @@ window.packagesRegistry['infoPopup'] = {
                 },
                 {
                     title: "4. Command Input",
-                    text: "<strong>Command input</strong>: This is where you type commands, run packages, and interact with the virtual file system. Try typing <strong>help</strong> to see available commands, or <strong>settings</strong> to open the settings window.",
+                    text: "<strong>Command input</strong>: This is where you type commands, run packages, and interact with the virtual file system. Try typing <strong class='text-color-glow'>help</strong> to see available commands, or <strong class='text-color-glow'>settings</strong> to open the settings window.",
                     getTarget: () => {
                         const activePrompt = document.querySelector('.terminal-instance.active-term .input-line .prompt') || document.querySelector('.input-line .prompt') || document.body;
                         return activePrompt.getBoundingClientRect();
@@ -187,7 +224,7 @@ window.packagesRegistry['infoPopup'] = {
                 },
                 {
                     title: "5. Have Fun!",
-                    text: "You're all set up. <strong>Have fun!</strong> Explore commands, install packages, and enjoy building things. You can always run <strong>infoPopup</strong> again to retake this tour.",
+                    text: "You're all set up. <strong>Have fun!</strong> Explore commands, install packages, and enjoy building things. You can always run <strong class='text-color-glow'>welcomeTour</strong> again to retake this tour.",
                     getTarget: () => ({ top: window.innerHeight / 2, left: window.innerWidth / 2, width: 0, height: 0 })
                 }
             ];
@@ -201,8 +238,11 @@ window.packagesRegistry['infoPopup'] = {
 
                 const prevBtn = document.getElementById('tourPrevBtn');
                 const nextBtn = document.getElementById('tourNextBtn');
+                const skipBtn = document.getElementById('tourSkipBtn');
 
+                // Toggle visibility based on step
                 prevBtn.style.visibility = currentStep === 0 ? 'hidden' : 'visible';
+                skipBtn.style.visibility = currentStep === steps.length - 1 ? 'hidden' : 'visible';
                 nextBtn.innerText = currentStep === steps.length - 1 ? "Start Exploring ➔" : "Next Step ➔";
 
                 requestAnimationFrame(() => {
@@ -258,14 +298,15 @@ window.packagesRegistry['infoPopup'] = {
                     setTimeout(() => activeTerm.focus(), 50);
                 }
                 
-                // Safe check incase context changed
+                // Safe check in case context changed
                 if (typeof this.print === 'function') {
-                    this.print("Steam-style welcome tour completed successfully.");
+                    this.print("Welcome Tour completed");
                     this.scrollToBottom();
                 }
             };
 
             const keyHandler = (e) => {
+                // Allows the user to exit using Escape key
                 if (e.key === 'Escape') {
                     closeTour();
                 } else if (e.key === 'Enter' || e.key === ' ') {
@@ -284,12 +325,14 @@ window.packagesRegistry['infoPopup'] = {
                 }
             };
             
+            // Listeners setup
             document.addEventListener('keydown', keyHandler);
             window._tourKeyHandler = keyHandler;
             window._tourResizeHandler = updateTourStep;
             window.addEventListener('resize', window._tourResizeHandler);
 
             document.getElementById('tourCloseX').addEventListener('click', closeTour);
+            document.getElementById('tourSkipBtn').addEventListener('click', closeTour);
             document.getElementById('tourPrevBtn').addEventListener('click', () => {
                 if (currentStep > 0) { currentStep--; updateTourStep(); }
             });
@@ -297,17 +340,18 @@ window.packagesRegistry['infoPopup'] = {
                 if (currentStep < steps.length - 1) { currentStep++; updateTourStep(); } else { closeTour(); }
             });
             
+            // Start the tour
             updateTourStep();
         },
 
         // Alias for camelCase references if they are explicitly typed via internal terminal calls
-        infoPopup: function(args) {
-            this.commands.infopopup.call(this, args);
+        welcomeTour: function(args) {
+            this.commands.welcometour.call(this, args);
         },
         
         // System handler
         run: function(args) {
-            this.commands.infopopup.call(this, args);
+            this.commands.welcometour.call(this, args);
         }
     }
 };
@@ -319,8 +363,8 @@ if (typeof tabs !== 'undefined' && tabs.length > 0) {
         if (tab && tab.terminals) {
             tab.terminals.forEach(term => {
                 if (term && term.commands) {
-                    term.commands.infopopup = window.packagesRegistry['infoPopup'].commands.infopopup.bind(term);
-                    term.commands.infoPopup = window.packagesRegistry['infoPopup'].commands.infoPopup.bind(term);
+                    term.commands.welcometour = window.packagesRegistry['welcomeTour'].commands.welcometour.bind(term);
+                    term.commands.welcomeTour = window.packagesRegistry['welcomeTour'].commands.welcomeTour.bind(term);
                 }
             });
         }
@@ -329,13 +373,13 @@ if (typeof tabs !== 'undefined' && tabs.length > 0) {
 
 // Register command info with proper case sensitivity
 if (typeof commandInfo !== 'undefined') {
-    ['infoPopup', 'infopopup'].forEach(cmdName => {
+    ['welcomeTour', 'welcometour'].forEach(cmdName => {
         if (!commandInfo.hasOwnProperty(cmdName)) {
             Object.defineProperty(commandInfo, cmdName, {
                 get: function() {
                     const lang = window.termSettings?.language || 'en';
-                    const pkg = window.packagesRegistry['infoPopup'];
-                    return pkg?.commandInfo?.[lang] || pkg?.commandInfo?.en || "what is this command?\ninfoPopup\n\nwhat is it used for?\nLaunches Steam-style welcome tour.";
+                    const pkg = window.packagesRegistry['welcomeTour'];
+                    return pkg?.commandInfo?.[lang] || pkg?.commandInfo?.en || "what is this command?\nwelcomeTour\n\nwhat is it used for?\nLaunches Welcome Tour.";
                 },
                 configurable: true
             });
@@ -347,7 +391,7 @@ function autoStartTour() {
     const hasSeenTour = localStorage.getItem('sTerminal_tourSeen');
     
     if (hasSeenTour) {
-        console.log('Tour already seen - not auto-starting (run "infoPopup" manually to retake the tour)');
+        console.log('Tour already seen - not auto-starting (run "welcomeTour" manually to retake the tour)');
         return;
     }
 
@@ -358,15 +402,15 @@ function autoStartTour() {
                 const firstTerm = firstTab.terminals[0];
                 
                 // Extra check in case the force-inject missed a loading race condition
-                if (!firstTerm.commands.infopopup && window.packagesRegistry['infoPopup']) {
-                     firstTerm.commands.infopopup = window.packagesRegistry['infoPopup'].commands.infopopup.bind(firstTerm);
+                if (!firstTerm.commands.welcometour && window.packagesRegistry['welcomeTour']) {
+                     firstTerm.commands.welcometour = window.packagesRegistry['welcomeTour'].commands.welcometour.bind(firstTerm);
                 }
 
-                if (firstTerm && firstTerm.commands && typeof firstTerm.commands.infopopup === 'function') {
+                if (firstTerm && firstTerm.commands && typeof firstTerm.commands.welcometour === 'function') {
                     console.log('First-time visit detected - auto-starting welcome tour...');
                     localStorage.setItem('sTerminal_tourSeen', 'true');
                     setTimeout(() => {
-                        firstTerm.commands.infopopup.call(firstTerm, []);
+                        firstTerm.commands.welcometour.call(firstTerm, []);
                     }, 300);
                     return true;
                 }
@@ -394,5 +438,5 @@ function autoStartTour() {
 
 autoStartTour();
 
-console.log('✅ infoPopup package loaded successfully!');
-console.log('📖 Type "infoPopup" in the terminal to launch the welcome tour.');
+console.log('✅ welcomeTour package loaded successfully!');
+console.log('📖 Type "welcomeTour" in the terminal to launch the welcome tour.');
