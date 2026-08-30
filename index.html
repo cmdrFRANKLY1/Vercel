@@ -39,6 +39,22 @@
             flex-direction: column;
         }
 
+        #boot-screen {
+            position: fixed;
+            inset: 0;
+            background-color: #000000;
+            color: #d3d7cf;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            padding: 15px;
+            overflow-y: auto;
+            z-index: 9999999;
+            display: flex;
+            flex-direction: column;
+            white-space: pre-wrap;
+            pointer-events: none;
+        }
+
         #infobar {
             height: var(--infobar-size, 26px);
             width: 100vw;
@@ -282,6 +298,8 @@
     </style>
 </head>
 <body>
+    <div id="boot-screen"></div>
+
     <div id="os-tooltip"></div>
     <div id="os-modal-overlay"><div id="os-modal"><div id="os-modal-text"></div><div class="os-modal-buttons"><button id="os-modal-cancel" class="os-btn" data-en="cancel">Cancel</button><button id="os-modal-confirm" class="os-btn" data-en="confirm">Confirm</button></div></div></div>
     
@@ -334,6 +352,27 @@
 
     <script src="languages/langTerminal.js"></script>
     <script>
+        // Boot logger utility
+        const delay = (ms) => new Promise(r => setTimeout(r, ms));
+        
+        async function bootLog(msg, status = "OK", type = "ok") {
+            const bootScreen = document.getElementById('boot-screen');
+            if (!bootScreen) return;
+            const line = document.createElement('div');
+            
+            let color = "#32cd32"; // OK - Green
+            if (type === "info") color = "#00bfff"; // INFO - Blue
+            else if (type === "warn") color = "#ffd700"; // WARN - Yellow
+            else if (type === "err") color = "#ff4500"; // ERR - Red
+            
+            line.innerHTML = `[ <span style="color: ${color}; font-weight: bold;">${status.padEnd(4, ' ').padStart(4, ' ')}</span> ] ${msg}`;
+            bootScreen.appendChild(line);
+            bootScreen.scrollTop = bootScreen.scrollHeight;
+            
+            // Random delay to simulate Linux boot sequence
+            await delay(15 + Math.random() * 35);
+        }
+
         window.Translations = {};
 
         function t(path, ...args) {
@@ -581,7 +620,10 @@
         }
 
         async function loadDynamicModules() {
+            await bootLog("Initializing system variables...", "INFO", "info");
+            
             try {
+                await bootLog("Loading languages/langTerminal.js...");
                 const termJson = window.langTerminal;
                 if (termJson) {
                     const langCodes = Object.keys(termJson.user || {});
@@ -607,8 +649,10 @@
                             }
                         }
                     });
+                    await bootLog("Translations compiled successfully.", " OK ", "ok");
                 }
             } catch (e) {
+                await bootLog("Could not load languages/langTerminal.js", "WARN", "warn");
                 console.warn('Could not load languages/langTerminal.js:', e);
             }
 
@@ -671,20 +715,26 @@
                 autorun: []
             };
 
+            await bootLog("Fetching registry.json from server...", "INFO", "info");
             try {
                 const response = await fetch('registry.json');
                 if (response.ok) {
                     const regData = await response.json();
                     registry = { ...registry, ...regData };
+                    await bootLog(`Registry loaded. Systems: ${registry.systems?.length||0}, Packages: ${registry.official?.length||0}`);
+                } else {
+                    await bootLog(`Failed to fetch registry.json (Status: ${response.status})`, "WARN", "warn");
                 }
             } catch (e) {
+                await bootLog(`Registry fetch error: ${e.message}`, "ERR", "err");
                 console.warn('Could not fetch registry.json:', e);
             }
 
             window.systemRegistryConfig = registry;
             window.guiRegistry = registry.gui || [];
 
-            const loadScript = async (src) => {
+            const loadScript = async (src, quiet = false) => {
+                if (!quiet) await bootLog(`Fetching ${src}...`);
                 try {
                     const script = document.createElement('script');
                     script.src = src;
@@ -693,20 +743,27 @@
                         script.onerror = reject;
                         document.head.appendChild(script);
                     });
+                    if (!quiet) await bootLog(`Loaded ${src}`);
                     return true;
                 } catch (e) {
+                    if (!quiet) await bootLog(`Failed to load ${src}`, "FAIL", "err");
                     return false;
                 }
             };
 
             const tryLoadPackage = async (pkg, candidates) => {
                 for (const src of candidates) {
-                    if (await loadScript(src)) return true;
+                    if (await loadScript(src, true)) {
+                        await bootLog(`Installed package module [${pkg}]`);
+                        return true;
+                    }
                 }
+                await bootLog(`Module not found: [${pkg}]`, "WARN", "warn");
                 return false;
             };
 
-            await loadScript('colors/colorsTerminal.js');
+            await bootLog("Loading core color profiles...");
+            await loadScript('colors/colorsTerminal.js', true);
 
             for (const name of (registry.colors || [])) {
                 if (name.includes('colorsTerminal')) continue;
@@ -720,6 +777,7 @@
             updateColorSchemeMenuUI();
             updateFontMenuUI();
 
+            await bootLog("Installing system profiles...");
             for (const sys of (registry.systems || [])) {
                 await tryLoadPackage(sys, [
                     `packages/systems/system${sys}.js`,
@@ -729,6 +787,7 @@
             }
             updateSystemMenuUI();
 
+            await bootLog("Scanning GUI environments...");
             for (const g of (registry.gui || [])) {
                 const gName = g.toLowerCase();
                 await tryLoadPackage(gName, [
@@ -738,6 +797,7 @@
                 ]);
             }
 
+            await bootLog("Verifying core dependencies...");
             for (const pkg of (registry.core || registry.corePackages || [])) {
                 await tryLoadPackage(pkg, [
                     `packages/core/${pkg}.js`,
@@ -746,6 +806,7 @@
                 ]);
             }
 
+            await bootLog("Synchronizing official package lists...");
             for (const pkg of (registry.official || registry.packages || [])) {
                 await tryLoadPackage(pkg, [
                     `packages/official/${pkg}.js`,
@@ -754,6 +815,7 @@
                 ]);
             }
 
+            await bootLog("Probing custom extensions...");
             for (const pkg of (registry.custom || [])) {
                 const loaded = await tryLoadPackage(pkg, [
                     `packages/custom/${pkg}.js`,
@@ -764,6 +826,7 @@
                 if (!loaded) console.warn(`Custom package not found: ${pkg}`);
             }
 
+            await bootLog("Validating wrapper application mappings...");
             for (const pkg of (registry.wrapper || [])) {
                 let foundType = null;
                 let foundSrc = null;
@@ -777,7 +840,7 @@
 
                 for (const candidate of wrapperCandidates) {
                     if (candidate.type === 'js') {
-                        if (await loadScript(candidate.src)) {
+                        if (await loadScript(candidate.src, true)) {
                             foundSrc = candidate.src;
                             foundType = 'js';
                             break;
@@ -795,12 +858,15 @@
                 }
 
                 if (!foundSrc) {
+                    await bootLog(`Wrapper reference invalid: ${pkg}`, "WARN", "warn");
                     console.warn(`Wrapper package not found: ${pkg}`);
                     continue;
                 }
+                await bootLog(`Mapped wrapper [${pkg}] -> ${foundSrc}`);
                 window.wrapperRegistry[pkg] = { type: foundType, src: foundSrc };
             }
 
+            await bootLog("Injecting package translations...");
             for (const [pkgKey, pkgObj] of Object.entries(window.packagesRegistry || {})) {
                 if (pkgObj.translations) {
                     for (const [langCode, transObj] of Object.entries(pkgObj.translations)) {
@@ -812,67 +878,70 @@
                 }
             }
 
+            await bootLog("Compiling terminal interface definitions...");
             refreshTerminalCommands();
             applySettings();
             refreshAllLanguageElements();
 
+            await bootLog("Processing autorun queues...");
             await loadAutorunScripts(registry.autorun || []);
+            
+            await bootLog("System configuration complete.", " OK ", "ok");
+            await bootLog("Starting user shell...", "INFO", "info");
         }
 
         async function loadAutorunScripts(autorunList) {
             if (!autorunList || autorunList.length === 0) {
-                console.log('No autorun scripts specified in registry');
+                await bootLog('No autorun scripts specified in registry', "INFO", "info");
                 return;
             }
 
-            console.log(`Loading and executing ${autorunList.length} autorun script(s)...`);
+            await bootLog(`Executing ${autorunList.length} autorun script(s)...`);
 
             for (const scriptName of autorunList) {
                 const scriptSrc = `packages/autorun/${scriptName}.js`;
                 try {
-                    console.log(`Loading autorun script: ${scriptSrc}`);
+                    await bootLog(`Triggering autorun: ${scriptSrc}...`);
                     const script = document.createElement('script');
                     script.src = scriptSrc;
                     
-                    // Await script load completion
                     const success = await new Promise((resolve) => {
                         script.onload = () => {
-                            console.log(`Autorun script loaded successfully: ${scriptName}`);
                             resolve(true);
                         };
                         script.onerror = () => {
-                            console.warn(`Failed to load autorun script: ${scriptName} (${scriptSrc})`);
                             resolve(false);
                         };
                         document.head.appendChild(script);
                     });
 
-                    // Auto-execute if script loaded and a terminal context is available
-                    if (success && typeof activeTab !== 'undefined' && activeTab?.activeTerminal) {
-                        const term = activeTab.activeTerminal;
-                        const isExecutable = window.wrapperRegistry[scriptName] || window.packagesRegistry[scriptName] || term.commands[scriptName];
-                        
-                        if (isExecutable) {
-                            if (window.packagesRegistry[scriptName]) {
-                                term.installedPackages.add(scriptName);
-                                refreshTerminalCommands();
+                    if (success) {
+                        await bootLog(`Autorun success: ${scriptName}`);
+                        // Auto-execute if script loaded and a terminal context is available
+                        if (typeof activeTab !== 'undefined' && activeTab?.activeTerminal) {
+                            const term = activeTab.activeTerminal;
+                            const isExecutable = window.wrapperRegistry[scriptName] || window.packagesRegistry[scriptName] || term.commands[scriptName];
+                            
+                            if (isExecutable) {
+                                if (window.packagesRegistry[scriptName]) {
+                                    term.installedPackages.add(scriptName);
+                                    refreshTerminalCommands();
+                                }
+                                
+                                const promptHTML = term.getPromptHTML();
+                                term.printHTML(`<div class="history-line"><span class="prompt">${promptHTML}</span> <span style="color:var(--hint-color); font-style:italic;">[autorun]</span> <span class="os-item" data-command="${scriptName}">${scriptName}</span></div>`);
+                                
+                                await term.executeCommand(scriptName);
+                                term.scrollToBottom();
                             }
-                            
-                            // Visually log the autorun execution to the terminal
-                            const promptHTML = term.getPromptHTML();
-                            term.printHTML(`<div class="history-line"><span class="prompt">${promptHTML}</span> <span style="color:var(--hint-color); font-style:italic;">[autorun]</span> <span class="os-item" data-command="${scriptName}">${scriptName}</span></div>`);
-                            
-                            // Trigger the command execution
-                            await term.executeCommand(scriptName);
-                            term.scrollToBottom();
                         }
+                    } else {
+                        await bootLog(`Autorun failure: ${scriptName}`, "WARN", "warn");
                     }
                 } catch (e) {
-                    console.warn(`Error loading/executing autorun script ${scriptName}:`, e);
+                    await bootLog(`Error in autorun ${scriptName}: ${e.message}`, "ERR", "err");
                 }
             }
-
-            console.log('All autorun scripts processed');
         }
 
         function refreshTerminalCommands() {
@@ -2483,9 +2552,28 @@
         }, { passive: false, capture: true });
 
         window.onload = async () => {
+            // We initiate behind the scenes while boot screen is on top.
             setupMenu();
-            createTab();
+            createTab(); 
+            
+            // Perform loading sequence
             await loadDynamicModules();
+            
+            // Artificial completion pause
+            await bootLog("Starting graphical workspace...", " OK ", "ok");
+            await delay(400); 
+
+            // Smooth transition away from the boot screen
+            const bootScreen = document.getElementById('boot-screen');
+            if (bootScreen) {
+                bootScreen.style.transition = 'opacity 0.6s ease';
+                bootScreen.style.opacity = '0';
+                setTimeout(() => {
+                    bootScreen.style.display = 'none';
+                    // Re-focus the active terminal appropriately
+                    if(activeTab && activeTab.activeTerminal) activeTab.activeTerminal.cmdInput.focus();
+                }, 600);
+            }
         };
     </script>
 </body>

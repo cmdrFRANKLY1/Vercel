@@ -290,7 +290,8 @@ window.packagesRegistry['welcomeTour'] = {
                     window._tourResizeHandler = null;
                 }
                 if (window._tourKeyHandler) {
-                    document.removeEventListener('keydown', window._tourKeyHandler);
+                    // Remove using the exact same capture flag
+                    document.removeEventListener('keydown', window._tourKeyHandler, { capture: true });
                     window._tourKeyHandler = null;
                 }
                 const activeTerm = document.querySelector('.terminal-instance.active-term .cmd-input');
@@ -306,18 +307,26 @@ window.packagesRegistry['welcomeTour'] = {
             };
 
             const keyHandler = (e) => {
-                // Allows the user to exit using Escape key
+                // 1. ALL inputs are intercepted to prevent underlying UI from reacting
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+
+                // 2. "Escape" ends the welcome tour
                 if (e.key === 'Escape') {
                     closeTour();
-                } else if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
+                } 
+                // 3. "Enter" and "Space" move welcome tour forward
+                else if (e.key === 'Enter' || e.key === ' ') {
                     if (currentStep < steps.length - 1) {
                         currentStep++;
                         updateTourStep();
                     } else {
                         closeTour();
                     }
-                } else if (e.key === 'ArrowLeft' || e.key === 'Backspace') {
+                } 
+                // 4. "Backspace" moves welcome tour backward
+                else if (e.key === 'Backspace') {
                     if (currentStep > 0) {
                         currentStep--;
                         updateTourStep();
@@ -325,8 +334,8 @@ window.packagesRegistry['welcomeTour'] = {
                 }
             };
             
-            // Listeners setup
-            document.addEventListener('keydown', keyHandler);
+            // Listeners setup - Using { capture: true } guarantees this listener runs before others
+            document.addEventListener('keydown', keyHandler, { capture: true });
             window._tourKeyHandler = keyHandler;
             window._tourResizeHandler = updateTourStep;
             window.addEventListener('resize', window._tourResizeHandler);

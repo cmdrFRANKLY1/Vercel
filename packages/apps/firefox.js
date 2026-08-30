@@ -15,121 +15,33 @@
         constructor() {
             this.filters = {
                 domains: [
-                    'doubleclick.net',
-                    'googleadservices.com',
-                    'googlesyndication.com',
-                    'adservice.google.com',
-                    'pagead2.googlesyndication.com',
-                    'ads.google.com',
-                    'google-analytics.com',
-                    'googletagmanager.com',
-                    'facebook.com/tr',
-                    'connect.facebook.net',
-                    'platform.twitter.com/widgets',
-                    'syndication.twitter.com',
-                    'ads.twitter.com',
-                    't.co',
-                    'amazon-adsystem.com',
-                    'ads.amazon.com',
-                    'aax.amazon-adsystem.com',
-                    'adnxs.com',
-                    'adzerk.net',
-                    'scorecardresearch.com',
-                    'outbrain.com',
-                    'taboola.com',
-                    'revcontent.com',
-                    'popads.net',
-                    'exoclick.com',
-                    'adroll.com',
-                    'adform.net',
-                    'criteo.com',
-                    'casalemedia.com',
-                    'adap.tv',
-                    'adsrvr.org',
-                    'advertising.com',
-                    'atdmt.com',
-                    'doubleverify.com',
-                    'fastclick.net',
-                    'flashtalking.com',
-                    'googleadservices.com',
-                    'innovid.com',
-                    'invitemedia.com',
-                    'moatads.com',
-                    'openx.net',
-                    'pubmatic.com',
-                    'rhythmone.com',
-                    'rubiconproject.com',
-                    'sharethrough.com',
-                    'sovrn.com',
-                    'spotx.tv',
-                    'springserve.com',
-                    'stickyadstv.com',
-                    'tremorhub.com',
-                    'undertone.com',
-                    'videoamp.com',
-                    'yieldmo.com',
-                    'yldbt.com',
-                    'zeotap.com'
+                    'doubleclick.net', 'googleadservices.com', 'googlesyndication.com', 'adservice.google.com',
+                    'pagead2.googlesyndication.com', 'ads.google.com', 'google-analytics.com', 'googletagmanager.com',
+                    'facebook.com/tr', 'connect.facebook.net', 'platform.twitter.com/widgets', 'syndication.twitter.com',
+                    'ads.twitter.com', 't.co', 'amazon-adsystem.com', 'ads.amazon.com', 'aax.amazon-adsystem.com',
+                    'adnxs.com', 'adzerk.net', 'scorecardresearch.com', 'outbrain.com', 'taboola.com', 'revcontent.com',
+                    'popads.net', 'exoclick.com', 'adroll.com', 'adform.net', 'criteo.com', 'casalemedia.com', 'adap.tv',
+                    'adsrvr.org', 'advertising.com', 'atdmt.com', 'doubleverify.com', 'fastclick.net', 'flashtalking.com',
+                    'innovid.com', 'invitemedia.com', 'moatads.com', 'openx.net', 'pubmatic.com', 'rhythmone.com',
+                    'rubiconproject.com', 'sharethrough.com', 'sovrn.com', 'spotx.tv', 'springserve.com', 'stickyadstv.com',
+                    'tremorhub.com', 'undertone.com', 'videoamp.com', 'yieldmo.com', 'yldbt.com', 'zeotap.com'
                 ],
                 patterns: [
-                    /\/ad[s]?[0-9]*\//i,
-                    /\/banner[s]?[0-9]*\//i,
-                    /\/popup[s]?[0-9]*\//i,
-                    /\/tracking\/?/i,
-                    /\/analytics\/?/i,
-                    /\/metrics\/?/i,
-                    /\/telemetry\/?/i,
-                    /\/beacon\/?/i,
-                    /\/pixel\/?/i,
-                    /\/impression\/?/i,
-                    /\/click\/?/i,
-                    /\/conversion\/?/i,
-                    /\/retargeting\/?/i,
-                    /\/remarketing\/?/i,
-                    /\/sponsored\/?/i,
-                    /\/promoted\/?/i,
-                    /\/adserver\/?/i,
-                    /\/admanager\/?/i,
-                    /\/adservice\/?/i,
-                    /\/adsense\/?/i,
-                    /\/adwords\/?/i
+                    /\/ad[s]?[0-9]*\//i, /\/banner[s]?[0-9]*\//i, /\/popup[s]?[0-9]*\//i, /\/tracking\/?/i,
+                    /\/analytics\/?/i, /\/metrics\/?/i, /\/telemetry\/?/i, /\/beacon\/?/i, /\/pixel\/?/i,
+                    /\/impression\/?/i, /\/click\/?/i, /\/conversion\/?/i, /\/retargeting\/?/i, /\/remarketing\/?/i,
+                    /\/sponsored\/?/i, /\/promoted\/?/i, /\/adserver\/?/i, /\/admanager\/?/i, /\/adservice\/?/i,
+                    /\/adsense\/?/i, /\/adwords\/?/i
                 ],
                 selectors: [
-                    '[id*="ad" i]',
-                    '[id*="banner" i]',
-                    '[id*="sponsored" i]',
-                    '[id*="promoted" i]',
-                    '[class*="ad" i]',
-                    '[class*="banner" i]',
-                    '[class*="sponsored" i]',
-                    '[class*="promoted" i]',
-                    '#player-ads',
-                    '#masthead-ad',
-                    '#feed-pyv-container',
-                    '#ytd-promoted-video-renderer',
-                    '.ytd-promoted-sparkles-text-search-renderer',
-                    '.ytd-display-ad-renderer',
-                    '#tads',
-                    '#taw',
-                    '#bottomads',
-                    '.ads-ad',
-                    '.ads-panel',
-                    '.adsbygoogle',
-                    '[data-testid="ad-preview"]',
-                    '[data-testid="fb-ads-ad"]',
-                    '.sponsored-post',
-                    '[data-testid="placementTracking"]',
-                    '.promoted-tweet',
-                    '.ad-container',
-                    '.ad-wrapper',
-                    '.ad-box',
-                    '.ad-frame',
-                    '.ad-slot',
-                    '.ad-unit',
-                    '.advertisement',
-                    '.advertising',
-                    '.sponsored-content',
-                    '.promoted-content'
+                    '[id*="ad" i]', '[id*="banner" i]', '[id*="sponsored" i]', '[id*="promoted" i]',
+                    '[class*="ad" i]', '[class*="banner" i]', '[class*="sponsored" i]', '[class*="promoted" i]',
+                    '#player-ads', '#masthead-ad', '#feed-pyv-container', '#ytd-promoted-video-renderer',
+                    '.ytd-promoted-sparkles-text-search-renderer', '.ytd-display-ad-renderer', '#tads', '#taw',
+                    '#bottomads', '.ads-ad', '.ads-panel', '.adsbygoogle', '[data-testid="ad-preview"]',
+                    '[data-testid="fb-ads-ad"]', '.sponsored-post', '[data-testid="placementTracking"]',
+                    '.promoted-tweet', '.ad-container', '.ad-wrapper', '.ad-box', '.ad-frame', '.ad-slot',
+                    '.ad-unit', '.advertisement', '.advertising', '.sponsored-content', '.promoted-content'
                 ]
             };
 
@@ -467,7 +379,7 @@
                 if (typeof value === 'string') {
                     // Leaf node - actual bookmark
                     html += `
-                        <button class="dropdown-item" onclick="window.parent.navigateTo('${value}')" style="
+                        <button class="dropdown-item" onclick="window.navigateTo('${value}')" style="
                             background: transparent;
                             border: none;
                             color: ${colors.text};
@@ -490,7 +402,7 @@
                     const submenuId = `submenu-${key.replace(/\s+/g, '-')}-${depth}`;
                     html += `
                         <div class="menu-group" style="position:relative; width:100%;">
-                            <button class="dropdown-item" onclick="toggleSubmenu('${submenuId}')" style="
+                            <button class="dropdown-item" onclick="window.toggleSubmenu('${submenuId}')" style="
                                 background: transparent;
                                 border: none;
                                 color: ${colors.text};
@@ -575,7 +487,7 @@
                         min-width: 180px;
                         padding: 4px;
                     ">
-                        <button class="dropdown-item" onclick="window.parent.navigateTo('https://www.google.com')" style="
+                        <button class="dropdown-item" onclick="window.navigateTo('https://www.google.com')" style="
                             background: transparent;
                             border: none;
                             color: ${colors.text};
@@ -591,7 +503,7 @@
                            onmouseout="this.style.background='transparent'; this.style.color='${colors.text}'">
                             <i class="fa-solid fa-window-restore" style="width:16px;"></i> New Window
                         </button>
-                        <button class="dropdown-item" onclick="window.parent.reloadPage()" style="
+                        <button class="dropdown-item" onclick="window.reloadPage()" style="
                             background: transparent;
                             border: none;
                             color: ${colors.text};
@@ -607,7 +519,7 @@
                            onmouseout="this.style.background='transparent'; this.style.color='${colors.text}'">
                             <i class="fa-solid fa-rotate" style="width:16px;"></i> Reload
                         </button>
-                        <button class="dropdown-item" onclick="window.parent.navigateTo('https://www.google.com')" style="
+                        <button class="dropdown-item" onclick="window.navigateTo('https://www.google.com')" style="
                             background: transparent;
                             border: none;
                             color: ${colors.text};
@@ -624,7 +536,7 @@
                             <i class="fa-solid fa-home" style="width:16px;"></i> Home
                         </button>
                         <div style="height:1px; background:${colors.windowBorder}; margin:3px 0;"></div>
-                        <button class="dropdown-item" onclick="window.parent.closeApp()" style="
+                        <button class="dropdown-item" onclick="window.closeApp()" style="
                             background: transparent;
                             border: none;
                             color: ${colors.text};
@@ -669,7 +581,7 @@
                         min-width: 180px;
                         padding: 4px;
                     ">
-                        <button class="dropdown-item" onclick="window.parent.toggleFullscreen()" style="
+                        <button class="dropdown-item" onclick="window.toggleFullscreen()" style="
                             background: transparent;
                             border: none;
                             color: ${colors.text};
@@ -685,7 +597,7 @@
                            onmouseout="this.style.background='transparent'; this.style.color='${colors.text}'">
                             <i class="fa-solid fa-expand" style="width:16px;"></i> Fullscreen
                         </button>
-                        <button class="dropdown-item" onclick="window.parent.zoomIn()" style="
+                        <button class="dropdown-item" onclick="window.zoomIn()" style="
                             background: transparent;
                             border: none;
                             color: ${colors.text};
@@ -701,7 +613,7 @@
                            onmouseout="this.style.background='transparent'; this.style.color='${colors.text}'">
                             <i class="fa-solid fa-plus" style="width:16px;"></i> Zoom In
                         </button>
-                        <button class="dropdown-item" onclick="window.parent.zoomOut()" style="
+                        <button class="dropdown-item" onclick="window.zoomOut()" style="
                             background: transparent;
                             border: none;
                             color: ${colors.text};
@@ -717,7 +629,7 @@
                            onmouseout="this.style.background='transparent'; this.style.color='${colors.text}'">
                             <i class="fa-solid fa-minus" style="width:16px;"></i> Zoom Out
                         </button>
-                        <button class="dropdown-item" onclick="window.parent.zoomReset()" style="
+                        <button class="dropdown-item" onclick="window.zoomReset()" style="
                             background: transparent;
                             border: none;
                             color: ${colors.text};
@@ -734,7 +646,7 @@
                             <i class="fa-solid fa-rotate-right" style="width:16px;"></i> Reset Zoom
                         </button>
                         <div style="height:1px; background:${colors.windowBorder}; margin:3px 0;"></div>
-                        <button class="dropdown-item" onclick="window.parent.toggleAdBlock()" style="
+                        <button class="dropdown-item" onclick="window.toggleAdBlock()" style="
                             background: transparent;
                             border: none;
                             color: ${colors.text};
@@ -802,7 +714,7 @@
                 backdrop-filter: blur(12px);
                 -webkit-backdrop-filter: blur(12px);
             ">
-                <button onclick="window.parent.goBack()" id="back-btn" style="
+                <button onclick="window.goBack()" id="back-btn" style="
                     background: transparent;
                     border: none;
                     color: ${colors.text};
@@ -814,7 +726,7 @@
                    onmouseout="this.style.background='transparent'; this.style.opacity='0.6'">
                     <i class="fa-solid fa-arrow-left"></i>
                 </button>
-                <button onclick="window.parent.goForward()" id="forward-btn" style="
+                <button onclick="window.goForward()" id="forward-btn" style="
                     background: transparent;
                     border: none;
                     color: ${colors.text};
@@ -826,7 +738,7 @@
                    onmouseout="this.style.background='transparent'; this.style.opacity='0.6'">
                     <i class="fa-solid fa-arrow-right"></i>
                 </button>
-                <button onclick="window.parent.reloadPage()" style="
+                <button onclick="window.reloadPage()" style="
                     background: transparent;
                     border: none;
                     color: ${colors.text};
@@ -837,7 +749,7 @@
                    onmouseout="this.style.background='transparent'">
                     <i class="fa-solid fa-rotate"></i>
                 </button>
-                <button onclick="window.parent.navigateTo('https://www.google.com')" style="
+                <button onclick="window.navigateTo('https://www.google.com')" style="
                     background: transparent;
                     border: none;
                     color: ${colors.text};
@@ -874,10 +786,10 @@
                         "
                         onfocus="this.style.borderColor='${colors.accent}'; this.style.boxShadow='0 0 0 2px ${colors.accent}33'"
                         onblur="this.style.borderColor='${colors.windowBorder}'; this.style.boxShadow='none'"
-                        onkeydown="if(event.key==='Enter') window.parent.navigate()">
+                        onkeydown="if(event.key==='Enter') window.navigate()">
                 </div>
                 
-                <button onclick="window.parent.navigate()" style="
+                <button onclick="window.navigate()" style="
                     background: ${colors.accent};
                     border: none;
                     border-radius: 20px;
@@ -892,7 +804,7 @@
                     <i class="fa-solid fa-arrow-right"></i>
                 </button>
                 
-                <button onclick="window.parent.showAddBookmarkDialog()" style="
+                <button onclick="window.showAddBookmarkDialog()" style="
                     background: transparent;
                     border: none;
                     color: ${colors.text};
@@ -1004,7 +916,7 @@
             // Add separator and add bookmark button
             const addButton = `
                 <div style="height:1px; background:${colors.windowBorder}; margin:3px 0;"></div>
-                <button class="dropdown-item" onclick="window.parent.showAddBookmarkDialog()" style="
+                <button class="dropdown-item" onclick="window.showAddBookmarkDialog()" style="
                     background: transparent;
                     border: none;
                     color: ${colors.text};
@@ -1064,7 +976,7 @@
             adBlockEnabled = !adBlockEnabled;
             updateAdStats();
             if (iframe.src && iframe.src !== 'about:blank') {
-                reloadPage();
+                window.reloadPage();
             }
         };
 
@@ -1081,7 +993,7 @@
             }
         };
 
-        // Close app function
+        // Close app function (Calls parent's closeApp to close the iframe wrapper)
         window.closeApp = function() {
             const winId = window.frameElement ? window.frameElement.id : null;
             if (winId && window.parent && window.parent.closeApp) {
@@ -1102,7 +1014,7 @@
                 }
             }
             
-            navigateTo(url);
+            window.navigateTo(url);
         };
 
         window.navigateTo = function(url) {
@@ -1115,6 +1027,9 @@
             if (adBlockEnabled && adBlocker.shouldBlockUrl(url)) {
                 statusText.textContent = '⛔ Ad blocked!';
                 loadingIndicator.style.display = 'none';
+                
+                // Note: The inner iframe's parent is the app iframe, 
+                // so window.parent.navigateTo inside blockedHtml correctly calls the app iframe's navigateTo.
                 const blockedHtml = `
                     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#1a1b1e;color:#eff0f1;font-family:sans-serif;padding:20px;">
                         <div style="font-size:64px;margin-bottom:20px;">🛡️</div>
@@ -1134,6 +1049,8 @@
                 return;
             }
             
+            // Clear srcdoc if it was previously set
+            iframe.removeAttribute('srcdoc');
             iframe.src = url;
             urlInput.value = url;
             loadingIndicator.style.display = 'block';
@@ -1181,6 +1098,7 @@
                     }
                 }
             } catch(e) {
+                // Cross origin frame - cannot access contentWindow.location
                 statusText.textContent = 'Loaded';
             }
         });
@@ -1190,6 +1108,7 @@
             if (window.browserHistoryIndex > 0) {
                 window.browserHistoryIndex--;
                 const url = window.browserHistory[window.browserHistoryIndex];
+                iframe.removeAttribute('srcdoc');
                 iframe.src = url;
                 urlInput.value = url;
                 loadingIndicator.style.display = 'block';
@@ -1202,6 +1121,7 @@
             if (window.browserHistoryIndex < window.browserHistory.length - 1) {
                 window.browserHistoryIndex++;
                 const url = window.browserHistory[window.browserHistoryIndex];
+                iframe.removeAttribute('srcdoc');
                 iframe.src = url;
                 urlInput.value = url;
                 loadingIndicator.style.display = 'block';
@@ -1214,7 +1134,7 @@
             if (adBlockEnabled) {
                 const currentUrl = iframe.src;
                 if (currentUrl && currentUrl !== 'about:blank') {
-                    navigateTo(currentUrl);
+                    window.navigateTo(currentUrl);
                 }
             } else {
                 iframe.src = iframe.src;
@@ -1271,31 +1191,31 @@
             }
             if (e.key === 'F5') {
                 e.preventDefault();
-                reloadPage();
+                window.reloadPage();
             }
             if ((e.altKey && e.key === 'ArrowLeft') || (e.key === 'Backspace' && e.altKey)) {
                 e.preventDefault();
-                goBack();
+                window.goBack();
             }
             if (e.altKey && e.key === 'ArrowRight') {
                 e.preventDefault();
-                goForward();
+                window.goForward();
             }
             if (e.ctrlKey && e.key === '=') {
                 e.preventDefault();
-                zoomIn();
+                window.zoomIn();
             }
             if (e.ctrlKey && e.key === '-') {
                 e.preventDefault();
-                zoomOut();
+                window.zoomOut();
             }
             if (e.ctrlKey && e.key === '0') {
                 e.preventDefault();
-                zoomReset();
+                window.zoomReset();
             }
             if (e.ctrlKey && e.key === 'd') {
                 e.preventDefault();
-                showAddBookmarkDialog();
+                window.showAddBookmarkDialog();
             }
         });
 
@@ -1350,6 +1270,5 @@
 
         console.log('Firefox-style browser with AdBlock and Bookmarks initialized');
         console.log('Using KDE colors:', colors);
-        console.log('Bookmarks loaded from JSON');
     }
 })();
