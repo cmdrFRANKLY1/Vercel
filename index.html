@@ -1,1192 +1,2415 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CFCC</title>
-    <link rel="preconnect" href="./resources/" crossorigin />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sTerminal</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* Disable text selection on everything */
-        *:not(input):not(textarea) {
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-        }
-
-        input, textarea {
-            user-select: text;
-            -webkit-user-select: text;
-            -moz-user-select: text;
-            -ms-user-select: text;
-        }
-
         :root {
-            --bg-color: #f8fafc;
-            --text-color: #0f172a;
-            --sub-color: #475569;
-            --border-color: #cbd5e1;
-            --border-hover: #2563eb;
-            --box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
-            --btn-bg: #ffffff;
-            --btn-border: #cbd5e1;
-            --btn-hover-border: #94a3b8;
-            --btn-text: #0f172a;
-            --hover-bg: #f1f5f9;
-            --input-bg: #ffffff;
-            --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.2);
-            --card-radius: 12px;
-            --toggle-radius: 12px;
-            --lang-toggle-bg: #ffffff;
-            --dropdown-bg: #ffffff;
-            --dropdown-hover: #f1f5f9;
-            --dropdown-border: #cbd5e1;
-            --quick-btn-bg: #ffffff;
-            --quick-btn-hover: #f1f5f9;
-            --quick-btn-border: #cbd5e1;
-            --fallback-icon-bg: #e2e8f0;
-            --fallback-icon-color: #64748b;
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --prompt-user: #ffffff;
+            --prompt-path: #bbbbbb;
+            --font-family: 'Courier New', Courier, monospace;
+            --font-size: 15px;
+            --infobar-size: 26px;
+            --infobar-color: var(--bg-color);
+            --hint-color: #555555;
+            --modal-bg: #000000;
+            --modal-border: #ffffff;
+            --modal-border-start: #ffffff;
+            --modal-border-end: #555555;
         }
 
-        [data-theme="dark"] {
-            --bg-color: #121212;
-            --text-color: #e8eaed;
-            --sub-color: #9aa0a6;
-            --border-color: #3c4043;
-            --border-hover: #8ab4f8;
-            --box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
-            --btn-bg: #303134;
-            --btn-border: #3c4043;
-            --btn-hover-border: #5f6368;
-            --btn-text: #e8eaed;
-            --hover-bg: #3c4043;
-            --input-bg: #202124;
-            --focus-ring: 0 0 0 3px rgba(138, 180, 248, 0.25);
-            --lang-toggle-bg: #303134;
-            --dropdown-bg: #303134;
-            --dropdown-hover: #3c4043;
-            --dropdown-border: #3c4043;
-            --quick-btn-bg: #303134;
-            --quick-btn-hover: #3c4043;
-            --quick-btn-border: #3c4043;
-            --fallback-icon-bg: #3c4043;
-            --fallback-icon-color: #9aa0a6;
-        }
-
-        body {
-            font-family: "Segoe UI", Roboto, Arial, sans-serif;
+        body, html {
             margin: 0;
             padding: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
             height: 100vh;
             background-color: var(--bg-color);
             color: var(--text-color);
-            will-change: background-color, color;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        .top-right {
-            position: absolute;
-            top: 20px;
-            right: 24px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-            z-index: 100;
-        }
-
-        .clickable-dt {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-color);
-            padding: 0 14px;
-            border-radius: var(--toggle-radius);
-            border: 1px solid var(--btn-border);
-            background: var(--btn-bg);
-            box-shadow: var(--box-shadow);
-            cursor: pointer;
-            user-select: none;
-            line-height: 1.3;
-            white-space: nowrap;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            transition: all 0.2s ease;
-        }
-        .clickable-dt:hover {
-            background: var(--hover-bg);
-            border-color: var(--border-hover);
-        }
-
-        .retention-part { font-weight: 600; color: var(--text-color); }
-        .date-part { font-weight: 600; color: var(--text-color); }
-        .time-part { font-weight: 600; color: var(--text-color); }
-
-        .lang-toggle {
-            background: var(--lang-toggle-bg);
-            border: 1px solid var(--btn-border);
-            border-radius: var(--toggle-radius);
-            padding: 0 16px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: var(--box-shadow);
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-color);
-            outline: none;
-            user-select: none;
-            transition: all 0.2s ease;
-        }
-        .lang-toggle:hover {
-            background: var(--hover-bg);
-            border-color: var(--border-hover);
-        }
-
-        .theme-toggle {
-            background: var(--btn-bg);
-            border: 1px solid var(--btn-border);
-            border-radius: var(--toggle-radius);
-            box-shadow: var(--box-shadow);
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: var(--sub-color);
-            outline: none;
-            user-select: none;
-            transition: all 0.2s ease;
-        }
-        .theme-toggle:hover {
-            background: var(--hover-bg);
-            border-color: var(--border-hover);
-        }
-        .theme-toggle svg {
-            width: 20px;
-            height: 20px;
-            fill: currentColor;
-            display: block;
-        }
-
-        .grid-toggle {
-            background: var(--btn-bg);
-            border: 1px solid var(--btn-border);
-            border-radius: var(--toggle-radius);
-            box-shadow: var(--box-shadow);
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: var(--sub-color);
-            outline: none;
-            user-select: none;
-            transition: all 0.2s ease;
-        }
-        .grid-toggle:hover {
-            background: var(--hover-bg);
-            border-color: var(--border-hover);
-        }
-        .grid-toggle svg {
-            width: 20px;
-            height: 20px;
-            fill: currentColor;
-            display: block;
-        }
-
-        .grid-dropdown {
-            position: absolute;
-            top: calc(100% + 12px);
-            right: 0;
-            background: var(--dropdown-bg);
-            border: 1px solid var(--dropdown-border);
-            border-radius: var(--card-radius);
-            box-shadow: var(--box-shadow);
-            width: 280px;
-            max-height: 350px;
-            overflow-y: auto;
-            padding: 12px;
-            display: none;
-            flex-direction: column;
-            gap: 6px;
-            z-index: 1000;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        .grid-dropdown.active {
-            display: flex;
-        }
-
-        .grid-item {
-            background: var(--btn-bg);
-            border: 1px solid var(--btn-border);
-            border-radius: 8px;
-            padding: 10px 14px;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-color);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.2s;
-        }
-        .grid-item:hover {
-            background: var(--hover-bg);
-            border-color: var(--border-hover);
-        }
-
-        .top-left {
-            position: absolute;
-            top: 20px;
-            left: 24px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            z-index: 100;
-            max-width: calc(100% - 350px);
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        .dynamic-title-box {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--text-color);
-            padding: 0 16px;
-            border-radius: var(--toggle-radius);
-            border: 1px solid var(--btn-border);
-            background: var(--btn-bg);
-            box-shadow: var(--box-shadow);
-            line-height: 1.3;
-            white-space: nowrap;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        .dynamic-subtitle-box {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--sub-color);
-            padding: 0 16px;
-            border-radius: var(--toggle-radius);
-            border: 1px solid var(--btn-border);
-            background: var(--btn-bg);
-            box-shadow: var(--box-shadow);
-            line-height: 1.3;
-            white-space: nowrap;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        .profile-container {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .profile-pic-wrapper {
-            width: 44px;
-            height: 44px;
-            border-radius: var(--toggle-radius);
-            border: 1px solid var(--btn-border);
-            box-shadow: var(--box-shadow);
-            cursor: pointer;
-            background-color: var(--fallback-icon-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            font-family: var(--font-family);
+            font-size: var(--font-size);
+            line-height: 1.4;
+            box-sizing: border-box;
             overflow: hidden;
-            transition: all 0.2s ease;
-            user-select: none;
-            -webkit-user-select: none;
-            pointer-events: auto;
-        }
-        .profile-pic-wrapper:hover {
-            border-color: var(--border-hover);
-        }
-
-        .profile-pic {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: none;
-        }
-
-        .profile-fallback-icon {
-            width: 24px;
-            height: 24px;
-            fill: var(--fallback-icon-color);
-            display: block;
-        }
-
-        .profile-panel {
-            position: absolute;
-            top: calc(100% + 12px);
-            right: 0;
-            background: var(--dropdown-bg);
-            border: 1px solid var(--dropdown-border);
-            border-radius: var(--card-radius);
-            box-shadow: var(--box-shadow);
-            width: 260px;
-            padding: 20px;
-            display: none;
+            display: flex;
             flex-direction: column;
+        }
+
+        #infobar {
+            height: var(--infobar-size, 26px);
+            width: 100vw;
+            background-color: var(--infobar-color, var(--bg-color));
+            color: var(--text-color);
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
+            padding: 0 15px;
+            box-sizing: border-box;
+            font-family: var(--font-family);
+            font-size: max(12px, calc(var(--font-size) - 3px));
             z-index: 1000;
-            user-select: none;
-            -webkit-user-select: none;
+            border: 1px solid transparent;
+            border-image: linear-gradient(90deg, var(--modal-border-start), var(--modal-border-end)) 1;
+            border-top: none;
+            border-left: none;
+            border-right: none;
         }
 
-        .profile-panel.active {
-            display: flex;
+        #infobar.hidden-infobar { display: none !important; }
+        #infobar-clock { font-weight: bold; cursor: pointer; user-select: none; transition: color 0.2s ease; }
+        #infobar-clock:hover { color: #aaaaaa; }
+
+        .infobar-btn {
+            cursor: pointer; padding: 0 8px; user-select: none; transition: background-color 0.2s, color 0.2s;
+            font-weight: bold; height: 100%; display: flex; align-items: center; position: relative;
+        }
+        .infobar-btn:hover { background-color: var(--text-color); color: var(--bg-color); }
+
+        #tabs-bar {
+            height: var(--infobar-size, 26px); width: 100vw; background-color: var(--infobar-color, var(--bg-color));
+            color: var(--text-color); flex-shrink: 0; display: flex; align-items: center; box-sizing: border-box;
+            font-family: var(--font-family); font-size: max(12px, calc(var(--font-size) - 3px));
+            border: 1px solid transparent; border-image: linear-gradient(90deg, var(--modal-border-start), var(--modal-border-end)) 1;
+            border-top: none; border-left: none; border-right: none; z-index: 1001; overflow-x: auto;
+        }
+        #tabs-bar.hidden-infobar { display: none !important; }
+        #tabs-container { display: flex; align-items: center; height: 100%; }
+
+        .tab-item {
+            padding: 0 6px 0 10px; height: 100%; display: flex; align-items: center; cursor: pointer;
+            user-select: none; border-right: 1px solid transparent; border-image: linear-gradient(90deg, var(--modal-border-start), var(--modal-border-end)) 1; font-weight: bold;
+            white-space: nowrap; gap: 6px;
+        }
+        .tab-item:hover { background-color: var(--text-color); color: var(--bg-color); }
+        .tab-item.active-tab { background-color: var(--text-color); color: var(--bg-color); }
+
+        .tab-close-btn { font-size: 1.1em; padding: 0 3px; border-radius: 2px; display: flex; align-items: center; justify-content: center; }
+        .tab-close-btn:hover { background-color: rgba(255,255,255,0.3); }
+        .tab-item.active-tab .tab-close-btn:hover { background-color: rgba(0,0,0,0.2); }
+
+        .tab-add-btn {
+            padding: 0 10px; height: 100%; display: flex; align-items: center; cursor: pointer;
+            user-select: none; font-weight: bold; border-right: 1px solid transparent; border-image: linear-gradient(90deg, var(--modal-border-start), var(--modal-border-end)) 1;
+        }
+        .tab-add-btn:hover { background-color: var(--text-color); color: var(--bg-color); }
+
+        .infobar-modules-left, .infobar-modules-right { display: flex; align-items: center; height: 100%; }
+
+        #workspace-container { flex-grow: 1; height: 0; display: flex; flex-direction: column; position: relative; }
+        .tab-content { display: none; flex-grow: 1; height: 100%; flex-direction: column; }
+        .tab-content.active-content { display: flex; }
+
+        #grid-container {
+            display: grid; width: 100vw; flex-grow: 1; height: 0;
+            grid-template-columns: 1fr; grid-template-rows: 1fr; gap: 1px; background: linear-gradient(90deg, var(--modal-border-start), var(--modal-border-end));
+        }
+        #grid-container.count-2 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; }
+        #grid-container.count-3, #grid-container.count-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+        #grid-container.count-3 .terminal-instance:nth-child(3) { grid-column: span 2; }
+
+        .terminal-instance {
+            background-color: var(--bg-color); display: flex; flex-direction: column;
+            overflow-y: auto; padding: 10px 20px; box-sizing: border-box; position: relative; min-height: 0;
+        }
+        .terminal-instance.active-term { box-shadow: inset 0 0 0 1px var(--text-color); }
+
+        .output { white-space: pre-wrap; word-wrap: break-word; }
+        .input-line, .history-line { display: flex; align-items: center; flex-wrap: wrap; }
+        .prompt { margin-right: 8px; white-space: nowrap; }
+        .prompt .user { color: var(--prompt-user); font-weight: bold; }
+        .prompt .path { color: var(--prompt-path); font-weight: bold; }
+        .prompt .symbol { color: var(--text-color); }
+
+        .input-wrapper { position: relative; flex-grow: 1; display: flex; align-items: center; }
+        .cmd-suggestion {
+            position: absolute; left: 0; color: var(--hint-color); font-family: var(--font-family);
+            font-size: var(--font-size); pointer-events: none; white-space: pre; z-index: 1;
+        }
+        .cmd-input {
+            position: relative; z-index: 2; background: transparent; border: none;
+            color: var(--text-color); font-family: var(--font-family); font-size: var(--font-size);
+            outline: none; flex-grow: 1; min-width: 200px; padding: 0; margin: 0;
         }
 
-        .profile-panel-img-wrapper {
-            width: 72px;
-            height: 72px;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            border: 1px solid var(--btn-border);
-            background-color: var(--fallback-icon-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            user-select: none;
-            -webkit-user-select: none;
+        .banner { color: #888888; margin-bottom: 15px; }
+        .error { color: #aaaaaa; text-decoration: none; }
+        .dir-color { color: var(--text-color); font-weight: bold; text-decoration: underline; cursor: pointer; }
+        .exec-color { color: var(--text-color); font-weight: bold; text-decoration: underline; cursor: pointer; }
+        .highlight-blue { color: var(--text-color); text-decoration: underline; cursor: pointer; }
+        .os-item { cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
+
+        #os-tooltip {
+            position: fixed; display: none; background-color: var(--modal-bg); color: var(--text-color);
+            border: 1px solid var(--modal-border); padding: 8px 12px; font-size: 13px;
+            z-index: 99999; pointer-events: none; white-space: pre-wrap; max-width: 340px; line-height: 1.3;
         }
 
-        .profile-panel-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: none;
+        #os-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 99999;
+        }
+        #os-modal {
+            background-color: var(--modal-bg); color: var(--text-color); border: 1px solid transparent;
+            border-image: linear-gradient(90deg, var(--modal-border-start), var(--modal-border-end)) 1;
+            padding: 20px; min-width: 300px; font-family: var(--font-family); font-size: var(--font-size);
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        .os-modal-buttons { display: flex; justify-content: flex-end; gap: 10px; }
+        .os-btn {
+            background: transparent; color: var(--text-color); border: 1px solid transparent;
+            border-image: linear-gradient(90deg, var(--modal-border-start), var(--modal-border-end)) 1;
+            padding: 4px 12px; font-family: inherit; font-size: inherit; cursor: pointer; font-weight: bold;
+        }
+        .os-btn:hover { background-color: var(--text-color); color: var(--bg-color); }
+
+        #options-menu {
+            position: absolute; left: 15px; background-color: var(--modal-bg); color: var(--text-color);
+            border: 1px solid transparent; border-image: linear-gradient(90deg, var(--modal-border-start), var(--modal-border-end)) 1;
+            display: none; flex-direction: column; z-index: 2000; font-family: var(--font-family);
+            font-size: max(11px, calc(var(--font-size) - 3px)); min-width: 130px;
         }
 
-        .profile-panel-fallback-icon {
-            width: 40px;
-            height: 40px;
-            fill: var(--fallback-icon-color);
-            display: block;
+        #theme-dropdown {
+            position: absolute; background-color: var(--modal-bg); color: var(--text-color);
+            border: 1px solid transparent; border-image: linear-gradient(90deg, var(--modal-border-start), var(--modal-border-end)) 1;
+            display: none; flex-direction: column; z-index: 2001; font-family: var(--font-family);
+            font-size: max(11px, calc(var(--font-size) - 3px)); min-width: 150px;
+            max-height: 50vh; overflow-y: auto;
+        }
+        #theme-dropdown::-webkit-scrollbar { width: 8px; }
+        #theme-dropdown::-webkit-scrollbar-thumb { background-color: var(--modal-border-end); }
+
+        #terminal-context-menu {
+            position: fixed; background-color: var(--modal-bg); color: var(--text-color);
+            border: 1px solid transparent; border-image: linear-gradient(90deg, var(--modal-border-start), var(--modal-border-end)) 1;
+            display: none; flex-direction: column; z-index: 9999; font-family: var(--font-family);
+            font-size: max(11px, calc(var(--font-size) - 3px)); min-width: 170px;
         }
 
-        .profile-name {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-color);
-            margin-bottom: 4px;
-            user-select: none;
-            -webkit-user-select: none;
+        .mc-menu-item {
+            padding: 2px 5px; cursor: pointer; user-select: none; display: flex;
+            justify-content: space-between; align-items: center; position: relative;
+            border-bottom: 1px solid rgba(255,255,255,0.2); white-space: nowrap;
         }
+        .mc-menu-item:last-child { border-bottom: none; }
+        .mc-menu-item:hover { background-color: var(--text-color); color: var(--bg-color); }
+        .mc-menu-item .arrow { margin-left: 8px; font-size: 0.7em; }
 
-        .profile-email {
-            font-size: 13px;
-            color: var(--sub-color);
-            margin-bottom: 4px;
-            user-select: none;
-            -webkit-user-select: none;
+        .mc-submenu {
+            position: absolute; left: 100%; top: -1px; background-color: var(--modal-bg);
+            color: var(--text-color); border: 1px solid var(--modal-border); flex-direction: column;
+            min-width: 90px; z-index: 2001; display: none;
         }
-        
-        .profile-dnd {
-            font-size: 12px;
-            color: var(--sub-color);
-            margin-bottom: 16px;
-            text-align: center;
-            line-height: 1.5;
-            padding: 8px 12px;
-            background: var(--btn-bg);
-            border-radius: 8px;
-            width: 100%;
-            border: 1px solid var(--btn-border);
-            user-select: none;
-            -webkit-user-select: none;
-        }
+        .mc-menu-item:hover > .mc-submenu, .mc-submenu:hover, .mc-submenu.force-open { display: flex; }
 
-        .profile-action-btn {
-            background: var(--btn-bg);
-            border: 1px solid var(--btn-border);
-            border-radius: var(--card-radius);
-            padding: 8px 16px;
-            width: 100%;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-color);
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 8px;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        .profile-action-btn:last-child {
-            margin-bottom: 0;
-        }
-
-        .profile-action-btn:hover {
-            background: var(--hover-bg);
-            border-color: var(--border-hover);
-        }
-
-        .main-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            flex-grow: 1;
-            padding: 0 20px;
-            text-align: center;
-            width: 100%;
-        }
-
-        .quick-dial {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            justify-content: center;
-            width: 900px;
-            max-width: 96%;
-            min-height: 70px;
-        }
-
-        .quick-btn {
-            background: var(--quick-btn-bg);
-            border: 1px solid var(--quick-btn-border);
-            border-radius: var(--card-radius);
-            box-shadow: var(--box-shadow);
-            padding: 18px 30px;
-            font-size: 17px;
-            font-weight: 600;
-            color: var(--text-color);
-            cursor: pointer;
-            user-select: none;
-            -webkit-user-select: none;
+        .mc-submenu-item {
+            padding: 2px 5px; cursor: pointer; user-select: none; display: flex;
+            justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.2);
             white-space: nowrap;
-            min-width: 260px;
-            min-height: 90px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            position: relative;
-            transition: all 0.2s ease;
-            text-decoration: none;
         }
-        .quick-btn:hover {
-            background: var(--hover-bg);
-            border-color: var(--border-hover);
-            transform: translateY(-1px);
+        .mc-submenu-item:last-child { border-bottom: none; }
+        .mc-submenu-item:hover { background-color: var(--text-color); color: var(--bg-color); }
+        .mc-submenu-item.active-setting::after { content: '✓'; margin-left: 6px; font-weight: bold; }
+
+        .mc-submenu-item input[type="number"] {
+            background-color: var(--bg-color); color: var(--text-color); border: 1px solid var(--modal-border);
+            font-family: inherit; font-size: inherit; padding: 1px 3px; outline: none;
+            width: 40px; height: 18px; box-sizing: border-box; cursor: pointer; margin-left: 6px;
+        }
+        .mc-submenu-item input[type="number"]:focus { background-color: var(--text-color); color: var(--bg-color); }
+
+        #settings-window-overlay {
+            position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.68);
+            display:none; justify-content:center; align-items:center; z-index:999999;
+        }
+        #settings-window {
+            background: var(--modal-bg);
+            color: var(--text-color); border: 1px solid transparent; border-image: linear-gradient(90deg, var(--modal-border-start), var(--modal-border-end)) 1;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.7);
+            padding: 10px 12px 12px; width: 420px; max-height: 82vh; overflow-y: auto;
+            font-family: var(--font-family); font-size: 12px; display:flex; flex-direction:column; gap:8px;
+        }
+        #settings-window > div:first-child {
+            border-bottom: 1px solid var(--modal-border) !important; padding-bottom: 6px; margin-bottom: 2px;
+        }
+        #settings-window label {
+            display:flex; flex-direction:column; gap:3px; padding: 2px 0; border-bottom: 1px solid var(--modal-border);
+        }
+        #settings-window label:last-of-type { border-bottom: none; }
+        #settings-window input, #settings-window select {
+            background: var(--bg-color); color: var(--text-color); border: 1px solid var(--modal-border);
+            padding: 3px 5px; font-family:inherit; font-size:inherit; min-height: 22px; box-sizing:border-box;
+            outline: none; accent-color: var(--modal-border);
+        }
+        #settings-window option { background: var(--bg-color); color: var(--text-color); }
+        #settings-window ::selection { background: var(--text-color); color: var(--bg-color); }
+        #settings-window input:focus, #settings-window select:focus, #settings-window button:focus {
+            background: var(--text-color); color: var(--bg-color); box-shadow: inset 0 0 0 1px var(--modal-border);
+        }
+        #settings-window select { background: var(--bg-color); }
+        #settings-window input[type="color"] {
+            min-height: 28px; padding: 2px; width: 100%; box-sizing: border-box; background: var(--bg-color);
+        }
+        #settings-window .os-btn {
+            background: rgba(255,255,255,0.03); border: 1px solid var(--modal-border);
+            padding: 4px 10px; min-height: 24px; line-height: 1.2;
         }
 
-        .category-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            margin-bottom: 40px;
+        #wrapper-overlay {
+            position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.72); z-index: 999999; padding: 2vh 2vw;
         }
-        .category-section:last-child {
-            margin-bottom: 0;
+        #wrapper-window {
+            position: relative; width: min(96vw, 1600px); height: min(92vh, 980px);
+            max-width: 100%; max-height: 100%; background: var(--bg-color); border: 1px solid transparent; border-image: linear-gradient(90deg, var(--modal-border-start), var(--modal-border-end)) 1;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.45); display: flex; flex-direction: column; overflow: hidden;
         }
-        
-        .category-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--sub-color);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 16px;
-            width: 900px;
-            max-width: 96%;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px;
+        #wrapper-frame {
+            width: 100%; flex: 1; background: #000; border: 0;
+        }
+        /* dark/light toggle button */
+        .theme-toggle-btn {
+            cursor: pointer;
+            font-weight: normal;
+            margin-right: 4px;
+            padding: 0 4px;
             user-select: none;
-            -webkit-user-select: none;
+            transition: background-color 0.2s;
+            border-radius: 2px;
         }
-
-        .monochrome-icon {
-            width: 22px;
-            height: 22px;
-            fill: var(--text-color);
-            display: inline-block;
-            vertical-align: middle;
+        .theme-toggle-btn:hover {
+            background-color: var(--text-color);
+            color: var(--bg-color);
         }
-
-        .source-indicator {
-            position: fixed;
-            bottom: 16px;
-            left: 20px;
-            font-size: 12px;
-            color: var(--sub-color);
-            z-index: 100;
+        .infobar-theme-label {
             display: flex;
-            flex-direction: column;
+            align-items: center;
             gap: 2px;
-            user-select: none;
-            -webkit-user-select: none;
-            pointer-events: none;
         }
-
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--bg-color);
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 0.5s ease;
+        /* theme name clickable area */
+        .theme-name-click {
+            cursor: pointer;
+            padding: 0 2px;
+            border-radius: 2px;
+            transition: background-color 0.2s;
         }
-
-        .spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid var(--border-color);
-            border-top: 4px solid var(--border-hover);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 24px;
-            user-select: none;
-            -webkit-user-select: none;
+        .theme-name-click:hover {
+            background-color: var(--text-color);
+            color: var(--bg-color);
         }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        /* hover highlight for the entire theme container */
+        .infobar-theme-label:hover {
+            background-color: var(--text-color);
+            color: var(--bg-color);
         }
-
-        .loading-profile-wrapper {
-            width: 80px;
-            height: 80px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            border: 2px solid var(--border-color);
-            opacity: 0;
-            display: none;
-            transition: opacity 0.4s ease;
-            box-shadow: var(--box-shadow);
-            background-color: var(--fallback-icon-bg);
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        .loading-profile-pic {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: none;
-        }
-
-        .loading-fallback-icon {
-            width: 44px;
-            height: 44px;
-            fill: var(--fallback-icon-color);
-            display: block;
-        }
-
-        .loading-text {
-            font-size: 20px;
-            font-weight: 500;
-            color: var(--text-color);
-            transition: opacity 0.3s ease;
-            text-align: center;
-            line-height: 1.8;
-            max-width: 600px;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        .loading-text .status-line {
-            display: block;
-            font-size: 16px;
-            font-weight: 400;
-            color: var(--sub-color);
-            margin-top: 6px;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        .loading-text .status-line.success { color: #16a34a; }
-        .loading-text .status-line.waiting { color: #ca8a04; }
-
-        .fade-out {
-            opacity: 0;
-            pointer-events: none;
+        .infobar-theme-label:hover .theme-toggle-btn,
+        .infobar-theme-label:hover .theme-name-click {
+            background-color: var(--text-color);
+            color: var(--bg-color);
         }
     </style>
 </head>
-<body data-theme="dark">
-    <div id="loadingScreen" class="loading-screen">
-        <div id="loadingProfileWrapper" class="loading-profile-wrapper">
-            <img id="loadingProfilePic" src="" alt="Profile" class="loading-profile-pic" />
-            <svg id="loadingFallbackIcon" class="loading-fallback-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-            </svg>
+<body>
+    <div id="os-tooltip"></div>
+    <div id="os-modal-overlay"><div id="os-modal"><div id="os-modal-text"></div><div class="os-modal-buttons"><button id="os-modal-cancel" class="os-btn" data-en="cancel">Cancel</button><button id="os-modal-confirm" class="os-btn" data-en="confirm">Confirm</button></div></div></div>
+    
+    <div id="settings-window-overlay"><div id="settings-window" tabindex="-1"><div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--text-color);padding-bottom:6px;"><span style="font-weight:bold;font-size:1.1em;" data-en="terminalSettings">sTerminal Settings</span><span id="settings-close-btn" class="os-btn" style="padding:2px 8px;cursor:pointer;">&times;</span></div><div style="display:flex;flex-direction:column;gap:8px;"><label><span data-en="fontSize">Font Size (px):</span><input type="number" id="sett-fontsize" min="10" max="36"></label><label><span data-en="fontFamily">Font Family:</span><select id="sett-font"></select></label><label><span data-en="language">Language:</span><select id="sett-language"><option value="en">English</option></select></label><label><span data-en="colorScheme">Color Scheme:</span><select id="sett-colorscheme"></select></label><label><span>Border Gradient Start:</span><input type="color" id="sett-border-start"></label><label><span>Border Gradient End:</span><input type="color" id="sett-border-end"></label><label><span data-en="systemProfile">System Profile:</span><select id="sett-system"></select></label><label><span data-en="infobarPosition">Infobar Position:</span><select id="sett-infobarpos"><option value="top">Top</option><option value="bottom">Bottom</option></select></label><label><span data-en="infobarSize">Infobar Size (px):</span><input type="number" id="sett-infobarsize" min="16" max="60"></label><label><span data-en="infobarVisibility">Infobar Visibility:</span><select id="sett-infobarshow"><option value="show">Show</option><option value="hide">Hide</option></select></label></div><div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px;"><button id="settings-save-btn" class="os-btn" data-en="saveApply">Save & Apply</button></div></div></div>
+    
+    <div id="wrapper-overlay"><div id="wrapper-window"><iframe id="wrapper-frame" title="Wrapper app"></iframe></div></div>
+
+    <div id="infobar"><div class="infobar-modules-left"><div id="infobar-options" class="infobar-btn" data-en="options">Options</div><div id="infobar-theme" class="infobar-btn infobar-theme-label"><span id="theme-toggle-btn" class="theme-toggle-btn">☀</span><span data-en="themeLabel">Theme:</span>&nbsp;<span id="infobar-theme-name" class="theme-name-click"></span></div></div><div class="infobar-modules-right"><span id="infobar-clock"></span></div></div>
+    <div id="tabs-bar"><div id="tabs-container"></div><div id="tab-add-btn" class="tab-add-btn" title="New stty tab">+</div></div>
+    <div id="workspace-container"></div>
+    
+    <div id="theme-dropdown"></div>
+
+    <div id="options-menu">
+        <div class="mc-menu-item"><span data-en="terminal">Terminal</span><span class="arrow">▶</span>
+            <div class="mc-submenu">
+                <div class="mc-submenu-item"><span data-en="fontSize">Font Size</span><input type="number" id="menu-fontsize" min="10" max="36" onclick="event.stopPropagation()"></div>
+                <div class="mc-submenu-item"><span data-en="font">Font</span><span class="arrow">▶</span><div class="mc-submenu" id="menu-font-submenu"></div></div>
+                <div class="mc-menu-item" id="menu-colorscheme-parent" style="display:none;"><span data-en="colorScheme">Color Scheme</span><span class="arrow">▶</span><div class="mc-submenu" id="menu-colorscheme-submenu"></div></div>
+                <div class="mc-menu-item" id="menu-system-parent" style="display:none;"><span data-en="systems">Systems</span><span class="arrow">▶</span><div class="mc-submenu" id="menu-system-submenu"></div></div>
+            </div>
         </div>
-        <div id="loadingSpinner" class="spinner"></div>
-        <div id="loadingText" class="loading-text">
-            Generating Environment...
-            <span id="statusLine" class="status-line">Initializing...</span>
+        <div class="mc-menu-item"><span data-en="language">Language</span><span class="arrow">▶</span><div class="mc-submenu" id="menu-language-submenu"></div></div>
+        <div class="mc-menu-item"><span data-en="infobar">Infobar</span><span class="arrow">▶</span>
+            <div class="mc-submenu">
+                <div class="mc-menu-item"><span data-en="position">Position</span><span class="arrow">▶</span><div class="mc-submenu"><div class="mc-submenu-item" data-action="infobarposition" data-value="top" data-en="top">Top</div><div class="mc-submenu-item" data-action="infobarposition" data-value="bottom" data-en="bottom">Bottom</div></div></div>
+                <div class="mc-menu-item"><span data-en="size">Size</span><input type="number" id="menu-infobarsize" min="16" max="60" onclick="event.stopPropagation()"></div>
+                <div class="mc-menu-item"><span data-en="infobar">Infobar</span><span class="arrow">▶</span><div class="mc-submenu"><div class="mc-submenu-item" data-action="infobarshow" data-value="show" data-en="show">Show</div><div class="mc-submenu-item" data-action="infobarshow" data-value="hide" data-en="hide">Hide</div></div></div>
+            </div>
         </div>
     </div>
 
-    <div class="top-right">
-        <span class="clickable-dt retention-part" id="retentionClick" title="Retention time (click to reset)">00:00:00</span>
-        <span class="clickable-dt date-part" id="dateClick" title="Toggle date format">---</span>
-        <span class="clickable-dt time-part" id="timeClick" title="Toggle time format">--:--:--</span>
-        <button class="lang-toggle" id="langToggle">EN</button>
-        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-            <svg id="themeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z" />
-            </svg>
-        </button>
-        <div style="position: relative;">
-            <button class="grid-toggle" id="gridToggle" aria-label="Retired Apps">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path d="M6 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6-8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6-8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                </svg>
-            </button>
-            <div class="grid-dropdown" id="gridDropdown">
-                <div style="font-size: 11px; font-weight: 700; color: var(--sub-color); text-transform: uppercase; letter-spacing: 1px; padding: 4px 8px;" data-i18n-key="retiredHeader">Retired Apps</div>
-                <div id="retiredListContainer" style="display: flex; flex-direction: column; gap: 4px;"></div>
+    <div id="terminal-context-menu">
+        <div class="mc-menu-item" id="ctx-copy"><span data-en="copy">Copy</span></div>
+        <div class="mc-menu-item"><span data-en="paste">Paste</span><span class="arrow">▶</span>
+            <div class="mc-submenu">
+                <div class="mc-submenu-item" id="ctx-paste" data-en="paste">Paste</div>
+                <div class="mc-submenu-item" id="ctx-paste-return" data-en="pasteReturn">Paste & Run</div>
+                <div class="mc-submenu-item" id="ctx-paste-term" data-en="pasteNewTerminal">Paste in new terminal</div>
+                <div class="mc-submenu-item" id="ctx-paste-term-return" data-en="pasteNewTerminalReturn">Paste in new terminal & Run</div>
+                <div class="mc-submenu-item" id="ctx-paste-tab" data-en="pasteNewTab">Paste in new tab</div>
+                <div class="mc-submenu-item" id="ctx-paste-tab-return" data-en="pasteNewTabReturn">Paste in new tab & Run</div>
             </div>
         </div>
-        <div class="profile-container">
-            <div class="profile-pic-wrapper" id="profilePicWrapper">
-                <img src="" alt="Profile" class="profile-pic" id="profilePic" />
-                <svg class="profile-fallback-icon" id="profileFallbackIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                </svg>
-            </div>
-            <div class="profile-panel" id="profilePanel">
-                <div class="profile-panel-img-wrapper">
-                    <img src="" alt="Profile" class="profile-panel-img" />
-                    <svg class="profile-panel-fallback-icon" id="panelFallbackIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                    </svg>
+        <div class="mc-menu-item"><span data-en="tabs">Tabs</span><span class="arrow">▶</span><div class="mc-submenu"><div class="mc-submenu-item" id="ctx-open-tab" data-en="openNewTab">Open new tab</div><div class="mc-submenu-item" id="ctx-close-tab" data-en="closeTab">Close tab</div></div></div>
+        <div class="mc-menu-item"><span data-en="terminals">Terminals</span><span class="arrow">▶</span><div class="mc-submenu"><div class="mc-submenu-item" id="ctx-open-term" data-en="openNewTerminal">Open new terminal</div><div class="mc-submenu-item" id="ctx-close-term" data-en="closeTerminal">Close terminal</div></div></div>
+        <div class="mc-menu-item"><span data-en="options">Options</span><span class="arrow">▶</span>
+            <div class="mc-submenu">
+                <div class="mc-menu-item"><span data-en="terminal">Terminal</span><span class="arrow">▶</span>
+                    <div class="mc-submenu">
+                        <div class="mc-menu-item"><span data-en="fontSize">Font Size</span><input type="number" id="ctx-menu-fontsize" min="10" max="36" onclick="event.stopPropagation()"></div>
+                        <div class="mc-menu-item"><span data-en="font">Font</span><span class="arrow">▶</span><div class="mc-submenu" id="ctx-menu-font-submenu"></div></div>
+                        <div class="mc-menu-item" id="ctx-menu-colorscheme-parent" style="display:none;"><span data-en="colorScheme">Color Scheme</span><span class="arrow">▶</span><div class="mc-submenu" id="ctx-menu-colorscheme-submenu"></div></div>
+                        <div class="mc-menu-item" id="ctx-menu-system-parent" style="display:none;"><span data-en="systems">Systems</span><span class="arrow">▶</span><div class="mc-submenu" id="ctx-menu-system-submenu"></div></div>
+                    </div>
                 </div>
-                <div class="profile-name" id="profileName">Loading...</div>
-                <div class="profile-email" id="profileEmail">loading@local.host</div>
-                <div class="profile-dnd" id="profileDnd">Loading profile...</div>
-                <button class="profile-action-btn">Account Settings</button>
-                <button class="profile-action-btn">Sign Out</button>
+                <div class="mc-menu-item"><span data-en="language">Language</span><span class="arrow">▶</span><div class="mc-submenu" id="ctx-menu-language-submenu"></div></div>
+                <div class="mc-menu-item"><span data-en="infobar">Infobar</span><span class="arrow">▶</span>
+                    <div class="mc-submenu">
+                        <div class="mc-menu-item"><span data-en="position">Position</span><span class="arrow">▶</span><div class="mc-submenu"><div class="mc-submenu-item" data-action="infobarposition" data-value="top" data-en="top">Top</div><div class="mc-submenu-item" data-action="infobarposition" data-value="bottom" data-en="bottom">Bottom</div></div></div>
+                        <div class="mc-menu-item"><span data-en="size">Size</span><input type="number" id="ctx-menu-infobarsize" min="16" max="60" onclick="event.stopPropagation()"></div>
+                        <div class="mc-menu-item"><span data-en="infobar">Infobar</span><span class="arrow">▶</span><div class="mc-submenu"><div class="mc-submenu-item" data-action="infobarshow" data-value="show" data-en="show">Show</div><div class="mc-submenu-item" data-action="infobarshow" data-value="hide" data-en="hide">Hide</div></div></div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-
-    <div class="top-left">
-        <div class="dynamic-title-box">CFCC</div>
-        <div class="dynamic-subtitle-box">cmdrFRANKLYs Control Center</div>
-    </div>
-
-    <div class="main-container">
-        
-        <div class="category-section">
-            <div class="category-title" data-i18n-cat="main">TOOLS</div>
-            <div class="quick-dial" id="quickDial">
-                <a href="tools/lyricsEditorRC.html" class="quick-btn">
-                    <span style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px;">
-                        <svg class="monochrome-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                        </svg>
-                        <span style="font-size: 16px; font-weight: 700;" data-i18n-key="lyricsTitle">Lyrics Editor</span>
-                    </span>
-                    <span style="font-size: 12px; font-weight: 400; color: var(--sub-color); display: block; line-height: 1.4; text-align: center;" data-i18n-key="lyricsDesc">Advanced Songwriting Tool. Telemetry for MCs.</span>
-                </a>
-
-                <a href="tools/textureEditorRC.html" class="quick-btn">
-                    <span style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px;">
-                        <svg class="monochrome-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM11 7h2v2h-2zm0 4h2v2H7zm-4-4h2v2H7zm0 4h2v2H7zm8-4h2v2H7zm0 4h2v2H7zm-4 4h2v2H7zm-4 0h2v2H7zm8 0h2v2H7z"/>
-                        </svg>
-                        <span style="font-size: 16px; font-weight: 700;" data-i18n-key="textureTitle">Texture Editor</span>
-                    </span>
-                    <span style="font-size: 12px; font-weight: 400; color: var(--sub-color); display: block; line-height: 1.4; text-align: center;" data-i18n-key="textureDesc">Create and edit textures with custom properties</span>
-                </a>
-
-                <a href="tools/terminalSimulatorRC.html" class="quick-btn">
-                    <span style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px;">
-                        <svg class="monochrome-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                            <path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.1.89 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8h16v10zm-2-1h-6v-2h6v2zM7.5 17l-1.41-1.41L8.67 13l-2.58-2.59L7.5 9l4 4-4 4z"/>
-                        </svg>
-                        <span style="font-size: 16px; font-weight: 700;" data-i18n-key="terminalTitle">Terminal Simulator</span>
-                    </span>
-                    <span style="font-size: 12px; font-weight: 400; color: var(--sub-color); display: block; line-height: 1.4; text-align: center;" data-i18n-key="terminalDesc">Web-based command line interface and system simulator.</span>
-                </a>
-            </div>
-        </div>
-        
-        <div class="category-section">
-            <div class="category-title" data-i18n-cat="minigames">Minigames</div>
-            <div class="quick-dial" id="quickDialMinigames">
-                <a href="miniGames/wordle.html" class="quick-btn">
-                    <span style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px;">
-                        <svg class="monochrome-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
-                        </svg>
-                        <span style="font-size: 16px; font-weight: 700;" data-i18n-key="wordleTitle">Wordle</span>
-                    </span>
-                    <span style="font-size: 12px; font-weight: 400; color: var(--sub-color); display: block; line-height: 1.4; text-align: center;" data-i18n-key="wordleDesc">Guess the hidden word</span>
-                </a>
-            </div>
-        </div>
-
-        <div class="category-section">
-            <div class="category-title" data-i18n-cat="viona">VIONA</div>
-            <div class="quick-dial" id="quickDialViona">
-                <a href="tools/vionaBerichtsheft.html" class="quick-btn">
-                    <span style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px;">
-                        <svg class="monochrome-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                            <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
-                        </svg>
-                        <span style="font-size: 16px; font-weight: 700;" data-i18n-key="berichtTitle">VIONA Berichtsheft</span>
-                    </span>
-                    <span style="font-size: 12px; font-weight: 400; color: var(--sub-color); display: block; line-height: 1.4; text-align: center;" data-i18n-key="berichtDesc">Für Strolchfreunde und Lausbuben</span>
-                </a>
-                
-                <a href="tools/vionaQuiz.html" class="quick-btn">
-                    <span style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px;">
-                        <svg class="monochrome-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                            <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm-2 14l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
-                        </svg>
-                        <span style="font-size: 16px; font-weight: 700;" data-i18n-key="quizTitle">VIONA Quiz</span>
-                    </span>
-                    <span style="font-size: 12px; font-weight: 400; color: var(--sub-color); display: block; line-height: 1.4; text-align: center;" data-i18n-key="quizDesc">Fragen zum Thema IT-Systemintegration</span>
-                </a>
-            </div>
-        </div>
-
-    </div>
-
-    <div class="source-indicator" id="sourceIndicator">
-        <span id="dataSourceStatus">Control Center Active</span>
-        <span id="profileSourceStatus" style="display: none;"></span>
     </div>
 
     <script>
-        (function() {
-            "use strict";
+        window.Translations = {};
 
-            const i18n = {
-                en: { 
-                    label: "EN",
-                    main: "TOOLS",
-                    minigames: "Minigames",
-                    viona: "VIONA",
-                    retiredHeader: "Retired Apps",
-                    nothingToShow: "Nothing to show",
-                    lyricsTitle: "Lyrics Editor",
-                    lyricsDesc: "Advanced Songwriting Tool. Telemetry for MCs.",
-                    textureTitle: "Texture Editor",
-                    textureDesc: "Create and edit textures with custom properties",
-                    terminalTitle: "Terminal Simulator",
-                    terminalDesc: "Web-based command line interface and system simulator.",
-                    wordleTitle: "Wordle",
-                    wordleDesc: "Guess the hidden word",
-                    berichtTitle: "VIONA Report Booklet",
-                    berichtDesc: "For scoundrels and pranksters",
-                    quizTitle: "VIONA Quiz",
-                    quizDesc: "Questions on IT System Integration"
-                },
-                de: { 
-                    label: "DE",
-                    main: "WERKZEUGE",
-                    minigames: "Minispiele",
-                    viona: "VIONA",
-                    retiredHeader: "Archivierte Apps",
-                    nothingToShow: "Nichts anzuzeigen",
-                    lyricsTitle: "Songtext-Editor",
-                    lyricsDesc: "Erweitertes Songwriting-Tool. Telemetrie für MCs.",
-                    textureTitle: "Textur Editor",
-                    textureDesc: "Texturen mit benutzerdefinierten Eigenschaften erstellen und bearbeiten",
-                    terminalTitle: "Terminal Simulator",
-                    terminalDesc: "Webbasierte Kommandozeilen-Schnittstelle und Systemsimulation.",
-                    wordleTitle: "Wordle",
-                    wordleDesc: "Errate das versteckte Wort",
-                    berichtTitle: "VIONA Berichtsheft",
-                    berichtDesc: "Für Strolchfreunde und Lausbuben",
-                    quizTitle: "VIONA Quiz",
-                    quizDesc: "Fragen zum Thema IT-Systemintegration"
-                },
+        function t(path, ...args) {
+            const lang = (termSettings?.language ?? window.termSettings?.language ?? 'en');
+            const dict = window.Translations[lang] || window.Translations['en'] || {};
+
+            const parts = path.split('.');
+            let curr = dict;
+            for (let p of parts) {
+                if (curr && curr[p] !== undefined) {
+                    curr = curr[p];
+                } else {
+                    curr = null;
+                    break;
+                }
+            }
+
+            if (curr === null && lang !== 'en') {
+                let currEn = window.Translations['en'];
+                if (currEn) {
+                    for (let p of parts) {
+                        if (currEn && currEn[p] !== undefined) currEn = currEn[p];
+                        else { currEn = null; break; }
+                    }
+                    if (currEn !== null) curr = currEn;
+                }
+            }
+
+            let text = curr !== null ? String(curr) : path;
+            if (args.length > 0) {
+                args.forEach((arg, i) => {
+                    text = text.replace(new RegExp('\\{' + i + '\\}', 'g'), String(arg));
+                });
+            }
+            return text;
+        }
+
+        function normalizeLanguageInput(raw) {
+            const value = String(raw || '').trim().toLowerCase().replace(/['"]/g, '');
+            const langMap = {
+                'german': 'de', 'deutsch': 'de', 'de': 'de',
+                'english': 'en', 'en': 'en',
+                'french': 'fr', 'francais': 'fr', 'français': 'fr', 'fr': 'fr',
+                'italian': 'it', 'italiano': 'it', 'it': 'it',
+                'turkish': 'tr', 'turkce': 'tr', 'türkçe': 'tr', 'tr': 'tr'
             };
+            return langMap[value] || value || null;
+        }
 
-            let currentLang = "en";
-            let timeLocale = "en-US";
-            let dateLocale = "en-US";
-            let retentionSeconds = 0;
+        function getUserDeviceString() {
+            const lang = (termSettings?.language ?? window.termSettings?.language ?? 'en');
+            const dict = window.Translations[lang] || window.Translations['en'] || {};
+            const userObj = dict.user || window.Translations['en']?.user || { user: "user", device: "device" };
+            const u = userObj.user || "user";
+            const d = userObj.device || "device";
+            return `${u}@${d}`;
+        }
 
-            const langToggleBtn = document.getElementById("langToggle");
-            const timeEl = document.getElementById("timeClick");
-            const dateEl = document.getElementById("dateClick");
-            const retentionEl = document.getElementById("retentionClick");
-            const body = document.body;
-            const themeToggle = document.getElementById("themeToggle");
-            const themeIcon = document.getElementById("themeIcon");
-            
-            const gridToggle = document.getElementById("gridToggle");
-            const gridDropdown = document.getElementById("gridDropdown");
-            const retiredListContainer = document.getElementById("retiredListContainer");
+        window.ColorAPI = {
+            themes: {
+                monochrome: { bg: '#000000', text: '#ffffff', user: '#ffffff', path: '#bbbbbb', hint: '#555555', modalBg: '#000000', modalBorder: '#ffffff', name: 'Monochrome' }
+            },
+            registerTheme(name, themeObj) {
+                this.themes[name] = themeObj;
+                window.colorSchemes = this.themes;
+                if (typeof updateColorSchemeMenuUI === 'function') updateColorSchemeMenuUI();
+            },
+            getTheme(name) { return this.themes[name] || this.themes['monochrome']; },
+            getHintColor() { const active = window.ColorAPI.getTheme(window.termSettings?.colorscheme || 'monochrome'); return active.hint || '#555555'; },
+            getModalBg() { const active = window.ColorAPI.getTheme(window.termSettings?.colorscheme || 'monochrome'); return active.modalBg || active.bg; },
+            getModalBorder() { const active = window.ColorAPI.getTheme(window.termSettings?.colorscheme || 'monochrome'); return active.modalBorder || active.text; }
+        };
+        window.colorSchemes = window.ColorAPI.themes;
 
-            const profilePic = document.getElementById("profilePic");
-            const profileFallbackIcon = document.getElementById("profileFallbackIcon");
-            const profilePanel = document.getElementById("profilePanel");
-            const profilePanelImg = document.querySelector(".profile-panel-img");
-            const panelFallbackIcon = document.getElementById("panelFallbackIcon");
-            
-            const loadingProfileWrapper = document.getElementById("loadingProfileWrapper");
-            const loadingProfilePic = document.getElementById("loadingProfilePic");
-            const loadingFallbackIcon = document.getElementById("loadingFallbackIcon");
-            
-            const profileName = document.getElementById("profileName");
-            const profileEmail = document.getElementById("profileEmail");
-            const profileDnd = document.getElementById("profileDnd");
-            const statusLine = document.getElementById("statusLine");
-            const profileSourceStatus = document.getElementById("profileSourceStatus");
+        window.systemsRegistry = {};
+        window.packagesRegistry = {};
+        window.wrapperRegistry = {};
 
-            function updateStatus(message, type = '') {
-                try {
-                    if (statusLine) {
-                        statusLine.textContent = message;
-                        statusLine.className = 'status-line' + (type ? ' ' + type : '');
-                    }
-                } catch (e) {}
+        function openWrapperWindow(name, src) {
+            const overlay = document.getElementById('wrapper-overlay');
+            const frame = document.getElementById('wrapper-frame');
+            if (!overlay || !frame) return;
+            frame.onload = () => {
+                try { frame.contentWindow.addEventListener('keydown', closeWrapperOnEscape, { capture: true }); } catch (err) {}
+            };
+            frame.src = src || 'about:blank';
+            overlay.style.display = 'flex';
+        }
+
+        function closeWrapperOnEscape(e) {
+            const overlay = document.getElementById('wrapper-overlay');
+            if (e.key !== 'Escape' || overlay?.style.display === 'none') return;
+            e.preventDefault();
+            e.stopPropagation();
+            closeWrapperWindow();
+        }
+
+        function closeWrapperWindow() {
+            const overlay = document.getElementById('wrapper-overlay');
+            const frame = document.getElementById('wrapper-frame');
+            if (overlay) overlay.style.display = 'none';
+            if (frame) frame.src = 'about:blank';
+        }
+
+        const commandInfo = {
+            help: "what is this command?\nhelp\n\nwhat is it used for?\nDisplays a list of available terminal commands, or detailed help information for specific commands.",
+            settings: "what is this command?\nsettings\n\nwhat is it used for?\nOpens a graphical settings window allowing you to customize all terminal, system, and infobar preferences.",
+            set: "what is this command?\nset\n\nwhat is it used for?\nConfigures terminal settings such as text size, font, language, color scheme, system or infobar layout.",
+            apt: "what is this command?\napt (Advanced Package Tool)\n\nwhat is it used for?\nInstalls, updates, or manages software packages from the packages directory.",
+            clear: "what is this command?\nclear\n\nwhat is it used for?\nClears all previous text output from the terminal screen to give you a clean workspace."
+        };
+
+        const defaultVFS = {
+            type: 'dir', description: 'Root directory of the virtual file system containing system directories.',
+            children: {
+                'bin': { type: 'dir', description: 'Binary directory containing essential command binaries.', children: {} },
+                'boot': { type: 'dir', description: 'Bootloader files and kernel images required for system startup.', children: {} },
+                'dev': { type: 'dir', description: 'Device files representing hardware components and pseudo-devices.', children: {} },
+                'etc': { type: 'dir', description: 'Configuration files specific to this machine.', children: { 'hostname': { type: 'file', description: 'Configuration file storing system hostname.', content: 'device\n' }, 'passwd': { type: 'file', description: 'User account database and access info.', content: 'root:x:0:0:root:/root:/bin/bash\nuser:x:1000:1000:user,,,:/home/user:/bin/bash\n' } } },
+                'home': { type: 'dir', description: 'Home directory containing user personal folders.', children: { 'user': { type: 'dir', description: 'Personal home folder for the current user.', children: { '.bashrc': { type: 'file', description: 'Initialization script for non-login shells.', content: '# ~/.bashrc\n' }, '.profile': { type: 'file', description: 'Initialization script for login shells.', content: '# ~/.profile\n' }, 'Desktop': { type: 'dir', description: 'Desktop items folder.', children: {} }, 'Documents': { type: 'dir', description: 'User documents and text files.', children: {} }, 'Downloads': { type: 'dir', description: 'Downloaded files storage.', children: {} }, 'Music': { type: 'dir', description: 'Audio tracks and music.', children: {} }, 'Pictures': { type: 'dir', description: 'Images and photos.', children: {} }, 'Videos': { type: 'dir', description: 'Video clips and recordings.', children: {} }, 'readme.txt': { type: 'file', description: 'Quick start guide file.', content: 'Type help to see available commands.' } } } } },
+                'lib': { type: 'dir', description: 'Shared library files.', children: {} },
+                'mnt': { type: 'dir', description: 'Temporary mount point.', children: {} },
+                'opt': { type: 'dir', description: 'Optional application packages.', children: {} },
+                'proc': { type: 'dir', description: 'Process and kernel info virtual filesystem.', children: {} },
+                'root': { type: 'dir', description: 'Root administrator home directory.', children: {} },
+                'run': { type: 'dir', description: 'Runtime data since boot.', children: {} },
+                'sbin': { type: 'dir', description: 'System administration binaries.', children: {} },
+                'srv': { type: 'dir', description: 'Service data folder.', children: {} },
+                'sys': { type: 'dir', description: 'Kernel and device config virtual filesystem.', children: {} },
+                'tmp': { type: 'dir', description: 'Temporary scratch directory.', children: {} },
+                'usr': { type: 'dir', description: 'Programs and data hierarchy.', children: { 'bin': { type: 'dir', description: 'User commands and binaries.', children: {} }, 'lib': { type: 'dir', description: 'Libraries for usr programs.', children: {} }, 'local': { type: 'dir', description: 'Lokale Daten.', children: {} }, 'share': { type: 'dir', description: 'Gemeinsame Daten.', children: {} } } },
+                'var': { type: 'dir', description: 'Variable data such as logs and caches.', children: { 'log': { type: 'dir', description: 'System log files.', children: {} }, 'tmp': { type: 'dir', description: 'Temporary files preserved between reboots.', children: {} } } }
             }
+        };
 
-            function setAvatarImages() {
-                const timestamp = Date.now();
-                const targetUrl = `https://this-person-does-not-exist.com/en?${timestamp}`;
+        let vfs = defaultVFS;
+        try { const savedVFS = localStorage.getItem('sTerminal_vfs'); if (savedVFS) { const parsed = JSON.parse(savedVFS); if (parsed && typeof parsed === 'object') vfs = parsed; } } catch(e) {}
 
-                const handleSuccess = (url) => {
-                    try {
-                        if (profilePic) {
-                            profilePic.src = url;
-                            profilePic.style.display = "block";
-                        }
-                        if (profileFallbackIcon) profileFallbackIcon.style.display = "none";
+        const termSettings = { fontsize: 15, font: "'Courier New', Courier, monospace", language: "en", colorscheme: "monochrome", infobarsize: 26, infobarposition: "top", infobarshow: "show", system: "default", borderGradientStart: '#ffffff', borderGradientEnd: '#555555' };
+        window.termSettings = termSettings;
+        try { const savedSettings = localStorage.getItem('sTerminal_settings'); if (savedSettings) { const parsed = JSON.parse(savedSettings); if (parsed && typeof parsed === 'object') Object.assign(termSettings, parsed); } } catch(e) {}
+        window.termSettings = termSettings;
 
-                        if (profilePanelImg) {
-                            profilePanelImg.src = url;
-                            profilePanelImg.style.display = "block";
-                        }
-                        if (panelFallbackIcon) panelFallbackIcon.style.display = "none";
-
-                        if (loadingProfilePic) {
-                            loadingProfilePic.src = url;
-                            loadingProfilePic.style.display = "block";
-                        }
-                        if (loadingFallbackIcon) loadingFallbackIcon.style.display = "none";
-                        if (loadingProfileWrapper) loadingProfileWrapper.style.display = "flex";
-
-                        if (profileSourceStatus) {
-                            profileSourceStatus.textContent = "Profile Picture loaded successfully";
-                            profileSourceStatus.style.display = "block";
-                        }
-                    } catch (e) {
-                        handleFallback();
-                    }
-                };
-
-                const handleFallback = () => {
-                    try {
-                        if (profilePic) profilePic.style.display = "none";
-                        if (profileFallbackIcon) profileFallbackIcon.style.display = "block";
-
-                        if (profilePanelImg) profilePanelImg.style.display = "none";
-                        if (panelFallbackIcon) panelFallbackIcon.style.display = "block";
-
-                        if (loadingProfilePic) loadingProfilePic.style.display = "none";
-                        if (loadingFallbackIcon) loadingFallbackIcon.style.display = "block";
-                        if (loadingProfileWrapper) loadingProfileWrapper.style.display = "flex";
-
-                        if (profileSourceStatus) {
-                            profileSourceStatus.style.display = "none";
-                        }
-                    } catch (e) {}
-                };
-
-                const imgTest = new Image();
-                imgTest.crossOrigin = "anonymous";
-                imgTest.onload = () => handleSuccess(targetUrl);
-                imgTest.onerror = () => handleFallback();
-                imgTest.src = targetUrl;
-            }
-
-            function loadData() {
-                try {
-                    updateStatus('Loading Control Center', 'waiting');
-                    setAvatarImages();
-                    if (profileName) profileName.textContent = "Alex Walker";
-                    if (profileEmail) profileEmail.textContent = "alex.walker@local.host";
-                    if (profileDnd) profileDnd.innerHTML = `🏛️ Earth • 🎯 Curiosity<br>⚔️ Intelligence • Creativity`;
-
-                    updateStatus('✅ Ready', 'success');
-
-                    const loadingScreen = document.getElementById("loadingScreen");
-                    const loadingSpinner = document.getElementById("loadingSpinner");
-
-                    setTimeout(() => {
-                        try {
-                            if (loadingSpinner) loadingSpinner.style.display = "none";
-                            if (loadingProfileWrapper) loadingProfileWrapper.style.display = "flex";
-                            setTimeout(() => {
-                                if (loadingScreen) {
-                                    loadingScreen.classList.add("fade-out");
-                                    setTimeout(() => loadingScreen.style.display = "none", 500);
-                                }
-                            }, 1000);
-                        } catch (e) {
-                            if (loadingScreen) loadingScreen.style.display = "none";
-                        }
-                    }, 400);
-
-                } catch (error) {
-                    console.error("Error loading data:", error);
-                    setAvatarImages();
-                    const loadingScreen = document.getElementById("loadingScreen");
-                    if (loadingScreen) loadingScreen.style.display = "none";
+        function updateColorSchemeMenuUI() {
+            ['menu-colorscheme-submenu', 'ctx-menu-colorscheme-submenu'].forEach(submenuId => {
+                const submenu = document.getElementById(submenuId);
+                if (!submenu) return;
+                submenu.innerHTML = '';
+                const schemeKeys = Object.keys(window.ColorAPI.themes);
+                if (schemeKeys.length > 0) {
+                    const parentMenu = document.getElementById(submenuId.replace('-submenu', '-parent'));
+                    if (parentMenu) parentMenu.style.display = 'flex';
+                    schemeKeys.forEach(key => {
+                        let item = document.createElement('div');
+                        item.className = 'mc-submenu-item';
+                        item.dataset.action = 'colorscheme';
+                        item.dataset.value = key;
+                        const themeName = window.ColorAPI.themes[key].name || (key.charAt(0).toUpperCase() + key.slice(1));
+                        item.innerText = themeName;
+                        submenu.appendChild(item);
+                    });
                 }
-            }
+            });
+            setupMenuActions();
+        }
 
-            const profilePicWrapper = document.getElementById("profilePicWrapper");
-            if (profilePicWrapper) {
-                profilePicWrapper.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    if (gridDropdown) gridDropdown.classList.remove("active");
-                    if (profilePanel) profilePanel.classList.toggle("active");
+        function updateSystemMenuUI() {
+            const uiDict = window.Translations[termSettings.language]?.uiLabels || window.Translations['en']?.uiLabels || {};
+            const defaultSystemLabel = uiDict.defaultSystem || 'Default OS';
+            ['menu-system-submenu', 'ctx-menu-system-submenu'].forEach(submenuId => {
+                const submenu = document.getElementById(submenuId);
+                if (!submenu) return;
+                submenu.innerHTML = '';
+                const systemKeys = Object.keys(window.systemsRegistry);
+                const parentMenu = document.getElementById(submenuId.replace('-submenu', '-parent'));
+                if (parentMenu) parentMenu.style.display = systemKeys.length > 0 ? 'flex' : 'none';
+                if (systemKeys.length > 0) {
+                    let defaultItem = document.createElement('div');
+                    defaultItem.className = 'mc-submenu-item';
+                    defaultItem.dataset.action = 'system';
+                    defaultItem.dataset.value = 'default';
+                    defaultItem.innerText = defaultSystemLabel;
+                    submenu.appendChild(defaultItem);
+                    systemKeys.forEach(key => {
+                        let item = document.createElement('div');
+                        item.className = 'mc-submenu-item';
+                        item.dataset.action = 'system';
+                        item.dataset.value = key;
+                        item.innerText = window.systemsRegistry[key].name || key;
+                        submenu.appendChild(item);
+                    });
+                }
+            });
+            setupMenuActions();
+        }
+
+        function updateLanguageMenuUI() {
+            const langCodes = Object.keys(window.Translations);
+            const langNames = { en: "English", de: "Deutsch", fr: "Français", it: "Italiano", tr: "Türkçe" };
+
+            ['menu-language-submenu', 'ctx-menu-language-submenu'].forEach(submenuId => {
+                const submenu = document.getElementById(submenuId);
+                if (!submenu) return;
+                submenu.innerHTML = '';
+                const availableLangs = langCodes.filter(code =>
+                    window.Translations[code] && Object.keys(window.Translations[code]).length > 0
+                );
+                const langsToShow = availableLangs.length > 0 ? availableLangs : ['en', 'de', 'fr', 'it', 'tr'];
+                langsToShow.forEach(code => {
+                    let item = document.createElement('div');
+                    item.className = 'mc-submenu-item';
+                    item.dataset.action = 'language';
+                    item.dataset.value = code;
+                    item.innerText = langNames[code] || code.toUpperCase();
+                    if (code === termSettings.language) item.classList.add('active-setting');
+                    submenu.appendChild(item);
                 });
-            }
-
-            if (gridToggle) {
-                gridToggle.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    if (profilePanel) profilePanel.classList.remove("active");
-                    if (gridDropdown) {
-                        gridDropdown.classList.toggle("active");
-                        if (gridDropdown.classList.contains("active")) {
-                            fetchRetiredApps();
-                        }
-                    }
-                });
-            }
-
-            async function fetchRetiredApps() {
-                let retiredFiles = [];
-                const pathsToTry = ['./retired/', 'retired/'];
-
-                for (const path of pathsToTry) {
-                    try {
-                        const response = await fetch(path, { headers: { 'Accept': 'text/html,application/xhtml+xml' } });
-                        if (response.ok) {
-                            const text = await response.text();
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(text, 'text/html');
-                            const links = doc.querySelectorAll('a');
-                            
-                            links.forEach(link => {
-                                const href = link.getAttribute('href');
-                                if (href && href.toLowerCase().endsWith('.html') && !href.includes('?') && !href.includes('..')) {
-                                    const cleanHref = href.split('/').pop().split('\\').pop();
-                                    if (cleanHref && !retiredFiles.some(f => f.name.toLowerCase() === cleanHref.toLowerCase())) {
-                                        retiredFiles.push({
-                                            name: cleanHref,
-                                            path: path + cleanHref,
-                                            title: cleanHref.replace('.html', '').replace(/([A-Z])/g, ' $1').trim()
-                                        });
-                                    }
-                                }
-                            });
-
-                            if (retiredFiles.length > 0) break;
-                        }
-                    } catch (err) {
-                        // Continue to next path candidate if CORS/fetch fails
-                    }
-                }
-
-                if (retiredListContainer) {
-                    retiredListContainer.innerHTML = '';
-                    if (retiredFiles.length === 0) {
-                        const emptyMsg = document.createElement('div');
-                        emptyMsg.style.cssText = 'padding: 10px 14px; font-size: 13px; color: var(--sub-color); text-align: center;';
-                        emptyMsg.setAttribute('data-i18n-key', 'nothingToShow');
-                        emptyMsg.textContent = i18n[currentLang].nothingToShow;
-                        retiredListContainer.appendChild(emptyMsg);
-                    } else {
-                        retiredFiles.forEach(app => {
-                            const a = document.createElement('a');
-                            a.href = app.path;
-                            a.target = '_blank';
-                            a.className = 'grid-item';
-                            a.innerHTML = `
-                                <svg class="monochrome-icon" style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
-                                <span>${app.title}</span>
-                            `;
-                            retiredListContainer.appendChild(a);
-                        });
-                    }
-                }
-            }
-
-            document.addEventListener("click", (e) => {
-                try {
-                    if (profilePanel && profilePicWrapper && !profilePanel.contains(e.target) && e.target !== profilePicWrapper && !profilePicWrapper.contains(e.target)) {
-                        profilePanel.classList.remove("active");
-                    }
-                    if (gridDropdown && gridToggle && !gridDropdown.contains(e.target) && e.target !== gridToggle && !gridToggle.contains(e.target)) {
-                        gridDropdown.classList.remove("active");
-                    }
-                } catch (e) {}
             });
 
-            if (langToggleBtn) {
-                langToggleBtn.addEventListener("click", () => {
-                    currentLang = currentLang === "en" ? "de" : "en";
-                    langToggleBtn.textContent = i18n[currentLang].label;
-                    timeLocale = currentLang === "en" ? "en-US" : "de-DE";
-                    dateLocale = currentLang === "en" ? "en-US" : "de-DE";
-                    updateTexts();
-                    updateDateTime();
+            const settLangSelect = document.getElementById('sett-language');
+            if (settLangSelect) {
+                const currentVal = settLangSelect.value;
+                settLangSelect.innerHTML = '';
+                const availableLangs = Object.keys(window.Translations).filter(code =>
+                    window.Translations[code] && Object.keys(window.Translations[code]).length > 0
+                );
+                const langsToShow = availableLangs.length > 0 ? availableLangs : ['en', 'de', 'fr', 'it', 'tr'];
+                langsToShow.forEach(code => {
+                    const opt = document.createElement('option');
+                    opt.value = code;
+                    opt.innerText = langNames[code] || code.toUpperCase();
+                    settLangSelect.appendChild(opt);
                 });
+                settLangSelect.value = termSettings.language || 'en';
             }
+            setupMenuActions();
+        }
 
-            function updateTexts() {
-                try {
-                    const dict = i18n[currentLang];
-                    document.querySelectorAll("[data-i18n-key]").forEach(el => {
-                        const key = el.getAttribute("data-i18n-key");
-                        if (dict[key]) {
-                            el.textContent = dict[key];
+        async function loadDynamicModules() {
+            try {
+                const termLangRes = await fetch('terminal.json');
+                if (termLangRes.ok) {
+                    const termJson = await termLangRes.json();
+
+                    const langCodes = Object.keys(termJson.user || {});
+
+                    langCodes.forEach(lang => {
+                        window.Translations[lang] = window.Translations[lang] || {};
+                    });
+
+                    const sections = ['user', 'uiLabels', 'messages', 'errors', 'successMessages', 'dialogs', 'helpSections', 'fileDescriptions'];
+                    sections.forEach(section => {
+                        const sectionData = termJson[section];
+                        if (sectionData && typeof sectionData === 'object') {
+                            const hasLangKeys = Object.keys(sectionData).some(key => langCodes.includes(key));
+                            if (hasLangKeys) {
+                                langCodes.forEach(lang => {
+                                    if (sectionData[lang]) {
+                                        window.Translations[lang][section] = sectionData[lang];
+                                    }
+                                });
+                            } else {
+                                langCodes.forEach(lang => {
+                                    window.Translations[lang][section] = sectionData;
+                                });
+                            }
                         }
                     });
-                    document.querySelectorAll("[data-i18n-cat]").forEach(el => {
-                        const cat = el.getAttribute("data-i18n-cat");
-                        if (dict[cat]) {
-                            el.textContent = dict[cat];
-                        }
-                    });
-                } catch (e) {}
+                }
+            } catch (e) {
+                console.warn('Could not load terminal.json:', e);
             }
 
-            if (retentionEl) {
-                retentionEl.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    retentionSeconds = 0;
-                    retentionEl.textContent = "00:00:00";
-                });
-            }
-
-            if (timeEl) {
-                timeEl.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    timeLocale = timeLocale === "en-US" ? "de-DE" : "en-US";
-                    updateDateTime();
-                });
-            }
-
-            if (dateEl) {
-                dateEl.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    dateLocale = dateLocale === "en-US" ? "de-DE" : "en-US";
-                    updateDateTime();
-                });
-            }
-
-            if (themeToggle) {
-                themeToggle.addEventListener("click", () => {
-                    const isDark = body.getAttribute("data-theme") === "dark";
-                    body.setAttribute("data-theme", isDark ? "light" : "dark");
-                    if (themeIcon) {
-                        themeIcon.innerHTML = isDark ?
-                            `<path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>` :
-                            `<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>`;
+            if (!window.Translations['en']) {
+                window.Translations['en'] = {
+                    user: { user: "user", device: "device" },
+                    messages: { helpPrompt: "Type 'help' to see available commands" },
+                    errors: { commandNotFound: "bash: {0}: command not found" },
+                    uiLabels: {
+                        terminalSettings: "sTerminal Settings",
+                        fontSize: "Font Size (px):",
+                        fontFamily: "Font Family:",
+                        language: "Language:",
+                        colorScheme: "Color Scheme:",
+                        systemProfile: "System Profile:",
+                        infobarPosition: "Infobar Position:",
+                        infobarSize: "Infobar Size (px):",
+                        infobarVisibility: "Infobar Visibility:",
+                        saveApply: "Save & Apply",
+                        cancel: "Cancel",
+                        confirm: "Confirm",
+                        copy: "Copy",
+                        paste: "Paste",
+                        pasteReturn: "Paste & Run",
+                        pasteNewTerminal: "Paste in new terminal",
+                        pasteNewTerminalReturn: "Paste in new terminal & Run",
+                        pasteNewTab: "Paste in new tab",
+                        pasteNewTabReturn: "Paste in new tab & Run",
+                        openNewTab: "Open new tab",
+                        closeTab: "Close tab",
+                        openNewTerminal: "Open new terminal",
+                        closeTerminal: "Close terminal",
+                        options: "Options",
+                        terminal: "Terminal",
+                        font: "Font",
+                        systems: "Systems",
+                        infobar: "Info Bar",
+                        position: "Position",
+                        size: "Size",
+                        show: "Show",
+                        hide: "Hide",
+                        top: "Top",
+                        bottom: "Bottom",
+                        tabs: "Tabs",
+                        terminals: "Terminals",
+                        defaultSystem: "Default OS",
+                        newTab: "New stty tab",
+                        themeLabel: "Theme:"
                     }
-                });
+                };
             }
 
-            function updateDateTime() {
+            updateLanguageMenuUI();
+
+            // Updated base registry structure matched with new registry.json
+            let registry = {
+                colors: [],
+                systems: [],
+                core: ['cat'], // Will map to registry.json "core" array
+                official: [],  // Will map to registry.json "official" array
+                custom: [],
+                wrapper: []
+            };
+
+            try {
+                const response = await fetch('registry.json');
+                if (response.ok) {
+                    const regData = await response.json();
+                    registry = { ...registry, ...regData };
+                }
+            } catch (e) {
+                console.warn('Could not fetch registry.json:', e);
+            }
+
+            window.systemRegistryConfig = registry;
+
+            const loadScript = async (src) => {
                 try {
-                    const now = new Date();
-                    if (timeEl) {
-                        timeEl.textContent = now.toLocaleTimeString(timeLocale, {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
+                    const script = document.createElement('script');
+                    script.src = src;
+                    await new Promise((resolve, reject) => {
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                    });
+                } catch (e) {
+                    console.warn(`Failed to load script ${src}:`, e);
+                }
+            };
+
+            const tryLoadPackage = async (pkg, candidates) => {
+                for (const src of candidates) {
+                    try {
+                        await new Promise((resolve, reject) => {
+                            const script = document.createElement('script');
+                            script.src = src;
+                            script.onload = () => resolve();
+                            script.onerror = () => reject(new Error(`Failed to load ${src}`));
+                            document.head.appendChild(script);
                         });
+                        return true;
+                    } catch (e) {
+                        // keep trying other candidate paths
                     }
-                    if (dateEl) {
-                        dateEl.textContent = now.toLocaleDateString(dateLocale, {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                        });
-                    }
-                } catch (e) {}
+                }
+                console.warn(`Package not found: ${pkg}`);
+                return false;
+            };
+
+            // Load the main monolithic color schemes file first
+            await loadScript('colors/colorsTerminal.js');
+
+            // Load any additional color schemes from the colors folder via registry
+            for (const name of (registry.colors || [])) {
+                // Skip the monolithic file or strange variants to prevent redundant fetch warnings
+                if (name === 'colorsTerminal.js' || name === 'colorsTerminal.html' || name === 'colorsTerminal') {
+                    continue;
+                }
+                
+                // Try multiple possible paths for individual theme packages
+                const loaded = await tryLoadPackage(name, [
+                    `colors/dark/${name}.js`,
+                    `colors/light/${name}.js`,
+                    `colors/${name}.js`,
+                    `${name}.js`
+                ]);
+                if (!loaded) console.warn(`Color package not found: ${name}`);
+            }
+            updateColorSchemeMenuUI();
+
+            for (const sys of (registry.systems || [])) {
+                await loadScript(`systems/system${sys}.js`);
+            }
+            updateSystemMenuUI();
+
+            for (const pkg of (registry.core || registry.corePackages || [])) {
+                const loaded = await tryLoadPackage(pkg, [
+                    `packages/core/${pkg}.js`,
+                    `packages/official/${pkg}.js`,
+                    `packages/${pkg}.js`
+                ]);
+                if (!loaded) console.warn(`Core package not found: ${pkg}`);
             }
 
-            function updateRetentionTimer() {
-                retentionSeconds++;
-                const hrs = Math.floor(retentionSeconds / 3600).toString().padStart(2, '0');
-                const mins = Math.floor((retentionSeconds % 3600) / 60).toString().padStart(2, '0');
-                const secs = (retentionSeconds % 60).toString().padStart(2, '0');
-                if (retentionEl) {
-                    retentionEl.textContent = `${hrs}:${mins}:${secs}`;
+            for (const pkg of (registry.official || registry.packages || [])) {
+                const loaded = await tryLoadPackage(pkg, [
+                    `packages/official/${pkg}.js`,
+                    `packages/${pkg}.js`,
+                    `packages/core/${pkg}.js`
+                ]);
+                if (!loaded) console.warn(`Official package not found: ${pkg}`);
+            }
+
+            for (const pkg of (registry.custom || [])) {
+                const loaded = await tryLoadPackage(pkg, [
+                    `packages/custom/${pkg}.js`,
+                    `packages/custom/${pkg}.mjs`,
+                    `packages/custom/${pkg}.cjs`,
+                    `packages/${pkg}.js`
+                ]);
+                if (!loaded) console.warn(`Custom package not found: ${pkg}`);
+            }
+
+            for (const pkg of (registry.wrapper || [])) {
+                let found = null;
+                const wrapperCandidates = [
+                    `packages/wrapped/${pkg}.html`,
+                    `packages/wrapped/${pkg}.js`,
+                    `packages/wrapper/${pkg}.html`,
+                    `packages/wrapper/${pkg}.js`
+                ];
+
+                for (const src of wrapperCandidates) {
+                    try {
+                        await new Promise((resolve, reject) => {
+                            const script = document.createElement('script');
+                            script.src = src;
+                            script.onload = () => resolve();
+                            script.onerror = () => reject(new Error(`Failed to load ${src}`));
+                            document.head.appendChild(script);
+                        });
+                        found = src;
+                        break;
+                    } catch (e) {
+                        // keep trying other candidate paths
+                    }
+                }
+
+                if (!found) {
+                    console.warn(`Wrapper package not found: ${pkg}`);
+                    continue;
+                }
+                window.wrapperRegistry[pkg] = { type: found.endsWith('.html') ? 'html' : 'js', src: found };
+                if (found.endsWith('.html')) {
+                    window.wrapperRegistry[pkg].src = found;
                 }
             }
 
-            updateDateTime();
-            setInterval(updateDateTime, 1000);
-            setInterval(updateRetentionTimer, 1000);
-            
-            if (langToggleBtn) langToggleBtn.textContent = i18n[currentLang].label;
-            updateTexts();
-
-            setTimeout(() => {
-                loadData();
-            }, 100);
-
-            setTimeout(() => {
-                try {
-                    const loadingScreen = document.getElementById("loadingScreen");
-                    if (loadingScreen && loadingScreen.style.display !== 'none') {
-                        loadingScreen.classList.add("fade-out");
-                        setTimeout(() => loadingScreen.style.display = "none", 500);
+            for (const [pkgKey, pkgObj] of Object.entries(window.packagesRegistry || {})) {
+                if (pkgObj.translations) {
+                    for (const [langCode, transObj] of Object.entries(pkgObj.translations)) {
+                        window.Translations[langCode] = window.Translations[langCode] || {};
+                        for (const [tKey, tVal] of Object.entries(transObj)) {
+                            window.Translations[langCode][tKey] = tVal;
+                        }
                     }
-                } catch (e) {}
-            }, 10000);
+                }
+            }
 
-            // Finalizing initialization and updating UI
-        })();
+            refreshTerminalCommands();
+            applySettings();
+            refreshAllLanguageElements();
+        }
+
+        function refreshTerminalCommands() {
+            if (typeof tabs !== 'undefined') {
+                tabs.forEach(tab => {
+                    tab.terminals.forEach(term => {
+                        term.invalidateCommandCache();
+                        for (const [pkgName, pkgObj] of Object.entries(window.packagesRegistry)) {
+                            if (pkgObj.preInstalledOn?.includes(termSettings.system) || term.installedPackages.has(pkgName)) {
+                                for (const [cmdName, cmdFunc] of Object.entries(pkgObj.commands || {})) {
+                                    if (!term.commands[cmdName]) {
+                                        term.commands[cmdName] = cmdFunc.bind(term);
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+            }
+        }
+
+        function isDebianFamilySystem() {
+            if (termSettings.system === 'default') return true;
+            const sysObj = window.systemsRegistry[termSettings.system];
+            if (!sysObj) return false;
+            if (sysObj.isDebianFamily !== undefined) return sysObj.isDebianFamily;
+            const sysName = (sysObj.name || termSettings.system).toLowerCase();
+            return sysName.includes('debian') || sysName.includes('ubuntu') || sysName.includes('debug');
+        }
+
+        function refreshAllLanguageElements() {
+            const lang = (termSettings?.language ?? window.termSettings?.language ?? 'en');
+            const uiDict = window.Translations[lang]?.uiLabels || window.Translations['en']?.uiLabels || {};
+
+            document.querySelectorAll('[data-en]').forEach(el => {
+                const key = el.dataset.en;
+                const inTerminalOutput = el.closest('.terminal-instance .output');
+                if (inTerminalOutput) return;
+                if (uiDict[key]) {
+                    el.innerText = uiDict[key];
+                }
+            });
+
+            const tabAddBtn = document.getElementById('tab-add-btn');
+            if (tabAddBtn) {
+                tabAddBtn.title = uiDict.newTab || 'New stty tab';
+            }
+
+            document.querySelectorAll('.tab-close-btn').forEach(btn => {
+                btn.title = uiDict.closeTab || 'Close tab';
+            });
+
+            const defaultSystemOption = document.querySelector('#sett-system option[value="default"]');
+            if (defaultSystemOption) {
+                defaultSystemOption.innerText = uiDict.defaultSystem || 'Default OS';
+            }
+
+            document.querySelectorAll('.user').forEach(el => {
+                el.innerText = getUserDeviceString();
+            });
+
+            document.querySelectorAll('.terminal-instance .banner').forEach(el => {
+                el.innerText = t('messages.helpPrompt');
+            });
+
+            const settLangSelect = document.getElementById('sett-language');
+            if (settLangSelect) {
+                settLangSelect.value = termSettings.language;
+            }
+
+            if (typeof tabs !== 'undefined') {
+                tabs.forEach(tab => {
+                    tab.terminals.forEach(term => {
+                        term.updatePromptUser();
+                        term.formatPromptPath();
+                        const bannerEl = term.outputDiv.querySelector('.banner');
+                        if (bannerEl) {
+                            bannerEl.innerText = t('messages.helpPrompt');
+                        }
+                    });
+                });
+            }
+        }
+
+        function applySettings() {
+            window.termSettings = termSettings;
+            document.documentElement.style.setProperty('--font-size', termSettings.fontsize + 'px');
+            document.documentElement.style.setProperty('--font-family', termSettings.font);
+            document.documentElement.style.setProperty('--infobar-size', termSettings.infobarsize + 'px');
+            const activeScheme = window.ColorAPI.getTheme(termSettings.colorscheme);
+            document.documentElement.style.setProperty('--bg-color', activeScheme.bg);
+            document.documentElement.style.setProperty('--text-color', activeScheme.text);
+            document.documentElement.style.setProperty('--prompt-user', activeScheme.user);
+            document.documentElement.style.setProperty('--prompt-path', activeScheme.path);
+            document.documentElement.style.setProperty('--hint-color', window.ColorAPI.getHintColor());
+            document.documentElement.style.setProperty('--modal-bg', window.ColorAPI.getModalBg());
+            document.documentElement.style.setProperty('--modal-border', window.ColorAPI.getModalBorder());
+            const baseBorderStart = termSettings.borderGradientStart || activeScheme.modalBorderStart || activeScheme.text || '#ffffff';
+            const baseBorderEnd = termSettings.borderGradientEnd || activeScheme.modalBorderEnd || activeScheme.modalBorder || activeScheme.text || '#555555';
+            document.documentElement.style.setProperty('--modal-border-start', baseBorderStart);
+            document.documentElement.style.setProperty('--modal-border-end', baseBorderEnd);
+            
+            const themeNameEl = document.getElementById('infobar-theme-name');
+            if (themeNameEl) themeNameEl.innerText = activeScheme.name || (termSettings.colorscheme.charAt(0).toUpperCase() + termSettings.colorscheme.slice(1));
+
+            // Update toggle icon
+            const toggleBtn = document.getElementById('theme-toggle-btn');
+            if (toggleBtn) {
+                const isDark = isDarkTheme(termSettings.colorscheme);
+                toggleBtn.innerText = isDark ? '☽' : '☀';
+            }
+
+            const infobar = document.getElementById('infobar');
+            const tabsBar = document.getElementById('tabs-bar');
+            const menu = document.getElementById('options-menu');
+            if (termSettings.infobarshow === 'hide') { infobar.classList.add('hidden-infobar'); tabsBar.classList.add('hidden-infobar'); } else { infobar.classList.remove('hidden-infobar'); tabsBar.classList.remove('hidden-infobar'); }
+            if (termSettings.infobarposition === 'top') {
+                infobar.style.order = '-2'; infobar.style.borderBottom = '1px solid var(--text-color)';
+                tabsBar.style.order = '-1'; tabsBar.style.borderBottom = '1px solid var(--text-color)'; tabsBar.style.borderTop = 'none';
+                if (menu) { menu.style.top = (termSettings.infobarsize * 2) + 'px'; menu.style.bottom = 'auto'; }
+            } else {
+                tabsBar.style.order = '1'; tabsBar.style.borderTop = '1px solid var(--text-color)'; tabsBar.style.borderBottom = 'none';
+                infobar.style.order = '2'; infobar.style.borderBottom = 'none'; infobar.style.borderTop = '1px solid var(--text-color)';
+                if (menu) { menu.style.bottom = (termSettings.infobarsize * 2) + 'px'; menu.style.top = 'auto'; }
+            }
+            localStorage.setItem('sTerminal_settings', JSON.stringify(termSettings));
+            updateInfobar();
+            updateMenuSelectionUI();
+
+            if (typeof tabs !== 'undefined') {
+                tabs.forEach(tab => {
+                    tab.terminals.forEach(term => {
+                        term.updatePromptUser();
+                        const bannerEl = term.outputDiv.querySelector('.banner');
+                        if (bannerEl) {
+                            bannerEl.innerText = t('messages.helpPrompt');
+                        }
+                    });
+                });
+            }
+
+            refreshAllLanguageElements();
+
+            const settLangSelect = document.getElementById('sett-language');
+            if (settLangSelect) {
+                settLangSelect.value = termSettings.language;
+            }
+        }
+
+        // helper: determine if a theme is dark
+        function isDarkTheme(themeName) {
+            const t = window.ColorAPI.getTheme(themeName);
+            if (!t) return true;
+            const bg = t.bg || '#000000';
+            // simple luminance check
+            const r = parseInt(bg.slice(1,3), 16);
+            const g = parseInt(bg.slice(3,5), 16);
+            const b = parseInt(bg.slice(5,7), 16);
+            const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            return lum < 0.5;
+        }
+
+        // Get only dark or light themes
+        function getThemesByMode(mode) {
+            const all = Object.keys(window.ColorAPI.themes);
+            return all.filter(key => {
+                const isDark = isDarkTheme(key);
+                return mode === 'dark' ? isDark : !isDark;
+            });
+        }
+
+        // Toggle between dark and light mode (switch to first theme of opposite mode)
+        function toggleDarkLight() {
+            const currentIsDark = isDarkTheme(termSettings.colorscheme);
+            const targetMode = currentIsDark ? 'light' : 'dark';
+            const themes = getThemesByMode(targetMode);
+            if (themes.length === 0) return;
+            // pick the first theme in the target mode
+            termSettings.colorscheme = themes[0];
+            applySettings();
+        }
+
+        // Cycle only through themes of the current mode (dark or light)
+        function cycleThemeInCurrentMode() {
+            const currentIsDark = isDarkTheme(termSettings.colorscheme);
+            const mode = currentIsDark ? 'dark' : 'light';
+            const themes = getThemesByMode(mode);
+            if (themes.length === 0) return;
+            let idx = themes.indexOf(termSettings.colorscheme);
+            if (idx === -1) idx = 0;
+            else idx = (idx + 1) % themes.length;
+            termSettings.colorscheme = themes[idx];
+            applySettings();
+        }
+
+        window.settingsWindowState = {
+            dirty: false,
+            snapshot: null
+        };
+
+        function getSettingsWindowSnapshot() {
+            return {
+                fontsize: document.getElementById('sett-fontsize').value,
+                font: document.getElementById('sett-font').value,
+                language: document.getElementById('sett-language').value,
+                colorscheme: document.getElementById('sett-colorscheme').value,
+                system: document.getElementById('sett-system').value,
+                infobarposition: document.getElementById('sett-infobarpos').value,
+                infobarsize: document.getElementById('sett-infobarsize').value,
+                infobarshow: document.getElementById('sett-infobarshow').value,
+                borderGradientStart: document.getElementById('sett-border-start').value,
+                borderGradientEnd: document.getElementById('sett-border-end').value
+            };
+        }
+
+        function refreshSettingsDirtyState() {
+            const snapshot = window.settingsWindowState.snapshot;
+            if (!snapshot) {
+                window.settingsWindowState.dirty = false;
+                return;
+            }
+            const current = getSettingsWindowSnapshot();
+            window.settingsWindowState.dirty = JSON.stringify(current) !== JSON.stringify(snapshot);
+        }
+
+        function focusSettingsWindow() {
+            const overlay = document.getElementById('settings-window-overlay');
+            const settingsWindow = document.getElementById('settings-window');
+            if (!overlay || !settingsWindow || overlay.style.display === 'none') return;
+            setTimeout(() => {
+                settingsWindow.focus();
+                const active = document.activeElement;
+                if (!active || !overlay.contains(active)) {
+                    const firstFocusable = settingsWindow.querySelector('input, select, button');
+                    if (firstFocusable) firstFocusable.focus();
+                }
+            }, 0);
+        }
+
+        function openSettingsWindow() {
+            const overlay = document.getElementById('settings-window-overlay');
+            if (!overlay) return;
+            const fontSelect = document.getElementById('sett-font');
+            fontSelect.innerHTML = '';
+            fontsList.forEach(f => { const opt = document.createElement('option'); opt.value = f; opt.innerText = f.replace(/'/g, ''); if (f === termSettings.font || `'${f}'` === termSettings.font) opt.selected = true; fontSelect.appendChild(opt); });
+            const csSelect = document.getElementById('sett-colorscheme');
+            csSelect.innerHTML = '';
+            Object.keys(window.ColorAPI.themes).forEach(key => {
+                const opt = document.createElement('option');
+                opt.value = key;
+                const themeName = window.ColorAPI.themes[key].name || (key.charAt(0).toUpperCase() + key.slice(1));
+                opt.innerText = themeName;
+                if (key === termSettings.colorscheme) opt.selected = true;
+                csSelect.appendChild(opt);
+            });
+            const sysSelect = document.getElementById('sett-system');
+            const defaultSystemLabel = (window.Translations[termSettings.language]?.uiLabels?.defaultSystem) || (window.Translations['en']?.uiLabels?.defaultSystem) || 'Default OS';
+            sysSelect.innerHTML = `<option value="default">${defaultSystemLabel}</option>`;
+            Object.keys(window.systemsRegistry).forEach(key => { const opt = document.createElement('option'); opt.value = key; opt.innerText = window.systemsRegistry[key].name || key; if (key === termSettings.system) opt.selected = true; sysSelect.appendChild(opt); });
+            document.getElementById('sett-fontsize').value = termSettings.fontsize;
+            document.getElementById('sett-language').value = termSettings.language;
+            document.getElementById('sett-infobarpos').value = termSettings.infobarposition;
+            document.getElementById('sett-infobarsize').value = termSettings.infobarsize;
+            document.getElementById('sett-infobarshow').value = termSettings.infobarshow;
+            document.getElementById('sett-border-start').value = termSettings.borderGradientStart || '#ffffff';
+            document.getElementById('sett-border-end').value = termSettings.borderGradientEnd || '#555555';
+            window.settingsWindowState.snapshot = getSettingsWindowSnapshot();
+            window.settingsWindowState.dirty = false;
+            overlay.style.display = 'flex';
+            refreshAllLanguageElements();
+            focusSettingsWindow();
+        }
+
+        function closeSettingsWindow() {
+            const overlay = document.getElementById('settings-window-overlay');
+            if (overlay) overlay.style.display = 'none';
+            window.settingsWindowState.dirty = false;
+            window.settingsWindowState.snapshot = null;
+        }
+
+        function promptCloseSettingsWindow() {
+            const overlay = document.getElementById('settings-window-overlay');
+            if (!overlay || overlay.style.display === 'none') return;
+            const snapshot = window.settingsWindowState.snapshot;
+            const currentDirty = snapshot ? JSON.stringify(getSettingsWindowSnapshot()) !== JSON.stringify(snapshot) : false;
+            window.settingsWindowState.dirty = currentDirty;
+            if (!window.settingsWindowState.dirty) {
+                closeSettingsWindow();
+                return;
+            }
+            const discardMessage = (window.Translations[termSettings.language]?.dialogs?.discardChanges)
+                || (window.Translations['en']?.dialogs?.discardChanges)
+                || 'You have unsaved changes. Discard them?';
+            modalText.innerText = discardMessage;
+            modalOverlay.style.display = 'flex';
+            const handleConfirm = () => {
+                cleanupModal();
+                closeSettingsWindow();
+            };
+            const handleCancel = () => {
+                cleanupModal();
+                focusSettingsWindow();
+            };
+            const cleanupModal = () => {
+                modalOverlay.style.display = 'none';
+                modalConfirm.removeEventListener('click', handleConfirm);
+                modalCancel.removeEventListener('click', handleCancel);
+            };
+            modalConfirm.addEventListener('click', handleConfirm);
+            modalCancel.addEventListener('click', handleCancel);
+        }
+
+        document.getElementById('settings-close-btn').addEventListener('click', () => promptCloseSettingsWindow());
+        document.getElementById('settings-window-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'settings-window-overlay') promptCloseSettingsWindow();
+        });
+        document.addEventListener('mousedown', (e) => {
+            const overlay = document.getElementById('settings-window-overlay');
+            const settingsWindow = document.getElementById('settings-window');
+            if (overlay && overlay.style.display !== 'none' && settingsWindow && !settingsWindow.contains(e.target)) {
+                e.preventDefault();
+                focusSettingsWindow();
+            }
+        });
+        window.addEventListener('keydown', (e) => {
+            const overlay = document.getElementById('settings-window-overlay');
+            if (overlay && overlay.style.display !== 'none') {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    promptCloseSettingsWindow();
+                }
+            }
+        });
+        document.getElementById('settings-window').addEventListener('focusin', () => {
+            if (document.getElementById('settings-window-overlay')?.style.display !== 'none') {
+                refreshSettingsDirtyState();
+            }
+        });
+        document.getElementById('settings-window').addEventListener('input', () => {
+            refreshSettingsDirtyState();
+            focusSettingsWindow();
+        });
+        document.getElementById('settings-window').addEventListener('change', () => {
+            refreshSettingsDirtyState();
+            focusSettingsWindow();
+        });
+        document.getElementById('settings-window').addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                promptCloseSettingsWindow();
+            }
+        });
+
+        document.getElementById('settings-save-btn').addEventListener('click', () => {
+            const newFontsize = parseInt(document.getElementById('sett-fontsize').value);
+            if (!isNaN(newFontsize) && newFontsize >= 10 && newFontsize <= 36) termSettings.fontsize = newFontsize;
+            termSettings.font = document.getElementById('sett-font').value;
+            termSettings.language = document.getElementById('sett-language').value;
+            termSettings.colorscheme = document.getElementById('sett-colorscheme').value;
+            termSettings.borderGradientStart = document.getElementById('sett-border-start').value;
+            termSettings.borderGradientEnd = document.getElementById('sett-border-end').value;
+            const newSys = document.getElementById('sett-system').value;
+            if (newSys !== termSettings.system) triggerSystemLoad(newSys);
+            termSettings.infobarposition = document.getElementById('sett-infobarpos').value;
+            const newInfobarSize = parseInt(document.getElementById('sett-infobarsize').value);
+            if (!isNaN(newInfobarSize) && newInfobarSize >= 16 && newInfobarSize <= 60) termSettings.infobarsize = newInfobarSize;
+            termSettings.infobarshow = document.getElementById('sett-infobarshow').value;
+            applySettings();
+            refreshAllLanguageElements();
+            closeSettingsWindow();
+        });
+
+        function updateInfobar() {
+            const clockEl = document.getElementById('infobar-clock');
+            if (!clockEl) return;
+            const now = new Date();
+            const localeMap = { de: 'de-DE', fr: 'fr-FR', it: 'it-IT', tr: 'tr-TR', en: 'en-US' };
+            const locale = localeMap[termSettings.language] || 'en-US';
+            clockEl.innerText = now.toLocaleString(locale, { weekday: 'short', year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        const fontsList = ["monospace", "Consolas", "'Courier New'", "'Lucida Console'", "'Fira Code'", "'Cascadia Code'", "'JetBrains Mono'", "'Source Code Pro'", "'Ubuntu Mono'", "Arial", "Verdana", "Tahoma", "'Comic Sans MS'", "'Times New Roman'"];
+
+        function setupMenu() {
+            const menu = document.getElementById('options-menu');
+            const btn = document.getElementById('infobar-options');
+            ['menu-font-submenu', 'ctx-menu-font-submenu'].forEach(submenuId => {
+                const fontSubmenu = document.getElementById(submenuId);
+                if (fontSubmenu && fontSubmenu.children.length === 0) {
+                    fontsList.forEach(f => { let item = document.createElement('div'); item.className = 'mc-submenu-item'; item.dataset.action = 'font'; item.dataset.value = f; item.innerText = f.replace(/'/g, ''); fontSubmenu.appendChild(item); });
+                }
+            });
+            if (btn && menu) {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const ctxMenu = document.getElementById('terminal-context-menu');
+                    const themeMenu = document.getElementById('theme-dropdown');
+                    if (ctxMenu) ctxMenu.style.display = 'none';
+                    if (themeMenu) themeMenu.style.display = 'none';
+                    if (menu.style.display === 'none' || menu.style.display === '') { updateMenuSelectionUI(); menu.style.display = 'flex'; } else { menu.style.display = 'none'; }
+                });
+            }
+
+            const themeContainer = document.getElementById('infobar-theme');
+            const themeDropdown = document.getElementById('theme-dropdown');
+            const toggleBtn = document.getElementById('theme-toggle-btn');
+            const themeNameEl = document.getElementById('infobar-theme-name');
+
+            // Dark/Light toggle button
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleDarkLight();
+                });
+            }
+
+            // Left-click on theme name: cycle themes in current mode
+            if (themeNameEl) {
+                themeNameEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    cycleThemeInCurrentMode();
+                });
+            }
+
+            // Right-click on the theme container (or theme name area) to show dropdown
+            if (themeContainer && themeDropdown) {
+                themeContainer.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const ctxMenu = document.getElementById('terminal-context-menu');
+                    if (ctxMenu) ctxMenu.style.display = 'none';
+                    if (menu) menu.style.display = 'none';
+
+                    themeDropdown.innerHTML = '';
+                    const currentIsDark = isDarkTheme(termSettings.colorscheme);
+                    const mode = currentIsDark ? 'dark' : 'light';
+                    const themes = getThemesByMode(mode);
+                    if (themes.length === 0) {
+                        const item = document.createElement('div');
+                        item.className = 'mc-submenu-item';
+                        item.innerText = 'No themes';
+                        themeDropdown.appendChild(item);
+                    } else {
+                        themes.forEach(key => {
+                            let item = document.createElement('div');
+                            item.className = 'mc-submenu-item';
+                            if (termSettings.colorscheme === key) item.classList.add('active-setting');
+                            item.innerText = window.ColorAPI.themes[key].name || (key.charAt(0).toUpperCase() + key.slice(1));
+                            item.addEventListener('click', (ev) => {
+                                ev.stopPropagation();
+                                termSettings.colorscheme = key;
+                                applySettings();
+                                themeDropdown.style.display = 'none';
+                            });
+                            themeDropdown.appendChild(item);
+                        });
+                    }
+
+                    const rect = themeContainer.getBoundingClientRect();
+                    if (termSettings.infobarposition === 'top') {
+                        themeDropdown.style.top = rect.bottom + 'px';
+                        themeDropdown.style.bottom = 'auto';
+                    } else {
+                        themeDropdown.style.bottom = (window.innerHeight - rect.top) + 'px';
+                        themeDropdown.style.top = 'auto';
+                    }
+                    themeDropdown.style.left = rect.left + 'px';
+                    themeDropdown.style.display = 'flex';
+                });
+            }
+
+            document.addEventListener('click', (e) => {
+                if (menu && !menu.contains(e.target) && e.target !== btn && menu.style.display === 'flex') menu.style.display = 'none';
+                const ctxMenu = document.getElementById('terminal-context-menu');
+                if (ctxMenu && !ctxMenu.contains(e.target)) ctxMenu.style.display = 'none';
+                if (themeDropdown && !themeDropdown.contains(e.target) && e.target !== themeContainer && !themeContainer.contains(e.target)) themeDropdown.style.display = 'none';
+            });
+            setupMenuActions();
+        }
+
+        function setupMenuActions() {
+            document.querySelectorAll('.mc-submenu').forEach(submenu => { submenu.addEventListener('mousedown', (e) => { e.stopPropagation(); }); submenu.addEventListener('click', (e) => { e.stopPropagation(); }); });
+            document.querySelectorAll('.mc-submenu-item[data-action]').forEach(item => {
+                item.onclick = null;
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const action = item.dataset.action;
+                    const val = item.dataset.value;
+                    if (action && val) {
+                        if (action === 'system') { triggerSystemLoad(val); } else { termSettings[action] = val; applySettings(); refreshAllLanguageElements(); }
+                        const menu = document.getElementById('options-menu');
+                        if (menu) menu.style.display = 'none';
+                        const ctxMenu = document.getElementById('terminal-context-menu');
+                        if (ctxMenu) ctxMenu.style.display = 'none';
+                    }
+                });
+            });
+            ['menu-infobarsize', 'ctx-menu-infobarsize'].forEach(id => {
+                const sizeInput = document.getElementById(id);
+                if (sizeInput && !sizeInput.dataset.bound) {
+                    sizeInput.dataset.bound = 'true';
+                    sizeInput.value = termSettings.infobarsize;
+                    sizeInput.addEventListener('input', (e) => { let val = parseInt(e.target.value); if (!isNaN(val) && val >= 16 && val <= 60) { termSettings.infobarsize = val; applySettings(); } });
+                }
+            });
+            ['menu-fontsize', 'ctx-menu-fontsize'].forEach(id => {
+                const fontSizeInput = document.getElementById(id);
+                if (fontSizeInput && !fontSizeInput.dataset.bound) {
+                    fontSizeInput.dataset.bound = 'true';
+                    fontSizeInput.value = termSettings.fontsize;
+                    fontSizeInput.addEventListener('input', (e) => { let val = parseInt(e.target.value); if (!isNaN(val) && val >= 10 && val <= 36) { termSettings.fontsize = val; applySettings(); } });
+                }
+            });
+        }
+
+        function updateMenuSelectionUI() {
+            document.querySelectorAll('.mc-submenu-item[data-action]').forEach(item => {
+                const action = item.dataset.action;
+                const val = item.dataset.value;
+                if (termSettings[action] === val) item.classList.add('active-setting');
+                else item.classList.remove('active-setting');
+            });
+            ['menu-infobarsize', 'ctx-menu-infobarsize'].forEach(id => { const sizeInput = document.getElementById(id); if (sizeInput) sizeInput.value = termSettings.infobarsize; });
+            ['menu-fontsize', 'ctx-menu-fontsize'].forEach(id => { const fontSizeInput = document.getElementById(id); if (fontSizeInput) fontSizeInput.value = termSettings.fontsize; });
+            updateLanguageMenuUI();
+        }
+
+        setInterval(updateInfobar, 1000);
+        const clockEl = document.getElementById('infobar-clock');
+        if (clockEl) {
+            clockEl.addEventListener('click', () => {
+                const langs = Object.keys(window.Translations);
+                let nextIdx = (langs.indexOf(termSettings.language) + 1) % langs.length;
+                termSettings.language = langs[nextIdx] || 'en';
+                applySettings();
+                refreshAllLanguageElements();
+            });
+        }
+
+        function saveVFS() { localStorage.setItem('sTerminal_vfs', JSON.stringify(vfs)); }
+
+        const tooltipEl = document.getElementById('os-tooltip');
+        document.addEventListener('mouseover', (e) => {
+            const target = e.target.closest('.os-item, .highlight-blue, .dir-color, .exec-color');
+            if (!target) { tooltipEl.style.display = 'none'; return; }
+            let text = '';
+            let textContent = target.textContent.trim().replace(/\/$/, '');
+            if (target.dataset?.command) textContent = target.dataset.command;
+            let possibleCmd = textContent.split(/\s+/)[0].toLowerCase();
+            
+            if (commandInfo[textContent]) { text = t(commandInfo[textContent]); }
+            else if (commandInfo[possibleCmd]) { text = t(commandInfo[possibleCmd]); }
+            else if (target.dataset && target.dataset.desc) {
+                const name = target.dataset.name || textContent;
+                const desc = t(target.dataset.desc);
+                if (target.dataset.type === 'dir') text = t("fileDescriptions.folderQuestion", name, desc);
+                else text = t("fileDescriptions.fileQuestion", name, desc);
+            }
+
+            if (!text) {
+                for (const pkg of Object.values(window.packagesRegistry || {})) {
+                    if (pkg.commandInfo) {
+                        if (pkg.commandInfo[textContent]) { text = t(pkg.commandInfo[textContent]); break; }
+                        else if (pkg.commandInfo[possibleCmd]) { text = t(pkg.commandInfo[possibleCmd]); break; }
+                    }
+                }
+            }
+
+            if (text) {
+                tooltipEl.innerText = text;
+                tooltipEl.style.display = 'block';
+                const rect = target.getBoundingClientRect();
+                tooltipEl.style.left = Math.min(window.innerWidth - 350, Math.max(10, rect.left)) + 'px';
+                tooltipEl.style.top = (rect.bottom + 6 > window.innerHeight - 130 ? rect.top - tooltipEl.offsetHeight - 6 : rect.bottom + 6) + 'px';
+            }
+        });
+        document.addEventListener('mouseout', (e) => { if (e.target.closest('.os-item, .highlight-blue, .dir-color, .exec-color')) tooltipEl.style.display = 'none'; });
+
+        const workspaceContainer = document.getElementById('workspace-container');
+        const tabsContainer = document.getElementById('tabs-container');
+        const tabAddBtn = document.getElementById('tab-add-btn');
+        const modalOverlay = document.getElementById('os-modal-overlay');
+        const modalText = document.getElementById('os-modal-text');
+        const modalConfirm = document.getElementById('os-modal-confirm');
+        const modalCancel = document.getElementById('os-modal-cancel');
+        let tabs = [];
+        let activeTab = null;
+
+        function getLongestCommonPrefix(strs) {
+            if (!strs.length) return '';
+            let prefix = strs[0];
+            for (let i = 1; i < strs.length; i++) {
+                while (strs[i].indexOf(prefix) !== 0) {
+                    prefix = prefix.substring(0, prefix.length - 1);
+                    if (!prefix) return '';
+                }
+            }
+            return prefix;
+        }
+
+        class TabSession {
+            constructor(tabNumber, wrapperName = null, wrapperSrc = null) {
+                this.tabNumber = tabNumber;
+                this.isWrapper = !!wrapperName;
+                this.wrapperName = wrapperName;
+                this.name = wrapperName ? wrapperName : 'stty' + tabNumber;
+                this.terminals = [];
+                this.activeTerminal = null;
+                this.tabEl = document.createElement('div');
+                this.tabEl.className = 'tab-item';
+                const titleSpan = document.createElement('span');
+                titleSpan.innerText = this.name;
+                titleSpan.addEventListener('click', () => switchTab(this));
+                const closeBtn = document.createElement('span');
+                closeBtn.className = 'tab-close-btn';
+                closeBtn.innerHTML = '&times;';
+                closeBtn.title = 'Close tab';
+                closeBtn.addEventListener('click', (e) => { e.stopPropagation(); confirmCloseTab(this); });
+                this.tabEl.appendChild(titleSpan);
+                this.tabEl.appendChild(closeBtn);
+                this.contentEl = document.createElement('div');
+                this.contentEl.className = 'tab-content';
+                
+                if (this.isWrapper) {
+                    this.iframeEl = document.createElement('iframe');
+                    this.iframeEl.src = wrapperSrc;
+                    this.iframeEl.style.width = '100%';
+                    this.iframeEl.style.height = '100%';
+                    this.iframeEl.style.border = 'none';
+                    this.iframeEl.style.background = 'var(--bg-color)';
+                    this.contentEl.appendChild(this.iframeEl);
+                    workspaceContainer.appendChild(this.contentEl);
+                } else {
+                    this.gridEl = document.createElement('div');
+                    this.gridEl.id = 'grid-container';
+                    this.contentEl.appendChild(this.gridEl);
+                    workspaceContainer.appendChild(this.contentEl);
+                    this.createTerminal();
+                }
+            }
+            renderTabElement() {
+                let inserted = false;
+                for (let child of tabsContainer.children) {
+                    let childNum = parseInt(child.dataset.tabNum);
+                    if (childNum > this.tabNumber) { tabsContainer.insertBefore(this.tabEl, child); inserted = true; break; }
+                }
+                if (!inserted) tabsContainer.appendChild(this.tabEl);
+                this.tabEl.dataset.tabNum = this.tabNumber;
+            }
+            updateGridLayout() { this.gridEl.className = 'count-' + this.terminals.length; }
+            createTerminal() {
+                if (this.terminals.length >= 4 || this.isWrapper) return;
+                const term = new Terminal();
+                this.terminals.push(term);
+                this.gridEl.appendChild(term.el);
+                this.updateGridLayout();
+                this.makeActive(term);
+                applySettings();
+                refreshAllLanguageElements();
+            }
+            closeTerminal(term) {
+                if (this.terminals.length <= 1) { confirmCloseTab(this); return; }
+                const index = this.terminals.indexOf(term);
+                term.el.remove();
+                this.terminals.splice(index, 1);
+                this.updateGridLayout();
+                this.makeActive(this.terminals[index - 1] || this.terminals[0]);
+            }
+            makeActive(term) {
+                this.terminals.forEach(t => t.el.classList.remove('active-term'));
+                term.el.classList.add('active-term');
+                this.activeTerminal = term;
+                term.cmdInput.focus();
+            }
+            navigateTerminal(direction) {
+                if (this.terminals.length <= 1) return;
+                const index = this.terminals.indexOf(this.activeTerminal);
+                let nextIndex = index;
+                if (direction === 'ArrowRight') nextIndex = (index + 1) % this.terminals.length;
+                else if (direction === 'ArrowLeft') nextIndex = (index - 1 + this.terminals.length) % this.terminals.length;
+                else if (direction === 'ArrowDown') nextIndex = (index + 2 < this.terminals.length) ? index + 2 : index;
+                else if (direction === 'ArrowUp') nextIndex = (index - 2 >= 0) ? index - 2 : index;
+                if (this.terminals[nextIndex]) this.makeActive(this.terminals[nextIndex]);
+            }
+        }
+
+        function createTab() {
+            let usedNumbers = tabs.map(t => t.tabNumber);
+            let newNum = 1;
+            while (usedNumbers.includes(newNum)) newNum++;
+            const tab = new TabSession(newNum);
+            tabs.push(tab);
+            tab.renderTabElement();
+            tabsContainer.appendChild(tabAddBtn);
+            switchTab(tab);
+        }
+
+        function createWrapperTab(wrapperName, src) {
+            let usedNumbers = tabs.map(t => t.tabNumber);
+            let newNum = 1;
+            while (usedNumbers.includes(newNum)) newNum++;
+            const tab = new TabSession(newNum, wrapperName, src);
+            tabs.push(tab);
+            tab.renderTabElement();
+            tabsContainer.appendChild(tabAddBtn);
+            switchTab(tab);
+        }
+
+        function confirmCloseTab(tab) {
+            modalText.innerText = t("dialogs.closeTabConfirmation", tab.name);
+            modalOverlay.style.display = 'flex';
+            const handleConfirm = () => { cleanupModal(); executeCloseTab(tab); };
+            const handleCancel = () => { cleanupModal(); };
+            const cleanupModal = () => { modalOverlay.style.display = 'none'; modalConfirm.removeEventListener('click', handleConfirm); modalCancel.removeEventListener('click', handleCancel); };
+            modalConfirm.addEventListener('click', handleConfirm);
+            modalCancel.addEventListener('click', handleCancel);
+        }
+
+        function executeCloseTab(tab) {
+            if (tabs.length <= 1 && !tab.isWrapper) { tab.terminals.forEach(t => t.outputDiv.innerHTML = ''); return; }
+            const index = tabs.indexOf(tab);
+            tab.tabEl.remove();
+            tab.contentEl.remove();
+            tabs.splice(index, 1);
+            if (tabs.length === 0) {
+                createTab();
+            } else {
+                switchTab(tabs[index - 1] || tabs[0]);
+            }
+        }
+
+        function switchTab(tab) {
+            tabs.forEach(t => { t.tabEl.classList.remove('active-tab'); t.contentEl.classList.remove('active-content'); });
+            tab.tabEl.classList.add('active-tab');
+            tab.contentEl.classList.add('active-content');
+            activeTab = tab;
+            if (tab.activeTerminal) tab.activeTerminal.cmdInput.focus();
+        }
+
+        tabAddBtn.addEventListener('click', createTab);
+
+        const ctxMenu = document.getElementById('terminal-context-menu');
+        document.addEventListener('contextmenu', (e) => {
+            const termInstance = e.target.closest('.terminal-instance');
+            if (termInstance) {
+                e.preventDefault();
+                const optionsMenu = document.getElementById('options-menu');
+                if (optionsMenu) optionsMenu.style.display = 'none';
+                updateMenuSelectionUI();
+                ctxMenu.style.display = 'flex';
+                ctxMenu.style.left = Math.min(window.innerWidth - 190, e.clientX) + 'px';
+                ctxMenu.style.top = Math.min(window.innerHeight - 250, e.clientY) + 'px';
+            } else ctxMenu.style.display = 'none';
+        });
+
+        document.getElementById('ctx-copy').addEventListener('click', () => {
+            ctxMenu.style.display = 'none';
+            const selectedText = window.getSelection().toString();
+            if (selectedText) {
+                const tempInput = document.createElement('textarea');
+                tempInput.value = selectedText;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                try { document.execCommand('copy'); } catch(err) {}
+                document.body.removeChild(tempInput);
+            }
+        });
+
+        async function handlePasteAction(mode) {
+            ctxMenu.style.display = 'none';
+            let clipboardText = '';
+            try { clipboardText = await navigator.clipboard.readText(); } catch(e) { clipboardText = prompt("Paste text:") || ''; }
+            if (!clipboardText) return;
+            let targetTab = activeTab;
+            let targetTerm = activeTab?.activeTerminal || null;
+            if (mode === 'term' || mode === 'term-return') {
+                if (activeTab && !activeTab.isWrapper && activeTab.terminals.length < 4) { activeTab.createTerminal(); targetTerm = activeTab.activeTerminal; }
+                else { createTab(); targetTab = activeTab; targetTerm = activeTab.activeTerminal; }
+            } else if (mode === 'tab' || mode === 'tab-return') { createTab(); targetTab = activeTab; targetTerm = activeTab.activeTerminal; }
+            if (targetTerm) {
+                targetTerm.cmdInput.value += clipboardText;
+                targetTerm.updateSuggestion();
+                targetTerm.cmdInput.focus();
+                if (mode.endsWith('return') || mode === 'term-return' || mode === 'tab-return') {
+                    const enterEvent = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
+                    targetTerm.cmdInput.dispatchEvent(enterEvent);
+                }
+            }
+        }
+
+        document.getElementById('ctx-paste').addEventListener('click', () => handlePasteAction('normal'));
+        document.getElementById('ctx-paste-return').addEventListener('click', () => handlePasteAction('normal-return'));
+        document.getElementById('ctx-paste-term').addEventListener('click', () => handlePasteAction('term'));
+        document.getElementById('ctx-paste-term-return').addEventListener('click', () => handlePasteAction('term-return'));
+        document.getElementById('ctx-paste-tab').addEventListener('click', () => handlePasteAction('tab'));
+        document.getElementById('ctx-paste-tab-return').addEventListener('click', () => handlePasteAction('tab-return'));
+        document.getElementById('ctx-open-tab').addEventListener('click', () => { ctxMenu.style.display = 'none'; createTab(); });
+        document.getElementById('ctx-close-tab').addEventListener('click', () => { ctxMenu.style.display = 'none'; if (activeTab) confirmCloseTab(activeTab); });
+        document.getElementById('ctx-open-term').addEventListener('click', () => { ctxMenu.style.display = 'none'; if (activeTab && !activeTab.isWrapper) activeTab.createTerminal(); });
+        document.getElementById('ctx-close-term').addEventListener('click', () => { ctxMenu.style.display = 'none'; if (activeTab?.activeTerminal && !activeTab.isWrapper) activeTab.closeTerminal(activeTab.activeTerminal); });
+
+        function triggerSystemLoad(sysKey) {
+            if (sysKey === 'default') {
+                termSettings.system = 'default';
+                vfs = JSON.parse(JSON.stringify(defaultVFS));
+                applySettings();
+                tabs.forEach(tab => { tab.terminals.forEach(term => { term.currentPath = ['home', 'user']; term.formatPromptPath(); term.printTranslatable("messages.systemReset"); }); });
+                return;
+            }
+            const sysObj = window.systemsRegistry[sysKey];
+            if (!sysObj) {
+                const activeTerm = activeTab?.activeTerminal || null;
+                if (activeTerm) activeTerm.printTranslatable("errors.unknownSystem", 'error', false, [sysKey, Object.keys(window.systemsRegistry).join(', ')]);
+                return;
+            }
+            const activeTerm = activeTab?.activeTerminal || null;
+            if (!activeTerm) return;
+            const qText = t("dialogs.loadSystemConfirmation", sysObj.name || sysKey);
+            activeTerm.promptSpan.style.display = 'none';
+            activeTerm.cmdInput.style.display = 'none';
+            activeTerm.cmdSuggestion.style.display = 'none';
+            const confirmLine = document.createElement('div');
+            confirmLine.className = 'history-line';
+            confirmLine.innerHTML = `<span id="confirm-q" style="font-weight: bold;">${qText}</span><span id="confirm-char" style="font-weight: bold;"></span>`;
+            activeTerm.outputDiv.appendChild(confirmLine);
+            activeTerm.scrollToBottom();
+            const charSpan = confirmLine.querySelector('#confirm-char');
+            const handleKeydown = (e) => {
+                const key = e.key.toLowerCase();
+                const isLoadKey = ['j', 'y', 'enter', 'o', 'e', 'evet'].includes(key);
+                const isCancelKey = ['n', 'escape', 'h', 'hayir'].includes(key);
+                if (isLoadKey || isCancelKey) {
+                    window.removeEventListener('keydown', handleKeydown, true);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    let ans = isLoadKey ? 'y' : 'n';
+                    charSpan.innerText = ans.toUpperCase();
+                    activeTerm.print('');
+                    activeTerm.promptSpan.style.display = '';
+                    activeTerm.cmdInput.style.display = '';
+                    activeTerm.cmdSuggestion.style.display = '';
+                    activeTerm.cmdInput.focus();
+                    if (ans === 'y') {
+                        termSettings.system = sysKey;
+                        if (sysObj.vfs) vfs = JSON.parse(JSON.stringify(sysObj.vfs));
+                        applySettings();
+                        tabs.forEach(tab => { tab.terminals.forEach(term => { term.currentPath = ['home', 'user']; term.formatPromptPath(); term.printTranslatable("successMessages.systemLoaded", "", false, [sysKey]); }); });
+                    } else activeTerm.printTranslatable("messages.systemLoadCancelled");
+                    activeTerm.scrollToBottom();
+                }
+            };
+            window.addEventListener('keydown', handleKeydown, { capture: true });
+        }
+
+        class Terminal {
+            constructor() {
+                this.currentPath = ['home', 'user'];
+                this.commandHistory = [];
+                this.historyIndex = 0;
+                this.currentInputBuffer = '';
+                this.currentSuggestionSuffix = '';
+                this.installedPackages = new Set();
+                this.isInstalling = false;
+                this._runningProcesses = new Map();
+                this._processCounter = 0;
+                this._commandCache = null;
+                this._cacheTimestamp = 0;
+                this._cacheTTL = 3000;
+
+                this.el = document.createElement('div');
+                this.el.className = 'terminal-instance';
+                this.outputDiv = document.createElement('div');
+                this.outputDiv.className = 'output';
+                this.inputLine = document.createElement('div');
+                this.inputLine.className = 'input-line';
+                const defaultUserAtDevice = getUserDeviceString();
+                this.inputLine.innerHTML = `<span class="prompt"><span class="user">${defaultUserAtDevice}</span>:<span class="path">~</span><span class="symbol">$</span></span><div class="input-wrapper"><div class="cmd-suggestion"></div><input type="text" class="cmd-input" autocomplete="off" spellcheck="false"></div>`;
+                this.el.appendChild(this.outputDiv);
+                this.el.appendChild(this.inputLine);
+                this.cmdInput = this.el.querySelector('.cmd-input');
+                this.cmdSuggestion = this.el.querySelector('.cmd-suggestion');
+                this.promptPathSpan = this.el.querySelector('.path');
+                this.promptSpan = this.el.querySelector('.prompt');
+                this.promptUserSpan = this.el.querySelector('.user');
+                this.setupCommands();
+                this.setupListeners();
+                this.formatPromptPath();
+                this.updatePromptUser();
+                this.displayBanner();
+            }
+
+            getAvailableCommands() {
+                const now = Date.now();
+                if (this._commandCache && (now - this._cacheTimestamp) < this._cacheTTL) return this._commandCache;
+                const allCommands = new Set();
+                if (this.commands) Object.keys(this.commands).forEach(cmd => allCommands.add(cmd));
+                for (const wrapperName of Object.keys(window.wrapperRegistry || {})) allCommands.add(wrapperName);
+                if (this.installedPackages) {
+                    for (const pkgName of this.installedPackages) {
+                        const pkgObj = window.packagesRegistry[pkgName];
+                        if (pkgObj?.commands) Object.keys(pkgObj.commands).forEach(cmd => allCommands.add(cmd));
+                    }
+                }
+                for (const [pkgName, pkgObj] of Object.entries(window.packagesRegistry || {})) {
+                    if (pkgObj.preInstalledOn?.includes(termSettings.system) && pkgObj.commands) {
+                        Object.keys(pkgObj.commands).forEach(cmd => allCommands.add(cmd));
+                    }
+                }
+                const result = Array.from(allCommands).sort();
+                this._commandCache = result;
+                this._cacheTimestamp = now;
+                return result;
+            }
+
+            getCommandsStartingWith(prefix) {
+                if (!prefix) return this.getAvailableCommands();
+                return this.getAvailableCommands().filter(cmd => cmd.startsWith(prefix));
+            }
+
+            getAvailablePackages(prefix) {
+                const pkgs = Object.keys(window.packagesRegistry || {});
+                if (!prefix) return pkgs;
+                return pkgs.filter(p => p.startsWith(prefix));
+            }
+
+            getPackageForCommand(cmd) {
+                if (this.installedPackages) {
+                    for (const pkgName of this.installedPackages) {
+                        const pkgObj = window.packagesRegistry[pkgName];
+                        if (pkgObj?.commands?.[cmd]) return pkgName;
+                    }
+                }
+                for (const [pkgName, pkgObj] of Object.entries(window.packagesRegistry || {})) {
+                    if (pkgObj.commands?.[cmd]) return pkgName;
+                }
+                return null;
+            }
+
+            invalidateCommandCache() { this._commandCache = null; this._cacheTimestamp = 0; }
+
+            registerProcess(name, cleanupFn) {
+                const pid = ++this._processCounter;
+                this._runningProcesses.set(pid, { name, cleanup: cleanupFn });
+                return pid;
+            }
+
+            killProcess(pid) {
+                const process = this._runningProcesses.get(pid);
+                if (process) { process.cleanup(); this._runningProcesses.delete(pid); return true; }
+                return false;
+            }
+
+            killAllProcesses() {
+                for (const [pid, process] of this._runningProcesses) process.cleanup();
+                this._runningProcesses.clear();
+            }
+
+            updatePromptUser() {
+                if (this.promptUserSpan) this.promptUserSpan.innerText = getUserDeviceString();
+            }
+
+            getAbsolutePathArray(pathStr) {
+                if (!pathStr) return [...this.currentPath];
+                if (pathStr === '~' || pathStr.startsWith('~/')) pathStr = pathStr.replace(/^~/, '/home/user');
+                let base = pathStr.startsWith('/') ? [] : [...this.currentPath];
+                let parts = pathStr.split('/');
+                for (let p of parts) {
+                    if (p === '' || p === '.') continue;
+                    if (p === '..') { if (base.length > 0) base.pop(); } else base.push(p);
+                }
+                return base;
+            }
+
+            getNodeByPathArray(pathArray) {
+                let node = vfs;
+                for (let p of pathArray) {
+                    if (node.type !== 'dir' || !node.children[p]) return null;
+                    node = node.children[p];
+                }
+                return node;
+            }
+
+            getParentNodeAndTargetName(pathStr) {
+                let arr = this.getAbsolutePathArray(pathStr);
+                if (arr.length === 0) return { parent: null, name: null };
+                let name = arr.pop();
+                return { parent: this.getNodeByPathArray(arr), name: name };
+            }
+
+            getPromptHTML() {
+                let pathStr = '/' + this.currentPath.join('/');
+                if (pathStr.startsWith('/home/user')) pathStr = '~' + pathStr.substring(10);
+                if (pathStr === '') pathStr = '/';
+                const uStr = getUserDeviceString();
+                return `<span class="user">${uStr}</span>:<span class="path">${pathStr}</span><span class="symbol">$</span>`;
+            }
+
+            formatPromptPath() {
+                let pathStr = '/' + this.currentPath.join('/');
+                if (pathStr.startsWith('/home/user')) pathStr = '~' + pathStr.substring(10);
+                if (pathStr === '') pathStr = '/';
+                this.promptPathSpan.innerText = pathStr;
+            }
+
+            print(text, cssClass = '') {
+                const span = document.createElement('span');
+                if (cssClass) span.className = cssClass;
+                span.innerText = text + '\n';
+                this.outputDiv.appendChild(span);
+            }
+
+            printHTML(html) {
+                const div = document.createElement('div');
+                div.innerHTML = html;
+                this.outputDiv.appendChild(div);
+                div.querySelectorAll('span').forEach(span => {
+                    const txt = span.textContent.trim().split(/\s+/)[0].replace(/\/$/, '');
+                    if (commandInfo[txt] && !span.classList.contains('os-item')) { span.classList.add('os-item'); span.dataset.command = txt; }
+                });
+            }
+
+            printTranslatable(enText, cssClass = '', isHTML = false, args = []) {
+                const el = document.createElement(isHTML ? 'div' : 'span');
+                if (cssClass) el.className = cssClass;
+
+                const templateMatch = typeof enText === 'string' ? enText.match(/data-en="([^"]+)"[^>]*>([^<]*)<\/[^>]+>/) : null;
+                if (templateMatch) {
+                    const key = templateMatch[1];
+                    const translated = t(key, ...args);
+                    el.innerHTML = enText.replace(templateMatch[2], translated);
+                    this.outputDiv.appendChild(el);
+                    el.querySelectorAll('span').forEach(span => {
+                        const txt = span.textContent.trim().split(/\s+/)[0].replace(/\/$/, '');
+                        if (commandInfo[txt] && !span.classList.contains('os-item')) { span.classList.add('os-item'); span.dataset.command = txt; }
+                    });
+                    return;
+                }
+
+                const text = typeof enText === 'string' ? t(enText, ...args) : enText;
+                if (isHTML) el.innerHTML = text;
+                else el.innerText = text + '\n';
+
+                this.outputDiv.appendChild(el);
+                if (isHTML) {
+                    el.querySelectorAll('span').forEach(span => {
+                        const txt = span.textContent.trim().split(/\s+/)[0].replace(/\/$/, '');
+                        if (commandInfo[txt] && !span.classList.contains('os-item')) { span.classList.add('os-item'); span.dataset.command = txt; }
+                    });
+                }
+            }
+
+            scrollToBottom() { this.el.scrollTop = this.el.scrollHeight; }
+
+            displayBanner() {
+                this.printTranslatable("messages.helpPrompt", 'banner');
+            }
+
+            async installPackage(pkgKey) {
+                const pkgObj = window.packagesRegistry[pkgKey];
+                if (!pkgObj) { this.printTranslatable("errors.packageNotFound", 'error', false, [pkgKey]); return; }
+                if (this.installedPackages.has(pkgKey)) { this.printTranslatable("errors.packageAlreadyInstalled", '', false, [pkgKey]); return; }
+                if (this.isInstalling) { this.printTranslatable("messages.installationInProgress", "error"); return; }
+                this.isInstalling = true;
+                this.printTranslatable("messages.readingPackageLists");
+                this.printTranslatable("messages.buildingDependencyTree");
+                this.printTranslatable("messages.unpacking", "", false, [pkgKey]);
+                await new Promise(r => setTimeout(r, 600));
+                this.printTranslatable("messages.settingUp", "", false, [pkgKey]);
+                this.installedPackages.add(pkgKey);
+                this.isInstalling = false;
+                this.invalidateCommandCache();
+                if (pkgObj.commands) {
+                    for (const [cmdName, cmdFunc] of Object.entries(pkgObj.commands)) {
+                        if (!this.commands[cmdName]) this.commands[cmdName] = cmdFunc.bind(this);
+                        if (pkgObj.commandInfo?.[cmdName]) commandInfo[cmdName] = pkgObj.commandInfo[cmdName];
+                    }
+                }
+                if (pkgObj.files) {
+                    for (const [filePath, fileData] of Object.entries(pkgObj.files)) {
+                        const { parent, name } = this.getParentNodeAndTargetName(filePath);
+                        if (parent?.type === 'dir') { parent.children[name] = fileData; }
+                    }
+                    saveVFS();
+                }
+                this.printTranslatable("successMessages.packageInstalled", "", false, [pkgKey]);
+                this.scrollToBottom();
+            }
+
+            setupCommands() {
+                this.commands = {
+                    help: (args) => {
+                        for (const [wrapperName, wrapperInfo] of Object.entries(window.wrapperRegistry || {})) {
+                            if (!this.commands[wrapperName]) {
+                                this.commands[wrapperName] = (cmdArgs) => {
+                                    const hasNt = cmdArgs && cmdArgs.includes('-nt');
+                                    const hasNw = cmdArgs && cmdArgs.includes('-nw');
+                                    const src = wrapperInfo.src;
+                                    if (hasNw) {
+                                        window.open(src, '_blank', 'width=1024,height=768,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes');
+                                    } else if (hasNt) {
+                                        window.open(src, '_blank');
+                                    } else {
+                                        let existingTab = tabs.find(t => t.isWrapper && t.wrapperName === wrapperName);
+                                        if (existingTab) {
+                                            switchTab(existingTab);
+                                        } else {
+                                            createWrapperTab(wrapperName, src);
+                                        }
+                                    }
+                                };
+                            }
+                        }
+                        
+                        if (args?.length > 0 && args[0].toLowerCase() === 'set') {
+                            if (args.length > 1 && args[1].toLowerCase() === 'font') {
+                                this.printTranslatable(`<br><strong class="os-item" data-command="help set font" data-en="helpSections.availableFonts">AVAILABLE FONTS:</strong>`, '', true);
+                                const fontListHtml = fontsList.map(f => `<span class="os-item highlight-blue" data-command="set font ${f.replace(/'/g, '')}">${f.replace(/'/g, '')}</span>`).join(', ');
+                                this.printHTML(`  ${fontListHtml}`);
+                                return;
+                            }
+                            if (args.length > 1 && args[1].toLowerCase() === 'colorscheme') {
+                                this.printTranslatable(`<br><strong class="os-item" data-command="help set colorscheme" data-en="helpSections.colorSchemes">COLOR SCHEMES:</strong>`, '', true);
+                                const schemeListHtml = Object.keys(window.ColorAPI.themes).map(key => `<span class="os-item highlight-blue" data-command="set colorscheme ${key}">${window.ColorAPI.themes[key].name || (key.charAt(0).toUpperCase() + key.slice(1))}</span>`).join(', ');
+                                this.printHTML(`  ${schemeListHtml}`);
+                                return;
+                            }
+                            this.printTranslatable(`<br><strong class="os-item" data-command="set" data-en="helpSections.setCommands">SET COMMANDS:</strong>`, '', true);
+                            this.printHTML(`  <span class="os-item highlight-blue" data-command="set fontsize">set fontsize</span> &lt;size&gt;`);
+                            this.printHTML(`  <span class="os-item highlight-blue" data-command="set font">set font</span> &lt;font_name&gt;`);
+                            this.printHTML(`  <span class="os-item highlight-blue" data-command="set language">set language</span> &lt;en|de|fr|it|tr&gt;`);
+                            this.printHTML(`  <span class="os-item highlight-blue" data-command="set colorscheme">set colorscheme</span> &lt;scheme&gt;`);
+                            this.printHTML(`  <span class="os-item highlight-blue" data-command="set system">set system</span> &lt;system_name&gt;`);
+                            this.printHTML(`  <span class="os-item highlight-blue" data-command="set infobar">set infobar</span> &lt;size|position|show|hide&gt; [value]`);
+                            return;
+                        }
+                        
+                        this.printTranslatable(`<br><strong data-en="helpSections.availableCommands">AVAILABLE COMMANDS:</strong>`, '', true);
+
+                        const builtIn = ['help', 'settings', 'set', 'clear', 'apt'];
+                        const formatCmdList = (cmds) => cmds.map(cmd => `<span class="os-item highlight-blue" data-command="${cmd}">${cmd}</span>`).join(', ');
+
+                        this.printHTML(`  <span style="display:inline-block; width:100px; color:var(--hint-color);">Built-in:</span> ${formatCmdList(builtIn)}`);
+
+                        const coreCmds = [];
+                        for (const [pkgName, pkgObj] of Object.entries(window.packagesRegistry || {})) {
+                            if (pkgObj.preInstalledOn?.includes(termSettings.system) && !this.installedPackages.has(pkgName)) {
+                                if (pkgObj.commands) {
+                                    coreCmds.push(...Object.keys(pkgObj.commands));
+                                } else {
+                                    coreCmds.push(pkgName);
+                                }
+                            }
+                        }
+                        if (coreCmds.length > 0) {
+                            this.printHTML(`  <span style="display:inline-block; width:100px; color:var(--hint-color);">System:</span> ${formatCmdList(coreCmds)}`);
+                        }
+
+                        const nonCoreInstalledPackages = Array.from(this.installedPackages);
+                        if (nonCoreInstalledPackages.length > 0) {
+                            let installedCmds = [];
+                            for (const pkg of nonCoreInstalledPackages) {
+                                const pkgObj = window.packagesRegistry[pkg];
+                                if (pkgObj?.commands) {
+                                    installedCmds.push(...Object.keys(pkgObj.commands));
+                                } else {
+                                    installedCmds.push(pkg); // fallback if no commands defined
+                                }
+                            }
+                            if (installedCmds.length > 0) {
+                                this.printHTML(`  <span style="display:inline-block; width:100px; color:var(--hint-color);">Installed:</span> ${formatCmdList(installedCmds)}`);
+                            }
+                        }
+
+                        const corePkgList = window.systemRegistryConfig?.corePackages || window.systemRegistryConfig?.core || [];
+                        const coreAvailCmds = [];
+                        for (const pkgName of corePkgList) {
+                            const pkgObj = window.packagesRegistry[pkgName];
+                            if (!pkgObj) continue;
+                            if (pkgObj.preInstalledOn?.includes(termSettings.system) || this.installedPackages.has(pkgName)) continue;
+                            if (pkgObj.commands) {
+                                coreAvailCmds.push(...Object.keys(pkgObj.commands));
+                            } else {
+                                coreAvailCmds.push(pkgName);
+                            }
+                        }
+                        if (coreAvailCmds.length > 0) {
+                            this.printHTML(`  <span style="display:inline-block; width:100px; color:var(--hint-color);">Core:</span> ${formatCmdList(coreAvailCmds)}`);
+                        }
+
+                        const wrappers = Object.keys(window.wrapperRegistry || {});
+                        if (wrappers.length > 0) {
+                            this.printHTML(`  <span style="display:inline-block; width:100px; color:var(--hint-color);">Apps:</span> ${formatCmdList(wrappers)}`);
+                        }
+                    },
+                    settings: () => { openSettingsWindow(); this.printTranslatable("messages.settingsOpened"); },
+                    apt: (args) => {
+                        if (!isDebianFamilySystem()) { this.printTranslatable("errors.aptNotFound", 'error'); return; }
+                        if (args.length < 2 || args[0].toLowerCase() !== 'install') { this.printTranslatable("errors.aptUsage", "error"); return; }
+                        this.installPackage(args[1].toLowerCase());
+                    },
+                    set: (args) => {
+                        if (args.length < 2) { this.printTranslatable("errors.setMissingArgs", "error"); return; }
+                        const setting = args[0].toLowerCase();
+                        const value = args.slice(1).join(' ').replace(/['"]/g, '');
+                        if (setting === 'fontsize') { let size = parseInt(value); if (!isNaN(size)) { termSettings.fontsize = size; applySettings(); this.printTranslatable("successMessages.fontSizeSet", "", false, [size]); } else this.printTranslatable("errors.setInvalidSize", "error"); }
+                        else if (setting === 'font') { const cssFont = value.includes(' ') ? `'${value}'` : value; termSettings.font = cssFont; applySettings(); this.printTranslatable("successMessages.fontSet", "", false, [cssFont]); }
+                        else if (setting === 'language') {
+                            const mappedCode = normalizeLanguageInput(value);
+                            if (mappedCode && (window.Translations[mappedCode] || ['en', 'de', 'fr', 'it', 'tr'].includes(mappedCode))) {
+                                termSettings.language = mappedCode;
+                                applySettings();
+                                refreshAllLanguageElements();
+                            } else {
+                                this.printTranslatable("errors.setInvalidLanguage", "error");
+                            }
+                        }
+                        else if (setting === 'colorscheme') { const schemeName = value.toLowerCase(); if (window.ColorAPI.themes[schemeName]) { termSettings.colorscheme = schemeName; applySettings(); this.printTranslatable("successMessages.colorSchemeSet", "", false, [schemeName]); } else this.printTranslatable("errors.setUnknownScheme", "error"); }
+                        else if (setting === 'system') { const sysName = value.toLowerCase(); if (sysName === 'default' || window.systemsRegistry[sysName]) triggerSystemLoad(sysName); else this.printTranslatable("errors.setUnknownSystem", "error"); }
+                        else if (setting === 'infobar') {
+                            const sub = args[1]?.toLowerCase() || '';
+                            const val = args.slice(2).join(' ').replace(/['"]/g, '');
+                            if (sub === 'size') { let size = parseInt(val); if (!isNaN(size) && size >= 0) { termSettings.infobarsize = size; applySettings(); this.printTranslatable("successMessages.infobarSizeSet", "", false, [size]); } else this.printTranslatable("errors.setInvalidSize", "error"); }
+                            else if (sub === 'position') { if (val === 'top' || val === 'bottom') { termSettings.infobarposition = val; applySettings(); this.printTranslatable("successMessages.infobarPositionSet", "", false, [val]); } else this.printTranslatable("errors.setInvalidPosition", "error"); }
+                            else if (sub === 'show' || sub === 'hide') { termSettings.infobarshow = sub; applySettings(); this.printTranslatable("successMessages.infobarSet", "", false, [sub]); }
+                            else this.printTranslatable("errors.setInfobarMissingSubsetting", "error");
+                        } else this.printTranslatable("errors.setUnknownSetting", "error");
+                    },
+                    clear: () => { this.killAllProcesses(); this.outputDiv.innerHTML = ''; }
+                };
+            }
+
+            handleTabCompletion() {
+                const input = this.cmdInput.value;
+                const parts = input.split(' ');
+                const currentWord = parts[parts.length - 1];
+                const isCommandPosition = parts.length === 1;
+                let matches = [];
+                let prefixPath = '';
+                let isFileSystemMatch = false;
+                let dirNode = null;
+                let partialName = '';
+
+                if (isCommandPosition) {
+                    if (!currentWord) return;
+                    matches = this.getCommandsStartingWith(currentWord);
+                } else if (parts[0] === 'help' && parts[1] === 'set') {
+                    if (parts.length === 3) matches = ['font', 'colorscheme'].filter(s => s.startsWith(currentWord));
+                } else if (parts[0] === 'set') {
+                    if (parts.length === 2) matches = ['fontsize', 'font', 'language', 'colorscheme', 'system', 'infobar'].filter(s => s.startsWith(currentWord));
+                    else if (parts.length === 3) {
+                        if (parts[1] === 'language') matches = ['german', 'english', 'french', 'italian', 'turkish', 'de', 'en', 'fr', 'it', 'tr'].filter(l => l.startsWith(currentWord));
+                        else if (parts[1] === 'colorscheme') matches = Object.keys(window.ColorAPI.themes).filter(c => c.startsWith(currentWord));
+                        else if (parts[1] === 'system') matches = ['default', ...Object.keys(window.systemsRegistry)].filter(s => s.startsWith(currentWord));
+                        else if (parts[1] === 'infobar') matches = ['size', 'position', 'show', 'hide'].filter(b => b.startsWith(currentWord));
+                    }
+                } else if (parts[0] === 'apt') {
+                    if (parts.length === 2) matches = ['install', 'remove', 'list', 'search'].filter(a => a.startsWith(currentWord));
+                    else if (parts.length === 3 && parts[1] === 'install') matches = this.getAvailablePackages(currentWord);
+                } else {
+                    isFileSystemMatch = true;
+                    let lastSlashIndex = currentWord.lastIndexOf('/');
+                    let dirPathStr = '';
+                    partialName = currentWord;
+                    if (lastSlashIndex !== -1) {
+                        dirPathStr = currentWord.substring(0, lastSlashIndex);
+                        if (dirPathStr === '') dirPathStr = '/';
+                        partialName = currentWord.substring(lastSlashIndex + 1);
+                        prefixPath = currentWord.substring(0, lastSlashIndex + 1);
+                    }
+                    let dirArr = this.getAbsolutePathArray(dirPathStr);
+                    dirNode = this.getNodeByPathArray(dirArr);
+                    if (dirNode?.type === 'dir') matches = Object.keys(dirNode.children).sort().filter(name => name.startsWith(partialName));
+                }
+
+                if (matches.length === 1) {
+                    const matchName = matches[0];
+                    if (isFileSystemMatch && dirNode) {
+                        const isDir = dirNode.children[matchName].type === 'dir';
+                        parts[parts.length - 1] = prefixPath + matchName + (isDir ? '/' : ' ');
+                    } else parts[parts.length - 1] = matchName + ' ';
+                    this.cmdInput.value = parts.join(' ');
+                } else if (matches.length > 1) {
+                    const lcp = getLongestCommonPrefix(matches);
+                    const targetLength = isFileSystemMatch ? partialName.length : currentWord.length;
+                    if (lcp.length > targetLength) {
+                        parts[parts.length - 1] = isFileSystemMatch ? prefixPath + lcp : lcp;
+                        this.cmdInput.value = parts.join(' ');
+                    } else {
+                        const promptHTML = this.getPromptHTML();
+                        this.printHTML(`<div class="history-line"><span class="prompt">${promptHTML}</span> ${input}</div>`);
+                        let suggestionsStr = matches.map(m => {
+                            if (isFileSystemMatch && dirNode) {
+                                let child = dirNode.children[m];
+                                let isDir = child.type === 'dir';
+                                let desc = child.description || '';
+                                return isDir ? `<span class="dir-color os-item" data-type="dir" data-name="${m}" data-desc="${desc}">${m}/</span>` : `<span class="os-item" data-type="file" data-name="${m}" data-desc="${desc}">${m}</span>`;
+                            } else {
+                                const pkgName = this.getPackageForCommand(m);
+                                return `<span class="os-item" data-command="${m}">${m}${pkgName ? ` (${pkgName})` : ''}</span>`;
+                            }
+                        }).join('  ');
+                        this.printHTML(suggestionsStr + '<br>');
+                        this.scrollToBottom();
+                    }
+                }
+            }
+
+            updateSuggestion() {
+                const input = this.cmdInput.value;
+                this.currentSuggestionSuffix = '';
+                if (!input) { this.cmdSuggestion.innerHTML = ''; return; }
+                const parts = input.split(' ');
+                const currentWord = parts[parts.length - 1];
+                const isCommandPosition = parts.length === 1;
+                let matches = [];
+
+                if (isCommandPosition) {
+                    matches = this.getCommandsStartingWith(currentWord);
+                } else {
+                    let lastSlashIndex = currentWord.lastIndexOf('/');
+                    let dirPathStr = '';
+                    let partialName = currentWord;
+                    if (lastSlashIndex !== -1) {
+                        dirPathStr = currentWord.substring(0, lastSlashIndex);
+                        if (dirPathStr === '') dirPathStr = '/';
+                        partialName = currentWord.substring(lastSlashIndex + 1);
+                    }
+                    let dirArr = this.getAbsolutePathArray(dirPathStr);
+                    let dirNode = this.getNodeByPathArray(dirArr);
+                    if (dirNode?.type === 'dir') {
+                        const childNames = Object.keys(dirNode.children).sort();
+                        matches = childNames.filter(name => name.startsWith(partialName));
+                        if (matches.length > 0) {
+                            const matchName = matches[0];
+                            const isDir = dirNode.children[matchName].type === 'dir';
+                            this.currentSuggestionSuffix = matchName.substring(partialName.length) + (matches.length === 1 ? (isDir ? '/' : ' ') : '');
+                        }
+                    }
+                }
+
+                if (matches.length > 0 && !this.currentSuggestionSuffix) {
+                    this.currentSuggestionSuffix = matches[0].substring(currentWord.length) + (matches.length === 1 ? ' ' : '');
+                }
+
+                const hiddenInputSpan = document.createElement('span');
+                hiddenInputSpan.style.visibility = 'hidden';
+                hiddenInputSpan.innerText = input;
+                this.cmdSuggestion.innerHTML = '';
+                this.cmdSuggestion.appendChild(hiddenInputSpan);
+                this.cmdSuggestion.appendChild(document.createTextNode(this.currentSuggestionSuffix));
+            }
+
+            setupListeners() {
+                this.cmdInput.addEventListener('input', () => this.updateSuggestion());
+
+                this.cmdInput.addEventListener('keydown', async (e) => {
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (this._runningProcesses.size > 0) {
+                            this.killAllProcesses();
+                            this.printTranslatable("helpSections.esc");
+                            this.printTranslatable("messages.processInterrupted");
+                        } else {
+                            const promptHTML = this.getPromptHTML();
+                            this.printHTML(`<div class="history-line"><span class="prompt">${promptHTML}</span> ${this.cmdInput.value}^[ESC]</div>`);
+                            this.cmdInput.value = '';
+                            this.updateSuggestion();
+                        }
+                        if (this.promptSpan) this.promptSpan.style.display = '';
+                        if (this.cmdInput) {
+                            this.cmdInput.style.display = '';
+                            this.cmdInput.disabled = false;
+                            setTimeout(() => {
+                                this.cmdInput.focus();
+                                this.scrollToBottom();
+                            }, 10);
+                        }
+                        if (this.cmdSuggestion) this.cmdSuggestion.style.display = '';
+                        this.scrollToBottom();
+                        return;
+                    }
+
+                    if (e.key === 'Enter') {
+                        const input = this.cmdInput.value.trim();
+                        this.cmdInput.value = '';
+                        if (input) this.commandHistory.push(input);
+                        this.historyIndex = this.commandHistory.length;
+                        this.currentInputBuffer = '';
+                        const promptHTML = this.getPromptHTML();
+
+                        const parts = input.split(/\s+/);
+                        const firstCmd = parts[0]?.toLowerCase() || '';
+                        let displayInput = input;
+
+                        if (commandInfo[firstCmd]) {
+                            const cmdKey = firstCmd;
+                            const argsPart = input.substring(cmdKey.length);
+                            displayInput = `<span class="os-item" data-command="${cmdKey}">${cmdKey}</span>${argsPart}`;
+                        }
+
+                        this.printHTML(`<div class="history-line"><span class="prompt">${promptHTML}</span> ${displayInput}</div>`);
+                        if (input) await this.executeCommand(input);
+                        this.cmdSuggestion.innerHTML = '';
+                        this.currentSuggestionSuffix = '';
+                        this.scrollToBottom();
+                    } else if (e.key === 'Tab') { e.preventDefault(); this.handleTabCompletion(); this.updateSuggestion(); }
+                    else if (e.key === 'ArrowRight') {
+                        if (this.cmdInput.selectionStart === this.cmdInput.value.length && this.currentSuggestionSuffix) {
+                            e.preventDefault();
+                            this.cmdInput.value += this.currentSuggestionSuffix;
+                            this.updateSuggestion();
+                        }
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (this.commandHistory.length > 0) {
+                            if (this.historyIndex === this.commandHistory.length) this.currentInputBuffer = this.cmdInput.value;
+                            if (this.historyIndex > 0) { this.historyIndex--; this.cmdInput.value = this.commandHistory[this.historyIndex]; this.updateSuggestion(); }
+                        }
+                    } else if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (this.historyIndex < this.commandHistory.length) {
+                            this.historyIndex++;
+                            this.cmdInput.value = this.historyIndex === this.commandHistory.length ? this.currentInputBuffer : this.commandHistory[this.historyIndex];
+                            this.updateSuggestion();
+                        }
+                    }
+                });
+
+                this.el.style.cursor = 'text';
+                this.el.addEventListener('click', () => {
+                    if (activeTab) activeTab.makeActive(this);
+                    if (window.getSelection().toString() === '') this.cmdInput.focus();
+                });
+            }
+
+            parseCommandInput(input) {
+                const regex = /[^\s"']+|"([^"]*)"|'([^']*)'/g;
+                const args = [];
+                let match;
+                while ((match = regex.exec(input)) !== null) args.push(match[1] || match[2] || match[0]);
+                return args;
+            }
+
+            async executeCommand(input) {
+                const args = this.parseCommandInput(input);
+                if (!args.length) return;
+                const cmd = args.shift().toLowerCase();
+
+                if (cmd === 'settings') {
+                    try { this.commands.settings(args); } catch(err) { this.print(`Error: ${err.message}`, 'error'); }
+                    return;
+                }
+
+                if (cmd === 'set' && args[0]?.toLowerCase() === 'language') {
+                    const mappedCode = normalizeLanguageInput(args.slice(1).join(' '));
+                    if (mappedCode && (window.Translations[mappedCode] || ['en', 'de', 'fr', 'it', 'tr'].includes(mappedCode))) {
+                        termSettings.language = mappedCode;
+                        applySettings();
+                        refreshAllLanguageElements();
+                    } else {
+                        this.printTranslatable("errors.setInvalidLanguage", "error");
+                    }
+                    return;
+                }
+
+                if (cmd === 'apt') {
+                    if (!isDebianFamilySystem()) { this.printTranslatable("errors.aptNotFound", 'error'); return; }
+                    if (args.length < 2 || args[0].toLowerCase() !== 'install') { this.printTranslatable("errors.aptUsage", "error"); return; }
+                    await this.installPackage(args[1].toLowerCase());
+                    return;
+                }
+
+                const pkgObj = window.packagesRegistry[cmd];
+                const isPreInstalled = pkgObj?.preInstalledOn?.includes(termSettings.system);
+                const isInstalled = this.installedPackages.has(cmd);
+
+                if (window.wrapperRegistry?.[cmd]) {
+                    try {
+                        const hasNt = args.includes('-nt');
+                        const hasNw = args.includes('-nw');
+                        const src = window.wrapperRegistry[cmd].src;
+
+                        if (hasNw) {
+                            window.open(src, '_blank', 'width=1024,height=768,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes');
+                        } else if (hasNt) {
+                            window.open(src, '_blank');
+                        } else {
+                            let existingTab = tabs.find(t => t.isWrapper && t.wrapperName === cmd);
+                            if (existingTab) {
+                                switchTab(existingTab);
+                            } else {
+                                createWrapperTab(cmd, src);
+                            }
+                        }
+                    } catch(err) { this.print(`Error: ${err.message}`, 'error'); }
+                    return;
+                }
+
+                if (pkgObj?.commands?.[cmd] && (isPreInstalled || isInstalled)) {
+                    try { pkgObj.commands[cmd].call(this, args); } catch(err) { this.print(`Error: ${err.message}`, 'error'); }
+                    return;
+                }
+
+                if (this.commands[cmd]) {
+                    try { this.commands[cmd](args); } catch(err) { this.print(`Error: ${err.message}`, 'error'); }
+                    return;
+                }
+
+                this.printTranslatable("errors.commandNotFound", 'error', false, [cmd]);
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && ['Enter', 'Backspace', 'ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.key === 'Enter' && activeTab && !activeTab.isWrapper) activeTab.createTerminal();
+                else if (e.key === 'Backspace' && activeTab?.activeTerminal && !activeTab.isWrapper) activeTab.closeTerminal(activeTab.activeTerminal);
+                else if (activeTab && !activeTab.isWrapper) activeTab.navigateTerminal(e.key);
+            }
+        }, { capture: true });
+
+        document.addEventListener('wheel', (e) => {
+            const terminalPane = e.target.closest('.terminal-instance');
+            if (!terminalPane || !e.altKey) return;
+            e.preventDefault();
+            const deltaDirection = e.deltaY < 0 ? 1 : -1;
+            const nextSize = Math.min(36, Math.max(10, termSettings.fontsize + deltaDirection));
+            if (nextSize !== termSettings.fontsize) {
+                termSettings.fontsize = nextSize;
+                applySettings();
+            }
+        }, { passive: false, capture: true });
+
+        window.addEventListener('keydown', (e) => {
+            closeWrapperOnEscape(e);
+        }, { capture: true });
+
+        window.onload = async () => {
+            setupMenu();
+            createTab();
+            await loadDynamicModules();
+        };
     </script>
 </body>
 </html>

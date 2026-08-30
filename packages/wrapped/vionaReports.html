@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CFCC · Berichtsheft · Advanced Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  
+  <style>
+    /* ===== MONOCHROME RESET & GLOBAL ===== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    input, textarea, .day-content, .day-content * {
+      user-select: text !important;
+      -webkit-user-select: text !important;
+    }
+    
+    :root {
+      --bg-color: #000000;
+      --text-color: #ffffff;
+      --font-family: 'Courier New', Courier, monospace;
+      --font-size: 15px;
+      --border-start: #ffffff;
+      --border-end: #555555;
+      --border-solid: #444444;
+      --hover-bg: #ffffff;
+      --hover-text: #000000;
+      --scrollbar-thumb: #444444;
+    }
+
+    body, html {
+      height: 100vh;
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-family: var(--font-family);
+      font-size: var(--font-size);
+      line-height: 1.5;
+      overflow: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-color); }
+    ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 0; }
+    
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+      background: var(--bg-color);
+      overflow: hidden;
+    }
+
+    /* ===== TERMINAL HEADER ===== */
+    #waybar {
+      height: 28px;
+      min-height: 28px;
+      width: 100%;
+      background: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 14px;
+      font-family: var(--font-family);
+      font-size: 13px;
+      flex-shrink: 0;
+      z-index: 100;
+      border-bottom: 1px solid transparent;
+      border-image: linear-gradient(90deg, var(--border-start), var(--border-end)) 1;
+    }
+    
+    .waybar-btn {
+      cursor: pointer;
+      padding: 0 8px;
+      transition: background 0.15s, color 0.15s;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      font-weight: 600;
+      color: var(--text-color);
+      background: transparent;
+      border: none;
+      font-family: inherit;
+      font-size: 13px;
+    }
+    .waybar-btn:hover {
+      background: var(--hover-bg);
+      color: var(--hover-text);
+    }
+
+    .view-btn-active {
+      background: var(--text-color);
+      color: var(--bg-color);
+    }
+
+    /* ===== SEARCH BAR - TERMINAL STYLE ===== */
+    #searchContainer {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      background: var(--bg-color);
+      border: 1px solid var(--border-solid);
+      height: 24px;
+      min-width: 180px;
+      max-width: 300px;
+    }
+    #searchInput {
+      background: transparent;
+      border: none;
+      color: var(--text-color);
+      font-family: var(--font-family);
+      font-size: 12px;
+      outline: none;
+      width: 100%;
+      min-width: 80px;
+      padding: 0;
+      height: 100%;
+    }
+    #searchInput::placeholder {
+      color: #444444;
+      font-style: italic;
+    }
+    .search-prompt {
+      color: #666666;
+      font-weight: bold;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .search-clear {
+      cursor: pointer;
+      color: #555555;
+      font-weight: bold;
+      padding: 0 2px;
+      font-size: 14px;
+      flex-shrink: 0;
+      display: none;
+    }
+    .search-clear:hover {
+      color: var(--text-color);
+    }
+    .search-count {
+      color: #555555;
+      font-size: 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 20px;
+      text-align: right;
+    }
+
+    /* ===== MAIN TERMINAL PANEL ===== */
+    #terminal-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr;
+      background: var(--border-end);
+      min-height: 0;
+    }
+    .term-pane {
+      background: var(--bg-color);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 12px 16px;
+      position: relative;
+    }
+    .output-area {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      flex: 1;
+    }
+    
+    .banner { color: #888888; margin-bottom: 15px; font-weight: bold; }
+    
+    /* ===== REPORT CARD ===== */
+    .report-card {
+      background: var(--bg-color);
+      border: 1px solid var(--border-solid);
+      border-left: 2px solid var(--text-color);
+      margin: 10px 0;
+      padding: 0;
+      transition: border-color 0.1s;
+    }
+    .report-card:hover { border-color: var(--text-color); }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      cursor: pointer;
+      border-bottom: 1px dashed var(--border-solid);
+      font-weight: bold;
+      font-size: 14px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .card-header:hover { background: rgba(255,255,255,0.05); }
+    .card-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .card-badges { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .badge {
+      font-size: 12px;
+      font-weight: bold;
+      color: var(--text-color);
+      letter-spacing: 1px;
+    }
+    .badge-ho {
+      color: #ffaa00;
+      border: 1px solid #ffaa00;
+      padding: 0 6px;
+      font-size: 10px;
+    }
+    .chevron::after { content: "[-]"; font-family: monospace; }
+    .report-card.collapsed .chevron::after { content: "[+]"; }
+    .report-card.collapsed .card-body { display: none; }
+    .report-card.collapsed .card-header { border-bottom: none; }
+    
+    .card-body { padding: 12px; }
+    .day-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+    .day-card {
+      background: var(--bg-color);
+      border: 1px solid var(--border-solid);
+      padding: 8px;
+      position: relative;
+    }
+    .day-card.ho-day {
+      border-color: #ffaa00;
+    }
+    .day-name {
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: var(--text-color);
+      border-bottom: 1px solid var(--border-solid);
+      padding-bottom: 4px;
+    }
+    .day-date-sub { font-size: 11px; color: #888888; float: right; }
+    .day-content {
+      font-size: 13px;
+      color: #bbbbbb;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 120px;
+      overflow-y: auto;
+      line-height: 1.4;
+      margin-top: 4px;
+    }
+    .day-content .highlight {
+      background: var(--text-color);
+      color: var(--bg-color);
+      padding: 0 2px;
+    }
+    .day-empty { color: #555555; font-style: italic; font-size: 12px; }
+    .empty-state {
+      text-align: center;
+      padding: 40px 16px;
+      color: #666666;
+    }
+    .search-info {
+      color: #888;
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+
+    /* ===== CALENDAR ===== */
+    .calendar-container {
+      background: var(--bg-color);
+      border: 1px solid transparent;
+      border-image: linear-gradient(90deg, var(--border-start), var(--border-end)) 1;
+      padding: 16px;
+      margin: 10px 0;
+    }
+    .calendar-header-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .cal-nav-group { display: flex; gap: 6px; align-items: center; }
+    .cal-nav-btn {
+      background: var(--bg-color);
+      border: 1px solid var(--border-solid);
+      color: var(--text-color);
+      padding: 4px 12px;
+      font-family: var(--font-family);
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      min-width: 44px;
+      text-align: center;
+    }
+    .cal-nav-btn:hover { background: var(--hover-bg); color: var(--hover-text); }
+    #calendarMonthTitle {
+      font-size: 15px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background: var(--border-solid);
+      border: 1px solid var(--border-solid);
+    }
+    .cal-day-header {
+      text-align: center;
+      font-weight: bold;
+      font-size: 12px;
+      color: var(--bg-color);
+      background: var(--text-color);
+      padding: 4px 0;
+    }
+    .cal-cell {
+      background: var(--bg-color);
+      min-height: 75px;
+      padding: 6px;
+      position: relative;
+    }
+    .cal-cell.empty { background: rgba(255,255,255,0.02); }
+    .cal-cell.today { box-shadow: inset 0 0 0 1px var(--text-color); }
+    .cal-cell.has-entry { cursor: pointer; }
+    .cal-cell.has-entry:hover {
+      background: var(--text-color);
+      color: var(--bg-color);
+    }
+    .cal-cell.has-entry:hover .cal-date, .cal-cell.has-entry:hover .cal-preview {
+      color: var(--bg-color);
+    }
+    .cal-cell.weekend {
+      opacity: 0.3;
+    }
+    .cal-date { font-size: 13px; font-weight: bold; }
+    .cal-preview {
+      font-size: 11px;
+      color: #888888;
+      line-height: 1.2;
+      margin-top: 4px;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      word-break: break-word;
+    }
+    .cal-cell.search-match {
+      border: 1px solid var(--text-color);
+    }
+    .cal-cell.search-match .cal-date {
+      color: var(--text-color);
+    }
+
+    /* ===== DETAILED VIEW ===== */
+    .detailed-container {
+      background: var(--bg-color);
+      border: 1px solid transparent;
+      border-image: linear-gradient(90deg, var(--border-start), var(--border-end)) 1;
+      padding: 16px;
+      margin: 10px 0;
+    }
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    .analytics-card {
+      background: var(--bg-color);
+      border: 1px solid var(--border-solid);
+      border-left: 3px solid var(--text-color);
+      padding: 12px 14px;
+    }
+    .analytics-card h3 {
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--text-color);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .timer-display {
+      font-family: var(--font-family);
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--text-color);
+      padding: 8px 12px;
+      background: transparent;
+      border: 1px dashed var(--border-solid);
+      text-align: center;
+    }
+
+    /* ===== STATS VIEW ===== */
+    .stats-container {
+      background: var(--bg-color);
+      border: 1px solid transparent;
+      border-image: linear-gradient(90deg, var(--border-start), var(--border-end)) 1;
+      padding: 16px;
+      margin: 10px 0;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--bg-color);
+      border: 1px solid var(--border-solid);
+      border-left: 3px solid var(--text-color);
+      padding: 12px 14px;
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 32px;
+      font-weight: bold;
+      color: var(--text-color);
+    }
+    .stat-label {
+      font-size: 12px;
+      color: #888;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stat-progress {
+      margin-top: 10px;
+      height: 4px;
+      background: var(--border-solid);
+    }
+    .stat-progress-fill {
+      height: 100%;
+      background: var(--text-color);
+      transition: width 0.5s;
+    }
+
+    /* ===== TIMELINE SEARCH HIGHLIGHT ===== */
+    .timeline-entry.search-match {
+      border-left: 2px solid var(--text-color) !important;
+      padding-left: 8px !important;
+    }
+
+    /* ===== MODAL ===== */
+    #calendarModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #calendarModal .modal-box {
+      background: var(--bg-color);
+      border: 1px solid transparent;
+      border-image: linear-gradient(90deg, var(--border-start), var(--border-end)) 1;
+      width: 100%;
+      max-width: 500px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+    }
+    .modal-header {
+      padding: 12px 16px;
+      border-bottom: 1px dashed var(--border-solid);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h3 { font-size: 14px; font-weight: bold; }
+    .modal-close {
+      background: none; border: none;
+      color: var(--text-color); font-size: 20px;
+      cursor: pointer; font-family: monospace; font-weight: bold;
+    }
+    .modal-close:hover { color: #ff5555; }
+    .modal-body {
+      padding: 16px;
+      overflow-y: auto;
+      font-size: 14px;
+      color: #bbbbbb;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+    .modal-actions button {
+      background: var(--bg-color);
+      border: 1px solid var(--border-solid);
+      color: var(--text-color);
+      cursor: pointer;
+      padding: 4px 8px;
+      font-family: inherit; font-size: 13px; font-weight: bold;
+      margin-right: 10px;
+    }
+    .modal-actions button:hover { background: var(--text-color); color: var(--bg-color); }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+      .day-grid { grid-template-columns: repeat(3, 1fr); }
+      .analytics-grid { grid-template-columns: 1fr; }
+      .calendar-grid { grid-template-columns: repeat(1, 1fr); gap: 0; }
+      .cal-day-header { display: none; }
+      .cal-cell { min-height: 50px; border-bottom: 1px solid var(--border-solid); }
+      .calendar-header-controls { flex-direction: column; align-items: stretch; gap: 8px; }
+      .cal-nav-group { justify-content: center; }
+      #searchContainer { min-width: 120px; max-width: 180px; }
+      #searchInput { min-width: 50px; font-size: 11px; }
+    }
+    @media (max-width: 600px) {
+      .day-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      #waybar { flex-wrap: wrap; height: auto; min-height: 28px; padding: 4px 8px; gap: 4px; }
+      .waybar-btn { font-size: 11px; padding: 0 4px; }
+      #searchContainer { min-width: 80px; max-width: 140px; padding: 2px 4px; }
+      #searchInput { font-size: 10px; min-width: 40px; }
+      .search-prompt { font-size: 11px; }
+      .search-count { font-size: 9px; min-width: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <!-- waybar -->
+  <div id="waybar">
+    <div style="display:flex; align-items:center; gap:4px; height: 100%; flex-wrap: wrap;">
+      <span class="waybar-btn" id="viewListBtn">[LIST]</span>
+      <span class="waybar-btn" id="viewCalBtn">[CAL]</span>
+      <span class="waybar-btn" id="viewDetailBtn">[TIMERS]</span>
+      <span class="waybar-btn" id="viewStatsBtn">[STATS]</span>
+      <span class="waybar-btn" id="viewTimelineBtn">[TIMELINE]</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; height: 100%; flex-wrap: wrap;">
+      <div id="searchContainer">
+        <span class="search-prompt">/</span>
+        <input type="text" id="searchInput" placeholder="search..." />
+        <span class="search-clear" id="searchClear">✕</span>
+        <span class="search-count" id="searchCount"></span>
+      </div>
+      <span class="waybar-btn" id="langToggle">EN</span>
+    </div>
+  </div>
+
+  <div id="terminal-grid">
+    <div class="term-pane" id="mainPane">
+      <div class="output-area" id="outputArea">
+        <div class="banner">> init Berichtsheft module v2.2...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="calendarModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="modalTitle">Day</h3>
+      <div class="modal-actions">
+        <button id="copyModalBtn">[COPY]</button>
+        <button class="modal-close" id="closeModalBtn">[X]</button>
+      </div>
+    </div>
+    <div class="modal-body" id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    "use strict";
+
+    const i18n = {
+      en: {
+        label: "EN", daysList: ['Mon','Tue','Wed','Thu','Fri'],
+        shortDays: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+        monthNames: ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"],
+        noReports: "NO REPORTS FOUND", errorLoading: "ERROR LOADING DATA",
+        start: "APPRENTICESHIP START", completion: "APPRENTICESHIP COMPLETION",
+        feierabend: "TIME TO END OF WORKDAY", weekend: "TIME TO NEXT WEEKEND",
+        topicProject: "PROJECT MANAGEMENT", topicSelfLearning: "LAST INDEPENDENT LEARNING",
+        topicSecurity: "IT-SECURITY", topicTechnology: "IT-TECHNOLOGY",
+        neverLogged: "NEVER LOGGED", weekendReached: "WEEKEND REACHED",
+        today: "TODAY", totalWeeks: "TOTAL WEEKS", totalEntries: "TOTAL ENTRIES",
+        completionRate: "COMPLETION RATE", progress: "PROGRESS",
+        timeline: "TIMELINE", 
+        searchPlaceholder: "search...", searchResults: "results",
+        noSearchResults: "no results", ho: "HOME OFFICE"
+      },
+      de: {
+        label: "DE", daysList: ['Mon','Die','Mit','Don','Fre'],
+        shortDays: ['Mo','Di','Mi','Do','Fr','Sa','So'],
+        monthNames: ["JANUAR","FEBRUAR","MÄRZ","APRIL","MAI","JUNI","JULI","AUGUST","SEPTEMBER","OKTOBER","NOVEMBER","DEZEMBER"],
+        noReports: "KEINE BERICHTE GEFUNDEN", errorLoading: "FEHLER BEIM LADEN",
+        start: "AUSBILDUNGSBEGINN", completion: "AUSBILDUNGSENDE",
+        feierabend: "ZEIT BIS FEIERABEND", weekend: "ZEIT BIS WOCHENENDE",
+        topicProject: "PROJEKTMANAGEMENT", topicSelfLearning: "LETZTES SELBST. LERNEN",
+        topicSecurity: "IT-SICHERHEIT", topicTechnology: "IT-TECHNOLOGIE",
+        neverLogged: "NIE ERFASST", weekendReached: "WOCHENENDE ERREICHT",
+        today: "HEUTE", totalWeeks: "WOCHEN INSGESAMT", totalEntries: "EINTRÄGE INSGESAMT",
+        completionRate: "FERTIGSTELLUNGSRATE", progress: "FORTSCHRITT",
+        timeline: "ZEITLINIE",
+        searchPlaceholder: "suchen...", searchResults: "Ergebnisse",
+        noSearchResults: "keine Ergebnisse", ho: "HAUSARBEIT"
+      }
+    };
+
+    let currentLang = "en";
+    let allReports = [];
+    let expandedCards = new Set();
+    let currentView = 'list';
+    let calendarYear = new Date().getFullYear();
+    let calendarMonth = new Date().getMonth();
+    let searchTerm = '';
+    const PARSE_DAY_NAMES = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag'];
+    const DAY_MAP = {
+      'montag': 'Montag',
+      'dienstag': 'Dienstag',
+      'mittwoch': 'Mittwoch',
+      'donnerstag': 'Donnerstag',
+      'freitag': 'Freitag'
+    };
+
+    // DOM refs
+    const output = document.getElementById('outputArea');
+    const mainPane = document.getElementById('mainPane');
+    const searchInput = document.getElementById('searchInput');
+    const searchClear = document.getElementById('searchClear');
+    const searchCount = document.getElementById('searchCount');
+    const langToggle = document.getElementById('langToggle');
+    const viewListBtn = document.getElementById('viewListBtn');
+    const viewCalBtn = document.getElementById('viewCalBtn');
+    const viewDetailBtn = document.getElementById('viewDetailBtn');
+    const viewStatsBtn = document.getElementById('viewStatsBtn');
+    const viewTimelineBtn = document.getElementById('viewTimelineBtn');
+
+    // ----- helper functions -----
+    function printHTML(html) {
+      const div = document.createElement('div');
+      div.innerHTML = html;
+      output.appendChild(div);
+      mainPane.scrollTop = mainPane.scrollHeight;
+    }
+
+    function clearOutput() {
+      output.innerHTML = '';
+    }
+
+    // ----- improved text extraction -----
+    function extractDayContent(text, dayName) {
+      // Look for day name followed by content, handling various formats
+      const patterns = [
+        // Pattern: "Montag" followed by content until next day or end
+        new RegExp(dayName + '[\\s\\-:;]*([\\s\\S]*?)(?=\\n\\s*(?:' + PARSE_DAY_NAMES.join('|') + ')|$)', 'i'),
+        // Pattern: "| Montag | content |" (table format)
+        new RegExp('\\|\\s*' + dayName + '\\s*\\|([^|]*)\\|', 'i'),
+        // Pattern: "Montag - content" 
+        new RegExp(dayName + '\\s*[-–]\\s*([\\s\\S]*?)(?=\\n\\s*(?:' + PARSE_DAY_NAMES.join('|') + ')|$)', 'i')
+      ];
+      
+      for (const pattern of patterns) {
+        const match = text.match(pattern);
+        if (match) {
+          let content = match[1].trim();
+          // Clean up the content
+          content = content
+            .replace(/\b\d+\s*(?:h|Std\.|Stunden)\b/gi, '') // Remove hours
+            .replace(/[–\-]\s*Selbständig.*$/gim, '') // Remove "Selbständig" references
+            .replace(/\d{2}\.\d{2}\.\d{4}\s*$/g, '') // Remove dates at end
+            .replace(/\s+\b8\b.*$/gm, '') // Remove "8" at end
+            .replace(/\|\s*$/, '') // Remove trailing pipe
+            .replace(/^[•\-*+]\s*/, '') // Remove bullet points
+            .trim();
+          
+          // Split by common separators and clean
+          const lines = content.split('\n')
+            .map(l => l.trim())
+            .filter(l => l && !l.match(/^[-–]{3,}$/))
+            .map(l => l.replace(/^[-*•+]\s*/, '• '));
+          
+          // Filter out lines that are just "HO" or "Home Office" - we'll mark these specially
+          const hasHO = lines.some(l => /^HO$/i.test(l) || /home office/i.test(l));
+          const filteredLines = lines.filter(l => !/^HO$/i.test(l) && !/home office/i.test(l));
+          
+          if (filteredLines.length === 0 && hasHO) {
+            return { content: '🏠 ' + i18n[currentLang].ho, isHO: true };
+          }
+          
+          return { content: filteredLines.join('\n') || '—', isHO: hasHO };
+        }
+      }
+      return { content: '—', isHO: false };
+    }
+
+    // ----- improved DOCX parsing -----
+    async function fetchAndParseDocx(report) {
+      try {
+        const resp = await fetch(report.url);
+        if (!resp.ok) return;
+        const zip = await JSZip.loadAsync(await resp.arrayBuffer());
+        const docFile = zip.file('word/document.xml');
+        if (!docFile) return;
+        const xml = await docFile.async('string');
+        
+        // Extract all text content preserving structure
+        const pRegex = /<w:p[^>]*>([\s\S]*?)<\/w:p>/g;
+        let paragraphs = [], m;
+        while ((m = pRegex.exec(xml)) !== null) {
+          const textContent = (m[1].match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [])
+            .map(x => x.replace(/<[^>]*>/g, '').trim())
+            .filter(Boolean);
+          if (textContent.length) {
+            paragraphs.push(textContent.join(' '));
+          }
+        }
+        
+        const fullText = paragraphs.join('\n');
+        
+        // Parse each day
+        const days = {};
+        for (const dayName of PARSE_DAY_NAMES) {
+          const result = extractDayContent(fullText, dayName);
+          days[dayName] = result;
+        }
+        
+        report.days = days;
+        
+        // Try to extract week dates from the document
+        const dateMatch = fullText.match(/(\d{1,2})[\.\/](\d{1,2})[\.\/](\d{2,4})/);
+        if (dateMatch) {
+          let d = parseInt(dateMatch[1]), mo = parseInt(dateMatch[2])-1, y = parseInt(dateMatch[3]);
+          if (y < 100) y += 2000;
+          const parsed = new Date(y, mo, d);
+          if (!isNaN(parsed.getTime())) {
+            // Check if this is a Monday, if not find the Monday of that week
+            const day = parsed.getDay();
+            const diff = parsed.getDate() - day + (day === 0 ? -6 : 1);
+            report.mondayDate = new Date(parsed.setDate(diff));
+          }
+        }
+      } catch(e) { 
+        console.warn('Parse error', report.name, e); 
+      }
+    }
+
+    // ----- search functions -----
+    function performSearch(term) {
+      if (!term || term.trim().length < 2) return allReports;
+      
+      const lowerTerm = term.toLowerCase().trim();
+      const matchedReports = allReports.filter(report => {
+        let matchFound = false;
+        
+        Object.entries(report.days).forEach(([dayName, dayData]) => {
+          if (dayData.content && dayData.content !== '—') {
+            const contentLower = dayData.content.toLowerCase();
+            if (contentLower.includes(lowerTerm)) {
+              matchFound = true;
+              if (!report._matches) report._matches = [];
+              report._matches.push({ day: dayName, content: dayData.content });
+            }
+          }
+        });
+        
+        if (report.name.toLowerCase().includes(lowerTerm)) {
+          matchFound = true;
+        }
+        
+        return matchFound;
+      });
+      
+      return matchedReports;
+    }
+
+    function highlightText(text, term) {
+      if (!term || term.trim().length < 2 || !text) return text;
+      
+      const lowerText = text.toLowerCase();
+      const lowerTerm = term.toLowerCase().trim();
+      const indices = [];
+      let startIndex = 0;
+      
+      while (true) {
+        const idx = lowerText.indexOf(lowerTerm, startIndex);
+        if (idx === -1) break;
+        indices.push(idx);
+        startIndex = idx + lowerTerm.length;
+      }
+      
+      if (indices.length === 0) return text;
+      
+      let result = '';
+      let lastEnd = 0;
+      indices.forEach(idx => {
+        result += text.substring(lastEnd, idx);
+        result += `<span class="highlight">${text.substring(idx, idx + lowerTerm.length)}</span>`;
+        lastEnd = idx + lowerTerm.length;
+      });
+      result += text.substring(lastEnd);
+      
+      return result;
+    }
+
+    // ----- update UI -----
+    function updateStaticUIText() {
+      langToggle.textContent = i18n[currentLang].label;
+      searchInput.placeholder = i18n[currentLang].searchPlaceholder;
+    }
+
+    langToggle.addEventListener('click', ()=>{
+      currentLang = currentLang === 'en' ? 'de' : 'en';
+      updateStaticUIText();
+      refreshCurrentView();
+    });
+
+    // ----- view switching -----
+    function switchView(view) {
+      currentView = view;
+      clearOutput();
+      
+      [viewListBtn, viewCalBtn, viewDetailBtn, viewStatsBtn, viewTimelineBtn].forEach(btn => {
+        btn.classList.remove('view-btn-active');
+      });
+      
+      switch(view) {
+        case 'list': viewListBtn.classList.add('view-btn-active'); renderListView(); break;
+        case 'calendar': viewCalBtn.classList.add('view-btn-active'); renderCalendarView(); break;
+        case 'detailed': viewDetailBtn.classList.add('view-btn-active'); renderDetailedView(); break;
+        case 'stats': viewStatsBtn.classList.add('view-btn-active'); renderStatsView(); break;
+        case 'timeline': viewTimelineBtn.classList.add('view-btn-active'); renderTimelineView(); break;
+      }
+    }
+
+    function refreshCurrentView() {
+      switchView(currentView);
+    }
+
+    viewListBtn.addEventListener('click', ()=>switchView('list'));
+    viewCalBtn.addEventListener('click', ()=>switchView('calendar'));
+    viewDetailBtn.addEventListener('click', ()=>switchView('detailed'));
+    viewStatsBtn.addEventListener('click', ()=>switchView('stats'));
+    viewTimelineBtn.addEventListener('click', ()=>switchView('timeline'));
+
+    // ----- search handlers -----
+    function handleSearch() {
+      const term = searchInput.value;
+      searchTerm = term;
+      
+      if (term.trim().length < 2) {
+        searchClear.style.display = 'none';
+        searchCount.textContent = '';
+        refreshCurrentView();
+        return;
+      }
+      
+      searchClear.style.display = 'inline';
+      const results = performSearch(term);
+      searchCount.textContent = results.length > 0 ? `${results.length}` : '';
+      refreshCurrentView();
+    }
+
+    function clearSearch() {
+      searchInput.value = '';
+      searchTerm = '';
+      searchClear.style.display = 'none';
+      searchCount.textContent = '';
+      refreshCurrentView();
+    }
+
+    searchInput.addEventListener('input', handleSearch);
+    searchClear.addEventListener('click', clearSearch);
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') clearSearch();
+    });
+
+    // ----- render list view -----
+    function renderListView() {
+      const lang = i18n[currentLang];
+      
+      let reports = allReports;
+      let searchActive = false;
+      
+      if (searchTerm && searchTerm.trim().length >= 2) {
+        reports = performSearch(searchTerm);
+        searchActive = true;
+        if (reports.length > 0) {
+          printHTML(`<div class="search-info">> ${reports.length} ${lang.searchResults} for "${searchTerm}"</div>`);
+        } else {
+          printHTML(`<div class="search-info">> ${searchTerm}: ${lang.noSearchResults}</div>`);
+        }
+      }
+      
+      if (!reports || !reports.length) {
+        printHTML('<div class="empty-state"><div>[!]</div><div>'+lang.noReports+'</div></div>');
+        return;
+      }
+
+      for (const r of reports) {
+        const collapsed = expandedCards.has(r.name) ? '' : 'collapsed';
+        let title = r.name.replace(/\.docx?$/i,'');
+        if (r.mondayDate) {
+          const end = new Date(r.mondayDate); end.setDate(end.getDate()+4);
+          const fmt = (d)=> currentLang==='en' ?
+            (String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+'/'+String(d.getFullYear()).slice(-2)) :
+            d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+          title = '> '+fmt(r.mondayDate)+' TO '+fmt(end);
+        }
+        
+        let html = '<div class="report-card '+collapsed+'" data-name="'+r.name+'">'+
+          '<div class="card-header">'+
+          '<div class="card-title"><span>📄</span> '+title+'</div>'+
+          '<div class="card-badges">'+
+          (r.isFisi?'<span class="badge">[FISI]</span>':'')+
+          '<span class="chevron"></span>'+
+          '</div></div>'+
+          '<div class="card-body"><div class="day-grid">';
+        
+        for (let i=0; i<PARSE_DAY_NAMES.length; i++) {
+          const dayName = PARSE_DAY_NAMES[i];
+          const d = r.days[dayName];
+          const has = d && d.content && d.content !== '—';
+          let dateSub = '';
+          if (r.mondayDate) {
+            const dd = new Date(r.mondayDate); dd.setDate(dd.getDate()+i);
+            dateSub = currentLang==='en' ?
+              (String(dd.getMonth()+1).padStart(2,'0')+'/'+String(dd.getDate()).padStart(2,'0')+'/'+String(dd.getFullYear()).slice(-2)) :
+              dd.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+          }
+          
+          let contentHTML = '';
+          const isHO = d && d.isHO;
+          const hoBadge = isHO ? ' <span class="badge-ho">[HO]</span>' : '';
+          
+          if (has) {
+            if (searchActive && searchTerm) {
+              contentHTML = d.content.toLowerCase().includes(searchTerm.toLowerCase().trim()) ? 
+                highlightText(d.content, searchTerm) : d.content;
+            } else {
+              contentHTML = d.content;
+            }
+          } else {
+            contentHTML = '<span class="day-empty">NO ENTRY</span>';
+          }
+          
+          const dayClass = isHO ? 'day-card ho-day' : 'day-card';
+          html += '<div class="'+dayClass+'">'+
+            '<div class="day-name">['+lang.daysList[i].toUpperCase()+']'+
+            (dateSub?' <span class="day-date-sub">'+dateSub+'</span>':'')+
+            hoBadge+
+            '</div>'+
+            '<div class="day-content">'+(has ? contentHTML : '<span class="day-empty">NO ENTRY</span>')+'</div></div>';
+        }
+        html += '</div></div></div>';
+        printHTML(html);
+      }
+      
+      document.querySelectorAll('.card-header').forEach(h => {
+        h.addEventListener('click', function(e) {
+          const card = this.closest('.report-card');
+          const name = card.dataset.name;
+          if (card.classList.contains('collapsed')) {
+            document.querySelectorAll('.report-card').forEach(c => c.classList.add('collapsed'));
+            expandedCards.clear();
+            card.classList.remove('collapsed');
+            expandedCards.add(name);
+          } else {
+            card.classList.add('collapsed');
+            expandedCards.delete(name);
+          }
+        });
+      });
+    }
+
+    // ----- calendar view -----
+    function renderCalendarView() {
+      const lang = i18n[currentLang];
+      clearOutput();
+      
+      if (searchTerm && searchTerm.trim().length >= 2) {
+        const results = performSearch(searchTerm);
+        printHTML(`<div class="search-info">> ${results.length} ${lang.searchResults} for "${searchTerm}"</div>`);
+      }
+      
+      const container = document.createElement('div');
+      container.className = 'calendar-container';
+      container.id = 'calContainer';
+      output.appendChild(container);
+
+      const header = document.createElement('div');
+      header.className = 'calendar-header-controls';
+
+      const leftGroup = document.createElement('div');
+      leftGroup.className = 'cal-nav-group';
+      leftGroup.innerHTML = `
+        <button class="cal-nav-btn" id="firstMonthBtn">[<<]</button>
+        <button class="cal-nav-btn" id="prevMonthBtn">[<]</button>
+        <button class="cal-nav-btn" id="todayBtn">[${lang.today}]</button>
+      `;
+
+      const titleSpan = document.createElement('span');
+      titleSpan.id = 'calendarMonthTitle';
+      titleSpan.textContent = `> ${lang.monthNames[calendarMonth]} ${calendarYear} <`;
+
+      const rightGroup = document.createElement('div');
+      rightGroup.className = 'cal-nav-group';
+      rightGroup.innerHTML = `
+        <button class="cal-nav-btn" id="nextMonthBtn">[>]</button>
+        <button class="cal-nav-btn" id="lastMonthBtn">[>>]</button>
+      `;
+
+      header.appendChild(leftGroup);
+      header.appendChild(titleSpan);
+      header.appendChild(rightGroup);
+      container.appendChild(header);
+
+      const grid = document.createElement('div');
+      grid.className = 'calendar-grid';
+      grid.id = 'calGrid';
+      container.appendChild(grid);
+
+      buildCalendarGrid(grid);
+
+      document.getElementById('firstMonthBtn').addEventListener('click', ()=>{
+        const {min} = getMinMaxDates();
+        if (!isNaN(min.getTime())) { calendarYear=min.getFullYear(); calendarMonth=min.getMonth(); renderCalendarView(); }
+      });
+      document.getElementById('lastMonthBtn').addEventListener('click', ()=>{
+        const {max} = getMinMaxDates();
+        if (!isNaN(max.getTime())) { calendarYear=max.getFullYear(); calendarMonth=max.getMonth(); renderCalendarView(); }
+      });
+      document.getElementById('prevMonthBtn').addEventListener('click', ()=>{
+        let m=calendarMonth-1, y=calendarYear;
+        if (m<0) { m=11; y--; }
+        const {min} = getMinMaxDates();
+        if (y>min.getFullYear() || (y===min.getFullYear() && m>=min.getMonth())) {
+          calendarMonth=m; calendarYear=y; renderCalendarView();
+        }
+      });
+      document.getElementById('nextMonthBtn').addEventListener('click', ()=>{
+        let m=calendarMonth+1, y=calendarYear;
+        if (m>11) { m=0; y++; }
+        const {max} = getMinMaxDates();
+        if (y<max.getFullYear() || (y===max.getFullYear() && m<=max.getMonth())) {
+          calendarMonth=m; calendarYear=y; renderCalendarView();
+        }
+      });
+      document.getElementById('todayBtn').addEventListener('click', ()=>{
+        const now = new Date(); calendarYear=now.getFullYear(); calendarMonth=now.getMonth(); renderCalendarView();
+      });
+    }
+
+    function buildCalendarGrid(grid) {
+      const lang = i18n[currentLang];
+      const now = new Date();
+      const entryMap = {};
+      const searchTermLower = searchTerm ? searchTerm.toLowerCase().trim() : '';
+      
+      for (const r of allReports) {
+        if (!r.mondayDate) continue;
+        for (let i=0; i<5; i++) {
+          const d = r.days[PARSE_DAY_NAMES[i]];
+          if (d && d.content && d.content !== '—') {
+            const exact = new Date(r.mondayDate); exact.setDate(exact.getDate()+i);
+            const k = exact.getFullYear()+'-'+exact.getMonth()+'-'+exact.getDate();
+            entryMap[k] = { content: d.content, isHO: d.isHO || false };
+          }
+        }
+      }
+      
+      const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
+      const offset = firstDay===0 ? 6 : firstDay-1;
+      const daysInMonth = new Date(calendarYear, calendarMonth+1, 0).getDate();
+
+      let html = lang.shortDays.map(d => '<div class="cal-day-header">'+d.toUpperCase()+'</div>').join('');
+      for (let i=0; i<offset; i++) html += '<div class="cal-cell empty"></div>';
+      for (let i=1; i<=daysInMonth; i++) {
+        const dateObj = new Date(calendarYear, calendarMonth, i);
+        const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+        const isToday = now.getFullYear()===calendarYear && now.getMonth()===calendarMonth && now.getDate()===i;
+        const key = calendarYear+'-'+calendarMonth+'-'+i;
+        const entry = entryMap[key] || null;
+        const content = entry ? entry.content : null;
+        const isHO = entry ? entry.isHO : false;
+        
+        let isSearchMatch = false;
+        if (content && searchTermLower && searchTermLower.length >= 2) {
+          isSearchMatch = content.toLowerCase().includes(searchTermLower);
+        }
+        
+        const weekendClass = isWeekend ? ' weekend' : '';
+        const hoIndicator = isHO ? ' 🏠' : '';
+        
+        html += '<div class="cal-cell '+(isToday?'today':'')+' '+(content?'has-entry':'')+ (isSearchMatch?' search-match':'') + weekendClass + '" '+
+          (content ? 'data-key="'+key+'"' : '') +'>'+
+          '<div class="cal-date">'+(i<10?'0'+i:i)+hoIndicator+'</div>'+
+          (content ? '<div class="cal-preview">'+content.replace(/<[^>]*>/g,'')+'</div>' : '')+
+          '</div>';
+      }
+      grid.innerHTML = html;
+      
+      grid.querySelectorAll('.has-entry').forEach(cell => {
+        cell.addEventListener('click', ()=>{
+          const k = cell.dataset.key;
+          const parts = k.split('-');
+          const d = new Date(parts[0], parts[1], parts[2]);
+          document.getElementById('modalTitle').textContent = "> " + d.toLocaleDateString(currentLang==='en'?'en-US':'de-DE', { weekday:'long', year:'numeric', month:'long', day:'numeric' }).toUpperCase();
+          
+          let content = entryMap[k] ? entryMap[k].content : '';
+          if (searchTerm && searchTerm.trim().length >= 2) {
+            content = highlightText(content, searchTerm);
+          }
+          document.getElementById('modalContent').innerHTML = content;
+          document.getElementById('calendarModal').style.display = 'flex';
+        });
+      });
+    }
+
+    function getMinMaxDates() {
+      const valid = allReports.map(r => r.mondayDate?.getTime()).filter(t => !isNaN(t));
+      if (!valid.length) return { min: new Date(), max: new Date() };
+      return { min: new Date(Math.min(...valid)), max: new Date(Math.max(...valid)) };
+    }
+
+    // ----- detailed/timers view (unchanged) -----
+    function renderDetailedView() {
+      clearOutput();
+      
+      if (searchTerm && searchTerm.trim().length >= 2) {
+        const results = performSearch(searchTerm);
+        const lang = i18n[currentLang];
+        printHTML(`<div class="search-info">> ${results.length} ${lang.searchResults} for "${searchTerm}"</div>`);
+      }
+      
+      const container = document.createElement('div');
+      container.className = 'detailed-container';
+      output.appendChild(container);
+      const grid = document.createElement('div');
+      grid.className = 'analytics-grid';
+      container.appendChild(grid);
+      
+      const items = [
+        { id:'timerStart', label:'start' },
+        { id:'timerCompletion', label:'completion' },
+        { id:'timerFeierabend', label:'feierabend' },
+        { id:'timerWeekend', label:'weekend' },
+        { id:'timerProject', label:'topicProject' },
+        { id:'timerSelfLearning', label:'topicSelfLearning' },
+        { id:'timerSecurity', label:'topicSecurity' },
+        { id:'timerTechnology', label:'topicTechnology' }
+      ];
+      for (const item of items) {
+        const card = document.createElement('div');
+        card.className = 'analytics-card';
+        card.innerHTML = `<h3><span id="${item.id}Label">${i18n[currentLang][item.label]}</span></h3>
+        <div class="timer-display" id="${item.id}">--</div>`;
+        grid.appendChild(card);
+      }
+      updateDetailedTimers();
+    }
+
+    function findLatestDateForTopic(regex) {
+      let latest = null;
+      for (const r of allReports) {
+        if (!r.mondayDate) continue;
+        for (let i=0; i<5; i++) {
+          const c = r.days[PARSE_DAY_NAMES[i]]?.content;
+          if (c && c!=='—' && regex.test(c)) {
+            const d = new Date(r.mondayDate); d.setDate(d.getDate()+i);
+            if (!latest || d>latest) latest = d;
+          }
+        }
+      }
+      return latest;
+    }
+
+    function formatAgo(diffMs) {
+      if (diffMs < 0) return currentLang==='en' ? '-00:00:00 AGO' : '-00:00:00 VORHER';
+      const secs = Math.floor(diffMs/1000);
+      const h = Math.floor(secs/3600);
+      const m = String(Math.floor((secs%3600)/60)).padStart(2,'0');
+      const s = String(secs%60).padStart(2,'0');
+      return currentLang==='en' ? '-'+h+':'+m+':'+s+' AGO' : '-'+h+':'+m+':'+s+' ZUVOR';
+    }
+
+    function formatCountdown(diffMs) {
+      if (diffMs <= 0) return i18n[currentLang].weekendReached;
+      const secs = Math.floor(diffMs/1000);
+      const h = Math.floor(secs/3600);
+      const m = String(Math.floor((secs%3600)/60)).padStart(2,'0');
+      const s = String(secs%60).padStart(2,'0');
+      return '+'+h+':'+m+':'+s;
+    }
+
+    function updateDetailedTimers() {
+      const lang = i18n[currentLang];
+      const earliest = getEarliestDate();
+      const now = new Date();
+      const diff = now.getTime() - earliest.getTime();
+      const daysAgo = diff >= 0 ? Math.floor(diff/(1000*60*60*24)) : 0;
+      const target = new Date(earliest); target.setFullYear(target.getFullYear()+2);
+      const left = target.getTime() - now.getTime();
+      const daysLeft = left >= 0 ? Math.floor(left/(1000*60*60*24)) : 0;
+
+      const el = (id) => document.getElementById(id);
+      if (el('timerStart')) el('timerStart').textContent = currentLang==='en' ? '-'+daysAgo+' DAYS' : '-'+daysAgo+' TAGE';
+      if (el('timerCompletion')) el('timerCompletion').textContent = currentLang==='en' ? '+'+daysLeft+' DAYS' : '+'+daysLeft+' TAGE';
+
+      const dow = now.getDay();
+      const ft = new Date(now); 
+      ft.setHours(16, 0, 0, 0);
+      const fd = ft.getTime() - now.getTime();
+
+      if (dow >= 1 && dow <= 5 && fd > 0) {
+        if (el('timerFeierabendLabel')) el('timerFeierabendLabel').textContent = i18n[currentLang].feierabend;
+        if (el('timerFeierabend')) el('timerFeierabend').textContent = formatCountdown(fd);
+      } else {
+        if (el('timerFeierabendLabel')) {
+          el('timerFeierabendLabel').textContent = currentLang === 'en' ? 'START OF NEXT WORKDAY' : 'BEGINN DES NÄCHSTEN ARBEITSTAGES';
+        }
+        let nextStart = new Date(now);
+        if (dow === 5 && fd <= 0) {
+          nextStart.setDate(now.getDate() + 3);
+        } else if (dow === 6) {
+          nextStart.setDate(now.getDate() + 2);
+        } else if (dow === 0) {
+          nextStart.setDate(now.getDate() + 1);
+        } else {
+          nextStart.setDate(now.getDate() + 1);
+        }
+        nextStart.setHours(8, 0, 0, 0);
+        const nextFd = nextStart.getTime() - now.getTime();
+        if (el('timerFeierabend')) el('timerFeierabend').textContent = formatCountdown(nextFd);
+      }
+
+      const nw = new Date(now);
+      let daysUntilFri = (5 - dow + 7) % 7;
+      if (daysUntilFri===0 && (now.getHours()>16 || (now.getHours()===16 && now.getMinutes()>0))) daysUntilFri=7;
+      nw.setDate(now.getDate()+daysUntilFri); nw.setHours(16,0,0,0);
+      const wd = nw.getTime() - now.getTime();
+      if (el('timerWeekend')) el('timerWeekend').textContent = formatCountdown(wd);
+
+      const project = findLatestDateForTopic(/\b(?:projektmanagement|projekt\s+management|project\s+management)\b/i);
+      if (el('timerProject')) el('timerProject').textContent = project ? formatAgo(now.getTime()-project.getTime()) : lang.neverLogged;
+      const self = findLatestDateForTopic(/\b(?:selbstständiges\s*lernen|selbstaendiges\s*lernen|eigenstudium|recherche)\b/i);
+      if (el('timerSelfLearning')) el('timerSelfLearning').textContent = self ? formatAgo(now.getTime()-self.getTime()) : lang.neverLogged;
+      const sec = findLatestDateForTopic(/\b(?:it\s*[-–]?\s*security|it\s*[-–]?\s*sicherheit)\b/i);
+      if (el('timerSecurity')) el('timerSecurity').textContent = sec ? formatAgo(now.getTime()-sec.getTime()) : lang.neverLogged;
+      const tech = findLatestDateForTopic(/\b(?:it\s*[-–]?\s*technology|it\s*[-–]?\s*technologie)\b/i);
+      if (el('timerTechnology')) el('timerTechnology').textContent = tech ? formatAgo(now.getTime()-tech.getTime()) : lang.neverLogged;
+    }
+
+    function getEarliestDate() {
+      const valid = allReports.map(r => r.mondayDate?.getTime()).filter(t => !isNaN(t));
+      return valid.length ? new Date(Math.min(...valid)) : new Date();
+    }
+
+    // ----- stats view -----
+    function renderStatsView() {
+      const lang = i18n[currentLang];
+      clearOutput();
+      
+      if (searchTerm && searchTerm.trim().length >= 2) {
+        const results = performSearch(searchTerm);
+        printHTML(`<div class="search-info">> ${results.length} ${lang.searchResults} for "${searchTerm}"</div>`);
+      }
+      
+      const totalWeeks = allReports.length;
+      const totalEntries = allReports.reduce((acc, r) => {
+        return acc + Object.values(r.days).filter(d => d.content && d.content !== '—').length;
+      }, 0);
+      const maxPossible = totalWeeks * 5;
+      const completionRate = maxPossible > 0 ? Math.round((totalEntries / maxPossible) * 100) : 0;
+      const progress = totalWeeks > 0 ? Math.round((totalWeeks / 104) * 100) : 0;
+      
+      const container = document.createElement('div');
+      container.className = 'stats-container';
+      
+      const statsHTML = `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number">${totalWeeks}</div>
+            <div class="stat-label">${lang.totalWeeks}</div>
+            <div class="stat-progress"><div class="stat-progress-fill" style="width:${Math.min(100, (totalWeeks/104)*100)}%"></div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">${totalEntries}</div>
+            <div class="stat-label">${lang.totalEntries}</div>
+            <div class="stat-progress"><div class="stat-progress-fill" style="width:${completionRate}%"></div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">${completionRate}%</div>
+            <div class="stat-label">${lang.completionRate}</div>
+            <div class="stat-progress"><div class="stat-progress-fill" style="width:${completionRate}%"></div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">${progress}%</div>
+            <div class="stat-label">${lang.progress}</div>
+            <div class="stat-progress"><div class="stat-progress-fill" style="width:${progress}%"></div></div>
+          </div>
+        </div>
+      `;
+      
+      container.innerHTML = statsHTML;
+      output.appendChild(container);
+    }
+
+    // ----- timeline view -----
+    function renderTimelineView() {
+      const lang = i18n[currentLang];
+      clearOutput();
+      
+      const allEntries = [];
+      allReports.forEach(r => {
+        if (!r.mondayDate) return;
+        Object.entries(r.days).forEach(([dayName, dayData], index) => {
+          if (dayData.content && dayData.content !== '—') {
+            const date = new Date(r.mondayDate);
+            date.setDate(date.getDate() + index);
+            allEntries.push({
+              date: date,
+              report: r,
+              day: dayName,
+              content: dayData.content,
+              isHO: dayData.isHO || false
+            });
+          }
+        });
+      });
+      
+      allEntries.sort((a, b) => b.date.getTime() - a.date.getTime());
+      
+      if (!allEntries.length) {
+        printHTML('<div class="empty-state">[!] NO ENTRIES FOUND</div>');
+        return;
+      }
+      
+      const container = document.createElement('div');
+      container.className = 'detailed-container';
+      container.innerHTML = `<h2 style="font-size:16px;font-weight:bold;margin-bottom:12px;">> ${lang.timeline}</h2>`;
+      
+      let filteredEntries = allEntries;
+      let searchMatches = 0;
+      if (searchTerm && searchTerm.trim().length >= 2) {
+        const lowerTerm = searchTerm.toLowerCase().trim();
+        filteredEntries = allEntries.filter(entry => {
+          const match = entry.content.toLowerCase().includes(lowerTerm);
+          if (match) searchMatches++;
+          return match;
+        });
+        
+        printHTML(`<div class="search-info">> ${searchMatches} ${lang.searchResults} for "${searchTerm}"</div>`);
+        
+        if (!filteredEntries.length) {
+          printHTML('<div class="empty-state">[!] NO MATCHING ENTRIES</div>');
+          return;
+        }
+      }
+      
+      const weekGroups = {};
+      filteredEntries.forEach(entry => {
+        const weekKey = entry.report.name;
+        if (!weekGroups[weekKey]) weekGroups[weekKey] = [];
+        weekGroups[weekKey].push(entry);
+      });
+      
+      const groupKeys = Object.keys(weekGroups);
+      
+      const lowerTerm = searchTerm ? searchTerm.toLowerCase().trim() : '';
+      
+      groupKeys.slice(0, 20).forEach(weekKey => {
+        const entries = weekGroups[weekKey];
+        const weekDiv = document.createElement('div');
+        weekDiv.style.cssText = 'border:1px solid #333;margin-bottom:12px;padding:12px;';
+        
+        const header = document.createElement('div');
+        header.style.cssText = 'font-weight:bold;font-size:14px;margin-bottom:8px;border-bottom:1px solid #444;padding-bottom:4px;';
+        header.textContent = `> ${weekKey}`;
+        weekDiv.appendChild(header);
+        
+        entries.forEach(entry => {
+          const dateStr = entry.date.toLocaleDateString(currentLang === 'en' ? 'en-US' : 'de-DE', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric'
+          });
+          
+          let displayContent = entry.content;
+          let isMatch = false;
+          const hoIndicator = entry.isHO ? ' 🏠' : '';
+          
+          if (lowerTerm && lowerTerm.length >= 2) {
+            isMatch = entry.content.toLowerCase().includes(lowerTerm);
+            if (isMatch) {
+              displayContent = highlightText(entry.content, searchTerm);
+            }
+          }
+          
+          const entryDiv = document.createElement('div');
+          entryDiv.style.cssText = 'padding:4px 0;font-size:13px;color:#aaa;border-bottom:1px solid #222;' + (isMatch ? 'border-left:2px solid #fff;padding-left:8px;' : '');
+          entryDiv.innerHTML = `
+            <span style="color:#888;font-size:11px;">[${dateStr}]${hoIndicator}</span>
+            <span>${displayContent.substring(0, 100)}${displayContent.length > 100 ? '...' : ''}</span>
+          `;
+          weekDiv.appendChild(entryDiv);
+        });
+        
+        container.appendChild(weekDiv);
+      });
+      
+      output.appendChild(container);
+    }
+
+    // ----- modal -----
+    document.getElementById('closeModalBtn').addEventListener('click', ()=>{
+      document.getElementById('calendarModal').style.display = 'none';
+    });
+    document.getElementById('calendarModal').addEventListener('click', (e)=>{
+      if (e.target === e.currentTarget) document.getElementById('calendarModal').style.display = 'none';
+    });
+    document.getElementById('copyModalBtn').addEventListener('click', ()=>{
+      const title = document.getElementById('modalTitle').textContent;
+      const content = document.getElementById('modalContent').textContent;
+      const txt = title + '\n' + content;
+      navigator.clipboard?.writeText(txt).catch(()=>{});
+    });
+
+    // ----- fetch reports -----
+    async function fetchReportFiles() {
+      const resp = await fetch('https://api.github.com/repos/cmdrFRANKLY1/Viona/contents/Reports');
+      if (!resp.ok) throw new Error('API error '+resp.status);
+      const data = await resp.json();
+      const docFiles = data.filter(i => i.type === 'file' && /\.docx?$/i.test(i.name));
+      return docFiles.map(item => {
+        const rawUrl = 'https://raw.githubusercontent.com/cmdrFRANKLY1/Viona/main/Reports/' + encodeURIComponent(item.name);
+        let mondayDate = null;
+        // Try to extract date from filename
+        const m = item.name.match(/(\d{1,2})[\.\/](\d{1,2})[\.\/](\d{2,4})/);
+        if (m) {
+          let d=parseInt(m[1]), mo=parseInt(m[2])-1, y=parseInt(m[3]);
+          if (y<100) y+=2000;
+          const parsed = new Date(y, mo, d);
+          if (!isNaN(parsed.getTime())) {
+            const day = parsed.getDay();
+            const diff = parsed.getDate() - day + (day===0 ? -6 : 1);
+            mondayDate = new Date(parsed.setDate(diff));
+          }
+        }
+        return { 
+          name: item.name, 
+          url: rawUrl, 
+          mondayDate, 
+          isFisi: /fisi/i.test(item.name), 
+          days: {} 
+        };
+      }).sort((a,b) => (a.mondayDate?.getTime()||0) - (b.mondayDate?.getTime()||0));
+    }
+
+    // ----- load data -----
+    async function loadData() {
+      try {
+        clearOutput();
+        printHTML('<div style="color:#ffffff;">> _ Loading remote repository data...</div>');
+        const reports = await fetchReportFiles();
+        if (!reports.length) throw new Error('NO FILES FOUND IN PATH');
+        allReports = reports;
+        for (let i=0; i<allReports.length; i++) {
+          await fetchAndParseDocx(allReports[i]);
+        }
+        switchView('list');
+      } catch(err) {
+        clearOutput();
+        printHTML('<div style="color:#ff5555;">> ERR: '+err.message+'</div>');
+      }
+    }
+
+    // ----- init -----
+    updateStaticUIText();
+    loadData();
+  })();
+</script>
+</body>
+</html>
