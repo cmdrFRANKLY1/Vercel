@@ -45,6 +45,27 @@
     }
 
     function generateVionaReportsHTML() {
+        let bgColor = '#000000', textColor = '#ffffff', fontFamily = 'Arial, Helvetica, sans-serif', fontSize = '15px';
+        let borderStart = '#ffffff', borderEnd = '#555555', borderSolid = '#444444', hintColor = '#888888';
+        
+        if (typeof document !== 'undefined' && document.documentElement) {
+            const getVar = (name, fallback) => {
+                let val = document.documentElement.style.getPropertyValue(name).trim();
+                if (!val && typeof getComputedStyle !== 'undefined') {
+                    val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+                }
+                return val || fallback;
+            };
+            bgColor = getVar('--bg-color', bgColor);
+            textColor = getVar('--text-color', textColor);
+            fontFamily = getVar('--font-family', fontFamily);
+            fontSize = getVar('--font-size', fontSize);
+            borderStart = getVar('--modal-border-start', getVar('--border-start', borderStart));
+            borderEnd = getVar('--modal-border-end', getVar('--border-end', borderEnd));
+            hintColor = getVar('--hint-color', hintColor);
+            borderSolid = getVar('--modal-border', hintColor);
+        }
+
         return '<!DOCTYPE html>\n' +
 '<html lang="en">\n' +
 '<head>\n' +
@@ -71,16 +92,17 @@
 '    }\n' +
 '    \n' +
 '    :root {\n' +
-'      --bg-color: #000000;\n' +
-'      --text-color: #ffffff;\n' +
-'      --font-family: Arial, Helvetica, sans-serif;\n' +
-'      --font-size: 15px;\n' +
-'      --border-start: #ffffff;\n' +
-'      --border-end: #555555;\n' +
-'      --border-solid: #444444;\n' +
-'      --hover-bg: #ffffff;\n' +
-'      --hover-text: #000000;\n' +
-'      --scrollbar-thumb: #444444;\n' +
+'      --bg-color: ' + bgColor + ';\n' +
+'      --text-color: ' + textColor + ';\n' +
+'      --font-family: ' + fontFamily + ';\n' +
+'      --font-size: ' + fontSize + ';\n' +
+'      --border-start: ' + borderStart + ';\n' +
+'      --border-end: ' + borderEnd + ';\n' +
+'      --border-solid: ' + borderSolid + ';\n' +
+'      --hint-color: ' + hintColor + ';\n' +
+'      --hover-bg: ' + textColor + ';\n' +
+'      --hover-text: ' + bgColor + ';\n' +
+'      --scrollbar-thumb: ' + borderEnd + ';\n' +
 '    }\n' +
 '\n' +
 '    body, html {\n' +
@@ -174,18 +196,18 @@
 '      height: 100%;\n' +
 '    }\n' +
 '    #searchInput::placeholder {\n' +
-'      color: #444444;\n' +
+'      color: var(--hint-color);\n' +
 '      font-style: italic;\n' +
 '    }\n' +
 '    .search-prompt {\n' +
-'      color: #666666;\n' +
+'      color: var(--hint-color);\n' +
 '      font-weight: bold;\n' +
 '      font-size: 13px;\n' +
 '      flex-shrink: 0;\n' +
 '    }\n' +
 '    .search-clear {\n' +
 '      cursor: pointer;\n' +
-'      color: #555555;\n' +
+'      color: var(--hint-color);\n' +
 '      font-weight: bold;\n' +
 '      padding: 0 2px;\n' +
 '      font-size: 14px;\n' +
@@ -196,7 +218,7 @@
 '      color: var(--text-color);\n' +
 '    }\n' +
 '    .search-count {\n' +
-'      color: #555555;\n' +
+'      color: var(--hint-color);\n' +
 '      font-size: 10px;\n' +
 '      white-space: nowrap;\n' +
 '      flex-shrink: 0;\n' +
@@ -227,7 +249,7 @@
 '      flex: 1;\n' +
 '    }\n' +
 '    \n' +
-'    .banner { color: #888888; margin-bottom: 15px; font-weight: bold; }\n' +
+'    .banner { color: var(--hint-color); margin-bottom: 15px; font-weight: bold; }\n' +
 '    \n' +
 '    /* ===== REPORT CARD ===== */\n' +
 '    .report-card {\n' +
@@ -294,10 +316,11 @@
 '      border-bottom: 1px solid var(--border-solid);\n' +
 '      padding-bottom: 4px;\n' +
 '    }\n' +
-'    .day-date-sub { font-size: 11px; color: #888888; float: right; }\n' +
+'    .day-date-sub { font-size: 11px; color: var(--hint-color); float: right; }\n' +
 '    .day-content {\n' +
 '      font-size: 13px;\n' +
-'      color: #bbbbbb;\n' +
+'      color: var(--text-color);\n' +
+'      opacity: 0.85;\n' +
 '      white-space: pre-wrap;\n' +
 '      word-break: break-word;\n' +
 '      max-height: 120px;\n' +
@@ -310,14 +333,14 @@
 '      color: var(--bg-color);\n' +
 '      padding: 0 2px;\n' +
 '    }\n' +
-'    .day-empty { color: #555555; font-style: italic; font-size: 12px; }\n' +
+'    .day-empty { color: var(--hint-color); font-style: italic; font-size: 12px; }\n' +
 '    .empty-state {\n' +
 '      text-align: center;\n' +
 '      padding: 40px 16px;\n' +
-'      color: #666666;\n' +
+'      color: var(--hint-color);\n' +
 '    }\n' +
 '    .search-info {\n' +
-'      color: #888;\n' +
+'      color: var(--hint-color);\n' +
 '      margin-bottom: 10px;\n' +
 '      font-size: 13px;\n' +
 '    }\n' +
@@ -394,7 +417,8 @@
 '    .cal-date { font-size: 13px; font-weight: bold; }\n' +
 '    .cal-preview {\n' +
 '      font-size: 11px;\n' +
-'      color: #888888;\n' +
+'      color: var(--text-color);\n' +
+'      opacity: 0.7;\n' +
 '      line-height: 1.2;\n' +
 '      margin-top: 4px;\n' +
 '      overflow: hidden;\n' +
@@ -476,7 +500,7 @@
 '    }\n' +
 '    .stat-label {\n' +
 '      font-size: 12px;\n' +
-'      color: #888;\n' +
+'      color: var(--hint-color);\n' +
 '      margin-top: 4px;\n' +
 '      text-transform: uppercase;\n' +
 '      letter-spacing: 0.5px;\n' +
@@ -538,7 +562,8 @@
 '      padding: 16px;\n' +
 '      overflow-y: auto;\n' +
 '      font-size: 14px;\n' +
-'      color: #bbbbbb;\n' +
+'      color: var(--text-color);\n' +
+'      opacity: 0.9;\n' +
 '      white-space: pre-wrap;\n' +
 '      line-height: 1.6;\n' +
 '    }\n' +
@@ -626,6 +651,42 @@
 '  (function(){\n' +
 '    "use strict";\n' +
 '\n' +
+'    function syncStyles() {\n' +
+'      try {\n' +
+'        if (window.parent && window.parent !== window && window.parent.document) {\n' +
+'          const pStyle = window.parent.getComputedStyle(window.parent.document.documentElement);\n' +
+'          const root = document.documentElement;\n' +
+'          const getVar = (n) => window.parent.document.documentElement.style.getPropertyValue(n) || pStyle.getPropertyValue(n);\n' +
+'          \n' +
+'          const bg = getVar("--bg-color");\n' +
+'          if (bg) root.style.setProperty("--bg-color", bg);\n' +
+'          const txt = getVar("--text-color");\n' +
+'          if (txt) {\n' +
+'            root.style.setProperty("--text-color", txt);\n' +
+'            root.style.setProperty("--hover-bg", txt);\n' +
+'          }\n' +
+'          if (bg) root.style.setProperty("--hover-text", bg);\n' +
+'          const font = getVar("--font-family");\n' +
+'          if (font) root.style.setProperty("--font-family", font);\n' +
+'          const fSize = getVar("--font-size");\n' +
+'          if (fSize) root.style.setProperty("--font-size", fSize);\n' +
+'          const hint = getVar("--hint-color");\n' +
+'          if (hint) root.style.setProperty("--hint-color", hint);\n' +
+'          \n' +
+'          const bStart = getVar("--modal-border-start") || getVar("--border-start");\n' +
+'          if (bStart) root.style.setProperty("--border-start", bStart);\n' +
+'          const bEnd = getVar("--modal-border-end") || getVar("--border-end");\n' +
+'          if (bEnd) {\n' +
+'            root.style.setProperty("--border-end", bEnd);\n' +
+'            root.style.setProperty("--scrollbar-thumb", bEnd);\n' +
+'          }\n' +
+'          const mBorder = getVar("--modal-border") || hint;\n' +
+'          if (mBorder) root.style.setProperty("--border-solid", mBorder);\n' +
+'        }\n' +
+'      } catch(e) {}\n' +
+'    }\n' +
+'    setInterval(syncStyles, 1000);\n' +
+'\n' +
 '    const i18n = {\n' +
 '      en: {\n' +
 '        label: "EN", daysList: [\'Mon\',\'Tue\',\'Wed\',\'Thu\',\'Fri\'],\n' +
@@ -669,6 +730,7 @@
 '    let calendarMonth = new Date().getMonth();\n' +
 '    let searchTerm = \'\';\n' +
 '    const PARSE_DAY_NAMES = [\'Montag\', \'Dienstag\', \'Mittwoch\', \'Donnerstag\', \'Freitag\'];\n' +
+'    const STOP_DAY_NAMES = [\'Montag\', \'Dienstag\', \'Mittwoch\', \'Donnerstag\', \'Freitag\', \'Samstag\', \'Sonntag\'];\n' +
 '    const DAY_MAP = {\n' +
 '      \'montag\': \'Montag\',\n' +
 '      \'dienstag\': \'Dienstag\',\n' +
@@ -704,14 +766,14 @@
 '\n' +
 '    // ----- improved text extraction -----\n' +
 '    function extractDayContent(text, dayName) {\n' +
-'      // Look for day name followed by content, handling various formats\n' +
+'      // Look for day name followed by content, handling various formats, stopping at ANY day including weekends\n' +
 '      const patterns = [\n' +
 '        // Pattern: "Montag" followed by content until next day or end\n' +
-'        new RegExp(dayName + \'[\\\\s\\\\-:;]*([\\\\s\\\\S]*?)(?=\\\\n\\\\s*(?:\' + PARSE_DAY_NAMES.join(\'|\') + \')|$)\', \'i\'),\n' +
+'        new RegExp(dayName + \'[\\\\s\\\\-:;]*([\\\\s\\\\S]*?)(?=\\\\n\\\\s*(?:\' + STOP_DAY_NAMES.join(\'|\') + \')|$)\', \'i\'),\n' +
 '        // Pattern: "| Montag | content |" (table format)\n' +
 '        new RegExp(\'\\\\|\\\\s*\' + dayName + \'\\\\s*\\\\|([^|]*)\\\\|\', \'i\'),\n' +
 '        // Pattern: "Montag - content" \n' +
-'        new RegExp(dayName + \'\\\\s*[-–]\\\\s*([\\\\s\\\\S]*?)(?=\\\\n\\\\s*(?:\' + PARSE_DAY_NAMES.join(\'|\') + \')|$)\', \'i\')\n' +
+'        new RegExp(dayName + \'\\\\s*[-–]\\\\s*([\\\\s\\\\S]*?)(?=\\\\n\\\\s*(?:\' + STOP_DAY_NAMES.join(\'|\') + \')|$)\', \'i\')\n' +
 '      ];\n' +
 '      \n' +
 '      for (const pattern of patterns) {\n' +
@@ -720,6 +782,7 @@
 '          let content = match[1].trim();\n' +
 '          // Clean up the content\n' +
 '          content = content\n' +
+'            .replace(/(?:\\n|^)\\s*(?:Samstag|Sonntag)\\b[\\s\\S]*$/i, \'\') // Force strip weekend blocks from bleed over\n' +
 '            .replace(/\\b\\d+\\s*(?:h|Std\\.|Stunden)\\b/gi, \'\') // Remove hours\n' +
 '            .replace(/[–\\-]\\s*Selbständig.*$/gim, \'\') // Remove "Selbständig" references\n' +
 '            .replace(/\\d{2}\\.\\d{2}\\.\\d{4}\\s*$/g, \'\') // Remove dates at end\n' +
@@ -1426,10 +1489,10 @@
 '      groupKeys.slice(0, 20).forEach(weekKey => {\n' +
 '        const entries = weekGroups[weekKey];\n' +
 '        const weekDiv = document.createElement(\'div\');\n' +
-'        weekDiv.style.cssText = \'border:1px solid #333;margin-bottom:12px;padding:12px;\';\n' +
+'        weekDiv.style.cssText = \'border:1px solid var(--border-solid);margin-bottom:12px;padding:12px;\';\n' +
 '        \n' +
 '        const header = document.createElement(\'div\');\n' +
-'        header.style.cssText = \'font-weight:bold;font-size:14px;margin-bottom:8px;border-bottom:1px solid #444;padding-bottom:4px;\';\n' +
+'        header.style.cssText = \'font-weight:bold;font-size:14px;margin-bottom:8px;border-bottom:1px solid var(--border-solid);padding-bottom:4px;\';\n' +
 '        header.textContent = `> ${weekKey}`;\n' +
 '        weekDiv.appendChild(header);\n' +
 '        \n' +
@@ -1452,9 +1515,9 @@
 '          }\n' +
 '          \n' +
 '          const entryDiv = document.createElement(\'div\');\n' +
-'          entryDiv.style.cssText = \'padding:4px 0;font-size:13px;color:#aaa;border-bottom:1px solid #222;\' + (isMatch ? \'border-left:2px solid #fff;padding-left:8px;\' : \'\');\n' +
+'          entryDiv.style.cssText = \'padding:4px 0;font-size:13px;color:var(--text-color);opacity:0.85;border-bottom:1px solid var(--border-solid);\' + (isMatch ? \'border-left:2px solid var(--text-color);padding-left:8px;\' : \'\');\n' +
 '          entryDiv.innerHTML = `\n' +
-'            <span style="color:#888;font-size:11px;">[${dateStr}]${hoIndicator}</span>\n' +
+'            <span style="color:var(--hint-color);font-size:11px;">[${dateStr}]${hoIndicator}</span>\n' +
 '            <span>${displayContent.substring(0, 100)}${displayContent.length > 100 ? \'...\' : \'\'}</span>\n' +
 '          `;\n' +
 '          weekDiv.appendChild(entryDiv);\n' +
@@ -1515,7 +1578,7 @@
 '    async function loadData() {\n' +
 '      try {\n' +
 '        clearOutput();\n' +
-'        printHTML(\'<div style="color:#ffffff;">> _ Loading remote repository data...</div>\');\n' +
+'        printHTML(\'<div style="color:var(--text-color);">> _ Loading remote repository data...</div>\');\n' +
 '        const reports = await fetchReportFiles();\n' +
 '        if (!reports.length) throw new Error(\'NO FILES FOUND IN PATH\');\n' +
 '        allReports = reports;\n' +
