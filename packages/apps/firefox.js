@@ -1,1274 +1,639 @@
-// firefox.js - Firefox-like Browser with AdBlocking for KDE Plasma
-// Integrates with colorsKde.js for consistent theming
-// Bookmarks loaded from resources/browserBookmarks.json
-
 (function() {
-    // Wait for DOM to be ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initFirefox);
-    } else {
-        initFirefox();
-    }
+    if (typeof window.packagesRegistry !== 'undefined') {
+        window.packagesRegistry['kde'] = {
+            name: 'KDE Plasma Desktop',
+            version: '1.0.0',
+            description: 'A KDE Plasma desktop experience simulation',
+            preInstalledOn: ['default'],
+            translations: {},
+            commands: {
+                kde: function(args) {
+                    const wrapperName = 'kde';
+                    const hasNt = args && args.includes('-nt');
+                    const hasNw = args && args.includes('-nw');
 
-    // AdBlocking Engine
-    class AdBlocker {
-        constructor() {
-            this.filters = {
-                domains: [
-                    'doubleclick.net', 'googleadservices.com', 'googlesyndication.com', 'adservice.google.com',
-                    'pagead2.googlesyndication.com', 'ads.google.com', 'google-analytics.com', 'googletagmanager.com',
-                    'facebook.com/tr', 'connect.facebook.net', 'platform.twitter.com/widgets', 'syndication.twitter.com',
-                    'ads.twitter.com', 't.co', 'amazon-adsystem.com', 'ads.amazon.com', 'aax.amazon-adsystem.com',
-                    'adnxs.com', 'adzerk.net', 'scorecardresearch.com', 'outbrain.com', 'taboola.com', 'revcontent.com',
-                    'popads.net', 'exoclick.com', 'adroll.com', 'adform.net', 'criteo.com', 'casalemedia.com', 'adap.tv',
-                    'adsrvr.org', 'advertising.com', 'atdmt.com', 'doubleverify.com', 'fastclick.net', 'flashtalking.com',
-                    'innovid.com', 'invitemedia.com', 'moatads.com', 'openx.net', 'pubmatic.com', 'rhythmone.com',
-                    'rubiconproject.com', 'sharethrough.com', 'sovrn.com', 'spotx.tv', 'springserve.com', 'stickyadstv.com',
-                    'tremorhub.com', 'undertone.com', 'videoamp.com', 'yieldmo.com', 'yldbt.com', 'zeotap.com'
-                ],
-                patterns: [
-                    /\/ad[s]?[0-9]*\//i, /\/banner[s]?[0-9]*\//i, /\/popup[s]?[0-9]*\//i, /\/tracking\/?/i,
-                    /\/analytics\/?/i, /\/metrics\/?/i, /\/telemetry\/?/i, /\/beacon\/?/i, /\/pixel\/?/i,
-                    /\/impression\/?/i, /\/click\/?/i, /\/conversion\/?/i, /\/retargeting\/?/i, /\/remarketing\/?/i,
-                    /\/sponsored\/?/i, /\/promoted\/?/i, /\/adserver\/?/i, /\/admanager\/?/i, /\/adservice\/?/i,
-                    /\/adsense\/?/i, /\/adwords\/?/i
-                ],
-                selectors: [
-                    '[id*="ad" i]', '[id*="banner" i]', '[id*="sponsored" i]', '[id*="promoted" i]',
-                    '[class*="ad" i]', '[class*="banner" i]', '[class*="sponsored" i]', '[class*="promoted" i]',
-                    '#player-ads', '#masthead-ad', '#feed-pyv-container', '#ytd-promoted-video-renderer',
-                    '.ytd-promoted-sparkles-text-search-renderer', '.ytd-display-ad-renderer', '#tads', '#taw',
-                    '#bottomads', '.ads-ad', '.ads-panel', '.adsbygoogle', '[data-testid="ad-preview"]',
-                    '[data-testid="fb-ads-ad"]', '.sponsored-post', '[data-testid="placementTracking"]',
-                    '.promoted-tweet', '.ad-container', '.ad-wrapper', '.ad-box', '.ad-frame', '.ad-slot',
-                    '.ad-unit', '.advertisement', '.advertising', '.sponsored-content', '.promoted-content'
-                ]
-            };
-
-            this.stats = {
-                blocked: 0,
-                allowed: 0
-            };
-
-            this.loadCustomFilters();
-        }
-
-        loadCustomFilters() {
-            try {
-                const saved = localStorage.getItem('adblock_filters');
-                if (saved) {
-                    const custom = JSON.parse(saved);
-                    if (custom.domains) this.filters.domains.push(...custom.domains);
-                    if (custom.selectors) this.filters.selectors.push(...custom.selectors);
-                }
-            } catch(e) {}
-        }
-
-        shouldBlockUrl(url) {
-            if (!url) return false;
-            
-            if (url.startsWith('http://') || url.startsWith('https://')) {
-                for (const domain of this.filters.domains) {
-                    if (url.includes(domain)) {
-                        this.stats.blocked++;
-                        return true;
-                    }
-                }
-                
-                for (const pattern of this.filters.patterns) {
-                    if (pattern.test(url)) {
-                        this.stats.blocked++;
-                        return true;
-                    }
-                }
-            }
-            
-            this.stats.allowed++;
-            return false;
-        }
-
-        cleanHtml(html) {
-            if (!html) return html;
-            
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            
-            for (const selector of this.filters.selectors) {
-                try {
-                    const elements = doc.querySelectorAll(selector);
-                    elements.forEach(el => {
-                        el.remove();
-                        this.stats.blocked++;
-                    });
-                } catch(e) {}
-            }
-            
-            const scripts = doc.querySelectorAll('script');
-            scripts.forEach(script => {
-                const src = script.getAttribute('src') || '';
-                const content = script.textContent || '';
-                
-                for (const domain of this.filters.domains) {
-                    if (src.includes(domain) || content.includes(domain)) {
-                        script.remove();
-                        this.stats.blocked++;
-                        break;
-                    }
-                }
-                
-                for (const pattern of this.filters.patterns) {
-                    if (pattern.test(content)) {
-                        script.remove();
-                        this.stats.blocked++;
-                        break;
-                    }
-                }
-            });
-            
-            const iframes = doc.querySelectorAll('iframe');
-            iframes.forEach(iframe => {
-                const src = iframe.getAttribute('src') || '';
-                for (const domain of this.filters.domains) {
-                    if (src.includes(domain)) {
-                        iframe.remove();
-                        this.stats.blocked++;
-                        break;
-                    }
-                }
-            });
-            
-            return doc.documentElement.outerHTML;
-        }
-
-        getStats() {
-            return {
-                total: this.stats.blocked + this.stats.allowed,
-                blocked: this.stats.blocked,
-                allowed: this.stats.allowed,
-                blockRate: this.stats.total > 0 ? 
-                    Math.round((this.stats.blocked / this.stats.total) * 100) : 0
-            };
-        }
-
-        addFilter(type, value) {
-            if (type === 'domain' && !this.filters.domains.includes(value)) {
-                this.filters.domains.push(value);
-                this.saveFilters();
-                return true;
-            }
-            if (type === 'selector' && !this.filters.selectors.includes(value)) {
-                this.filters.selectors.push(value);
-                this.saveFilters();
-                return true;
-            }
-            return false;
-        }
-
-        saveFilters() {
-            try {
-                localStorage.setItem('adblock_filters', JSON.stringify({
-                    domains: this.filters.domains,
-                    selectors: this.filters.selectors
-                }));
-            } catch(e) {}
-        }
-
-        resetStats() {
-            this.stats.blocked = 0;
-            this.stats.allowed = 0;
-        }
-    }
-
-    // Bookmark Manager - Loads from JSON file
-    class BookmarkManager {
-        constructor() {
-            this.bookmarks = {};
-            this.loaded = false;
-            this.loadBookmarks();
-        }
-
-        async loadBookmarks() {
-            try {
-                // Try to load from JSON file
-                const response = await fetch('resources/browserBookmarks.json');
-                if (response.ok) {
-                    this.bookmarks = await response.json();
-                    this.loaded = true;
-                    console.log('Bookmarks loaded from resources/browserBookmarks.json');
-                } else {
-                    // Fallback to default bookmarks
-                    this.loadDefaultBookmarks();
-                }
-            } catch(e) {
-                console.warn('Failed to load bookmarks JSON, using defaults:', e);
-                this.loadDefaultBookmarks();
-            }
-            
-            // Also try to load custom bookmarks from localStorage
-            this.loadCustomBookmarks();
-        }
-
-        loadDefaultBookmarks() {
-            this.bookmarks = {
-                'Tools': {
-                    'Wikipedia': 'https://www.wikipedia.org',
-                    'Google': 'https://www.google.com'
-                },
-                'Social Media': {
-                    'YouTube': 'https://www.youtube.com',
-                    'Twitch': 'https://www.twitch.tv'
-                },
-                'Shops': {
-                    'Amazon': 'https://www.amazon.com'
-                },
-                'Games': {
-                    'Steam': 'https://store.steampowered.com'
-                }
-            };
-            this.loaded = true;
-        }
-
-        loadCustomBookmarks() {
-            try {
-                const saved = localStorage.getItem('firefox_bookmarks_custom');
-                if (saved) {
-                    const custom = JSON.parse(saved);
-                    // Merge custom bookmarks with loaded ones
-                    this.mergeBookmarks(this.bookmarks, custom);
-                }
-            } catch(e) {}
-        }
-
-        mergeBookmarks(target, source) {
-            for (const [key, value] of Object.entries(source)) {
-                if (typeof value === 'string') {
-                    target[key] = value;
-                } else if (typeof value === 'object') {
-                    if (!target[key]) target[key] = {};
-                    this.mergeBookmarks(target[key], value);
-                }
-            }
-        }
-
-        saveCustomBookmarks() {
-            try {
-                // Only save custom additions, not the entire bookmarks
-                localStorage.setItem('firefox_bookmarks_custom', JSON.stringify(this.bookmarks));
-            } catch(e) {}
-        }
-
-        getAllBookmarks() {
-            return this.bookmarks;
-        }
-
-        getFlatBookmarks() {
-            const flat = [];
-            
-            function traverse(obj, path = '') {
-                if (typeof obj === 'string') {
-                    flat.push({ name: path, url: obj });
-                } else if (typeof obj === 'object') {
-                    for (const [key, value] of Object.entries(obj)) {
-                        traverse(value, path ? `${path} > ${key}` : key);
-                    }
-                }
-            }
-            
-            traverse(this.bookmarks);
-            return flat;
-        }
-
-        addBookmark(name, url, category = null) {
-            if (category) {
-                const parts = category.split(' > ');
-                let current = this.bookmarks;
-                for (const part of parts) {
-                    if (!current[part]) {
-                        current[part] = {};
-                    }
-                    current = current[part];
-                }
-                if (typeof current === 'object') {
-                    current[name] = url;
-                }
-            } else {
-                this.bookmarks[name] = url;
-            }
-            this.saveCustomBookmarks();
-            return true;
-        }
-
-        removeBookmark(name, category = null) {
-            if (category) {
-                const parts = category.split(' > ');
-                let current = this.bookmarks;
-                for (let i = 0; i < parts.length - 1; i++) {
-                    if (current[parts[i]]) {
-                        current = current[parts[i]];
+                    const htmlContent = generateKdeHTML();
+                    if (hasNw || hasNt) {
+                        const win = window.open('', '_blank', hasNw ? 'width=1024,height=768,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes' : '');
+                        if (win) {
+                            win.document.write(htmlContent);
+                            win.document.close();
+                        }
                     } else {
-                        return false;
-                    }
-                }
-                const lastPart = parts[parts.length - 1];
-                if (current[lastPart] && current[lastPart][name]) {
-                    delete current[lastPart][name];
-                    this.saveCustomBookmarks();
-                    return true;
-                }
-            } else {
-                if (this.bookmarks[name]) {
-                    delete this.bookmarks[name];
-                    this.saveCustomBookmarks();
-                    return true;
-                }
-            }
-            return false;
-        }
-    }
-
-    function getThemeColors() {
-        if (window.kdeThemeColors) {
-            return {
-                bg: window.kdeThemeColors['kde-bg'] || '#1a1b1e',
-                panel: window.kdeThemeColors['kde-panel'] || 'rgba(35, 38, 41, 0.85)',
-                panelHover: window.kdeThemeColors['kde-panel-hover'] || 'rgba(255, 255, 255, 0.1)',
-                accent: window.kdeThemeColors['kde-accent'] || '#3daee9',
-                text: window.kdeThemeColors['kde-text'] || '#eff0f1',
-                windowBg: window.kdeThemeColors['kde-window-bg'] || '#31363b',
-                windowBorder: window.kdeThemeColors['kde-window-border'] || '#1d2023'
-            };
-        }
-        return {
-            bg: '#1a1b1e',
-            panel: 'rgba(35, 38, 41, 0.85)',
-            panelHover: 'rgba(255, 255, 255, 0.1)',
-            accent: '#3daee9',
-            text: '#eff0f1',
-            windowBg: '#31363b',
-            windowBorder: '#1d2023'
-        };
-    }
-
-    function initFirefox() {
-        const colors = getThemeColors();
-        
-        // Initialize adblocker and bookmarks
-        const adBlocker = new AdBlocker();
-        const bookmarkManager = new BookmarkManager();
-        
-        // Create the app container
-        const appContainer = document.createElement('div');
-        appContainer.id = 'app';
-        appContainer.style.cssText = `
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            width: 100vw;
-            box-sizing: border-box;
-            background: ${colors.windowBg};
-            color: ${colors.text};
-            font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-        `;
-
-        // Helper function to build bookmark menu items
-        function buildBookmarkMenu(obj, depth = 0) {
-            let html = '';
-            const indent = depth * 12;
-            
-            for (const [key, value] of Object.entries(obj)) {
-                if (typeof value === 'string') {
-                    // Leaf node - actual bookmark
-                    html += `
-                        <button class="dropdown-item" onclick="window.navigateTo('${value}')" style="
-                            background: transparent;
-                            border: none;
-                            color: ${colors.text};
-                            padding: 6px 10px 6px ${10 + indent}px;
-                            text-align: left;
-                            border-radius: 3px;
-                            cursor: pointer;
-                            font-size: 12px;
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                            width: 100%;
-                        " onmouseover="this.style.background='${colors.accent}'; this.style.color='#000'" 
-                           onmouseout="this.style.background='transparent'; this.style.color='${colors.text}'">
-                            <i class="fa-solid fa-link" style="width:14px; font-size:10px;"></i> ${key}
-                        </button>
-                    `;
-                } else if (typeof value === 'object') {
-                    // Folder - create submenu
-                    const submenuId = `submenu-${key.replace(/\s+/g, '-')}-${depth}`;
-                    html += `
-                        <div class="menu-group" style="position:relative; width:100%;">
-                            <button class="dropdown-item" onclick="window.toggleSubmenu('${submenuId}')" style="
-                                background: transparent;
-                                border: none;
-                                color: ${colors.text};
-                                padding: 6px 10px 6px ${10 + indent}px;
-                                text-align: left;
-                                border-radius: 3px;
-                                cursor: pointer;
-                                font-size: 12px;
-                                display: flex;
-                                align-items: center;
-                                justify-content: space-between;
-                                gap: 8px;
-                                width: 100%;
-                            " onmouseover="this.style.background='${colors.panelHover}'" 
-                               onmouseout="this.style.background='transparent'">
-                                <span><i class="fa-solid fa-folder" style="width:14px; font-size:10px;"></i> ${key}</span>
-                                <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
-                            </button>
-                            <div id="${submenuId}" class="menu-dropdown submenu" style="
-                                display: none;
-                                flex-direction: column;
-                                position: absolute;
-                                top: 0;
-                                left: 100%;
-                                background: ${colors.windowBg};
-                                border: 1px solid ${colors.windowBorder};
-                                border-radius: 4px;
-                                box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-                                z-index: 100;
-                                min-width: 200px;
-                                max-height: 400px;
-                                overflow-y: auto;
-                                padding: 4px;
-                                margin-left: 2px;
-                            ">
-                                ${buildBookmarkMenu(value, depth + 1)}
-                            </div>
-                        </div>
-                    `;
-                }
-            }
-            return html;
-        }
-
-        appContainer.innerHTML = `
-            <!-- Firefox-style Menu Bar -->
-            <div id="menubar" style="
-                display: flex;
-                background: ${colors.panel};
-                border-bottom: 1px solid ${colors.windowBorder};
-                padding: 2px 6px;
-                font-size: 12px;
-                gap: 2px;
-                user-select: none;
-                backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px);
-            ">
-                <div class="menu-group" style="position:relative;">
-                    <button class="menu-btn" style="
-                        background: transparent;
-                        border: none;
-                        color: ${colors.text};
-                        padding: 4px 8px;
-                        border-radius: 3px;
-                        cursor: pointer;
-                        font-size: 12px;
-                    " onmouseover="this.style.background='${colors.panelHover}'" 
-                       onmouseout="this.style.background='transparent'">
-                        File
-                    </button>
-                    <div class="menu-dropdown" style="
-                        display: none;
-                        flex-direction: column;
-                        position: absolute;
-                        top: 100%;
-                        left: 0;
-                        background: ${colors.windowBg};
-                        border: 1px solid ${colors.windowBorder};
-                        border-radius: 4px;
-                        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-                        z-index: 100;
-                        min-width: 180px;
-                        padding: 4px;
-                    ">
-                        <button class="dropdown-item" onclick="window.navigateTo('https://www.google.com')" style="
-                            background: transparent;
-                            border: none;
-                            color: ${colors.text};
-                            padding: 6px 10px;
-                            text-align: left;
-                            border-radius: 3px;
-                            cursor: pointer;
-                            font-size: 12px;
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                        " onmouseover="this.style.background='${colors.accent}'; this.style.color='#000'" 
-                           onmouseout="this.style.background='transparent'; this.style.color='${colors.text}'">
-                            <i class="fa-solid fa-window-restore" style="width:16px;"></i> New Window
-                        </button>
-                        <button class="dropdown-item" onclick="window.reloadPage()" style="
-                            background: transparent;
-                            border: none;
-                            color: ${colors.text};
-                            padding: 6px 10px;
-                            text-align: left;
-                            border-radius: 3px;
-                            cursor: pointer;
-                            font-size: 12px;
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                        " onmouseover="this.style.background='${colors.accent}'; this.style.color='#000'" 
-                           onmouseout="this.style.background='transparent'; this.style.color='${colors.text}'">
-                            <i class="fa-solid fa-rotate" style="width:16px;"></i> Reload
-                        </button>
-                        <button class="dropdown-item" onclick="window.navigateTo('https://www.google.com')" style="
-                            background: transparent;
-                            border: none;
-                            color: ${colors.text};
-                            padding: 6px 10px;
-                            text-align: left;
-                            border-radius: 3px;
-                            cursor: pointer;
-                            font-size: 12px;
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                        " onmouseover="this.style.background='${colors.accent}'; this.style.color='#000'" 
-                           onmouseout="this.style.background='transparent'; this.style.color='${colors.text}'">
-                            <i class="fa-solid fa-home" style="width:16px;"></i> Home
-                        </button>
-                        <div style="height:1px; background:${colors.windowBorder}; margin:3px 0;"></div>
-                        <button class="dropdown-item" onclick="window.closeApp()" style="
-                            background: transparent;
-                            border: none;
-                            color: ${colors.text};
-                            padding: 6px 10px;
-                            text-align: left;
-                            border-radius: 3px;
-                            cursor: pointer;
-                            font-size: 12px;
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                        " onmouseover="this.style.background='#e74c3c'; this.style.color='#fff'" 
-                           onmouseout="this.style.background='transparent'; this.style.color='${colors.text}'">
-                            <i class="fa-solid fa-xmark" style="width:16px;"></i> Close
-                        </button>
-                    </div>
-                </div>
-                <div class="menu-group" style="position:relative;">
-                    <button class="menu-btn" style="
-                        background: transparent;
-                        border: none;
-                        color: ${colors.text};
-                        padding: 4px 8px;
-                        border-radius: 3px;
-                        cursor: pointer;
-                        font-size: 12px;
-                    " onmouseover="this.style.background='${colors.panelHover}'" 
-                       onmouseout="this.style.background='transparent'">
-                        View
-                    </button>
-                    <div class="menu-dropdown" style="
-                        display: none;
-                        flex-direction: column;
-                        position: absolute;
-                        top: 100%;
-                        left: 0;
-                        background: ${colors.windowBg};
-                        border: 1px solid ${colors.windowBorder};
-                        border-radius: 4px;
-                        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-                        z-index: 100;
-                        min-width: 180px;
-                        padding: 4px;
-                    ">
-                        <button class="dropdown-item" onclick="window.toggleFullscreen()" style="
-                            background: transparent;
-                            border: none;
-                            color: ${colors.text};
-                            padding: 6px 10px;
-                            text-align: left;
-                            border-radius: 3px;
-                            cursor: pointer;
-                            font-size: 12px;
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                        " onmouseover="this.style.background='${colors.accent}'; this.style.color='#000'" 
-                           onmouseout="this.style.background='transparent'; this.style.color='${colors.text}'">
-                            <i class="fa-solid fa-expand" style="width:16px;"></i> Fullscreen
-                        </button>
-                        <button class="dropdown-item" onclick="window.zoomIn()" style="
-                            background: transparent;
-                            border: none;
-                            color: ${colors.text};
-                            padding: 6px 10px;
-                            text-align: left;
-                            border-radius: 3px;
-                            cursor: pointer;
-                            font-size: 12px;
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                        " onmouseover="this.style.background='${colors.accent}'; this.style.color='#000'" 
-                           onmouseout="this.style.background='transparent'; this.style.color='${colors.text}'">
-                            <i class="fa-solid fa-plus" style="width:16px;"></i> Zoom In
-                        </button>
-                        <button class="dropdown-item" onclick="window.zoomOut()" style="
-                            background: transparent;
-                            border: none;
-                            color: ${colors.text};
-                            padding: 6px 10px;
-                            text-align: left;
-                            border-radius: 3px;
-                            cursor: pointer;
-                            font-size: 12px;
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                        " onmouseover="this.style.background='${colors.accent}'; this.style.color='#000'" 
-                           onmouseout="this.style.background='transparent'; this.style.color='${colors.text}'">
-                            <i class="fa-solid fa-minus" style="width:16px;"></i> Zoom Out
-                        </button>
-                        <button class="dropdown-item" onclick="window.zoomReset()" style="
-                            background: transparent;
-                            border: none;
-                            color: ${colors.text};
-                            padding: 6px 10px;
-                            text-align: left;
-                            border-radius: 3px;
-                            cursor: pointer;
-                            font-size: 12px;
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                        " onmouseover="this.style.background='${colors.accent}'; this.style.color='#000'" 
-                           onmouseout="this.style.background='transparent'; this.style.color='${colors.text}'">
-                            <i class="fa-solid fa-rotate-right" style="width:16px;"></i> Reset Zoom
-                        </button>
-                        <div style="height:1px; background:${colors.windowBorder}; margin:3px 0;"></div>
-                        <button class="dropdown-item" onclick="window.toggleAdBlock()" style="
-                            background: transparent;
-                            border: none;
-                            color: ${colors.text};
-                            padding: 6px 10px;
-                            text-align: left;
-                            border-radius: 3px;
-                            cursor: pointer;
-                            font-size: 12px;
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                        " onmouseover="this.style.background='${colors.accent}'; this.style.color='#000'" 
-                           onmouseout="this.style.background='transparent'; this.style.color='${colors.text}'">
-                            <i class="fa-solid fa-shield-halved" style="width:16px;" id="adblock-icon"></i> <span id="adblock-status">AdBlock: On</span>
-                        </button>
-                    </div>
-                </div>
-                <div class="menu-group" style="position:relative;">
-                    <button class="menu-btn" style="
-                        background: transparent;
-                        border: none;
-                        color: ${colors.text};
-                        padding: 4px 8px;
-                        border-radius: 3px;
-                        cursor: pointer;
-                        font-size: 12px;
-                    " onmouseover="this.style.background='${colors.panelHover}'" 
-                       onmouseout="this.style.background='transparent'">
-                        Bookmarks
-                    </button>
-                    <div class="menu-dropdown" style="
-                        display: none;
-                        flex-direction: column;
-                        position: absolute;
-                        top: 100%;
-                        left: 0;
-                        background: ${colors.windowBg};
-                        border: 1px solid ${colors.windowBorder};
-                        border-radius: 4px;
-                        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-                        z-index: 100;
-                        min-width: 220px;
-                        max-height: 500px;
-                        overflow-y: auto;
-                        padding: 4px;
-                    " id="bookmarks-menu">
-                        <div id="bookmarks-loading" style="padding:20px;text-align:center;color:${colors.text};opacity:0.6;">
-                            <i class="fa-solid fa-spinner fa-spin"></i> Loading bookmarks...
-                        </div>
-                    </div>
-                </div>
-                <div style="margin-left:auto; font-size:11px; color:${colors.text}; opacity:0.6; padding:4px 8px;" id="ad-stats">
-                    Ads blocked: 0
-                </div>
-            </div>
-
-            <!-- Firefox-style Navigation Toolbar -->
-            <div id="nav-toolbar" style="
-                display: flex;
-                align-items: center;
-                padding: 4px 8px;
-                background: ${colors.panel};
-                border-bottom: 1px solid ${colors.windowBorder};
-                gap: 4px;
-                backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px);
-            ">
-                <button onclick="window.goBack()" id="back-btn" style="
-                    background: transparent;
-                    border: none;
-                    color: ${colors.text};
-                    cursor: pointer;
-                    padding: 4px 6px;
-                    border-radius: 3px;
-                    opacity: 0.6;
-                " onmouseover="this.style.background='${colors.panelHover}'; this.style.opacity='1'" 
-                   onmouseout="this.style.background='transparent'; this.style.opacity='0.6'">
-                    <i class="fa-solid fa-arrow-left"></i>
-                </button>
-                <button onclick="window.goForward()" id="forward-btn" style="
-                    background: transparent;
-                    border: none;
-                    color: ${colors.text};
-                    cursor: pointer;
-                    padding: 4px 6px;
-                    border-radius: 3px;
-                    opacity: 0.6;
-                " onmouseover="this.style.background='${colors.panelHover}'; this.style.opacity='1'" 
-                   onmouseout="this.style.background='transparent'; this.style.opacity='0.6'">
-                    <i class="fa-solid fa-arrow-right"></i>
-                </button>
-                <button onclick="window.reloadPage()" style="
-                    background: transparent;
-                    border: none;
-                    color: ${colors.text};
-                    cursor: pointer;
-                    padding: 4px 6px;
-                    border-radius: 3px;
-                " onmouseover="this.style.background='${colors.panelHover}'" 
-                   onmouseout="this.style.background='transparent'">
-                    <i class="fa-solid fa-rotate"></i>
-                </button>
-                <button onclick="window.navigateTo('https://www.google.com')" style="
-                    background: transparent;
-                    border: none;
-                    color: ${colors.text};
-                    cursor: pointer;
-                    padding: 4px 6px;
-                    border-radius: 3px;
-                " onmouseover="this.style.background='${colors.panelHover}'" 
-                   onmouseout="this.style.background='transparent'">
-                    <i class="fa-solid fa-house"></i>
-                </button>
-                
-                <!-- URL Bar -->
-                <div style="flex:1; position:relative; display:flex; align-items:center;">
-                    <div style="
-                        position: absolute;
-                        left: 8px;
-                        color: ${colors.text};
-                        opacity: 0.6;
-                        font-size: 11px;
-                    ">
-                        <i class="fa-solid fa-shield-halved" id="security-icon" style="color:${colors.accent};"></i>
-                    </div>
-                    <input type="text" id="url-input" placeholder="Search or enter address..." 
-                        style="
-                            width: 100%;
-                            background: ${colors.bg};
-                            border: 1px solid ${colors.windowBorder};
-                            border-radius: 20px;
-                            color: ${colors.text};
-                            padding: 5px 12px 5px 30px;
-                            font-size: 13px;
-                            outline: none;
-                            transition: border-color 0.2s, box-shadow 0.2s;
-                        "
-                        onfocus="this.style.borderColor='${colors.accent}'; this.style.boxShadow='0 0 0 2px ${colors.accent}33'"
-                        onblur="this.style.borderColor='${colors.windowBorder}'; this.style.boxShadow='none'"
-                        onkeydown="if(event.key==='Enter') window.navigate()">
-                </div>
-                
-                <button onclick="window.navigate()" style="
-                    background: ${colors.accent};
-                    border: none;
-                    border-radius: 20px;
-                    color: #000;
-                    padding: 4px 14px;
-                    cursor: pointer;
-                    font-weight: 600;
-                    font-size: 12px;
-                    transition: opacity 0.2s;
-                " onmouseover="this.style.opacity='0.9'" 
-                   onmouseout="this.style.opacity='1'">
-                    <i class="fa-solid fa-arrow-right"></i>
-                </button>
-                
-                <button onclick="window.showAddBookmarkDialog()" style="
-                    background: transparent;
-                    border: none;
-                    color: ${colors.text};
-                    cursor: pointer;
-                    padding: 4px 6px;
-                    border-radius: 3px;
-                " onmouseover="this.style.background='${colors.panelHover}'" 
-                   onmouseout="this.style.background='transparent'" title="Add Bookmark (Ctrl+D)">
-                    <i class="fa-regular fa-star"></i>
-                </button>
-            </div>
-
-            <!-- Browser Content -->
-            <div id="browser-content" style="
-                flex: 1;
-                position: relative;
-                background: #ffffff;
-                overflow: hidden;
-            ">
-                <iframe id="browser-frame" 
-                    style="
-                        width: 100%;
-                        height: 100%;
-                        border: none;
-                        background: #ffffff;
-                    "
-                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals"
-                    loading="lazy">
-                </iframe>
-                
-                <!-- Loading indicator -->
-                <div id="loading-indicator" style="
-                    display: none;
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    color: ${colors.accent};
-                    font-size: 14px;
-                    text-align: center;
-                ">
-                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; display: block; margin-bottom: 8px;"></i>
-                    Loading...
-                </div>
-            </div>
-
-            <!-- Firefox-style Status Bar -->
-            <div id="status-bar" style="
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                padding: 2px 8px;
-                background: ${colors.panel};
-                border-top: 1px solid ${colors.windowBorder};
-                font-size: 11px;
-                color: ${colors.text};
-                opacity: 0.8;
-                backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px);
-            ">
-                <span id="status-text">Ready</span>
-                <div style="display: flex; gap: 12px;">
-                    <span id="zoom-level">100%</span>
-                    <span id="adblock-status-bar" style="color:${colors.accent};">🛡️ AdBlock Active</span>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(appContainer);
-        
-        // Initialize browser
-        const iframe = document.getElementById('browser-frame');
-        const urlInput = document.getElementById('url-input');
-        const statusText = document.getElementById('status-text');
-        const loadingIndicator = document.getElementById('loading-indicator');
-        const zoomLevel = document.getElementById('zoom-level');
-        const adStats = document.getElementById('ad-stats');
-        const adblockStatus = document.getElementById('adblock-status');
-        const adblockStatusBar = document.getElementById('adblock-status-bar');
-        const bookmarksMenu = document.getElementById('bookmarks-menu');
-        
-        // AdBlock state
-        let adBlockEnabled = true;
-        
-        // Set default URL
-        const defaultUrl = 'https://www.google.com';
-        iframe.src = defaultUrl;
-        urlInput.value = defaultUrl;
-
-        // Browser state
-        window.browserHistory = [defaultUrl];
-        window.browserHistoryIndex = 0;
-        window.zoom = 1;
-
-        // Function to update bookmark menu
-        function updateBookmarkMenu() {
-            if (!bookmarksMenu) return;
-            
-            const bookmarks = bookmarkManager.getAllBookmarks();
-            const loadingEl = document.getElementById('bookmarks-loading');
-            
-            if (loadingEl) {
-                loadingEl.remove();
-            }
-            
-            // Build the menu
-            const menuHtml = buildBookmarkMenu(bookmarks);
-            
-            // Add separator and add bookmark button
-            const addButton = `
-                <div style="height:1px; background:${colors.windowBorder}; margin:3px 0;"></div>
-                <button class="dropdown-item" onclick="window.showAddBookmarkDialog()" style="
-                    background: transparent;
-                    border: none;
-                    color: ${colors.text};
-                    padding: 6px 10px;
-                    text-align: left;
-                    border-radius: 3px;
-                    cursor: pointer;
-                    font-size: 12px;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                " onmouseover="this.style.background='${colors.accent}'; this.style.color='#000'" 
-                   onmouseout="this.style.background='transparent'; this.style.color='${colors.text}'">
-                    <i class="fa-solid fa-plus" style="width:16px;"></i> Add Bookmark
-                </button>
-            `;
-            
-            bookmarksMenu.innerHTML = menuHtml + addButton;
-        }
-
-        // Function to update ad stats display
-        function updateAdStats() {
-            const stats = adBlocker.getStats();
-            if (adStats) {
-                adStats.textContent = `🛡️ Ads blocked: ${stats.blocked}`;
-            }
-            if (adblockStatusBar) {
-                adblockStatusBar.textContent = adBlockEnabled ? '🛡️ AdBlock Active' : '⚠️ AdBlock Off';
-                adblockStatusBar.style.color = adBlockEnabled ? colors.accent : '#e74c3c';
-            }
-            if (adblockStatus) {
-                adblockStatus.textContent = adBlockEnabled ? 'AdBlock: On' : 'AdBlock: Off';
-            }
-            const icon = document.getElementById('adblock-icon');
-            if (icon) {
-                icon.style.color = adBlockEnabled ? colors.accent : '#e74c3c';
-            }
-        }
-
-        // Show add bookmark dialog
-        window.showAddBookmarkDialog = function() {
-            const currentUrl = iframe.src || urlInput.value;
-            const title = prompt('Enter bookmark name:', currentUrl);
-            if (title && title.trim()) {
-                const category = prompt('Enter category (optional, use > for subcategories):', '');
-                if (bookmarkManager.addBookmark(title.trim(), currentUrl, category || null)) {
-                    statusText.textContent = `✅ Bookmark added: ${title}`;
-                    updateBookmarkMenu();
-                } else {
-                    statusText.textContent = '❌ Failed to add bookmark';
-                }
-            }
-        };
-
-        // Toggle AdBlock
-        window.toggleAdBlock = function() {
-            adBlockEnabled = !adBlockEnabled;
-            updateAdStats();
-            if (iframe.src && iframe.src !== 'about:blank') {
-                window.reloadPage();
-            }
-        };
-
-        // Toggle submenu
-        window.toggleSubmenu = function(id) {
-            const el = document.getElementById(id);
-            if (el) {
-                const isVisible = el.style.display === 'flex';
-                // Close all other submenus
-                document.querySelectorAll('.submenu').forEach(sub => {
-                    if (sub.id !== id) sub.style.display = 'none';
-                });
-                el.style.display = isVisible ? 'none' : 'flex';
-            }
-        };
-
-        // Close app function (Calls parent's closeApp to close the iframe wrapper)
-        window.closeApp = function() {
-            const winId = window.frameElement ? window.frameElement.id : null;
-            if (winId && window.parent && window.parent.closeApp) {
-                window.parent.closeApp(winId);
-            }
-        };
-
-        // Enhanced navigation with ad blocking
-        window.navigate = function() {
-            let url = urlInput.value.trim();
-            if (!url) return;
-            
-            if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                if (url.includes(' ') || !url.includes('.')) {
-                    url = `https://www.google.com/search?q=${encodeURIComponent(url)}`;
-                } else {
-                    url = `https://${url}`;
-                }
-            }
-            
-            window.navigateTo(url);
-        };
-
-        window.navigateTo = function(url) {
-            if (!url) return;
-            
-            if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                url = `https://${url}`;
-            }
-            
-            if (adBlockEnabled && adBlocker.shouldBlockUrl(url)) {
-                statusText.textContent = '⛔ Ad blocked!';
-                loadingIndicator.style.display = 'none';
-                
-                // Note: The inner iframe's parent is the app iframe, 
-                // so window.parent.navigateTo inside blockedHtml correctly calls the app iframe's navigateTo.
-                const blockedHtml = `
-                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#1a1b1e;color:#eff0f1;font-family:sans-serif;padding:20px;">
-                        <div style="font-size:64px;margin-bottom:20px;">🛡️</div>
-                        <h1 style="font-size:24px;margin-bottom:10px;">Ad Blocked</h1>
-                        <p style="color:#9ca3af;text-align:center;max-width:400px;margin-bottom:20px;">
-                            This ad was blocked by the KDE AdBlocker.<br>
-                            <span style="font-size:12px;">URL: ${url}</span>
-                        </p>
-                        <button onclick="window.parent.navigateTo('${url}')" 
-                            style="background:#3daee9;border:none;padding:8px 16px;border-radius:4px;color:#000;font-weight:600;cursor:pointer;">
-                            Continue anyway
-                        </button>
-                    </div>
-                `;
-                iframe.srcdoc = blockedHtml;
-                updateAdStats();
-                return;
-            }
-            
-            // Clear srcdoc if it was previously set
-            iframe.removeAttribute('srcdoc');
-            iframe.src = url;
-            urlInput.value = url;
-            loadingIndicator.style.display = 'block';
-            statusText.textContent = 'Loading...';
-            
-            if (window.browserHistory[window.browserHistoryIndex] !== url) {
-                window.browserHistory = window.browserHistory.slice(0, window.browserHistoryIndex + 1);
-                window.browserHistory.push(url);
-                window.browserHistoryIndex++;
-            }
-            updateNavButtons();
-        };
-
-        // Override iframe load to clean content
-        iframe.addEventListener('load', function() {
-            loadingIndicator.style.display = 'none';
-            statusText.textContent = 'Done';
-            
-            try {
-                const currentUrl = iframe.contentWindow.location.href;
-                if (currentUrl && currentUrl !== 'about:blank' && !currentUrl.startsWith('blob:')) {
-                    urlInput.value = currentUrl;
-                    
-                    if (window.browserHistory[window.browserHistoryIndex] !== currentUrl) {
-                        window.browserHistory = window.browserHistory.slice(0, window.browserHistoryIndex + 1);
-                        window.browserHistory.push(currentUrl);
-                        window.browserHistoryIndex++;
-                    }
-                    updateNavButtons();
-                    
-                    if (adBlockEnabled) {
-                        try {
-                            const html = iframe.contentDocument.documentElement.outerHTML;
-                            const cleaned = adBlocker.cleanHtml(html);
-                            if (cleaned !== html) {
-                                iframe.contentDocument.open();
-                                iframe.contentDocument.write(cleaned);
-                                iframe.contentDocument.close();
-                                statusText.textContent = '✅ Ads removed!';
+                        if (typeof window.createWrapperTab !== 'undefined') {
+                            const blob = new Blob([htmlContent], { type: 'text/html' });
+                            const url = URL.createObjectURL(blob);
+                            window.createWrapperTab(wrapperName, url);
+                        } else if (typeof window.openWrapperWindow !== 'undefined') {
+                            const blob = new Blob([htmlContent], { type: 'text/html' });
+                            const url = URL.createObjectURL(blob);
+                            window.openWrapperWindow(wrapperName, url);
+                        } else {
+                            const win = window.open('', '_blank');
+                            if (win) {
+                                win.document.write(htmlContent);
+                                win.document.close();
                             }
-                            updateAdStats();
-                        } catch(e) {
-                            statusText.textContent = '✅ AdBlock active (cross-origin)';
                         }
                     }
                 }
-            } catch(e) {
-                // Cross origin frame - cannot access contentWindow.location
-                statusText.textContent = 'Loaded';
-            }
-        });
-
-        // Navigation functions
-        window.goBack = function() {
-            if (window.browserHistoryIndex > 0) {
-                window.browserHistoryIndex--;
-                const url = window.browserHistory[window.browserHistoryIndex];
-                iframe.removeAttribute('srcdoc');
-                iframe.src = url;
-                urlInput.value = url;
-                loadingIndicator.style.display = 'block';
-                statusText.textContent = 'Loading...';
-                updateNavButtons();
+            },
+            commandInfo: {
+                kde: "what is this command?\nkde\n\nwhat is it used for?\nOpens a simulated KDE Plasma desktop environment."
             }
         };
+    }
 
-        window.goForward = function() {
-            if (window.browserHistoryIndex < window.browserHistory.length - 1) {
-                window.browserHistoryIndex++;
-                const url = window.browserHistory[window.browserHistoryIndex];
-                iframe.removeAttribute('srcdoc');
-                iframe.src = url;
-                urlInput.value = url;
-                loadingIndicator.style.display = 'block';
-                statusText.textContent = 'Loading...';
-                updateNavButtons();
+    function generateKdeHTML() {
+        return '<!DOCTYPE html>\r\n' +
+'<html lang="en">\r\n' +
+'<head>\r\n' +
+'\r\n' +
+'    <meta charset="UTF-8">\r\n' +
+'    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">\r\n' +
+'    <title>KDE Plasma Desktop Experience</title>\r\n' +
+'    \r\n' +
+'    <script src="../../colors/colorsKde.js"></script>\r\n' +
+'\r\n' +
+'    <script src="https://cdn.tailwindcss.com"></script>\r\n' +
+'    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">\r\n' +
+'\r\n' +
+'    <script>\r\n' +
+'        const defaultKdeColors = {\r\n' +
+'            \'kde-bg\': \'#1a1b1e\', \r\n' +
+'            \'kde-panel\': \'rgba(35, 38, 41, 0.85)\', \r\n' +
+'            \'kde-panel-hover\': \'rgba(255, 255, 255, 0.1)\',\r\n' +
+'            \'kde-accent\': \'#3daee9\', \r\n' +
+'            \'kde-text\': \'#eff0f1\',\r\n' +
+'            \'kde-window-bg\': \'#31363b\',\r\n' +
+'            \'kde-window-border\': \'#1d2023\',\r\n' +
+'        };\r\n' +
+'\r\n' +
+'        tailwind.config = {\r\n' +
+'            theme: {\r\n' +
+'                extend: {\r\n' +
+'                    colors: window.kdeThemeColors || defaultKdeColors,\r\n' +
+'                    fontFamily: {\r\n' +
+'                        sans: [\'Noto Sans\', \'Segoe UI\', \'Roboto\', \'Helvetica\', \'Arial\', \'sans-serif\'],\r\n' +
+'                    }\r\n' +
+'                }\r\n' +
+'            }\r\n' +
+'        }\r\n' +
+'    </script>\r\n' +
+'    \r\n' +
+'\r\n' +
+'    <style>\r\n' +
+'        body {\r\n' +
+'            overflow: hidden;\r\n' +
+'            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);\r\n' +
+'            background-size: cover;\r\n' +
+'            background-position: center;\r\n' +
+'        }\r\n' +
+'\r\n' +
+'        .glass-effect {\r\n' +
+'            backdrop-filter: blur(12px);\r\n' +
+'            -webkit-backdrop-filter: blur(12px);\r\n' +
+'        }\r\n' +
+'\r\n' +
+'        .desktop-icon {\r\n' +
+'            transition: background-color 0.15s ease;\r\n' +
+'        }\r\n' +
+'        .desktop-icon:hover {\r\n' +
+'            background-color: rgba(255, 255, 255, 0.15);\r\n' +
+'            border-radius: 0.5rem;\r\n' +
+'        }\r\n' +
+'        \r\n' +
+'        #app-launcher {\r\n' +
+'            transition: opacity 0.2s ease, transform 0.2s ease;\r\n' +
+'            transform-origin: bottom left;\r\n' +
+'        }\r\n' +
+'        #app-launcher.hidden {\r\n' +
+'            opacity: 0;\r\n' +
+'            transform: scale(0.95);\r\n' +
+'            pointer-events: none;\r\n' +
+'        }\r\n' +
+'        #app-launcher.visible {\r\n' +
+'            opacity: 1;\r\n' +
+'            transform: scale(1);\r\n' +
+'            pointer-events: auto;\r\n' +
+'        }\r\n' +
+'\r\n' +
+'        .window {\r\n' +
+'            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px var(--tw-colors-kde-window-border);\r\n' +
+'            transition: transform 0.1s ease, box-shadow 0.1s ease;\r\n' +
+'        }\r\n' +
+'        .window.minimized {\r\n' +
+'            display: none !important;\r\n' +
+'        }\r\n' +
+'        .window.maximized {\r\n' +
+'            top: 0 !important;\r\n' +
+'            left: 0 !important;\r\n' +
+'            width: 100vw !important;\r\n' +
+'            height: calc(100vh - 48px) !important;\r\n' +
+'            border-radius: 0 !important;\r\n' +
+'        }\r\n' +
+'        .window-header {\r\n' +
+'            cursor: move;\r\n' +
+'        }\r\n' +
+'    </style>\r\n' +
+'</head>\r\n' +
+'<body class="text-kde-text h-screen w-screen relative select-none font-sans">\r\n' +
+'\r\n' +
+'\r\n' +
+'    <div id="desktop-area" class="w-full h-[calc(100vh-48px)] absolute top-0 left-0 p-4 flex flex-col flex-wrap items-start gap-2 z-0">\r\n' +
+'    </div>\r\n' +
+'\r\n' +
+'    <div id="windows-container" class="absolute top-0 left-0 w-full h-[calc(100vh-48px)] pointer-events-none z-10">\r\n' +
+'    </div>\r\n' +
+'\r\n' +
+'\r\n' +
+'    <div id="app-launcher" class="hidden absolute bottom-12 left-0 mb-1 ml-2 w-96 h-[32rem] bg-kde-panel glass-effect border border-gray-600/50 rounded-lg shadow-2xl z-50 flex flex-col text-sm text-gray-200">\r\n' +
+'        <div class="p-3 border-b border-gray-600/50">\r\n' +
+'            <div class="bg-gray-800/80 rounded-full px-3 py-1.5 flex items-center border border-gray-600/30 focus-within:border-kde-accent focus-within:ring-1 focus-within:ring-kde-accent transition-all">\r\n' +
+'                <i class="fa-solid fa-magnifying-glass text-gray-400 mr-2"></i>\r\n' +
+'                <input type="text" id="app-search-input" placeholder="Search apps..." class="bg-transparent border-none outline-none w-full text-sm placeholder-gray-400" oninput="filterApps(this.value)">\r\n' +
+'            </div>\r\n' +
+'        </div>\r\n' +
+'        \r\n' +
+'        <div class="flex flex-1 overflow-hidden">\r\n' +
+'            <div class="w-1/3 border-r border-gray-600/50 flex flex-col">\r\n' +
+'                <button class="text-left px-4 py-2 hover:bg-white/10 bg-white/5 border-l-2 border-kde-accent"><i class="fa-solid fa-desktop w-6 text-gray-400"></i> Applications</button>\r\n' +
+'                <button onclick="window.location.href=\'../../index.html\'" class="text-left px-4 py-2 hover:bg-white/10 mt-auto"><i class="fa-solid fa-power-off w-6 text-red-400"></i> Leave</button>\r\n' +
+'            </div>\r\n' +
+'            \r\n' +
+'            <div class="w-2/3 p-2 overflow-y-auto flex flex-col gap-1" id="apps-container">\r\n' +
+'                <div class="p-4 text-center text-gray-500 italic mt-10" id="no-apps-message">\r\n' +
+'                    Loading applications...\r\n' +
+'                </div>\r\n' +
+'            </div>\r\n' +
+'        </div>\r\n' +
+'        \r\n' +
+'        <div class="p-3 border-t border-gray-600/50 flex justify-between items-center bg-gray-900/30 rounded-b-lg">\r\n' +
+'            <div class="flex items-center gap-2">\r\n' +
+'                <div class="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center border border-gray-500">\r\n' +
+'                    <i class="fa-solid fa-user text-gray-300"></i>\r\n' +
+'                </div>\r\n' +
+'                <span class="font-semibold text-sm">Plasma User</span>\r\n' +
+'            </div>\r\n' +
+'            <div class="flex gap-2 text-gray-400">\r\n' +
+'                <button class="hover:text-white p-1"><i class="fa-solid fa-lock"></i></button>\r\n' +
+'                <button class="hover:text-red-400 p-1" onclick="window.location.href=\'../../index.html\'"><i class="fa-solid fa-power-off"></i></button>\r\n' +
+'            </div>\r\n' +
+'        </div>\r\n' +
+'    </div>\r\n' +
+'\r\n' +
+'\r\n' +
+'    <div id="panel" class="absolute bottom-0 left-0 w-full h-12 bg-kde-panel glass-effect border-t border-white/5 flex items-center px-1 z-50">\r\n' +
+'        \r\n' +
+'        <button id="launcher-btn" class="h-10 w-10 mx-1 flex items-center justify-center rounded hover:bg-kde-panel-hover transition-colors" onclick="toggleLauncher(event)">\r\n' +
+'            <svg class="w-6 h-6 text-kde-accent drop-shadow-md" viewBox="0 0 24 24" fill="currentColor">\r\n' +
+'                <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />\r\n' +
+'            </svg>\r\n' +
+'        </button>\r\n' +
+'\r\n' +
+'        <div id="task-manager" class="flex-1 h-full flex items-center px-2 gap-1 overflow-x-hidden">\r\n' +
+'        </div>\r\n' +
+'\r\n' +
+'        <div class="flex items-center h-full px-2 gap-3 text-sm text-gray-300">\r\n' +
+'            <div class="cursor-pointer hover:text-white px-1 relative group">\r\n' +
+'                <i class="fa-solid fa-volume-high"></i>\r\n' +
+'            </div>\r\n' +
+'\r\n' +
+'            <div id="clock" class="font-semibold text-center cursor-pointer hover:bg-kde-panel-hover px-2 py-1 rounded select-none flex flex-col justify-center leading-tight">\r\n' +
+'                <span id="time" class="text-[13px]">00:00 AM</span>\r\n' +
+'                <span id="date" class="text-[10px] text-gray-400">Date</span>\r\n' +
+'            </div>\r\n' +
+'        </div>\r\n' +
+'    </div>\r\n' +
+'\r\n' +
+'    <script>\r\n' +
+'\r\n' +
+'        function updateClock() {\r\n' +
+'            const now = new Date();\r\n' +
+'            let hours = now.getHours();\r\n' +
+'            let minutes = now.getMinutes();\r\n' +
+'            const ampm = hours >= 12 ? \'PM\' : \'AM\';\r\n' +
+'            \r\n' +
+'            hours = hours % 12;\r\n' +
+'            hours = hours ? hours : 12;\r\n' +
+'            minutes = minutes < 10 ? \'0\' + minutes : minutes;\r\n' +
+'            \r\n' +
+'            const timeString = hours + \':\' + minutes + \' \' + ampm;\r\n' +
+'            const options = { weekday: \'short\', month: \'short\', day: \'numeric\' };\r\n' +
+'            const dateString = now.toLocaleDateString(undefined, options);\r\n' +
+'\r\n' +
+'            document.getElementById(\'time\').textContent = timeString;\r\n' +
+'            document.getElementById(\'date\').textContent = dateString;\r\n' +
+'        }\r\n' +
+'\r\n' +
+'        setInterval(updateClock, 1000);\r\n' +
+'        updateClock();\r\n' +
+'\r\n' +
+'        const launcher = document.getElementById(\'app-launcher\');\r\n' +
+'        const launcherBtn = document.getElementById(\'launcher-btn\');\r\n' +
+'        let availableApps = [];\r\n' +
+'\r\n' +
+'        function toggleLauncher(e) {\r\n' +
+'            if(e) e.stopPropagation();\r\n' +
+'            if (launcher.classList.contains(\'hidden\')) {\r\n' +
+'                launcher.classList.remove(\'hidden\');\r\n' +
+'                setTimeout(() => launcher.classList.add(\'visible\'), 10);\r\n' +
+'            } else {\r\n' +
+'                launcher.classList.remove(\'visible\');\r\n' +
+'                setTimeout(() => launcher.classList.add(\'hidden\'), 200);\r\n' +
+'            }\r\n' +
+'        }\r\n' +
+'\r\n' +
+'        document.addEventListener(\'click\', (event) => {\r\n' +
+'            if (launcher.classList.contains(\'visible\') && \r\n' +
+'                !launcher.contains(event.target) && \r\n' +
+'                !launcherBtn.contains(event.target)) {\r\n' +
+'                toggleLauncher();\r\n' +
+'            }\r\n' +
+'        });\r\n' +
+'\r\n' +
+'\r\n' +
+'        function formatAppName(name) {\r\n' +
+'            if (!name) return \'\';\r\n' +
+'            return name\r\n' +
+'                .replace(/([a-z])([A-Z])/g, \'$1 $2\')\r\n' +
+'                .replace(/[-_]/g, \' \')\r\n' +
+'                .replace(/^./, str => str.toUpperCase());\r\n' +
+'        }\r\n' +
+'\r\n' +
+'        document.addEventListener(\'DOMContentLoaded\', () => {\r\n' +
+'            const appsContainer = document.getElementById(\'apps-container\');\r\n' +
+'            const noAppsMessage = document.getElementById(\'no-apps-message\');\r\n' +
+'            \r\n' +
+'            const fallbackRegistry = {\r\n' +
+'                "apps": [\r\n' +
+'                    "fireFox"\r\n' +
+'                ]\r\n' +
+'            };\r\n' +
+'\r\n' +
+'            const possiblePaths = [\r\n' +
+'                \'../../registry.json\',\r\n' +
+'                \'../registry.json\',\r\n' +
+'                \'./registry.json\',\r\n' +
+'                \'/registry.json\'\r\n' +
+'            ];\r\n' +
+'\r\n' +
+'            async function loadRegistry() {\r\n' +
+'                for (const path of possiblePaths) {\r\n' +
+'                    try {\r\n' +
+'                        const response = await fetch(path);\r\n' +
+'                        if (response.ok) {\r\n' +
+'                            const data = await response.json();\r\n' +
+'                            if (data && data.apps) {\r\n' +
+'                                return data;\r\n' +
+'                            }\r\n' +
+'                        }\r\n' +
+'                    } catch (err) {}\r\n' +
+'                }\r\n' +
+'                return fallbackRegistry;\r\n' +
+'            }\r\n' +
+'\r\n' +
+'            loadRegistry().then(registry => {\r\n' +
+'                availableApps = registry.apps || [];\r\n' +
+'                renderAppList(availableApps);\r\n' +
+'            });\r\n' +
+'        });\r\n' +
+'\r\n' +
+'\r\n' +
+'        function renderAppList(apps) {\r\n' +
+'            const appsContainer = document.getElementById(\'apps-container\');\r\n' +
+'            const noAppsMessage = document.getElementById(\'no-apps-message\');\r\n' +
+'            \r\n' +
+'            const existingItems = appsContainer.querySelectorAll(\'button:not(#no-apps-message)\');\r\n' +
+'            existingItems.forEach(item => item.remove());\r\n' +
+'\r\n' +
+'            if (apps && apps.length > 0) {\r\n' +
+'                if (noAppsMessage) noAppsMessage.style.display = \'none\';\r\n' +
+'                \r\n' +
+'                apps.forEach(app => {\r\n' +
+'                    const btn = document.createElement(\'button\');\r\n' +
+'                    btn.className = \'text-left px-3 py-2 rounded hover:bg-white/10 flex items-center gap-3 transition-colors\';\r\n' +
+'                    btn.innerHTML = `\r\n' +
+'                        <div class="w-8 h-8 rounded bg-gray-700 flex items-center justify-center text-kde-accent shadow-inner">\r\n' +
+'                            <i class="fa-solid fa-window-maximize text-xs"></i>\r\n' +
+'                        </div>\r\n' +
+'                        <span class="capitalize text-sm font-medium">${formatAppName(app)}</span>\r\n' +
+'                    `;\r\n' +
+'                    btn.onclick = () => {\r\n' +
+'                        launchApp(app);\r\n' +
+'                        toggleLauncher();\r\n' +
+'                    };\r\n' +
+'                    appsContainer.appendChild(btn);\r\n' +
+'                });\r\n' +
+'            } else {\r\n' +
+'                if (noAppsMessage) {\r\n' +
+'                    noAppsMessage.style.display = \'block\';\r\n' +
+'                    noAppsMessage.textContent = \'No applications found\';\r\n' +
+'                }\r\n' +
+'            }\r\n' +
+'        }\r\n' +
+'\r\n' +
+'        function filterApps(query) {\r\n' +
+'            const filtered = availableApps.filter(app => \r\n' +
+'                formatAppName(app).toLowerCase().includes(query.toLowerCase())\r\n' +
+'            );\r\n' +
+'            renderAppList(filtered);\r\n' +
+'        }\r\n' +
+'\r\n' +
+'\r\n' +
+'        const windows = {};\r\n' +
+'        const zIndexBase = 100;\r\n' +
+'        let currentZIndex = zIndexBase;\r\n' +
+'\r\n' +
+'\r\n' +
+'        async function resolveAppJsUrl(appName) {\r\n' +
+'            const exact = `${appName}.js`;\r\n' +
+'            const lower = `${appName.toLowerCase()}.js`;\r\n' +
+'            \r\n' +
+'            const paths = [\r\n' +
+'                exact,\r\n' +
+'                lower,\r\n' +
+'                `./${exact}`,\r\n' +
+'                `./${lower}`,\r\n' +
+'                `../../packages/apps/${exact}`,\r\n' +
+'                `../apps/${exact}`\r\n' +
+'            ];\r\n' +
+'            \r\n' +
+'            for (const path of paths) {\r\n' +
+'                try {\r\n' +
+'                    const res = await fetch(path, { method: \'HEAD\' });\r\n' +
+'                    if (res.ok) return path;\r\n' +
+'                } catch(e) {}\r\n' +
+'            }\r\n' +
+'            \r\n' +
+'            // Fallback for this specific environment where files might be side-by-side\r\n' +
+'            // Guarantees "fireFox" attempts to load "firefox.js"\r\n' +
+'            return lower;\r\n' +
+'        }\r\n' +
+'\r\n' +
+'\r\n' +
+'        async function launchApp(appName) {\r\n' +
+'            const winId = `window-${appName}`;\r\n' +
+'            \r\n' +
+'            if (windows[winId]) {\r\n' +
+'                if (windows[winId].isMinimized) {\r\n' +
+'                    openWindow(appName);\r\n' +
+'                } else {\r\n' +
+'                    bringToFront(winId);\r\n' +
+'                }\r\n' +
+'                return;\r\n' +
+'            }\r\n' +
+'\r\n' +
+'            const winDiv = document.createElement(\'div\');\r\n' +
+'            winDiv.id = winId;\r\n' +
+'            winDiv.className = \'window absolute bg-kde-window-bg border border-kde-window-border rounded-lg shadow-2xl flex flex-col overflow-hidden transition-transform duration-100 ease-out pointer-events-auto\';\r\n' +
+'            \r\n' +
+'            const offset = (Object.keys(windows).length * 30) + 50;\r\n' +
+'            winDiv.style.width = \'800px\';\r\n' +
+'            winDiv.style.height = \'540px\';\r\n' +
+'            winDiv.style.top = `${offset}px`;\r\n' +
+'            winDiv.style.left = `${offset}px`;\r\n' +
+'            \r\n' +
+'            winDiv.innerHTML = `\r\n' +
+'                <div class="window-header h-9 bg-gray-800 flex justify-between items-center select-none group border-b border-gray-900">\r\n' +
+'                    <div class="flex items-center gap-2 px-3 text-gray-300">\r\n' +
+'                        <i class="fa-solid fa-window-maximize text-kde-accent text-xs"></i>\r\n' +
+'                        <span class="capitalize font-semibold text-sm tracking-wide drop-shadow-md">${formatAppName(appName)}</span>\r\n' +
+'                    </div>\r\n' +
+'                    <div class="flex h-full">\r\n' +
+'                        <button onclick="minimizeWindow(\'${winId}\')" class="w-12 hover:bg-gray-600 flex items-center justify-center transition-colors text-gray-400 hover:text-white" title="Minimize"><i class="fa-solid fa-minus text-xs"></i></button>\r\n' +
+'                        <button onclick="maximizeWindow(\'${winId}\')" class="w-12 hover:bg-gray-600 flex items-center justify-center transition-colors text-gray-400 hover:text-white" title="Maximize"><i class="fa-regular fa-square text-xs max-icon"></i></button>\r\n' +
+'                        <button onclick="closeApp(\'${winId}\')" class="w-12 hover:bg-red-600 flex items-center justify-center transition-colors text-gray-400 hover:text-white" title="Close"><i class="fa-solid fa-xmark text-sm"></i></button>\r\n' +
+'                    </div>\r\n' +
+'                </div>\r\n' +
+'                <div class="flex-1 relative bg-kde-window-bg">\r\n' +
+'                    <div class="iframe-glass absolute inset-0 z-10 hidden"></div>\r\n' +
+'                    <iframe id="iframe-${winId}" class="w-full h-full border-none bg-kde-window-bg block"></iframe>\r\n' +
+'                </div>\r\n' +
+'            `;\r\n' +
+'            \r\n' +
+'            document.getElementById(\'windows-container\').appendChild(winDiv);\r\n' +
+'            \r\n' +
+'\r\n' +
+'            const jsUrl = await resolveAppJsUrl(appName);\r\n' +
+'            const iframe = winDiv.querySelector(\'iframe\');\r\n' +
+'            \r\n' +
+'            const iframeContent = `<!DOCTYPE html>\r\n' +
+'            <html lang="en" class="h-full">\r\n' +
+'            <head>\r\n' +
+'                <meta charset="UTF-8">\r\n' +
+'                <script src="../../colors/colorsKde.js"><\\/script>\r\n' +
+'                <script src="https://cdn.tailwindcss.com"><\\/script>\r\n' +
+'                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">\r\n' +
+'                <style>\r\n' +
+'                    body { background-color: #31363b; color: #eff0f1; margin: 0; font-family: \'Noto Sans\', sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }\r\n' +
+'                    /* Hybrid UI Tokens for hosted apps */\r\n' +
+'                    #app { display: flex; flex-direction: column; height: 100vh; width: 100vw; box-sizing: border-box; }\r\n' +
+'                    #menubar { display: flex; background: rgba(35, 38, 41, 0.95); border-bottom: 1px solid #1d2023; padding: 2px 6px; font-size: 12px; gap: 4px; user-select: none; }\r\n' +
+'                    .menu-btn { background: transparent; border: none; color: #eff0f1; padding: 4px 8px; border-radius: 3px; cursor: pointer; }\r\n' +
+'                    .menu-btn:hover { background: rgba(255,255,255,0.1); }\r\n' +
+'                    .menu-dropdown { display: none; flex-direction: column; position: absolute; top: 100%; left: 0; background: #31363b; border: 1px solid #1d2023; border-radius: 4px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 100; min-width: 140px; padding: 4px; }\r\n' +
+'                    .group:hover .menu-dropdown { display: flex; }\r\n' +
+'                    .dropdown-item { background: transparent; border: none; color: #eff0f1; padding: 6px 10px; text-align: left; border-radius: 3px; cursor: pointer; font-size: 12px; display: flex; align-items: center; }\r\n' +
+'                    .dropdown-item:hover { background: #3daee9; color: #000; }\r\n' +
+'                </style>\r\n' +
+'            </head>\r\n' +
+'            <body>\r\n' +
+'                <script src="${jsUrl}"><\\/script>\r\n' +
+'            </body>\r\n' +
+'            </html>`;\r\n' +
+'\r\n' +
+'            iframe.srcdoc = iframeContent;\r\n' +
+'\r\n' +
+'            windows[winId] = {\r\n' +
+'                element: winDiv,\r\n' +
+'                isOpen: true,\r\n' +
+'                isMinimized: false,\r\n' +
+'                isMaximized: false,\r\n' +
+'                appName: appName,\r\n' +
+'                iconClass: \'fa-window-maximize\',\r\n' +
+'                iconColor: \'text-kde-accent\',\r\n' +
+'                title: formatAppName(appName)\r\n' +
+'            };\r\n' +
+'\r\n' +
+'            makeDraggable(winDiv);\r\n' +
+'            winDiv.addEventListener(\'mousedown\', () => bringToFront(winId));\r\n' +
+'            \r\n' +
+'            createTaskbarItem(winId);\r\n' +
+'            bringToFront(winId);\r\n' +
+'        }\r\n' +
+'\r\n' +
+'\r\n' +
+'        function openWindow(appName) {\r\n' +
+'            const winId = `window-${appName}`;\r\n' +
+'            if (!windows[winId]) return; \r\n' +
+'\r\n' +
+'            windows[winId].element.classList.remove(\'minimized\');\r\n' +
+'            windows[winId].isMinimized = false;\r\n' +
+'            updateTaskbarItemState(winId);\r\n' +
+'            bringToFront(winId);\r\n' +
+'        }\r\n' +
+'\r\n' +
+'        function closeApp(winId) {\r\n' +
+'            if (windows[winId]) {\r\n' +
+'                windows[winId].element.remove();\r\n' +
+'                delete windows[winId];\r\n' +
+'                removeTaskbarItem(winId);\r\n' +
+'            }\r\n' +
+'        }\r\n' +
+'\r\n' +
+'        function minimizeWindow(winId) {\r\n' +
+'            if (windows[winId]) {\r\n' +
+'                windows[winId].element.classList.add(\'minimized\');\r\n' +
+'                windows[winId].isMinimized = true;\r\n' +
+'                updateTaskbarItemState(winId);\r\n' +
+'            }\r\n' +
+'        }\r\n' +
+'\r\n' +
+'        function maximizeWindow(winId) {\r\n' +
+'             if (windows[winId]) {\r\n' +
+'                const win = windows[winId].element;\r\n' +
+'                const icon = win.querySelector(\'.max-icon\');\r\n' +
+'                if(windows[winId].isMaximized) {\r\n' +
+'                    win.classList.remove(\'maximized\');\r\n' +
+'                    windows[winId].isMaximized = false;\r\n' +
+'                    if(icon) { icon.classList.remove(\'fa-clone\'); icon.classList.add(\'fa-square\'); }\r\n' +
+'                } else {\r\n' +
+'                    win.classList.add(\'maximized\');\r\n' +
+'                    windows[winId].isMaximized = true;\r\n' +
+'                    if(icon) { icon.classList.remove(\'fa-square\'); icon.classList.add(\'fa-clone\'); }\r\n' +
+'                }\r\n' +
+'                bringToFront(winId);\r\n' +
+'            }\r\n' +
+'        }\r\n' +
+'\r\n' +
+'        function bringToFront(winId) {\r\n' +
+'            if (windows[winId]) {\r\n' +
+'                currentZIndex++;\r\n' +
+'                windows[winId].element.style.zIndex = currentZIndex;\r\n' +
+'                updateTaskbarItemState(winId); \r\n' +
+'            }\r\n' +
+'        }\r\n' +
+'\r\n' +
+'\r\n' +
+'        const taskManager = document.getElementById(\'task-manager\');\r\n' +
+'\r\n' +
+'        function createTaskbarItem(winId) {\r\n' +
+'            const winInfo = windows[winId];\r\n' +
+'            const taskBtn = document.createElement(\'button\');\r\n' +
+'            taskBtn.id = `task-${winId}`;\r\n' +
+'            taskBtn.className = `h-10 px-3 flex items-center gap-2 rounded transition-colors max-w-[150px] overflow-hidden whitespace-nowrap border-b-2`;\r\n' +
+'            taskBtn.innerHTML = `\r\n' +
+'                <i class="fa-solid ${winInfo.iconClass} ${winInfo.iconColor}"></i>\r\n' +
+'                <span class="text-sm truncate">${winInfo.title}</span>\r\n' +
+'            `;\r\n' +
+'            \r\n' +
+'            taskBtn.onclick = () => {\r\n' +
+'                if (winInfo.isMinimized) {\r\n' +
+'                    openWindow(winInfo.appName);\r\n' +
+'                } else if (winInfo.element.style.zIndex == currentZIndex) {\r\n' +
+'                    minimizeWindow(winId);\r\n' +
+'                } else {\r\n' +
+'                    bringToFront(winId);\r\n' +
+'                }\r\n' +
+'            };\r\n' +
+'            \r\n' +
+'            taskManager.appendChild(taskBtn);\r\n' +
+'            updateTaskbarItemState(winId);\r\n' +
+'        }\r\n' +
+'\r\n' +
+'        function removeTaskbarItem(winId) {\r\n' +
+'            const taskBtn = document.getElementById(`task-${winId}`);\r\n' +
+'            if (taskBtn) taskBtn.remove();\r\n' +
+'        }\r\n' +
+'\r\n' +
+'        function updateTaskbarItemState(winId) {\r\n' +
+'            Object.keys(windows).forEach(id => {\r\n' +
+'                const btn = document.getElementById(`task-${id}`);\r\n' +
+'                if (btn) {\r\n' +
+'                    btn.className = `h-10 px-3 flex items-center gap-2 rounded transition-colors max-w-[150px] overflow-hidden whitespace-nowrap border-b-2 border-transparent hover:bg-kde-panel-hover text-gray-300 pointer-events-auto`;\r\n' +
+'                    \r\n' +
+'                    if (id === winId) {\r\n' +
+'                        if (windows[id].isMinimized) {\r\n' +
+'                            btn.classList.add(\'opacity-50\');\r\n' +
+'                        } else if (windows[id].element.style.zIndex == currentZIndex) {\r\n' +
+'                            btn.classList.remove(\'border-transparent\', \'hover:bg-kde-panel-hover\', \'text-gray-300\');\r\n' +
+'                            btn.classList.add(\'bg-white/10\', \'border-kde-accent\', \'text-white\');\r\n' +
+'                        }\r\n' +
+'                    }\r\n' +
+'                }\r\n' +
+'            });\r\n' +
+'        }\r\n' +
+'\r\n' +
+'\r\n' +
+'        function makeDraggable(element) {\r\n' +
+'            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;\r\n' +
+'            const header = element.querySelector(\'.window-header\');\r\n' +
+'            \r\n' +
+'            if (header) {\r\n' +
+'                header.onmousedown = dragMouseDown;\r\n' +
+'            } else {\r\n' +
+'                element.onmousedown = dragMouseDown;\r\n' +
+'            }\r\n' +
+'\r\n' +
+'            function dragMouseDown(e) {\r\n' +
+'                if(e.target.tagName === \'BUTTON\' || e.target.closest(\'button\')) return;\r\n' +
+'                const winId = element.id;\r\n' +
+'                if(windows[winId] && windows[winId].isMaximized) return;\r\n' +
+'\r\n' +
+'                e = e || window.event;\r\n' +
+'                e.preventDefault();\r\n' +
+'                pos3 = e.clientX;\r\n' +
+'                pos4 = e.clientY;\r\n' +
+'                document.onmouseup = closeDragElement;\r\n' +
+'                document.onmousemove = elementDrag;\r\n' +
+'                \r\n' +
+'                const glass = element.querySelector(\'.iframe-glass\');\r\n' +
+'                if(glass) glass.classList.remove(\'hidden\');\r\n' +
+'                \r\n' +
+'                bringToFront(element.id);\r\n' +
+'            }\r\n' +
+'\r\n' +
+'            function elementDrag(e) {\r\n' +
+'                e = e || window.event;\r\n' +
+'                e.preventDefault();\r\n' +
+'                pos1 = pos3 - e.clientX;\r\n' +
+'                pos2 = pos4 - e.clientY;\r\n' +
+'                pos3 = e.clientX;\r\n' +
+'                pos4 = e.clientY;\r\n' +
+'                \r\n' +
+'                let newTop = element.offsetTop - pos2;\r\n' +
+'                let newLeft = element.offsetLeft - pos1;\r\n' +
+'                \r\n' +
+'                if(newTop < 0) newTop = 0;\r\n' +
+'                const panelHeight = document.getElementById(\'panel\').offsetHeight;\r\n' +
+'                if(newTop > window.innerHeight - panelHeight - 30) newTop = window.innerHeight - panelHeight - 30;\r\n' +
+'\r\n' +
+'                element.style.top = newTop + "px";\r\n' +
+'                element.style.left = newLeft + "px";\r\n' +
+'            }\r\n' +
+'\r\n' +
+'            function closeDragElement() {\r\n' +
+'                document.onmouseup = null;\r\n' +
+'                document.onmousemove = null;\r\n' +
+'                \r\n' +
+'                const glass = element.querySelector(\'.iframe-glass\');\r\n' +
+'                if(glass) glass.classList.add(\'hidden\');\r\n' +
+'            }\r\n' +
+'        }\r\n' +
+'    </script>\r\n' +
+'</body>\r\n' +
+'</html>';
+    }
+
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = {
+            generateKdeHTML,
+            package: {
+                name: 'kde',
+                version: '1.0.0',
+                description: 'A KDE Plasma desktop experience simulation'
             }
         };
-
-        window.reloadPage = function() {
-            if (adBlockEnabled) {
-                const currentUrl = iframe.src;
-                if (currentUrl && currentUrl !== 'about:blank') {
-                    window.navigateTo(currentUrl);
-                }
-            } else {
-                iframe.src = iframe.src;
-            }
-            loadingIndicator.style.display = 'block';
-            statusText.textContent = 'Reloading...';
-        };
-
-        function updateNavButtons() {
-            const backBtn = document.getElementById('back-btn');
-            const forwardBtn = document.getElementById('forward-btn');
-            
-            if (backBtn) {
-                backBtn.style.opacity = window.browserHistoryIndex > 0 ? '1' : '0.6';
-            }
-            if (forwardBtn) {
-                forwardBtn.style.opacity = window.browserHistoryIndex < window.browserHistory.length - 1 ? '1' : '0.6';
-            }
-        }
-
-        // Zoom functions
-        window.zoomIn = function() {
-            window.zoom = Math.min(window.zoom + 0.1, 2);
-            iframe.style.zoom = window.zoom;
-            zoomLevel.textContent = `${Math.round(window.zoom * 100)}%`;
-        };
-
-        window.zoomOut = function() {
-            window.zoom = Math.max(window.zoom - 0.1, 0.5);
-            iframe.style.zoom = window.zoom;
-            zoomLevel.textContent = `${Math.round(window.zoom * 100)}%`;
-        };
-
-        window.zoomReset = function() {
-            window.zoom = 1;
-            iframe.style.zoom = 1;
-            zoomLevel.textContent = '100%';
-        };
-
-        window.toggleFullscreen = function() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
-            } else {
-                document.exitFullscreen();
-            }
-        };
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            if ((e.ctrlKey && e.key === 'l') || (e.metaKey && e.key === 'l')) {
-                e.preventDefault();
-                urlInput.focus();
-                urlInput.select();
-            }
-            if (e.key === 'F5') {
-                e.preventDefault();
-                window.reloadPage();
-            }
-            if ((e.altKey && e.key === 'ArrowLeft') || (e.key === 'Backspace' && e.altKey)) {
-                e.preventDefault();
-                window.goBack();
-            }
-            if (e.altKey && e.key === 'ArrowRight') {
-                e.preventDefault();
-                window.goForward();
-            }
-            if (e.ctrlKey && e.key === '=') {
-                e.preventDefault();
-                window.zoomIn();
-            }
-            if (e.ctrlKey && e.key === '-') {
-                e.preventDefault();
-                window.zoomOut();
-            }
-            if (e.ctrlKey && e.key === '0') {
-                e.preventDefault();
-                window.zoomReset();
-            }
-            if (e.ctrlKey && e.key === 'd') {
-                e.preventDefault();
-                window.showAddBookmarkDialog();
-            }
-        });
-
-        // Handle dropdown menus
-        document.querySelectorAll('.menu-group').forEach(group => {
-            const btn = group.querySelector('.menu-btn');
-            const dropdown = group.querySelector('.menu-dropdown');
-            
-            if (btn && dropdown) {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const isVisible = dropdown.style.display === 'flex';
-                    // Close other dropdowns
-                    document.querySelectorAll('.menu-dropdown').forEach(d => {
-                        if (d !== dropdown) d.style.display = 'none';
-                    });
-                    dropdown.style.display = isVisible ? 'none' : 'flex';
-                });
-            }
-        });
-
-        // Close dropdowns when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.menu-group')) {
-                document.querySelectorAll('.menu-dropdown').forEach(d => {
-                    d.style.display = 'none';
-                });
-                document.querySelectorAll('.submenu').forEach(d => {
-                    d.style.display = 'none';
-                });
-            }
-        });
-
-        // Initialize ad stats and bookmarks
-        updateAdStats();
-        updateNavButtons();
-        
-        // Wait for bookmarks to load then update menu
-        setTimeout(() => {
-            if (bookmarkManager.loaded) {
-                updateBookmarkMenu();
-            } else {
-                // Check again after a delay
-                const checkLoaded = setInterval(() => {
-                    if (bookmarkManager.loaded) {
-                        clearInterval(checkLoaded);
-                        updateBookmarkMenu();
-                    }
-                }, 100);
-            }
-        }, 200);
-
-        console.log('Firefox-style browser with AdBlock and Bookmarks initialized');
-        console.log('Using KDE colors:', colors);
     }
 })();

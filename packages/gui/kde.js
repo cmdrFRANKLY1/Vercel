@@ -12,7 +12,11 @@
                     const hasNt = args && args.includes('-nt');
                     const hasNw = args && args.includes('-nw');
 
-                    const htmlContent = generateKdeHTML();
+                    // Extract the true workspace base URL to fix Blob environment pathing issues
+                    let baseUrl = window.location.href.split('#')[0].split('?')[0];
+                    baseUrl = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1);
+
+                    const htmlContent = generateKdeHTML(baseUrl);
                     if (hasNw || hasNt) {
                         const win = window.open('', '_blank', hasNw ? 'width=1024,height=768,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes' : '');
                         if (win) {
@@ -44,11 +48,16 @@
         };
     }
 
-    function generateKdeHTML() {
-        return '<!DOCTYPE html>\r\n' +
+    function generateKdeHTML(baseUrl = '') {
+        const baseTag = baseUrl ? `<base href="${baseUrl}">\r\n` : '';
+        const baseScript = baseUrl ? `<script>window.KDE_BASE_URL = "${baseUrl}";</script>\r\n` : '';
+
+        let html = '<!DOCTYPE html>\r\n' +
 '<html lang="en">\r\n' +
 '<head>\r\n' +
 '    <meta charset="UTF-8">\r\n' +
+'    ' + baseTag +
+'    ' + baseScript +
 '    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">\r\n' +
 '    <title>KDE Plasma Desktop Experience</title>\r\n' +
 '    \r\n' +
@@ -135,8 +144,9 @@
 '        }\r\n' +
 '    </style>\r\n' +
 '</head>\r\n' +
-'<body class="text-kde-text h-screen w-screen relative select-none font-sans">\r\n' +
-'\r\n' +
+'<body class="text-kde-text h-screen w-screen relative select-none font-sans">\r\n';
+
+        html += '\r\n' +
 '    <div id="desktop-area" class="w-full h-[calc(100vh-48px)] absolute top-0 left-0 p-4 flex flex-col flex-wrap items-start gap-2 z-0">\r\n' +
 '    </div>\r\n' +
 '\r\n' +
@@ -199,9 +209,9 @@
 '                <span id="date" class="text-[10px] text-gray-400">Date</span>\r\n' +
 '            </div>\r\n' +
 '        </div>\r\n' +
-'    </div>\r\n' +
-'\r\n' +
-'    <script>\r\n' +
+'    </div>\r\n';
+
+        html += '    <script>\r\n' +
 '        function updateClock() {\r\n' +
 '            const now = new Date();\r\n' +
 '            let hours = now.getHours();\r\n' +
@@ -258,9 +268,10 @@
 '            const appsContainer = document.getElementById(\'apps-container\');\r\n' +
 '            const noAppsMessage = document.getElementById(\'no-apps-message\');\r\n' +
 '            \r\n' +
+'            // Strictly default to fireFox if registry parsing fails\r\n' +
 '            const fallbackRegistry = {\r\n' +
 '                "apps": [\r\n' +
-'                    "lyricsEditor"\r\n' +
+'                    "fireFox"\r\n' +
 '                ]\r\n' +
 '            };\r\n' +
 '\r\n' +
@@ -277,8 +288,9 @@
 '                        const response = await fetch(path);\r\n' +
 '                        if (response.ok) {\r\n' +
 '                            const data = await response.json();\r\n' +
-'                            if (data && data.apps) {\r\n' +
-'                                return data;\r\n' +
+'                            if (data && Array.isArray(data.apps)) {\r\n' +
+'                                // Strictly filter ONLY apps. Ignore "wrapper" entirely.\r\n' +
+'                                return { apps: data.apps };\r\n' +
 '                            }\r\n' +
 '                        }\r\n' +
 '                    } catch (err) {}\r\n' +
@@ -330,27 +342,36 @@
 '                formatAppName(app).toLowerCase().includes(query.toLowerCase())\r\n' +
 '            );\r\n' +
 '            renderAppList(filtered);\r\n' +
-'        }\r\n' +
-'\r\n' +
-'        // --- STREAMING_CHUNK:Robust path resolver for JavaScript app modules ---\r\n' +
-'        const windows = {};\r\n' +
+'        }\r\n';
+
+        html += '        const windows = {};\r\n' +
 '        const zIndexBase = 100;\r\n' +
 '        let currentZIndex = zIndexBase;\r\n' +
 '\r\n' +
 '        async function resolveAppJsUrl(appName) {\r\n' +
+'            const exact = `${appName}.js`;\r\n' +
+'            const lower = `${appName.toLowerCase()}.js`;\r\n' +
+'            \r\n' +
 '            const paths = [\r\n' +
-'                `../../packages/apps/${appName}.js`,\r\n' +
-'                `../apps/${appName}.js`,\r\n' +
-'                `./packages/apps/${appName}.js`,\r\n' +
-'                `${appName}.js`\r\n' +
+'                exact,\r\n' +
+'                lower,\r\n' +
+'                `./${exact}`,\r\n' +
+'                `./${lower}`,\r\n' +
+'                `../../packages/apps/${exact}`,\r\n' +
+'                `../../packages/apps/${lower}`,\r\n' +
+'                `../apps/${exact}`,\r\n' +
+'                `../apps/${lower}`\r\n' +
 '            ];\r\n' +
+'            \r\n' +
 '            for (const path of paths) {\r\n' +
 '                try {\r\n' +
 '                    const res = await fetch(path, { method: \'HEAD\' });\r\n' +
 '                    if (res.ok) return path;\r\n' +
 '                } catch(e) {}\r\n' +
 '            }\r\n' +
-'            return `../../packages/apps/${appName}.js`;\r\n' +
+'            \r\n' +
+'            // Fallback that specifically allows fireFox mapping to firefox.js\r\n' +
+'            return lower;\r\n' +
 '        }\r\n' +
 '\r\n' +
 '        async function launchApp(appName) {\r\n' +
@@ -398,17 +419,18 @@
 '            const jsUrl = await resolveAppJsUrl(appName);\r\n' +
 '            const iframe = winDiv.querySelector(\'iframe\');\r\n' +
 '            \r\n' +
-'            // Construct a self-contained runtime document inside the iframe that loads Tailwind, KDE Theme colors, and the app script\r\n' +
+'            // Construct iframe injecting base URL to fix inner script resolution\r\n' +
 '            const iframeContent = `<!DOCTYPE html>\r\n' +
 '            <html lang="en" class="h-full">\r\n' +
 '            <head>\r\n' +
 '                <meta charset="UTF-8">\r\n' +
+'                ${window.KDE_BASE_URL ? `<base href="${window.KDE_BASE_URL}">` : \'\'}\r\n' +
 '                <script src="../../colors/colorsKde.js"><\\/script>\r\n' +
 '                <script src="https://cdn.tailwindcss.com"><\\/script>\r\n' +
 '                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">\r\n' +
 '                <style>\r\n' +
-'                    body { background-color: #31363b; color: #eff0f1; margin: 0; font-family: \'Noto Sans\', sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }\r\n' +
-'                    /* Ableton / Gimp / KDE Hybrid UI Tokens */\r\n' +
+'                    body { background-color: #31363b; color: #eff0f1; margin: 0; font-family: \\\'Noto Sans\\\', sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }\r\n' +
+'                    /* Hybrid UI Tokens for hosted apps */\r\n' +
 '                    #app { display: flex; flex-direction: column; height: 100vh; width: 100vw; box-sizing: border-box; }\r\n' +
 '                    #menubar { display: flex; background: rgba(35, 38, 41, 0.95); border-bottom: 1px solid #1d2023; padding: 2px 6px; font-size: 12px; gap: 4px; user-select: none; }\r\n' +
 '                    .menu-btn { background: transparent; border: none; color: #eff0f1; padding: 4px 8px; border-radius: 3px; cursor: pointer; }\r\n' +
@@ -417,67 +439,6 @@
 '                    .group:hover .menu-dropdown { display: flex; }\r\n' +
 '                    .dropdown-item { background: transparent; border: none; color: #eff0f1; padding: 6px 10px; text-align: left; border-radius: 3px; cursor: pointer; font-size: 12px; display: flex; align-items: center; }\r\n' +
 '                    .dropdown-item:hover { background: #3daee9; color: #000; }\r\n' +
-'                    .menu-separator { height: 1px; background: #1d2023; margin: 3px 0; }\r\n' +
-'                    .container { display: flex; flex: 1; overflow: hidden; position: relative; }\r\n' +
-'                    .editor { flex: 1; display: flex; flex-direction: column; background: #1a1b1e; border-right: 1px solid #1d2023; min-width: 200px; }\r\n' +
-'                    .pane-label { background: #232629; color: #9ca3af; font-size: 11px; font-weight: 600; padding: 4px 8px; border-bottom: 1px solid #1d2023; text-transform: uppercase; letter-spacing: 0.05em; }\r\n' +
-'                    .editor-container { display: flex; flex: 1; position: relative; overflow: hidden; }\r\n' +
-'                    .line-numbers { width: 36px; background: #1f2225; color: #6b7280; font-family: monospace; font-size: 12px; padding: 8px 4px; text-align: right; user-select: none; overflow: hidden; line-height: 1.5; }\r\n' +
-'                    textarea { flex: 1; background: transparent; color: #eff0f1; border: none; outline: none; padding: 8px; font-family: monospace; font-size: 13px; resize: none; line-height: 1.5; }\r\n' +
-'                    .editor-sub-bar { display: flex; align-items: center; padding: 4px 8px; background: #232629; border-top: 1px solid #1d2023; font-size: 11px; gap: 6px; min-height: 28px; }\r\n' +
-'                    .sub-bar-label { color: #9ca3af; font-weight: 600; min-width: 75px; }\r\n' +
-'                    #predictionsList, #rhymesList, #definitionsList, #hintsList { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; flex: 1; overflow: hidden; }\r\n' +
-'                    .suggestion-badge { background: rgba(61, 174, 233, 0.15); border: 1px solid rgba(61, 174, 233, 0.4); color: #3daee9; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 11px; }\r\n' +
-'                    .suggestion-badge:hover { background: #3daee9; color: #000; }\r\n' +
-'                    .hint-badge { background: #1d2023; padding: 2px 6px; border-radius: 3px; color: #9ca3af; font-size: 11px; }\r\n' +
-'                    .resizer { background: #1d2023; transition: background 0.2s; }\r\n' +
-'                    .resizer:hover, .resizer.dragging { background: #3daee9; }\r\n' +
-'                    .col-resizer { width: 5px; cursor: col-resize; }\r\n' +
-'                    .row-resizer { height: 5px; cursor: row-resize; width: 100%; }\r\n' +
-'                    .preview { flex: 1; display: flex; flex-direction: column; background: #31363b; min-width: 250px; }\r\n' +
-'                    .output { flex: 1; padding: 12px; font-family: monospace; font-size: 13px; overflow-y: auto; white-space: pre-wrap; line-height: 1.5; color: #eff0f1; }\r\n' +
-'                    .metrics-panel { display: flex; flex-direction: column; background: #232629; border-top: 1px solid #1d2023; height: 310px; min-height: 190px; }\r\n' +
-'                    .metrics-header { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; background: #1d2023; font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; }\r\n' +
-'                    .btn-ableton { background: #31363b; border: 1px solid #3a3f44; color: #9ca3af; padding: 2px 6px; border-radius: 3px; font-size: 10px; cursor: pointer; }\r\n' +
-'                    .btn-ableton.active { background: #3daee9; color: #000; border-color: #3daee9; font-weight: 700; }\r\n' +
-'                    .ableton-toggles { display: flex; gap: 3px; }\r\n' +
-'                    .gimp-color-picker { display: flex; gap: 3px; align-items: center; position: relative; }\r\n' +
-'                    .gimp-square { width: 12px; height: 12px; border-radius: 2px; cursor: pointer; border: 1px solid rgba(255,255,255,0.3); }\r\n' +
-'                    .gimp-square.active-target { outline: 2px solid #fff; }\r\n' +
-'                    .gimp-square-random { font-size: 10px; cursor: pointer; padding: 0 2px; }\r\n' +
-'                    #timelinePlotContainer { position: relative; height: 64px; background: #1a1b1e; border-bottom: 1px solid #1d2023; display: flex; flex-direction: column; }\r\n' +
-'                    .timeline-legend { position: absolute; top: 2px; right: 6px; display: flex; gap: 8px; font-size: 9px; pointer-events: none; }\r\n' +
-'                    .timeline-legend label { display: flex; align-items: center; gap: 3px; pointer-events: auto; cursor: pointer; }\r\n' +
-'                    .timeline-progress-label { position: absolute; bottom: 2px; right: 6px; font-size: 9px; color: #6b7280; pointer-events: none; }\r\n' +
-'                    .metrics-content { display: flex; flex-direction: column; flex: 1; padding: 6px 10px; gap: 6px; overflow-y: auto; }\r\n' +
-'                    .grids-row { display: flex; gap: 8px; height: 105px; }\r\n' +
-'                    .grid-panel { flex: 1; background: #1a1b1e; border: 1px solid #1d2023; border-radius: 4px; padding: 6px; display: flex; flex-direction: column; overflow: hidden; }\r\n' +
-'                    .rhythm-grid { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; flex: 1; }\r\n' +
-'                    .rhythm-row { display: flex; gap: 2px; align-items: center; }\r\n' +
-'                    .rhythm-tile { width: 16px; height: 16px; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; font-family: monospace; }\r\n' +
-'                    .word-grid-container { display: grid; gap: 2px; overflow-y: auto; flex: 1; align-content: start; }\r\n' +
-'                    .word-tile { width: 14px; height: 14px; border-radius: 2px; }\r\n' +
-'                    .metrics-stats-row { display: flex; gap: 8px; }\r\n' +
-'                    .metric-item { flex: 1; background: #1a1b1e; border: 1px solid #1d2023; border-radius: 4px; padding: 6px; display: flex; flex-direction: column; gap: 3px; }\r\n' +
-'                    .metric-name { font-size: 10px; color: #9ca3af; }\r\n' +
-'                    .metric-val-wrapper { display: flex; align-items: center; gap: 8px; }\r\n' +
-'                    .metric-value { font-size: 13px; font-weight: 700; color: #eff0f1; min-width: 45px; }\r\n' +
-'                    .progress-bar { flex: 1; height: 5px; background: #232629; border-radius: 3px; overflow: hidden; border: 1px solid #1d2023; }\r\n' +
-'                    .progress-fill { height: 100%; width: 0%; background: #3daee9; transition: width 0.2s; }\r\n' +
-'                    .editor-status-bar { display: flex; align-items: center; background: #232629; border-top: 1px solid #1d2023; padding: 3px 8px; font-size: 11px; color: #9ca3af; gap: 8px; }\r\n' +
-'                    #letterCountsContainer { display: flex; gap: 6px; overflow-x: auto; flex: 1; white-space: nowrap; scrollbar-width: none; }\r\n' +
-'                    #letterCountsContainer::-webkit-scrollbar { display: none; }\r\n' +
-'                    .scroll-arrow-btn { background: transparent; border: none; color: #9ca3af; cursor: pointer; padding: 0 4px; }\r\n' +
-'                    .scroll-arrow-btn:hover { color: #eff0f1; }\r\n' +
-'                    .color-picker-popup { display: none; position: absolute; background: #31363b; border: 1px solid #1d2023; border-radius: 4px; padding: 6px; z-index: 1000; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }\r\n' +
-'                    .color-picker-grid { display: grid; grid-template-columns: repeat(5, 1fr; gap: 4px; }\r\n' +
-'                    .color-picker-dot { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); }\r\n' +
-'                    .custom-modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }\r\n' +
-'                    .custom-modal { background: #31363b; border: 1px solid #1d2023; border-radius: 6px; padding: 16px; width: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 12px; }\r\n' +
-'                    .custom-modal h3 { font-size: 14px; font-weight: 700; color: #eff0f1; margin: 0; }\r\n' +
-'                    .custom-modal p { font-size: 12px; color: #9ca3af; margin: 0; }\r\n' +
-'                    .btn-modal { background: #3daee9; color: #000; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 600; font-size: 12px; cursor: pointer; width: 100%; text-align: center; }\r\n' +
-'                    .btn-modal:hover { opacity: 0.9; }\r\n' +
 '                </style>\r\n' +
 '            </head>\r\n' +
 '            <body>\r\n' +
@@ -554,8 +515,9 @@
 '                windows[winId].element.style.zIndex = currentZIndex;\r\n' +
 '                updateTaskbarItemState(winId); \r\n' +
 '            }\r\n' +
-'        }\r\n' +
-'\r\n' +
+'        }\r\n';
+
+        html += '\r\n' +
 '        const taskManager = document.getElementById(\'task-manager\');\r\n' +
 '\r\n' +
 '        function createTaskbarItem(winId) {\r\n' +
@@ -663,6 +625,8 @@
 '    </script>\r\n' +
 '</body>\r\n' +
 '</html>';
+
+        return html;
     }
 
     if (typeof module !== 'undefined' && module.exports) {
