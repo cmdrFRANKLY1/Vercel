@@ -62,7 +62,7 @@ window.packagesRegistry['welcomeTour'] = {
                 height: 100vh;
                 background: rgba(0, 0, 0, 0.78);
                 z-index: 999999;
-                font-family: inherit;
+                font-family: Verdana, sans-serif !important;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -162,9 +162,9 @@ window.packagesRegistry['welcomeTour'] = {
             const header = document.createElement('div');
             header.className = 'color-glow-border';
             header.style.cssText = `display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid; padding-bottom: 10px;`;
+            // Removed the "Welcome Tour Step X of Y" text as requested
             header.innerHTML = `
                 <div>
-                    <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;" class="text-color-glow">Welcome Tour · Step <span id="tourStepNum">1</span> of 5</div>
                     <div style="font-size: 16px; font-weight: 700; margin-top: 2px;" id="tourTitle">Hello!</div>
                 </div>
                 <button id="tourCloseX" class="text-color-glow" style="background:transparent; border:none; font-size:18px; cursor:pointer; padding: 4px 8px;">&times;</button>
@@ -194,12 +194,12 @@ window.packagesRegistry['welcomeTour'] = {
 
             const steps = [
                 {
-                    title: "Welcome :)",
-                    text: "<strong>Hello!</strong> This is a IdeaSpace! Let's take a quick tour of whats happening...",
+                    title: "Welcome!",
+                    text: "Let's take a quick peek over yonder to see what's happening up on this mothertrucking Website. Shall we?",
                     getTarget: () => ({ top: window.innerHeight / 2, left: window.innerWidth / 2, width: 0, height: 0 })
                 },
                 {
-                    title: "2. Theme Controls",
+                    title: "Theme Controls",
                     text: "<strong>Themes</strong>: Left Click the moon/sun icon to toggle between dark/light mode. Left Click the Fontname to cycle fonts. Right-click for more options.",
                     getTarget: () => {
                         const themeContainer = document.getElementById('infobar-theme') || document.getElementById('infobar') || document.body;
@@ -207,7 +207,7 @@ window.packagesRegistry['welcomeTour'] = {
                     }
                 },
                 {
-                    title: "3. Language & Font",
+                    title: "Language & Font",
                     text: "<strong>Language and font</strong>: Adjust your preferred display language or customize your terminal font families here. Click the name to cycle through options or right-click for a dropdown menu.",
                     getTarget: () => {
                         const langContainer = document.getElementById('infobar-language') || document.body;
@@ -215,16 +215,16 @@ window.packagesRegistry['welcomeTour'] = {
                     }
                 },
                 {
-                    title: "4. Command Input",
-                    text: "<strong>Command input</strong>: This is where you type commands, run packages, and interact with the virtual file system. Try typing <strong class='text-color-glow'>help</strong> to see available commands, or <strong class='text-color-glow'>settings</strong> to open the settings window.",
+                    title: "Command Prompt",
+                    text: "<strong>Command input</strong>: This is where you type commands, run packages, and interact with the file system. Try typing <strong class='text-color-glow'>help</strong> to see available commands.",
                     getTarget: () => {
                         const activePrompt = document.querySelector('.terminal-instance.active-term .input-line .prompt') || document.querySelector('.input-line .prompt') || document.body;
                         return activePrompt.getBoundingClientRect();
                     }
                 },
                 {
-                    title: "5. Have Fun!",
-                    text: "You're all set up. <strong>Have fun!</strong> Explore commands, install packages, and enjoy building things. You can always run <strong class='text-color-glow'>welcomeTour</strong> again to retake this tour.",
+                    title: "Have Fun!",
+                    text: "You're all set up. <strong>Let's go</strong>!",
                     getTarget: () => ({ top: window.innerHeight / 2, left: window.innerWidth / 2, width: 0, height: 0 })
                 }
             ];
@@ -232,7 +232,6 @@ window.packagesRegistry['welcomeTour'] = {
             let currentStep = 0;
 
             const updateTourStep = () => {
-                document.getElementById('tourStepNum').innerText = currentStep + 1;
                 document.getElementById('tourTitle').innerText = steps[currentStep].title;
                 document.getElementById('tourBodyContent').innerHTML = steps[currentStep].text;
 

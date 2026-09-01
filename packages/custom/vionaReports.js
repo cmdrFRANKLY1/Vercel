@@ -608,11 +608,11 @@
 '  <!-- waybar -->\n' +
 '  <div id="waybar">\n' +
 '    <div style="display:flex; align-items:center; gap:4px; height: 100%; flex-wrap: wrap;">\n' +
-'      <span class="waybar-btn" id="viewListBtn">[LISTVIEW]</span>\n' +
-'      <span class="waybar-btn" id="viewCalBtn">[CALENDER]</span>\n' +
-'      <span class="waybar-btn" id="viewDetailBtn">[TIMERS]</span>\n' +
-'      <span class="waybar-btn" id="viewStatsBtn">[STATISTICS]</span>\n' +
-'      <span class="waybar-btn" id="viewTimelineBtn">[TIMELINE]</span>\n' +
+'      <span class="waybar-btn" id="viewListBtn">Listview</span>\n' +
+'      <span class="waybar-btn" id="viewCalBtn">Calender</span>\n' +
+'      <span class="waybar-btn" id="viewDetailBtn">Timers</span>\n' +
+'      <span class="waybar-btn" id="viewStatsBtn">Statistics</span>\n' +
+'      <span class="waybar-btn" id="viewTimelineBtn">Timeline</span>\n' +
 '    </div>\n' +
 '    <div style="display:flex; align-items:center; gap:8px; height: 100%; flex-wrap: wrap;">\n' +
 '      <div id="searchContainer">\n' +

@@ -1,639 +1,814 @@
 (function() {
-    if (typeof window.packagesRegistry !== 'undefined') {
-        window.packagesRegistry['kde'] = {
-            name: 'KDE Plasma Desktop',
-            version: '1.0.0',
-            description: 'A KDE Plasma desktop experience simulation',
-            preInstalledOn: ['default'],
-            translations: {},
-            commands: {
-                kde: function(args) {
-                    const wrapperName = 'kde';
-                    const hasNt = args && args.includes('-nt');
-                    const hasNw = args && args.includes('-nw');
+    "use strict";
 
-                    const htmlContent = generateKdeHTML();
-                    if (hasNw || hasNt) {
-                        const win = window.open('', '_blank', hasNw ? 'width=1024,height=768,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes' : '');
-                        if (win) {
-                            win.document.write(htmlContent);
-                            win.document.close();
-                        }
-                    } else {
-                        if (typeof window.createWrapperTab !== 'undefined') {
-                            const blob = new Blob([htmlContent], { type: 'text/html' });
-                            const url = URL.createObjectURL(blob);
-                            window.createWrapperTab(wrapperName, url);
-                        } else if (typeof window.openWrapperWindow !== 'undefined') {
-                            const blob = new Blob([htmlContent], { type: 'text/html' });
-                            const url = URL.createObjectURL(blob);
-                            window.openWrapperWindow(wrapperName, url);
-                        } else {
-                            const win = window.open('', '_blank');
-                            if (win) {
-                                win.document.write(htmlContent);
-                                win.document.close();
-                            }
-                        }
-                    }
+    // Inject KDE Firefox theme and styles
+    const style = document.createElement('style');
+    style.textContent = `
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        input, textarea, iframe, .wiki-body, .wiki-body * {
+            user-select: text !important;
+            -webkit-user-select: text !important;
+        }
+
+        :root {
+            --bg-color: #1a1b1e;
+            --panel-bg: #232629;
+            --toolbar-bg: #31363b;
+            --text-color: #eff0f1;
+            --text-muted: #888888;
+            --accent-color: #3daee9;
+            --accent-hover: #1d99d6;
+            --border-color: #1d2023;
+            --hover-bg: rgba(61, 174, 233, 0.15);
+            --selected-bg: rgba(61, 174, 233, 0.3);
+            --font-family: 'Noto Sans', 'Segoe UI', 'Roboto', sans-serif;
+            --wiki-bg: #121212;
+            --wiki-card: #1e1e1e;
+            --wiki-text: #e0e0e0;
+            --wiki-link: #569cd6;
+        }
+
+        body, html {
+            height: 100vh;
+            width: 100vw;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            font-size: 13px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-color); }
+
+        #firefox-app {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            background: var(--bg-color);
+        }
+
+        /* Tabs Bar */
+        #tabs-bar {
+            height: 36px;
+            background-color: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 4px;
+            gap: 2px;
+            overflow-x: auto;
+            flex-shrink: 0;
+        }
+
+        .browser-tab {
+            display: flex;
+            align-items: center;
+            height: 30px;
+            padding: 0 12px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--text-muted);
+            transition: all 0.15s;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .browser-tab.active {
+            background-color: var(--toolbar-bg);
+            color: var(--text-color);
+            border-color: var(--accent-color);
+            border-top: 2px solid var(--accent-color);
+        }
+
+        .browser-tab:hover {
+            color: var(--text-color);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+        }
+
+        .tab-close:hover {
+            background-color: rgba(255, 85, 85, 0.2);
+            color: #ff5555;
+        }
+
+        .tab-new-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-color);
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .tab-new-btn:hover {
+            background-color: var(--hover-bg);
+            color: var(--accent-color);
+        }
+
+        /* Navigation Toolbar */
+        #toolbar {
+            height: 44px;
+            background-color: var(--toolbar-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .tool-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-color);
+            border-radius: 4px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .tool-btn:hover:not(:disabled) {
+            background-color: var(--hover-bg);
+            border-color: var(--accent-color);
+        }
+
+        .tool-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .tool-btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* URL Bar */
+        #url-bar-container {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            height: 32px;
+            padding: 0 12px;
+            gap: 8px;
+            transition: border-color 0.2s;
+        }
+
+        #url-bar-container:focus-within {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 1px var(--accent-color);
+        }
+
+        #url-input {
+            flex-grow: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-color);
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+        }
+
+        /* Viewport / Browser Content Area */
+        #viewport-container {
+            flex-grow: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+            background-color: var(--wiki-bg);
+        }
+
+        .browser-page {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: none;
+            overflow-y: auto;
+            background-color: var(--wiki-bg);
+            color: var(--wiki-text);
+        }
+
+        .browser-page.active {
+            display: block;
+        }
+
+        .browser-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #ffffff;
+        }
+
+        /* Wikipedia Dark Mode Styling */
+        .wiki-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 30px;
+            font-family: sans-serif;
+            line-height: 1.6;
+        }
+
+        .wiki-header {
+            border-bottom: 1px solid #333;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .wiki-title {
+            font-size: 36px;
+            font-weight: normal;
+            color: #ffffff;
+            font-family: 'Linux Libertine', Georgia, serif;
+            margin-bottom: 6px;
+        }
+
+        .wiki-subtitle {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .wiki-search-box {
+            display: flex;
+            background: #232629;
+            border: 1px solid #444;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .wiki-search-input {
+            background: transparent;
+            border: none;
+            color: #fff;
+            padding: 8px 12px;
+            font-size: 13px;
+            outline: none;
+            width: 220px;
+        }
+
+        .wiki-search-btn {
+            background: #3daee9;
+            color: #000;
+            border: none;
+            padding: 0 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .wiki-content {
+            display: flex;
+            gap: 30px;
+        }
+
+        .wiki-main {
+            flex-grow: 1;
+        }
+
+        .wiki-sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .wiki-card {
+            background: var(--wiki-card);
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 16px;
+        }
+
+        .wiki-card-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 6px;
+        }
+
+        .wiki-p {
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: var(--wiki-text);
+        }
+
+        .wiki-link {
+            color: var(--wiki-link);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .wiki-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Status Bar */
+        #status-bar {
+            height: 22px;
+            background-color: var(--panel-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        /* Notification Toast */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--accent-color);
+            color: #000;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 20000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        #toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    `;
+    document.head.appendChild(style);
+
+    function applyKDEColors() {
+        const kdeColors = window.kdeThemeColors || window.parent?.kdeThemeColors || {
+            'kde-bg': '#1a1b1e',
+            'kde-panel': '#232629',
+            'kde-accent': '#3daee9',
+            'kde-text': '#eff0f1',
+            'kde-window-border': '#1d2023',
+        };
+
+        const root = document.documentElement;
+        root.style.setProperty('--bg-color', kdeColors['kde-bg']);
+        root.style.setProperty('--panel-bg', kdeColors['kde-panel']);
+        root.style.setProperty('--text-color', kdeColors['kde-text']);
+        root.style.setProperty('--border-color', kdeColors['kde-window-border']);
+        root.style.setProperty('--accent-color', kdeColors['kde-accent']);
+    }
+    applyKDEColors();
+
+    document.body.innerHTML = `
+    <div id="firefox-app">
+        <!-- Tabs Bar -->
+        <div id="tabs-bar">
+            <div id="tabs-container" style="display:flex; gap:2px; align-items:center; flex-grow:1; overflow-x:auto;"></div>
+            <button class="tab-new-btn" id="btn-new-tab" title="Open New Tab (Ctrl+T)">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+        </div>
+
+        <!-- Navigation Toolbar -->
+        <div id="toolbar">
+            <button class="tool-btn" id="btn-back" title="Back" disabled>
+                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <button class="tool-btn" id="btn-forward" title="Forward" disabled>
+                <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+            <button class="tool-btn" id="btn-reload" title="Reload">
+                <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+            </button>
+            <button class="tool-btn" id="btn-home" title="Wikipedia Homepage">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            </button>
+
+            <!-- URL Bar -->
+            <div id="url-bar-container">
+                <svg viewBox="0 0 24 24" style="width:14px; height:14px; stroke:var(--text-muted); stroke-width:2; fill:none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <input type="text" id="url-input" spellcheck="false" placeholder="Enter URL or search Wikipedia...">
+            </div>
+        </div>
+
+        <!-- Viewport Container -->
+        <div id="viewport-container"></div>
+
+        <!-- Status Bar -->
+        <div id="status-bar">
+            <span id="status-text">Connected via KDE Web Engine (Dark Mode)</span>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast">Notice</div>
+    `;
+
+    let tabs = [];
+    let activeTab = null;
+    let vfs = null;
+
+    function loadVFS() {
+        try {
+            const savedVFS = localStorage.getItem('sTerminal_vfs');
+            if (savedVFS) vfs = JSON.parse(savedVFS);
+        } catch (e) {
+            console.error("Failed to load VFS:", e);
+        }
+    }
+
+    function logFirefoxAction(message) {
+        try {
+            loadVFS();
+            if (!vfs) return;
+            const logPath = ['home', 'user', 'Documents', 'Logs'];
+            let node = vfs;
+            for (const p of logPath) {
+                if (!node.children[p]) {
+                    node.children[p] = { type: 'dir', description: 'Logs directory', children: {} };
                 }
-            },
-            commandInfo: {
-                kde: "what is this command?\nkde\n\nwhat is it used for?\nOpens a simulated KDE Plasma desktop environment."
+                node = node.children[p];
             }
-        };
+            if (!node.children['logFirefox.txt']) {
+                node.children['logFirefox.txt'] = { type: 'file', description: 'Firefox browser logs', content: '' };
+            }
+            const timestamp = new Date().toISOString();
+            node.children['logFirefox.txt'].content += `[${timestamp}] ${message}\n`;
+            localStorage.setItem('sTerminal_vfs', JSON.stringify(vfs));
+        } catch (err) {
+            console.error("Failed to log firefox action:", err);
+        }
     }
 
-    function generateKdeHTML() {
-        return '<!DOCTYPE html>\r\n' +
-'<html lang="en">\r\n' +
-'<head>\r\n' +
-'\r\n' +
-'    <meta charset="UTF-8">\r\n' +
-'    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">\r\n' +
-'    <title>KDE Plasma Desktop Experience</title>\r\n' +
-'    \r\n' +
-'    <script src="../../colors/colorsKde.js"></script>\r\n' +
-'\r\n' +
-'    <script src="https://cdn.tailwindcss.com"></script>\r\n' +
-'    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">\r\n' +
-'\r\n' +
-'    <script>\r\n' +
-'        const defaultKdeColors = {\r\n' +
-'            \'kde-bg\': \'#1a1b1e\', \r\n' +
-'            \'kde-panel\': \'rgba(35, 38, 41, 0.85)\', \r\n' +
-'            \'kde-panel-hover\': \'rgba(255, 255, 255, 0.1)\',\r\n' +
-'            \'kde-accent\': \'#3daee9\', \r\n' +
-'            \'kde-text\': \'#eff0f1\',\r\n' +
-'            \'kde-window-bg\': \'#31363b\',\r\n' +
-'            \'kde-window-border\': \'#1d2023\',\r\n' +
-'        };\r\n' +
-'\r\n' +
-'        tailwind.config = {\r\n' +
-'            theme: {\r\n' +
-'                extend: {\r\n' +
-'                    colors: window.kdeThemeColors || defaultKdeColors,\r\n' +
-'                    fontFamily: {\r\n' +
-'                        sans: [\'Noto Sans\', \'Segoe UI\', \'Roboto\', \'Helvetica\', \'Arial\', \'sans-serif\'],\r\n' +
-'                    }\r\n' +
-'                }\r\n' +
-'            }\r\n' +
-'        }\r\n' +
-'    </script>\r\n' +
-'    \r\n' +
-'\r\n' +
-'    <style>\r\n' +
-'        body {\r\n' +
-'            overflow: hidden;\r\n' +
-'            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);\r\n' +
-'            background-size: cover;\r\n' +
-'            background-position: center;\r\n' +
-'        }\r\n' +
-'\r\n' +
-'        .glass-effect {\r\n' +
-'            backdrop-filter: blur(12px);\r\n' +
-'            -webkit-backdrop-filter: blur(12px);\r\n' +
-'        }\r\n' +
-'\r\n' +
-'        .desktop-icon {\r\n' +
-'            transition: background-color 0.15s ease;\r\n' +
-'        }\r\n' +
-'        .desktop-icon:hover {\r\n' +
-'            background-color: rgba(255, 255, 255, 0.15);\r\n' +
-'            border-radius: 0.5rem;\r\n' +
-'        }\r\n' +
-'        \r\n' +
-'        #app-launcher {\r\n' +
-'            transition: opacity 0.2s ease, transform 0.2s ease;\r\n' +
-'            transform-origin: bottom left;\r\n' +
-'        }\r\n' +
-'        #app-launcher.hidden {\r\n' +
-'            opacity: 0;\r\n' +
-'            transform: scale(0.95);\r\n' +
-'            pointer-events: none;\r\n' +
-'        }\r\n' +
-'        #app-launcher.visible {\r\n' +
-'            opacity: 1;\r\n' +
-'            transform: scale(1);\r\n' +
-'            pointer-events: auto;\r\n' +
-'        }\r\n' +
-'\r\n' +
-'        .window {\r\n' +
-'            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px var(--tw-colors-kde-window-border);\r\n' +
-'            transition: transform 0.1s ease, box-shadow 0.1s ease;\r\n' +
-'        }\r\n' +
-'        .window.minimized {\r\n' +
-'            display: none !important;\r\n' +
-'        }\r\n' +
-'        .window.maximized {\r\n' +
-'            top: 0 !important;\r\n' +
-'            left: 0 !important;\r\n' +
-'            width: 100vw !important;\r\n' +
-'            height: calc(100vh - 48px) !important;\r\n' +
-'            border-radius: 0 !important;\r\n' +
-'        }\r\n' +
-'        .window-header {\r\n' +
-'            cursor: move;\r\n' +
-'        }\r\n' +
-'    </style>\r\n' +
-'</head>\r\n' +
-'<body class="text-kde-text h-screen w-screen relative select-none font-sans">\r\n' +
-'\r\n' +
-'\r\n' +
-'    <div id="desktop-area" class="w-full h-[calc(100vh-48px)] absolute top-0 left-0 p-4 flex flex-col flex-wrap items-start gap-2 z-0">\r\n' +
-'    </div>\r\n' +
-'\r\n' +
-'    <div id="windows-container" class="absolute top-0 left-0 w-full h-[calc(100vh-48px)] pointer-events-none z-10">\r\n' +
-'    </div>\r\n' +
-'\r\n' +
-'\r\n' +
-'    <div id="app-launcher" class="hidden absolute bottom-12 left-0 mb-1 ml-2 w-96 h-[32rem] bg-kde-panel glass-effect border border-gray-600/50 rounded-lg shadow-2xl z-50 flex flex-col text-sm text-gray-200">\r\n' +
-'        <div class="p-3 border-b border-gray-600/50">\r\n' +
-'            <div class="bg-gray-800/80 rounded-full px-3 py-1.5 flex items-center border border-gray-600/30 focus-within:border-kde-accent focus-within:ring-1 focus-within:ring-kde-accent transition-all">\r\n' +
-'                <i class="fa-solid fa-magnifying-glass text-gray-400 mr-2"></i>\r\n' +
-'                <input type="text" id="app-search-input" placeholder="Search apps..." class="bg-transparent border-none outline-none w-full text-sm placeholder-gray-400" oninput="filterApps(this.value)">\r\n' +
-'            </div>\r\n' +
-'        </div>\r\n' +
-'        \r\n' +
-'        <div class="flex flex-1 overflow-hidden">\r\n' +
-'            <div class="w-1/3 border-r border-gray-600/50 flex flex-col">\r\n' +
-'                <button class="text-left px-4 py-2 hover:bg-white/10 bg-white/5 border-l-2 border-kde-accent"><i class="fa-solid fa-desktop w-6 text-gray-400"></i> Applications</button>\r\n' +
-'                <button onclick="window.location.href=\'../../index.html\'" class="text-left px-4 py-2 hover:bg-white/10 mt-auto"><i class="fa-solid fa-power-off w-6 text-red-400"></i> Leave</button>\r\n' +
-'            </div>\r\n' +
-'            \r\n' +
-'            <div class="w-2/3 p-2 overflow-y-auto flex flex-col gap-1" id="apps-container">\r\n' +
-'                <div class="p-4 text-center text-gray-500 italic mt-10" id="no-apps-message">\r\n' +
-'                    Loading applications...\r\n' +
-'                </div>\r\n' +
-'            </div>\r\n' +
-'        </div>\r\n' +
-'        \r\n' +
-'        <div class="p-3 border-t border-gray-600/50 flex justify-between items-center bg-gray-900/30 rounded-b-lg">\r\n' +
-'            <div class="flex items-center gap-2">\r\n' +
-'                <div class="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center border border-gray-500">\r\n' +
-'                    <i class="fa-solid fa-user text-gray-300"></i>\r\n' +
-'                </div>\r\n' +
-'                <span class="font-semibold text-sm">Plasma User</span>\r\n' +
-'            </div>\r\n' +
-'            <div class="flex gap-2 text-gray-400">\r\n' +
-'                <button class="hover:text-white p-1"><i class="fa-solid fa-lock"></i></button>\r\n' +
-'                <button class="hover:text-red-400 p-1" onclick="window.location.href=\'../../index.html\'"><i class="fa-solid fa-power-off"></i></button>\r\n' +
-'            </div>\r\n' +
-'        </div>\r\n' +
-'    </div>\r\n' +
-'\r\n' +
-'\r\n' +
-'    <div id="panel" class="absolute bottom-0 left-0 w-full h-12 bg-kde-panel glass-effect border-t border-white/5 flex items-center px-1 z-50">\r\n' +
-'        \r\n' +
-'        <button id="launcher-btn" class="h-10 w-10 mx-1 flex items-center justify-center rounded hover:bg-kde-panel-hover transition-colors" onclick="toggleLauncher(event)">\r\n' +
-'            <svg class="w-6 h-6 text-kde-accent drop-shadow-md" viewBox="0 0 24 24" fill="currentColor">\r\n' +
-'                <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />\r\n' +
-'            </svg>\r\n' +
-'        </button>\r\n' +
-'\r\n' +
-'        <div id="task-manager" class="flex-1 h-full flex items-center px-2 gap-1 overflow-x-hidden">\r\n' +
-'        </div>\r\n' +
-'\r\n' +
-'        <div class="flex items-center h-full px-2 gap-3 text-sm text-gray-300">\r\n' +
-'            <div class="cursor-pointer hover:text-white px-1 relative group">\r\n' +
-'                <i class="fa-solid fa-volume-high"></i>\r\n' +
-'            </div>\r\n' +
-'\r\n' +
-'            <div id="clock" class="font-semibold text-center cursor-pointer hover:bg-kde-panel-hover px-2 py-1 rounded select-none flex flex-col justify-center leading-tight">\r\n' +
-'                <span id="time" class="text-[13px]">00:00 AM</span>\r\n' +
-'                <span id="date" class="text-[10px] text-gray-400">Date</span>\r\n' +
-'            </div>\r\n' +
-'        </div>\r\n' +
-'    </div>\r\n' +
-'\r\n' +
-'    <script>\r\n' +
-'\r\n' +
-'        function updateClock() {\r\n' +
-'            const now = new Date();\r\n' +
-'            let hours = now.getHours();\r\n' +
-'            let minutes = now.getMinutes();\r\n' +
-'            const ampm = hours >= 12 ? \'PM\' : \'AM\';\r\n' +
-'            \r\n' +
-'            hours = hours % 12;\r\n' +
-'            hours = hours ? hours : 12;\r\n' +
-'            minutes = minutes < 10 ? \'0\' + minutes : minutes;\r\n' +
-'            \r\n' +
-'            const timeString = hours + \':\' + minutes + \' \' + ampm;\r\n' +
-'            const options = { weekday: \'short\', month: \'short\', day: \'numeric\' };\r\n' +
-'            const dateString = now.toLocaleDateString(undefined, options);\r\n' +
-'\r\n' +
-'            document.getElementById(\'time\').textContent = timeString;\r\n' +
-'            document.getElementById(\'date\').textContent = dateString;\r\n' +
-'        }\r\n' +
-'\r\n' +
-'        setInterval(updateClock, 1000);\r\n' +
-'        updateClock();\r\n' +
-'\r\n' +
-'        const launcher = document.getElementById(\'app-launcher\');\r\n' +
-'        const launcherBtn = document.getElementById(\'launcher-btn\');\r\n' +
-'        let availableApps = [];\r\n' +
-'\r\n' +
-'        function toggleLauncher(e) {\r\n' +
-'            if(e) e.stopPropagation();\r\n' +
-'            if (launcher.classList.contains(\'hidden\')) {\r\n' +
-'                launcher.classList.remove(\'hidden\');\r\n' +
-'                setTimeout(() => launcher.classList.add(\'visible\'), 10);\r\n' +
-'            } else {\r\n' +
-'                launcher.classList.remove(\'visible\');\r\n' +
-'                setTimeout(() => launcher.classList.add(\'hidden\'), 200);\r\n' +
-'            }\r\n' +
-'        }\r\n' +
-'\r\n' +
-'        document.addEventListener(\'click\', (event) => {\r\n' +
-'            if (launcher.classList.contains(\'visible\') && \r\n' +
-'                !launcher.contains(event.target) && \r\n' +
-'                !launcherBtn.contains(event.target)) {\r\n' +
-'                toggleLauncher();\r\n' +
-'            }\r\n' +
-'        });\r\n' +
-'\r\n' +
-'\r\n' +
-'        function formatAppName(name) {\r\n' +
-'            if (!name) return \'\';\r\n' +
-'            return name\r\n' +
-'                .replace(/([a-z])([A-Z])/g, \'$1 $2\')\r\n' +
-'                .replace(/[-_]/g, \' \')\r\n' +
-'                .replace(/^./, str => str.toUpperCase());\r\n' +
-'        }\r\n' +
-'\r\n' +
-'        document.addEventListener(\'DOMContentLoaded\', () => {\r\n' +
-'            const appsContainer = document.getElementById(\'apps-container\');\r\n' +
-'            const noAppsMessage = document.getElementById(\'no-apps-message\');\r\n' +
-'            \r\n' +
-'            const fallbackRegistry = {\r\n' +
-'                "apps": [\r\n' +
-'                    "fireFox"\r\n' +
-'                ]\r\n' +
-'            };\r\n' +
-'\r\n' +
-'            const possiblePaths = [\r\n' +
-'                \'../../registry.json\',\r\n' +
-'                \'../registry.json\',\r\n' +
-'                \'./registry.json\',\r\n' +
-'                \'/registry.json\'\r\n' +
-'            ];\r\n' +
-'\r\n' +
-'            async function loadRegistry() {\r\n' +
-'                for (const path of possiblePaths) {\r\n' +
-'                    try {\r\n' +
-'                        const response = await fetch(path);\r\n' +
-'                        if (response.ok) {\r\n' +
-'                            const data = await response.json();\r\n' +
-'                            if (data && data.apps) {\r\n' +
-'                                return data;\r\n' +
-'                            }\r\n' +
-'                        }\r\n' +
-'                    } catch (err) {}\r\n' +
-'                }\r\n' +
-'                return fallbackRegistry;\r\n' +
-'            }\r\n' +
-'\r\n' +
-'            loadRegistry().then(registry => {\r\n' +
-'                availableApps = registry.apps || [];\r\n' +
-'                renderAppList(availableApps);\r\n' +
-'            });\r\n' +
-'        });\r\n' +
-'\r\n' +
-'\r\n' +
-'        function renderAppList(apps) {\r\n' +
-'            const appsContainer = document.getElementById(\'apps-container\');\r\n' +
-'            const noAppsMessage = document.getElementById(\'no-apps-message\');\r\n' +
-'            \r\n' +
-'            const existingItems = appsContainer.querySelectorAll(\'button:not(#no-apps-message)\');\r\n' +
-'            existingItems.forEach(item => item.remove());\r\n' +
-'\r\n' +
-'            if (apps && apps.length > 0) {\r\n' +
-'                if (noAppsMessage) noAppsMessage.style.display = \'none\';\r\n' +
-'                \r\n' +
-'                apps.forEach(app => {\r\n' +
-'                    const btn = document.createElement(\'button\');\r\n' +
-'                    btn.className = \'text-left px-3 py-2 rounded hover:bg-white/10 flex items-center gap-3 transition-colors\';\r\n' +
-'                    btn.innerHTML = `\r\n' +
-'                        <div class="w-8 h-8 rounded bg-gray-700 flex items-center justify-center text-kde-accent shadow-inner">\r\n' +
-'                            <i class="fa-solid fa-window-maximize text-xs"></i>\r\n' +
-'                        </div>\r\n' +
-'                        <span class="capitalize text-sm font-medium">${formatAppName(app)}</span>\r\n' +
-'                    `;\r\n' +
-'                    btn.onclick = () => {\r\n' +
-'                        launchApp(app);\r\n' +
-'                        toggleLauncher();\r\n' +
-'                    };\r\n' +
-'                    appsContainer.appendChild(btn);\r\n' +
-'                });\r\n' +
-'            } else {\r\n' +
-'                if (noAppsMessage) {\r\n' +
-'                    noAppsMessage.style.display = \'block\';\r\n' +
-'                    noAppsMessage.textContent = \'No applications found\';\r\n' +
-'                }\r\n' +
-'            }\r\n' +
-'        }\r\n' +
-'\r\n' +
-'        function filterApps(query) {\r\n' +
-'            const filtered = availableApps.filter(app => \r\n' +
-'                formatAppName(app).toLowerCase().includes(query.toLowerCase())\r\n' +
-'            );\r\n' +
-'            renderAppList(filtered);\r\n' +
-'        }\r\n' +
-'\r\n' +
-'\r\n' +
-'        const windows = {};\r\n' +
-'        const zIndexBase = 100;\r\n' +
-'        let currentZIndex = zIndexBase;\r\n' +
-'\r\n' +
-'\r\n' +
-'        async function resolveAppJsUrl(appName) {\r\n' +
-'            const exact = `${appName}.js`;\r\n' +
-'            const lower = `${appName.toLowerCase()}.js`;\r\n' +
-'            \r\n' +
-'            const paths = [\r\n' +
-'                exact,\r\n' +
-'                lower,\r\n' +
-'                `./${exact}`,\r\n' +
-'                `./${lower}`,\r\n' +
-'                `../../packages/apps/${exact}`,\r\n' +
-'                `../apps/${exact}`\r\n' +
-'            ];\r\n' +
-'            \r\n' +
-'            for (const path of paths) {\r\n' +
-'                try {\r\n' +
-'                    const res = await fetch(path, { method: \'HEAD\' });\r\n' +
-'                    if (res.ok) return path;\r\n' +
-'                } catch(e) {}\r\n' +
-'            }\r\n' +
-'            \r\n' +
-'            // Fallback for this specific environment where files might be side-by-side\r\n' +
-'            // Guarantees "fireFox" attempts to load "firefox.js"\r\n' +
-'            return lower;\r\n' +
-'        }\r\n' +
-'\r\n' +
-'\r\n' +
-'        async function launchApp(appName) {\r\n' +
-'            const winId = `window-${appName}`;\r\n' +
-'            \r\n' +
-'            if (windows[winId]) {\r\n' +
-'                if (windows[winId].isMinimized) {\r\n' +
-'                    openWindow(appName);\r\n' +
-'                } else {\r\n' +
-'                    bringToFront(winId);\r\n' +
-'                }\r\n' +
-'                return;\r\n' +
-'            }\r\n' +
-'\r\n' +
-'            const winDiv = document.createElement(\'div\');\r\n' +
-'            winDiv.id = winId;\r\n' +
-'            winDiv.className = \'window absolute bg-kde-window-bg border border-kde-window-border rounded-lg shadow-2xl flex flex-col overflow-hidden transition-transform duration-100 ease-out pointer-events-auto\';\r\n' +
-'            \r\n' +
-'            const offset = (Object.keys(windows).length * 30) + 50;\r\n' +
-'            winDiv.style.width = \'800px\';\r\n' +
-'            winDiv.style.height = \'540px\';\r\n' +
-'            winDiv.style.top = `${offset}px`;\r\n' +
-'            winDiv.style.left = `${offset}px`;\r\n' +
-'            \r\n' +
-'            winDiv.innerHTML = `\r\n' +
-'                <div class="window-header h-9 bg-gray-800 flex justify-between items-center select-none group border-b border-gray-900">\r\n' +
-'                    <div class="flex items-center gap-2 px-3 text-gray-300">\r\n' +
-'                        <i class="fa-solid fa-window-maximize text-kde-accent text-xs"></i>\r\n' +
-'                        <span class="capitalize font-semibold text-sm tracking-wide drop-shadow-md">${formatAppName(appName)}</span>\r\n' +
-'                    </div>\r\n' +
-'                    <div class="flex h-full">\r\n' +
-'                        <button onclick="minimizeWindow(\'${winId}\')" class="w-12 hover:bg-gray-600 flex items-center justify-center transition-colors text-gray-400 hover:text-white" title="Minimize"><i class="fa-solid fa-minus text-xs"></i></button>\r\n' +
-'                        <button onclick="maximizeWindow(\'${winId}\')" class="w-12 hover:bg-gray-600 flex items-center justify-center transition-colors text-gray-400 hover:text-white" title="Maximize"><i class="fa-regular fa-square text-xs max-icon"></i></button>\r\n' +
-'                        <button onclick="closeApp(\'${winId}\')" class="w-12 hover:bg-red-600 flex items-center justify-center transition-colors text-gray-400 hover:text-white" title="Close"><i class="fa-solid fa-xmark text-sm"></i></button>\r\n' +
-'                    </div>\r\n' +
-'                </div>\r\n' +
-'                <div class="flex-1 relative bg-kde-window-bg">\r\n' +
-'                    <div class="iframe-glass absolute inset-0 z-10 hidden"></div>\r\n' +
-'                    <iframe id="iframe-${winId}" class="w-full h-full border-none bg-kde-window-bg block"></iframe>\r\n' +
-'                </div>\r\n' +
-'            `;\r\n' +
-'            \r\n' +
-'            document.getElementById(\'windows-container\').appendChild(winDiv);\r\n' +
-'            \r\n' +
-'\r\n' +
-'            const jsUrl = await resolveAppJsUrl(appName);\r\n' +
-'            const iframe = winDiv.querySelector(\'iframe\');\r\n' +
-'            \r\n' +
-'            const iframeContent = `<!DOCTYPE html>\r\n' +
-'            <html lang="en" class="h-full">\r\n' +
-'            <head>\r\n' +
-'                <meta charset="UTF-8">\r\n' +
-'                <script src="../../colors/colorsKde.js"><\\/script>\r\n' +
-'                <script src="https://cdn.tailwindcss.com"><\\/script>\r\n' +
-'                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">\r\n' +
-'                <style>\r\n' +
-'                    body { background-color: #31363b; color: #eff0f1; margin: 0; font-family: \'Noto Sans\', sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }\r\n' +
-'                    /* Hybrid UI Tokens for hosted apps */\r\n' +
-'                    #app { display: flex; flex-direction: column; height: 100vh; width: 100vw; box-sizing: border-box; }\r\n' +
-'                    #menubar { display: flex; background: rgba(35, 38, 41, 0.95); border-bottom: 1px solid #1d2023; padding: 2px 6px; font-size: 12px; gap: 4px; user-select: none; }\r\n' +
-'                    .menu-btn { background: transparent; border: none; color: #eff0f1; padding: 4px 8px; border-radius: 3px; cursor: pointer; }\r\n' +
-'                    .menu-btn:hover { background: rgba(255,255,255,0.1); }\r\n' +
-'                    .menu-dropdown { display: none; flex-direction: column; position: absolute; top: 100%; left: 0; background: #31363b; border: 1px solid #1d2023; border-radius: 4px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 100; min-width: 140px; padding: 4px; }\r\n' +
-'                    .group:hover .menu-dropdown { display: flex; }\r\n' +
-'                    .dropdown-item { background: transparent; border: none; color: #eff0f1; padding: 6px 10px; text-align: left; border-radius: 3px; cursor: pointer; font-size: 12px; display: flex; align-items: center; }\r\n' +
-'                    .dropdown-item:hover { background: #3daee9; color: #000; }\r\n' +
-'                </style>\r\n' +
-'            </head>\r\n' +
-'            <body>\r\n' +
-'                <script src="${jsUrl}"><\\/script>\r\n' +
-'            </body>\r\n' +
-'            </html>`;\r\n' +
-'\r\n' +
-'            iframe.srcdoc = iframeContent;\r\n' +
-'\r\n' +
-'            windows[winId] = {\r\n' +
-'                element: winDiv,\r\n' +
-'                isOpen: true,\r\n' +
-'                isMinimized: false,\r\n' +
-'                isMaximized: false,\r\n' +
-'                appName: appName,\r\n' +
-'                iconClass: \'fa-window-maximize\',\r\n' +
-'                iconColor: \'text-kde-accent\',\r\n' +
-'                title: formatAppName(appName)\r\n' +
-'            };\r\n' +
-'\r\n' +
-'            makeDraggable(winDiv);\r\n' +
-'            winDiv.addEventListener(\'mousedown\', () => bringToFront(winId));\r\n' +
-'            \r\n' +
-'            createTaskbarItem(winId);\r\n' +
-'            bringToFront(winId);\r\n' +
-'        }\r\n' +
-'\r\n' +
-'\r\n' +
-'        function openWindow(appName) {\r\n' +
-'            const winId = `window-${appName}`;\r\n' +
-'            if (!windows[winId]) return; \r\n' +
-'\r\n' +
-'            windows[winId].element.classList.remove(\'minimized\');\r\n' +
-'            windows[winId].isMinimized = false;\r\n' +
-'            updateTaskbarItemState(winId);\r\n' +
-'            bringToFront(winId);\r\n' +
-'        }\r\n' +
-'\r\n' +
-'        function closeApp(winId) {\r\n' +
-'            if (windows[winId]) {\r\n' +
-'                windows[winId].element.remove();\r\n' +
-'                delete windows[winId];\r\n' +
-'                removeTaskbarItem(winId);\r\n' +
-'            }\r\n' +
-'        }\r\n' +
-'\r\n' +
-'        function minimizeWindow(winId) {\r\n' +
-'            if (windows[winId]) {\r\n' +
-'                windows[winId].element.classList.add(\'minimized\');\r\n' +
-'                windows[winId].isMinimized = true;\r\n' +
-'                updateTaskbarItemState(winId);\r\n' +
-'            }\r\n' +
-'        }\r\n' +
-'\r\n' +
-'        function maximizeWindow(winId) {\r\n' +
-'             if (windows[winId]) {\r\n' +
-'                const win = windows[winId].element;\r\n' +
-'                const icon = win.querySelector(\'.max-icon\');\r\n' +
-'                if(windows[winId].isMaximized) {\r\n' +
-'                    win.classList.remove(\'maximized\');\r\n' +
-'                    windows[winId].isMaximized = false;\r\n' +
-'                    if(icon) { icon.classList.remove(\'fa-clone\'); icon.classList.add(\'fa-square\'); }\r\n' +
-'                } else {\r\n' +
-'                    win.classList.add(\'maximized\');\r\n' +
-'                    windows[winId].isMaximized = true;\r\n' +
-'                    if(icon) { icon.classList.remove(\'fa-square\'); icon.classList.add(\'fa-clone\'); }\r\n' +
-'                }\r\n' +
-'                bringToFront(winId);\r\n' +
-'            }\r\n' +
-'        }\r\n' +
-'\r\n' +
-'        function bringToFront(winId) {\r\n' +
-'            if (windows[winId]) {\r\n' +
-'                currentZIndex++;\r\n' +
-'                windows[winId].element.style.zIndex = currentZIndex;\r\n' +
-'                updateTaskbarItemState(winId); \r\n' +
-'            }\r\n' +
-'        }\r\n' +
-'\r\n' +
-'\r\n' +
-'        const taskManager = document.getElementById(\'task-manager\');\r\n' +
-'\r\n' +
-'        function createTaskbarItem(winId) {\r\n' +
-'            const winInfo = windows[winId];\r\n' +
-'            const taskBtn = document.createElement(\'button\');\r\n' +
-'            taskBtn.id = `task-${winId}`;\r\n' +
-'            taskBtn.className = `h-10 px-3 flex items-center gap-2 rounded transition-colors max-w-[150px] overflow-hidden whitespace-nowrap border-b-2`;\r\n' +
-'            taskBtn.innerHTML = `\r\n' +
-'                <i class="fa-solid ${winInfo.iconClass} ${winInfo.iconColor}"></i>\r\n' +
-'                <span class="text-sm truncate">${winInfo.title}</span>\r\n' +
-'            `;\r\n' +
-'            \r\n' +
-'            taskBtn.onclick = () => {\r\n' +
-'                if (winInfo.isMinimized) {\r\n' +
-'                    openWindow(winInfo.appName);\r\n' +
-'                } else if (winInfo.element.style.zIndex == currentZIndex) {\r\n' +
-'                    minimizeWindow(winId);\r\n' +
-'                } else {\r\n' +
-'                    bringToFront(winId);\r\n' +
-'                }\r\n' +
-'            };\r\n' +
-'            \r\n' +
-'            taskManager.appendChild(taskBtn);\r\n' +
-'            updateTaskbarItemState(winId);\r\n' +
-'        }\r\n' +
-'\r\n' +
-'        function removeTaskbarItem(winId) {\r\n' +
-'            const taskBtn = document.getElementById(`task-${winId}`);\r\n' +
-'            if (taskBtn) taskBtn.remove();\r\n' +
-'        }\r\n' +
-'\r\n' +
-'        function updateTaskbarItemState(winId) {\r\n' +
-'            Object.keys(windows).forEach(id => {\r\n' +
-'                const btn = document.getElementById(`task-${id}`);\r\n' +
-'                if (btn) {\r\n' +
-'                    btn.className = `h-10 px-3 flex items-center gap-2 rounded transition-colors max-w-[150px] overflow-hidden whitespace-nowrap border-b-2 border-transparent hover:bg-kde-panel-hover text-gray-300 pointer-events-auto`;\r\n' +
-'                    \r\n' +
-'                    if (id === winId) {\r\n' +
-'                        if (windows[id].isMinimized) {\r\n' +
-'                            btn.classList.add(\'opacity-50\');\r\n' +
-'                        } else if (windows[id].element.style.zIndex == currentZIndex) {\r\n' +
-'                            btn.classList.remove(\'border-transparent\', \'hover:bg-kde-panel-hover\', \'text-gray-300\');\r\n' +
-'                            btn.classList.add(\'bg-white/10\', \'border-kde-accent\', \'text-white\');\r\n' +
-'                        }\r\n' +
-'                    }\r\n' +
-'                }\r\n' +
-'            });\r\n' +
-'        }\r\n' +
-'\r\n' +
-'\r\n' +
-'        function makeDraggable(element) {\r\n' +
-'            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;\r\n' +
-'            const header = element.querySelector(\'.window-header\');\r\n' +
-'            \r\n' +
-'            if (header) {\r\n' +
-'                header.onmousedown = dragMouseDown;\r\n' +
-'            } else {\r\n' +
-'                element.onmousedown = dragMouseDown;\r\n' +
-'            }\r\n' +
-'\r\n' +
-'            function dragMouseDown(e) {\r\n' +
-'                if(e.target.tagName === \'BUTTON\' || e.target.closest(\'button\')) return;\r\n' +
-'                const winId = element.id;\r\n' +
-'                if(windows[winId] && windows[winId].isMaximized) return;\r\n' +
-'\r\n' +
-'                e = e || window.event;\r\n' +
-'                e.preventDefault();\r\n' +
-'                pos3 = e.clientX;\r\n' +
-'                pos4 = e.clientY;\r\n' +
-'                document.onmouseup = closeDragElement;\r\n' +
-'                document.onmousemove = elementDrag;\r\n' +
-'                \r\n' +
-'                const glass = element.querySelector(\'.iframe-glass\');\r\n' +
-'                if(glass) glass.classList.remove(\'hidden\');\r\n' +
-'                \r\n' +
-'                bringToFront(element.id);\r\n' +
-'            }\r\n' +
-'\r\n' +
-'            function elementDrag(e) {\r\n' +
-'                e = e || window.event;\r\n' +
-'                e.preventDefault();\r\n' +
-'                pos1 = pos3 - e.clientX;\r\n' +
-'                pos2 = pos4 - e.clientY;\r\n' +
-'                pos3 = e.clientX;\r\n' +
-'                pos4 = e.clientY;\r\n' +
-'                \r\n' +
-'                let newTop = element.offsetTop - pos2;\r\n' +
-'                let newLeft = element.offsetLeft - pos1;\r\n' +
-'                \r\n' +
-'                if(newTop < 0) newTop = 0;\r\n' +
-'                const panelHeight = document.getElementById(\'panel\').offsetHeight;\r\n' +
-'                if(newTop > window.innerHeight - panelHeight - 30) newTop = window.innerHeight - panelHeight - 30;\r\n' +
-'\r\n' +
-'                element.style.top = newTop + "px";\r\n' +
-'                element.style.left = newLeft + "px";\r\n' +
-'            }\r\n' +
-'\r\n' +
-'            function closeDragElement() {\r\n' +
-'                document.onmouseup = null;\r\n' +
-'                document.onmousemove = null;\r\n' +
-'                \r\n' +
-'                const glass = element.querySelector(\'.iframe-glass\');\r\n' +
-'                if(glass) glass.classList.add(\'hidden\');\r\n' +
-'            }\r\n' +
-'        }\r\n' +
-'    </script>\r\n' +
-'</body>\r\n' +
-'</html>';
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
-    if (typeof module !== 'undefined' && module.exports) {
-        module.exports = {
-            generateKdeHTML,
-            package: {
-                name: 'kde',
-                version: '1.0.0',
-                description: 'A KDE Plasma desktop experience simulation'
+    class BrowserTab {
+        constructor(url = 'https://www.wikipedia.com/') {
+            this.id = 'tab_' + Math.random().toString(36).substr(2, 9);
+            this.url = url;
+            this.history = [url];
+            this.historyIndex = 0;
+            this.title = 'Wikipedia';
+
+            this.buildDOM();
+            this.navigateTo(url, false);
+        }
+
+        buildDOM() {
+            this.tabEl = document.createElement('div');
+            this.tabEl.className = 'browser-tab';
+            this.tabEl.innerHTML = `
+                <span class="tab-title" style="flex-grow:1; overflow:hidden; text-overflow:ellipsis;">Wikipedia</span>
+                <button class="tab-close" title="Close Tab">&times;</button>
+            `;
+
+            this.tabEl.addEventListener('click', () => switchTab(this));
+            this.tabEl.querySelector('.tab-close').addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeTab(this);
+            });
+
+            document.getElementById('tabs-container').appendChild(this.tabEl);
+
+            this.pageEl = document.createElement('div');
+            this.pageEl.className = 'browser-page';
+            document.getElementById('viewport-container').appendChild(this.pageEl);
+        }
+
+        async navigateTo(url, recordHistory = true) {
+            let cleanUrl = url.trim();
+            if (cleanUrl === 'www.wikipedia.com' || cleanUrl === 'wikipedia.com' || cleanUrl === 'https://www.wikipedia.com' || cleanUrl === 'https://www.wikipedia.com/' || cleanUrl === 'http://www.wikipedia.com/' || cleanUrl === 'http://www.wikipedia.com') {
+                cleanUrl = 'https://www.wikipedia.com/';
             }
-        };
+
+            if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+                if (cleanUrl.includes('.') && !cleanUrl.includes(' ')) {
+                    cleanUrl = 'https://' + cleanUrl;
+                } else {
+                    cleanUrl = `https://en.wikipedia.org/wiki/Special:Search?search=` + encodeURIComponent(cleanUrl);
+                }
+            }
+
+            this.url = cleanUrl;
+            if (recordHistory) {
+                if (this.historyIndex < this.history.length - 1) {
+                    this.history = this.history.slice(0, this.historyIndex + 1);
+                }
+                this.history.push(cleanUrl);
+                this.historyIndex = this.history.length - 1;
+            }
+
+            await this.renderPage();
+            if (activeTab === this) {
+                updateToolbarState();
+            }
+            logFirefoxAction(`Navigated to: ${cleanUrl}`);
+        }
+
+        goBack() {
+            if (this.historyIndex > 0) {
+                this.historyIndex--;
+                this.navigateTo(this.history[this.historyIndex], false);
+            }
+        }
+
+        goForward() {
+            if (this.historyIndex < this.history.length - 1) {
+                this.historyIndex++;
+                this.navigateTo(this.history[this.historyIndex], false);
+            }
+        }
+
+        async renderPage() {
+            // Check if it's the Wikipedia Homepage (`https://www.wikipedia.com/`)
+            if (this.url === 'https://www.wikipedia.com/' || this.url === 'https://www.wikipedia.com') {
+                this.title = 'Wikipedia, the free encyclopedia';
+                this.tabEl.querySelector('.tab-title').innerText = 'Wikipedia';
+                
+                this.pageEl.innerHTML = `
+                    <div class="wiki-container">
+                        <div class="wiki-header">
+                            <div>
+                                <div class="wiki-title">Wikipedia</div>
+                                <div class="wiki-subtitle">The Free Encyclopedia</div>
+                            </div>
+                            <div class="wiki-search-box">
+                                <input type="text" class="wiki-search-input" id="wiki-main-search" placeholder="Search Wikipedia...">
+                                <button class="wiki-search-btn" id="wiki-main-search-btn">Search</button>
+                            </div>
+                        </div>
+                        <div class="wiki-content">
+                            <div class="wiki-main">
+                                <h3 style="color:var(--accent-color); margin-bottom:12px; font-size:18px;">Welcome to Wikipedia</h3>
+                                <p class="wiki-p">The free encyclopedia that anyone can edit. Explore millions of articles across science, history, arts, and culture.</p>
+                                
+                                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 25px;">
+                                    <div class="wiki-card">
+                                        <div class="wiki-card-title">Featured Article</div>
+                                        <p class="wiki-p" style="font-size:13px;">Explore featured content across science, history, geography, and arts. Wikipedia provides comprehensive encyclopedic knowledge sourced from reliable academic references.</p>
+                                        <a class="wiki-link" onclick="window.navigateWiki('Science')">→ Read about Science</a>
+                                    </div>
+                                    <div class="wiki-card">
+                                        <div class="wiki-card-title">Technology & Linux</div>
+                                        <p class="wiki-p" style="font-size:13px;">...that KDE Plasma is one of the most customizable, modern Linux desktop environments available today, built on Qt technology?</p>
+                                        <a class="wiki-link" onclick="window.navigateWiki('KDE')">→ Learn more about KDE</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="wiki-sidebar">
+                                <div class="wiki-card">
+                                    <div class="wiki-card-title">Explore Topics</div>
+                                    <ul style="list-style:none; display:flex; flex-direction:column; gap:8px; font-size:13px;">
+                                        <li><a class="wiki-link" onclick="window.navigateWiki('Mathematics')">Mathematics</a></li>
+                                        <li><a class="wiki-link" onclick="window.navigateWiki('Physics')">Physics</a></li>
+                                        <li><a class="wiki-link" onclick="window.navigateWiki('Computer Science')">Computer Science</a></li>
+                                        <li><a class="wiki-link" onclick="window.navigateWiki('History')">History</a></li>
+                                        <li><a class="wiki-link" onclick="window.navigateWiki('Astronomy')">Astronomy</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                setTimeout(() => {
+                    const searchInput = this.pageEl.querySelector('#wiki-main-search');
+                    const searchBtn = this.pageEl.querySelector('#wiki-main-search-btn');
+                    const doSearch = () => {
+                        const query = searchInput.value.trim();
+                        if (query) this.navigateTo(query);
+                    };
+                    searchBtn.onclick = doSearch;
+                    searchInput.onkeydown = (e) => { if (e.key === 'Enter') doSearch(); };
+                }, 50);
+                return;
+            }
+
+            // Check if it's a Wikipedia article URL or Search
+            if (this.url.includes('wikipedia.org/wiki/')) {
+                const titleMatch = this.url.split('/wiki/')[1]?.split('#')[0] || 'Main_Page';
+                
+                if (titleMatch.startsWith('Special:Search')) {
+                    const urlParams = new URLSearchParams(this.url.split('?')[1]);
+                    const searchQuery = urlParams.get('search') || '';
+                    this.title = `Search: ${searchQuery}`;
+                    this.tabEl.querySelector('.tab-title').innerText = this.title;
+
+                    this.pageEl.innerHTML = `
+                        <div class="wiki-container">
+                            <div class="wiki-header">
+                                <div class="wiki-title">Search results</div>
+                                <div class="wiki-subtitle">Results for "${searchQuery}"</div>
+                            </div>
+                            <div class="wiki-content">
+                                <div class="wiki-main">
+                                    <p class="wiki-p">Direct article match for <a class="wiki-link" onclick="window.navigateWiki('${searchQuery}')"><b>${searchQuery}</b></a></p>
+                                    <p class="wiki-p">Click above to view detailed Wikipedia encyclopedia documentation on this subject.</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                try {
+                    const apiEndpoint = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(titleMatch)}`;
+                    const response = await fetch(apiEndpoint);
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.title = data.title || titleMatch;
+                        this.tabEl.querySelector('.tab-title').innerText = this.title;
+                        
+                        let thumbnailHTML = '';
+                        if (data.thumbnail && data.thumbnail.source) {
+                            thumbnailHTML = `<img src="${data.thumbnail.source}" alt="${data.title}" style="max-width:100%; border-radius:6px; margin-bottom:16px;">`;
+                        }
+
+                        this.pageEl.innerHTML = `
+                            <div class="wiki-container">
+                                <div class="wiki-header">
+                                    <div>
+                                        <div class="wiki-title">${data.title}</div>
+                                        <div class="wiki-subtitle">From Wikipedia, the free encyclopedia • <a href="${data.content_urls?.desktop?.page || this.url}" target="_blank" style="color:var(--accent-color)">Open on Wikipedia</a></div>
+                                    </div>
+                                    <a class="wiki-link" onclick="window.navigateWiki('https://www.wikipedia.com/')" style="font-weight:bold;">← Return to Main Page</a>
+                                </div>
+                                <div class="wiki-content">
+                                    <div class="wiki-main">
+                                        ${thumbnailHTML}
+                                        <p class="wiki-p" style="font-size: 16px; line-height: 1.7;"><b>${data.description || ''}</b></p>
+                                        <p class="wiki-p" style="font-size: 14px; line-height: 1.7;">${data.extract || 'No summary available.'}</p>
+                                        <div style="margin-top:40px; padding-top:15px; border-top:1px solid #333; font-size:12px; color:#888;">
+                                            Content fetched live from Wikimedia REST API under CC BY-SA License.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        return;
+                    }
+                } catch(e) {
+                    console.warn("Wiki API fetch fallback:", e);
+                }
+            }
+
+            // Fallback general web view using an iframe
+            this.tabEl.querySelector('.tab-title').innerText = this.url;
+            this.pageEl.innerHTML = `
+                <div style="width:100%; height:100%; display:flex; flex-direction:column;">
+                    <div style="background:#232629; padding:6px 12px; font-size:12px; color:#aaa; border-bottom:1px solid #31363b; display:flex; justify-content:space-between;">
+                        <span>Displaying external web content in sandboxed browser container.</span>
+                        <a href="${this.url}" target="_blank" style="color:var(--accent-color)">Open in new tab ↗</a>
+                    </div>
+                    <iframe class="browser-iframe" src="${this.url}" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+                </div>
+            `;
+        }
     }
+
+    window.navigateWiki = function(topic) {
+        if (activeTab) {
+            if (topic === 'https://www.wikipedia.com/' || topic === 'Main_Page') {
+                activeTab.navigateTo('https://www.wikipedia.com/');
+            } else {
+                activeTab.navigateTo(`https://en.wikipedia.org/wiki/${encodeURIComponent(topic)}`);
+            }
+            updateToolbarState();
+        }
+    };
+
+    function createTab(url = 'https://www.wikipedia.com/') {
+        const tab = new BrowserTab(url);
+        tabs.push(tab);
+        switchTab(tab);
+    }
+
+    function switchTab(tab) {
+        tabs.forEach(t => {
+            t.tabEl.classList.remove('active');
+            t.pageEl.classList.remove('active');
+        });
+
+        activeTab = tab;
+        tab.tabEl.classList.add('active');
+        tab.pageEl.classList.add('active');
+
+        document.getElementById('url-input').value = tab.url;
+        updateToolbarState();
+    }
+
+    function closeTab(tab) {
+        const idx = tabs.indexOf(tab);
+        if (idx === -1) return;
+
+        tab.tabEl.remove();
+        tab.pageEl.remove();
+        tabs.splice(idx, 1);
+
+        if (tabs.length === 0) {
+            createTab('https://www.wikipedia.com/');
+        } else {
+            switchTab(tabs[Math.max(0, idx - 1)]);
+        }
+    }
+
+    function updateToolbarState() {
+        if (!activeTab) return;
+        document.getElementById('btn-back').disabled = activeTab.historyIndex <= 0;
+        document.getElementById('btn-forward').disabled = activeTab.historyIndex >= activeTab.history.length - 1;
+        document.getElementById('url-input').value = activeTab.url;
+    }
+
+    document.getElementById('btn-new-tab').addEventListener('click', () => createTab('https://www.wikipedia.com/'));
+    document.getElementById('btn-back').addEventListener('click', () => { if (activeTab) { activeTab.goBack(); updateToolbarState(); } });
+    document.getElementById('btn-forward').addEventListener('click', () => { if (activeTab) { activeTab.goForward(); updateToolbarState(); } });
+    document.getElementById('btn-reload').addEventListener('click', () => { if (activeTab) activeTab.renderPage(); });
+    document.getElementById('btn-home').addEventListener('click', () => { if (activeTab) { activeTab.navigateTo('https://www.wikipedia.com/'); updateToolbarState(); } });
+
+    const urlInput = document.getElementById('url-input');
+    urlInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const val = urlInput.value.trim();
+            if (activeTab && val) {
+                activeTab.navigateTo(val);
+                updateToolbarState();
+            }
+        }
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key.toLowerCase() === 't') {
+            e.preventDefault();
+            createTab('https://www.wikipedia.com/');
+        }
+        if (e.ctrlKey && e.key.toLowerCase() === 'w') {
+            e.preventDefault();
+            if (activeTab) closeTab(activeTab);
+        }
+        if (e.key === 'F5') {
+            e.preventDefault();
+            if (activeTab) activeTab.renderPage();
+        }
+    });
+
+    loadVFS();
+    createTab('https://www.wikipedia.com/');
+    logFirefoxAction("KDE Firefox Web Browser initialized with startpage https://www.wikipedia.com/.");
+
 })();
