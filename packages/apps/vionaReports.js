@@ -362,7 +362,7 @@
         }
         .calendar-grid {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 2px;
             background: var(--border-solid);
             border: 1px solid var(--border-solid);
@@ -388,6 +388,10 @@
         .cal-cell.has-entry { cursor: pointer; }
         .cal-cell.has-entry:hover { background: rgba(61, 174, 233, 0.15); }
         .cal-cell.weekend { opacity: 0.4; }
+        .cal-cell.holiday { 
+            background: rgba(255, 200, 0, 0.1) !important;
+            border: 1px solid rgba(255, 200, 0, 0.3) !important;
+        }
         .cal-date { font-weight: 700; font-size: 12px; }
         .cal-preview {
             font-size: 10px;
@@ -577,10 +581,6 @@
                     <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/></svg>
                     TIMERS
                 </button>
-                <button class="waybar-btn" id="viewStatsBtn">
-                    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
-                    STATS
-                </button>
                 <button class="waybar-btn" id="viewTimelineBtn">
                     <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
                     TIMELINE
@@ -636,6 +636,43 @@
             fetching: "Fetching repository report files...",
             parsing: "Parsing DOCX table structures...",
             done: "Loading complete."
+        };
+
+        // German holidays for 2024-2026
+        const germanHolidays = {
+            '2024-01-01': 'New Year',
+            '2024-02-14': 'Valentine',
+            '2024-03-29': 'Good Friday',
+            '2024-04-01': 'Easter Monday',
+            '2024-05-01': 'Labor Day',
+            '2024-05-09': 'Ascension',
+            '2024-05-20': 'Whit Monday',
+            '2024-05-30': 'Corpus Christi',
+            '2024-10-03': 'German Unity',
+            '2024-12-25': 'Christmas',
+            '2024-12-26': 'Boxing Day',
+            '2025-01-01': 'New Year',
+            '2025-02-14': 'Valentine',
+            '2025-04-18': 'Good Friday',
+            '2025-04-21': 'Easter Monday',
+            '2025-05-01': 'Labor Day',
+            '2025-05-29': 'Ascension',
+            '2025-06-09': 'Whit Monday',
+            '2025-06-19': 'Corpus Christi',
+            '2025-10-03': 'German Unity',
+            '2025-12-25': 'Christmas',
+            '2025-12-26': 'Boxing Day',
+            '2026-01-01': 'New Year',
+            '2026-02-14': 'Valentine',
+            '2026-04-10': 'Good Friday',
+            '2026-04-13': 'Easter Monday',
+            '2026-05-01': 'Labor Day',
+            '2026-05-21': 'Ascension',
+            '2026-06-01': 'Whit Monday',
+            '2026-06-11': 'Corpus Christi',
+            '2026-10-03': 'German Unity',
+            '2026-12-25': 'Christmas',
+            '2026-12-26': 'Boxing Day'
         };
 
         let allReports = [];
@@ -924,15 +961,17 @@
         function switchView(view) {
             currentView = view;
             clearOutput();
-            [viewListBtn, viewCalBtn, viewDetailBtn, viewStatsBtn, viewTimelineBtn].forEach(btn => {
+            [viewListBtn, viewCalBtn, viewDetailBtn, viewTimelineBtn].forEach(btn => {
                 btn.classList.remove('view-btn-active');
             });
+            if (document.getElementById('viewStatsBtn')) {
+                document.getElementById('viewStatsBtn').classList.remove('view-btn-active');
+            }
 
             switch (view) {
                 case 'list': viewListBtn.classList.add('view-btn-active'); renderListView(); break;
                 case 'calendar': viewCalBtn.classList.add('view-btn-active'); renderCalendarView(); break;
-                case 'detailed': viewDetailBtn.classList.add('view-btn-active'); renderDetailedView(); break;
-                case 'stats': viewStatsBtn.classList.add('view-btn-active'); renderStatsView(); break;
+                case 'detailed': viewDetailBtn.classList.add('view-btn-active'); renderDetailedStatsView(); break;
                 case 'timeline': viewTimelineBtn.classList.add('view-btn-active'); renderTimelineView(); break;
             }
         }
@@ -944,7 +983,9 @@
         viewListBtn.addEventListener('click', () => switchView('list'));
         viewCalBtn.addEventListener('click', () => switchView('calendar'));
         viewDetailBtn.addEventListener('click', () => switchView('detailed'));
-        viewStatsBtn.addEventListener('click', () => switchView('stats'));
+        if (document.getElementById('viewStatsBtn')) {
+            document.getElementById('viewStatsBtn').addEventListener('click', () => switchView('detailed'));
+        }
         viewTimelineBtn.addEventListener('click', () => switchView('timeline'));
 
         function handleSearch() {
@@ -1141,28 +1182,39 @@
                 });
             }
 
-            const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
-            const offset = firstDay === 0 ? 6 : firstDay - 1;
+            const firstDayOfMonth = new Date(calendarYear, calendarMonth, 1).getDay();
+            // For weekday-only grid (Mon-Fri): calculate empty slots before 1st
+            // If month starts on Sat/Sun, add 5 empty slots; otherwise offset based on day
+            const emptySlots = (firstDayOfMonth === 0 || firstDayOfMonth === 6) ? 5 : (firstDayOfMonth - 1);
             const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
 
-            let html = strings.shortDays.map(d => '<div class="cal-day-header">' + d.toUpperCase() + '</div>').join('');
-            for (let i = 0; i < offset; i++) html += '<div class="cal-cell empty"></div>';
+            let html = strings.daysList.map(d => '<div class="cal-day-header">' + d.toUpperCase() + '</div>').join('');
+            // Add empty cells before the 1st of the month to maintain alignment
+            for (let e = 0; e < emptySlots; e++) {
+                html += '<div class="cal-cell empty"></div>';
+            }
             for (let i = 1; i <= daysInMonth; i++) {
                 const dateObj = new Date(calendarYear, calendarMonth, i);
-                const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
-                const isToday = now.getFullYear() === calendarYear && now.getMonth() === calendarMonth && now.getDate() === i;
-                const key = calendarYear + '-' + calendarMonth + '-' + i;
-                const entry = entryMap[key] || null;
-                const content = entry ? entry.content : null;
-                const isHO = entry ? entry.isHO : false;
+                const dayOfWeek = dateObj.getDay();
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                
+                if (!isWeekend) {
+                    const isToday = now.getFullYear() === calendarYear && now.getMonth() === calendarMonth && now.getDate() === i;
+                    const key = calendarYear + '-' + calendarMonth + '-' + i;
+                    const entry = entryMap[key] || null;
+                    const content = entry ? entry.content : null;
+                    const isHO = entry ? entry.isHO : false;
+                    const holidayKey = calendarYear + '-' + String(calendarMonth + 1).padStart(2, '0') + '-' + String(i).padStart(2, '0');
+                    const holiday = germanHolidays[holidayKey];
 
-                let isSearchMatch = (content && searchTermLower && searchTermLower.length >= 2) ? content.toLowerCase().includes(searchTermLower) : false;
+                    let isSearchMatch = (content && searchTermLower && searchTermLower.length >= 2) ? content.toLowerCase().includes(searchTermLower) : false;
 
-                html += '<div class="cal-cell ' + (isToday ? 'today' : '') + ' ' + (content ? 'has-entry' : '') + (isSearchMatch ? ' search-match' : '') + (isWeekend ? ' weekend' : '') + '" ' +
-                    (content ? 'data-key="' + key + '"' : '') + '>' +
-                    '<div class="cal-date">' + (i < 10 ? '0' + i : i) + (isHO ? ' 🏠' : '') + '</div>' +
-                    (content ? '<div class="cal-preview">' + escapeHTML(content.substring(0, 50)) + '</div>' : '') +
-                    '</div>';
+                    html += '<div class="cal-cell ' + (isToday ? 'today' : '') + ' ' + (content ? 'has-entry' : '') + (isSearchMatch ? ' search-match' : '') + (holiday ? ' holiday' : '') + '" ' +
+                        (content ? 'data-key="' + key + '"' : '') + ' title="' + (holiday ? holiday : '') + '">' +
+                        '<div class="cal-date">' + (i < 10 ? '0' + i : i) + (isHO ? ' 🏠' : '') + (holiday ? ' 🎄' : '') + '</div>' +
+                        (content ? '<div class="cal-preview">' + escapeHTML(content.substring(0, 50)) + '</div>' : '') +
+                        '</div>';
+                }
             }
             grid.innerHTML = html;
 
@@ -1184,30 +1236,74 @@
             return { min: new Date(Math.min(...valid)), max: new Date(Math.max(...valid)) };
         }
 
-        function renderDetailedView() {
+        function renderDetailedStatsView() {
             clearOutput();
             const container = document.createElement('div');
             container.className = 'detailed-container';
             output.appendChild(container);
 
-            const grid = document.createElement('div');
-            grid.className = 'analytics-grid';
-            container.appendChild(grid);
+            // Timers Section Title
+            const timerTitle = document.createElement('div');
+            timerTitle.style.cssText = 'font-size:12px;font-weight:700;color:var(--sub-color);text-transform:uppercase;margin-bottom:12px;letter-spacing:0.5px;';
+            timerTitle.innerHTML = '&gt; TIMERS';
+            container.appendChild(timerTitle);
 
-            const items = [
-                { id: 'timerStart', label: 'APPRENTICESHIP START' },
-                { id: 'timerCompletion', label: 'APPRENTICESHIP COMPLETION' },
-                { id: 'timerFeierabend', label: 'TIME TO END OF WORKDAY' },
-                { id: 'timerWeekend', label: 'TIME TO NEXT WEEKEND' }
+            const timerGrid = document.createElement('div');
+            timerGrid.className = 'analytics-grid';
+            container.appendChild(timerGrid);
+
+            const timerItems = [
+                { id: 'timerStart', label: 'START' },
+                { id: 'timerCompletion', label: 'COMPLETION' },
+                { id: 'timerFeierabend', label: 'WORKDAY END' },
+                { id: 'timerWeekend', label: 'NEXT WEEKEND' }
             ];
 
-            items.forEach(item => {
+            timerItems.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'analytics-card';
                 card.innerHTML = `<h3>${item.label}</h3><div class="timer-display" id="${item.id}">--</div>`;
-                grid.appendChild(card);
+                timerGrid.appendChild(card);
             });
             updateDetailedTimers();
+
+            // Stats Section Title
+            const statsTitle = document.createElement('div');
+            statsTitle.style.cssText = 'font-size:12px;font-weight:700;color:var(--sub-color);text-transform:uppercase;margin-top:20px;margin-bottom:12px;letter-spacing:0.5px;';
+            statsTitle.innerHTML = '&gt; STATISTICS';
+            container.appendChild(statsTitle);
+
+            const totalWeeks = allReports.length;
+            const totalEntries = allReports.reduce((acc, r) => acc + Object.values(r.days || {}).filter(d => d && d.content && d.content !== '—').length, 0);
+            const maxPossible = totalWeeks * 5;
+            const completionRate = maxPossible > 0 ? Math.round((totalEntries / maxPossible) * 100) : 0;
+            const progress = totalWeeks > 0 ? Math.round((totalWeeks / 104) * 100) : 0;
+
+            const statsGrid = document.createElement('div');
+            statsGrid.className = 'analytics-grid';
+            statsGrid.innerHTML = `
+                <div class="analytics-card">
+                    <h3>TOTAL WEEKS</h3>
+                    <div class="timer-display">${totalWeeks}</div>
+                    <div class="stat-progress"><div class="stat-progress-fill" style="width:${Math.min(100, (totalWeeks/104)*100)}%"></div></div>
+                </div>
+                <div class="analytics-card">
+                    <h3>COMPLETION</h3>
+                    <div class="timer-display">${completionRate}%</div>
+                    <div class="stat-progress"><div class="stat-progress-fill" style="width:${completionRate}%"></div></div>
+                </div>
+                <div class="analytics-card">
+                    <h3>ENTRIES</h3>
+                    <div class="timer-display">${totalEntries}</div>
+                    <div class="stat-progress"><div class="stat-progress-fill" style="width:${Math.min(100, (totalEntries/maxPossible)*100)}%"></div></div>
+                </div>
+                <div class="analytics-card">
+                    <h3>PROGRESS</h3>
+                    <div class="timer-display">${progress}%</div>
+                    <div class="stat-progress"><div class="stat-progress-fill" style="width:${progress}%"></div></div>
+                </div>
+            `;
+            container.appendChild(statsGrid);
         }
 
         function updateDetailedTimers() {
@@ -1235,42 +1331,7 @@
             if (el('timerWeekend')) el('timerWeekend').textContent = `+${Math.max(0, Math.floor((nw.getTime() - now.getTime())/3600000))}h`;
         }
 
-        function renderStatsView() {
-            clearOutput();
-            const totalWeeks = allReports.length;
-            const totalEntries = allReports.reduce((acc, r) => acc + Object.values(r.days || {}).filter(d => d && d.content && d.content !== '—').length, 0);
-            const maxPossible = totalWeeks * 5;
-            const completionRate = maxPossible > 0 ? Math.round((totalEntries / maxPossible) * 100) : 0;
-            const progress = totalWeeks > 0 ? Math.round((totalWeeks / 104) * 100) : 0;
-
-            const container = document.createElement('div');
-            container.className = 'stats-container';
-            container.innerHTML = `
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-number">${totalWeeks}</div>
-                        <div class="stat-label">TOTAL WEEKS</div>
-                        <div class="stat-progress"><div class="stat-progress-fill" style="width:${Math.min(100, (totalWeeks/104)*100)}%"></div></div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${totalEntries}</div>
-                        <div class="stat-label">TOTAL ENTRIES</div>
-                        <div class="stat-progress"><div class="stat-progress-fill" style="width:${completionRate}%"></div></div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${completionRate}%</div>
-                        <div class="stat-label">COMPLETION RATE</div>
-                        <div class="stat-progress"><div class="stat-progress-fill" style="width:${completionRate}%"></div></div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${progress}%</div>
-                        <div class="stat-label">PROGRESS</div>
-                        <div class="stat-progress"><div class="stat-progress-fill" style="width:${progress}%"></div></div>
-                    </div>
-                </div>
-            `;
-            output.appendChild(container);
-        }
+        // Removed: renderStatsView - now combined with renderDetailedStatsView for compact display
 
         function renderTimelineView() {
             clearOutput();
