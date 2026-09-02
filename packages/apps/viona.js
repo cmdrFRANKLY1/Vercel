@@ -6,7 +6,6 @@
 (function() {
     "use strict";
 
-    // ---------- PDF.js loader ----------
     let pdfjsLib = window.pdfjsLib;
     if (typeof pdfjsLib === 'undefined') {
         const script = document.createElement('script');
@@ -27,7 +26,6 @@
         initViona();
     }
 
-    // ---------- JSZip loader for PPTX / DOCX ----------
     let JSZip = window.JSZip;
     if (typeof JSZip === 'undefined') {
         const s = document.createElement('script');
@@ -44,7 +42,6 @@
         JSZip = window.JSZip;
     }
 
-    // ---------- Mammoth.js loader for DOC/DOCX rendering ----------
     let mammoth = window.mammoth;
     if (typeof mammoth === 'undefined') {
         const mScript = document.createElement('script');
@@ -61,7 +58,6 @@
         mammoth = window.mammoth;
     }
 
-    // ---------- Main initialization ----------
     function initViona() {
         if (!document.getElementById('app')) {
             buildVionaUI();
@@ -101,7 +97,6 @@
         const outputArea = $('outputArea');
         const mainPane = $('mainPane');
 
-        // ---------- State ----------
         let activeTab = 'detailed'; // 'pdf', 'ppt', 'htmls', 'docs', 'report', 'calendar', 'detailed', 'timeline'
         let pdfFiles = [];
         let pptFiles = [];
@@ -139,7 +134,6 @@
             '2026-01-01': 'New Year', '2026-05-01': 'Labor Day', '2026-10-03': 'German Unity', '2026-12-25': 'Christmas'
         };
 
-        // ---------- Helper / Status functions ----------
         function setStatus(msg, show) {
             if (show) {
                 statusOverlay.style.display = 'block';
@@ -151,7 +145,6 @@
             }
         }
 
-        // ---------- PDF Viewer functions ----------
         function createVisibilityObserver() {
             if (pageObserver) pageObserver.disconnect();
             pageObserver = new IntersectionObserver((entries) => {
@@ -253,7 +246,6 @@
             });
         }
 
-        // ---------- PowerPoint Viewer Functions ----------
         async function loadPPTX(url, fileName) {
             setStatus('Parsing PowerPoint presentation...<br>' + fileName, true);
             btnZoomIn.disabled = true;
@@ -303,11 +295,12 @@
             }
         }
 
-        // ---------- HTMLs Viewer Functions ----------
         async function loadHTMLPreview(url, fileName) {
             setStatus('Loading HTML document...<br>' + fileName, true);
             pagesContainer.innerHTML = '';
             pagesContainer.className = 'mode-single';
+            btnZoomIn.disabled = true;
+            btnZoomOut.disabled = true;
             
             try {
                 let resp = await fetch(url);
@@ -317,26 +310,26 @@
                 
                 const iframe = document.createElement('iframe');
                 iframe.className = 'html-preview-frame';
+                iframe.sandbox = 'allow-scripts allow-same-origin allow-forms';
                 iframe.style.width = '100%';
                 iframe.style.height = '100%';
                 iframe.style.border = 'none';
                 iframe.style.background = '#ffffff';
-                iframe.style.minHeight = '700px';
+                iframe.style.minHeight = '750px';
+                iframe.style.borderRadius = '4px';
                 
                 pagesContainer.appendChild(iframe);
                 
-                const blob = new Blob([htmlText], { type: 'text/html;charset=utf-8' });
-                iframe.src = URL.createObjectURL(blob);
+                // Write via srcdoc or blob for reliable rendering
+                iframe.srcdoc = htmlText;
                 
-                iframe.onload = () => setStatus('', false);
-                setTimeout(() => setStatus('', false), 500);
+                setTimeout(() => setStatus('', false), 300);
             } catch (err) {
                 console.error('HTML preview error', err);
                 setStatus('Failed to load HTML file.<br>' + err.message, true);
             }
         }
 
-        // ---------- DOC / DOCX Viewer Functions ----------
         async function loadDOCPreview(url, fileName) {
             setStatus('Rendering Word Document...<br>' + fileName, true);
             pagesContainer.innerHTML = '';
@@ -366,7 +359,6 @@
             }
         }
 
-        // ---------- Fetch Repository File Lists ----------
         async function fetchRepoDirectory(folderName) {
             let resp = await fetch(`https://api.github.com/repos/cmdrFRANKLY1/Viona/contents/${folderName}`);
             if (!resp.ok) resp = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(`https://api.github.com/repos/cmdrFRANKLY1/Viona/contents/${folderName}`));
@@ -379,13 +371,11 @@
                 fileListContainer.innerHTML = '<div style="padding:15px;color:var(--sub-color);text-align:center;">Fetching files...</div>';
                 setStatus('Connecting to GitHub repository...', true);
 
-                // Fetch PDF list (BGP-DS)
                 try {
                     const pdfData = await fetchRepoDirectory('BGP-DS');
                     pdfFiles = pdfData.filter(i => i.name.toLowerCase().endsWith('.pdf'));
                 } catch(e) { console.warn('PDF fetch warning', e); }
 
-                // Fetch PowerPoint list (PowerPoint)
                 try {
                     const pptData = await fetchRepoDirectory('PowerPoint');
                     pptFiles = pptData.filter(i => {
@@ -394,13 +384,11 @@
                     });
                 } catch(e) { console.warn('PPT fetch warning', e); }
 
-                // Fetch HTMLs list (HTMLs)
                 try {
                     const htmlData = await fetchRepoDirectory('HTMLs');
                     htmlFiles = htmlData.filter(i => i.name.toLowerCase().endsWith('.html') || i.name.toLowerCase().endsWith('.htm'));
                 } catch(e) { console.warn('HTML fetch warning', e); }
 
-                // Fetch DOCs list (DOCs)
                 try {
                     const docData = await fetchRepoDirectory('DOCs');
                     docFiles = docData.filter(i => {
@@ -481,7 +469,6 @@
             });
         }
 
-        // ---------- Berichtsheft functions ----------
         function escapeHTML(str) {
             if (!str) return '';
             const d = document.createElement('div');
@@ -525,6 +512,12 @@
 
         async function fetchAndParseDocx(report) {
             try {
+                let attempts = 0;
+                while (typeof JSZip === 'undefined' && attempts < 50) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+                if (typeof JSZip === 'undefined') return;
                 let resp = await fetch(report.url);
                 if (!resp.ok) resp = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(report.url));
                 if (!resp.ok) return;
@@ -588,6 +581,7 @@
         }
 
         function renderListView() {
+            clearOutput();
             let reports = allReports;
             let searchActive = false;
             if (searchTerm && searchTerm.trim().length >= 2) {
@@ -596,7 +590,7 @@
                 printHTML(`<div class="search-info">&gt; ${reports.length} ${strings.searchResults} for "${escapeHTML(searchTerm)}"</div>`);
             }
             if (!reports.length) {
-                printHTML('<div class="empty-state"><div>📁</div><div>' + strings.noReports + '</div></div>');
+                printHTML('<div class="empty-state"><div style="font-size:24px;">📁</div><div>' + strings.noReports + '</div></div>');
                 return;
             }
             for (const r of reports) {
@@ -661,7 +655,7 @@
                 });
             }
             if (!monthsWithData.size) {
-                printHTML('<div class="empty-state"><div>📁</div><div>NO CALENDAR DATA</div></div>');
+                printHTML('<div class="empty-state"><div style="font-size:24px;">📅</div><div>NO CALENDAR DATA FOUND</div></div>');
                 return;
             }
             Array.from(monthsWithData.values()).forEach(({ year, month }) => {
@@ -680,9 +674,34 @@
                 for (let i = 1; i <= daysInMonth; i++) {
                     const dateObj = new Date(year, month, i);
                     if (dateObj.getDay() === 0 || dateObj.getDay() === 6) continue;
-                    html += `<div class="cal-cell"><div class="cal-date">${i < 10 ? '0' + i : i}</div></div>`;
+                    
+                    // Check if report entry exists for this exact date
+                    let matchContent = null;
+                    for (const r of allReports) {
+                        if (!r.mondayDate || !r.days) continue;
+                        PARSE_DAY_NAMES.forEach((dn, di) => {
+                            const exact = new Date(r.mondayDate);
+                            exact.setDate(exact.getDate() + di);
+                            if (exact.getFullYear() === year && exact.getMonth() === month && exact.getDate() === i) {
+                                const d = r.days[dn];
+                                if (d && d.content && d.content !== '—') matchContent = d.content;
+                            }
+                        });
+                    }
+
+                    html += `<div class="cal-cell ${matchContent ? 'has-entry' : ''}" ${matchContent ? 'data-content="' + escapeHTML(matchContent) + '"' : ''}><div class="cal-date">${i < 10 ? '0' + i : i}</div>${matchContent ? '<div class="cal-preview">' + escapeHTML(matchContent.substring(0, 30)) + '...</div>' : ''}</div>`;
                 }
                 grid.innerHTML = html;
+            });
+
+            // Click listener for calendar day entries
+            outputArea.querySelectorAll('.cal-cell.has-entry').forEach(cell => {
+                cell.addEventListener('click', () => {
+                    const text = cell.getAttribute('data-content');
+                    $('modalTitle').textContent = "DAY ENTRY DETAIL";
+                    $('modalContent').textContent = text;
+                    $('calendarModal').style.display = 'flex';
+                });
             });
         }
 
@@ -690,11 +709,17 @@
             clearOutput();
             const container = document.createElement('div');
             container.className = 'detailed-container';
+            const totalWeeks = allReports.length;
+            const totalEntries = allReports.reduce((acc, r) => acc + Object.values(r.days || {}).filter(d => d && d.content && d.content !== '—').length, 0);
+            const maxPossible = totalWeeks * 5;
+            const completionRate = maxPossible > 0 ? Math.round((totalEntries / maxPossible) * 100) : 0;
+            const progress = totalWeeks > 0 ? Math.min(100, Math.round((totalWeeks / 104) * 100)) : 0;
+
             container.innerHTML = `
                 <div style="font-size:12px;font-weight:700;color:var(--sub-color);text-transform:uppercase;margin-bottom:12px;">&gt; STATISTICS & METRICS</div>
-                <div class="analytics-grid">
-                    <div class="analytics-card"><h3>TOTAL WEEKS</h3><div class="timer-display">${allReports.length}</div></div>
-                    <div class="analytics-card"><h3>PROGRAM PROGRESS</h3><div class="timer-display">${Math.min(100, Math.round((allReports.length / 104) * 100))}%</div></div>
+                <div class="analytics-grid" style="margin-bottom:20px;">
+                    <div class="analytics-card"><h3>TOTAL WEEKS</h3><div class="timer-display">${totalWeeks}</div><div class="stat-progress"><div class="stat-progress-fill" style="width:${progress}%"></div></div></div>
+                    <div class="analytics-card"><h3>COMPLETION RATE</h3><div class="timer-display">${completionRate}%</div><div class="stat-progress"><div class="stat-progress-fill" style="width:${completionRate}%"></div></div></div>
                 </div>
             `;
             outputArea.appendChild(container);
@@ -702,9 +727,42 @@
 
         function renderTimelineView() {
             clearOutput();
+            const allEntries = [];
+            allReports.forEach(r => {
+                if (!r.mondayDate || !r.days) return;
+                PARSE_DAY_NAMES.forEach((dn, di) => {
+                    const dayData = r.days[dn];
+                    if (dayData && dayData.content && dayData.content !== '—') {
+                        const date = new Date(r.mondayDate);
+                        date.setDate(date.getDate() + di);
+                        allEntries.push({ date, report: r, content: dayData.content, isHO: dayData.isHO || false });
+                    }
+                });
+            });
+            allEntries.sort((a, b) => b.date.getTime() - a.date.getTime());
+
+            if (!allEntries.length) {
+                printHTML('<div class="empty-state"><div style="font-size:24px;">⏱️</div><div>NO TIMELINE ENTRIES FOUND</div></div>');
+                return;
+            }
+
             const container = document.createElement('div');
             container.className = 'detailed-container';
             container.innerHTML = `<div style="font-size:14px;font-weight:700;margin-bottom:12px;">&gt; TIMELINE FEED</div>`;
+            
+            let filteredEntries = allEntries;
+            if (searchTerm && searchTerm.trim().length >= 2) {
+                const lowerTerm = searchTerm.toLowerCase().trim();
+                filteredEntries = allEntries.filter(e => e.content.toLowerCase().includes(lowerTerm));
+            }
+
+            filteredEntries.slice(0, 40).forEach(entry => {
+                const dateStr = entry.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+                const card = document.createElement('div');
+                card.style.cssText = 'background:#232629;border:1px solid var(--border-solid);padding:12px;margin-bottom:10px;border-radius:4px;border-left:3px solid var(--accent-color);';
+                card.innerHTML = `<div style="font-size:11px;color:var(--accent-color);margin-bottom:6px;font-weight:600;">[${dateStr}] ${escapeHTML(entry.report.name)} ${entry.isHO ? '🏠 [HO]' : ''}</div><div style="font-size:12px;color:#d1d2d3;white-space:pre-wrap;line-height:1.4;">${escapeHTML(entry.content)}</div>`;
+                container.appendChild(card);
+            });
             outputArea.appendChild(container);
         }
 
@@ -744,9 +802,7 @@
                     await fetchAndParseDocx(allReports[i]);
                 }
                 printHTML('<div style="color:var(--success-color);font-weight:700;">&gt; ' + strings.done + '</div>');
-                if (activeTab === 'report' || activeTab === 'calendar' || activeTab === 'detailed' || activeTab === 'timeline') {
-                    switchView(activeTab);
-                }
+                switchView(activeTab);
             } catch (err) {
                 clearOutput();
                 printHTML('<div style="color:var(--danger-color);font-weight:700;">&gt; ERROR: ' + escapeHTML(err.message) + '</div>');
@@ -755,7 +811,6 @@
             }
         }
 
-        // ---------- Switch View / Tab ----------
         function switchView(tab) {
             activeTab = tab;
             const isDocViewer = (tab === 'pdf' || tab === 'ppt' || tab === 'htmls' || tab === 'docs');
@@ -779,18 +834,18 @@
             
             if (isDocViewer) {
                 renderSidebarList(searchTerm);
-            } else if (tab === 'report') {
-                renderListView();
-            } else if (tab === 'calendar') {
-                renderCalendarView();
-            } else if (tab === 'detailed') {
-                renderDetailedStatsView();
-            } else if (tab === 'timeline') {
-                renderTimelineView();
+            } else {
+                if (!allReports.length) {
+                    loadReportData();
+                    return;
+                }
+                if (tab === 'report') renderListView();
+                else if (tab === 'calendar') renderCalendarView();
+                else if (tab === 'detailed') renderDetailedStatsView();
+                else if (tab === 'timeline') renderTimelineView();
             }
         }
 
-        // ---------- Event Listeners ----------
         btnPrev.addEventListener('click', () => {
             pageNum = Math.max(1, pageNum - 1);
             renderPdfView();
@@ -817,13 +872,13 @@
         });
 
         viewPdfBtn.addEventListener('click', () => switchView('pdf'));
-        viewPptBtn.addEventListener('click', () => switchView('ppt'));
-        viewHtmlBtn.addEventListener('click', () => switchView('htmls'));
-        viewDocBtn.addEventListener('click', () => switchView('docs'));
-        viewReportBtn.addEventListener('click', () => { if (!allReports.length) loadReportData(); else switchView('report'); });
-        viewCalBtn.addEventListener('click', () => { if (!allReports.length) loadReportData(); else switchView('calendar'); });
-        viewDetailBtn.addEventListener('click', () => { if (!allReports.length) loadReportData(); else switchView('detailed'); });
-        viewTimelineBtn.addEventListener('click', () => { if (!allReports.length) loadReportData(); else switchView('timeline'); });
+        viewPptBtn.addEventListener('click', () => { switchView('ppt'); fetchAllRepos(); });
+        viewHtmlBtn.addEventListener('click', () => { switchView('htmls'); fetchAllRepos(); });
+        viewDocBtn.addEventListener('click', () => { switchView('docs'); fetchAllRepos(); });
+        viewReportBtn.addEventListener('click', () => switchView('report'));
+        viewCalBtn.addEventListener('click', () => switchView('calendar'));
+        viewDetailBtn.addEventListener('click', () => switchView('detailed'));
+        viewTimelineBtn.addEventListener('click', () => switchView('timeline'));
 
         refreshBtn.addEventListener('click', () => {
             if (activeTab === 'pdf' || activeTab === 'ppt' || activeTab === 'htmls' || activeTab === 'docs') fetchAllRepos();
@@ -845,13 +900,18 @@
             else switchView(activeTab);
         });
 
+        // Modal close bindings
+        const closeModal = () => { $('calendarModal').style.display = 'none'; };
+        $('closeModalBtn').addEventListener('click', closeModal);
+        $('calendarModal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeModal(); });
+        $('copyModalBtn').addEventListener('click', () => {
+            navigator.clipboard.writeText($('modalContent').textContent).catch(() => {});
+        });
+
         fetchAllRepos();
-        setTimeout(() => {
-            loadReportData().then(() => switchView('detailed'));
-        }, 500);
+        loadReportData();
     }
 
-    // ---------- Build UI Structure ----------
     function buildVionaUI() {
         const style = document.createElement('style');
         style.textContent = `
@@ -924,17 +984,33 @@
             .day-name { font-weight: 700; font-size: 11px; color: var(--accent-color); border-bottom: 1px solid var(--border-solid); padding-bottom: 4px; margin-bottom: 6px; display: flex; justify-content: space-between; }
             .day-content { font-size: 12px; color: #d1d2d3; white-space: pre-wrap; line-height: 1.4; }
             .day-empty { color: var(--sub-color); font-style: italic; }
+            
             .calendar-container { background: var(--panel-bg); border: 1px solid var(--border-solid); border-radius: 6px; padding: 16px; margin-bottom: 16px; }
-            .calendar-header-controls { text-align: center; font-weight: 700; margin-bottom: 14px; }
+            .calendar-header-controls { text-align: center; font-weight: 700; margin-bottom: 14px; font-size: 13px; color: var(--accent-color); }
             .calendar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; background: var(--border-solid); border-radius: 4px; overflow: hidden; }
             .cal-day-header { text-align: center; font-weight: 700; font-size: 11px; background: #2980b9; color: #fff; padding: 6px 0; }
-            .cal-cell { background: #232629; min-height: 70px; padding: 6px; }
+            .cal-cell { background: #232629; min-height: 80px; padding: 6px; position: relative; }
+            .cal-cell.has-entry { cursor: pointer; }
+            .cal-cell.has-entry:hover { background: rgba(61, 174, 233, 0.15); }
             .cal-date { font-weight: 700; font-size: 12px; }
+            .cal-preview { font-size: 10px; color: var(--sub-color); margin-top: 4px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
             .detailed-container { background: var(--panel-bg); border: 1px solid var(--border-solid); border-radius: 6px; padding: 16px; }
             .analytics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
             .analytics-card { background: #232629; border: 1px solid var(--border-solid); border-left: 3px solid var(--accent-color); padding: 12px; border-radius: 4px; }
             .analytics-card h3 { font-size: 11px; color: var(--sub-color); margin-bottom: 6px; }
             .timer-display { font-family: monospace; font-size: 15px; font-weight: 700; }
+            .stat-progress { margin-top: 8px; height: 4px; background: var(--border-solid); border-radius: 2px; overflow: hidden; }
+            .stat-progress-fill { height: 100%; background: var(--accent-color); border-radius: 2px; }
+
+            #calendarModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+            .modal-box { background: var(--bg-color); border: 1px solid var(--border-solid); border-radius: 6px; width: 100%; max-width: 520px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 12px 36px rgba(0,0,0,0.6); }
+            .modal-header { padding: 10px 14px; background: var(--panel-bg); border-bottom: 1px solid var(--border-solid); display: flex; justify-content: space-between; align-items: center; }
+            .modal-header h3 { font-size: 13px; font-weight: 700; }
+            .modal-actions { display: flex; gap: 6px; align-items: center; }
+            .modal-actions button { background: #232629; border: 1px solid #4d5052; color: var(--text-color); padding: 3px 8px; font-size: 11px; font-weight: 600; cursor: pointer; border-radius: 3px; }
+            .modal-actions button:hover { background: rgba(61, 174, 233, 0.15); border-color: var(--accent-color); }
+            .modal-body { padding: 16px; overflow-y: auto; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
         `;
         document.head.appendChild(style);
 
@@ -992,6 +1068,16 @@
             </div>
         `;
         document.body.appendChild(app);
+
+        const modal = document.createElement('div');
+        modal.id = 'calendarModal';
+        modal.innerHTML = `
+            <div class="modal-box">
+                <div class="modal-header"><h3 id="modalTitle">Entry Details</h3><div class="modal-actions"><button id="copyModalBtn">Copy</button><button id="closeModalBtn">Close</button></div></div>
+                <div class="modal-body" id="modalContent"></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
     }
 
 })();
