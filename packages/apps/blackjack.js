@@ -5,7 +5,7 @@
         window.packagesRegistry['blackjack'] = {
             name: 'Blackjack',
             version: '2.7.0',
-            description: 'KDE-styled Multiplayer Table Blackjack with 4 CPU Opponents, Staggered Turns, Action Popups, Theme Toggle, Verdana Font, and Auto-Closing Round Results',
+            description: 'Blackjack with 4 CPU Opponents, Staggered Turns, Action Popups, Theme Toggle, Verdana Font, and Auto-Closing Round Results',
             preInstalledOn: ['default'],
             commands: {
                 blackjack: function(args) {
@@ -202,7 +202,7 @@
             <div id="blackjack-header">
                 <div style="display:flex; align-items:center; gap:12px;">
                     <button class="bj-btn" id="blackjack-back">Back</button>
-                    <span style="font-weight:600; font-size:15px;">KDE Multiplayer Blackjack</span>
+                    <span style="font-weight:600; font-size:15px;">Blackjack</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:12px;">
                     <button class="bj-btn" id="btn-theme-toggle" title="Toggle Felt Theme">Dark Mode</button>
@@ -568,6 +568,6 @@
             else app.remove();
         };
 
-        console.log("Multiplayer Blackjack initialized with Verdana font, CPU action popups, and auto-closing round results.");
+        console.log("Blackjack initialized with Verdana font, CPU action popups, and auto-closing round results.");
     })();
 })();

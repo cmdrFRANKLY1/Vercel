@@ -650,9 +650,15 @@
     let vfs = null;
     let currentEditingFile = null;
     let isSplitView = false;
-    let clipboard = null; // { type: 'copy'|'cut', path: [...], name: '...' }
+    let clipboard = null;
     let contextMenuTarget = { pane: null, itemName: null, isBackground: false };
 
+    // ===== SVG ICONS =====
+    const svgFolder = `<svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
+    const svgFile = `<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
+    const svgBinary = `<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>`;
+
+    // ===== FILE BROWSER PANE CLASS =====
     class FileBrowserPane {
         constructor(containerEl, initialPath = ['home', 'user']) {
             this.container = containerEl;
@@ -803,23 +809,23 @@
                     <div class="item-meta">${isDir ? 'Folder' : 'File'}</div>
                 `;
 
-                let clickTimeout = null;
+                // Double-click handler
+                card.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    setActivePane(this);
+                    this.clearSelection();
+                    card.classList.add('selected');
+                    this.selectedItemName = key;
+                    this.handleItemOpen(key, child);
+                });
+
+                // Single-click handler
                 card.addEventListener('click', (e) => {
                     e.stopPropagation();
                     setActivePane(this);
                     this.clearSelection();
                     card.classList.add('selected');
                     this.selectedItemName = key;
-
-                    if (clickTimeout) {
-                        clearTimeout(clickTimeout);
-                        clickTimeout = null;
-                        this.handleItemOpen(key, child);
-                    } else {
-                        clickTimeout = setTimeout(() => {
-                            clickTimeout = null;
-                        }, 250);
-                    }
                 });
 
                 this.viewEl.appendChild(card);
@@ -835,35 +841,7 @@
         }
     }
 
-    const svgFolder = `<svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
-    const svgFile = `<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
-    const svgBinary = `<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>`;
-
-    let panes = [];
-    let activePane = null;
-
-    const pathBar = document.getElementById('path-bar');
-    const btnBack = document.getElementById('btn-back');
-    const btnForward = document.getElementById('btn-forward');
-    const btnUp = document.getElementById('btn-up');
-    const btnRefresh = document.getElementById('btn-refresh');
-    const btnNewFolder = document.getElementById('btn-new-folder');
-    const btnNewFile = document.getElementById('btn-new-file');
-    const btnDelete = document.getElementById('btn-delete');
-    const btnSplitView = document.getElementById('btn-split-view');
-    const sidebarItems = document.querySelectorAll('.sidebar-item');
-    const splitContainer = document.getElementById('split-container');
-    const contextMenu = document.getElementById('context-menu');
-    
-    const editorModal = document.getElementById('editor-modal');
-    const editorTitle = document.getElementById('editor-title');
-    const editorContent = document.getElementById('editor-content');
-    const btnSave = document.getElementById('editor-save');
-    const btnCancel = document.getElementById('editor-cancel');
-    const btnClose = document.getElementById('editor-close');
-    const editorStatus = document.getElementById('editor-status');
-    const toast = document.getElementById('toast');
-
+    // ===== VFS FUNCTIONS =====
     function loadVFS() {
         try {
             const savedVFS = localStorage.getItem('sTerminal_vfs');
@@ -939,6 +917,32 @@
         return node;
     }
 
+    // ===== UI HELPERS =====
+    let panes = [];
+    let activePane = null;
+
+    const pathBar = document.getElementById('path-bar');
+    const btnBack = document.getElementById('btn-back');
+    const btnForward = document.getElementById('btn-forward');
+    const btnUp = document.getElementById('btn-up');
+    const btnRefresh = document.getElementById('btn-refresh');
+    const btnNewFolder = document.getElementById('btn-new-folder');
+    const btnNewFile = document.getElementById('btn-new-file');
+    const btnDelete = document.getElementById('btn-delete');
+    const btnSplitView = document.getElementById('btn-split-view');
+    const sidebarItems = document.querySelectorAll('.sidebar-item');
+    const splitContainer = document.getElementById('split-container');
+    const contextMenu = document.getElementById('context-menu');
+    
+    const editorModal = document.getElementById('editor-modal');
+    const editorTitle = document.getElementById('editor-title');
+    const editorContent = document.getElementById('editor-content');
+    const btnSave = document.getElementById('editor-save');
+    const btnCancel = document.getElementById('editor-cancel');
+    const btnClose = document.getElementById('editor-close');
+    const editorStatus = document.getElementById('editor-status');
+    const toast = document.getElementById('toast');
+
     function setActivePane(pane) {
         panes.forEach(p => p.container.classList.remove('active-pane'));
         pane.container.classList.add('active-pane');
@@ -1004,6 +1008,7 @@
         }, 3000);
     }
 
+    // ===== CONTEXT MENU =====
     function showContextMenu(x, y, pane, itemName, isBackground) {
         contextMenuTarget = { pane, itemName, isBackground };
         
@@ -1043,9 +1048,7 @@
         contextMenu.style.display = 'none';
     }
 
-    document.addEventListener('click', () => hideContextMenu());
-    window.addEventListener('blur', () => hideContextMenu());
-
+    // ===== CONTEXT MENU ACTIONS =====
     document.getElementById('ctx-open').addEventListener('click', () => {
         const { pane, itemName } = contextMenuTarget;
         if (pane && itemName) {
@@ -1136,6 +1139,7 @@
         hideContextMenu();
     });
 
+    // ===== TOOLBAR BUTTONS =====
     btnBack.addEventListener('click', () => { if (activePane) activePane.goBack(); });
     btnForward.addEventListener('click', () => { if (activePane) activePane.goForward(); });
     btnUp.addEventListener('click', () => { if (activePane) activePane.goUp(); });
@@ -1249,6 +1253,7 @@
         }
     });
 
+    // ===== FILE EDITOR =====
     function openFileEditor(name, fileNode) {
         currentEditingFile = { name: name, node: fileNode };
         editorTitle.innerText = `Editing: ${name}`;
@@ -1292,6 +1297,7 @@
         if (e.target === editorModal) closeFileEditor();
     });
 
+    // ===== SIDEBAR =====
     sidebarItems.forEach(item => {
         item.addEventListener('click', () => {
             if (!activePane) return;
@@ -1301,6 +1307,7 @@
         });
     });
 
+    // ===== KEYBOARD SHORTCUTS =====
     window.addEventListener('keydown', (e) => {
         if (editorModal.style.display === 'flex') {
             if (e.ctrlKey && e.key.toLowerCase() === 's') {
@@ -1317,8 +1324,9 @@
         }
     });
 
+    // ===== INITIALIZE =====
     loadVFS();
-    logAction("File Browser initialized with context menus.");
+    logAction("File Browser initialized with context menus and double-click support.");
 
     const paneEl1 = document.createElement('div');
     paneEl1.className = 'pane active-pane';
@@ -1327,5 +1335,9 @@
     const pane1 = new FileBrowserPane(paneEl1, ['home', 'user']);
     panes.push(pane1);
     setActivePane(pane1);
+
+    // ===== GLOBAL CLICK TO HIDE CONTEXT MENU =====
+    document.addEventListener('click', () => hideContextMenu());
+    window.addEventListener('blur', () => hideContextMenu());
 
 })();
