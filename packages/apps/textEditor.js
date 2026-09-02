@@ -1,10 +1,10 @@
 (function() {
     "use strict";
 
-    // Inject Kate KDE theme and styles
+    // Inject styles
     const style = document.createElement('style');
     style.textContent = `
-        /* ===== KATE THEMED RESET & GLOBAL ===== */
+        /* ===== GENERIC THEMED RESET & GLOBAL ===== */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -52,7 +52,7 @@
         ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--accent-color); }
 
-        #kate-app {
+        #textEditor-app {
             display: flex;
             flex-direction: column;
             height: 100%;
@@ -407,28 +407,28 @@
     `;
     document.head.appendChild(style);
 
-    // Apply KDE Theme Colors from parent environment if present
-    function applyKDEColors() {
-        const kdeColors = window.kdeThemeColors || window.parent?.kdeThemeColors || {
-            'kde-bg': '#1a1b1e',
-            'kde-panel': '#232629',
-            'kde-accent': '#3daee9',
-            'kde-text': '#eff0f1',
-            'kde-window-border': '#31363b',
+    // Apply Theme Colors from parent environment if present
+    function applyColors() {
+        const themeColors = window.themeColors || window.parent?.themeColors || {
+            'bg': '#1a1b1e',
+            'panel': '#232629',
+            'accent': '#3daee9',
+            'text': '#eff0f1',
+            'border': '#31363b',
         };
 
         const root = document.documentElement;
-        root.style.setProperty('--bg-color', kdeColors['kde-bg']);
-        root.style.setProperty('--panel-bg', kdeColors['kde-panel']);
-        root.style.setProperty('--text-color', kdeColors['kde-text']);
-        root.style.setProperty('--border-color', kdeColors['kde-window-border']);
-        root.style.setProperty('--accent-color', kdeColors['kde-accent']);
+        root.style.setProperty('--bg-color', themeColors['bg']);
+        root.style.setProperty('--panel-bg', themeColors['panel']);
+        root.style.setProperty('--text-color', themeColors['text']);
+        root.style.setProperty('--border-color', themeColors['border']);
+        root.style.setProperty('--accent-color', themeColors['accent']);
     }
-    applyKDEColors();
+    applyColors();
 
-    // Render Kate UI Skeleton
+    // Render UI Skeleton
     document.body.innerHTML = `
-    <div id="kate-app">
+    <div id="textEditor-app">
         <!-- Menu Bar -->
         <div id="menu-bar">
             <div class="menu-item" id="menu-file">File</div>
@@ -506,7 +506,7 @@
 
     // State variables
     let vfs = null;
-    let openTabs = []; // Array of { pathArray, name, content, originalContent, scrollPos }
+    let openTabs = [];
     let activeTab = null;
     let contextMenuTargetPath = null;
     let contextMenuIsFolder = false;
@@ -539,7 +539,7 @@
                             'user': { type: 'dir', children: {
                                 'Documents': { type: 'dir', children: {
                                     'Logs': { type: 'dir', children: {} },
-                                    'readme.txt': { type: 'file', content: 'Welcome to KDE Kate Text Editor.' }
+                                    'readme.txt': { type: 'file', content: 'Welcome to the Text Editor.' }
                                 }},
                                 '.bashrc': { type: 'file', content: '# alias ls="ls -la"' }
                             }}
@@ -558,11 +558,11 @@
         }
     }
 
-    function logKateAction(message) {
+    function logAction(message) {
         try {
             if (!vfs) loadVFS();
             const logPath = ['home', 'user', 'Documents', 'Logs'];
-            const logFileName = 'logKate.txt';
+            const logFileName = 'logEditor.txt';
 
             let node = vfs;
             for (const p of logPath) {
@@ -573,14 +573,14 @@
             }
 
             if (!node.children[logFileName]) {
-                node.children[logFileName] = { type: 'file', description: 'Kate editor activity log', content: '' };
+                node.children[logFileName] = { type: 'file', description: 'Editor activity log', content: '' };
             }
 
             const timestamp = new Date().toISOString();
             node.children[logFileName].content += `[${timestamp}] ${message}\n`;
             saveVFS();
         } catch (err) {
-            console.error("Failed to log kate action:", err);
+            console.error("Failed to log action:", err);
         }
     }
 
@@ -631,7 +631,6 @@
             nodeEl.className = 'tree-node';
             if (isDir) nodeEl.classList.add('open');
             
-            // Check if active tab matches this path
             if (activeTab && JSON.stringify(activeTab.pathArray) === JSON.stringify(currentPath)) {
                 nodeEl.classList.add('selected');
             }
@@ -666,7 +665,6 @@
 
     // Open File in Tab
     function openFile(pathArray, name, fileNode) {
-        // Check if already open
         let existing = openTabs.find(t => JSON.stringify(t.pathArray) === JSON.stringify(pathArray));
         if (existing) {
             switchTab(existing);
@@ -684,7 +682,7 @@
         openTabs.push(newTab);
         switchTab(newTab);
         renderFileTree();
-        logKateAction(`Opened file: /${pathArray.join('/')}`);
+        logAction(`Opened file: /${pathArray.join('/')}`);
     }
 
     function switchTab(tab) {
@@ -772,7 +770,6 @@
         const isModified = activeTab.content !== activeTab.originalContent;
         statusModified.style.display = isModified ? 'inline' : 'none';
 
-        // Detect syntax mode
         const name = activeTab.name.toLowerCase();
         if (name.endsWith('.js')) statusMode.innerText = 'JavaScript';
         else if (name.endsWith('.html')) statusMode.innerText = 'HTML';
@@ -802,7 +799,7 @@
         updateTabsUI();
         updateStatusInfo();
         showToast(`Saved '${activeTab.name}'`);
-        logKateAction(`Saved file: /${activeTab.pathArray.join('/')}`);
+        logAction(`Saved file: /${activeTab.pathArray.join('/')}`);
     }
 
     // Context Menu Handling
@@ -848,7 +845,7 @@
                 saveVFS();
                 renderFileTree();
                 showToast(`Created file: ${fileName}`);
-                logKateAction(`Created file: /${[...targetDirArray, fileName].join('/')}`);
+                logAction(`Created file: /${[...targetDirArray, fileName].join('/')}`);
             }
         }
         hideContextMenu();
@@ -869,7 +866,7 @@
                 saveVFS();
                 renderFileTree();
                 showToast(`Created folder: ${folderName}`);
-                logKateAction(`Created folder: /${[...targetDirArray, folderName].join('/')}`);
+                logAction(`Created folder: /${[...targetDirArray, folderName].join('/')}`);
             }
         }
         hideContextMenu();
@@ -893,7 +890,7 @@
                 saveVFS();
                 renderFileTree();
                 showToast(`Renamed to ${newName}`);
-                logKateAction(`Renamed /${contextMenuTargetPath.join('/')} to ${newName}`);
+                logAction(`Renamed /${contextMenuTargetPath.join('/')} to ${newName}`);
             }
         }
         hideContextMenu();
@@ -911,7 +908,7 @@
                 saveVFS();
                 renderFileTree();
                 showToast(`Deleted ${itemName}`);
-                logKateAction(`Deleted /${contextMenuTargetPath.join('/')}`);
+                logAction(`Deleted /${contextMenuTargetPath.join('/')}`);
             }
         }
         hideContextMenu();
@@ -967,9 +964,9 @@
         }
     });
 
-    // Initialize Kate Editor
+    // Initialize Editor
     loadVFS();
     renderFileTree();
-    logKateAction("KDE Kate Text Editor initialized.");
+    logAction("Text Editor initialized.");
 
 })();

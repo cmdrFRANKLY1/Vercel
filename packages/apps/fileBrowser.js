@@ -3,7 +3,7 @@
 
     const style = document.createElement('style');
     style.textContent = `
-        /* ===== KDE THEMED RESET & GLOBAL ===== */
+        /* ===== GENERIC THEMED RESET & GLOBAL ===== */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -499,25 +499,25 @@
     `;
     document.head.appendChild(style);
 
-    function applyKDEColors() {
-        const kdeColors = window.kdeThemeColors || {
-            'kde-bg': '#1a1b1e',
-            'kde-panel': '#232629',
-            'kde-accent': '#3daee9',
-            'kde-text': '#eff0f1',
-            'kde-window-bg': '#31363b',
-            'kde-window-border': '#1d2023',
+    function applyColors() {
+        const themeColors = window.themeColors || {
+            'bg': '#1a1b1e',
+            'panel': '#232629',
+            'accent': '#3daee9',
+            'text': '#eff0f1',
+            'window-bg': '#31363b',
+            'window-border': '#1d2023',
         };
 
         const root = document.documentElement;
-        root.style.setProperty('--bg-color', kdeColors['kde-bg']);
-        root.style.setProperty('--panel-bg', kdeColors['kde-panel']);
-        root.style.setProperty('--text-color', kdeColors['kde-text']);
-        root.style.setProperty('--border-color', kdeColors['kde-window-border']);
-        root.style.setProperty('--accent-color', kdeColors['kde-accent']);
-        root.style.setProperty('--icon-color-folder', kdeColors['kde-accent']);
+        root.style.setProperty('--bg-color', themeColors['bg']);
+        root.style.setProperty('--panel-bg', themeColors['panel']);
+        root.style.setProperty('--text-color', themeColors['text']);
+        root.style.setProperty('--border-color', themeColors['window-border']);
+        root.style.setProperty('--accent-color', themeColors['accent']);
+        root.style.setProperty('--icon-color-folder', themeColors['accent']);
     }
-    applyKDEColors();
+    applyColors();
 
     document.body.innerHTML = `
     <div id="app">
@@ -653,7 +653,7 @@
     let clipboard = null; // { type: 'copy'|'cut', path: [...], name: '...' }
     let contextMenuTarget = { pane: null, itemName: null, isBackground: false };
 
-    class DolphinPane {
+    class FileBrowserPane {
         constructor(containerEl, initialPath = ['home', 'user']) {
             this.container = containerEl;
             this.currentPath = [...initialPath];
@@ -719,7 +719,7 @@
             this.currentPath = [...newPath];
             this.clearSelection();
             this.updateUI();
-            logDolphinAction(`Navigated to: /${this.currentPath.join('/')}`);
+            logAction(`Navigated to: /${this.currentPath.join('/')}`);
         }
 
         goBack() {
@@ -876,7 +876,7 @@
                             'user': { type: 'dir', children: {
                                 'Documents': { type: 'dir', children: {
                                     'Logs': { type: 'dir', children: {} },
-                                    'readme.txt': { type: 'file', content: 'Welcome to Dolphin VFS browser.' }
+                                    'readme.txt': { type: 'file', content: 'Welcome to the File Browser.' }
                                 }},
                                 '.bashrc': { type: 'file', content: '# alias ls="ls -la"' }
                             }}
@@ -900,11 +900,11 @@
         }
     }
 
-    function logDolphinAction(message) {
+    function logAction(message) {
         try {
             if (!vfs) loadVFS();
             const logPath = ['home', 'user', 'Documents', 'Logs'];
-            const logFileName = 'logDolphin.txt';
+            const logFileName = 'logFileBrowser.txt';
 
             let node = vfs;
             for (const p of logPath) {
@@ -915,14 +915,14 @@
             }
 
             if (!node.children[logFileName]) {
-                node.children[logFileName] = { type: 'file', description: 'Dolphin file manager activity log', content: '' };
+                node.children[logFileName] = { type: 'file', description: 'File browser activity log', content: '' };
             }
 
             const timestamp = new Date().toISOString();
             node.children[logFileName].content += `[${timestamp}] ${message}\n`;
             saveVFS();
         } catch (err) {
-            console.error("Failed to log dolphin action:", err);
+            console.error("Failed to log action:", err);
         }
     }
 
@@ -1062,7 +1062,7 @@
         if (pane && itemName) {
             clipboard = { path: [...pane.currentPath], name: itemName };
             showToast(`Copied: ${itemName}`);
-            logDolphinAction(`Copied item /${[...pane.currentPath, itemName].join('/')}`);
+            logAction(`Copied item /${[...pane.currentPath, itemName].join('/')}`);
         }
         hideContextMenu();
     });
@@ -1089,7 +1089,7 @@
                 saveVFS();
                 pane.refresh();
                 showToast(`Pasted: ${destName}`);
-                logDolphinAction(`Pasted item to /${[...pane.currentPath, destName].join('/')}`);
+                logAction(`Pasted item to /${[...pane.currentPath, destName].join('/')}`);
             }
         }
         hideContextMenu();
@@ -1111,7 +1111,7 @@
                     saveVFS();
                     pane.refresh();
                     showToast(`Renamed to ${newName}`);
-                    logDolphinAction(`Renamed /${[...pane.currentPath, itemName].join('/')} to ${newName}`);
+                    logAction(`Renamed /${[...pane.currentPath, itemName].join('/')} to ${newName}`);
                 }
             }
         }
@@ -1129,7 +1129,7 @@
                     pane.selectedItemName = null;
                     pane.refresh();
                     showToast(`Deleted ${itemName}`);
-                    logDolphinAction(`Deleted /${[...pane.currentPath, itemName].join('/')}`);
+                    logAction(`Deleted /${[...pane.currentPath, itemName].join('/')}`);
                 }
             }
         }
@@ -1153,7 +1153,7 @@
             }
             parentNode.children[folderName] = { type: 'dir', description: 'User created directory', children: {} };
             saveVFS();
-            logDolphinAction(`Created directory /${[...activePane.currentPath, folderName].join('/')}`);
+            logAction(`Created directory /${[...activePane.currentPath, folderName].join('/')}`);
             activePane.refresh();
             showToast(`Created folder: ${folderName}`);
         }
@@ -1171,7 +1171,7 @@
             }
             parentNode.children[fileName] = { type: 'file', description: 'User created file', content: '' };
             saveVFS();
-            logDolphinAction(`Created file /${[...activePane.currentPath, fileName].join('/')}`);
+            logAction(`Created file /${[...activePane.currentPath, fileName].join('/')}`);
             activePane.refresh();
             showToast(`Created file: ${fileName}`);
         }
@@ -1188,7 +1188,7 @@
             if (parentNode && parentNode.children && parentNode.children[itemName]) {
                 delete parentNode.children[itemName];
                 saveVFS();
-                logDolphinAction(`Deleted /${[...activePane.currentPath, itemName].join('/')}`);
+                logAction(`Deleted /${[...activePane.currentPath, itemName].join('/')}`);
                 activePane.selectedItemName = null;
                 activePane.refresh();
                 showToast(`Deleted ${itemName}`);
@@ -1224,7 +1224,7 @@
 
                 const paneEl2 = document.createElement('div');
                 paneEl2.className = 'pane';
-                const pane2 = new DolphinPane(paneEl2, activePane.currentPath);
+                const pane2 = new FileBrowserPane(paneEl2, activePane.currentPath);
                 
                 panes[0].container.style.flex = '1 1 50%';
                 paneEl2.style.flex = '1 1 50%';
@@ -1235,7 +1235,7 @@
                 panes.push(pane2);
             }
             showToast("Split View Enabled");
-            logDolphinAction("Enabled split view mode");
+            logAction("Enabled split view mode");
         } else {
             if (panes.length > 1) {
                 splitContainer.querySelector('.split-divider')?.remove();
@@ -1245,7 +1245,7 @@
                 setActivePane(panes[0]);
             }
             showToast("Split View Disabled");
-            logDolphinAction("Disabled split view mode");
+            logAction("Disabled split view mode");
         }
     });
 
@@ -1264,7 +1264,7 @@
         }
 
         editorModal.style.display = 'flex';
-        logDolphinAction(`Opened file editor for: ${name}`);
+        logAction(`Opened file editor for: ${name}`);
         setTimeout(() => editorContent.focus(), 50);
     }
 
@@ -1277,7 +1277,7 @@
         if (currentEditingFile && currentEditingFile.node) {
             currentEditingFile.node.content = editorContent.value;
             saveVFS();
-            logDolphinAction(`Saved file: ${currentEditingFile.name}`);
+            logAction(`Saved file: ${currentEditingFile.name}`);
             showToast("File saved successfully");
             closeFileEditor();
             if (activePane) activePane.refresh();
@@ -1318,13 +1318,13 @@
     });
 
     loadVFS();
-    logDolphinAction("KDE Dolphin File Manager initialized with context menus.");
+    logAction("File Browser initialized with context menus.");
 
     const paneEl1 = document.createElement('div');
     paneEl1.className = 'pane active-pane';
     paneEl1.style.flex = '1 1 100%';
     splitContainer.appendChild(paneEl1);
-    const pane1 = new DolphinPane(paneEl1, ['home', 'user']);
+    const pane1 = new FileBrowserPane(paneEl1, ['home', 'user']);
     panes.push(pane1);
     setActivePane(pane1);
 

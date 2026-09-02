@@ -1,22 +1,22 @@
 (function() {
     // Register the package for the external desktop environment
     if (typeof window.packagesRegistry !== 'undefined') {
-        window.packagesRegistry['kcalc'] = {
-            name: 'KCalc',
+        window.packagesRegistry['calculator'] = {
+            name: 'Calculator',
             version: '1.0.0',
-            description: 'KDE Scientific Calculator Simulation',
+            description: 'Scientific Calculator Simulation',
             preInstalledOn: ['default'],
             commands: {
-                kcalc: function(args) {
+                calculator: function(args) {
                     if (typeof window.launchApp === 'function') {
-                        window.launchApp('kcalc');
+                        window.launchApp('calculator');
                     } else {
-                        console.log("KCalc invoked.");
+                        console.log("Calculator invoked.");
                     }
                 }
             },
             commandInfo: {
-                kcalc: "what is this command?\nkcalc\n\nwhat is it used for?\nOpens the KCalc Calculator app."
+                calculator: "what is this command?\ncalculator\n\nwhat is it used for?\nOpens the Calculator app."
             }
         };
     }
@@ -29,7 +29,7 @@
         }
 
         // Prevent double initialization - check if app already exists
-        if (document.getElementById('kcalc-app')) {
+        if (document.getElementById('calculator-app')) {
             return;
         }
 
@@ -64,7 +64,7 @@
             }
 
             // Find the container div created by kde.js
-            let container = document.getElementById('app-container-kcalc');
+            let container = document.getElementById('app-container-calculator');
             
             // If container doesn't exist, use the body
             if (!container) {
@@ -76,7 +76,7 @@
 
             // Build main application container
             const app = document.createElement('div');
-            app.id = 'kcalc-app';
+            app.id = 'calculator-app';
             app.style.cssText = `display:flex;flex-direction:column;height:100vh;width:100vw;box-sizing:border-box;background-color:${kdeColors.windowBg};color:${kdeColors.text};font-family:"Noto Sans",sans-serif;user-select:none;overflow:hidden;position:absolute;top:0;left:0;`;
 
             // Main content area (Centered Calculator) - No toolbar
@@ -337,10 +337,10 @@
                 }
             });
 
-            console.log('KCalc initialized successfully');
+            console.log('Calculator initialized successfully');
 
         } catch (error) {
-            console.error('Error initializing KCalc:', error);
+            console.error('Error initializing Calculator:', error);
             // Show error in a non-intrusive way
             const errorDiv = document.createElement('div');
             errorDiv.style.cssText = `display:flex;align-items:center;justify-content:center;height:100vh;color:#eff0f1;background:#1e1e1e;font-family:sans-serif;flex-direction:column;padding:20px;text-align:center;`;
@@ -349,7 +349,7 @@
                 <p style="color:#aaa;max-width:400px;">${error.message}</p>
                 <button onclick="location.reload()" style="margin-top:20px;padding:10px 20px;background:#3daee9;border:none;border-radius:4px;color:#000;cursor:pointer;font-size:14px;">Reload</button>
             `;
-            const container = document.getElementById('app-container-kcalc') || document.body;
+            const container = document.getElementById('app-container-calculator') || document.body;
             container.innerHTML = '';
             container.appendChild(errorDiv);
         }
@@ -359,9 +359,9 @@
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             package: {
-                name: 'kcalc',
+                name: 'calculator',
                 version: '1.0.0',
-                description: 'KDE Scientific Calculator Simulation'
+                description: 'Scientific Calculator Simulation'
             }
         };
     }

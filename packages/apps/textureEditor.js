@@ -1,4 +1,6 @@
 (function() {
+    "use strict";
+
     if (typeof window.packagesRegistry !== 'undefined') {
         window.packagesRegistry['textureeditor'] = {
             name: 'Texture Editor',
@@ -7,31 +9,7 @@
             preInstalledOn: ['default'],
             commands: {
                 textureeditor: function(args) {
-                    const htmlContent = generateTextureEditorHTML();
-                    
-                    try {
-                        if (typeof window.createWrapperTab !== 'undefined') {
-                            const blob = new Blob([htmlContent], { type: 'text/html' });
-                            const url = URL.createObjectURL(blob);
-                            window.createWrapperTab('textureeditor', url);
-                        } else if (typeof window.openWrapperWindow !== 'undefined') {
-                            const blob = new Blob([htmlContent], { type: 'text/html' });
-                            const url = URL.createObjectURL(blob);
-                            window.openWrapperWindow('textureeditor', url);
-                        } else {
-                            const win = window.open('', '_blank');
-                            if (win) {
-                                win.document.write(htmlContent);
-                                win.document.close();
-                            }
-                        }
-                    } catch (e) {
-                        const win = window.open('', '_blank');
-                        if (win) {
-                            win.document.write(htmlContent);
-                            win.document.close();
-                        }
-                    }
+                    console.log("Texture Editor launched.");
                 }
             },
             commandInfo: {
@@ -40,268 +18,186 @@
         };
     }
 
-    function generateTextureEditorHTML() {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Texture Editor</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        :root {
-            --bg-color: #f2f5f9;
-            --text-color: #1e293b;
-            --sub-color: #475569;
-            --border-color: #cbd5e1;
-            --border-hover: #2563eb;
-            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-            --btn-bg: #e2e8f0;
-            --btn-border: #cbd5e1;
-            --btn-hover-border: #94a3b8;
-            --btn-text: #1e293b;
-            --hover-bg: #d8e2ee;
-            --input-bg: #e8ecf2;
-            --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.18);
-            --card-radius: 12px;
-            --toggle-radius: 12px;
-            --modal-bg: #ffffff;
-            --dropdown-bg: #ffffff;
-        }
-
-        [data-theme="dark"] {
-            --bg-color: #121212;
-            --text-color: #e8eaed;
-            --sub-color: #9aa0a6;
-            --border-color: #3c4043;
-            --border-hover: #8ab4f8;
-            --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
-            --btn-bg: #303134;
-            --btn-border: #3c4043;
-            --btn-hover-border: #5f6368;
-            --btn-text: #e8eaed;
-            --hover-bg: #3c4043;
-            --input-bg: #202124;
-            --focus-ring: 0 0 0 3px rgba(138, 180, 248, 0.25);
-            --modal-bg: #1e1e1e;
-            --dropdown-bg: #2a2b2e;
-        }
-
+    const style = document.createElement('style');
+    style.textContent = `
         * {
             box-sizing: border-box;
-            -webkit-font-smoothing: antialiased;
-        }
-        
-        body, html {
             margin: 0;
             padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: var(--bg-color);
-            font-family: "Segoe UI", Roboto, Arial, sans-serif;
-            color: var(--text-color);
             user-select: none;
             -webkit-user-select: none;
         }
-        
-        input {
-            user-select: text;
-            -webkit-user-select: text;
+
+        input, textarea, select {
+            user-select: text !important;
+            -webkit-user-select: text !important;
         }
 
-        .main-layout {
-            display: flex;
-            width: 100vw;
+        :root {
+            --bg-color: #1a1b1e;
+            --panel-bg: #232629;
+            --toolbar-bg: #31363b;
+            --text-color: #eff0f1;
+            --text-muted: #888888;
+            --accent-color: #3daee9;
+            --accent-hover: #1d99d6;
+            --border-color: #1d2023;
+            --hover-bg: rgba(61, 174, 233, 0.15);
+            --card-radius: 6px;
+            --font-family: 'Noto Sans', 'Segoe UI', 'Roboto', sans-serif;
+        }
+
+        body, html {
             height: 100vh;
+            width: 100vw;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            font-size: 13px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-color); }
+
+        #texture-editor-app {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            background: var(--bg-color);
+        }
+
+        /* Toolbar */
+        #toolbar {
+            height: 44px;
+            background-color: var(--toolbar-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .tool-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-color);
+            border-radius: 4px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .tool-btn:hover:not(:disabled) {
+            background-color: var(--hover-bg);
+            border-color: var(--accent-color);
+        }
+
+        .tool-btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .toolbar-separator {
+            width: 1px;
+            height: 20px;
+            background-color: var(--border-color);
+            margin: 0 4px;
+        }
+
+        /* Layout */
+        .editor-layout {
+            display: flex;
+            flex-grow: 1;
             overflow: hidden;
             position: relative;
         }
 
-        .sidebar-left {
-            width: 280px;
-            min-width: 280px;
-            max-width: 280px;
-            background: var(--bg-color);
+        .sidebar {
+            width: 260px;
+            min-width: 260px;
+            background: var(--panel-bg);
             border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            gap: 16px;
-            padding: 16px;
-            overflow: hidden;
-            flex-shrink: 0;
-            z-index: 10;
-        }
-
-        .sidebar-right {
-            width: 280px;
-            min-width: 280px;
-            max-width: 280px;
-            background: var(--bg-color);
-            border-left: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            padding: 16px;
+            gap: 12px;
+            padding: 12px;
             overflow-y: auto;
             flex-shrink: 0;
-            z-index: 10;
-            direction: rtl;
         }
-        .sidebar-right > * {
-            direction: ltr;
+
+        .sidebar.right {
+            border-right: none;
+            border-left: 1px solid var(--border-color);
         }
 
         .panel-box {
-            background: var(--input-bg);
+            background: var(--bg-color);
             border: 1px solid var(--border-color);
             border-radius: var(--card-radius);
-            padding: 14px;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
-            width: 100%;
+            padding: 10px;
         }
 
         .panel-title {
-            font-size: 0.7rem;
-            font-weight: 700;
+            font-size: 11px;
+            font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: var(--sub-color);
-            margin-bottom: 10px;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 6px;
+            padding-bottom: 4px;
         }
 
         .section-subhdr {
             font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--sub-color);
-            margin: 8px 0 4px 0;
-        }
-        .section-subhdr:first-child { margin-top: 0; }
-
-        .viewport-center {
-            flex: 1;
-            background: var(--input-bg);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: grab;
-        }
-        .viewport-center.grabbing { cursor: grabbing; }
-
-        #dazzleCanvas {
-            position: absolute;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            transform-origin: center center;
-        }
-
-        .zoom-indicator {
-            position: absolute;
-            bottom: 16px;
-            left: 16px;
-            background: var(--btn-bg);
-            border: 1px solid var(--btn-border);
-            color: var(--text-color);
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-family: monospace;
             font-weight: bold;
-            pointer-events: none;
-            z-index: 15;
-            box-shadow: var(--box-shadow);
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin: 6px 0 2px 0;
         }
-
-        .floating-toolbar {
-            position: absolute;
-            top: 16px;
-            left: 16px;
-            display: flex;
-            gap: 8px;
-            z-index: 25;
-        }
-
-        .float-icon-btn {
-            background: var(--dropdown-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            width: 40px;
-            height: 40px;
-            border-radius: var(--toggle-radius);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: var(--box-shadow);
-            transition: all 0.15s;
-        }
-        .float-icon-btn:hover { background: var(--hover-bg); border-color: var(--border-hover); }
-        .float-icon-btn svg { width: 18px; height: 18px; fill: currentColor; }
-
-        .dropdown-menu {
-            position: absolute;
-            top: calc(100% + 8px);
-            left: 0;
-            background: var(--dropdown-bg);
-            border: 1px solid var(--border-color);
-            border-radius: var(--card-radius);
-            box-shadow: var(--box-shadow);
-            padding: 6px;
-            min-width: 160px;
-            display: none;
-            flex-direction: column;
-            gap: 2px;
-            z-index: 30;
-        }
-        .dropdown-menu.show { display: flex; }
-        .dropdown-item {
-            padding: 8px 12px;
-            font-size: 12px;
-            color: var(--text-color);
-            text-decoration: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-        .dropdown-item:hover { background: var(--hover-bg); }
 
         .style-btn {
             width: 100%;
             text-align: left;
             background: transparent;
             border: 1px solid transparent;
-            border-radius: 6px;
+            border-radius: 4px;
             padding: 5px 8px;
-            font-size: 11px;
-            font-weight: 500;
+            font-size: 12px;
             color: var(--text-color);
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: all 0.15s;
         }
-        .style-btn:hover { background: var(--hover-bg); border-color: var(--btn-hover-border); }
-        .style-btn.active { background: var(--hover-bg); border-color: var(--border-hover); font-weight: 600; }
+        .style-btn:hover { background: var(--hover-bg); border-color: var(--accent-color); }
+        .style-btn.active { background: var(--hover-bg); border-color: var(--accent-color); font-weight: bold; }
 
-        .slider-group {
-            margin-bottom: 10px;
-        }
-        .slider-group:last-child { margin-bottom: 0; }
+        .slider-group { margin-bottom: 8px; }
         .slider-label {
             display: flex;
             justify-content: space-between;
             font-size: 11px;
-            font-weight: 600;
-            color: var(--sub-color);
-            margin-bottom: 3px;
+            color: var(--text-muted);
+            margin-bottom: 2px;
         }
         .slider-label span { color: var(--text-color); font-family: monospace; }
         input[type="range"] {
             width: 100%;
-            accent-color: var(--border-hover);
+            accent-color: var(--accent-color);
             cursor: pointer;
         }
 
@@ -309,254 +205,309 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 11px;
-            font-weight: 500;
+            font-size: 12px;
             color: var(--text-color);
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             cursor: pointer;
         }
         .checkbox-row input {
             cursor: pointer;
-            accent-color: var(--border-hover);
-            width: 15px;
-            height: 15px;
+            accent-color: var(--accent-color);
+            width: 14px;
+            height: 14px;
         }
         .select-row select {
             background: var(--bg-color);
             color: var(--text-color);
             border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 4px 8px;
-            font-size: 11px;
+            border-radius: 4px;
+            padding: 3px 6px;
+            font-size: 12px;
             outline: none;
             cursor: pointer;
         }
-        .select-row select:focus { border-color: var(--border-hover); }
 
         .info-row {
             display: flex;
             justify-content: space-between;
             font-size: 11px;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
             font-family: monospace;
         }
-        .info-row span:first-child { color: var(--sub-color); font-weight: 600; }
-        .info-row span:last-child { color: var(--text-color); font-weight: 700; }
+        .info-row span:first-child { color: var(--text-muted); }
+        .info-row span:last-child { color: var(--text-color); font-weight: bold; }
 
-        .cfcc-input {
-            background: var(--bg-color);
+        /* Workspace Viewport */
+        #workspace {
+            flex-grow: 1;
+            background-color: #121212;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+        }
+        #workspace.grabbing { cursor: grabbing; }
+
+        #dazzleCanvas {
+            position: absolute;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transform-origin: center center;
+        }
+
+        .zoom-indicator {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            background: var(--panel-bg);
             border: 1px solid var(--border-color);
             color: var(--text-color);
-            border-radius: 6px;
-            padding: 6px 10px;
-            width: 100%;
-            outline: none;
-            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: monospace;
+            pointer-events: none;
         }
-        .cfcc-input:focus { border-color: var(--border-hover); box-shadow: var(--focus-ring); }
 
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
-    </style>
-</head>
-<body data-theme="dark">
+        /* Dropdown */
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--card-radius);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            padding: 4px;
+            min-width: 150px;
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+            z-index: 30;
+        }
+        .dropdown-menu.show { display: flex; }
+        .dropdown-item {
+            padding: 6px 10px;
+            font-size: 12px;
+            color: var(--text-color);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .dropdown-item:hover { background: var(--hover-bg); color: var(--accent-color); }
 
-<div class="main-layout">
-  <div class="sidebar-left">
-    <div class="panel-box" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
-      <div class="panel-title" id="lblGenControls">Generator Controls</div>
-      <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding-right: 4px;">
-        <div class="section-subhdr" id="lblCatCamo">Camouflage</div>
-        <button data-style="wwi" class="style-btn active">WWI Dazzle</button>
-        <button data-style="splinter" class="style-btn">Splinter Tarn</button>
-        <button data-style="tiger" class="style-btn">Tiger Stripe</button>
-        <button data-style="digital" class="style-btn">Digital MARPAT</button>
-        <button data-style="flecktarn" class="style-btn">Flecktarn</button>
-        
-        <div class="section-subhdr" id="lblCatAbstract">Abstract</div>
-        <button data-style="cubist" class="style-btn">Cubist Abstract</button>
-        <button data-style="hex" class="style-btn">Hex Tactical</button>
-        <button data-style="brushstroke" class="style-btn">Brushstroke</button>
-        <button data-style="topographic" class="style-btn">Topographic</button>
-        <button data-style="shapes" class="style-btn">Geometric Shapes</button>
-        
-        <div class="section-subhdr" id="lblCatOrganic">Organic</div>
-        <button data-style="zebra" class="style-btn">Zebra Stripes</button>
-        <button data-style="leopard" class="style-btn">Leopard Print</button>
-        <button data-style="rust" class="style-btn">Rust & Patina</button>
-        <button data-style="wood" class="style-btn">Wood Grain</button>
-        
-        <div class="section-subhdr" id="lblCatTech">Tech / Synth</div>
-        <button data-style="wireframe" class="style-btn">Cyber Wireframe</button>
-        <button data-style="carbon" class="style-btn">Carbon Fibre</button>
-        <button data-style="circuit" class="style-btn">Circuit Board</button>
-        <button data-style="glitch" class="style-btn">Data Glitch</button>
-        
-        <div class="section-subhdr" id="lblCatNovelty">Novelty</div>
-        <button data-style="emojis" class="style-btn">Emoji Pattern</button>
-      </div>
-    </div>
+        /* Status Bar */
+        #status-bar {
+            height: 22px;
+            background-color: var(--panel-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+    `;
+    document.head.appendChild(style);
 
-    <div class="panel-box" style="flex-shrink: 0;">
-      <div class="panel-title" id="lblTextureInfo">Texture Info</div>
-      <div class="info-row"><span id="lblActiveStyle">Active Style:</span><span id="infoStyleName">WWI Dazzle</span></div>
-      <div class="info-row"><span id="lblPaletteColors">Palette Colors:</span><span id="infoColors">5</span></div>
-      <div class="info-row"><span id="lblBackground">Background:</span><span id="infoBg">#101010</span></div>
-      <div class="info-row"><span id="lblViewportRes">Viewport Res:</span><span id="infoRes">1200 x 800</span></div>
-      <div class="info-row"><span id="lblColorDepth">Color Depth:</span><span>32-bit RGBA</span></div>
-      <div class="info-row"><span id="lblSeedVal">Seed Value:</span><span id="infoSeedDisp">1234</span></div>
-      <div class="info-row mt-1"><span id="lblEstSize">Est. File Size:</span><span id="infoFileSize">-- MB</span></div>
-      <div class="info-row"><span id="lblRawMem">Raw Memory:</span><span id="infoMemory">-- MB</span></div>
-    </div>
-  </div>
+    function applyKDEColors() {
+        const kdeColors = window.kdeThemeColors || window.parent?.kdeThemeColors || {
+            'kde-bg': '#1a1b1e',
+            'kde-panel': '#232629',
+            'kde-accent': '#3daee9',
+            'kde-text': '#eff0f1',
+            'kde-window-border': '#1d2023',
+        };
 
-  <div class="viewport-center" id="viewport">
-    <div class="floating-toolbar">
-      <button id="reloadBtn" class="float-icon-btn" title="Regenerate Texture">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-      </button>
+        const root = document.documentElement;
+        root.style.setProperty('--bg-color', kdeColors['kde-bg']);
+        root.style.setProperty('--panel-bg', kdeColors['kde-panel']);
+        root.style.setProperty('--text-color', kdeColors['kde-text']);
+        root.style.setProperty('--border-color', kdeColors['kde-window-border']);
+        root.style.setProperty('--accent-color', kdeColors['kde-accent']);
+    }
+    applyKDEColors();
 
-      <div class="relative" id="downloadContainer">
-        <button id="downloadDropdownBtn" class="float-icon-btn" title="Export PNG Options">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-        </button>
-        <div id="downloadMenu" class="dropdown-menu">
-          <div class="px-3 py-1 text-[10px] font-bold text-[var(--sub-color)] uppercase tracking-wider" id="lblExportRes">Resolutions</div>
-          <a class="dropdown-item dl-opt" data-res="current">Viewport Size</a>
-          <a class="dropdown-item dl-opt" data-res="1280x720">720p HD</a>
-          <a class="dropdown-item dl-opt" data-res="1920x1080">1080p FHD</a>
-          <a class="dropdown-item dl-opt" data-res="2560x1440">1440p QHD</a>
-          <div class="border-t border-[var(--border-color)] my-1"></div>
-          <a class="dropdown-item dl-opt" id="customResBtn">Custom X by X...</a>
-        </div>
-      </div>
-    </div>
-
-    <canvas id="dazzleCanvas" width="1200" height="800"></canvas>
-    <div class="zoom-indicator" id="zoomIndicator">100%</div>
-  </div>
-
-  <div class="sidebar-right">
-    <div class="panel-box">
-      <div class="panel-title" id="lblFineTuning">Fine Tuning</div>
-      
-      <div class="slider-group">
-        <div class="slider-label"><span id="lblSeed">Seed Value</span> <span id="valSeed">1234</span></div>
-        <input type="range" id="rangeSeed" min="1" max="9999" value="1234">
-      </div>
-
-      <div class="slider-group">
-        <div class="slider-label"><span id="lblScale">Scale / Density</span> <span id="valScale">50</span></div>
-        <input type="range" id="rangeScale" min="10" max="100" value="50">
-      </div>
-
-      <div class="slider-group">
-        <div class="slider-label"><span id="lblComplexity">Complexity</span> <span id="valComplexity">5</span></div>
-        <input type="range" id="rangeComplexity" min="1" max="10" value="5">
-      </div>
-
-      <div class="slider-group">
-        <div class="slider-label"><span id="lblHue">Hue Shift</span> <span id="valHue">0°</span></div>
-        <input type="range" id="rangeHue" min="0" max="360" value="0">
-      </div>
-
-      <div class="slider-group">
-        <div class="slider-label"><span id="lblSaturation">Saturation</span> <span id="valSaturation">100%</span></div>
-        <input type="range" id="rangeSaturation" min="0" max="200" value="100">
-      </div>
-
-      <div class="slider-group">
-        <div class="slider-label"><span id="lblContrast">Contrast</span> <span id="valContrast">100%</span></div>
-        <input type="range" id="rangeContrast" min="50" max="150" value="100">
-      </div>
-
-      <div class="slider-group">
-        <div class="slider-label"><span id="lblBrightness">Brightness</span> <span id="valBrightness">100%</span></div>
-        <input type="range" id="rangeBrightness" min="50" max="150" value="100">
-      </div>
-
-      <div class="slider-group">
-        <div class="slider-label"><span id="lblBlur">Softness / Blur</span> <span id="valBlur">0px</span></div>
-        <input type="range" id="rangeBlur" min="0" max="10" value="0">
-      </div>
-    </div>
-
-    <div class="panel-box">
-      <div class="panel-title" id="lblOptionsMenu">Options</div>
-      
-      <label class="checkbox-row">
-        <span id="lblEnableOutlines">Enable Outlines</span>
-        <input type="checkbox" id="chkOutline" checked>
-      </label>
-
-      <label class="checkbox-row">
-        <span id="lblRandomPalette">Randomize Palettes</span>
-        <input type="checkbox" id="chkRandomPalette" checked>
-      </label>
-
-      <label class="checkbox-row">
-        <span id="lblInvertColors">Invert Colors</span>
-        <input type="checkbox" id="chkInvert">
-      </label>
-
-      <label class="checkbox-row">
-        <span id="lblVignette">Vignette Effect</span>
-        <input type="checkbox" id="chkVignette" checked>
-      </label>
-
-      <div class="select-row mt-2">
-        <span id="lblBlendMode">Blend Mode</span>
-        <select id="selectBlend">
-          <option value="normal">Normal</option>
-          <option value="multiply">Multiply</option>
-          <option value="screen">Screen</option>
-          <option value="overlay">Overlay</option>
-        </select>
-      </div>
-
-      <div class="slider-group mt-2">
-        <div class="slider-label"><span id="lblRoughness">Roughness / Noise</span> <span id="valNoise">0%</span></div>
-        <input type="range" id="rangeNoise" min="0" max="50" value="0">
-      </div>
-
-      <div class="slider-group">
-        <div class="slider-label"><span id="lblStrokeWidth">Stroke Width</span> <span id="valStroke">2px</span></div>
-        <input type="range" id="rangeStroke" min="0" max="10" value="2">
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="customResModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center">
-    <div class="panel-box !w-auto min-w-[320px]" id="customResContent">
-        <h3 class="text-[var(--text-color)] text-lg font-bold mb-4" id="lblCustomModalTitle">Custom Download Size</h3>
-        <div class="flex items-center gap-4 mb-2">
-            <div class="flex-1">
-                <label class="block text-xs text-[var(--sub-color)] mb-1 font-semibold uppercase" id="lblWidth">Width (px)</label>
-                <input type="number" id="customW" value="3840" class="cfcc-input" />
-            </div>
-            <span class="text-[var(--sub-color)] mt-5 font-bold">X</span>
-            <div class="flex-1">
-                <label class="block text-xs text-[var(--sub-color)] mb-1 font-semibold uppercase" id="lblHeight">Height (px)</label>
-                <input type="number" id="customH" value="2160" class="cfcc-input" />
+    document.body.innerHTML = `
+    <div id="texture-editor-app">
+        <!-- Toolbar -->
+        <div id="toolbar">
+            <button class="tool-btn" id="reloadBtn" title="Regenerate Texture">
+                <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+            </button>
+            <div class="toolbar-separator"></div>
+            <div style="position:relative;" id="downloadContainer">
+                <button class="tool-btn" id="downloadDropdownBtn" title="Export PNG Options">
+                    <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                </button>
+                <div id="downloadMenu" class="dropdown-menu">
+                    <div style="padding:4px 8px; font-size:10px; font-weight:bold; color:var(--text-muted); text-transform:uppercase;">Resolutions</div>
+                    <a class="dropdown-item dl-opt" data-res="current">Viewport Size</a>
+                    <a class="dropdown-item dl-opt" data-res="1280x720">720p HD</a>
+                    <a class="dropdown-item dl-opt" data-res="1920x1080">1080p FHD</a>
+                    <a class="dropdown-item dl-opt" data-res="2560x1440">1440p QHD</a>
+                </div>
             </div>
         </div>
-        <p id="customError" class="text-red-500 text-xs h-4 mb-4 font-semibold"></p>
-        <div class="flex justify-end gap-3 pt-3 border-t border-[var(--border-color)]">
-            <button id="cancelCustom" class="px-4 py-2 text-sm font-semibold text-[var(--sub-color)] hover:text-[var(--text-color)] transition-colors">Cancel</button>
-            <button id="downloadCustom" class="float-btn !bg-[var(--border-hover)] !text-white !border-transparent hover:!opacity-90 px-4 py-2 rounded-lg text-sm font-semibold">Download</button>
+
+        <!-- Main Workspace Layout -->
+        <div class="editor-layout">
+            <!-- Left Sidebar -->
+            <div class="sidebar">
+                <div class="panel-box" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+                    <div class="panel-title">Generator Controls</div>
+                    <div style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:2px; padding-right:2px;">
+                        <div class="section-subhdr">Camouflage</div>
+                        <button data-style="wwi" class="style-btn active">WWI Dazzle</button>
+                        <button data-style="splinter" class="style-btn">Splinter Tarn</button>
+                        <button data-style="tiger" class="style-btn">Tiger Stripe</button>
+                        <button data-style="digital" class="style-btn">Digital MARPAT</button>
+                        <button data-style="flecktarn" class="style-btn">Flecktarn</button>
+                        
+                        <div class="section-subhdr">Abstract</div>
+                        <button data-style="cubist" class="style-btn">Cubist Abstract</button>
+                        <button data-style="hex" class="style-btn">Hex Tactical</button>
+                        <button data-style="brushstroke" class="style-btn">Brushstroke</button>
+                        <button data-style="topographic" class="style-btn">Topographic</button>
+                        <button data-style="shapes" class="style-btn">Geometric Shapes</button>
+                        
+                        <div class="section-subhdr">Organic</div>
+                        <button data-style="zebra" class="style-btn">Zebra Stripes</button>
+                        <button data-style="leopard" class="style-btn">Leopard Print</button>
+                        <button data-style="rust" class="style-btn">Rust & Patina</button>
+                        <button data-style="wood" class="style-btn">Wood Grain</button>
+                        
+                        <div class="section-subhdr">Tech / Synth</div>
+                        <button data-style="wireframe" class="style-btn">Cyber Wireframe</button>
+                        <button data-style="carbon" class="style-btn">Carbon Fibre</button>
+                        <button data-style="circuit" class="style-btn">Circuit Board</button>
+                        <button data-style="glitch" class="style-btn">Data Glitch</button>
+                        
+                        <div class="section-subhdr">Novelty</div>
+                        <button data-style="emojis" class="style-btn">Emoji Pattern</button>
+                    </div>
+                </div>
+
+                <div class="panel-box" style="flex-shrink:0;">
+                    <div class="panel-title">Texture Info</div>
+                    <div class="info-row"><span>Active Style:</span><span id="infoStyleName">WWI Dazzle</span></div>
+                    <div class="info-row"><span>Palette Colors:</span><span id="infoColors">5</span></div>
+                    <div class="info-row"><span>Background:</span><span id="infoBg">#101010</span></div>
+                    <div class="info-row"><span>Viewport Res:</span><span id="infoRes">1200 x 800</span></div>
+                    <div class="info-row"><span>Seed Value:</span><span id="infoSeedDisp">1234</span></div>
+                    <div class="info-row"><span>Est. File Size:</span><span id="infoFileSize">-- MB</span></div>
+                </div>
+            </div>
+
+            <!-- Viewport Center -->
+            <div id="workspace">
+                <canvas id="dazzleCanvas" width="1200" height="800"></canvas>
+                <div class="zoom-indicator" id="zoomIndicator">100%</div>
+            </div>
+
+            <!-- Right Sidebar -->
+            <div class="sidebar right">
+                <div class="panel-box">
+                    <div class="panel-title">Fine Tuning</div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label"><span>Seed Value</span> <span id="valSeed">1234</span></div>
+                        <input type="range" id="rangeSeed" min="1" max="9999" value="1234">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label"><span>Scale / Density</span> <span id="valScale">50</span></div>
+                        <input type="range" id="rangeScale" min="10" max="100" value="50">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label"><span>Complexity</span> <span id="valComplexity">5</span></div>
+                        <input type="range" id="rangeComplexity" min="1" max="10" value="5">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label"><span>Hue Shift</span> <span id="valHue">0°</span></div>
+                        <input type="range" id="rangeHue" min="0" max="360" value="0">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label"><span>Saturation</span> <span id="valSaturation">100%</span></div>
+                        <input type="range" id="rangeSaturation" min="0" max="200" value="100">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label"><span>Contrast</span> <span id="valContrast">100%</span></div>
+                        <input type="range" id="rangeContrast" min="50" max="150" value="100">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label"><span>Brightness</span> <span id="valBrightness">100%</span></div>
+                        <input type="range" id="rangeBrightness" min="50" max="150" value="100">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label"><span>Softness / Blur</span> <span id="valBlur">0px</span></div>
+                        <input type="range" id="rangeBlur" min="0" max="10" value="0">
+                    </div>
+                </div>
+
+                <div class="panel-box">
+                    <div class="panel-title">Options</div>
+                    
+                    <label class="checkbox-row">
+                        <span>Enable Outlines</span>
+                        <input type="checkbox" id="chkOutline" checked>
+                    </label>
+
+                    <label class="checkbox-row">
+                        <span>Randomize Palettes</span>
+                        <input type="checkbox" id="chkRandomPalette" checked>
+                    </label>
+
+                    <label class="checkbox-row">
+                        <span>Invert Colors</span>
+                        <input type="checkbox" id="chkInvert">
+                    </label>
+
+                    <label class="checkbox-row">
+                        <span>Vignette Effect</span>
+                        <input type="checkbox" id="chkVignette" checked>
+                    </label>
+
+                    <div class="select-row mt-2">
+                        <span>Blend Mode</span>
+                        <select id="selectBlend">
+                            <option value="normal">Normal</option>
+                            <option value="multiply">Multiply</option>
+                            <option value="screen">Screen</option>
+                            <option value="overlay">Overlay</option>
+                        </select>
+                    </div>
+
+                    <div class="slider-group mt-2">
+                        <div class="slider-label"><span>Roughness / Noise</span> <span id="valNoise">0%</span></div>
+                        <input type="range" id="rangeNoise" min="0" max="50" value="0">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label"><span>Stroke Width</span> <span id="valStroke">2px</span></div>
+                        <input type="range" id="rangeStroke" min="0" max="10" value="2">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div id="status-bar">
+            <span>Ready for procedural texture generation</span>
         </div>
     </div>
-</div>
-
-<script>
-  (function(){
-    "use strict";
+    `;
 
     const canvas = document.getElementById('dazzleCanvas');
     const ctx = canvas.getContext('2d');
-    const viewport = document.getElementById('viewport');
+    const workspace = document.getElementById('workspace');
     const zoomIndicator = document.getElementById('zoomIndicator');
 
     let scale = 0.75;
@@ -572,36 +523,36 @@
     canvas.height = baseH;
 
     function updateCanvasTransform() {
-      canvas.style.transform = \`translate(\${panX}px, \${panY}px) scale(\${scale})\`;
-      zoomIndicator.textContent = \`\${Math.round(scale * 100)}%\`;
+        canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+        zoomIndicator.textContent = `${Math.round(scale * 100)}%`;
     }
     updateCanvasTransform();
 
-    viewport.addEventListener('mousedown', (e) => {
-      if (e.button === 0 && (e.target === viewport || e.target === canvas)) {
-        isPanning = true;
-        viewport.classList.add('grabbing');
-        startX = e.clientX - panX;
-        startY = e.clientY - panY;
-      }
+    workspace.addEventListener('mousedown', (e) => {
+        if (e.button === 0 && (e.target === workspace || e.target === canvas)) {
+            isPanning = true;
+            workspace.classList.add('grabbing');
+            startX = e.clientX - panX;
+            startY = e.clientY - panY;
+        }
     });
     window.addEventListener('mousemove', (e) => {
-      if (!isPanning) return;
-      panX = e.clientX - startX;
-      panY = e.clientY - startY;
-      updateCanvasTransform();
+        if (!isPanning) return;
+        panX = e.clientX - startX;
+        panY = e.clientY - startY;
+        updateCanvasTransform();
     });
     window.addEventListener('mouseup', () => {
-      isPanning = false;
-      viewport.classList.remove('grabbing');
+        isPanning = false;
+        workspace.classList.remove('grabbing');
     });
-    viewport.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      const zoomFactor = 1.1;
-      let newScale = e.deltaY < 0 ? scale * zoomFactor : scale / zoomFactor;
-      newScale = Math.max(0.1, Math.min(10, newScale));
-      scale = newScale;
-      updateCanvasTransform();
+    workspace.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const zoomFactor = 1.1;
+        let newScale = e.deltaY < 0 ? scale * zoomFactor : scale / zoomFactor;
+        newScale = Math.max(0.1, Math.min(10, newScale));
+        scale = newScale;
+        updateCanvasTransform();
     }, { passive: false });
 
     let currentStyle = 'wwi';
@@ -1005,7 +956,7 @@
         tCtx.fillRect(0, 0, w, h);
         const emojis = ['🪖', '🌿', '💥', '🚁', '🎖️', '🔥', '⚙️', '💎', '🚀', '⭐'];
         for(let i=0; i<80; i++) {
-            tCtx.font = \`\${randomInt(20, 60)}px sans-serif\`;
+            tCtx.font = `${randomInt(20, 60)}px sans-serif`;
             tCtx.fillText(randomChoice(emojis), random()*w, random()*h);
         }
     }
@@ -1149,8 +1100,8 @@
             activePalette = styleList[0];
         }
 
-        let filterStr = \`hue-rotate(\${hueShiftVal}deg) saturate(\${saturationVal}%) contrast(\${contrastVal}%) brightness(\${brightnessVal}%) blur(\${blurVal}px)\`;
-        if (invertColors) filterStr += \` invert(100%)\`;
+        let filterStr = `hue-rotate(${hueShiftVal}deg) saturate(${saturationVal}%) contrast(${contrastVal}%) brightness(${brightnessVal}%) blur(${blurVal}px)`;
+        if (invertColors) filterStr += ` invert(100%)`;
         tCtx.filter = filterStr;
         
         if(currentStyle==='wwi') generateWWIDazzle(tCtx, w, h);
@@ -1212,7 +1163,6 @@
         const rawBytes = baseW * baseH * 4;
         const estKb = Math.round((rawBytes * 0.35) / 1024);
         document.getElementById('infoFileSize').textContent = estKb > 1024 ? (estKb / 1024).toFixed(2) + ' MB' : estKb + ' KB';
-        document.getElementById('infoMemory').textContent = (rawBytes / (1024 * 1024)).toFixed(2) + ' MB';
     }
 
     document.getElementById('reloadBtn').addEventListener('click', () => {
@@ -1233,9 +1183,9 @@
     });
 
     ['Seed', 'Scale', 'Complexity', 'Noise', 'Stroke'].forEach(key => {
-        document.getElementById(\`range\${key}\`).addEventListener('input', (e) => {
+        document.getElementById(`range${key}`).addEventListener('input', (e) => {
             const val = parseInt(e.target.value);
-            document.getElementById(\`val\${key}\`).textContent = key === 'Stroke' ? \`\${val}px\` : (key === 'Noise' ? \`\${val}%\` : val);
+            document.getElementById(`val${key}`).textContent = key === 'Stroke' ? `${val}px` : (key === 'Noise' ? `${val}%` : val);
             if(key==='Seed') seedValue = val;
             if(key==='Scale') scaleDensity = val;
             if(key==='Complexity') complexityVal = val;
@@ -1246,9 +1196,9 @@
     });
 
     ['Hue', 'Saturation', 'Contrast', 'Brightness', 'Blur'].forEach(key => {
-        document.getElementById(\`range\${key}\`).addEventListener('input', (e) => {
+        document.getElementById(`range${key}`).addEventListener('input', (e) => {
             const val = parseInt(e.target.value);
-            document.getElementById(\`val\${key}\`).textContent = key === 'Hue' ? \`\${val}°\` : (key === 'Blur' ? \`\${val}px\` : \`\${val}%\`);
+            document.getElementById(`val${key}`).textContent = key === 'Hue' ? `${val}°` : (key === 'Blur' ? `${val}px` : `${val}%`);
             if(key==='Hue') hueShiftVal = val;
             if(key==='Saturation') saturationVal = val;
             if(key==='Contrast') contrastVal = val;
@@ -1267,8 +1217,6 @@
     const downloadDropdownBtn = document.getElementById('downloadDropdownBtn');
     const downloadMenu = document.getElementById('downloadMenu');
     const downloadOptions = document.querySelectorAll('.dl-opt');
-    const customResBtn = document.getElementById('customResBtn');
-    const customResModal = document.getElementById('customResModal');
     
     downloadDropdownBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1287,7 +1235,7 @@
         renderPatternToContext(offCtx, width, height);
         
         const link = document.createElement('a');
-        link.download = \`texture-\${currentStyle}-\${width}x\${height}.png\`;
+        link.download = `texture-${currentStyle}-${width}x${height}.png`;
         link.href = offCanvas.toDataURL('image/png');
         link.click();
     }
@@ -1307,31 +1255,7 @@
         });
     });
 
-    customResBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        customResModal.classList.remove('hidden');
-    });
-
-    document.getElementById('cancelCustom').addEventListener('click', () => { customResModal.classList.add('hidden'); });
-    document.getElementById('customResContent').addEventListener('click', (e) => e.stopPropagation());
-
-    document.getElementById('downloadCustom').addEventListener('click', () => {
-        const w = parseInt(document.getElementById('customW').value);
-        const h = parseInt(document.getElementById('customH').value);
-        if(w > 0 && h > 0) {
-            customResModal.classList.add('hidden');
-            executeDownload(w, h);
-        } else {
-            document.getElementById('customError').textContent = 'Invalid dimensions';
-        }
-    });
-
     generateMainTexture();
+    console.log("Texture Editor initialized successfully.");
 
-  })();
-</script>
-</body>
-</html>`;
-    }
 })();

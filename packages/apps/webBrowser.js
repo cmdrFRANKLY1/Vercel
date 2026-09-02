@@ -1,7 +1,7 @@
 (function() {
     "use strict";
 
-    // Inject KDE Firefox theme and styles
+    // Inject KDE WebBrowser theme and styles
     const style = document.createElement('style');
     style.textContent = `
         * {
@@ -52,7 +52,7 @@
         ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--accent-color); }
 
-        #firefox-app {
+        #webBrowser-app {
             display: flex;
             flex-direction: column;
             height: 100%;
@@ -411,7 +411,7 @@
     applyKDEColors();
 
     document.body.innerHTML = `
-    <div id="firefox-app">
+    <div id="webBrowser-app">
         <!-- Tabs Bar -->
         <div id="tabs-bar">
             <div id="tabs-container" style="display:flex; gap:2px; align-items:center; flex-grow:1; overflow-x:auto;"></div>
@@ -468,7 +468,7 @@
         }
     }
 
-    function logFirefoxAction(message) {
+    function logWebBrowserAction(message) {
         try {
             loadVFS();
             if (!vfs) return;
@@ -480,14 +480,14 @@
                 }
                 node = node.children[p];
             }
-            if (!node.children['logFirefox.txt']) {
-                node.children['logFirefox.txt'] = { type: 'file', description: 'Firefox browser logs', content: '' };
+            if (!node.children['logWebBrowser.txt']) {
+                node.children['logWebBrowser.txt'] = { type: 'file', description: 'Web browser logs', content: '' };
             }
             const timestamp = new Date().toISOString();
-            node.children['logFirefox.txt'].content += `[${timestamp}] ${message}\n`;
+            node.children['logWebBrowser.txt'].content += `[${timestamp}] ${message}\n`;
             localStorage.setItem('sTerminal_vfs', JSON.stringify(vfs));
         } catch (err) {
-            console.error("Failed to log firefox action:", err);
+            console.error("Failed to log webBrowser action:", err);
         }
     }
 
@@ -558,7 +558,7 @@
             if (activeTab === this) {
                 updateToolbarState();
             }
-            logFirefoxAction(`Navigated to: ${cleanUrl}`);
+            logWebBrowserAction(`Navigated to: ${cleanUrl}`);
         }
 
         goBack() {
@@ -809,6 +809,6 @@
 
     loadVFS();
     createTab('https://www.wikipedia.com/');
-    logFirefoxAction("KDE Firefox Web Browser initialized with startpage https://www.wikipedia.com/.");
+    logWebBrowserAction("KDE WebBrowser initialized with startpage https://www.wikipedia.com/.");
 
 })();
