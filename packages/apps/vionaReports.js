@@ -333,14 +333,15 @@
             border: 1px solid var(--border-solid);
             border-radius: 6px;
             padding: 16px;
+            margin-bottom: 16px;
         }
         .calendar-header-controls {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             margin-bottom: 14px;
         }
-        .cal-nav-group { display: flex; gap: 4px; }
+        .cal-nav-group { display: none; gap: 4px; }
         .cal-nav-btn {
             background: #232629;
             border: 1px solid #4d5052;
@@ -1111,56 +1112,51 @@
                 printHTML(`<div class="search-info">&gt; ${results.length} ${strings.searchResults} for "${escapeHTML(searchTerm)}"</div>`);
             }
 
-            const container = document.createElement('div');
-            container.className = 'calendar-container';
-            output.appendChild(container);
+            // Get all unique months with data
+            const monthsWithData = new Map();
+            for (const r of allReports) {
+                if (!r.mondayDate || !r.days) continue;
+                PARSE_DAY_NAMES.forEach((dayName, dayIndex) => {
+                    const d = r.days[dayName];
+                    if (d && d.content && d.content !== '—') {
+                        const exact = new Date(r.mondayDate);
+                        exact.setDate(exact.getDate() + dayIndex);
+                        const key = exact.getFullYear() + '-' + exact.getMonth();
+                        if (!monthsWithData.has(key)) {
+                            monthsWithData.set(key, { year: exact.getFullYear(), month: exact.getMonth() });
+                        }
+                    }
+                });
+            }
 
-            const header = document.createElement('div');
-            header.className = 'calendar-header-controls';
+            if (monthsWithData.size === 0) {
+                printHTML('<div class="empty-state"><div>📁</div><div>NO CALENDAR DATA AVAILABLE</div></div>');
+                return;
+            }
 
-            header.innerHTML = `
-                <div class="cal-nav-group">
-                    <button class="cal-nav-btn" id="firstMonthBtn">⏮</button>
-                    <button class="cal-nav-btn" id="prevMonthBtn">◀</button>
-                    <button class="cal-nav-btn" id="todayBtn">TODAY</button>
-                </div>
-                <span id="calendarMonthTitle">&gt; ${strings.monthNames[calendarMonth]} ${calendarYear} &lt;</span>
-                <div class="cal-nav-group">
-                    <button class="cal-nav-btn" id="nextMonthBtn">▶</button>
-                    <button class="cal-nav-btn" id="lastMonthBtn">⏭</button>
-                </div>
-            `;
-            container.appendChild(header);
-
-            const grid = document.createElement('div');
-            grid.className = 'calendar-grid';
-            container.appendChild(grid);
-
-            buildCalendarGrid(grid);
-
-            document.getElementById('firstMonthBtn').addEventListener('click', () => {
-                const { min } = getMinMaxDates();
-                if (!isNaN(min.getTime())) { calendarYear = min.getFullYear(); calendarMonth = min.getMonth(); renderCalendarView(); }
+            // Sort months chronologically
+            const sortedMonths = Array.from(monthsWithData.values()).sort((a, b) => {
+                const aKey = a.year * 12 + a.month;
+                const bKey = b.year * 12 + b.month;
+                return aKey - bKey;
             });
-            document.getElementById('lastMonthBtn').addEventListener('click', () => {
-                const { max } = getMinMaxDates();
-                if (!isNaN(max.getTime())) { calendarYear = max.getFullYear(); calendarMonth = max.getMonth(); renderCalendarView(); }
-            });
-            document.getElementById('prevMonthBtn').addEventListener('click', () => {
-                let m = calendarMonth - 1, y = calendarYear;
-                if (m < 0) { m = 11; y--; }
-                calendarMonth = m; calendarYear = y; renderCalendarView();
-            });
-            document.getElementById('nextMonthBtn').addEventListener('click', () => {
-                let m = calendarMonth + 1, y = calendarYear;
-                if (m > 11) { m = 0; y++; }
-                calendarMonth = m; calendarYear = y; renderCalendarView();
-            });
-            document.getElementById('todayBtn').addEventListener('click', () => {
-                const now = new Date();
-                calendarYear = now.getFullYear();
-                calendarMonth = now.getMonth();
-                renderCalendarView();
+
+            // Render all months
+            sortedMonths.forEach(({ year, month }) => {
+                const container = document.createElement('div');
+                container.className = 'calendar-container';
+                output.appendChild(container);
+
+                const header = document.createElement('div');
+                header.className = 'calendar-header-controls';
+                header.innerHTML = `<span id="calendarMonthTitle">&gt; ${strings.monthNames[month]} ${year} &lt;</span>`;
+                container.appendChild(header);
+
+                const grid = document.createElement('div');
+                grid.className = 'calendar-grid';
+                container.appendChild(grid);
+
+                buildCalendarGridForMonth(grid, year, month);
             });
         }
 
@@ -1205,6 +1201,72 @@
                     const content = entry ? entry.content : null;
                     const isHO = entry ? entry.isHO : false;
                     const holidayKey = calendarYear + '-' + String(calendarMonth + 1).padStart(2, '0') + '-' + String(i).padStart(2, '0');
+                    const holiday = germanHolidays[holidayKey];
+
+                    let isSearchMatch = (content && searchTermLower && searchTermLower.length >= 2) ? content.toLowerCase().includes(searchTermLower) : false;
+
+                    html += '<div class="cal-cell ' + (isToday ? 'today' : '') + ' ' + (content ? 'has-entry' : '') + (isSearchMatch ? ' search-match' : '') + (holiday ? ' holiday' : '') + '" ' +
+                        (content ? 'data-key="' + key + '"' : '') + ' title="' + (holiday ? holiday : '') + '">' +
+                        '<div class="cal-date">' + (i < 10 ? '0' + i : i) + (isHO ? ' 🏠' : '') + (holiday ? ' 🎄' : '') + '</div>' +
+                        (content ? '<div class="cal-preview">' + escapeHTML(content.substring(0, 50)) + '</div>' : '') +
+                        '</div>';
+                }
+            }
+            grid.innerHTML = html;
+
+            grid.querySelectorAll('.has-entry').forEach(cell => {
+                cell.addEventListener('click', () => {
+                    const k = cell.dataset.key;
+                    const parts = k.split('-');
+                    const d = new Date(parts[0], parts[1], parts[2]);
+                    document.getElementById('modalTitle').textContent = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase();
+                    document.getElementById('modalContent').textContent = entryMap[k] ? entryMap[k].content : '';
+                    document.getElementById('calendarModal').style.display = 'flex';
+                });
+            });
+        }
+
+        function buildCalendarGridForMonth(grid, year, month) {
+            const now = new Date();
+            const entryMap = {};
+            const searchTermLower = searchTerm ? searchTerm.toLowerCase().trim() : '';
+
+            for (const r of allReports) {
+                if (!r.mondayDate || !r.days) continue;
+                PARSE_DAY_NAMES.forEach((dayName, dayIndex) => {
+                    const d = r.days[dayName];
+                    if (d && d.content && d.content !== '—') {
+                        const exact = new Date(r.mondayDate);
+                        exact.setDate(exact.getDate() + dayIndex);
+                        const k = exact.getFullYear() + '-' + exact.getMonth() + '-' + exact.getDate();
+                        entryMap[k] = { content: d.content, isHO: d.isHO || false };
+                    }
+                });
+            }
+
+            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            // For weekday-only grid (Mon-Fri): calculate empty slots before 1st
+            // If month starts on Sat/Sun, add 5 empty slots; otherwise offset based on day
+            const emptySlots = (firstDayOfMonth === 0 || firstDayOfMonth === 6) ? 5 : (firstDayOfMonth - 1);
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            let html = strings.daysList.map(d => '<div class="cal-day-header">' + d.toUpperCase() + '</div>').join('');
+            // Add empty cells before the 1st of the month to maintain alignment
+            for (let e = 0; e < emptySlots; e++) {
+                html += '<div class="cal-cell empty"></div>';
+            }
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateObj = new Date(year, month, i);
+                const dayOfWeek = dateObj.getDay();
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                
+                if (!isWeekend) {
+                    const isToday = now.getFullYear() === year && now.getMonth() === month && now.getDate() === i;
+                    const key = year + '-' + month + '-' + i;
+                    const entry = entryMap[key] || null;
+                    const content = entry ? entry.content : null;
+                    const isHO = entry ? entry.isHO : false;
+                    const holidayKey = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(i).padStart(2, '0');
                     const holiday = germanHolidays[holidayKey];
 
                     let isSearchMatch = (content && searchTermLower && searchTermLower.length >= 2) ? content.toLowerCase().includes(searchTermLower) : false;
