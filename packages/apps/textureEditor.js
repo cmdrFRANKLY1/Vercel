@@ -4,7 +4,7 @@
     if (typeof window.packagesRegistry !== 'undefined') {
         window.packagesRegistry['textureeditor'] = {
             name: 'Texture Editor',
-            version: '1.0.0',
+            version: '1.1.0',
             description: 'Advanced procedural texture generation with real-time preview and export',
             preInstalledOn: ['default'],
             commands: {
@@ -13,7 +13,7 @@
                 }
             },
             commandInfo: {
-                textureeditor: "what is this command?\ntextureeditor\n\nwhat is it used for?\nProcedural texture generator with 18+ pattern styles, real-time editing, and PNG export at multiple resolutions."
+                textureeditor: "what is this command?\ntextureeditor\n\nwhat is it used for?\nProcedural texture generator with 19+ pattern styles, real-time editing, and PNG export at multiple resolutions."
             }
         };
     }
@@ -378,7 +378,8 @@
                         <button data-style="rust" class="style-btn">Rust & Patina</button>
                         <button data-style="wood" class="style-btn">Wood Grain</button>
                         
-                        <div class="section-subhdr">Tech / Synth</div>
+                        <div class="section-subhdr">Tech & Industrial</div>
+                        <button data-style="warning" class="style-btn">Warning Sign</button>
                         <button data-style="wireframe" class="style-btn">Cyber Wireframe</button>
                         <button data-style="carbon" class="style-btn">Carbon Fibre</button>
                         <button data-style="circuit" class="style-btn">Circuit Board</button>
@@ -588,6 +589,7 @@
         wood: [['#C19A6B', '#966F33', '#6F4E37', '#4A3219'], ['#A89689', '#786C63', '#4A413A', '#241E1A']],
         shapes: [['#1A2530', '#34495E', '#1ABC9C', '#E74C3C'], ['#2C3E50', '#8E44AD', '#3498DB', '#E67E22']],
         emojis: [['#111827', '#1F2937', '#374151']],
+        warning: [['#FFCC00', '#000000'], ['#F5D300', '#0A0A0A'], ['#E5A900', '#111111', '#333333']],
         wireframe: [['#050505', '#00ffff', '#ff00ff'], ['#0a0a1a', '#4444ff', '#00ffaa']],
         carbon: [['#111111', '#1f1f1f', '#2a2a2a', '#050505']],
         circuit: [['#003300', '#00ff00', '#00aa00', '#c0c0c0'], ['#001133', '#00ffff', '#0066aa', '#ffd700']],
@@ -972,6 +974,84 @@
         }
     }
 
+    function generateWarningSign(tCtx, w, h) {
+        const pal = activePalette.length >= 2 ? activePalette : ['#FFCC00', '#000000'];
+        tCtx.fillStyle = pal[0]; // Usually Yellow
+        tCtx.fillRect(0, 0, w, h);
+
+        tCtx.fillStyle = pal[1]; // Usually Black
+        
+        // Use scale density to define stripe width
+        const stripeWidth = Math.max(10, 80 * (scaleDensity / 50));
+        const diag = Math.sqrt(w*w + h*h) * 2; 
+
+        tCtx.save();
+        tCtx.translate(w/2, h/2);
+        
+        // Base diagonal angle around 45 degrees, slightly randomized by seed
+        const isFlipped = random() > 0.5 ? 1 : -1;
+        const angle = (Math.PI / 4) * isFlipped + (random() - 0.5) * 0.1;
+        
+        tCtx.rotate(angle);
+        tCtx.translate(-diag/2, -diag/2);
+
+        for(let x = 0; x < diag; x += stripeWidth * 2) {
+            tCtx.fillRect(x, 0, stripeWidth, diag);
+        }
+        tCtx.restore();
+
+        // Introduce procedural grime and hazard markings based on complexity slider
+        const grungeLevel = complexityVal;
+        if (grungeLevel > 1) {
+            const numScratches = Math.floor((w * h) / 10000 * grungeLevel);
+            
+            // Yellow scratches/chips over the black stripes
+            tCtx.fillStyle = pal[0];
+            for(let i = 0; i < numScratches; i++) {
+                tCtx.globalAlpha = 0.4 + random() * 0.6;
+                tCtx.beginPath();
+                tCtx.arc(random()*w, random()*h, randomInt(1, 4), 0, Math.PI*2);
+                tCtx.fill();
+            }
+            
+            // Black grime/dirt over the yellow
+            tCtx.fillStyle = pal[1];
+            for(let i = 0; i < numScratches; i++) {
+                tCtx.globalAlpha = 0.4 + random() * 0.6;
+                tCtx.beginPath();
+                tCtx.arc(random()*w, random()*h, randomInt(1, 4), 0, Math.PI*2);
+                tCtx.fill();
+            }
+            tCtx.globalAlpha = 1.0;
+            
+            // Occasionally add hazard triangle decals based on seed complexity
+            if (random() > 0.5 && grungeLevel >= 3) {
+                tCtx.lineWidth = strokeWidthVal > 0 ? strokeWidthVal * 3 : 5;
+                tCtx.strokeStyle = pal[1];
+                tCtx.fillStyle = pal[0];
+                tCtx.beginPath();
+                const cx = w / 2 + (random() - 0.5) * (w/2);
+                const cy = h / 2 + (random() - 0.5) * (h/2);
+                const r = 50 + random() * 80;
+                
+                // Draw Warning Triangle
+                tCtx.moveTo(cx, cy - r);
+                tCtx.lineTo(cx + r, cy + r - 15);
+                tCtx.lineTo(cx - r, cy + r - 15);
+                tCtx.closePath();
+                tCtx.fill();
+                tCtx.stroke();
+                
+                // Exclamation mark inside the triangle
+                tCtx.fillStyle = pal[1];
+                tCtx.fillRect(cx - r*0.1, cy - r*0.3, r*0.2, r*0.7);
+                tCtx.beginPath();
+                tCtx.arc(cx, cy + r*0.6, r*0.1, 0, Math.PI*2);
+                tCtx.fill();
+            }
+        }
+    }
+
     function generateWireframe(tCtx, w, h) {
         const pal = activePalette.length >= 3 ? activePalette : ['#050505', '#00ffff', '#ff00ff'];
         tCtx.fillStyle = pal[0];
@@ -1119,6 +1199,7 @@
         else if(currentStyle==='wood') generateWoodGrain(tCtx, w, h);
         else if(currentStyle==='emojis') generateEmojis(tCtx, w, h);
         else if(currentStyle==='shapes') generateShapes(tCtx, w, h);
+        else if(currentStyle==='warning') generateWarningSign(tCtx, w, h);
         else if(currentStyle==='wireframe') generateWireframe(tCtx, w, h);
         else if(currentStyle==='carbon') generateCarbonFibre(tCtx, w, h);
         else if(currentStyle==='circuit') generateCircuit(tCtx, w, h);
