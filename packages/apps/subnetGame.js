@@ -20,19 +20,30 @@ const htmlContent = `
             --success-color: #27ae60;
             --error-color: #e74c3c;
             --warning-color: #f39c12;
+            --network-color: #9b59b6; /* Color to visually represent network bits */
+            --host-color: #3498db;    /* Color to visually represent host bits */
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            /* Prevent selection globally for app-like feel, but override for inputs below */
             user-select: none;
             -webkit-user-select: none;
         }
 
-        input, textarea, .selectable-text {
+        /* FIX: Allow selection and interactions on standard form elements */
+        input, textarea, select, button, .selectable-text {
             user-select: text !important;
             -webkit-user-select: text !important;
+            /* Ensure pointer events are active */
+            pointer-events: auto !important; 
+        }
+
+        /* Specifically for range inputs to ensure dragability */
+        input[type="range"] {
+            cursor: pointer;
         }
 
         body, html {
@@ -50,7 +61,7 @@ const htmlContent = `
         .code-font {
             font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
         }
-
+ 
         #app-container {
             display: flex;
             flex-direction: column;
@@ -60,7 +71,6 @@ const htmlContent = `
             position: relative;
         }
 
-        /* Toolbar/Header styling mimicking textEditor.js */
         #toolbar {
             height: 48px;
             background-color: var(--kde-panel);
@@ -87,11 +97,10 @@ const htmlContent = `
         }
 
         .tool-btn:hover {
-            background-color: rgba(61, 174, 233, 0.15); /* Hover based on accent */
+            background-color: rgba(61, 174, 233, 0.15);
             color: var(--kde-accent);
         }
 
-        /* Main Content Area */
         #workspace {
             display: flex;
             flex-grow: 1;
@@ -130,7 +139,6 @@ const htmlContent = `
             animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
-        /* Custom Input Styling */
         input[type="number"] {
             -moz-appearance: textfield;
             background-color: var(--kde-bg);
@@ -148,7 +156,6 @@ const htmlContent = `
             margin: 0; 
         }
 
-        /* Buttons */
         .primary-btn {
             background-color: var(--kde-accent);
             color: #fff;
@@ -162,13 +169,11 @@ const htmlContent = `
             transform: scale(0.98);
         }
 
-        /* Scrollbar styling */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--kde-bg); }
         ::-webkit-scrollbar-thumb { background: var(--kde-window-border); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--kde-accent); }
 
-        /* Status Bar */
         #status-bar {
             height: 24px;
             background-color: var(--kde-panel);
@@ -182,7 +187,6 @@ const htmlContent = `
             flex-shrink: 0;
         }
 
-        /* Modal Overlays */
         .modal-overlay {
             background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(4px);
@@ -192,12 +196,46 @@ const htmlContent = `
             border: 1px solid var(--kde-window-border);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
+
+        .bit-box {
+            width: 12px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            border: 1px solid var(--kde-window-border);
+            margin: 1px;
+            transition: all 0.3s ease;
+            position: relative;
+            /* Make sure bits don't block interactions if ever needed */
+            pointer-events: none; 
+        }
+        .bit-box.network {
+            background-color: rgba(155, 89, 182, 0.2);
+            border-color: var(--network-color);
+            color: #e0b0ff;
+        }
+        .bit-box.host {
+            background-color: rgba(52, 152, 219, 0.2);
+            border-color: var(--host-color);
+            color: #add8e6;
+        }
+        .octet-divider {
+            display: inline-block;
+            width: 4px;
+            height: 24px;
+            background-color: var(--kde-window-border);
+            margin: 0 4px;
+            vertical-align: top;
+            margin-top: 1px;
+        }
     </style>
 </head>
 <body>
     <div id="app-container">
         
-        <!-- App Toolbar -->
         <div id="toolbar">
             <div class="flex items-center gap-2">
                 <span class="font-bold tracking-wide text-[var(--kde-accent)] text-lg" data-i18n="title">Subnet Master</span>
@@ -208,7 +246,7 @@ const htmlContent = `
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span data-i18n="cheatSheet">Cheat Sheet</span>
+                    <span data-i18n="cheatSheet">Help / Cheat Sheet</span>
                 </button>
                 <button id="resetBtn" class="tool-btn" title="Reset stats">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -219,11 +257,9 @@ const htmlContent = `
             </div>
         </div>
 
-        <!-- Main Workspace Area -->
         <div id="workspace">
             <div class="game-panel pop-in" id="gameContainer">
                 
-                <!-- Score Header -->
                 <div class="flex justify-between items-center p-4 border-b" style="border-color: var(--kde-window-border);">
                     <div class="flex flex-col">
                         <span class="text-xs uppercase tracking-wider font-semibold opacity-60" data-i18n="score">Score</span>
@@ -235,7 +271,6 @@ const htmlContent = `
                     </div>
                 </div>
 
-                <!-- Active Game Area -->
                 <div class="flex flex-col items-center justify-center p-8 space-y-8">
                     
                     <div class="text-center space-y-3 w-full">
@@ -262,14 +297,12 @@ const htmlContent = `
                     </div>
                 </div>
 
-                <!-- Feedback Area -->
                 <div id="feedbackContainer" class="min-h-[80px] flex flex-col items-center justify-center p-4 border-t transition-all bg-black/20 rounded-b-lg" style="border-color: var(--kde-window-border);">
                     <p class="text-sm opacity-60 animate-pulse text-center" data-i18n="awaiting">Awaiting calculation...</p>
                 </div>
             </div>
         </div>
 
-        <!-- Status Bar -->
         <div id="status-bar">
             <div>
                 <span id="status-msg" data-i18n="ready">Ready</span>
@@ -279,13 +312,11 @@ const htmlContent = `
             </div>
         </div>
 
-        <!-- Help/Cheat Sheet Modal Overlay -->
         <div id="helpModal" class="modal-overlay fixed inset-0 z-50 hidden items-center justify-center p-4 opacity-0 transition-opacity duration-200">
-            <div class="modal-content rounded-lg p-0 max-w-2xl w-full relative flex flex-col max-h-[85vh]">
+            <div class="modal-content rounded-lg p-0 max-w-3xl w-full relative flex flex-col max-h-[90vh]">
                 
-                <!-- Modal Header -->
                 <div class="flex justify-between items-center p-4 border-b" style="border-color: var(--kde-window-border); background-color: var(--kde-panel);">
-                    <h3 class="text-xl font-bold" data-i18n="modalTitle">How to Calculate Hosts</h3>
+                    <h3 class="text-xl font-bold" data-i18n="modalTitle">How to Calculate Hosts & Identify Networks</h3>
                     <button id="closeHelpBtn" class="text-gray-400 hover:text-white transition-colors p-1">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -293,31 +324,59 @@ const htmlContent = `
                     </button>
                 </div>
 
-                <!-- Modal Body (Scrollable) -->
-                <div class="p-6 overflow-y-auto space-y-6 text-sm sm:text-base">
+                <div class="p-6 overflow-y-auto space-y-8 text-sm sm:text-base">
                     
-                    <div class="p-4 rounded-md border text-center" style="background-color: var(--kde-bg); border-color: var(--kde-window-border);">
-                        <h4 class="font-bold text-lg mb-1" style="color: var(--kde-accent);" data-i18n="magic32Title">The Magic Number is 32</h4>
-                        <p class="opacity-80" data-i18n="magic32Desc">Every IPv4 address has exactly <strong>32 puzzle pieces</strong> (bits).</p>
+                    <div class="p-4 rounded-md border" style="background-color: var(--kde-bg); border-color: var(--kde-window-border);">
+                        <h4 class="font-bold text-lg mb-2 text-center" data-i18n="visualTitle">Visualizing the 32 Bits</h4>
+                        <p class="opacity-80 text-center mb-4 text-sm" data-i18n="visualDesc">Adjust the slider to see how the subnet mask (/) divides the 32 bits of an IP address into <strong style="color: var(--network-color);">Network</strong> and <strong style="color: var(--host-color);">Host</strong> portions.</p>
+                        
+                        <div class="flex flex-col items-center space-y-4">
+                            <div class="flex items-center gap-4 w-full max-w-md">
+                                <span class="font-bold text-lg code-font w-16 text-right">/ <span id="visualSliderVal">24</span></span>
+                                <!-- Ensure the slider is clickable -->
+                                <input type="range" id="visualizerSlider" min="16" max="31" value="24" class="w-full cursor-pointer accent-[var(--kde-accent)]" style="pointer-events: auto;">
+                            </div>
+
+                            <div class="w-full flex justify-center items-center overflow-x-auto pb-2">
+                                <div id="bitContainer" class="flex items-center whitespace-nowrap bg-black/30 p-2 rounded border border-[var(--kde-window-border)]">
+                                    <!-- Bits will be injected here by JS -->
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between w-full max-w-md text-sm font-semibold opacity-90 mt-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 rounded" style="background-color: var(--network-color);"></div>
+                                    <span data-i18n="networkBitsLabel">Network Bits (Masked)</span>: <span id="networkBitsCount">24</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 rounded" style="background-color: var(--host-color);"></div>
+                                    <span data-i18n="hostBitsLabel">Host Bits (Remaining)</span>: <span id="hostBitsCount">8</span>
+                                </div>
+                            </div>
+                            <div class="text-center text-sm p-2 rounded bg-black/20 border border-[var(--kde-window-border)] mt-2">
+                                <span data-i18n="usableHostsLabel">Usable Hosts (2<sup>Host Bits</sup> - 2): </span>
+                                <strong class="text-[var(--kde-accent)] text-lg ml-1" id="visualUsableHosts">254</strong>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="space-y-5">
+                    <div class="space-y-6">
                         <div class="flex gap-4">
                             <div class="font-bold rounded w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1 shadow" style="background-color: var(--kde-accent); color: white;">1</div>
                             <div>
-                                <h4 class="font-bold mb-1" data-i18n="step1Title">Look at the Slash Number</h4>
-                                <p class="opacity-80 mb-1" data-i18n="step1Desc1">If the game asks for <strong>/24</strong>...</p>
-                                <p class="opacity-60 text-sm" data-i18n="step1Desc2">That means 24 pieces are locked for the network. You can't use them for computers.</p>
+                                <h4 class="font-bold mb-1" data-i18n="step1Title">Identify the Network Portion (The Mask)</h4>
+                                <p class="opacity-80 mb-1" data-i18n="step1Desc1">The slash number (e.g., <strong>/24</strong>) tells you exactly how many of the 32 bits belong to the network.</p>
+                                <p class="opacity-60 text-sm" data-i18n="step1Desc2">These bits are "locked" and identify the network itself. They cannot be assigned to devices.</p>
                             </div>
                         </div>
 
                         <div class="flex gap-4">
                             <div class="font-bold rounded w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1 shadow" style="background-color: var(--kde-accent); color: white;">2</div>
                             <div>
-                                <h4 class="font-bold mb-1" data-i18n="step2Title">Subtract from 32</h4>
-                                <p class="opacity-80 mb-2" data-i18n="step2Desc">Find out how many pieces are left for your computers (hosts).</p>
+                                <h4 class="font-bold mb-1" data-i18n="step2Title">Find the Remaining Host Bits</h4>
+                                <p class="opacity-80 mb-2" data-i18n="step2Desc">Subtract the network bits from the total 32 bits to find out how many bits are left for your devices (hosts).</p>
                                 <div class="font-mono px-3 py-1 rounded inline-block shadow-inner text-sm" style="background-color: var(--kde-bg); border: 1px solid var(--kde-window-border);" data-i18n="step2Math">
-                                    32 - 24 = <strong>8</strong> pieces left
+                                    32 bits total - 24 network bits = <strong>8</strong> host bits left
                                 </div>
                             </div>
                         </div>
@@ -325,8 +384,8 @@ const htmlContent = `
                         <div class="flex gap-4">
                             <div class="font-bold rounded w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1 shadow" style="background-color: var(--kde-accent); color: white;">3</div>
                             <div>
-                                <h4 class="font-bold mb-1" data-i18n="step3Title">Multiply the 2s (The Power of 2)</h4>
-                                <p class="opacity-80 mb-2" data-i18n="step3Desc">Multiply 2 by itself for every piece you have left (2<sup>8</sup>).</p>
+                                <h4 class="font-bold mb-1" data-i18n="step3Title">Calculate Total IPs (The Power of 2)</h4>
+                                <p class="opacity-80 mb-2" data-i18n="step3Desc">Calculate 2 to the power of the remaining host bits (2<sup>8</sup>).</p>
                                 <div class="font-mono px-3 py-1 rounded inline-block shadow-inner text-sm" style="background-color: var(--kde-bg); border: 1px solid var(--kde-window-border);" data-i18n="step3Math">
                                     2 × 2 × 2 × 2 × 2 × 2 × 2 × 2 = <strong>256</strong> total IPs
                                 </div>
@@ -336,8 +395,8 @@ const htmlContent = `
                         <div class="flex gap-4">
                             <div class="font-bold rounded w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1 shadow" style="background-color: var(--error-color); color: white;">4</div>
                             <div>
-                                <h4 class="font-bold mb-1" style="color: var(--error-color);" data-i18n="step4Title">ALWAYS Subtract 2!</h4>
-                                <p class="opacity-80 mb-2" data-i18n="step4Desc">You must throw away the very first IP (Network) and the very last IP (Broadcast). You can never assign them to a host.</p>
+                                <h4 class="font-bold mb-1" style="color: var(--error-color);" data-i18n="step4Title">Subtract 2 (Network & Broadcast)</h4>
+                                <p class="opacity-80 mb-2" data-i18n="step4Desc">You must subtract 2 from the total. The very first IP identifies the <strong>Network Address</strong>, and the last IP is the <strong>Broadcast Address</strong>.</p>
                                 <div class="font-mono px-3 py-2 rounded inline-block shadow text-base font-bold" style="background-color: var(--kde-panel); border: 1px solid var(--success-color); color: var(--success-color);" data-i18n="step4Math">
                                     256 - 2 = 254 Usable Hosts
                                 </div>
@@ -345,7 +404,6 @@ const htmlContent = `
                         </div>
                     </div>
 
-                    <!-- Quick Reference Table -->
                     <div class="mt-6 p-4 rounded-md border" style="background-color: var(--kde-bg); border-color: var(--kde-window-border);">
                         <h4 class="font-bold mb-3 text-center opacity-80 uppercase tracking-wider text-xs" data-i18n="quickRef">Quick Reference Cheat Sheet</h4>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-sm font-mono">
@@ -373,19 +431,16 @@ document.open();
 document.write(htmlContent);
 document.close();
 
-// Initialize the game logic
 function initApp() {
 
-    // Apply theme colors dynamically if provided by parent (KDE wrapper)
     function applyTheme() {
         let themeColors = window.kdeThemeColors;
         
         if (!themeColors) {
             try {
-                // Wrap parent access in try-catch to prevent cross-origin SecurityErrors
                 themeColors = window.parent && window.parent.kdeThemeColors;
             } catch (e) {
-                console.warn("Cross-origin restriction prevented accessing parent theme colors. Using defaults.");
+                console.warn("Cross-origin restriction prevented accessing parent theme colors.");
             }
         }
 
@@ -404,7 +459,7 @@ function initApp() {
     const i18n = {
         en: {
             title: "Subnet Master",
-            cheatSheet: "Cheat Sheet",
+            cheatSheet: "Help / Cheat Sheet",
             reset: "Reset",
             score: "Score",
             streak: "Streak",
@@ -414,20 +469,23 @@ function initApp() {
             awaiting: "Awaiting calculation...",
             ready: "Ready",
             module: "Module: SubnetHostCalc",
-            modalTitle: "How to Calculate Hosts",
-            magic32Title: "The Magic Number is 32",
-            magic32Desc: "Every IPv4 address has exactly <strong>32 puzzle pieces</strong> (bits).",
-            step1Title: "Look at the Slash Number",
-            step1Desc1: "If the game asks for <strong>/24</strong>...",
-            step1Desc2: "That means 24 pieces are locked for the network. You can't use them for computers.",
-            step2Title: "Subtract from 32",
-            step2Desc: "Find out how many pieces are left for your computers (hosts).",
-            step2Math: "32 - 24 = <strong>8</strong> pieces left",
-            step3Title: "Multiply the 2s (The Power of 2)",
-            step3Desc: "Multiply 2 by itself for every piece you have left (2<sup>8</sup>).",
+            modalTitle: "How to Calculate Hosts & Identify Networks",
+            visualTitle: "Visualizing the 32 Bits",
+            visualDesc: "Adjust the slider to see how the subnet mask (/) divides the 32 bits of an IP address into <strong style='color: var(--network-color);'>Network</strong> and <strong style='color: var(--host-color);'>Host</strong> portions.",
+            networkBitsLabel: "Network Bits (Masked)",
+            hostBitsLabel: "Host Bits (Remaining)",
+            usableHostsLabel: "Usable Hosts (2<sup>Host Bits</sup> - 2): ",
+            step1Title: "Identify the Network Portion (The Mask)",
+            step1Desc1: "The slash number (e.g., <strong>/24</strong>) tells you exactly how many of the 32 bits belong to the network.",
+            step1Desc2: "These bits are 'locked' and identify the network itself. They cannot be assigned to devices.",
+            step2Title: "Find the Remaining Host Bits",
+            step2Desc: "Subtract the network bits from the total 32 bits to find out how many bits are left for your devices (hosts).",
+            step2Math: "32 bits total - 24 network bits = <strong>8</strong> host bits left",
+            step3Title: "Calculate Total IPs (The Power of 2)",
+            step3Desc: "Calculate 2 to the power of the remaining host bits (2<sup>8</sup>).",
             step3Math: "2 × 2 × 2 × 2 × 2 × 2 × 2 × 2 = <strong>256</strong> total IPs",
-            step4Title: "ALWAYS Subtract 2!",
-            step4Desc: "You must throw away the very first IP (Network) and the very last IP (Broadcast). You can never assign them to a host.",
+            step4Title: "Subtract 2 (Network & Broadcast)",
+            step4Desc: "You must subtract 2 from the total. The very first IP identifies the <strong>Network Address</strong>, and the last IP is the <strong>Broadcast Address</strong>.",
             step4Math: "256 - 2 = 254 Usable Hosts",
             quickRef: "Quick Reference Cheat Sheet",
             waitInput: "Waiting for input...",
@@ -435,7 +493,7 @@ function initApp() {
             invalidNum: "Invalid input. Numbers only.",
             correctInfo: "Answer correct!",
             incorrectInfo: "Answer incorrect.",
-            viewCheat: "Viewing Cheat Sheet",
+            viewCheat: "Viewing Help Modal",
             statsReset: "Stats Reset.",
             statsResetMsg: "Game stats have been reset.",
             correctMsg: (ips, hosts) => `Correct! ${ips} IPs - 2 = <strong>${hosts}</strong> usable hosts.`,
@@ -443,7 +501,7 @@ function initApp() {
         },
         de: {
             title: "Subnetz-Meister",
-            cheatSheet: "Spickzettel",
+            cheatSheet: "Hilfe / Spickzettel",
             reset: "Neustart",
             score: "Punkte",
             streak: "Serie",
@@ -453,20 +511,23 @@ function initApp() {
             awaiting: "Warte auf Berechnung...",
             ready: "Bereit",
             module: "Modul: SubnetzHostRechner",
-            modalTitle: "Wie man Hosts berechnet",
-            magic32Title: "Die magische Zahl ist 32",
-            magic32Desc: "Jede IPv4-Adresse hat genau <strong>32 Puzzleteile</strong> (Bits).",
-            step1Title: "Schau dir die Slash-Zahl an",
-            step1Desc1: "Wenn das Spiel nach <strong>/24</strong> fragt...",
-            step1Desc2: "Das bedeutet, 24 Teile sind für das Netzwerk gesperrt. Du kannst sie nicht für Computer verwenden.",
-            step2Title: "Von 32 subtrahieren",
-            step2Desc: "Finde heraus, wie viele Teile für deine Computer (Hosts) übrig sind.",
-            step2Math: "32 - 24 = <strong>8</strong> Teile übrig",
-            step3Title: "Multipliziere die 2er (Zweierpotenz)",
-            step3Desc: "Multipliziere 2 mit sich selbst für jedes übrig gebliebene Teil (2<sup>8</sup>).",
+            modalTitle: "Hosts berechnen & Netzwerke identifizieren",
+            visualTitle: "Visualisierung der 32 Bits",
+            visualDesc: "Bewege den Regler, um zu sehen, wie die Subnetzmaske (/) die 32 Bits einer IP-Adresse in <strong style='color: var(--network-color);'>Netzwerk</strong>- und <strong style='color: var(--host-color);'>Host</strong>-Teile trennt.",
+            networkBitsLabel: "Netzwerk-Bits (Maskiert)",
+            hostBitsLabel: "Host-Bits (Verbleibend)",
+            usableHostsLabel: "Nutzbare Hosts (2<sup>Host-Bits</sup> - 2): ",
+            step1Title: "Netzwerk-Teil identifizieren (Die Maske)",
+            step1Desc1: "Die Slash-Zahl (z.B. <strong>/24</strong>) sagt dir genau, wie viele der 32 Bits zum Netzwerk gehören.",
+            step1Desc2: "Diese Bits sind 'gesperrt' und identifizieren das Netzwerk selbst. Sie können keinen Geräten zugewiesen werden.",
+            step2Title: "Finde die verbleibenden Host-Bits",
+            step2Desc: "Subtrahiere die Netzwerk-Bits von den gesamten 32 Bits, um herauszufinden, wie viele Bits für deine Geräte (Hosts) übrig sind.",
+            step2Math: "32 Bits gesamt - 24 Netzwerk-Bits = <strong>8</strong> Host-Bits übrig",
+            step3Title: "Berechne gesamte IPs (Zweierpotenz)",
+            step3Desc: "Berechne 2 hoch die verbleibenden Host-Bits (2<sup>8</sup>).",
             step3Math: "2 × 2 × 2 × 2 × 2 × 2 × 2 × 2 = <strong>256</strong> gesamte IPs",
-            step4Title: "IMMER 2 abziehen!",
-            step4Desc: "Du musst die allererste IP (Netzwerk) und die allerletzte IP (Broadcast) wegwerfen. Sie können niemals einem Host zugewiesen werden.",
+            step4Title: "2 Abziehen (Netzwerk & Broadcast)",
+            step4Desc: "Du musst 2 von der Gesamtzahl abziehen. Die allererste IP identifiziert die <strong>Netzwerkadresse</strong>, und die letzte IP ist die <strong>Broadcast-Adresse</strong>.",
             step4Math: "256 - 2 = 254 Nutzbare Hosts",
             quickRef: "Schnellreferenz-Spickzettel",
             waitInput: "Warte auf Eingabe...",
@@ -474,7 +535,7 @@ function initApp() {
             invalidNum: "Ungültige Eingabe. Nur Zahlen.",
             correctInfo: "Antwort richtig!",
             incorrectInfo: "Antwort falsch.",
-            viewCheat: "Zeige Spickzettel",
+            viewCheat: "Zeige Hilfefenster",
             statsReset: "Statistiken zurückgesetzt.",
             statsResetMsg: "Spielstatistiken wurden zurückgesetzt.",
             correctMsg: (ips, hosts) => `Richtig! ${ips} IPs - 2 = <strong>${hosts}</strong> nutzbare Hosts.`,
@@ -482,7 +543,6 @@ function initApp() {
         }
     };
 
-    // Game State
     const gameState = {
         score: 0,
         streak: 0,
@@ -494,7 +554,6 @@ function initApp() {
 
     const commonCidrs = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
 
-    // DOM Elements
     const els = {
         container: document.getElementById('gameContainer'),
         questionMask: document.getElementById('questionMask'),
@@ -508,31 +567,68 @@ function initApp() {
         helpModal: document.getElementById('helpModal'),
         closeHelpBtn: document.getElementById('closeHelpBtn'),
         resetBtn: document.getElementById('resetBtn'),
-        statusMsg: document.getElementById('status-msg')
+        statusMsg: document.getElementById('status-msg'),
+        
+        visualizerSlider: document.getElementById('visualizerSlider'),
+        visualSliderVal: document.getElementById('visualSliderVal'),
+        bitContainer: document.getElementById('bitContainer'),
+        networkBitsCount: document.getElementById('networkBitsCount'),
+        hostBitsCount: document.getElementById('hostBitsCount'),
+        visualUsableHosts: document.getElementById('visualUsableHosts')
     };
+
+    function renderBits(cidr) {
+        els.bitContainer.innerHTML = '';
+        for (let i = 0; i < 32; i++) {
+            const isNetwork = i < cidr;
+            const bitSpan = document.createElement('span');
+            bitSpan.className = `bit-box ${isNetwork ? 'network' : 'host'}`;
+            bitSpan.textContent = isNetwork ? 'N' : 'H';
+            bitSpan.title = isNetwork ? `Bit ${i+1}: Network` : `Bit ${i+1}: Host`;
+            
+            els.bitContainer.appendChild(bitSpan);
+
+            // Add octet divider every 8 bits (except the last one)
+            if ((i + 1) % 8 === 0 && i !== 31) {
+                const divider = document.createElement('span');
+                divider.className = 'octet-divider';
+                els.bitContainer.appendChild(divider);
+            }
+        }
+    }
+
+    function updateVisualizer(cidr) {
+        els.visualSliderVal.textContent = cidr;
+        els.networkBitsCount.textContent = cidr;
+        
+        const hostBits = 32 - cidr;
+        els.hostBitsCount.textContent = hostBits;
+        
+        const usable = calculateUsableHosts(cidr);
+        els.visualUsableHosts.textContent = usable.toLocaleString();
+        
+        renderBits(cidr);
+    }
 
     function updateLanguageUI() {
         const t = i18n[gameState.language];
         
-        // Update all translated nodes
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
             if (t[key]) el.innerHTML = t[key];
         });
         
-        // Update placeholders
         document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
             const key = el.getAttribute('data-i18n-placeholder');
             if (t[key]) el.placeholder = t[key];
         });
         
-        // Update language toggle button text (show the opposite of current)
         els.langBtn.innerHTML = gameState.language === 'en' ? '🇩🇪 DE' : '🇬🇧 EN';
     }
 
     function calculateUsableHosts(cidr) {
         if (cidr >= 31) return 0;
-        if (cidr === 32) return 1;
+        if (cidr === 32) return 1; 
         const hostBits = 32 - cidr;
         return Math.pow(2, hostBits) - 2;
     }
@@ -645,12 +741,10 @@ function initApp() {
         els.scoreDisplay.classList.add('pop-in');
     }
 
-    // Language Toggle Listener
     els.langBtn.addEventListener('click', () => {
         gameState.language = gameState.language === 'en' ? 'de' : 'en';
         updateLanguageUI();
         
-        // If we are waiting for an answer, dynamically update the feedback message block text
         if (gameState.isAnswering) {
             const t = i18n[gameState.language];
             els.feedbackContainer.innerHTML = `<p class="text-sm opacity-60 animate-pulse text-center" data-i18n="awaiting">${t.awaiting}</p>`;
@@ -667,10 +761,21 @@ function initApp() {
         }
     });
 
-    // Modal Controls
+    // Handle slider input
+    els.visualizerSlider.addEventListener('input', (e) => {
+        const cidr = parseInt(e.target.value, 10);
+        updateVisualizer(cidr);
+    });
+
+    // Modal controls
     els.helpBtn.addEventListener('click', () => {
         els.helpModal.classList.remove('hidden');
         els.helpModal.classList.add('flex');
+        
+        const targetCidr = gameState.currentCidr || 24;
+        els.visualizerSlider.value = targetCidr;
+        updateVisualizer(targetCidr);
+
         setTimeout(() => {
             els.helpModal.classList.remove('opacity-0');
             els.helpModal.classList.add('opacity-100');
@@ -703,7 +808,6 @@ function initApp() {
         }
     });
 
-    // Reset
     els.resetBtn.addEventListener('click', () => {
         const t = i18n[gameState.language];
         gameState.score = 0;
@@ -719,12 +823,12 @@ function initApp() {
         }, 2000);
     });
 
-    // Initialization
+    // Initialize state
     updateLanguageUI();
+    updateVisualizer(24);
     generateQuestion();
 }
 
-// Run immediately if DOM is already parsed (e.g., when injected dynamically), else wait.
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
 } else {
