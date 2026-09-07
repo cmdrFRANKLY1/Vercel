@@ -71,6 +71,7 @@
         const viewerContainer = $('viewer-container');
         const fileListContainer = $('fileListContainer');
         const sidebarHeader = $('sidebarHeader');
+        
         const searchInput = $('searchInput');
         const searchClear = $('searchClear');
         const searchCount = $('searchCount');
@@ -83,6 +84,7 @@
             overlayNext = $('overlayNext');
         const numDisplay = $('pageNum'),
             countDisplay = $('pageCount');
+        
         const pdfNavGroup = $('pdfNavGroup');
         const viewPdfBtn = $('viewPdfBtn'),
             viewPptBtn = $('viewPptBtn'),
@@ -528,6 +530,7 @@
                 if (!docFile) return;
                 const xml = await docFile.async('string');
                 const pRegex = /<w:p[^>]*>([\s\S]*?)<\/w:p>/g;
+                
                 let paragraphs = [], pMatch;
                 while ((pMatch = pRegex.exec(xml)) !== null) {
                     const textContent = (pMatch[1].match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [])
@@ -540,6 +543,7 @@
                     days[dn] = extractDayContent(fullText, dn);
                 }
                 report.days = days;
+                
                 const dateMatch = fullText.match(/(?:vom|Ausbildungswoche vom)[:\s]*(\d{1,2})[\.\/](\d{1,2})[\.\/](\d{2,4})/i) ||
                     fullText.match(/(\d{1,2})[\.\/](\d{1,2})[\.\/](\d{2,4})/);
                 if (dateMatch) {
@@ -593,6 +597,7 @@
                 printHTML('<div class="empty-state"><div style="font-size:24px;">📁</div><div>' + strings.noReports + '</div></div>');
                 return;
             }
+            
             for (const r of reports) {
                 const collapsed = expandedCards.has(r.name) ? '' : 'collapsed';
                 let title = r.name.replace(/\.docx?$/i, '');
@@ -623,6 +628,7 @@
                 html += '</div></div></div>';
                 printHTML(html);
             }
+            
             document.querySelectorAll('.card-header').forEach(h => {
                 h.addEventListener('click', function() {
                     const card = this.closest('.report-card');
@@ -658,6 +664,7 @@
                 printHTML('<div class="empty-state"><div style="font-size:24px;">📅</div><div>NO CALENDAR DATA FOUND</div></div>');
                 return;
             }
+            
             Array.from(monthsWithData.values()).forEach(({ year, month }) => {
                 const container = document.createElement('div');
                 container.className = 'calendar-container';
@@ -1019,8 +1026,8 @@
         app.innerHTML = `
             <div id="waybar">
                 <div class="waybar-group">
-                    <button class="waybar-btn" id="viewPdfBtn"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg> PDF</button>
-                    <button class="waybar-btn" id="viewPptBtn"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg> PPT</button>
+                    <button class="waybar-btn" id="viewPdfBtn"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg> PDFs</button>
+                    <button class="waybar-btn" id="viewPptBtn"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg> PPTs</button>
                     <button class="waybar-btn" id="viewHtmlBtn"><svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> HTMLs</button>
                     <button class="waybar-btn" id="viewDocBtn"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg> DOCs</button>
                     <button class="waybar-btn" id="viewReportBtn"><svg viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/></svg> REPORT</button>
@@ -1028,6 +1035,7 @@
                     <button class="waybar-btn view-btn-active" id="viewDetailBtn"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/></svg> TIMERS</button>
                     <button class="waybar-btn" id="viewTimelineBtn"><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2z"/></svg> TIMELINE</button>
                     <div style="width:1px;height:20px;background:#4d5052;margin:0 4px;"></div>
+                    
                     <div id="pdfNavGroup" style="display:none;align-items:center;gap:4px;">
                         <button class="waybar-btn" id="btnPrev" disabled><svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg></button>
                         <div class="page-info"><span id="pageNum">0</span>/<span id="pageCount">0</span></div>
