@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SubNets für Strolchfreunde</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Noto Sans', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                        mono: ['Courier New', 'Courier', 'monospace'],
+                    },
+                    colors: {
+                        // KDE Plasma dark theme palette
+                        kde: {
+                            bg: '#1a1b1e',
+                            panel: 'rgba(35, 38, 41, 0.85)',
+                            panelHover: 'rgba(255, 255, 255, 0.1)',
+                            accent: '#3daee9',
+                            text: '#eff0f1',
+                            windowBg: '#31363b',
+                            windowBorder: '#1d2023',
+                            surface: '#232629',
+                            input: '#1a1b1e'
+                        },
+                        // Overriding brand to match KDE accent for minimal logic changes below
+                        brand: {
+                            50: '#e1f4fc',
+                            100: '#b4e1f7',
+                            200: '#84cbf2',
+                            300: '#54b6ec',
+                            400: '#3daee9', // KDE Accent
+                            500: '#1b92d2',
+                            600: '#1575a8',
+                            900: '#0a3a54',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Noto Sans', sans-serif;
+            background-color: var(--tw-colors-kde-bg);
+            color: var(--tw-colors-kde-text);
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .tab-btn.active {
+            border-bottom: 2px solid #3daee9; /* kde-accent */
+            color: #3daee9;
+            background-color: rgba(61, 174, 233, 0.1);
+            font-weight: 600;
+        }
+        .binary-bit {
+            display: inline-block;
+            width: 14px;
+            text-align: center;
+        }
+        .network-bit { color: #f87171; font-weight: bold; } /* Red-400 for Network */
+        .host-bit { color: #3daee9; font-weight: bold; }   /* kde-accent for Host */
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        .correct-input { border-color: #22c55e !important; background-color: rgba(34, 197, 94, 0.1) !important; color: #4ade80; }
+        .wrong-input { border-color: #ef4444 !important; background-color: rgba(239, 68, 68, 0.1) !important; color: #f87171; }
+
+        .connection-trigger {
+            cursor: help;
+            border-bottom: 2px dashed rgba(61, 174, 233, 0.6); /* kde-accent */
+            border-radius: 0.25rem;
+            padding: 0 0.25rem;
+            transition: all 0.2s ease;
+            display: inline-block;
+        }
+        .connection-trigger:hover {
+            background-color: rgba(61, 174, 233, 0.25);
+            border-bottom-style: solid;
+            border-bottom-color: rgba(61, 174, 233, 1);
+        }
+        .connection-target {
+            transition: all 0.3s ease;
+            border-radius: 0.25rem;
+        }
+        .target-active {
+            box-shadow: 0 0 0 2px #3daee9, 0 0 12px rgba(61, 174, 233, 0.5) !important;
+            background-color: rgba(61, 174, 233, 0.2) !important;
+            z-index: 20;
+            position: relative;
+            border-color: transparent !important;
+        }
+
+        /* Step 1 */
+        .anim-s1-scan1 { animation: step1-scan1 4s infinite; }
+        .anim-s1-scan2 { animation: step1-scan2 4s infinite; }
+        .anim-s1-scan3 { animation: step1-scan3 4s infinite; }
+        .anim-s1-found { animation: step1-found 4s infinite; display: inline-block; transition: all 0.2s; }
+        .anim-s1-text  { animation: step1-text 4s infinite; }
+        @keyframes step1-scan1 { 0%, 100% { background: transparent; } 5%, 15% { background: var(--tw-colors-kde-surface); } }
+        @keyframes step1-scan2 { 0%, 100% { background: transparent; } 15%, 25% { background: var(--tw-colors-kde-surface); } }
+        @keyframes step1-scan3 { 0%, 100% { background: transparent; } 25%, 35% { background: var(--tw-colors-kde-surface); } }
+        @keyframes step1-found { 0%, 35%, 90%, 100% { background: transparent; color: #8e8f90; border-color: transparent; transform: scale(1); box-shadow: none; } 45%, 85% { background: rgba(61, 174, 233, 0.2); color: #3daee9; border-color: #3daee9; transform: scale(1.1); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5); } }
+        @keyframes step1-text { 0%, 40%, 90%, 100% { opacity: 0; transform: translateY(5px); } 45%, 85% { opacity: 1; transform: translateY(0); } }
+
+        /* Step 2 */
+        .anim-s2-fade { animation: step2-fade 5s infinite; }
+        .anim-s2-pop { animation: step2-pop 5s infinite; }
+        .anim-s2-b1 { animation: step2-block1 5s infinite; }
+        .anim-s2-b2 { animation: step2-block2 5s infinite; }
+        .anim-s2-b3 { animation: step2-block3 5s infinite; }
+        @keyframes step2-fade { 0%, 5%, 90%, 100% { opacity: 0; } 10%, 85% { opacity: 1; } }
+        @keyframes step2-pop { 0%, 25%, 90%, 100% { opacity: 0; transform: scale(0.8); } 35%, 85% { opacity: 1; transform: scale(1); } }
+        @keyframes step2-block1 { 0%, 45%, 90%, 100% { opacity: 0; transform: translateY(10px); } 50%, 85% { opacity: 1; transform: translateY(0); } }
+        @keyframes step2-block2 { 0%, 55%, 90%, 100% { opacity: 0; transform: translateY(10px); } 60%, 85% { opacity: 1; transform: translateY(0); } }
+        @keyframes step2-block3 { 0%, 65%, 90%, 100% { opacity: 0; transform: translateY(10px); } 70%, 85% { opacity: 1; transform: translateY(0); } }
+
+        /* Step 3 */
+        .anim-s3-drop { animation: step3-drop 4s infinite; }
+        .anim-s3-highlight { animation: step3-highlight 4s infinite; }
+        @keyframes step3-drop { 0%, 90%, 100% { transform: translateY(-30px); opacity: 0; } 15%, 25% { transform: translateY(0); opacity: 1; } 35%, 85% { transform: translateY(30px); opacity: 0; } }
+        @keyframes step3-highlight { 0%, 30%, 90%, 100% { border-color: var(--tw-colors-kde-windowBorder); background: var(--tw-colors-kde-input); transform: scale(1); box-shadow: none; } 35%, 85% { border-color: #3daee9; background: rgba(61, 174, 233, 0.15); transform: scale(1.05); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.4); } }
+
+        /* Step 4 */
+        .anim-s4-arrow { animation: step4-arrow 4s infinite; }
+        .anim-s4-minus { animation: step4-minus 4s infinite; }
+        .anim-s4-broadcast { animation: step4-broadcast 4s infinite; }
+        @keyframes step4-arrow { 0%, 20%, 90%, 100% { opacity: 0; transform: translateX(10px); } 30%, 85% { opacity: 1; transform: translateX(0); } }
+        @keyframes step4-minus { 0%, 40%, 90%, 100% { opacity: 0; transform: scale(0.5) translateY(10px); } 50%, 85% { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes step4-broadcast { 0%, 60%, 90%, 100% { opacity: 0; transform: scale(0.9); } 70%, 85% { opacity: 1; transform: scale(1); } }
+
+        /* Step 5 */
+        .anim-s5-net { animation: step5-net 6s infinite; }
+        .anim-s5-first { animation: step5-first 6s infinite; }
+        .anim-s5-bc { animation: step5-bc 6s infinite; }
+        .anim-s5-last { animation: step5-last 6s infinite; }
+        .anim-s5-pulse1 { animation: step5-pulse 6s infinite; }
+        .anim-s5-pulse2 { animation: step5-pulse 6s infinite; animation-delay: 2s; }
+
+        @keyframes step5-net { 0%, 100% { transform: translateY(0); opacity: 1; border-color: var(--tw-colors-kde-windowBorder); background: var(--tw-colors-kde-surface);} 5%, 25% { transform: translateY(-5px); border-color: #3daee9; background: rgba(61, 174, 233, 0.2);} }
+        @keyframes step5-first { 0%, 5%, 95%, 100% { opacity: 0; transform: translateY(-10px); } 15%, 85% { opacity: 1; transform: translateY(0); } }
+        @keyframes step5-bc { 0%, 35%, 100% { transform: translateY(0); opacity: 1; border-color: var(--tw-colors-kde-windowBorder); background: var(--tw-colors-kde-surface);} 40%, 60% { transform: translateY(-5px); border-color: #ef4444; background: rgba(239, 68, 68, 0.2);} }
+        @keyframes step5-last { 0%, 40%, 95%, 100% { opacity: 0; transform: translateY(10px); } 50%, 85% { opacity: 1; transform: translateY(0); } }
+        @keyframes step5-pulse { 0%, 100% { transform: scale(1); opacity: 0;} 15%, 20% { transform: scale(1.2); opacity: 1;} 30% { transform: scale(1); opacity: 0;}}
+        
+        /* Custom Scrollbar for KDE look */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--tw-colors-kde-bg); }
+        ::-webkit-scrollbar-thumb { background: #4d5157; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6c7178; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-kde-bg text-kde-text relative">
+
+    <header class="bg-kde-windowBg shadow-md sticky top-0 z-40 border-b border-kde-windowBorder">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row md:items-center justify-between">
+            <div class="flex items-center gap-2 py-3">
+                <i class="fa-solid fa-network-wired text-brand-400 text-xl"></i>
+                <h1 class="text-xl font-semibold tracking-wide text-white">SubNets <span class="text-brand-400 font-normal">für Strolchfreunde</span></h1>
+            </div>
+            <nav class="flex overflow-x-auto scrollbar-hide text-sm">
+                <button onclick="switchTab('learn')" id="tab-learn" class="tab-btn active px-4 py-4 text-gray-400 hover:text-brand-400 hover:bg-white/5 whitespace-nowrap transition-colors flex items-center gap-2"><i class="fa-solid fa-book-open text-xs"></i> 1. Lernen</button>
+                <button onclick="switchTab('calc')" id="tab-calc" class="tab-btn px-4 py-4 text-gray-400 hover:text-brand-400 hover:bg-white/5 whitespace-nowrap transition-colors flex items-center gap-2"><i class="fa-solid fa-calculator text-xs"></i> 2. Rechner</button>
+                <button onclick="switchTab('quiz')" id="tab-quiz" class="tab-btn px-4 py-4 text-gray-400 hover:text-brand-400 hover:bg-white/5 whitespace-nowrap transition-colors flex items-center gap-2"><i class="fa-solid fa-graduation-cap text-xs"></i> 3. Quiz</button>
+                <button onclick="switchTab('animations')" id="tab-animations" class="tab-btn px-4 py-4 text-gray-400 hover:text-brand-400 hover:bg-white/5 whitespace-nowrap transition-colors flex items-center gap-2"><i class="fa-solid fa-film text-xs"></i> 4. Animationen</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-6xl mx-auto w-full px-4 py-8 relative z-30">
+
+        <section id="view-learn" class="block animate-fade-in">
+            <div class="bg-kde-windowBg rounded-lg shadow border border-kde-windowBorder p-6 mb-6">
+                <h2 class="text-lg font-semibold text-white mb-2 border-b border-kde-windowBorder pb-2 flex items-center gap-2"><i class="fa-solid fa-route text-brand-400"></i> Der rote Faden: Die "Magic Number" Methode</h2>
+                <p class="mb-8 text-gray-300">Subnetting baut logisch aufeinander auf. Bewege die Maus über die <span class="connection-trigger text-brand-300">gestrichelten Wörter</span>, um die Verbindung zum nächsten Schritt zu sehen. Begleiten wir das Beispiel <code class="bg-kde-input px-1.5 py-0.5 rounded text-white font-mono border border-kde-windowBorder">192.168.1.100 /26</code>.</p>
+
+                <!-- Zeitstrahl / Roter Faden Layout -->
+                <div class="relative border-l-2 border-brand-500/40 ml-4 md:ml-6 space-y-10 pb-4">
+                    
+                    <!-- Step 1 -->
+                    <div class="relative pl-6 md:pl-8 group">
+                        <div class="absolute -left-[13px] top-1 w-6 h-6 bg-kde-surface rounded-full border-2 border-brand-500 flex items-center justify-center shadow-lg group-hover:bg-brand-500 transition-colors duration-300 text-xs font-bold text-gray-400 group-hover:text-white">1</div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="font-semibold text-md text-white group-hover:text-brand-400 transition-colors">Interessantes Oktett finden</h3>
+                            <button onclick="openAnimationModal(1)" class="text-brand-400 hover:text-white bg-kde-surface hover:bg-brand-500 border border-brand-500/30 w-7 h-7 rounded flex items-center justify-center transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500 shadow-sm" title="Animation ansehen">
+                                <i class="fa-solid fa-play text-xs pl-0.5"></i>
+                            </button>
+                        </div>
+                        <p class="text-gray-300 mb-3 text-sm">Finde in der Subnetzmaske den Abschnitt, der weder 255 noch 0 ist. Dies ist unsere Berechnungsgrenze.</p>
+                        <div class="bg-kde-surface p-4 rounded border border-kde-windowBorder text-sm shadow-inner leading-relaxed">
+                            <span class="font-semibold text-gray-400 uppercase text-[10px] tracking-wider block mb-1">Unser Beispiel:</span>
+                            Die /26 Maske ist 255.255.255.<strong>192</strong>.<br>
+                            Das 4. <span class="connection-trigger text-white font-semibold" onmouseenter="showArrow(this, 's1-t1')" onmouseleave="hideArrow('s1-t1')">Oktett</span> ist das interessante Oktett. Der Wert, den wir für den nächsten Schritt festhalten, ist <strong id="s1-t1" class="connection-target connection-trigger bg-brand-900/40 text-brand-300 px-1.5 py-0.5 rounded border border-brand-500/30 inline-block mx-1" onmouseenter="showArrow(this, 's2-t1')" onmouseleave="hideArrow('s2-t1')">192</strong>.
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="relative pl-6 md:pl-8 group">
+                        <div class="absolute -left-[13px] top-1 w-6 h-6 bg-kde-surface rounded-full border-2 border-brand-500 flex items-center justify-center shadow-lg group-hover:bg-brand-500 transition-colors duration-300 text-xs font-bold text-gray-400 group-hover:text-white">2</div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="font-semibold text-md text-white group-hover:text-brand-400 transition-colors">Magic Number berechnen</h3>
+                            <button onclick="openAnimationModal(2)" class="text-brand-400 hover:text-white bg-kde-surface hover:bg-brand-500 border border-brand-500/30 w-7 h-7 rounded flex items-center justify-center transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500 shadow-sm" title="Animation ansehen">
+                                <i class="fa-solid fa-play text-xs pl-0.5"></i>
+                            </button>
+                        </div>
+                        <p class="text-gray-300 mb-3 text-sm">Nimm den <strong>Wert aus Schritt 1</strong> und subtrahiere ihn von 256. Das Ergebnis ist die Blockgröße (Magic Number).</p>
+                        <div class="bg-kde-surface p-4 rounded border border-kde-windowBorder text-sm shadow-inner leading-relaxed">
+                            <span class="font-semibold text-gray-400 uppercase text-[10px] tracking-wider block mb-1">Unser Beispiel:</span>
+                            256 - <strong id="s2-t1" class="connection-target text-brand-400 inline-block px-1 rounded">192</strong> = <strong id="s2-t2" class="connection-target connection-trigger bg-brand-900/40 text-brand-300 px-1.5 py-0.5 rounded border border-brand-500/30 inline-block mx-1" onmouseenter="showArrow(this, 's3-t1')" onmouseleave="hideArrow('s3-t1')">64</strong>.<br>
+                            Wir wissen nun für den nächsten Schritt: Unsere Subnetze existieren in <span class="connection-trigger text-white font-semibold" onmouseenter="showArrow(this, 's3-t1')" onmouseleave="hideArrow('s3-t1')">64er-Blöcken</span> (0, 64, 128, ...).
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="relative pl-6 md:pl-8 group">
+                        <div class="absolute -left-[13px] top-1 w-6 h-6 bg-kde-surface rounded-full border-2 border-brand-500 flex items-center justify-center shadow-lg group-hover:bg-brand-500 transition-colors duration-300 text-xs font-bold text-gray-400 group-hover:text-white">3</div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="font-semibold text-md text-white group-hover:text-brand-400 transition-colors">Netzwerkadresse finden</h3>
+                            <button onclick="openAnimationModal(3)" class="text-brand-400 hover:text-white bg-kde-surface hover:bg-brand-500 border border-brand-500/30 w-7 h-7 rounded flex items-center justify-center transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500 shadow-sm" title="Animation ansehen">
+                                <i class="fa-solid fa-play text-xs pl-0.5"></i>
+                            </button>
+                        </div>
+                        <p class="text-gray-300 mb-3 text-sm">Nutze die <strong>Blockgröße aus Schritt 2</strong>. Schau dir nun deine IP-Adresse genau in dem Oktett an, das wir in <strong>Schritt 1</strong> identifiziert haben. Finde das Block-Vielfache, in das diese Zahl passt.</p>
+                        <div class="bg-kde-surface p-4 rounded border border-kde-windowBorder text-sm shadow-inner leading-relaxed">
+                            <span class="font-semibold text-gray-400 uppercase text-[10px] tracking-wider block mb-1">Unser Beispiel:</span>
+                            Die IP ist 192.168.1.<strong>100</strong>. Wir schauen auf das 4. Oktett (100).<br>
+                            Welches Vielfache von <strong id="s3-t1" class="connection-target text-brand-400 inline-block px-1 rounded">64</strong> ist kleiner oder gleich 100? Das ist die 64.<br>
+                            Das Netz, das wir für den nächsten Schritt festhalten, ist also <strong id="s3-t2" class="connection-target connection-trigger bg-blue-900/30 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/30 inline-block mx-1" onmouseenter="showArrow(this, 's4-t1,s5-t1')" onmouseleave="hideArrow('s4-t1,s5-t1')">192.168.1.64</strong>.
+                        </div>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="relative pl-6 md:pl-8 group">
+                        <div class="absolute -left-[13px] top-1 w-6 h-6 bg-kde-surface rounded-full border-2 border-brand-500 flex items-center justify-center shadow-lg group-hover:bg-brand-500 transition-colors duration-300 text-xs font-bold text-gray-400 group-hover:text-white">4</div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="font-semibold text-md text-white group-hover:text-brand-400 transition-colors">Broadcast-Adresse finden</h3>
+                            <button onclick="openAnimationModal(4)" class="text-brand-400 hover:text-white bg-kde-surface hover:bg-brand-500 border border-brand-500/30 w-7 h-7 rounded flex items-center justify-center transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500 shadow-sm" title="Animation ansehen">
+                                <i class="fa-solid fa-play text-xs pl-0.5"></i>
+                            </button>
+                        </div>
+                        <p class="text-gray-300 mb-3 text-sm">Nimm die <strong>Netzwerkadresse aus Schritt 3</strong>. Addiere einmal die Blockgröße dazu, um das <em>nächste</em> Netz zu finden. Die Broadcast-Adresse ist exakt eine IP davor (-1).</p>
+                        <div class="bg-kde-surface p-4 rounded border border-kde-windowBorder text-sm shadow-inner leading-relaxed">
+                            <span class="font-semibold text-gray-400 uppercase text-[10px] tracking-wider block mb-1">Unser Beispiel:</span>
+                            Unser aktuelles Netz startet bei <strong id="s4-t1" class="connection-target text-blue-400 inline-block px-1 rounded">.64</strong>.<br>
+                            Das nächste Netz startet bei 64 + 64 = 128.<br>
+                            Eins davor: 128 - 1 = 127.<br>
+                            Die Broadcast-Adresse lautet <strong id="s4-t2" class="connection-target connection-trigger bg-red-900/30 text-red-300 px-1.5 py-0.5 rounded border border-red-500/30 inline-block mx-1" onmouseenter="showArrow(this, 's5-t2')" onmouseleave="hideArrow('s5-t2')">192.168.1.127</strong>.
+                        </div>
+                    </div>
+
+                    <!-- Step 5 -->
+                    <div class="relative pl-6 md:pl-8 group">
+                        <div class="absolute -left-[13px] top-1 w-6 h-6 bg-kde-surface rounded-full border-2 border-brand-500 flex items-center justify-center shadow-lg group-hover:bg-brand-500 transition-colors duration-300 text-xs font-bold text-gray-400 group-hover:text-white">5</div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="font-semibold text-md text-white group-hover:text-brand-400 transition-colors">Erste und Letzte IP</h3>
+                            <button onclick="openAnimationModal(5)" class="text-brand-400 hover:text-white bg-kde-surface hover:bg-brand-500 border border-brand-500/30 w-7 h-7 rounded flex items-center justify-center transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500 shadow-sm" title="Animation ansehen">
+                                <i class="fa-solid fa-play text-xs pl-0.5"></i>
+                            </button>
+                        </div>
+                        <p class="text-gray-300 mb-3 text-sm">Nun haben wir alles. Die nutzbaren Adressen liegen exakt eingeklemmt zwischen den <strong>Ergebnissen aus Schritt 3 und Schritt 4</strong>.</p>
+                        <div class="bg-kde-surface p-4 rounded border border-kde-windowBorder text-sm shadow-inner leading-relaxed">
+                            <span class="font-semibold text-gray-400 uppercase text-[10px] tracking-wider block mb-1">Unser Beispiel:</span>
+                            <strong>Erste IP:</strong> <strong class="text-blue-400">Netzwerk</strong> + 1 &rarr; <strong id="s5-t1" class="connection-target inline-block px-1 rounded">192.168.1.64</strong> + 1 = <strong>.65</strong><br>
+                            <strong>Letzte IP:</strong> <strong class="text-red-400">Broadcast</strong> - 1 &rarr; <strong id="s5-t2" class="connection-target inline-block px-1 rounded">192.168.1.127</strong> - 1 = <strong>.126</strong>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="bg-kde-windowBg rounded-lg shadow border border-kde-windowBorder overflow-hidden">
+                <h2 class="text-lg font-semibold p-4 bg-kde-surface border-b border-kde-windowBorder text-white flex items-center gap-2"><i class="fa-solid fa-table-list text-gray-400"></i> CIDR Spickzettel (Cheat Sheet)</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-300">
+                        <thead class="text-xs text-gray-400 uppercase bg-kde-bg border-b border-kde-windowBorder">
+                            <tr>
+                                <th class="px-6 py-3 font-semibold">CIDR</th>
+                                <th class="px-6 py-3 font-semibold">Subnetzmaske</th>
+                                <th class="px-6 py-3 font-semibold">Magic Number</th>
+                                <th class="px-6 py-3 font-semibold">Hosts</th>
+                                <th class="px-6 py-3 font-semibold hidden sm:table-cell">Interessantes Oktett</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cheat-sheet-body" class="divide-y divide-kde-windowBorder">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-calc" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Input Form -->
+                <div class="lg:col-span-1 bg-kde-windowBg rounded-lg shadow border border-kde-windowBorder p-6 h-fit">
+                    <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-sliders text-brand-400"></i> Eingabe</h2>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-300 mb-1">IP Adresse</label>
+                        <input type="text" id="calc-ip" value="192.168.10.42" class="w-full bg-kde-input border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 font-mono transition-colors shadow-inner" placeholder="z.B. 192.168.1.1" oninput="calculateSubnet()">
+                        <p id="calc-ip-error" class="text-red-400 text-xs mt-1 hidden">Ungültige IPv4 Adresse</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-300 mb-1">CIDR Präfix: <span id="calc-cidr-val" class="font-bold text-brand-400">/24</span></label>
+                        <input type="range" id="calc-cidr" min="8" max="31" value="24" class="w-full accent-brand-500" oninput="document.getElementById('calc-cidr-val').innerText = '/' + this.value; calculateSubnet()">
+                    </div>
+
+                    <div class="mt-6 p-4 bg-kde-surface border border-kde-windowBorder rounded text-sm text-gray-400 flex items-start gap-3">
+                        <i class="fa-solid fa-circle-info mt-0.5"></i>
+                        <p>Ändere die IP oder ziehe den Slider, um die Änderungen sofort zu sehen.</p>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Core Info -->
+                    <div class="bg-kde-windowBg rounded-lg shadow border border-kde-windowBorder overflow-hidden">
+                         <h2 class="text-lg font-semibold text-white p-4 bg-kde-surface border-b border-kde-windowBorder flex items-center gap-2"><i class="fa-solid fa-network-wired text-gray-400"></i> Netzwerk Details</h2>
+                        <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">Subnetzmaske</p>
+                                <p class="text-lg font-mono text-white" id="res-mask">-</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">Netzwerkadresse</p>
+                                <p class="text-lg font-mono font-bold text-brand-400" id="res-network">-</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">Erster Host</p>
+                                <p class="text-lg font-mono text-white" id="res-first">-</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">Letzter Host</p>
+                                <p class="text-lg font-mono text-white" id="res-last">-</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">Broadcast Adresse</p>
+                                <p class="text-lg font-mono font-bold text-red-400" id="res-broadcast">-</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">Nutzbare Hosts</p>
+                                <p class="text-lg font-mono font-bold text-white" id="res-hosts">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Binäre Darstellung -->
+                    <div class="bg-kde-windowBg rounded-lg shadow border border-kde-windowBorder overflow-hidden">
+                        <h2 class="text-lg font-semibold text-white p-4 bg-kde-surface border-b border-kde-windowBorder flex items-center gap-2"><i class="fa-solid fa-microchip text-gray-400"></i> Binäre Ansicht</h2>
+                        <div class="p-6">
+                            <div class="overflow-x-auto text-sm sm:text-base font-mono whitespace-nowrap text-gray-300">
+                                <div class="mb-2">
+                                    <span class="inline-block w-24 text-gray-500">IP:</span>
+                                    <span id="bin-ip"></span>
+                                </div>
+                                <div>
+                                    <span class="inline-block w-24 text-gray-500">Maske:</span>
+                                    <span id="bin-mask"></span>
+                                </div>
+                            </div>
+                            <div class="mt-4 text-xs text-gray-400 flex gap-4">
+                                <span class="flex items-center gap-1"><div class="w-3 h-3 bg-red-400 rounded-sm"></div> Netz-Bits (N)</span>
+                                <span class="flex items-center gap-1"><div class="w-3 h-3 bg-brand-400 rounded-sm"></div> Host-Bits (H)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Magic Number Erklärung -->
+                    <div class="bg-kde-windowBg rounded-lg shadow border border-kde-windowBorder border-l-4 border-l-brand-500 p-6">
+                        <h2 class="text-md font-semibold text-white mb-3 flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-brand-400"></i> Wie berechnet man das?</h2>
+                        <div id="res-explanation" class="text-sm text-gray-300 space-y-2 min-h-[180px] leading-relaxed">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-quiz" class="hidden">
+            <div class="bg-kde-windowBg rounded-lg shadow border border-kde-windowBorder overflow-hidden max-w-3xl mx-auto">
+                <div class="p-6 border-b border-kde-windowBorder bg-kde-surface flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-semibold text-white flex items-center gap-2"><i class="fa-solid fa-clipboard-question text-brand-400"></i> Subnetting Quiz</h2>
+                        <p class="text-gray-400 text-sm mt-1">Fülle die Felder für die gegebene IP und CIDR aus.</p>
+                    </div>
+                    <div class="text-right bg-kde-input px-4 py-2 rounded border border-gray-700 shadow-inner">
+                        <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Score</p>
+                        <p class="text-2xl font-bold text-brand-400 leading-none" id="quiz-score">0</p>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    <div class="bg-kde-input border border-gray-700 p-6 rounded text-center mb-8 shadow-inner">
+                        <p class="text-xs text-gray-400 uppercase font-semibold mb-2 tracking-wider">Analysiere diese Adresse</p>
+                        <p class="text-3xl font-mono font-bold tracking-wider text-white" id="quiz-question-ip">10.0.0.1 <span class="text-brand-400">/24</span></p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">Netzwerkadresse</label>
+                                <input type="text" id="q-network" class="w-full bg-kde-input border border-gray-600 rounded px-3 py-2.5 text-white font-mono focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 transition-colors shadow-inner" placeholder="z.B. 10.0.0.0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">Erster nutzbarer Host</label>
+                                <input type="text" id="q-first" class="w-full bg-kde-input border border-gray-600 rounded px-3 py-2.5 text-white font-mono focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 transition-colors shadow-inner" placeholder="z.B. 10.0.0.1">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">Letzter nutzbarer Host</label>
+                                <input type="text" id="q-last" class="w-full bg-kde-input border border-gray-600 rounded px-3 py-2.5 text-white font-mono focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 transition-colors shadow-inner" placeholder="z.B. 10.0.0.254">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">Broadcast Adresse</label>
+                                <input type="text" id="q-broadcast" class="w-full bg-kde-input border border-gray-600 rounded px-3 py-2.5 text-white font-mono focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 transition-colors shadow-inner" placeholder="z.B. 10.0.0.255">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex flex-wrap gap-4 justify-between items-center pt-6 border-t border-gray-700/50">
+                        <button onclick="checkQuizAnswers()" class="bg-brand-600 hover:bg-brand-500 text-white font-medium py-2 px-6 rounded transition-colors shadow flex items-center gap-2"><i class="fa-solid fa-check"></i> Antworten prüfen</button>
+
+                        <div class="flex gap-2">
+                            <button onclick="showQuizHint()" class="bg-kde-surface hover:bg-gray-700 border border-gray-600 text-gray-200 py-2 px-4 rounded transition-colors text-sm flex items-center gap-2"><i class="fa-regular fa-lightbulb"></i> Tipp (kostet Punkte)</button>
+                            <button onclick="generateNewQuiz()" class="bg-kde-surface hover:bg-gray-700 border border-gray-600 text-gray-200 py-2 px-4 rounded transition-colors text-sm flex items-center gap-2"><i class="fa-solid fa-rotate-right"></i> Neue Frage</button>
+                        </div>
+                    </div>
+
+                    <div id="quiz-feedback" class="mt-6 hidden p-4 rounded border text-sm">
+                        <!-- Feedback message here -->
+                    </div>
+
+                    <div id="quiz-hint" class="mt-6 hidden p-4 bg-yellow-900/20 border border-yellow-700/50 rounded text-sm text-yellow-200">
+                        <!-- Hint populated here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-animations" class="hidden">
+            <div class="bg-kde-windowBg rounded-lg shadow border border-kde-windowBorder p-6 max-w-4xl mx-auto">
+                <div class="mb-6 border-b border-kde-windowBorder pb-4">
+                    <h2 class="text-xl font-semibold text-white flex items-center gap-2"><i class="fa-solid fa-film text-brand-400"></i> Animations-Übersicht</h2>
+                    <p class="text-gray-400 text-sm mt-1">Hier findest du alle Schritte der Methode samt detaillierter Erklärung im direkten Überblick.</p>
+                </div>
+
+                <div id="all-animations-container" class="space-y-8">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Animation Modal -->
+        <div id="animation-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center transition-opacity">
+            <div class="bg-kde-windowBg rounded-lg shadow-2xl border border-kde-windowBorder max-w-lg w-full mx-4 overflow-hidden flex flex-col transform animate-fade-in">
+                <div class="px-4 py-3 border-b border-kde-windowBorder flex justify-between items-center bg-kde-surface">
+                    <h3 id="animation-modal-title" class="font-semibold text-md text-white">Titel</h3>
+                    <button onclick="closeAnimationModal()" class="text-gray-400 hover:text-red-400 transition-colors p-1 rounded hover:bg-white/5">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <p id="animation-modal-text" class="text-gray-300 mb-6 text-sm"></p>
+                    <div id="animation-modal-visual" class="p-6 bg-kde-input border border-gray-700 rounded text-center flex flex-col items-center justify-center min-h-[220px] shadow-inner overflow-hidden">
+                        <!-- Visual content goes here -->
+                    </div>
+                </div>
+                <div class="p-4 border-t border-kde-windowBorder bg-kde-surface flex justify-between items-center">
+                    <button id="modal-prev-btn" onclick="prevAnimationStep()" class="bg-kde-input hover:bg-gray-700 border border-gray-600 text-gray-300 px-4 py-1.5 rounded transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"><i class="fa-solid fa-chevron-left text-xs"></i> Zurück</button>
+                    <div class="flex space-x-2" id="modal-dots">
+                        <!-- Dots populated by JS -->
+                    </div>
+                    <button id="modal-next-btn" onclick="nextAnimationStep()" class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-1.5 rounded transition-colors text-sm shadow flex items-center gap-2">Weiter <i class="fa-solid fa-chevron-right text-xs"></i></button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="svg-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; overflow: visible;">
+        <svg id="arrow-canvas" style="width: 100%; height: 100%; overflow: visible;" class="hidden">
+            <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#3daee9" />
+                </marker>
+            </defs>
+            <!-- Paths will be injected dynamically -->
+        </svg>
+    </div>
+
+    <script>
+        // --- Core Subnetting Math Functions ---
+        function isValidIP(ip) {
+            const regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+            return regex.test(ip);
+        }
+
+        function ipToInt(ip) {
+            return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
+        }
+
+        function intToIp(int) {
+            return [
+                (int >>> 24) & 255,
+                (int >>> 16) & 255,
+                (int >>> 8) & 255,
+                int & 255
+            ].join('.');
+        }
+
+        function getMaskInt(cidr) {
+            return (0xFFFFFFFF << (32 - cidr)) >>> 0;
+        }
+
+        function getInterestingOctetIndex(cidr) {
+            if (cidr < 8) return 0;
+            if (cidr < 16) return 1;
+            if (cidr < 24) return 2;
+            return 3;
+        }
+
+        function calculateSubnetDetails(ipStr, cidr) {
+            if (!isValidIP(ipStr)) return null;
+
+            const ipInt = ipToInt(ipStr);
+            const maskInt = getMaskInt(cidr);
+
+            const networkInt = (ipInt & maskInt) >>> 0;
+            const invertedMask = (~maskInt) >>> 0;
+            const broadcastInt = (networkInt | invertedMask) >>> 0;
+
+            let firstInt = networkInt + 1;
+            let lastInt = broadcastInt - 1;
+            let totalHosts = broadcastInt - networkInt - 1;
+
+            if (cidr === 31) {
+                firstInt = networkInt;
+                lastInt = broadcastInt;
+                totalHosts = 2;
+            } else if (cidr === 32) {
+                firstInt = networkInt;
+                lastInt = networkInt;
+                totalHosts = 1;
+            }
+
+            const maskStr = intToIp(maskInt);
+            const maskOctets = maskStr.split('.').map(Number);
+            const intOctetIdx = getInterestingOctetIndex(cidr);
+            const interestingMaskVal = maskOctets[intOctetIdx];
+            const magicNumber = 256 - interestingMaskVal;
+
+            return {
+                ip: ipStr, cidr: cidr, maskStr: maskStr,
+                networkStr: intToIp(networkInt), firstStr: intToIp(firstInt),
+                lastStr: intToIp(lastInt), broadcastStr: intToIp(broadcastInt),
+                totalHosts: totalHosts > 0 ? totalHosts : 0, intOctetIdx: intOctetIdx,
+                interestingMaskVal: interestingMaskVal, magicNumber: magicNumber,
+                ipInt: ipInt, maskInt: maskInt
+            };
+        }
+
+        // --- Interactive Arrow Connections ---
+        function showArrow(triggerEl, targetIds) {
+            const ids = targetIds.split(',');
+            const svg = document.getElementById('arrow-canvas');
+            
+            // Reset the canvas (keeping the defs with kde accent color)
+            svg.innerHTML = `
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#3daee9" /> 
+                    </marker>
+                </defs>
+            `;
+            svg.classList.remove('hidden');
+
+            ids.forEach(id => {
+                const targetEl = document.getElementById(id.trim());
+                if (!targetEl) return;
+
+                targetEl.classList.add('target-active');
+
+                const tRect = triggerEl.getBoundingClientRect();
+                const tarRect = targetEl.getBoundingClientRect();
+
+                const startX = tRect.left + window.scrollX + (tRect.width / 2);
+                const startY = tRect.bottom + window.scrollY; 
+                
+                const endX = tarRect.left + window.scrollX + (tarRect.width / 2);
+                const endY = tarRect.top + window.scrollY - 4; // Stop just above bounding box
+
+                const cp1X = startX;
+                const cp1Y = startY + Math.max(20, (endY - startY) / 2); 
+                const cp2X = endX;
+                const cp2Y = startY + Math.max(20, (endY - startY) / 2);
+
+                const d = `M ${startX},${startY} C ${cp1X},${cp1Y} ${cp2X},${cp2Y} ${endX},${endY}`;
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', d);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', '#3daee9'); // KDE Accent
+                path.setAttribute('stroke-width', '2.5');
+                path.setAttribute('stroke-dasharray', '6,6');
+                path.setAttribute('marker-end', 'url(#arrowhead)');
+                
+                const approxLength = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2)) * 1.5; 
+                path.style.strokeDasharray = `${approxLength}`;
+                path.style.strokeDashoffset = `${approxLength}`;
+                path.style.transition = 'stroke-dashoffset 0.35s ease-out';
+                
+                svg.appendChild(path);
+
+                path.getBoundingClientRect(); // force reflow
+                path.style.strokeDashoffset = '0';
+            });
+        }
+
+        function hideArrow(targetIds) {
+            const ids = targetIds.split(',');
+            ids.forEach(id => {
+                const targetEl = document.getElementById(id.trim());
+                if (targetEl) {
+                    targetEl.classList.remove('target-active');
+                }
+            });
+            const svg = document.getElementById('arrow-canvas');
+            svg.classList.add('hidden');
+        }
+
+        window.addEventListener('scroll', () => {
+            const svg = document.getElementById('arrow-canvas');
+            if (!svg.classList.contains('hidden')) {
+                document.querySelectorAll('.target-active').forEach(el => el.classList.remove('target-active'));
+                svg.classList.add('hidden');
+            }
+        });
+
+        // --- UI Functions ---
+        function switchTab(tabId) {
+            document.getElementById('view-learn').classList.add('hidden');
+            document.getElementById('view-calc').classList.add('hidden');
+            document.getElementById('view-quiz').classList.add('hidden');
+            document.getElementById('view-animations').classList.add('hidden');
+
+            document.getElementById('view-learn').classList.remove('animate-fade-in');
+            document.getElementById('view-calc').classList.remove('animate-fade-in');
+            document.getElementById('view-quiz').classList.remove('animate-fade-in');
+            document.getElementById('view-animations').classList.remove('animate-fade-in');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+            const view = document.getElementById(`view-${tabId}`);
+            view.classList.remove('hidden');
+            void view.offsetWidth;
+            view.classList.add('animate-fade-in');
+
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+
+            if (tabId === 'calc') calculateSubnet();
+            else if (tabId === 'quiz' && !currentQuiz) generateNewQuiz();
+        }
+
+        function populateCheatSheet() {
+            const tbody = document.getElementById('cheat-sheet-body');
+            tbody.innerHTML = '';
+
+            for (let cidr = 8; cidr <= 30; cidr++) {
+                const details = calculateSubnetDetails('10.0.0.0', cidr);
+                let octetText = "";
+                if(cidr >= 8 && cidr < 16) octetText = "2. Oktett";
+                if(cidr >= 16 && cidr < 24) octetText = "3. Oktett";
+                if(cidr >= 24) octetText = "4. Oktett";
+
+                const tr = document.createElement('tr');
+                tr.className = cidr === 24 ? "bg-kde-surface font-bold text-white" : "bg-kde-windowBg hover:bg-kde-surface/50 transition-colors";
+
+                tr.innerHTML = `
+                    <td class="px-6 py-2">/${cidr}</td>
+                    <td class="px-6 py-2 font-mono text-sm">${details.maskStr}</td>
+                    <td class="px-6 py-2 font-semibold text-brand-400">${details.magicNumber}</td>
+                    <td class="px-6 py-2">${details.totalHosts.toLocaleString('de-DE')}</td>
+                    <td class="px-6 py-2 hidden sm:table-cell text-gray-500 font-normal">${octetText}</td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        function toBinaryString(int32, cidr, isMask) {
+            let bin = (int32 >>> 0).toString(2).padStart(32, '0');
+            let html = '';
+            for (let i = 0; i < 32; i++) {
+                if (i > 0 && i % 8 === 0) html += '<span class="text-gray-600 mx-1">.</span>';
+                let bitClass = 'binary-bit ';
+                if (i < cidr) bitClass += 'network-bit';
+                else bitClass += 'host-bit';
+                html += `<span class="${bitClass}">${bin[i]}</span>`;
+            }
+            return html;
+        }
+
+        function calculateSubnet() {
+            const ipInput = document.getElementById('calc-ip').value.trim();
+            const cidr = parseInt(document.getElementById('calc-cidr').value);
+            const errorMsg = document.getElementById('calc-ip-error');
+
+            if (!isValidIP(ipInput)) {
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+            errorMsg.classList.add('hidden');
+
+            const details = calculateSubnetDetails(ipInput, cidr);
+
+            document.getElementById('res-mask').innerText = details.maskStr;
+            document.getElementById('res-network').innerText = details.networkStr;
+            document.getElementById('res-first').innerText = details.firstStr;
+            document.getElementById('res-last').innerText = details.lastStr;
+            document.getElementById('res-broadcast').innerText = details.broadcastStr;
+            document.getElementById('res-hosts').innerText = details.totalHosts.toLocaleString('de-DE');
+
+            document.getElementById('bin-ip').innerHTML = toBinaryString(details.ipInt, cidr, false);
+            document.getElementById('bin-mask').innerHTML = toBinaryString(details.maskInt, cidr, true);
+
+            const octetNames = ["1.", "2.", "3.", "4."];
+            const ipOctets = details.ip.split('.');
+            const targetIpVal = ipOctets[details.intOctetIdx];
+
+            let explanationHTML = `
+                <p><strong>1. Subnetzmaske:</strong> Eine /${cidr} Maske entspricht <strong class="text-white">${details.maskStr}</strong>.</p>
+                <p><strong>2. Interessantes Oktett:</strong> Die Grenze zwischen Netzwerk und Host liegt im <strong class="text-white">${octetNames[details.intOctetIdx]} Oktett</strong>. Der Wert der Maske dort ist <strong class="text-white">${details.interestingMaskVal}</strong>.</p>
+            `;
+
+            if (cidr === 8 || cidr === 16 || cidr === 24) {
+                 explanationHTML += `<p><strong>3. Einfacher Fall:</strong> Da die Grenze genau auf dem Oktett liegt (Maske ist 255), ändert sich die IP bis hierhin nicht, der Rest ist 0 (Netz) oder 255 (Broadcast).</p>`;
+            } else if (cidr > 30) {
+                 explanationHTML += `<p><strong>3. Sonderfall:</strong> Point-to-Point Links (/31 oder /32) erfordern spezielle Regeln.</p>`;
+            } else {
+                 explanationHTML += `
+                    <p><strong>3. Magic Number (Blockgröße):</strong> 256 - ${details.interestingMaskVal} = <strong class="text-brand-400">${details.magicNumber}</strong>. Subnetze springen in ${details.magicNumber}er Schritten.</p>
+                    <p><strong>4. In welches Netz fällt die IP?</strong> Die IP hat im ${octetNames[details.intOctetIdx]} Oktett den Wert <strong class="text-white">${targetIpVal}</strong>. Das nächstkleinere oder gleiche Vielfache von ${details.magicNumber} ist <strong class="text-white">${details.networkStr.split('.')[details.intOctetIdx]}</strong>.</p>
+                    <p><strong>5. Broadcast berechnen:</strong> Das Netz endet kurz vor dem nächsten Block. Nächstes Vielfaches ist (${details.networkStr.split('.')[details.intOctetIdx]} + ${details.magicNumber} = ${parseInt(details.networkStr.split('.')[details.intOctetIdx]) + details.magicNumber}). Minus 1 ergibt <strong class="text-white">${details.broadcastStr.split('.')[details.intOctetIdx]}</strong> im interessanten Oktett.</p>
+                 `;
+            }
+            document.getElementById('res-explanation').innerHTML = explanationHTML;
+        }
+
+        let currentQuiz = null;
+        let score = 0;
+
+        function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+        function generateNewQuiz() {
+            let o1 = getRandomInt(1, 223);
+            if (o1 === 127) o1 = 192;
+            const ip = `${o1}.${getRandomInt(0, 255)}.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`;
+            let cidr = Math.random() > 0.3 ? getRandomInt(25, 29) : getRandomInt(10, 23);
+
+            currentQuiz = calculateSubnetDetails(ip, cidr);
+            document.getElementById('quiz-question-ip').innerHTML = `${ip} <span class="text-brand-400">/${cidr}</span>`;
+
+            ['q-network', 'q-first', 'q-last', 'q-broadcast'].forEach(id => {
+                const el = document.getElementById(id);
+                el.value = '';
+                el.classList.remove('correct-input', 'wrong-input');
+            });
+
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            document.getElementById('quiz-hint').classList.add('hidden');
+        }
+
+        function checkQuizAnswers() {
+            if (!currentQuiz) return;
+            let allCorrect = true;
+
+            function checkField(id, val, correctVal) {
+                const el = document.getElementById(id);
+                el.classList.remove('correct-input', 'wrong-input');
+                if (val === correctVal) el.classList.add('correct-input');
+                else { el.classList.add('wrong-input'); allCorrect = false; }
+            }
+
+            checkField('q-network', document.getElementById('q-network').value.trim(), currentQuiz.networkStr);
+            checkField('q-first', document.getElementById('q-first').value.trim(), currentQuiz.firstStr);
+            checkField('q-last', document.getElementById('q-last').value.trim(), currentQuiz.lastStr);
+            checkField('q-broadcast', document.getElementById('q-broadcast').value.trim(), currentQuiz.broadcastStr);
+
+            const fb = document.getElementById('quiz-feedback');
+            fb.classList.remove('hidden', 'bg-green-900/20', 'border-green-700', 'text-green-300', 'bg-red-900/20', 'border-red-700', 'text-red-300');
+
+            if (allCorrect) {
+                fb.classList.add('bg-green-900/20', 'border-green-700', 'text-green-300', 'border');
+                fb.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> <strong>Exzellent!</strong> Alle Antworten sind korrekt. (+10 Punkte)`;
+                score += 10;
+                document.getElementById('quiz-score').innerText = score;
+                setTimeout(generateNewQuiz, 2500);
+            } else {
+                fb.classList.add('bg-red-900/20', 'border-red-700', 'text-red-300', 'border');
+                fb.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> <strong>Hoppla!</strong> Einige Antworten stimmen noch nicht. Überprüfe die rot markierten Felder oder nutze den Tipp.`;
+            }
+        }
+
+        function showQuizHint() {
+            if (!currentQuiz) return;
+            const octetNames = ["1.", "2.", "3.", "4."];
+            let hintHTML = `<strong>Tipp:</strong><br>`;
+
+            if ([8, 16, 24].includes(currentQuiz.cidr)) {
+                 hintHTML += `Klassen-basiertes Netz (/${currentQuiz.cidr}). Die Netzwerkgrenze liegt exakt zwischen den Oktetten. Alles danach wird zu 0 (Netz) oder 255 (Broadcast).`;
+            } else {
+                const targetIpVal = currentQuiz.ip.split('.')[currentQuiz.intOctetIdx];
+                const netVal = currentQuiz.networkStr.split('.')[currentQuiz.intOctetIdx];
+                hintHTML += `
+                    Maske: ${currentQuiz.maskStr}. Interessantes Oktett: <strong>${octetNames[currentQuiz.intOctetIdx]}</strong> (Wert: ${currentQuiz.interestingMaskVal}).<br>
+                    Magic Number: 256 - ${currentQuiz.interestingMaskVal} = <strong class="text-brand-300">${currentQuiz.magicNumber}</strong>.<br>
+                    Suche das Vielfache von ${currentQuiz.magicNumber}, das <= ${targetIpVal} ist. (Antwort für das ${octetNames[currentQuiz.intOctetIdx]} Oktett im Netz ist ${netVal}).
+                `;
+            }
+
+            const hintEl = document.getElementById('quiz-hint');
+            hintEl.innerHTML = hintHTML;
+            hintEl.classList.remove('hidden');
+            if(score > 0) {
+                score = Math.max(0, score - 2);
+                document.getElementById('quiz-score').innerText = score;
+            }
+        }
+
+        const animationData = {
+            1: {
+                title: "1. Interessantes Oktett finden",
+                text: "Das Oktett der Subnetzmaske, das weder 255 (nur Netz) noch 0 (nur Host) ist, bestimmt die Grenzen.",
+                detailedText: "Die Subnetzmaske besteht aus vier Blöcken (Oktetten). Eine <strong>255</strong> bedeutet: <em>'Hier ändert sich nichts, das ist fest für das Netzwerk'</em>. Eine <strong>0</strong> bedeutet: <em>'Hier befinden sich alle Hosts'</em>. Das Oktett, das einen Wert dazwischen hat (z.B. 192), ist unser <strong>'interessantes Oktett'</strong>. Genau hier zieht das Subnetz seine Grenze, und genau in diesem Abschnitt müssen wir im nächsten Schritt rechnen.",
+                visual: `
+                    <div class="flex items-center justify-center space-x-1 text-2xl font-mono font-bold mt-4">
+                        <span class="px-2 py-1 rounded anim-s1-scan1 text-gray-500">255</span><span class="text-gray-600">.</span>
+                        <span class="px-2 py-1 rounded anim-s1-scan2 text-gray-500">255</span><span class="text-gray-600">.</span>
+                        <span class="px-2 py-1 rounded anim-s1-scan3 text-gray-500">255</span><span class="text-gray-600">.</span>
+                        <span class="px-2 py-1 rounded border anim-s1-found text-gray-500 border-transparent">192</span>
+                    </div>
+                    <p class="text-sm font-semibold text-brand-400 mt-6 h-6"><span class="anim-s1-text">Da ist es! Weder 255 noch 0.</span></p>
+                `
+            },
+            2: {
+                title: "2. Magic Number berechnen",
+                text: "Subtrahiere den Wert des interessanten Oktetts von 256. Das ist die Blockgröße (Magic Number).",
+                detailedText: "Die Magic Number ist der wichtigste Trick beim schnellen Subnetting im Kopf. Da ein einzelnes Oktett maximal 256 mögliche Werte (0 bis 255) haben kann, ziehen wir den Wert des interessanten Oktetts von 256 ab (z.B. 256 - 192 = <strong>64</strong>). Das Ergebnis – unsere Magic Number – verrät uns die 'Schrittweite' der Subnetze. Die Subnetze springen also immer exakt um diesen Blockwert weiter (z.B. .0, dann .64, dann .128).",
+                visual: `
+                    <div class="flex flex-col items-center">
+                        <div class="text-3xl font-mono font-bold flex items-center space-x-3 mb-4">
+                            <span class="anim-s2-fade text-white">256</span>
+                            <span class="anim-s2-fade text-gray-500">-</span>
+                            <span class="anim-s2-fade text-gray-300">192</span>
+                            <span class="anim-s2-fade text-gray-500">=</span>
+                            <span class="anim-s2-pop text-brand-300 bg-brand-900/40 px-3 py-1 rounded shadow border border-brand-500/30">64</span>
+                        </div>
+                        <div class="text-xs font-semibold text-gray-400 mb-3 anim-s2-pop">Jedes Subnetz ist 64 IPs groß:</div>
+                        <div class="flex gap-2 sm:gap-4 items-end">
+                            <div class="flex flex-col items-center">
+                                <div class="anim-s2-b1 w-12 sm:w-16 h-12 flex items-center justify-center bg-kde-surface border border-kde-windowBorder rounded font-mono font-bold text-gray-400">.0</div>
+                                <span class="text-xs text-gray-500 mt-1 anim-s2-b1">1. Netz</span>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <span class="text-[10px] sm:text-xs font-bold text-brand-400 mb-1 anim-s2-b2">+ 64 &rarr;</span>
+                                <div class="anim-s2-b2 w-12 sm:w-16 h-12 flex items-center justify-center bg-brand-900/20 border-2 border-brand-500 rounded font-mono font-bold text-brand-300 shadow-lg">.64</div>
+                                <span class="text-xs text-brand-400 mt-1 anim-s2-b2">2. Netz</span>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <span class="text-[10px] sm:text-xs font-bold text-gray-500 mb-1 anim-s2-b3">+ 64 &rarr;</span>
+                                <div class="anim-s2-b3 w-12 sm:w-16 h-12 flex items-center justify-center bg-kde-surface border border-kde-windowBorder rounded font-mono font-bold text-gray-400">.128</div>
+                                <span class="text-xs text-gray-500 mt-1 anim-s2-b3">3. Netz</span>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            3: {
+                title: "3. Netzwerkadresse finden",
+                text: "Welches Vielfache der Magic Number passt noch in den Wert der IP-Adresse?",
+                detailedText: "Jetzt schauen wir uns die ursprüngliche IP-Adresse an. Wir nehmen genau die Zahl, die an der Stelle des interessanten Oktetts steht (z.B. die <strong>100</strong>). Nun suchen wir den Subnetz-Block, in den diese Zahl 'hineinfällt'. Frag dich: <em>Welches Vielfache unserer Magic Number (64) ist kleiner oder gleich unserer Zahl (100)?</em> Das ist die 64 (denn 128 wäre bereits zu groß). Unser Netzwerk beginnt in diesem Oktett also bei der <strong>.64</strong>.",
+                visual: `
+                    <div class="flex flex-col items-center relative w-full pt-4">
+                        <div class="anim-s3-drop font-mono text-xl font-bold text-blue-300 bg-kde-windowBg px-3 py-1 border-2 border-blue-500/50 rounded-full z-10 absolute top-0 shadow-lg">IP: .100</div>
+                        <div class="flex gap-4 mt-8 w-full justify-center">
+                            <div class="w-20 h-20 rounded flex flex-col items-center justify-end pb-2 border-2 border-kde-windowBorder bg-kde-surface relative overflow-hidden transition-colors">
+                                <span class="text-xs font-bold text-gray-500 absolute top-2">Netz .0</span>
+                            </div>
+                            <div class="anim-s3-highlight w-24 h-24 -mt-2 rounded flex flex-col items-center justify-end pb-2 border-2 border-kde-windowBorder bg-kde-surface relative overflow-hidden transition-colors">
+                                <span class="text-sm font-bold text-brand-400 absolute top-2">Netz .64</span>
+                            </div>
+                            <div class="w-20 h-20 rounded flex flex-col items-center justify-end pb-2 border-2 border-kde-windowBorder bg-kde-surface relative overflow-hidden transition-colors">
+                                <span class="text-xs font-bold text-gray-500 absolute top-2">Netz .128</span>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            4: {
+                title: "4. Broadcast-Adresse finden",
+                text: "Die Broadcast-Adresse ist immer genau eine IP vor dem Start des nächsten Subnetzes.",
+                detailedText: "Jedes Netzwerk hat eine Broadcast-Adresse, die verwendet wird, um alle Geräte im selben Netz gleichzeitig anzusprechen. Diese Adresse ist immer die allerletzte Adresse eines Subnetzes, direkt bevor das nächste beginnt. Um sie zu finden, nimmst du das aktuelle Netz und addierst einen Block (Magic Number) dazu, um den Start des <strong>nächsten</strong> Blocks zu finden (64 + 64 = 128). Gehst du von dort genau einen Schritt zurück (-1), landest du bei der <strong>.127</strong>. Das ist dein Broadcast.",
+                visual: `
+                    <div class="flex items-center justify-center space-x-4 mt-4 w-full">
+                         <div class="flex flex-col items-center">
+                             <div class="font-mono text-xl font-bold bg-kde-surface border border-kde-windowBorder px-4 py-2 rounded text-gray-400">.128</div>
+                             <span class="text-xs text-gray-500 mt-2 font-semibold uppercase">Nächstes Netz</span>
+                         </div>
+
+                         <div class="flex flex-col items-center relative w-12 h-16 justify-center">
+                              <div class="anim-s4-arrow text-3xl text-gray-500">&larr;</div>
+                              <div class="anim-s4-minus font-bold text-red-400 absolute top-0 bg-kde-input px-1 rounded">-1</div>
+                         </div>
+
+                         <div class="flex flex-col items-center">
+                             <div class="anim-s4-broadcast font-mono text-2xl font-bold border-2 border-red-500/50 bg-red-900/20 text-red-400 px-4 py-2 rounded shadow-lg">.127</div>
+                             <span class="text-xs text-red-400 mt-2 font-semibold uppercase">Broadcast</span>
+                         </div>
+                    </div>
+                `
+            },
+            5: {
+                title: "5. Erste und Letzte IP finden",
+                text: "Die nutzbaren IPs liegen eingeklemmt zwischen Netzwerk- und Broadcast-Adresse.",
+                detailedText: "Jetzt haben wir die Begrenzungen unseres Netzwerks. Ein Subnetz braucht die allererste Adresse zwingend als 'Netzwerk-Kennung' und die allerletzte als 'Broadcast'. Diese beiden können <strong>nicht</strong> an Computer oder Drucker vergeben werden. Die erste nutzbare IP für ein Gerät ist daher immer die <strong>Netzwerkadresse + 1</strong>. Die letzte nutzbare IP für ein Gerät ist immer die <strong>Broadcast-Adresse - 1</strong>. Damit haben wir den vollständigen Bereich (Range) berechnet.",
+                visual: `
+                    <div class="flex flex-col items-center justify-center space-y-6 w-full py-2">
+
+                        <!-- First IP Row -->
+                        <div class="flex items-center justify-center space-x-3 w-full">
+                            <div class="flex flex-col items-center">
+                                <div class="anim-s5-net font-mono text-lg font-bold bg-kde-surface border border-kde-windowBorder px-3 py-1.5 rounded text-gray-400">192.168.1.64</div>
+                                <span class="text-[10px] text-gray-500 mt-1 uppercase">Netzwerk</span>
+                            </div>
+
+                            <div class="flex items-center relative w-16 justify-center">
+                                <div class="w-full h-[2px] bg-gray-600"></div>
+                                <div class="anim-s5-pulse1 font-bold text-blue-400 absolute bg-kde-input px-1 -top-3 text-sm">+1</div>
+                                <div class="absolute right-0 w-2 h-2 border-t-2 border-r-2 border-gray-500 transform rotate-45 mr-1"></div>
+                            </div>
+
+                            <div class="flex flex-col items-center">
+                                <div class="anim-s5-first font-mono text-lg font-bold bg-blue-900/20 border-2 border-blue-500/50 text-blue-300 px-3 py-1.5 rounded shadow">192.168.1.65</div>
+                                <span class="anim-s5-first text-[10px] text-blue-400 mt-1 font-bold uppercase">Erste IP</span>
+                            </div>
+                        </div>
+
+                        <div class="w-full border-t border-dashed border-gray-700"></div>
+
+                        <!-- Last IP Row -->
+                        <div class="flex items-center justify-center space-x-3 w-full">
+                            <div class="flex flex-col items-center">
+                                <div class="anim-s5-bc font-mono text-lg font-bold bg-kde-surface border border-kde-windowBorder px-3 py-1.5 rounded text-gray-400">192.168.1.127</div>
+                                <span class="text-[10px] text-gray-500 mt-1 uppercase">Broadcast</span>
+                            </div>
+
+                            <div class="flex items-center relative w-16 justify-center">
+                                <div class="w-full h-[2px] bg-gray-600"></div>
+                                <div class="anim-s5-pulse2 font-bold text-red-400 absolute bg-kde-input px-1 -top-3 text-sm">-1</div>
+                                <div class="absolute right-0 w-2 h-2 border-t-2 border-r-2 border-gray-500 transform rotate-45 mr-1"></div>
+                            </div>
+
+                            <div class="flex flex-col items-center">
+                                <div class="anim-s5-last font-mono text-lg font-bold bg-green-900/20 border-2 border-green-500/50 text-green-300 px-3 py-1.5 rounded shadow">192.168.1.126</div>
+                                <span class="anim-s5-last text-[10px] text-green-400 mt-1 font-bold uppercase">Letzte IP</span>
+                            </div>
+                        </div>
+                    </div>
+                `
+            }
+        };
+
+        let currentModalStep = 1;
+        const totalSteps = 5;
+
+        function openAnimationModal(step) {
+            currentModalStep = step;
+            const data = animationData[step];
+
+            document.getElementById('animation-modal-title').innerText = data.title;
+            document.getElementById('animation-modal-text').innerText = data.text;
+
+            const visualContainer = document.getElementById('animation-modal-visual');
+            visualContainer.innerHTML = '';
+            setTimeout(() => { visualContainer.innerHTML = data.visual; }, 10);
+
+            document.getElementById('modal-prev-btn').disabled = (step === 1);
+            const nextBtn = document.getElementById('modal-next-btn');
+            if (step === totalSteps) {
+                nextBtn.innerHTML = '<i class="fa-solid fa-check"></i> Schließen';
+                nextBtn.onclick = closeAnimationModal;
+                nextBtn.classList.remove('bg-brand-600', 'hover:bg-brand-500', 'text-white');
+                nextBtn.classList.add('bg-kde-surface', 'hover:bg-gray-700', 'border', 'border-gray-600', 'text-gray-200');
+            } else {
+                nextBtn.innerHTML = 'Weiter <i class="fa-solid fa-chevron-right text-xs"></i>';
+                nextBtn.onclick = nextAnimationStep;
+                nextBtn.classList.add('bg-brand-600', 'hover:bg-brand-500', 'text-white');
+                nextBtn.classList.remove('bg-kde-surface', 'hover:bg-gray-700', 'border', 'border-gray-600', 'text-gray-200');
+            }
+
+            let dotsHtml = '';
+            for(let i = 1; i <= totalSteps; i++) {
+                if(i === step) dotsHtml += `<div class="w-2 h-2 rounded-full bg-brand-500 transition-colors shadow-[0_0_8px_rgba(61,174,233,0.8)]"></div>`;
+                else dotsHtml += `<div class="w-2 h-2 rounded-full bg-gray-600 transition-colors"></div>`;
+            }
+            document.getElementById('modal-dots').innerHTML = dotsHtml;
+
+            document.getElementById('animation-modal').classList.remove('hidden');
+        }
+
+        function nextAnimationStep() { if (currentModalStep < totalSteps) openAnimationModal(currentModalStep + 1); }
+        function prevAnimationStep() { if (currentModalStep > 1) openAnimationModal(currentModalStep - 1); }
+        function closeAnimationModal() {
+            document.getElementById('animation-modal').classList.add('hidden');
+            document.getElementById('animation-modal-visual').innerHTML = '';
+        }
+
+        function populateAllAnimationsView() {
+            const container = document.getElementById('all-animations-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            for (let i = 1; i <= totalSteps; i++) {
+                const data = animationData[i];
+                container.innerHTML += `
+                    <div class="border border-kde-windowBorder rounded-lg overflow-hidden shadow-lg bg-kde-windowBg">
+                        <div class="p-4 border-b border-kde-windowBorder bg-kde-surface flex items-center gap-4">
+                            <div class="w-8 h-8 rounded bg-brand-900/30 text-brand-400 border border-brand-500/30 font-bold flex items-center justify-center shrink-0 shadow-inner">${i}</div>
+                            <div>
+                                <h3 class="font-semibold text-lg text-white">${data.title.substring(3)}</h3>
+                            </div>
+                        </div>
+                        <div class="p-6 text-gray-300 text-sm leading-relaxed border-b border-kde-windowBorder bg-kde-windowBg">
+                            ${data.detailedText}
+                        </div>
+                        <div class="p-6 bg-kde-input flex flex-col items-center justify-center min-h-[220px] overflow-hidden shadow-inner">
+                            ${data.visual}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        window.onload = () => {
+            populateCheatSheet();
+            populateAllAnimationsView();
+            switchTab('learn');
+        };
+    </script>
+</body>
+</html>

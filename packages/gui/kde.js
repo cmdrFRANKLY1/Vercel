@@ -2,7 +2,7 @@
     if (typeof window.packagesRegistry !== 'undefined') {
         window.packagesRegistry['kde'] = {
             name: 'KDE Plasma Desktop',
-            version: '1.0.2',
+            version: '1.0.3',
             description: 'A KDE Plasma desktop experience simulation',
             preInstalledOn: ['default'],
             translations: {},
@@ -104,10 +104,16 @@
 '        }\r\n' +
 '\r\n' +
 '        .desktop-icon {\r\n' +
-'            transition: background-color 0.15s ease;\r\n' +
+'            transition: background-color 0.15s ease, border 0.15s ease;\r\n' +
+'            border: 1px solid transparent;\r\n' +
 '        }\r\n' +
 '        .desktop-icon:hover {\r\n' +
 '            background-color: rgba(255, 255, 255, 0.15);\r\n' +
+'            border-radius: 0.5rem;\r\n' +
+'        }\r\n' +
+'        .desktop-icon.selected {\r\n' +
+'            background-color: rgba(61, 174, 233, 0.3) !important;\r\n' +
+'            border: 1px solid rgba(61, 174, 233, 0.5);\r\n' +
 '            border-radius: 0.5rem;\r\n' +
 '        }\r\n' +
 '        \r\n' +
@@ -152,7 +158,7 @@
 '<body class="text-kde-text h-screen w-screen relative select-none font-sans">\r\n';
 
         html += '\r\n' +
-'    <div id="desktop-area" class="w-full h-[calc(100vh-48px)] absolute top-0 left-0 p-4 flex flex-col flex-wrap items-start gap-2 z-0">\r\n' +
+'    <div id="desktop-area" class="w-full h-[calc(100vh-48px)] absolute top-0 left-0 p-4 flex flex-col flex-wrap items-start gap-2 z-0 content-start">\r\n' +
 '    <\/div>\r\n' +
 '\r\n' +
 '    <div id="windows-container" class="absolute top-0 left-0 w-full h-[calc(100vh-48px)] pointer-events-none z-10">\r\n' +
@@ -219,11 +225,8 @@
 
         html += '    <script>\r\n' +
 '        function closeSTerminal() {\r\n' +
-'            // Try to close the sTerminal by finding and closing the wrapper tab/window\r\n' +
 '            try {\r\n' +
-'                // First try to close via the parent window (sTerminal context)\r\n' +
 '                if (window.parent && window.parent !== window) {\r\n' +
-'                    // If we\'re in an iframe, try to close the parent\'s wrapper\r\n' +
 '                    if (typeof window.parent.closeWrapperTab === \'function\') {\r\n' +
 '                        window.parent.closeWrapperTab();\r\n' +
 '                        return;\r\n' +
@@ -233,25 +236,19 @@
 '                        return;\r\n' +
 '                    }\r\n' +
 '                }\r\n' +
-'                // Try to close via window.close() if this is a popup\r\n' +
 '                if (window.opener && !window.opener.closed) {\r\n' +
 '                    window.close();\r\n' +
 '                    return;\r\n' +
 '                }\r\n' +
-'                // If we\'re in an iframe, try to close the parent window\r\n' +
 '                if (window.parent && window.parent !== window) {\r\n' +
 '                    window.parent.close();\r\n' +
 '                    return;\r\n' +
 '                }\r\n' +
-'                // Fallback: redirect to a blank page\r\n' +
 '                window.location.href = \'about:blank\';\r\n' +
 '            } catch(e) {\r\n' +
 '                console.log(\'Error closing terminal:\', e);\r\n' +
-'                try {\r\n' +
-'                    window.location.href = \'about:blank\';\r\n' +
-'                } catch(err) {}\r\n' +
+'                try { window.location.href = \'about:blank\'; } catch(err) {}\r\n' +
 '            }\r\n' +
-'            // If nothing else worked, try to close the window\r\n' +
 '            try { window.close(); } catch(e) {}\r\n' +
 '        }\r\n' +
 '\r\n' +
@@ -297,11 +294,17 @@
 '                !launcherBtn.contains(event.target)) {\r\n' +
 '                toggleLauncher();\r\n' +
 '            }\r\n' +
+'            \r\n' +
+'            // Click on empty desktop area clears desktop icon selection\r\n' +
+'            if (event.target.id === \'desktop-area\') {\r\n' +
+'                document.querySelectorAll(\'.desktop-icon\').forEach(el => el.classList.remove(\'selected\'));\r\n' +
+'            }\r\n' +
 '        });\r\n' +
 '\r\n' +
 '        function formatAppName(name) {\r\n' +
 '            if (!name) return \'\';\r\n' +
-'            return name\r\n' +
+'            let cleanName = name.replace(/\\.html$/i, \'\');\r\n' +
+'            return cleanName\r\n' +
 '                .replace(/([a-z])([A-Z])/g, \'$1 $2\')\r\n' +
 '                .replace(/[-_]/g, \' \')\r\n' +
 '                .replace(/^./, str => str.toUpperCase());\r\n' +
@@ -320,8 +323,10 @@
 '                    "lyricsEditorApp",\r\n' +
 '                    "lyricseditor",\r\n' +
 '                    "radioPlayer",\r\n' +
+'                    "subnets",\r\n' +
 '                    "wikipedia"\r\n' +
-'                ]\r\n' +
+'                ],\r\n' +
+'                "desktop": ["subnets", "kcalc", "kate"]\r\n' +
 '            };\r\n' +
 '\r\n' +
 '            const possiblePaths = [\r\n' +
@@ -349,8 +354,44 @@
 '            loadRegistry().then(registry => {\r\n' +
 '                availableApps = registry.apps || [];\r\n' +
 '                renderAppList(availableApps);\r\n' +
+'                renderDesktopIcons(registry.desktop || []);\r\n' +
 '            });\r\n' +
 '        });\r\n' +
+'\r\n' +
+'        function renderDesktopIcons(desktopApps) {\r\n' +
+'            const desktopArea = document.getElementById(\'desktop-area\');\r\n' +
+'            if (!desktopArea) return;\r\n' +
+'            \r\n' +
+'            desktopArea.innerHTML = \'\';\r\n' +
+'            if (desktopApps && desktopApps.length > 0) {\r\n' +
+'                desktopApps.forEach(appName => {\r\n' +
+'                    const btn = document.createElement(\'div\');\r\n' +
+'                    btn.className = \'desktop-icon w-24 h-[104px] flex flex-col items-center justify-start p-2 cursor-pointer gap-1.5 rounded-lg\';\r\n' +
+'                    btn.innerHTML = `\r\n' +
+'                        <div class="w-12 h-12 rounded-lg bg-gray-800/80 border border-gray-600/50 flex items-center justify-center text-kde-accent shadow-lg glass-effect">\r\n' +
+'                            <i class="fa-solid fa-window-maximize text-2xl"><\\/i>\r\n' +
+'                        <\\/div>\r\n' +
+'                        <span class="text-white text-xs font-medium text-center drop-shadow-md leading-tight break-words w-full" style="text-shadow: 0 1px 3px rgba(0,0,0,0.8);">${formatAppName(appName)}<\\/span>\r\n' +
+'                    `;\r\n' +
+'                    \r\n' +
+'                    // Double click to launch\r\n' +
+'                    btn.ondblclick = (e) => {\r\n' +
+'                        e.stopPropagation();\r\n' +
+'                        launchApp(appName);\r\n' +
+'                        btn.classList.remove(\'selected\');\r\n' +
+'                    };\r\n' +
+'\r\n' +
+'                    // Single click to select\r\n' +
+'                    btn.onclick = (e) => {\r\n' +
+'                        e.stopPropagation();\r\n' +
+'                        document.querySelectorAll(\'.desktop-icon\').forEach(el => el.classList.remove(\'selected\'));\r\n' +
+'                        btn.classList.add(\'selected\');\r\n' +
+'                    };\r\n' +
+'                    \r\n' +
+'                    desktopArea.appendChild(btn);\r\n' +
+'                });\r\n' +
+'            }\r\n' +
+'        }\r\n' +
 '\r\n' +
 '        function renderAppList(apps) {\r\n' +
 '            const appsContainer = document.getElementById(\'apps-container\');\r\n' +
@@ -403,6 +444,7 @@
 '            \'lyricsEditorApp\': { width: 1000, height: 650, maxizable: true },\r\n' +
 '            \'lyricseditor\': { width: 1000, height: 650, maxizable: true },\r\n' +
 '            \'radioPlayer\': { width: 460, height: 600, maxizable: false },\r\n' +
+'            \'subnets\': { width: 1000, height: 700, maxizable: true, url: \'packages/desktop/SubNets.html\' },\r\n' +
 '            \'wikipedia\': { width: 920, height: 660, maxizable: true }\r\n' +
 '        };\r\n' +
 '\r\n' +
@@ -432,7 +474,20 @@
 '                const winDiv = document.createElement(\'div\');\r\n' +
 '                winDiv.id = winId;\r\n' +
 '                \r\n' +
-'                const config = appConfig[appName] || { width: 800, height: 540, maxizable: true };\r\n' +
+'                let config = appConfig[appName];\r\n' +
+'                let isHtmlApp = false;\r\n' +
+'                let htmlUrl = \'\';\r\n' +
+'\r\n' +
+'                if (config && config.url) {\r\n' +
+'                    isHtmlApp = true;\r\n' +
+'                    htmlUrl = config.url;\r\n' +
+'                } else if (appName.toLowerCase().endsWith(\'.html\')) {\r\n' +
+'                    isHtmlApp = true;\r\n' +
+'                    htmlUrl = `packages/desktop/${appName}`;\r\n' +
+'                    config = { width: 1000, height: 700, maxizable: true };\r\n' +
+'                } else {\r\n' +
+'                    config = config || { width: 800, height: 540, maxizable: true };\r\n' +
+'                }\r\n' +
 '                \r\n' +
 '                const winClasses = \'window absolute bg-kde-window-bg border border-kde-window-border rounded-lg shadow-2xl flex flex-col overflow-hidden transition-transform duration-100 ease-out pointer-events-auto\';\r\n' +
 '                winDiv.className = config.maxizable ? winClasses : winClasses + \' no-maximize\';\r\n' +
@@ -463,85 +518,89 @@
 '                \r\n' +
 '                document.getElementById(\'windows-container\').appendChild(winDiv);\r\n' +
 '                \r\n' +
-'                const jsUrl = resolveAppJsUrl(appName);\r\n' +
 '                const iframe = winDiv.querySelector(\'iframe\');\r\n' +
 '                \r\n';
 
-        html += '                const iframeContent = `<!DOCTYPE html>\r\n' +
-'                <html lang="en" class="h-full">\r\n' +
-'                <head>\r\n' +
-'                    <meta charset="UTF-8">\r\n' +
-'                    <meta name="viewport" content="width=device-width, initial-scale=1.0">\r\n' +
-'                    ${window.KDE_BASE_URL ? `<base href="${window.KDE_BASE_URL}">` : \'\'}\r\n' +
-'                    <script src="../../colors/colorsKde.js"><\\/script>\r\n' +
-'                    <script src="https://cdn.tailwindcss.com"><\\/script>\r\n' +
-'                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">\r\n' +
-'                    <style>\r\n' +
-'                        * { margin: 0; padding: 0; box-sizing: border-box; }\r\n' +
-'                        html, body { height: 100%; overflow: hidden; }\r\n' +
-'                        body { background-color: #31363b; color: #eff0f1; font-family: \\\'Noto Sans\\\', sans-serif; }\r\n' +
-'                    <\/style>\r\n' +
-'                <\/head>\r\n' +
-'                <body>\r\n' +
-'                    <script>\r\n' +
-'                        (function() {\r\n' +
-'                            const appName = "${appName}";\r\n' +
-'                            const exact = appName + ".js";\r\n' +
-'                            const lower = appName.toLowerCase() + ".js";\r\n' +
-'                            const exactApp = appName + "App.js";\r\n' +
-'                            \r\n' +
-'                            // Advanced robust cascade pathing - handles root, /packages/gui/, and generic fallback scenarios\r\n' +
-'                            const paths = [\r\n' +
-'                                "packages/apps/" + exact,\r\n' +
-'                                "packages/apps/" + exactApp,\r\n' +
-'                                "packages/apps/" + lower,\r\n' +
-'                                "../apps/" + exact,\r\n' +
-'                                "../apps/" + exactApp,\r\n' +
-'                                "../apps/" + lower,\r\n' +
-'                                "../../packages/apps/" + exact,\r\n' +
-'                                "../../packages/apps/" + exactApp,\r\n' +
-'                                "/packages/apps/" + exact,\r\n' +
-'                                "${jsUrl}",\r\n' +
-'                                exact,\r\n' +
-'                                exactApp,\r\n' +
-'                                lower,\r\n' +
-'                                "./" + exact\r\n' +
-'                            ];\r\n' +
-'                            \r\n' +
-'                            const uniquePaths = paths.filter((item, pos) => paths.indexOf(item) === pos && item);\r\n' +
-'                            let currentIdx = 0;\r\n' +
-'\r\n' +
-'                            console.log("KDE Wrapper: Attempting to load app: " + appName, uniquePaths);\r\n' +
-'\r\n' +
-'                            function tryLoadScript() {\r\n' +
-'                                if (currentIdx >= uniquePaths.length) {\r\n' +
-'                                    console.error("KDE Wrapper: Exhausted all paths for", appName);\r\n' +
-'                                    document.body.innerHTML = \'<div style="padding:20px;color:#ff4444;text-align:center;font-family:sans-serif;margin-top:2rem;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;"><strong>Failed to load application script:</strong><br>\' + appName + \'<br><br><span style="font-size:0.8em;color:#888;">Ensure the JS file is in the packages/apps/ directory.</span></div>\';\r\n' +
-'                                    return;\r\n' +
-'                                }\r\n' +
-'\r\n' +
-'                                const script = document.createElement(\'script\');\r\n' +
-'                                script.src = uniquePaths[currentIdx];\r\n' +
+        html += '                if (isHtmlApp) {\r\n' +
+'                    console.log("KDE Wrapper: Loading HTML app directly:", htmlUrl);\r\n' +
+'                    iframe.src = htmlUrl;\r\n' +
+'                } else {\r\n' +
+'                    const jsUrl = resolveAppJsUrl(appName);\r\n' +
+'                    const iframeContent = `<!DOCTYPE html>\r\n' +
+'                    <html lang="en" class="h-full">\r\n' +
+'                    <head>\r\n' +
+'                        <meta charset="UTF-8">\r\n' +
+'                        <meta name="viewport" content="width=device-width, initial-scale=1.0">\r\n' +
+'                        ${window.KDE_BASE_URL ? `<base href="${window.KDE_BASE_URL}">` : \'\'}\r\n' +
+'                        <script src="../../colors/colorsKde.js"><\\/script>\r\n' +
+'                        <script src="https://cdn.tailwindcss.com"><\\/script>\r\n' +
+'                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">\r\n' +
+'                        <style>\r\n' +
+'                            * { margin: 0; padding: 0; box-sizing: border-box; }\r\n' +
+'                            html, body { height: 100%; overflow: hidden; }\r\n' +
+'                            body { background-color: #31363b; color: #eff0f1; font-family: \\\'Noto Sans\\\', sans-serif; }\r\n' +
+'                        <\/style>\r\n' +
+'                    <\/head>\r\n' +
+'                    <body>\r\n' +
+'                        <script>\r\n' +
+'                            (function() {\r\n' +
+'                                const appName = "${appName}";\r\n' +
+'                                const exact = appName + ".js";\r\n' +
+'                                const lower = appName.toLowerCase() + ".js";\r\n' +
+'                                const exactApp = appName + "App.js";\r\n' +
 '                                \r\n' +
-'                                script.onload = function() {\r\n' +
-'                                    console.log("KDE Wrapper: Successfully loaded", appName, "from", script.src);\r\n' +
-'                                };\r\n' +
-'                                script.onerror = function() {\r\n' +
-'                                    console.warn("KDE Wrapper: Path failed:", script.src);\r\n' +
-'                                    currentIdx++;\r\n' +
-'                                    tryLoadScript();\r\n' +
-'                                };\r\n' +
-'                                document.body.appendChild(script);\r\n' +
-'                            }\r\n' +
-'                            \r\n' +
-'                            tryLoadScript();\r\n' +
-'                        })();\r\n' +
-'                    <\\/script>\r\n' +
-'                <\/body>\r\n' +
-'                <\/html>`;\r\n' +
+'                                // Advanced robust cascade pathing - handles root, /packages/gui/, and generic fallback scenarios\r\n' +
+'                                const paths = [\r\n' +
+'                                    "packages/apps/" + exact,\r\n' +
+'                                    "packages/apps/" + exactApp,\r\n' +
+'                                    "packages/apps/" + lower,\r\n' +
+'                                    "../apps/" + exact,\r\n' +
+'                                    "../apps/" + exactApp,\r\n' +
+'                                    "../apps/" + lower,\r\n' +
+'                                    "../../packages/apps/" + exact,\r\n' +
+'                                    "../../packages/apps/" + exactApp,\r\n' +
+'                                    "/packages/apps/" + exact,\r\n' +
+'                                    "${jsUrl}",\r\n' +
+'                                    exact,\r\n' +
+'                                    exactApp,\r\n' +
+'                                    lower,\r\n' +
+'                                    "./" + exact\r\n' +
+'                                ];\r\n' +
+'                                \r\n' +
+'                                const uniquePaths = paths.filter((item, pos) => paths.indexOf(item) === pos && item);\r\n' +
+'                                let currentIdx = 0;\r\n' +
 '\r\n' +
-'                // Render straight to srcdoc (avoids the previous async reload bug)\r\n' +
-'                iframe.srcdoc = iframeContent;\r\n' +
+'                                console.log("KDE Wrapper: Attempting to load app: " + appName, uniquePaths);\r\n' +
+'\r\n' +
+'                                function tryLoadScript() {\r\n' +
+'                                    if (currentIdx >= uniquePaths.length) {\r\n' +
+'                                        console.error("KDE Wrapper: Exhausted all paths for", appName);\r\n' +
+'                                        document.body.innerHTML = \'<div style="padding:20px;color:#ff4444;text-align:center;font-family:sans-serif;margin-top:2rem;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;"><strong>Failed to load application script:</strong><br>\' + appName + \'<br><br><span style="font-size:0.8em;color:#888;">Ensure the JS file is in the packages/apps/ directory.</span></div>\';\r\n' +
+'                                        return;\r\n' +
+'                                    }\r\n' +
+'\r\n' +
+'                                    const script = document.createElement(\'script\');\r\n' +
+'                                    script.src = uniquePaths[currentIdx];\r\n' +
+'                                    \r\n' +
+'                                    script.onload = function() {\r\n' +
+'                                        console.log("KDE Wrapper: Successfully loaded", appName, "from", script.src);\r\n' +
+'                                    };\r\n' +
+'                                    script.onerror = function() {\r\n' +
+'                                        console.warn("KDE Wrapper: Path failed:", script.src);\r\n' +
+'                                        currentIdx++;\r\n' +
+'                                        tryLoadScript();\r\n' +
+'                                    };\r\n' +
+'                                    document.body.appendChild(script);\r\n' +
+'                                }\r\n' +
+'                                \r\n' +
+'                                tryLoadScript();\r\n' +
+'                            })();\r\n' +
+'                        <\\/script>\r\n' +
+'                    <\/body>\r\n' +
+'                    <\/html>`;\r\n' +
+'\r\n' +
+'                    iframe.srcdoc = iframeContent;\r\n' +
+'                }\r\n' +
 '\r\n' +
 '                windows[winId] = {\r\n' +
 '                    element: winDiv,\r\n' +
@@ -877,7 +936,7 @@
             generateKdeHTML,
             package: {
                 name: 'kde',
-                version: '1.0.2',
+                version: '1.0.3',
                 description: 'A KDE Plasma desktop experience simulation'
             }
         };
