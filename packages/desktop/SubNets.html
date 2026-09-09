@@ -161,6 +161,138 @@
         ::-webkit-scrollbar-thumb { background: #4d5157; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #6c7178; }
     </style>
+    <script>
+        // Global functions defined in head to ensure availability before DOM load
+        window.switchTab = function(tabId) {
+            const views = ['learn', 'classes', 'calc', 'quiz'];
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if (el) {
+                    el.classList.add('hidden');
+                    el.classList.remove('animate-fade-in');
+                }
+                const btn = document.getElementById(`tab-${v}`);
+                if (btn) btn.classList.remove('active');
+            });
+
+            const activeView = document.getElementById(`view-${tabId}`);
+            if (activeView) {
+                activeView.classList.remove('hidden');
+                void activeView.offsetWidth;
+                activeView.classList.add('animate-fade-in');
+            }
+
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            if (tabId === 'calc' && typeof calculateSubnet === 'function') calculateSubnet();
+            else if (tabId === 'quiz' && !currentQuiz && typeof generateNewQuiz === 'function') generateNewQuiz();
+        };
+
+        window.showArrow = function(triggerEl, targetIds) {
+            const ids = targetIds.split(',');
+            const svg = document.getElementById('arrow-canvas');
+            if (!svg) return;
+            
+            svg.innerHTML = '';
+            svg.classList.remove('hidden');
+
+            ids.forEach(id => {
+                const targetEl = document.getElementById(id.trim());
+                if (!targetEl || targetEl === triggerEl) return;
+
+                targetEl.classList.add('target-active');
+
+                const tRect = triggerEl.getBoundingClientRect();
+                const tarRect = targetEl.getBoundingClientRect();
+
+                const startX = tRect.left + window.scrollX + (tRect.width / 2);
+                const startY = tRect.bottom + window.scrollY; 
+                
+                const endX = tarRect.left + window.scrollX + (tarRect.width / 2);
+                const endY = tarRect.top + window.scrollY - 4; 
+
+                const cp1X = startX;
+                const cp1Y = startY + Math.max(20, (endY - startY) / 2); 
+                const cp2X = endX;
+                const cp2Y = startY + Math.max(20, (endY - startY) / 2);
+
+                const d = `M ${startX},${startY} C ${cp1X},${cp1Y} ${cp2X},${cp2Y} ${endX},${endY}`;
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', d);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', '#3daee9');
+                path.setAttribute('stroke-width', '2.5');
+                path.setAttribute('stroke-dasharray', '6,6');
+                
+                const approxLength = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2)) * 1.5; 
+                path.style.strokeDasharray = `${approxLength}`;
+                path.style.strokeDashoffset = `${approxLength}`;
+                path.style.transition = 'stroke-dashoffset 0.35s ease-out';
+                
+                svg.appendChild(path);
+                path.getBoundingClientRect(); 
+                path.style.strokeDashoffset = '0';
+            });
+        };
+
+        window.showArrowBottom = function(triggerEl, targetId) {
+            const svg = document.getElementById('arrow-canvas');
+            if (!svg) return;
+            svg.innerHTML = '';
+            svg.classList.remove('hidden');
+
+            const targetEl = document.getElementById(targetId.trim());
+            if (!targetEl || targetEl === triggerEl) return;
+
+            targetEl.classList.add('target-active');
+
+            const tRect = triggerEl.getBoundingClientRect();
+            const tarRect = targetEl.getBoundingClientRect();
+
+            const startX = tRect.left + window.scrollX + (tRect.width / 2);
+            const startY = tRect.bottom + window.scrollY; 
+            
+            const endX = tarRect.left + window.scrollX + (tarRect.width / 2);
+            const endY = tarRect.bottom + window.scrollY + 4;
+
+            const cp1X = startX;
+            const cp1Y = startY + Math.max(20, Math.abs(endY - startY) / 2); 
+            const cp2X = endX;
+            const cp2Y = startY + Math.max(20, Math.abs(endY - startY) / 2);
+
+            const d = `M ${startX},${startY} C ${cp1X},${cp1Y} ${cp2X},${cp2Y} ${endX},${endY}`;
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', '#3daee9');
+            path.setAttribute('stroke-width', '2.5');
+            path.setAttribute('stroke-dasharray', '6,6');
+            
+            const approxLength = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2)) * 1.5; 
+            path.style.strokeDasharray = `${approxLength}`;
+            path.style.strokeDashoffset = `${approxLength}`;
+            path.style.transition = 'stroke-dashoffset 0.35s ease-out';
+            
+            svg.appendChild(path);
+            path.getBoundingClientRect(); 
+            path.style.strokeDashoffset = '0';
+        };
+
+        window.hideArrow = function(targetIds) {
+            const ids = targetIds.split(',');
+            ids.forEach(id => {
+                const targetEl = document.getElementById(id.trim());
+                if (targetEl) {
+                    targetEl.classList.remove('target-active');
+                }
+            });
+            const svg = document.getElementById('arrow-canvas');
+            if (svg) svg.classList.add('hidden');
+        };
+    </script>
 </head>
 <body class="min-h-screen flex flex-col bg-kde-bg text-kde-text relative">
 
@@ -170,12 +302,16 @@
                 <i class="fa-solid fa-network-wired text-brand-400 text-xl"></i>
                 <h1 class="text-xl font-semibold tracking-wide text-white">SubNets <span class="text-brand-400 font-normal">für Strolchfreunde</span></h1>
             </div>
-            <nav class="flex overflow-x-auto scrollbar-hide text-sm">
-                <button onclick="switchTab('learn')" id="tab-learn" class="tab-btn active px-4 py-4 text-gray-400 hover:text-brand-400 hover:bg-white/5 whitespace-nowrap transition-colors flex items-center gap-2"><i class="fa-solid fa-book-open text-xs"></i> 1. Lernen</button>
-                <button onclick="switchTab('classes')" id="tab-classes" class="tab-btn px-4 py-4 text-gray-400 hover:text-brand-400 hover:bg-white/5 whitespace-nowrap transition-colors flex items-center gap-2"><i class="fa-solid fa-layer-group text-xs"></i> 2. Klassen</button>
-                <button onclick="switchTab('calc')" id="tab-calc" class="tab-btn px-4 py-4 text-gray-400 hover:text-brand-400 hover:bg-white/5 whitespace-nowrap transition-colors flex items-center gap-2"><i class="fa-solid fa-calculator text-xs"></i> 3. Rechner</button>
-                <button onclick="switchTab('quiz')" id="tab-quiz" class="tab-btn px-4 py-4 text-gray-400 hover:text-brand-400 hover:bg-white/5 whitespace-nowrap transition-colors flex items-center gap-2"><i class="fa-solid fa-graduation-cap text-xs"></i> 4. Quiz</button>
-            </nav>
+            <div class="flex items-center gap-4">
+                <nav class="flex overflow-x-auto scrollbar-hide text-sm">
+                    <button onclick="switchTab('learn')" id="tab-learn" class="tab-btn active px-4 py-4 text-gray-400 hover:text-brand-400 hover:bg-white/5 whitespace-nowrap transition-colors flex items-center gap-2"><i class="fa-solid fa-book-open text-xs"></i> 1. Lernen</button>
+                    <button onclick="switchTab('classes')" id="tab-classes" class="tab-btn px-4 py-4 text-gray-400 hover:text-brand-400 hover:bg-white/5 whitespace-nowrap transition-colors flex items-center gap-2"><i class="fa-solid fa-layer-group text-xs"></i> 2. Klassen</button>
+                    <button onclick="switchTab('calc')" id="tab-calc" class="tab-btn px-4 py-4 text-gray-400 hover:text-brand-400 hover:bg-white/5 whitespace-nowrap transition-colors flex items-center gap-2"><i class="fa-solid fa-calculator text-xs"></i> 3. Rechner</button>
+                </nav>
+                <button onclick="toggleQuizSidebar()" id="quiz-toggle-btn" class="bg-brand-600/20 hover:bg-brand-600/40 text-brand-300 border border-brand-500/40 px-3 py-2 rounded text-sm transition-colors flex items-center gap-2 shadow-sm font-semibold">
+                    <i class="fa-solid fa-graduation-cap"></i> Quiz-Trainer <span id="sidebar-score-badge" class="bg-brand-500 text-white px-1.5 py-0.5 rounded-full text-xs font-bold ml-1">0</span>
+                </button>
+            </div>
         </div>
     </header>
 
@@ -486,66 +622,7 @@
                     <div class="bg-kde-windowBg rounded-lg shadow border border-kde-windowBorder border-l-4 border-l-brand-500 p-6">
                         <h2 class="text-md font-semibold text-white mb-3 flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-brand-400"></i> Wie berechnet man das?</h2>
                         <div id="res-explanation" class="text-sm text-gray-300 space-y-2 min-h-[180px] leading-relaxed">
-                            <!-- Populated by JS -->
                         </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="view-quiz" class="hidden">
-            <div class="bg-kde-windowBg rounded-lg shadow border border-kde-windowBorder overflow-hidden max-w-3xl mx-auto">
-                <div class="p-6 border-b border-kde-windowBorder bg-kde-surface flex justify-between items-center">
-                    <div>
-                        <h2 class="text-xl font-semibold text-white flex items-center gap-2"><i class="fa-solid fa-clipboard-question text-brand-400"></i> Subnetting Quiz</h2>
-                        <p class="text-gray-400 text-sm mt-1">Fülle die Felder für die gegebene IP und CIDR aus.</p>
-                    </div>
-                    <div class="text-right bg-kde-input px-4 py-2 rounded border border-gray-700 shadow-inner">
-                        <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Score</p>
-                        <p class="text-2xl font-bold text-brand-400 leading-none" id="quiz-score">0</p>
-                    </div>
-                </div>
-
-                <div class="p-6">
-                    <div class="bg-kde-input border border-gray-700 p-6 rounded text-center mb-8 shadow-inner">
-                        <p class="text-xs text-gray-400 uppercase font-semibold mb-2 tracking-wider">Analysiere diese Adresse</p>
-                        <p class="text-3xl font-mono font-bold tracking-wider text-white" id="quiz-question-ip">10.0.0.1 <span class="text-brand-400">/24</span></p>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-1">Netzwerkadresse</label>
-                                <input type="text" id="q-network" class="w-full bg-kde-input border border-gray-600 rounded px-3 py-2.5 text-white font-mono focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 transition-colors shadow-inner" placeholder="z.B. 10.0.0.0">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-1">Erster nutzbarer Host</label>
-                                <input type="text" id="q-first" class="w-full bg-kde-input border border-gray-600 rounded px-3 py-2.5 text-white font-mono focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 transition-colors shadow-inner" placeholder="z.B. 10.0.0.1">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-1">Letzter nutzbarer Host</label>
-                                <input type="text" id="q-last" class="w-full bg-kde-input border border-gray-600 rounded px-3 py-2.5 text-white font-mono focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 transition-colors shadow-inner" placeholder="z.B. 10.0.0.254">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-1">Broadcast Adresse</label>
-                                <input type="text" id="q-broadcast" class="w-full bg-kde-input border border-gray-600 rounded px-3 py-2.5 text-white font-mono focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 transition-colors shadow-inner" placeholder="z.B. 10.0.0.255">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-8 flex flex-wrap gap-4 justify-between items-center pt-6 border-t border-gray-700/50">
-                        <button onclick="checkQuizAnswers()" class="bg-brand-600 hover:bg-brand-500 text-white font-medium py-2 px-6 rounded transition-colors shadow flex items-center gap-2"><i class="fa-solid fa-check"></i> Antworten prüfen</button>
-
-                        <div class="flex gap-2">
-                            <button onclick="showQuizHint()" class="bg-kde-surface hover:bg-gray-700 border border-gray-600 text-gray-200 py-2 px-4 rounded transition-colors text-sm flex items-center gap-2"><i class="fa-regular fa-lightbulb"></i> Tipp (kostet Punkte)</button>
-                            <button onclick="generateNewQuiz()" class="bg-kde-surface hover:bg-gray-700 border border-gray-600 text-gray-200 py-2 px-4 rounded transition-colors text-sm flex items-center gap-2"><i class="fa-solid fa-rotate-right"></i> Neue Frage</button>
-                        </div>
-                    </div>
-
-                    <div id="quiz-feedback" class="mt-6 hidden p-4 rounded border text-sm">
-                    </div>
-
-                    <div id="quiz-hint" class="mt-6 hidden p-4 bg-yellow-900/20 border border-yellow-700/50 rounded text-sm text-yellow-200">
                     </div>
                 </div>
             </div>
@@ -576,39 +653,69 @@
 
     </main>
 
+    <!-- Quiz Sidebar (Toggle-able Right Sidebar) -->
+    <div id="quiz-backdrop" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-40 hidden transition-opacity" onclick="toggleQuizSidebar()"></div>
+    <aside id="quiz-sidebar" class="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-kde-windowBg border-l border-kde-windowBorder shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+        <div class="p-4 border-b border-kde-windowBorder bg-kde-surface flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-graduation-cap text-brand-400 text-lg"></i>
+                <h3 class="font-semibold text-white">Quiz-Trainer</h3>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="text-right bg-kde-input px-2.5 py-1 rounded border border-gray-700 shadow-inner">
+                    <span class="text-[9px] uppercase font-bold text-gray-500 tracking-wider block">Score</span>
+                    <span class="text-lg font-bold text-brand-400 leading-none" id="quiz-score">0</span>
+                </div>
+                <button onclick="toggleQuizSidebar()" class="text-gray-400 hover:text-white transition-colors p-2 rounded hover:bg-white/5">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="p-6 overflow-y-auto flex-grow space-y-6">
+            <div class="bg-kde-input border border-gray-700 p-4 rounded text-center shadow-inner">
+                <span class="text-[10px] text-gray-400 uppercase font-semibold mb-1 block tracking-wider">Analysiere diese Adresse</span>
+                <span class="text-2xl font-mono font-bold tracking-wider text-white" id="quiz-question-ip">10.0.0.1 <span class="text-brand-400">/24</span></span>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Netzwerkadresse</label>
+                    <input type="text" id="q-network" class="w-full bg-kde-input border border-gray-600 rounded px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-brand-400 transition-colors shadow-inner" placeholder="z.B. 10.0.0.0">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Erster nutzbarer Host</label>
+                    <input type="text" id="q-first" class="w-full bg-kde-input border border-gray-600 rounded px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-brand-400 transition-colors shadow-inner" placeholder="z.B. 10.0.0.1">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Letzter nutzbarer Host</label>
+                    <input type="text" id="q-last" class="w-full bg-kde-input border border-gray-600 rounded px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-brand-400 transition-colors shadow-inner" placeholder="z.B. 10.0.0.254">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Broadcast Adresse</label>
+                    <input type="text" id="q-broadcast" class="w-full bg-kde-input border border-gray-600 rounded px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-brand-400 transition-colors shadow-inner" placeholder="z.B. 10.0.0.255">
+                </div>
+            </div>
+
+            <div id="quiz-feedback" class="hidden p-3 rounded border text-xs leading-relaxed"></div>
+            <div id="quiz-hint" class="hidden p-3 bg-yellow-900/20 border border-yellow-700/50 rounded text-xs text-yellow-200 leading-relaxed"></div>
+        </div>
+
+        <div class="p-4 border-t border-kde-windowBorder bg-kde-surface flex flex-col gap-2">
+            <button onclick="checkQuizAnswers()" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-medium py-2 px-4 rounded transition-colors text-sm shadow flex items-center justify-center gap-2"><i class="fa-solid fa-check"></i> Antworten prüfen</button>
+            <div class="flex gap-2">
+                <button onclick="showQuizHint()" class="flex-1 bg-kde-input hover:bg-gray-700 border border-gray-600 text-gray-200 py-1.5 px-3 rounded transition-colors text-xs flex items-center justify-center gap-1.5"><i class="fa-regular fa-lightbulb"></i> Tipp (-2 Pkt)</button>
+                <button onclick="generateNewQuiz()" class="flex-1 bg-kde-input hover:bg-gray-700 border border-gray-600 text-gray-200 py-1.5 px-3 rounded transition-colors text-xs flex items-center justify-center gap-1.5"><i class="fa-solid fa-rotate-right"></i> Neue Frage</button>
+            </div>
+        </div>
+    </aside>
+
     <div id="svg-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; overflow: visible;">
         <svg id="arrow-canvas" style="width: 100%; height: 100%; overflow: visible;" class="hidden">
         </svg>
     </div>
 
     <script>
-        function switchTab(tabId) {
-            document.getElementById('view-learn').classList.add('hidden');
-            document.getElementById('view-classes').classList.add('hidden');
-            document.getElementById('view-calc').classList.add('hidden');
-            document.getElementById('view-quiz').classList.add('hidden');
-
-            document.getElementById('view-learn').classList.remove('animate-fade-in');
-            document.getElementById('view-classes').classList.remove('animate-fade-in');
-            document.getElementById('view-calc').classList.remove('animate-fade-in');
-            document.getElementById('view-quiz').classList.remove('animate-fade-in');
-
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-
-            const view = document.getElementById(`view-${tabId}`);
-            if (view) {
-                view.classList.remove('hidden');
-                void view.offsetWidth;
-                view.classList.add('animate-fade-in');
-            }
-
-            const btn = document.getElementById(`tab-${tabId}`);
-            if (btn) btn.classList.add('active');
-
-            if (tabId === 'calc') calculateSubnet();
-            else if (tabId === 'quiz' && !currentQuiz) generateNewQuiz();
-        }
-
         function isValidIP(ip) {
             const regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
             return regex.test(ip);
@@ -678,110 +785,6 @@
             };
         }
 
-        // --- Interactive Arrow Connections ---
-        function showArrow(triggerEl, targetIds) {
-            const ids = targetIds.split(',');
-            const svg = document.getElementById('arrow-canvas');
-            
-            svg.innerHTML = '';
-            svg.classList.remove('hidden');
-
-            ids.forEach(id => {
-                const targetEl = document.getElementById(id.trim());
-                if (!targetEl || targetEl === triggerEl) return;
-
-                targetEl.classList.add('target-active');
-
-                const tRect = triggerEl.getBoundingClientRect();
-                const tarRect = targetEl.getBoundingClientRect();
-
-                const startX = tRect.left + window.scrollX + (tRect.width / 2);
-                const startY = tRect.bottom + window.scrollY; 
-                
-                const endX = tarRect.left + window.scrollX + (tarRect.width / 2);
-                const endY = tarRect.top + window.scrollY - 4; 
-
-                const cp1X = startX;
-                const cp1Y = startY + Math.max(20, (endY - startY) / 2); 
-                const cp2X = endX;
-                const cp2Y = startY + Math.max(20, (endY - startY) / 2);
-
-                const d = `M ${startX},${startY} C ${cp1X},${cp1Y} ${cp2X},${cp2Y} ${endX},${endY}`;
-
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('d', d);
-                path.setAttribute('fill', 'none');
-                path.setAttribute('stroke', '#3daee9');
-                path.setAttribute('stroke-width', '2.5');
-                path.setAttribute('stroke-dasharray', '6,6');
-                
-                const approxLength = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2)) * 1.5; 
-                path.style.strokeDasharray = `${approxLength}`;
-                path.style.strokeDashoffset = `${approxLength}`;
-                path.style.transition = 'stroke-dashoffset 0.35s ease-out';
-                
-                svg.appendChild(path);
-
-                path.getBoundingClientRect(); 
-                path.style.strokeDashoffset = '0';
-            });
-        }
-
-        function showArrowBottom(triggerEl, targetId) {
-            const svg = document.getElementById('arrow-canvas');
-            svg.innerHTML = '';
-            svg.classList.remove('hidden');
-
-            const targetEl = document.getElementById(targetId.trim());
-            if (!targetEl || targetEl === triggerEl) return;
-
-            targetEl.classList.add('target-active');
-
-            const tRect = triggerEl.getBoundingClientRect();
-            const tarRect = targetEl.getBoundingClientRect();
-
-            const startX = tRect.left + window.scrollX + (tRect.width / 2);
-            const startY = tRect.bottom + window.scrollY; 
-            
-            const endX = tarRect.left + window.scrollX + (tarRect.width / 2);
-            const endY = tarRect.bottom + window.scrollY + 4;
-
-            const cp1X = startX;
-            const cp1Y = startY + Math.max(20, Math.abs(endY - startY) / 2); 
-            const cp2X = endX;
-            const cp2Y = startY + Math.max(20, Math.abs(endY - startY) / 2);
-
-            const d = `M ${startX},${startY} C ${cp1X},${cp1Y} ${cp2X},${cp2Y} ${endX},${endY}`;
-
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', d);
-            path.setAttribute('fill', 'none');
-            path.setAttribute('stroke', '#3daee9');
-            path.setAttribute('stroke-width', '2.5');
-            path.setAttribute('stroke-dasharray', '6,6');
-            
-            const approxLength = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2)) * 1.5; 
-            path.style.strokeDasharray = `${approxLength}`;
-            path.style.strokeDashoffset = `${approxLength}`;
-            path.style.transition = 'stroke-dashoffset 0.35s ease-out';
-            
-            svg.appendChild(path);
-            path.getBoundingClientRect(); 
-            path.style.strokeDashoffset = '0';
-        }
-
-        function hideArrow(targetIds) {
-            const ids = targetIds.split(',');
-            ids.forEach(id => {
-                const targetEl = document.getElementById(id.trim());
-                if (targetEl) {
-                    targetEl.classList.remove('target-active');
-                }
-            });
-            const svg = document.getElementById('arrow-canvas');
-            if (svg) svg.classList.add('hidden');
-        }
-
         window.addEventListener('scroll', () => {
             const svg = document.getElementById('arrow-canvas');
             if (svg && !svg.classList.contains('hidden')) {
@@ -790,7 +793,6 @@
             }
         });
 
-        // --- Calculator logic ---
         function toBinaryString(int32, cidr, isMask) {
             let bin = (int32 >>> 0).toString(2).padStart(32, '0');
             let html = '';
@@ -850,7 +852,6 @@
             document.getElementById('res-explanation').innerHTML = explanationHTML;
         }
 
-        // --- Quiz logic ---
         let currentQuiz = null;
         let score = 0;
 
@@ -867,12 +868,16 @@
 
             ['q-network', 'q-first', 'q-last', 'q-broadcast'].forEach(id => {
                 const el = document.getElementById(id);
-                el.value = '';
-                el.classList.remove('correct-input', 'wrong-input');
+                if (el) {
+                    el.value = '';
+                    el.classList.remove('correct-input', 'wrong-input');
+                }
             });
 
-            document.getElementById('quiz-feedback').classList.add('hidden');
-            document.getElementById('quiz-hint').classList.add('hidden');
+            const fb = document.getElementById('quiz-feedback');
+            if (fb) fb.classList.add('hidden');
+            const hint = document.getElementById('quiz-hint');
+            if (hint) hint.classList.add('hidden');
         }
 
         function checkQuizAnswers() {
@@ -881,28 +886,54 @@
 
             function checkField(id, val, correctVal) {
                 const el = document.getElementById(id);
+                if (!el) return;
                 el.classList.remove('correct-input', 'wrong-input');
                 if (val === correctVal) el.classList.add('correct-input');
                 else { el.classList.add('wrong-input'); allCorrect = false; }
             }
 
-            checkField('q-network', document.getElementById('q-network').value.trim(), currentQuiz.networkStr);
-            checkField('q-first', document.getElementById('q-first').value.trim(), currentQuiz.firstStr);
-            checkField('q-last', document.getElementById('q-last').value.trim(), currentQuiz.lastStr);
-            checkField('q-broadcast', document.getElementById('q-broadcast').value.trim(), currentQuiz.broadcastStr);
+            const netEl = document.getElementById('q-network');
+            const firstEl = document.getElementById('q-first');
+            const lastEl = document.getElementById('q-last');
+            const bcEl = document.getElementById('q-broadcast');
+
+            if (netEl) checkField('q-network', netEl.value.trim(), currentQuiz.networkStr);
+            if (firstEl) checkField('q-first', firstEl.value.trim(), currentQuiz.firstStr);
+            if (lastEl) checkField('q-last', lastEl.value.trim(), currentQuiz.lastStr);
+            if (bcEl) checkField('q-broadcast', bcEl.value.trim(), currentQuiz.broadcastStr);
 
             const fb = document.getElementById('quiz-feedback');
+            if (!fb) return;
             fb.classList.remove('hidden', 'bg-green-900/20', 'border-green-700', 'text-green-300', 'bg-red-900/20', 'border-red-700', 'text-red-300');
 
             if (allCorrect) {
                 fb.classList.add('bg-green-900/20', 'border-green-700', 'text-green-300', 'border');
                 fb.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> <strong>Exzellent!</strong> Alle Antworten sind korrekt. (+10 Punkte)`;
                 score += 10;
-                document.getElementById('quiz-score').innerText = score;
+                const scoreEl = document.getElementById('quiz-score');
+                if (scoreEl) scoreEl.innerText = score;
+                const badgeEl = document.getElementById('sidebar-score-badge');
+                if (badgeEl) badgeEl.innerText = score;
                 setTimeout(generateNewQuiz, 2500);
             } else {
                 fb.classList.add('bg-red-900/20', 'border-red-700', 'text-red-300', 'border');
                 fb.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> <strong>Hoppla!</strong> Einige Antworten stimmen noch nicht. Überprüfe die rot markierten Felder oder nutze den Tipp.`;
+            }
+        }
+
+        function toggleQuizSidebar() {
+            const sidebar = document.getElementById('quiz-sidebar');
+            const backdrop = document.getElementById('quiz-backdrop');
+            if (!sidebar || !backdrop) return;
+            const isOpen = !sidebar.classList.contains('translate-x-full');
+
+            if (isOpen) {
+                sidebar.classList.add('translate-x-full');
+                backdrop.classList.add('hidden');
+            } else {
+                sidebar.classList.remove('translate-x-full');
+                backdrop.classList.remove('hidden');
+                if (!currentQuiz) generateNewQuiz();
             }
         }
 
@@ -924,15 +955,19 @@
             }
 
             const hintEl = document.getElementById('quiz-hint');
-            hintEl.innerHTML = hintHTML;
-            hintEl.classList.remove('hidden');
+            if (hintEl) {
+                hintEl.innerHTML = hintHTML;
+                hintEl.classList.remove('hidden');
+            }
             if(score > 0) {
                 score = Math.max(0, score - 2);
-                document.getElementById('quiz-score').innerText = score;
+                const scoreEl = document.getElementById('quiz-score');
+                if (scoreEl) scoreEl.innerText = score;
+                const badgeEl = document.getElementById('sidebar-score-badge');
+                if (badgeEl) badgeEl.innerText = score;
             }
         }
 
-        // --- Animations data ---
         const animationData = {
             1: {
                 title: "1. Interessantes Oktett finden",
