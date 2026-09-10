@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPv6 für Strolchfreunde</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Noto Sans', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                        mono: ['Courier New', 'Courier', 'monospace'],
+                    },
+                    colors: {
+                        kde: {
+                            bg: '#1a1b1e',
+                            panel: 'rgba(35, 38, 41, 0.85)',
+                            panelHover: 'rgba(255, 255, 255, 0.1)',
+                            accent: '#3daee9',
+                            text: '#eff0f1',
+                            windowBg: '#31363b',
+                            windowBorder: '#1d2023',
+                            surface: '#232629',
+                            input: '#1a1b1e'
+                        },
+                        brand: {
+                            50: '#e1f4fc',
+                            100: '#b4e1f7',
+                            200: '#84cbf2',
+                            300: '#54b6ec',
+                            400: '#3daee9',
+                            500: '#1b92d2',
+                            600: '#1575a8',
+                            900: '#0a3a54',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Noto Sans', sans-serif;
+            background-color: var(--tw-colors-kde-bg);
+            color: var(--tw-colors-kde-text);
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .tab-btn.active {
+            border-bottom: 2px solid #3daee9;
+            color: #3daee9;
+            background-color: rgba(61, 174, 233, 0.1);
+            font-weight: 600;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        .correct-input { border-color: #22c55e !important; background-color: rgba(34, 197, 94, 0.1) !important; color: #4ade80; }
+        .wrong-input { border-color: #ef4444 !important; background-color: rgba(239, 68, 68, 0.1) !important; color: #f87171; }
+
+        .connection-trigger {
+            cursor: help;
+            border-bottom: 2px dashed rgba(61, 174, 233, 0.6);
+            border-radius: 0.25rem;
+            padding: 0 0.25rem;
+            transition: all 0.2s ease;
+            display: inline-block;
+        }
+        .connection-trigger:hover {
+            background-color: rgba(61, 174, 233, 0.25);
+            border-bottom-style: solid;
+            border-bottom-color: rgba(61, 174, 233, 1);
+        }
+        .connection-target {
+            transition: all 0.3s ease;
+            border-radius: 0.25rem;
+        }
+        .target-active {
+            box-shadow: 0 0 0 2px #3daee9, 0 0 12px rgba(61, 174, 233, 0.5) !important;
+            background-color: rgba(61, 174, 233, 0.2) !important;
+            z-index: 20;
+            position: relative;
+            border-color: transparent !important;
+        }
+
+        /* IPv6 Specific Animations */
+        /* Size Comparison */
+        .anim-v4-dot { animation: pulse-v4 3s infinite; }
+        .anim-v6-expand { animation: expand-v6 3s infinite; }
+        @keyframes pulse-v4 { 0%, 100% { transform: scale(1); opacity: 0.7;} 50% { transform: scale(1.1); opacity: 1;} }
+        @keyframes expand-v6 { 0% { transform: scale(0.9); opacity: 0; } 20%, 80% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.05); opacity: 0; } }
+
+        /* Scanning blocks */
+        .anim-hex-scan1 { animation: scan-hex 4s infinite; animation-delay: 0s; }
+        .anim-hex-scan2 { animation: scan-hex 4s infinite; animation-delay: 0.5s; }
+        .anim-hex-scan3 { animation: scan-hex 4s infinite; animation-delay: 1s; }
+        @keyframes scan-hex { 0%, 100% { background: transparent; border-color: transparent; } 10%, 30% { background: rgba(61, 174, 233, 0.2); border-color: #3daee9; } }
+
+        /* Shrinking leading zeros */
+        .anim-zero-fade { animation: fade-zero 5s infinite; }
+        .anim-zero-move { animation: move-zero 5s infinite; display: inline-block;}
+        @keyframes fade-zero { 0%, 20%, 80%, 100% { opacity: 1; color: #9ca3af; } 30%, 70% { opacity: 0; transform: translateY(-5px); } }
+        @keyframes move-zero { 0%, 20%, 80%, 100% { transform: translateX(0); } 30%, 70% { transform: translateX(-12px); color: #3daee9; } }
+
+        /* Collapsing blocks to :: */
+        .anim-col-block { animation: collapse-block 6s infinite; }
+        .anim-col-colon { animation: show-colon 6s infinite; }
+        @keyframes collapse-block { 0%, 20%, 80%, 100% { opacity: 1; max-width: 150px; } 30%, 70% { opacity: 0; max-width: 0; padding: 0; margin: 0; overflow: hidden; } }
+        @keyframes show-colon { 0%, 20%, 80%, 100% { opacity: 0; transform: scale(0.5); display: none;} 30%, 70% { opacity: 1; transform: scale(1.2); display: inline-block; color: #f87171;} }
+
+        /* Split Prefix/Host */
+        .anim-split-line { animation: split-line 4s infinite; }
+        @keyframes split-line { 0%, 20%, 80%, 100% { height: 0; opacity: 0; } 30%, 70% { height: 120%; opacity: 1; } }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--tw-colors-kde-bg); }
+        ::-webkit-scrollbar-thumb { background: #4d5157; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6c7178; }
+    </style>
+    <script>
+        // Global functions defined in head to ensure availability before DOM load
+        window.switchTab = function(tabId) {
+            const views = ['learn', 'types', 'calc', 'quiz'];
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if (el) {
+                    el.classList.add('hidden');
+                    el.classList.remove('animate-fade-in');
+                }
+                const btn = document.getElementById(`tab-${v}`);
+                if (btn) btn.classList.remove('active');
+            });
+
+            const activeView = document.getElementById(`view-${tabId}`);
+            if (activeView) {
+                activeView.classList.remove('hidden');
+                void activeView.offsetWidth;
+                activeView.classList.add('animate-fade-in');
+            }
+
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            if (tabId === 'calc' && typeof formatIPv6Input === 'function') formatIPv6Input();
+            else if (tabId === 'quiz' && typeof generateNewQuiz === 'function' && !document.getElementById('q-compress').dataset.active) generateNewQuiz();
+        };
+
+        window.showArrow = function(triggerEl, targetIds) {
+            const ids = targetIds.split(',');
+            const svg = document.getElementById('arrow-canvas');
+            if (!svg) return;
+            
+            svg.innerHTML = '';
+            svg.classList.remove('hidden');
+
+            ids.forEach(id => {
+                const targetEl = document.getElementById(id.trim());
+                if (!targetEl || targetEl === triggerEl) return;
+
+                targetEl.classList.add('target-active');
+
+                const tRect = triggerEl.getBoundingClientRect();
+                const tarRect = targetEl.getBoundingClientRect();
+
+                const startX = tRect.left + window.scrollX + (tRect.width / 2);
+                const startY = tRect.bottom + window.scrollY; 
+                
+                const endX = tarRect.left + window.scrollX + (tarRect.width / 2);
+                const endY = tarRect.top + window.scrollY - 4; 
+
+                const cp1X = startX;
+                const cp1Y = startY + Math.max(20, (endY - startY) / 2); 
+                const cp2X = endX;
+                const cp2Y = startY + Math.max(20, (endY - startY) / 2);
+
+                const d = `M ${startX},${startY} C ${cp1X},${cp1Y} ${cp2X},${cp2Y} ${endX},${endY}`;
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', d);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', '#3daee9');
+                path.setAttribute('stroke-width', '2.5');
+                path.setAttribute('stroke-dasharray', '6,6');
+                
+                const approxLength = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2)) * 1.5; 
+                path.style.strokeDasharray = `${approxLength}`;
+                path.style.strokeDashoffset = `${approxLength}`;
+                path.style.transition = 'stroke-dashoffset 0.35s ease-out';
+                
+                svg.appendChild(path);
+                path.getBoundingClientRect(); 
+                path.style.strokeDashoffset = '0';
+            });
+        };
+
+        window.showArrowBottom = function(triggerEl, targetId) {
+            const svg = document.getElementById('arrow-canvas');
+            if (!svg) return;
+            svg.innerHTML = '';
+            svg.classList.remove('hidden');
+
+            const targetEl = document.getElementById(targetId.trim());
+            if (!targetEl || targetEl === triggerEl) return;
+
+            targetEl.classList.add('target-active');
+
+            const tRect = triggerEl.getBoundingClientRect();
+            const tarRect = targetEl.getBoundingClientRect();
+
+            const startX = tRect.left + window.scrollX + (tRect.width / 2);
+            const startY = tRect.bottom + window.scrollY; 
+            
+            const endX = tarRect.left + window.scrollX + (tarRect.width / 2);
+            const endY = tarRect.bottom + window.scrollY + 4;
+
+            const cp1X = startX;
+            const cp1Y = startY + Math.max(20, Math.abs(endY - startY) / 2); 
+            const cp2X = endX;
+            const cp2Y = startY + Math.max(20, Math.abs(endY - startY) / 2);
+
+            const d = `M ${startX},${startY} C ${cp1X},${cp1Y} ${cp2X},${cp2Y} ${endX},${endY}`;
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', '#3daee9');
+            path.setAttribute('stroke-width', '2.5');
+            path.setAttribute('stroke-dasharray', '6,6');
+            
+            const approxLength = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2)) * 1.5; 
+            path.style.strokeDasharray = `${approxLength}`;
+            path.style.strokeDashoffset = `${approxLength}`;
+            path.style.transition = 'stroke-dashoffset 0.35s ease-out';
+            
+            svg.appendChild(path);
+            path.getBoundingClientRect(); 
+            path.style.strokeDashoffset = '0';
+        };
+
+        window.hideArrow = function(targetIds) {
+            const ids = targetIds.split(',');
+            ids.forEach(id => {
+                const targetEl = document.getElementById(id.trim());
+                if (targetEl) {
+                    targetEl.classList.remove('target-active');
+                }
+            });
+            const svg = document.getElementById('arrow-canvas');
+            if (svg) svg.classList.add('hidden');
+        };
+    </script>
+</head>
+<body class="min-h-screen flex flex-col bg-kde-bg text-kde-text relative">
+
+    <header class="bg-kde-windowBg shadow-md sticky top-0 z-40 border-b border-kde-windowBorder">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row md:items-center justify-between">
+            <div class="flex items-center gap-2 py-3">
+                <i class="fa-solid fa-globe text-brand-400 text-xl"></i>
+                <h1 class="text-xl font-semibold tracking-wide text-white">IPv6 <span class="text-brand-400 font-normal">für Strolchfreunde</span></h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <nav class="flex overflow-x-auto scrollbar-hide text-sm">
+                    <button onclick="switchTab('learn')" id="tab-learn" class="tab-btn active px-4 py-4 text-gray-400 hover:text-brand-400 hover:bg-white/5 whitespace-nowrap transition-colors flex items-center gap-2"><i class="fa-solid fa-book-open text-xs"></i> 1. Aufbau</button>
+                    <button onclick="switchTab('types')" id="tab-types" class="tab-btn px-4 py-4 text-gray-400 hover:text-brand-400 hover:bg-white/5 whitespace-nowrap transition-colors flex items-center gap-2"><i class="fa-solid fa-layer-group text-xs"></i> 2. Typen</button>
+                    <button onclick="switchTab('calc')" id="tab-calc" class="tab-btn px-4 py-4 text-gray-400 hover:text-brand-400 hover:bg-white/5 whitespace-nowrap transition-colors flex items-center gap-2"><i class="fa-solid fa-compress text-xs"></i> 3. Komprimierer</button>
+                </nav>
+                <button onclick="toggleQuizSidebar()" id="quiz-toggle-btn" class="bg-brand-600/20 hover:bg-brand-600/40 text-brand-300 border border-brand-500/40 px-3 py-2 rounded text-sm transition-colors flex items-center gap-2 shadow-sm font-semibold">
+                    <i class="fa-solid fa-graduation-cap"></i> Quiz-Trainer <span id="sidebar-score-badge" class="bg-brand-500 text-white px-1.5 py-0.5 rounded-full text-xs font-bold ml-1">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-6xl mx-auto w-full px-4 py-8 relative z-30">
+
+        <section id="view-learn" class="block animate-fade-in space-y-8">
+            <div class="bg-kde-windowBg rounded-lg shadow border border-kde-windowBorder p-6">
+                <h2 class="text-lg font-semibold text-white mb-2 border-b border-kde-windowBorder pb-2 flex items-center gap-2"><i class="fa-solid fa-route text-brand-400"></i> Der rote Faden: IPv6 lesen und schreiben</h2>
+                <p class="mb-8 text-gray-300">IPv6 sieht im Vergleich zu IPv4 riesig aus, folgt aber klaren Regeln. Bewege die Maus über die <span class="connection-trigger text-brand-300">gestrichelten Wörter</span>, um Zusammenhänge zu sehen. Wir schauen uns die Adresse <code class="bg-kde-input px-1.5 py-0.5 rounded text-white font-mono border border-kde-windowBorder text-sm">2001:0db8:0000:0000:0000:0000:0000:0001 /64</code> an.</p>
+
+                <!-- Zeitstrahl / Roter Faden Layout -->
+                <div class="relative border-l-2 border-brand-500/40 ml-4 md:ml-6 space-y-10 pb-4">
+                    
+                    <!-- Step 1 -->
+                    <div class="relative pl-6 md:pl-8 group">
+                        <div class="absolute -left-[13px] top-1 w-6 h-6 bg-kde-surface rounded-full border-2 border-brand-500 flex items-center justify-center shadow-lg group-hover:bg-brand-500 transition-colors duration-300 text-xs font-bold text-gray-400 group-hover:text-white">1</div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="font-semibold text-md text-white group-hover:text-brand-400 transition-colors">Warum ein neues Format?</h3>
+                            <button onclick="openAnimationModal(1)" class="text-brand-400 hover:text-white bg-kde-surface hover:bg-brand-500 border border-brand-500/30 w-7 h-7 rounded flex items-center justify-center transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500 shadow-sm" title="Animation ansehen">
+                                <i class="fa-solid fa-play text-xs pl-0.5"></i>
+                            </button>
+                        </div>
+                        <p class="text-gray-300 mb-3 text-sm">IPv4 nutzt 32 Bit (ca. 4,3 Milliarden Adressen). Diese sind aufgebraucht. IPv6 nutzt gigantische <strong class="text-brand-300">128 Bit</strong>.</p>
+                        <div class="bg-kde-surface p-4 rounded border border-kde-windowBorder text-sm shadow-inner leading-relaxed">
+                            Damit die Adressen für Menschen lesbar bleiben, schreiben wir sie nicht mehr dezimal (0-255), sondern <strong>Hexadezimal</strong>. Dabei werden Zahlen von <span class="text-brand-400 font-mono">0-9</span> und Buchstaben von <span class="text-brand-400 font-mono">a-f</span> verwendet.
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="relative pl-6 md:pl-8 group">
+                        <div class="absolute -left-[13px] top-1 w-6 h-6 bg-kde-surface rounded-full border-2 border-brand-500 flex items-center justify-center shadow-lg group-hover:bg-brand-500 transition-colors duration-300 text-xs font-bold text-gray-400 group-hover:text-white">2</div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="font-semibold text-md text-white group-hover:text-brand-400 transition-colors">Aufbau: 8 Blöcke (Hextets)</h3>
+                            <button onclick="openAnimationModal(2)" class="text-brand-400 hover:text-white bg-kde-surface hover:bg-brand-500 border border-brand-500/30 w-7 h-7 rounded flex items-center justify-center transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500 shadow-sm" title="Animation ansehen">
+                                <i class="fa-solid fa-play text-xs pl-0.5"></i>
+                            </button>
+                        </div>
+                        <p class="text-gray-300 mb-3 text-sm">Eine vollständige IPv6-Adresse besteht immer aus <strong id="s2-bloecke" class="connection-trigger text-white" onmouseenter="showArrowBottom(this, 's2-target')" onmouseleave="hideArrow('s2-target')">8 Blöcken</strong>. Jeder Block enthält 4 Hex-Zeichen und wird durch einen Doppelpunkt <code class="text-brand-400">:</code> getrennt.</p>
+                        <div class="bg-kde-surface p-4 rounded border border-kde-windowBorder text-sm shadow-inner leading-relaxed font-mono overflow-x-auto">
+                            <div id="s2-target" class="connection-target inline-block px-2 rounded whitespace-nowrap">
+                                <span class="text-purple-400">2001</span>:<span class="text-purple-400">0db8</span>:<span class="text-gray-500">0000</span>:<span class="text-gray-500">0000</span>:<span class="text-gray-500">0000</span>:<span class="text-gray-500">0000</span>:<span class="text-gray-500">0000</span>:<span class="text-blue-400">0001</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="relative pl-6 md:pl-8 group">
+                        <div class="absolute -left-[13px] top-1 w-6 h-6 bg-kde-surface rounded-full border-2 border-brand-500 flex items-center justify-center shadow-lg group-hover:bg-brand-500 transition-colors duration-300 text-xs font-bold text-gray-400 group-hover:text-white">3</div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="font-semibold text-md text-white group-hover:text-brand-400 transition-colors">Regel 1: Führende Nullen streichen</h3>
+                            <button onclick="openAnimationModal(3)" class="text-brand-400 hover:text-white bg-kde-surface hover:bg-brand-500 border border-brand-500/30 w-7 h-7 rounded flex items-center justify-center transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500 shadow-sm" title="Animation ansehen">
+                                <i class="fa-solid fa-play text-xs pl-0.5"></i>
+                            </button>
+                        </div>
+                        <p class="text-gray-300 mb-3 text-sm">Um die Adresse kürzer zu machen, darf man in jedem der 8 Blöcke die <span class="connection-trigger text-white font-semibold" onmouseenter="showArrow(this, 's3-t1,s3-t2')" onmouseleave="hideArrow('s3-t1,s3-t2')">führenden Nullen</span> (Nullen ganz links) weglassen. Ein Block, der nur aus Nullen besteht, wird zu einer einzelnen <code class="text-brand-400">0</code>.</p>
+                        <div class="bg-kde-surface p-4 rounded border border-kde-windowBorder text-sm shadow-inner leading-relaxed font-mono overflow-x-auto">
+                            Vorher: 2001:<strong id="s3-t1" class="connection-target text-red-400 px-1 rounded">0</strong>db8:0000:0000:0000:0000:0000:<strong id="s3-t2" class="connection-target text-red-400 px-1 rounded">000</strong>1<br>
+                            Nachher: 2001:<strong class="text-brand-400">db8</strong>:<strong class="text-gray-500">0:0:0:0:0</strong>:<strong class="text-brand-400">1</strong>
+                        </div>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="relative pl-6 md:pl-8 group">
+                        <div class="absolute -left-[13px] top-1 w-6 h-6 bg-kde-surface rounded-full border-2 border-brand-500 flex items-center justify-center shadow-lg group-hover:bg-brand-500 transition-colors duration-300 text-xs font-bold text-gray-400 group-hover:text-white">4</div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="font-semibold text-md text-white group-hover:text-brand-400 transition-colors">Regel 2: Der Doppel-Doppelpunkt "::"</h3>
+                            <button onclick="openAnimationModal(4)" class="text-brand-400 hover:text-white bg-kde-surface hover:bg-brand-500 border border-brand-500/30 w-7 h-7 rounded flex items-center justify-center transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500 shadow-sm" title="Animation ansehen">
+                                <i class="fa-solid fa-play text-xs pl-0.5"></i>
+                            </button>
+                        </div>
+                        <p class="text-gray-300 mb-3 text-sm">Die längste durchgehende <span id="s4-trigger" class="connection-trigger text-white font-semibold" onmouseenter="showArrow(this, 's4-target')" onmouseleave="hideArrow('s4-target')">Kette von Null-Blöcken</span> darf exakt <strong>einmal</strong> pro Adresse durch zwei Doppelpunkte <code class="text-red-400">::</code> ersetzt werden.</p>
+                        <div class="bg-kde-surface p-4 rounded border border-kde-windowBorder text-sm shadow-inner leading-relaxed font-mono">
+                            Vorher: 2001:db8:<strong id="s4-target" class="connection-target text-gray-500 bg-gray-800/50 px-1 rounded">0:0:0:0:0</strong>:1<br>
+                            Nachher: 2001:db8<strong class="text-red-400 font-bold text-lg">::</strong>1
+                            <div class="mt-2 text-xs text-yellow-400 font-sans italic border-t border-gray-700 pt-2">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Warum nur einmal? Weil der PC sonst beim "Entpacken" nicht wüsste, wie viele Nullen auf die einzelnen "::" verteilt werden müssen, um wieder auf 8 Blöcke zu kommen.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 5 -->
+                    <div class="relative pl-6 md:pl-8 group">
+                        <div class="absolute -left-[13px] top-1 w-6 h-6 bg-kde-surface rounded-full border-2 border-brand-500 flex items-center justify-center shadow-lg group-hover:bg-brand-500 transition-colors duration-300 text-xs font-bold text-gray-400 group-hover:text-white">5</div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="font-semibold text-md text-white group-hover:text-brand-400 transition-colors">Netzwerk & Host (Präfix /64)</h3>
+                            <button onclick="openAnimationModal(5)" class="text-brand-400 hover:text-white bg-kde-surface hover:bg-brand-500 border border-brand-500/30 w-7 h-7 rounded flex items-center justify-center transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500 shadow-sm" title="Animation ansehen">
+                                <i class="fa-solid fa-play text-xs pl-0.5"></i>
+                            </button>
+                        </div>
+                        <p class="text-gray-300 mb-3 text-sm">Bei IPv6 gibt es keine Subnetzmasken wie "255.255..." mehr. Es wird immer die CIDR-Notation (z.B. <code class="text-brand-300">/64</code>) genutzt. Im Standardfall wird die 128-Bit Adresse genau in der <span class="connection-trigger text-white font-semibold" onmouseenter="showArrow(this, 's5-target')" onmouseleave="hideArrow('s5-target')">Mitte geteilt</span>.</p>
+                        <div class="bg-kde-surface p-4 rounded border border-kde-windowBorder text-sm shadow-inner leading-relaxed font-mono">
+                            <div class="flex flex-col sm:flex-row gap-2 items-center text-xs sm:text-sm">
+                                <div class="bg-purple-900/30 border border-purple-500/40 p-2 rounded text-center w-full sm:w-1/2">
+                                    <span class="block text-purple-300 mb-1">Ersten 64 Bit (4 Blöcke)</span>
+                                    <strong class="text-white">2001:0db8:0000:0000</strong><br>
+                                    <span class="text-[10px] uppercase text-purple-400">Netzwerk-Präfix (Routing)</span>
+                                </div>
+                                <div id="s5-target" class="connection-target text-gray-500 font-bold hidden sm:block">|</div>
+                                <div class="bg-blue-900/30 border border-blue-500/40 p-2 rounded text-center w-full sm:w-1/2">
+                                    <span class="block text-blue-300 mb-1">Letzten 64 Bit (4 Blöcke)</span>
+                                    <strong class="text-white">0000:0000:0000:0001</strong><br>
+                                    <span class="text-[10px] uppercase text-blue-400">Interface ID (Gerät)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Integrated Animations Container -->
+            <div class="bg-kde-windowBg rounded-lg shadow border border-kde-windowBorder p-6 mt-8">
+                <div class="mb-6 border-b border-kde-windowBorder pb-4">
+                    <h2 class="text-xl font-semibold text-white flex items-center gap-2"><i class="fa-solid fa-film text-brand-400"></i> Animationen im Überblick</h2>
+                    <p class="text-gray-400 text-sm mt-1">Alle Regeln visuell dargestellt.</p>
+                </div>
+                <div id="all-animations-container" class="space-y-8">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </section>
+
+        <section id="view-types" class="hidden">
+            <div class="bg-kde-windowBg rounded-lg shadow border border-kde-windowBorder p-6 mb-6">
+                <div class="flex items-start gap-4 mb-6 pb-6 border-b border-kde-windowBorder">
+                    <div class="w-12 h-12 bg-kde-surface rounded-full flex items-center justify-center border-2 border-brand-500 shrink-0">
+                        <i class="fa-solid fa-tags text-brand-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold text-white mb-2">Die wichtigsten IPv6 Adresstypen</h2>
+                        <p class="text-gray-300 text-sm leading-relaxed">
+                            IPv6 nutzt keine Broadcasts mehr. Stattdessen gibt es <strong>Unicast</strong> (Einer zu Einem), <strong>Multicast</strong> (Einer zu Vielen) und <strong>Anycast</strong> (Einer zum Nächsten). 
+                            Zudem ist es normal, dass ein PC <em>mehrere</em> IPv6 Adressen gleichzeitig hat (z.B. eine für das lokale Netz, eine für das Internet).
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Global Unicast -->
+                    <div class="bg-kde-surface border border-kde-windowBorder rounded-lg p-5 shadow-inner hover:border-purple-500/50 transition-colors">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-globe text-purple-400"></i> Global Unicast</h3>
+                        </div>
+                        <ul class="text-sm space-y-2 text-gray-300">
+                            <li><span class="text-gray-500 w-20 inline-block">Beginnt oft mit:</span> <span class="font-mono text-brand-300 font-bold bg-kde-bg px-1 rounded">2000::/3</span></li>
+                            <li><span class="text-gray-500 w-20 inline-block">Beispiel:</span> <span class="font-mono text-white text-xs">2001:db8::1</span></li>
+                            <li class="pt-2 text-xs text-gray-400 border-t border-gray-700 mt-2">Das Äquivalent zur <strong>öffentlichen IPv4</strong>. Diese Adressen sind weltweit eindeutig und werden im Internet geroutet.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Link-Local -->
+                    <div class="bg-kde-surface border border-kde-windowBorder rounded-lg p-5 shadow-inner hover:border-yellow-500/50 transition-colors">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-network-wired text-yellow-400"></i> Link-Local</h3>
+                        </div>
+                        <ul class="text-sm space-y-2 text-gray-300">
+                            <li><span class="text-gray-500 w-20 inline-block">Beginnt immer mit:</span> <span class="font-mono text-brand-300 font-bold bg-kde-bg px-1 rounded">fe80::/10</span></li>
+                            <li><span class="text-gray-500 w-20 inline-block">Beispiel:</span> <span class="font-mono text-white text-xs">fe80::1</span></li>
+                            <li class="pt-2 text-xs text-gray-400 border-t border-gray-700 mt-2">Wird automatisch konfiguriert (APIPA). Gilt <strong>nur im selben Segment (VLAN)</strong> und wird von Routern niemals weitergeleitet. Zwingend nötig für das IPv6-Nachbarschaftsprotokoll.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Unique Local -->
+                    <div class="bg-kde-surface border border-kde-windowBorder rounded-lg p-5 shadow-inner hover:border-green-500/50 transition-colors">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-building text-green-400"></i> Unique Local (ULA)</h3>
+                        </div>
+                        <ul class="text-sm space-y-2 text-gray-300">
+                            <li><span class="text-gray-500 w-20 inline-block">Beginnt meist mit:</span> <span class="font-mono text-brand-300 font-bold bg-kde-bg px-1 rounded">fc00::/7</span> oder <span class="font-mono text-brand-300 font-bold bg-kde-bg px-1 rounded">fd</span></li>
+                            <li><span class="text-gray-500 w-20 inline-block">Beispiel:</span> <span class="font-mono text-white text-xs">fd00:1::1</span></li>
+                            <li class="pt-2 text-xs text-gray-400 border-t border-gray-700 mt-2">Das Äquivalent zur <strong>privaten IPv4 (z.B. 192.168.x.x)</strong>. Sie werden im Internet nicht geroutet, können aber firmenintern über Standorte hinweg geroutet werden.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Multicast & Loopback -->
+                    <div class="md:col-span-2 lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+                        <div class="bg-kde-surface border border-kde-windowBorder rounded-lg p-5 shadow-inner opacity-95">
+                            <h3 class="text-md font-bold text-white mb-2 flex items-center gap-2"><i class="fa-solid fa-tower-broadcast text-red-400"></i> Multicast (ff00::/8)</h3>
+                            <p class="text-sm text-gray-300 mb-2">Ersetzt den alten Broadcast. Anstatt alle zu "anzuschreien", abonnieren Geräte Gruppen.</p>
+                            <ul class="text-xs font-mono text-gray-400 space-y-1">
+                                <li><span class="text-brand-300">ff02::1</span> - Alle IPv6 Geräte im Netz</li>
+                                <li><span class="text-brand-300">ff02::2</span> - Alle Router im Netz</li>
+                            </ul>
+                        </div>
+                        <div class="bg-kde-surface border border-kde-windowBorder rounded-lg p-5 shadow-inner opacity-95">
+                            <h3 class="text-md font-bold text-white mb-2 flex items-center gap-2"><i class="fa-solid fa-rotate-left text-blue-400"></i> Loopback (::1/128)</h3>
+                            <p class="text-sm text-gray-300 mb-2">Die "Localhost" Adresse. Das Gerät verweist hiermit auf sich selbst.</p>
+                            <p class="text-xs text-gray-400">Entspricht der <span class="font-mono">127.0.0.1</span> unter IPv4. Da es nur Nullen sind (0:0:0:0:0:0:0:1), wird sie maximal gekürzt zu <span class="font-mono text-white bg-kde-bg px-1 rounded">::1</span>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-calc" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Input Form -->
+                <div class="lg:col-span-1 bg-kde-windowBg rounded-lg shadow border border-kde-windowBorder p-6 h-fit">
+                    <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-compress text-brand-400"></i> Komprimierer</h2>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-300 mb-1">IPv6 Adresse</label>
+                        <input type="text" id="calc-ip" value="2001:0db8:0000:0000:0008:0800:200C:417A" class="w-full bg-kde-input border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 font-mono transition-colors shadow-inner text-sm" placeholder="z.B. 2001:db8::1" oninput="formatIPv6Input()">
+                        <p id="calc-error" class="text-red-400 text-xs mt-1 hidden">Bitte eine gültige IPv6-Adresse eingeben.</p>
+                    </div>
+
+                    <div class="mt-6 p-4 bg-kde-surface border border-kde-windowBorder rounded text-sm text-gray-400 flex items-start gap-3">
+                        <i class="fa-solid fa-circle-info mt-0.5 text-brand-400"></i>
+                        <p>Das Tool zeigt dir die voll ausgeschriebene Form, die optimal gekürzte Form und analysiert den Adresstyp.</p>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-kde-windowBg rounded-lg shadow border border-kde-windowBorder overflow-hidden">
+                         <h2 class="text-lg font-semibold text-white p-4 bg-kde-surface border-b border-kde-windowBorder flex items-center gap-2"><i class="fa-solid fa-microscope text-gray-400"></i> Analyse</h2>
+                        
+                        <div class="p-6 space-y-6">
+                            
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase font-semibold tracking-wide mb-1">Maximal Gekürzt (Empfohlen)</p>
+                                <div class="bg-brand-900/20 border border-brand-500/30 rounded p-3 text-lg font-mono text-brand-300 tracking-wider overflow-x-auto shadow-inner" id="res-compressed">
+                                    -
+                                </div>
+                            </div>
+
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase font-semibold tracking-wide mb-1">Voll Ausgeschrieben (Erweitert)</p>
+                                <div class="bg-kde-input border border-gray-700 rounded p-3 text-sm font-mono text-gray-400 tracking-widest overflow-x-auto" id="res-expanded">
+                                    -
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-kde-windowBorder">
+                                <div>
+                                    <p class="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">Adresstyp</p>
+                                    <p class="text-md font-semibold text-white flex items-center gap-2 mt-1" id="res-type"><i class="fa-solid fa-circle-question text-gray-500"></i> Unbekannt</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">Interface ID (Letzte 64 Bit)</p>
+                                    <p class="text-md font-mono text-gray-300 mt-1" id="res-interface">-</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Animation Modal -->
+        <div id="animation-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center transition-opacity">
+            <div class="bg-kde-windowBg rounded-lg shadow-2xl border border-kde-windowBorder max-w-lg w-full mx-4 overflow-hidden flex flex-col transform animate-fade-in">
+                <div class="px-4 py-3 border-b border-kde-windowBorder flex justify-between items-center bg-kde-surface">
+                    <h3 id="animation-modal-title" class="font-semibold text-md text-white">Titel</h3>
+                    <button onclick="closeAnimationModal()" class="text-gray-400 hover:text-red-400 transition-colors p-1 rounded hover:bg-white/5">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <p id="animation-modal-text" class="text-gray-300 mb-6 text-sm"></p>
+                    <div id="animation-modal-visual" class="p-6 bg-kde-input border border-gray-700 rounded text-center flex flex-col items-center justify-center min-h-[220px] shadow-inner overflow-hidden">
+                    </div>
+                </div>
+                <div class="p-4 border-t border-kde-windowBorder bg-kde-surface flex justify-between items-center">
+                    <button id="modal-prev-btn" onclick="prevAnimationStep()" class="bg-kde-input hover:bg-gray-700 border border-gray-600 text-gray-300 px-4 py-1.5 rounded transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"><i class="fa-solid fa-chevron-left text-xs"></i> Zurück</button>
+                    <div class="flex space-x-2" id="modal-dots">
+                    </div>
+                    <button id="modal-next-btn" onclick="nextAnimationStep()" class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-1.5 rounded transition-colors text-sm shadow flex items-center gap-2">Weiter <i class="fa-solid fa-chevron-right text-xs"></i></button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Quiz Sidebar (Toggle-able Right Sidebar) -->
+    <div id="quiz-backdrop" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-40 hidden transition-opacity" onclick="toggleQuizSidebar()"></div>
+    <aside id="quiz-sidebar" class="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-kde-windowBg border-l border-kde-windowBorder shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+        <div class="p-4 border-b border-kde-windowBorder bg-kde-surface flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-graduation-cap text-brand-400 text-lg"></i>
+                <h3 class="font-semibold text-white">IPv6 Kürzen-Quiz</h3>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="text-right bg-kde-input px-2.5 py-1 rounded border border-gray-700 shadow-inner">
+                    <span class="text-[9px] uppercase font-bold text-gray-500 tracking-wider block">Score</span>
+                    <span class="text-lg font-bold text-brand-400 leading-none" id="quiz-score">0</span>
+                </div>
+                <button onclick="toggleQuizSidebar()" class="text-gray-400 hover:text-white transition-colors p-2 rounded hover:bg-white/5">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="p-6 overflow-y-auto flex-grow space-y-6">
+            <p class="text-sm text-gray-300">Wende beide Regeln an, um diese Adresse so kurz wie möglich zu schreiben.</p>
+            <div class="bg-kde-input border border-gray-700 p-4 rounded text-center shadow-inner overflow-x-auto">
+                <span class="text-[10px] text-gray-400 uppercase font-semibold mb-2 block tracking-wider">Ungekuerzte Adresse</span>
+                <span class="text-sm sm:text-base font-mono tracking-wider text-white whitespace-nowrap" id="quiz-question-ip">2001:0db8:0000:0000:0000:0000:0000:0001</span>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Maximal gekürzte Form</label>
+                    <input type="text" id="q-compress" class="w-full bg-kde-input border border-gray-600 rounded px-3 py-3 text-sm text-brand-300 font-mono focus:outline-none focus:border-brand-400 transition-colors shadow-inner" placeholder="z.B. 2001:db8::1">
+                </div>
+            </div>
+
+            <div id="quiz-feedback" class="hidden p-3 rounded border text-sm leading-relaxed font-mono"></div>
+            <div id="quiz-hint" class="hidden p-3 bg-yellow-900/20 border border-yellow-700/50 rounded text-xs text-yellow-200 leading-relaxed"></div>
+        </div>
+
+        <div class="p-4 border-t border-kde-windowBorder bg-kde-surface flex flex-col gap-2">
+            <button onclick="checkQuizAnswer()" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-medium py-2 px-4 rounded transition-colors text-sm shadow flex items-center justify-center gap-2"><i class="fa-solid fa-check"></i> Antwort prüfen</button>
+            <div class="flex gap-2">
+                <button onclick="showQuizHint()" class="flex-1 bg-kde-input hover:bg-gray-700 border border-gray-600 text-gray-200 py-1.5 px-3 rounded transition-colors text-xs flex items-center justify-center gap-1.5"><i class="fa-regular fa-lightbulb"></i> Tipp (-2 Pkt)</button>
+                <button onclick="generateNewQuiz()" class="flex-1 bg-kde-input hover:bg-gray-700 border border-gray-600 text-gray-200 py-1.5 px-3 rounded transition-colors text-xs flex items-center justify-center gap-1.5"><i class="fa-solid fa-rotate-right"></i> Neu</button>
+            </div>
+        </div>
+    </aside>
+
+    <div id="svg-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; overflow: visible;">
+        <svg id="arrow-canvas" style="width: 100%; height: 100%; overflow: visible;" class="hidden">
+        </svg>
+    </div>
+
+    <script>
+        // --- IPv6 Logic Core ---
+        
+        // Basic loose validation to see if it looks like IPv6 before processing
+        function isValidIPv6(ip) {
+            // Very simplified check: has colons, valid hex chars, max 8 blocks (if no ::), at least 2 colons.
+            if (!/^[a-fA-F0-9:]+$/.test(ip)) return false;
+            const parts = ip.split(':');
+            if (parts.length < 3 || parts.length > 8) return false;
+            const doubleColons = ip.match(/::/g);
+            if (doubleColons && doubleColons.length > 1) return false;
+            return true;
+        }
+
+        // Expand a partially compressed IPv6 address to full 8 blocks of 4 chars
+        function expandIPv6(ip) {
+            ip = ip.toLowerCase();
+            let blocks = ip.split(':');
+            
+            // Handle edge cases like ::1 or 2001::
+            if (blocks[0] === '') blocks.shift(); 
+            if (blocks[blocks.length - 1] === '') blocks.pop();
+
+            const doubleColonIndex = blocks.indexOf('');
+            
+            if (doubleColonIndex !== -1) {
+                // Calculate how many blocks are missing
+                const missingBlocksCount = 8 - (blocks.length - 1);
+                const missingBlocks = new Array(missingBlocksCount).fill('0000');
+                
+                // Replace the empty string (representing ::) with the missing blocks
+                blocks.splice(doubleColonIndex, 1, ...missingBlocks);
+            }
+
+            // Ensure we have exactly 8 blocks, pad each to 4 zeros
+            if (blocks.length !== 8) return null; // Invalid structure
+
+            return blocks.map(block => block.padStart(4, '0')).join(':');
+        }
+
+        // Compress a full IPv6 address
+        function compressIPv6(ip) {
+            const expanded = expandIPv6(ip);
+            if (!expanded) return null;
+
+            let blocks = expanded.split(':');
+
+            // Rule 1: Remove leading zeros
+            blocks = blocks.map(block => {
+                let trimmed = block.replace(/^0+/, '');
+                return trimmed === '' ? '0' : trimmed;
+            });
+
+            let currentStr = blocks.join(':');
+
+            // Rule 2: Find the longest sequence of '0' blocks to replace with '::'
+            // We use regex to find sequences like :0:0:0:, 0:0:, etc.
+            const zeroSequences = currentStr.match(/(?:(?:^|:)0)+(?::|$)/g);
+            
+            if (zeroSequences) {
+                // Find longest sequence. Must be at least length 2 to be worth replacing.
+                let longestSeq = '';
+                let maxLength = 0;
+                
+                for (let seq of zeroSequences) {
+                    const count = seq.match(/0/g).length;
+                    // Only replace if it saves space (2 or more blocks)
+                    if (count > 1 && count > maxLength) {
+                        maxLength = count;
+                        longestSeq = seq;
+                    }
+                }
+
+                if (maxLength > 1) {
+                    // We only replace the FIRST occurrence of the longest sequence
+                    currentStr = currentStr.replace(longestSeq, '::');
+                    // Fix edge cases where :: ends up at start or end incorrectly
+                    if (currentStr.startsWith(':') && !currentStr.startsWith('::')) currentStr = ':' + currentStr;
+                    if (currentStr.endsWith(':') && !currentStr.endsWith('::')) currentStr = currentStr + ':';
+                }
+            }
+
+            return currentStr;
+        }
+
+        // Determine the type of IPv6 address
+        function getIPv6Type(expandedIp) {
+            if (!expandedIp) return "Ungültig";
+            if (expandedIp === "0000:0000:0000:0000:0000:0000:0000:0001") return '<i class="fa-solid fa-rotate-left text-blue-400"></i> Loopback (Localhost)';
+            if (expandedIp === "0000:0000:0000:0000:0000:0000:0000:0000") return '<i class="fa-solid fa-ban text-gray-400"></i> Unspecified (::)';
+            
+            const firstBlock = expandedIp.split(':')[0];
+            const firstHex = parseInt(firstBlock[0], 16); // First digit
+
+            if (firstBlock.startsWith('2') || firstBlock.startsWith('3')) return '<i class="fa-solid fa-globe text-purple-400"></i> Global Unicast (Öffentlich)';
+            if (firstBlock.toLowerCase().startsWith('fe8') || firstBlock.toLowerCase().startsWith('fe9') || firstBlock.toLowerCase().startsWith('fea') || firstBlock.toLowerCase().startsWith('feb')) return '<i class="fa-solid fa-network-wired text-yellow-400"></i> Link-Local (Nur in diesem Netz)';
+            if (firstBlock.toLowerCase().startsWith('fc') || firstBlock.toLowerCase().startsWith('fd')) return '<i class="fa-solid fa-building text-green-400"></i> Unique Local (ULA / Privat)';
+            if (firstBlock.toLowerCase().startsWith('ff')) return '<i class="fa-solid fa-tower-broadcast text-red-400"></i> Multicast (Gruppe)';
+
+            return '<i class="fa-solid fa-question text-gray-400"></i> Unbekannt / Speziell';
+        }
+
+        // --- UI Interactions ---
+
+        window.addEventListener('scroll', () => {
+            const svg = document.getElementById('arrow-canvas');
+            if (svg && !svg.classList.contains('hidden')) {
+                document.querySelectorAll('.target-active').forEach(el => el.classList.remove('target-active'));
+                svg.classList.add('hidden');
+            }
+        });
+
+        function formatIPv6Input() {
+            const input = document.getElementById('calc-ip').value.trim();
+            const errorEl = document.getElementById('calc-error');
+            
+            if (input === '') {
+                errorEl.classList.add('hidden');
+                document.getElementById('res-compressed').innerText = '-';
+                document.getElementById('res-expanded').innerText = '-';
+                document.getElementById('res-type').innerHTML = '<i class="fa-solid fa-circle-question text-gray-500"></i> -';
+                document.getElementById('res-interface').innerText = '-';
+                return;
+            }
+
+            if (!isValidIPv6(input)) {
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            errorEl.classList.add('hidden');
+
+            const expanded = expandIPv6(input);
+            if (!expanded) {
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            const compressed = compressIPv6(expanded);
+            const typeHtml = getIPv6Type(expanded);
+
+            // Interface ID is the last 4 blocks
+            const interfaceParts = expanded.split(':').slice(4);
+            const interfaceId = interfaceParts.join(':');
+
+            document.getElementById('res-compressed').innerText = compressed;
+            document.getElementById('res-expanded').innerText = expanded;
+            document.getElementById('res-type').innerHTML = typeHtml;
+            document.getElementById('res-interface').innerText = interfaceId;
+        }
+
+        // --- Quiz Logic ---
+        let score = 0;
+        let currentQuizAnswer = '';
+
+        function getRandomHexBlock() {
+            return Math.floor(Math.random() * 65535).toString(16).padStart(4, '0');
+        }
+
+        function generateNewQuiz() {
+            // Generate a random IPv6 that needs compression
+            let blocks = [];
+            // Prefix
+            blocks.push('2001');
+            blocks.push('0db8');
+            
+            // Random chance for zeros
+            let zeroPattern = Math.floor(Math.random() * 4); // 0-3
+            
+            if(zeroPattern === 0) { // 3 zeros in middle
+                blocks.push('0000', '0000', '0000', getRandomHexBlock(), getRandomHexBlock(), '0001');
+            } else if (zeroPattern === 1) { // 4 zeros at end
+                blocks.push(getRandomHexBlock(), getRandomHexBlock(), '0000', '0000', '0000', '0000');
+            } else if (zeroPattern === 2) { // 2 zeros, gap, 2 zeros
+                blocks.push('0000', '0000', getRandomHexBlock(), '0000', '0000', getRandomHexBlock());
+            } else { // lots of leading zeros but random numbers
+                blocks.push('00' + Math.floor(Math.random()*99).toString(16).padStart(2,'0'));
+                blocks.push('0000');
+                blocks.push('0000');
+                blocks.push('000' + Math.floor(Math.random()*9).toString(16));
+                blocks.push('0000');
+                blocks.push('0001');
+            }
+
+            const uncompressed = blocks.join(':');
+            currentQuizAnswer = compressIPv6(uncompressed);
+            
+            document.getElementById('quiz-question-ip').innerText = uncompressed;
+            const inputEl = document.getElementById('q-compress');
+            inputEl.value = '';
+            inputEl.dataset.active = 'true';
+            inputEl.classList.remove('correct-input', 'wrong-input');
+
+            const fb = document.getElementById('quiz-feedback');
+            fb.classList.add('hidden');
+            const hint = document.getElementById('quiz-hint');
+            hint.classList.add('hidden');
+        }
+
+        function checkQuizAnswer() {
+            if (!currentQuizAnswer) return;
+            
+            const inputEl = document.getElementById('q-compress');
+            const userAnswer = inputEl.value.trim().toLowerCase();
+            const fb = document.getElementById('quiz-feedback');
+            
+            inputEl.classList.remove('correct-input', 'wrong-input');
+            fb.classList.remove('hidden', 'bg-green-900/20', 'border-green-700', 'text-green-300', 'bg-red-900/20', 'border-red-700', 'text-red-300');
+
+            if (userAnswer === currentQuizAnswer) {
+                inputEl.classList.add('correct-input');
+                fb.classList.add('bg-green-900/20', 'border-green-700', 'text-green-300', 'border');
+                fb.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Richtig! Gekürzt: <br><strong>${currentQuizAnswer}</strong><br><span class="text-xs">+10 Punkte</span>`;
+                score += 10;
+                updateScore();
+                setTimeout(generateNewQuiz, 2500);
+            } else {
+                inputEl.classList.add('wrong-input');
+                fb.classList.add('bg-red-900/20', 'border-red-700', 'text-red-300', 'border');
+                fb.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> Fast! Denke an führende Nullen und die längste "0000" Kette.`;
+            }
+        }
+
+        function showQuizHint() {
+            if (!currentQuizAnswer) return;
+            let hintHTML = `<strong>Tipp:</strong> Die gesuchte Antwort lautet:<br><span class="font-mono text-brand-300 tracking-wider">${currentQuizAnswer}</span>`;
+            
+            const hintEl = document.getElementById('quiz-hint');
+            hintEl.innerHTML = hintHTML;
+            hintEl.classList.remove('hidden');
+            
+            if(score > 0) {
+                score = Math.max(0, score - 2);
+                updateScore();
+            }
+        }
+
+        function updateScore() {
+            document.getElementById('quiz-score').innerText = score;
+            document.getElementById('sidebar-score-badge').innerText = score;
+        }
+
+        function toggleQuizSidebar() {
+            const sidebar = document.getElementById('quiz-sidebar');
+            const backdrop = document.getElementById('quiz-backdrop');
+            if (!sidebar || !backdrop) return;
+            const isOpen = !sidebar.classList.contains('translate-x-full');
+
+            if (isOpen) {
+                sidebar.classList.add('translate-x-full');
+                backdrop.classList.add('hidden');
+            } else {
+                sidebar.classList.remove('translate-x-full');
+                backdrop.classList.remove('hidden');
+                if (!document.getElementById('q-compress').dataset.active) generateNewQuiz();
+            }
+        }
+
+        // --- Animations Data ---
+        const animationData = {
+            1: {
+                title: "1. 32-Bit vs 128-Bit",
+                text: "Warum IPv6? Es bietet unvorstellbar mehr Platz.",
+                detailedText: "IPv4 nutzt 32 Bit, was ca. 4,3 Milliarden Adressen ermöglicht. Das reicht für jedes Smartphone, Tablet und Smart-Home-Gerät heute längst nicht mehr. IPv6 nutzt 128 Bit. Das sind 340 Sextillionen Adressen. Genug, um jedem Sandkorn auf der Erde eine eigene IP zu geben.",
+                visual: `
+                    <div class="flex flex-col items-center justify-center space-y-6 w-full mt-4">
+                        <div class="flex items-center space-x-4">
+                            <span class="text-sm font-bold text-gray-500 w-12">IPv4</span>
+                            <div class="h-4 w-12 bg-gray-500 rounded anim-v4-dot"></div>
+                            <span class="text-xs text-gray-500">4.3 Milliarden</span>
+                        </div>
+                        <div class="flex items-center space-x-4 w-full justify-center">
+                            <span class="text-sm font-bold text-brand-400 w-12">IPv6</span>
+                            <div class="h-8 w-64 bg-brand-500/50 rounded shadow-[0_0_15px_rgba(61,174,233,0.5)] anim-v6-expand border border-brand-400 relative overflow-hidden">
+                                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] animate-[shimmer_2s_infinite]"></div>
+                            </div>
+                            <span class="text-xs text-brand-300">Unendlich*</span>
+                        </div>
+                    </div>
+                `
+            },
+            2: {
+                title: "2. Acht Blöcke",
+                text: "Eine IPv6 Adresse besteht voll ausgeschrieben aus 8 Hextets.",
+                detailedText: "Da 128 Einsen und Nullen im Binärcode unlesbar sind, fassen wir sie in 8 Blöcke zusammen. Jeder Block enthält 4 Zeichen. Da wir Hexadezimal schreiben (Basis 16: 0-9 und a-f), repräsentiert ein einzelnes Zeichen genau 4 Bit. 8 Blöcke × 4 Zeichen × 4 Bit = 128 Bit.",
+                visual: `
+                    <div class="flex flex-wrap items-center justify-center gap-1 font-mono text-sm sm:text-xl font-bold mt-8">
+                        <span class="px-1 py-1 rounded anim-hex-scan1 border text-purple-300">2001</span><span class="text-gray-600">:</span>
+                        <span class="px-1 py-1 rounded anim-hex-scan2 border text-purple-300">0db8</span><span class="text-gray-600">:</span>
+                        <span class="px-1 py-1 rounded anim-hex-scan3 border text-gray-400">0000</span><span class="text-gray-600">:</span>
+                        <span class="px-1 py-1 rounded border border-transparent text-gray-400">0000</span><span class="text-gray-600">:</span>
+                        <span class="px-1 py-1 rounded border border-transparent text-gray-400">0000</span><span class="text-gray-600">:</span>
+                        <span class="px-1 py-1 rounded border border-transparent text-gray-400">0000</span><span class="text-gray-600">:</span>
+                        <span class="px-1 py-1 rounded border border-transparent text-gray-400">0000</span><span class="text-gray-600">:</span>
+                        <span class="px-1 py-1 rounded border border-transparent text-blue-300">0001</span>
+                    </div>
+                    <p class="text-xs text-brand-400 mt-6 uppercase tracking-widest font-semibold"><i class="fa-solid fa-arrows-left-right"></i> 8 Blöcke (Hextets) <i class="fa-solid fa-arrows-left-right"></i></p>
+                `
+            },
+            3: {
+                title: "3. Führende Nullen",
+                text: "Nullen auf der linken Seite eines Blocks fallen weg.",
+                detailedText: "Genau wie du statt '0005 Euro' nur '5 Euro' schreibst, fallen bei IPv6 die führenden Nullen in einem Block weg. Das ändert den Wert nicht. Ein Block '0000' wird zu einer einfachen '0'. Wichtig: Nullen rechts oder in der Mitte ('0db8', '200c') dürfen NICHT entfernt werden, nur die ganz links!",
+                visual: `
+                    <div class="flex flex-col items-center mt-6">
+                        <div class="font-mono text-2xl font-bold flex bg-kde-surface px-4 py-2 rounded border border-kde-windowBorder mb-4">
+                            <span class="text-gray-400">2001:</span>
+                            <span class="anim-zero-fade text-red-400 relative">0<span class="absolute -top-4 left-0 text-[10px] text-red-400 opacity-0 anim-zero-fade" style="animation-name: float-up-fade;">weg!</span></span>
+                            <span class="anim-zero-move text-white">db8</span>
+                            <span class="text-gray-400">:</span>
+                            <span class="anim-zero-fade text-red-400">000</span><span class="anim-zero-move text-white">0</span>
+                        </div>
+                        <div class="text-xs text-brand-400 mt-2 font-mono bg-brand-900/20 px-3 py-1 rounded border border-brand-500/30">
+                            Ergebnis: 2001:db8:0
+                        </div>
+                    </div>
+                `
+            },
+            4: {
+                title: "4. Null-Blöcke Komprimieren",
+                text: "Mehrere Null-Blöcke hintereinander werden zu ::",
+                detailedText: "Die mächtigste Kürzung: Eine Kette aus reinen Nullen (0:0:0...) darf durch :: ersetzt werden. Hast du eine Adresse wie 'ff02:0:0:0:0:0:0:1', wird daraus elegant 'ff02::1'. Das darf pro IP aber strikt nur EINMAL gemacht werden. Gibt es zwei gleich lange Nuller-Ketten, komprimiert man üblicherweise die erste.",
+                visual: `
+                    <div class="flex flex-col items-center mt-6">
+                         <div class="font-mono text-xl sm:text-2xl font-bold flex items-center bg-kde-surface px-3 py-2 rounded border border-kde-windowBorder overflow-hidden max-w-full">
+                            <span class="text-purple-300 shrink-0">fe80</span>
+                            <span class="text-gray-500 shrink-0">:</span>
+                            <div class="flex items-center anim-col-block bg-gray-800/80 rounded px-1 shrink-0">
+                                <span class="text-gray-400">0:0:0:0</span>
+                            </div>
+                            <span class="text-red-400 font-bold anim-col-colon shrink-0">::</span>
+                            <span class="text-gray-500 shrink-0">:</span>
+                            <span class="text-blue-300 shrink-0">abcd</span>
+                         </div>
+                         <div class="text-xs text-brand-400 mt-4"><i class="fa-solid fa-compress-arrows-alt"></i> Die Lücke wird geschlossen</div>
+                    </div>
+                `
+            },
+            5: {
+                title: "5. Der Netz- und Hostanteil",
+                text: "Die Adresse wird in der Mitte geteilt (Präfix /64).",
+                detailedText: "Bei IPv4 hatten wir Subnetzmasken. Bei IPv6 nutzen wir fast immer ein festes /64 Präfix für Endnutzer-Netze. Das bedeutet: Die ersten 64 Bit (genau 4 Blöcke) bestimmen das Netzwerk (Routing im Internet). Die letzten 64 Bit (die restlichen 4 Blöcke) identifizieren das Gerät in diesem Netzwerk eindeutig (die Interface ID).",
+                visual: `
+                    <div class="flex items-center justify-center space-x-2 sm:space-x-4 w-full h-32 relative">
+                        <div class="flex flex-col items-center z-10 w-1/2">
+                            <span class="font-mono text-sm sm:text-lg font-bold text-purple-300">2001:db8:1:a</span>
+                            <span class="text-[10px] sm:text-xs text-purple-400 mt-2 uppercase text-center">Netzwerk Präfix<br>(Vom Provider)</span>
+                        </div>
+                        
+                        <div class="w-[2px] bg-brand-400 anim-split-line absolute top-[-10%] shadow-[0_0_8px_rgba(61,174,233,1)] z-20"></div>
+
+                        <div class="flex flex-col items-center z-10 w-1/2">
+                            <span class="font-mono text-sm sm:text-lg font-bold text-blue-300">0:0:0:1</span>
+                            <span class="text-[10px] sm:text-xs text-blue-400 mt-2 uppercase text-center">Interface ID<br>(Das Gerät)</span>
+                        </div>
+                    </div>
+                `
+            }
+        };
+
+        let currentModalStep = 1;
+        const totalSteps = 5;
+
+        function openAnimationModal(step) {
+            currentModalStep = step;
+            const data = animationData[step];
+
+            document.getElementById('animation-modal-title').innerText = data.title;
+            document.getElementById('animation-modal-text').innerText = data.text;
+
+            const visualContainer = document.getElementById('animation-modal-visual');
+            visualContainer.innerHTML = '';
+            // Slight delay to ensure DOM is ready for CSS animations to trigger
+            setTimeout(() => { visualContainer.innerHTML = data.visual; }, 10);
+
+            document.getElementById('modal-prev-btn').disabled = (step === 1);
+            const nextBtn = document.getElementById('modal-next-btn');
+            if (step === totalSteps) {
+                nextBtn.innerHTML = '<i class="fa-solid fa-check"></i> Schließen';
+                nextBtn.onclick = closeAnimationModal;
+                nextBtn.classList.remove('bg-brand-600', 'hover:bg-brand-500', 'text-white');
+                nextBtn.classList.add('bg-kde-surface', 'hover:bg-gray-700', 'border', 'border-gray-600', 'text-gray-200');
+            } else {
+                nextBtn.innerHTML = 'Weiter <i class="fa-solid fa-chevron-right text-xs"></i>';
+                nextBtn.onclick = nextAnimationStep;
+                nextBtn.classList.add('bg-brand-600', 'hover:bg-brand-500', 'text-white');
+                nextBtn.classList.remove('bg-kde-surface', 'hover:bg-gray-700', 'border', 'border-gray-600', 'text-gray-200');
+            }
+
+            let dotsHtml = '';
+            for(let i = 1; i <= totalSteps; i++) {
+                if(i === step) dotsHtml += `<div class="w-2 h-2 rounded-full bg-brand-500 transition-colors shadow-[0_0_8px_rgba(61,174,233,0.8)]"></div>`;
+                else dotsHtml += `<div class="w-2 h-2 rounded-full bg-gray-600 transition-colors"></div>`;
+            }
+            document.getElementById('modal-dots').innerHTML = dotsHtml;
+
+            document.getElementById('animation-modal').classList.remove('hidden');
+        }
+
+        function nextAnimationStep() { if (currentModalStep < totalSteps) openAnimationModal(currentModalStep + 1); }
+        function prevAnimationStep() { if (currentModalStep > 1) openAnimationModal(currentModalStep - 1); }
+        function closeAnimationModal() {
+            document.getElementById('animation-modal').classList.add('hidden');
+            document.getElementById('animation-modal-visual').innerHTML = '';
+        }
+
+        function populateAllAnimationsView() {
+            const container = document.getElementById('all-animations-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            for (let i = 1; i <= totalSteps; i++) {
+                const data = animationData[i];
+                container.innerHTML += `
+                    <div class="border border-kde-windowBorder rounded-lg overflow-hidden shadow-lg bg-kde-windowBg">
+                        <div class="p-4 border-b border-kde-windowBorder bg-kde-surface flex items-center gap-4">
+                            <div class="w-8 h-8 rounded bg-brand-900/30 text-brand-400 border border-brand-500/30 font-bold flex items-center justify-center shrink-0 shadow-inner">${i}</div>
+                            <div>
+                                <h3 class="font-semibold text-lg text-white">${data.title.substring(3)}</h3>
+                            </div>
+                        </div>
+                        <div class="p-6 text-gray-300 text-sm leading-relaxed border-b border-kde-windowBorder bg-kde-windowBg">
+                            ${data.detailedText}
+                        </div>
+                        <div class="p-6 bg-kde-input flex flex-col items-center justify-center min-h-[220px] overflow-hidden shadow-inner relative">
+                            ${data.visual}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Add CSS keyframe needed dynamically for floating text
+        const styleSheet = document.createElement("style");
+        styleSheet.innerText = `
+            @keyframes float-up-fade {
+                0% { transform: translateY(0); opacity: 1; }
+                50% { transform: translateY(-10px) scale(1.2); opacity: 0; }
+                100% { transform: translateY(-10px); opacity: 0; }
+            }
+            @keyframes shimmer {
+                100% { transform: translateX(200%) skewX(-12deg); }
+            }
+        `;
+        document.head.appendChild(styleSheet);
+
+        window.onload = () => {
+            populateAllAnimationsView();
+            switchTab('learn');
+            formatIPv6Input(); // Init calculator
+        };
+    </script>
+</body>
+</html>

@@ -324,9 +324,10 @@
 '                    "lyricseditor",\r\n' +
 '                    "radioPlayer",\r\n' +
 '                    "subnets",\r\n' +
+'                    "ipv6",\r\n' +
 '                    "wikipedia"\r\n' +
 '                ],\r\n' +
-'                "desktop": ["subnets", "kcalc", "kate"]\r\n' +
+'                "desktop": ["subnets", "ipv6", "kcalc", "kate"]\r\n' +
 '            };\r\n' +
 '\r\n' +
 '            const possiblePaths = [\r\n' +
@@ -445,6 +446,7 @@
 '            \'lyricseditor\': { width: 1000, height: 650, maxizable: true },\r\n' +
 '            \'radioPlayer\': { width: 460, height: 600, maxizable: false },\r\n' +
 '            \'subnets\': { width: 1000, height: 700, maxizable: true, url: \'packages/desktop/SubNets.html\' },\r\n' +
+'            \'ipv6\': { width: 1000, height: 700, maxizable: true, url: \'packages/desktop/IPv6.html\' },\r\n' +
 '            \'wikipedia\': { width: 920, height: 660, maxizable: true }\r\n' +
 '        };\r\n' +
 '\r\n' +
