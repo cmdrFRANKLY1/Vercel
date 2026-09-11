@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netzwerk Simulator – für Strolchfreunde</title>
+    <title>Netzwerk Simulator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -291,13 +291,13 @@
                     <i class="fa-solid fa-diagram-project text-brand-400 text-sm"></i>
                 </div>
                 <div class="min-w-0">
-                    <h1 class="text-sm font-semibold text-white leading-none truncate">Netzwerk Sandbox</h1>
-                    <p class="text-[10px] text-gray-500 mt-0.5 leading-none">Für absolute Strolchfreunde</p>
+                    <h1 class="text-sm font-semibold text-white leading-none truncate">Netzwerk Simulator</h1>
+                    <p class="text-[10px] text-gray-500 mt-0.5 leading-none">für Strolchfreunde</p>
                 </div>
             </div>
 
             <div class="flex items-center gap-2 flex-shrink-0">
-                <button onclick="togglePuzzleMenu()" class="btn btn-ghost !text-yellow-500/80 hover:!text-yellow-400 hover:!bg-yellow-400/10" title="Rätsel laden">
+                <button onclick="spawnRandomPuzzle()" class="btn btn-ghost !text-yellow-500/80 hover:!text-yellow-400 hover:!bg-yellow-400/10" title="Zufälliges Rätsel laden">
                     <i class="fa-solid fa-puzzle-piece"></i>
                     <span class="hidden sm:inline">Rätsel</span>
                 </button>
@@ -416,24 +416,6 @@
         <div>
             <p class="text-[12px] font-bold text-white leading-tight" id="toast-title">Hinweis</p>
             <p class="text-[10px] text-gray-400 leading-tight mt-0.5" id="toast-text"></p>
-        </div>
-    </div>
-
-    <!-- Puzzle Menu Modal -->
-    <div id="puzzle-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[2000] items-center justify-center">
-        <div class="bg-[#232629] border border-[#31363b] rounded-xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden transform scale-95 transition-transform duration-200" id="puzzle-box">
-            <div class="px-4 py-3 border-b border-[#31363b] flex justify-between items-center bg-[#1a1b1e]">
-                <h3 class="font-bold text-sm flex items-center gap-2 text-white">
-                    <i class="fa-solid fa-puzzle-piece text-yellow-400"></i> Netzwerk-Rätsel
-                </h3>
-                <button onclick="closePuzzleMenu()" class="text-gray-500 hover:text-white transition-colors"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="p-4 flex-1 overflow-y-auto max-h-[60vh] space-y-2" id="puzzle-list">
-                <div class="text-center text-gray-500 text-xs py-4">Lade Rätsel...</div>
-            </div>
-            <div class="px-4 py-3 border-t border-[#31363b] bg-[#1a1b1e] flex justify-end gap-2">
-                <button onclick="closePuzzleMenu()" class="px-4 py-1.5 rounded-md text-xs font-semibold bg-[#31363b] text-gray-300 hover:bg-[#3b4147] transition-colors">Schließen</button>
-            </div>
         </div>
     </div>
 
@@ -1504,51 +1486,36 @@
         let puzzleSolved = false;
         let lastValidationTime = 0;
 
-        function togglePuzzleMenu() {
-            const modal = document.getElementById('puzzle-modal');
-            if (modal.classList.contains('hidden')) openPuzzleMenu();
-            else closePuzzleMenu();
-        }
-
-        function openPuzzleMenu() {
-            const modal = document.getElementById('puzzle-modal');
-            const box = document.getElementById('puzzle-box');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            setTimeout(() => box.classList.remove('scale-95'), 10);
-
-            const listEl = document.getElementById('puzzle-list');
-            listEl.innerHTML = '<div class="text-center text-gray-500 text-xs py-4"><i class="fa-solid fa-circle-notch fa-spin"></i> Lade Rätsel...</div>';
+        function spawnRandomPuzzle() {
+            const btnIcon = document.querySelector('button[onclick="spawnRandomPuzzle()"] i');
+            if (btnIcon) {
+                btnIcon.className = 'fa-solid fa-circle-notch fa-spin';
+            }
 
             loadPuzzles().then(() => {
-                listEl.innerHTML = '';
+                if (btnIcon) {
+                    btnIcon.className = 'fa-solid fa-puzzle-piece';
+                }
+                
                 if (!window.NetSimPuzzles || window.NetSimPuzzles.length === 0) {
-                    listEl.innerHTML = '<div class="text-center text-red-400 text-xs py-4">Keine Rätsel gefunden.</div>';
+                    toast('Fehler', 'Keine Rätsel gefunden.', 'error');
                     return;
                 }
-                window.NetSimPuzzles.forEach(puz => {
-                    const btn = document.createElement('button');
-                    btn.className = 'w-full text-left bg-[#1a1b1e] hover:bg-brand-900/30 border border-[#31363b] hover:border-brand-500/50 p-3 rounded-lg transition-all flex flex-col gap-1';
-                    btn.innerHTML = `
-                        <strong class="text-white text-xs">${puz.title}</strong>
-                        <span class="text-gray-400 text-[10px] line-clamp-2">${puz.description}</span>
-                    `;
-                    btn.onclick = () => startPuzzle(puz);
-                    listEl.appendChild(btn);
-                });
+                
+                // Pick a random puzzle, avoiding to repeat the exact same one back-to-back if possible
+                let available = window.NetSimPuzzles;
+                if (currentPuzzle && available.length > 1) {
+                    available = available.filter(p => p.id !== currentPuzzle.id);
+                }
+                const randomPuzzle = available[Math.floor(Math.random() * available.length)];
+                
+                startPuzzle(randomPuzzle);
             }).catch(err => {
-                listEl.innerHTML = '<div class="text-center text-red-400 text-xs py-4">Fehler beim Laden der Rätseldatei.<br>Stelle sicher, dass netSimEvent.js existiert.</div>';
+                if (btnIcon) {
+                    btnIcon.className = 'fa-solid fa-puzzle-piece';
+                }
+                toast('Fehler', 'Rätsel konnten nicht geladen werden.', 'error');
             });
-        }
-
-        function closePuzzleMenu() {
-            const modal = document.getElementById('puzzle-modal');
-            const box = document.getElementById('puzzle-box');
-            box.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }, 150);
         }
 
         function loadPuzzles() {
@@ -1570,7 +1537,6 @@
         }
 
         function startPuzzle(puzzle) {
-            closePuzzleMenu();
             performClearAll(); // Clear without prompt
             logEl.innerHTML = '';
 
