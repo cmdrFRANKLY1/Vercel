@@ -164,6 +164,88 @@
         ::-webkit-scrollbar-track { background: var(--tw-colors-kde-bg); }
         ::-webkit-scrollbar-thumb { background: #4d5157; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #6c7178; }
+
+        /* Floating connection hint (top-left corner) */
+        .connection-hint {
+            position: fixed;
+            background: rgba(30, 33, 36, 0.97);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(61, 174, 233, 0.6);
+            border-radius: 0.75rem;
+            padding: 0.7rem 1.1rem;
+            font-size: 0.85rem;
+            color: #eff0f1;
+            z-index: 200;
+            pointer-events: none;
+            box-shadow: 0 12px 30px -5px rgba(0,0,0,0.85), 0 0 20px rgba(61,174,233,0.25);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-width: 90vw;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            opacity: 0;
+            top: 5.5rem;
+            left: 1rem;
+            transform: translateX(-10px);
+        }
+        .connection-hint.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .connection-hint .hint-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #3daee9;
+            font-weight: 700;
+            border-bottom: 1px solid rgba(61, 174, 233, 0.2);
+            padding-bottom: 0.4rem;
+        }
+        .connection-hint .hint-link-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: #eff0f1;
+        }
+        .connection-hint .hint-link-row .arrow-icon {
+            color: #3daee9;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        .connection-hint .hint-link-row .step-badge {
+            background: rgba(61, 174, 233, 0.2);
+            border: 1px solid rgba(61, 174, 233, 0.4);
+            border-radius: 0.25rem;
+            padding: 0.1rem 0.4rem;
+            font-size: 0.7rem;
+            color: #54b6ec;
+            font-weight: 700;
+            flex-shrink: 0;
+            font-family: 'Noto Sans', sans-serif;
+        }
+        .connection-hint .hint-link-row .target-text {
+            color: #54b6ec;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+            background: rgba(61, 174, 233, 0.1);
+            padding: 0.1rem 0.4rem;
+            border-radius: 0.25rem;
+            border: 1px solid rgba(61, 174, 233, 0.2);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 55vw;
+        }
+        .connection-hint .hint-divider {
+            height: 1px;
+            background: rgba(61, 174, 233, 0.15);
+            margin: 0.1rem 0;
+        }
     </style>
     <script>
         // Global functions defined in head to ensure availability before DOM load
@@ -193,6 +275,9 @@
             else if (tabId === 'quiz' && !currentQuiz && typeof generateNewQuiz === 'function') generateNewQuiz();
         };
 
+        // ============================================================
+        //  ENHANCED ARROW FUNCTIONS WITH OFF-SCREEN DETECTION
+        // ============================================================
         window.showArrow = function(triggerEl, targetIds) {
             const ids = targetIds.split(',');
             const svg = document.getElementById('arrow-canvas');
@@ -200,6 +285,11 @@
 
             svg.innerHTML = '';
             svg.classList.remove('hidden');
+
+            removeFloatingHint();
+
+            const offScreenTargets = [];
+            let hintPosition = null;
 
             ids.forEach(id => {
                 const targetEl = document.getElementById(id.trim());
@@ -215,6 +305,32 @@
 
                 const endX = tarRect.left + window.scrollX + (tarRect.width / 2);
                 const endY = tarRect.top + window.scrollY - 4;
+
+                const viewportTop = window.scrollY;
+                const viewportBottom = window.scrollY + window.innerHeight;
+                const viewportLeft = window.scrollX;
+                const viewportRight = window.scrollX + window.innerWidth;
+
+                const targetRectDoc = {
+                    top: tarRect.top + window.scrollY,
+                    bottom: tarRect.bottom + window.scrollY,
+                    left: tarRect.left + window.scrollX,
+                    right: tarRect.right + window.scrollX
+                };
+
+                const isTargetOffScreenTop = targetRectDoc.bottom < viewportTop;
+                const isTargetOffScreenBottom = targetRectDoc.top > viewportBottom;
+                const isTargetOffScreenLeft = targetRectDoc.right < viewportLeft;
+                const isTargetOffScreenRight = targetRectDoc.left > viewportRight;
+                const isTargetOffScreen = isTargetOffScreenTop || isTargetOffScreenBottom || isTargetOffScreenLeft || isTargetOffScreenRight;
+
+                if (isTargetOffScreen) {
+                    offScreenTargets.push({
+                        el: targetEl,
+                        position: isTargetOffScreenTop ? 'top' : 'bottom'
+                    });
+                    if (!hintPosition) hintPosition = isTargetOffScreenTop ? 'top' : 'bottom';
+                }
 
                 const cp1X = startX;
                 const cp1Y = startY + Math.max(20, (endY - startY) / 2);
@@ -239,6 +355,10 @@
                 path.getBoundingClientRect();
                 path.style.strokeDashoffset = '0';
             });
+
+            if (offScreenTargets.length > 0) {
+                showFloatingHint(triggerEl, offScreenTargets, hintPosition);
+            }
         };
 
         window.showArrowBottom = function(triggerEl, targetId) {
@@ -260,6 +380,25 @@
 
             const endX = tarRect.left + window.scrollX + (tarRect.width / 2);
             const endY = tarRect.bottom + window.scrollY + 4;
+
+            const viewportTop = window.scrollY;
+            const viewportBottom = window.scrollY + window.innerHeight;
+
+            const targetRectDoc = {
+                top: tarRect.top + window.scrollY,
+                bottom: tarRect.bottom + window.scrollY,
+                left: tarRect.left + window.scrollX,
+                right: tarRect.right + window.scrollX
+            };
+
+            const isTargetOffScreen = (targetRectDoc.bottom < viewportTop) || (targetRectDoc.top > viewportBottom);
+
+            if (isTargetOffScreen) {
+                const position = targetRectDoc.bottom < viewportTop ? 'top' : 'bottom';
+                showFloatingHint(triggerEl, [{ el: targetEl, position: position }], position);
+            } else {
+                removeFloatingHint();
+            }
 
             const cp1X = startX;
             const cp1Y = startY + Math.max(20, Math.abs(endY - startY) / 2);
@@ -285,6 +424,114 @@
             path.style.strokeDashoffset = '0';
         };
 
+        // ============================================================
+        //  FLOATING HINT FUNCTIONS - Supports multiple targets
+        // ============================================================
+        function showFloatingHint(triggerEl, targets, position) {
+            removeFloatingHint();
+
+            const targetList = Array.isArray(targets) ? targets : [{ el: targets, position: position }];
+            if (targetList.length === 0) return;
+
+            const hint = document.createElement('div');
+            hint.className = `connection-hint`;
+            hint.id = 'floating-connection-hint';
+
+            const headerHtml = `
+                <div class="hint-header">
+                    <i class="fa-solid fa-link"></i>
+                    <span>Verbindung zu ${targetList.length > 1 ? targetList.length + ' Stellen' : 'Schritt'}</span>
+                </div>
+            `;
+
+            let rowsHtml = '';
+            targetList.forEach((item, index) => {
+                const targetEl = item.el;
+                const targetPosition = item.position || position;
+
+                // Determine the step number: prefer the ancestor step container
+                let stepNum = null;
+
+                const stepContainer = targetEl.closest('.group');
+                if (stepContainer) {
+                    const stepCircle = stepContainer.querySelector('.absolute.-left-\\[13px\\]');
+                    if (stepCircle) stepNum = stepCircle.textContent.trim();
+                }
+
+                if (!stepNum && targetEl.dataset.step) {
+                    stepNum = targetEl.dataset.step;
+                }
+
+                if (!stepNum) {
+                    const idMatch = targetEl.id.match(/^s(\d+)/);
+                    if (idMatch) stepNum = idMatch[1];
+                }
+
+                if (!stepNum) {
+                    const allSteps = document.querySelectorAll('#view-learn .group');
+                    for (let i = 0; i < allSteps.length; i++) {
+                        if (allSteps[i].contains(targetEl)) {
+                            stepNum = String(i + 1);
+                            break;
+                        }
+                    }
+                }
+
+                let hintText = '';
+                if (targetEl.dataset.hintText) {
+                    hintText = targetEl.dataset.hintText;
+                } else {
+                    let rawText = targetEl.textContent.trim();
+                    const innerStrong = targetEl.querySelector('strong');
+                    if (innerStrong && innerStrong.textContent.trim().length > 0) {
+                        rawText = innerStrong.textContent.trim();
+                    }
+                    hintText = rawText;
+                }
+                if (hintText.length > 45) {
+                    hintText = hintText.substring(0, 42) + '...';
+                }
+
+                let iconHtml = '';
+                if (targetPosition === 'top') {
+                    iconHtml = '<i class="fa-solid fa-arrow-up arrow-icon"></i>';
+                } else {
+                    iconHtml = '<i class="fa-solid fa-arrow-down arrow-icon"></i>';
+                }
+
+                if (index > 0) {
+                    rowsHtml += `<div class="hint-divider"></div>`;
+                }
+
+                rowsHtml += `
+                    <div class="hint-link-row">
+                        ${iconHtml}
+                        ${stepNum ? `<span class="step-badge">Schritt ${stepNum}</span>` : ''}
+                        <span class="target-text">${hintText}</span>
+                    </div>
+                `;
+            });
+
+            hint.innerHTML = headerHtml + rowsHtml;
+            document.body.appendChild(hint);
+
+            requestAnimationFrame(() => {
+                hint.classList.add('visible');
+            });
+        }
+
+        function removeFloatingHint() {
+            const existing = document.getElementById('floating-connection-hint');
+            if (existing) {
+                existing.classList.remove('visible');
+                setTimeout(() => {
+                    if (existing.parentNode) {
+                        existing.parentNode.removeChild(existing);
+                    }
+                }, 200);
+            }
+        }
+
         window.hideArrow = function(targetIds) {
             const ids = targetIds.split(',');
             ids.forEach(id => {
@@ -295,6 +542,7 @@
             });
             const svg = document.getElementById('arrow-canvas');
             if (svg) svg.classList.add('hidden');
+            removeFloatingHint();
         };
     </script>
 </head>
@@ -324,7 +572,7 @@
         <section id="view-learn" class="block animate-fade-in space-y-8">
             <div class="bg-kde-windowBg rounded-lg shadow border border-kde-windowBorder p-6">
                 <h2 class="text-lg font-semibold text-white mb-2 border-b border-kde-windowBorder pb-2 flex items-center gap-2"><i class="fa-solid fa-route text-brand-400"></i> Der rote Faden: Die Hex-Hextet-Methode</h2>
-                <p class="mb-8 text-gray-300">IPv6 ist kein anderes Universum – nur ein anderes Zahlensystem. Bewege die Maus über die <span class="connection-trigger text-brand-300">gestrichelten Wörter</span> und farbigen Werte, um exakt zu sehen, wie die Zahlen von Schritt zu Schritt wandern. Begleiten wir das Beispiel <code class="bg-kde-input px-1.5 py-0.5 rounded text-white font-mono border border-kde-windowBorder">2001:db8:abcd:<span id="s0-tip" class="connection-target connection-trigger text-yellow-400 font-bold" onmouseenter="showArrowBottom(this, 's3-tip')" onmouseleave="hideArrow('s3-tip')">1234</span>::1 /56</code>.</p>
+                <p class="mb-8 text-gray-300">IPv6 ist kein anderes Universum – nur ein anderes Zahlensystem. Bewege die Maus über die <span class="connection-trigger text-brand-300">gestrichelten Wörter</span> und farbigen Werte, um exakt zu sehen, wie die Zahlen von Schritt zu Schritt wandern. Begleiten wir das Beispiel <code class="bg-kde-input px-1.5 py-0.5 rounded text-white font-mono border border-kde-windowBorder">2001:db8:abcd:<span id="s0-tip" class="connection-target connection-trigger text-yellow-400 font-bold" data-step="3" data-hint-text="0x1234 (IP-Hextet)" onmouseenter="showArrowBottom(this, 's3-tip')" onmouseleave="hideArrow('s3-tip')">1234</span>::1 /56</code>.</p>
 
                 <!-- Zeitstrahl / Roter Faden Layout -->
                 <div class="relative border-l-2 border-brand-500/40 ml-4 md:ml-6 space-y-10 pb-4">
@@ -341,8 +589,8 @@
                         <p class="text-gray-300 mb-3 text-sm">IPv6 hat 128 Bit, aufgeteilt in 8 Blöcke (<em>Hextets</em>) à 16 Bit. Die Präfixlänge verrät dir, wie viele Bits zum Netz gehören – der Rest des Hextets, in dem die Grenze landet, ist unser <strong>interessantes Hextet</strong>.</p>
                         <div class="bg-kde-surface p-4 rounded border border-kde-windowBorder text-sm shadow-inner leading-relaxed">
                             <span class="font-semibold text-gray-400 uppercase text-[10px] tracking-wider block mb-1">Unser Beispiel:</span>
-                            /56 heißt <strong class="text-white">56 Netz-Bits</strong>. Das sind 3 volle Hextets (3 × 16 = 48 Bit) plus <strong id="s1-tbits" class="connection-target connection-trigger bg-purple-900/40 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/30 inline-block mx-1" onmouseenter="showArrow(this, 's2-tbits')" onmouseleave="hideArrow('s2-tbits')">8 Bit</strong> aus dem 4. Hextet.<br>
-                            Damit ist das 4. <span class="connection-trigger text-white font-semibold" onmouseenter="showArrowBottom(this, 's1-t1')" onmouseleave="hideArrow('s1-t1')">Hextet</span> unser interessantes Hextet – dort steht der Wert <strong id="s1-t1" class="connection-target connection-trigger bg-yellow-900/30 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-500/30 inline-block mx-1" onmouseenter="showArrow(this, 's3-tip')" onmouseleave="hideArrow('s3-tip')">0x1234</strong>.
+                            /56 heißt <strong class="text-white">56 Netz-Bits</strong>. Das sind 3 volle Hextets (3 × 16 = 48 Bit) plus <strong id="s1-tbits" class="connection-target connection-trigger bg-purple-900/40 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/30 inline-block mx-1" data-step="1" data-hint-text="8 Host-Bits im Hextet" onmouseenter="showArrow(this, 's2-tbits')" onmouseleave="hideArrow('s2-tbits')">8 Bit</strong> aus dem 4. Hextet.<br>
+                            Damit ist das 4. <span class="connection-trigger text-white font-semibold" data-step="1" data-hint-text="4. Hextet (0x1234)" onmouseenter="showArrowBottom(this, 's1-t1')" onmouseleave="hideArrow('s1-t1')">Hextet</span> unser interessantes Hextet – dort steht der Wert <strong id="s1-t1" class="connection-target connection-trigger bg-yellow-900/30 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-500/30 inline-block mx-1" data-step="1" data-hint-text="0x1234 (IP-Hextet)" onmouseenter="showArrow(this, 's3-tip')" onmouseleave="hideArrow('s3-tip')">0x1234</strong>.
                         </div>
                     </div>
 
@@ -358,8 +606,8 @@
                         <p class="text-gray-300 mb-3 text-sm">Ein Hextet hat 16 Bit. Nimm die <strong>Host-Bits aus Schritt 1</strong> und rechne <code class="bg-kde-input px-1 rounded text-brand-300">2^(16 − Host-Bits)</code>. Das Ergebnis ist die Blockgröße – unsere IPv6-Magic-Number in Hex.</p>
                         <div class="bg-kde-surface p-4 rounded border border-kde-windowBorder text-sm shadow-inner leading-relaxed">
                             <span class="font-semibold text-gray-400 uppercase text-[10px] tracking-wider block mb-1">Unser Beispiel:</span>
-                            2^(16 − <strong id="s2-tbits" class="connection-target connection-trigger text-purple-400 inline-block px-1 rounded" onmouseenter="showArrowBottom(this, 's1-tbits')" onmouseleave="hideArrow('s1-tbits')">8</strong>) = 2^8 = 256 = <strong id="s2-t1" class="connection-target connection-trigger bg-brand-900/40 text-brand-300 px-1.5 py-0.5 rounded border border-brand-500/30 inline-block mx-1 font-mono" onmouseenter="showArrow(this, 's3-t1,s4-tmagic')" onmouseleave="hideArrow('s3-t1,s4-tmagic')">0x100</strong>.<br>
-                            Unsere Subnetze springen im 4. Hextet also in <span class="connection-trigger text-white font-semibold" onmouseenter="showArrow(this, 's3-t1')" onmouseleave="hideArrow('s3-t1')">0x100er-Schritten</span> (0x1100, 0x1200, 0x1300, …).
+                            2^(16 − <strong id="s2-tbits" class="connection-target connection-trigger text-purple-400 inline-block px-1 rounded" data-step="1" data-hint-text="8 Host-Bits im Hextet" onmouseenter="showArrowBottom(this, 's1-tbits')" onmouseleave="hideArrow('s1-tbits')">8</strong>) = 2^8 = 256 = <strong id="s2-t1" class="connection-target connection-trigger bg-brand-900/40 text-brand-300 px-1.5 py-0.5 rounded border border-brand-500/30 inline-block mx-1 font-mono" data-step="2" data-hint-text="Schrittweite = 0x100 (für Netzsuche)" onmouseenter="showArrow(this, 's3-t1,s4-tmagic')" onmouseleave="hideArrow('s3-t1,s4-tmagic')">0x100</strong>.<br>
+                            Unsere Subnetze springen im 4. Hextet also in <span class="connection-trigger text-white font-semibold" data-step="2" data-hint-text="0x100er-Schritte" onmouseenter="showArrow(this, 's3-t1')" onmouseleave="hideArrow('s3-t1')">0x100er-Schritten</span> (0x1100, 0x1200, 0x1300, …).
                         </div>
                     </div>
 
@@ -375,9 +623,9 @@
                         <p class="text-gray-300 mb-3 text-sm">Nutze die <strong>Schrittweite aus Schritt 2</strong> und schau dir den Hextet-Wert deiner IP an. Runde ihn auf das nächstkleinere Vielfache der Schrittweite <em>ab</em>.</p>
                         <div class="bg-kde-surface p-4 rounded border border-kde-windowBorder text-sm shadow-inner leading-relaxed">
                             <span class="font-semibold text-gray-400 uppercase text-[10px] tracking-wider block mb-1">Unser Beispiel:</span>
-                            Die IP ist 2001:db8:abcd:<strong id="s3-tip" class="connection-target connection-trigger text-yellow-400 font-bold inline-block px-1 rounded font-mono" onmouseenter="showArrowBottom(this, 's0-tip')" onmouseleave="hideArrow('s0-tip')">1234</strong>::1.<br>
-                            Welches Vielfache von <strong id="s3-t1" class="connection-target connection-trigger text-brand-400 inline-block px-1 rounded font-mono" onmouseenter="showArrowBottom(this, 's2-t1')" onmouseleave="hideArrow('s2-t1')">0x100</strong> ist kleiner oder gleich <span class="text-yellow-400 font-bold font-mono">0x1234</span>? Das ist <span class="text-blue-400 font-bold font-mono">0x1200</span>.<br>
-                            Das Netz, das wir für den nächsten Schritt festhalten, ist also <strong id="s3-t2" class="connection-target connection-trigger bg-blue-900/30 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/30 inline-block mx-1 font-mono" onmouseenter="showArrow(this, 's4-t1,s5-t1')" onmouseleave="hideArrow('s4-t1,s5-t1')">2001:db8:abcd:1200::/56</strong>.
+                            Die IP ist 2001:db8:abcd:<strong id="s3-tip" class="connection-target connection-trigger text-yellow-400 font-bold inline-block px-1 rounded font-mono" data-step="3" data-hint-text="0x1234 (IP-Hextet)" onmouseenter="showArrowBottom(this, 's0-tip')" onmouseleave="hideArrow('s0-tip')">1234</strong>::1.<br>
+                            Welches Vielfache von <strong id="s3-t1" class="connection-target connection-trigger text-brand-400 inline-block px-1 rounded font-mono" data-step="3" data-hint-text="Schrittweite = 0x100 (für Netzsuche)" onmouseenter="showArrowBottom(this, 's2-t1')" onmouseleave="hideArrow('s2-t1')">0x100</strong> ist kleiner oder gleich <span class="text-yellow-400 font-bold font-mono">0x1234</span>? Das ist <span class="text-blue-400 font-bold font-mono">0x1200</span>.<br>
+                            Das Netz, das wir für den nächsten Schritt festhalten, ist also <strong id="s3-t2" class="connection-target connection-trigger bg-blue-900/30 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/30 inline-block mx-1 font-mono" data-step="3" data-hint-text="Netzwerk: 2001:db8:abcd:1200::/56" onmouseenter="showArrow(this, 's4-t1,s5-t1')" onmouseleave="hideArrow('s4-t1,s5-t1')">2001:db8:abcd:1200::/56</strong>.
                         </div>
                     </div>
 
@@ -393,10 +641,10 @@
                         <p class="text-gray-300 mb-3 text-sm">Addiere die <strong>Schrittweite</strong> auf das Netz – das ist der Start des <em>nächsten</em> Subnetzes. Eins davor ist das letzte Hextet unseres Blocks. Der Rest wird mit <code class="text-red-300">ffff</code> aufgefüllt.</p>
                         <div class="bg-kde-surface p-4 rounded border border-kde-windowBorder text-sm shadow-inner leading-relaxed">
                             <span class="font-semibold text-gray-400 uppercase text-[10px] tracking-wider block mb-1">Unser Beispiel:</span>
-                            Unser Block startet bei <strong id="s4-t1" class="connection-target connection-trigger text-blue-400 inline-block px-1 rounded font-mono" onmouseenter="showArrowBottom(this, 's3-t2')" onmouseleave="hideArrow('s3-t2')">0x1200</strong>.<br>
-                            Das nächste Netz startet bei <span class="text-blue-400 font-bold font-mono">0x1200</span> + <strong id="s4-tmagic" class="connection-target connection-trigger text-brand-300 inline-block px-1 rounded font-mono" onmouseenter="showArrowBottom(this, 's2-t1')" onmouseleave="hideArrow('s2-t1')">0x100</strong> = <span class="text-orange-400 font-bold font-mono">0x1300</span>.<br>
+                            Unser Block startet bei <strong id="s4-t1" class="connection-target connection-trigger text-blue-400 inline-block px-1 rounded font-mono" data-step="3" data-hint-text="Netzwerk: 2001:db8:abcd:1200::/56" onmouseenter="showArrowBottom(this, 's3-t2')" onmouseleave="hideArrow('s3-t2')">0x1200</strong>.<br>
+                            Das nächste Netz startet bei <span class="text-blue-400 font-bold font-mono">0x1200</span> + <strong id="s4-tmagic" class="connection-target connection-trigger text-brand-300 inline-block px-1 rounded font-mono" data-step="4" data-hint-text="Schrittweite = 0x100 (für Broadcast-Ende)" onmouseenter="showArrowBottom(this, 's2-t1')" onmouseleave="hideArrow('s2-t1')">0x100</strong> = <span class="text-orange-400 font-bold font-mono">0x1300</span>.<br>
                             Eins davor: <span class="text-orange-400 font-bold font-mono">0x1300</span> − 1 = <span class="text-red-400 font-bold font-mono">0x12ff</span>.<br>
-                            Die letzte Adresse lautet <strong id="s4-t2" class="connection-target connection-trigger bg-red-900/30 text-red-300 px-1.5 py-0.5 rounded border border-red-500/30 inline-block mx-1 font-mono" onmouseenter="showArrow(this, 's5-t2')" onmouseleave="hideArrow('s5-t2')">2001:db8:abcd:12ff:ffff:ffff:ffff:ffff</strong>.
+                            Die letzte Adresse lautet <strong id="s4-t2" class="connection-target connection-trigger bg-red-900/30 text-red-300 px-1.5 py-0.5 rounded border border-red-500/30 inline-block mx-1 font-mono" data-step="4" data-hint-text="Letzte Adresse: …:12ff:ffff:ffff:ffff:ffff" onmouseenter="showArrow(this, 's5-t2')" onmouseleave="hideArrow('s5-t2')">2001:db8:abcd:12ff:ffff:ffff:ffff:ffff</strong>.
                         </div>
                     </div>
 
@@ -412,9 +660,9 @@
                         <p class="text-gray-300 mb-3 text-sm">Damit hast du den kompletten Bereich. <strong class="text-red-300">Aber Achtung:</strong> IPv6 kennt <em>keine Broadcast-Adresse</em> – Multicast übernimmt diese Aufgabe.</p>
                         <div class="bg-kde-surface p-4 rounded border border-kde-windowBorder text-sm shadow-inner leading-relaxed">
                             <span class="font-semibold text-gray-400 uppercase text-[10px] tracking-wider block mb-1">Unser Beispiel:</span>
-                            <strong>Netzwerk:</strong> <span id="s5-net-ref" class="connection-trigger connection-target text-blue-300 font-mono" onmouseenter="showArrowBottom(this, 's3-t2')" onmouseleave="hideArrow('s3-t2')">2001:db8:abcd:1200::</span> <span class="text-gray-500">(als Subnet-Router-Anycast reserviert)</span><br>
-                            <strong>Erste nutzbare IP:</strong> Netz + 1 &rarr; <strong id="s5-t1" class="connection-target connection-trigger text-white font-mono inline-block px-1 rounded" onmouseenter="showArrowBottom(this, 's3-t2')" onmouseleave="hideArrow('s3-t2')">2001:db8:abcd:1200::</strong> + 1 = <strong class="text-blue-300 font-mono">2001:db8:abcd:1200::1</strong><br>
-                            <strong>Letzte IP:</strong> <strong id="s5-t2" class="connection-target connection-trigger text-white font-mono inline-block px-1 rounded" onmouseenter="showArrowBottom(this, 's4-t2')" onmouseleave="hideArrow('s4-t2')">2001:db8:abcd:12ff:ffff:ffff:ffff:ffff</strong> <span class="text-gray-500">(voll nutzbar – kein Broadcast!)</span>
+                            <strong>Netzwerk:</strong> <span id="s5-net-ref" class="connection-trigger connection-target text-blue-300 font-mono" data-step="3" data-hint-text="Netzwerk: 2001:db8:abcd:1200::/56" onmouseenter="showArrowBottom(this, 's3-t2')" onmouseleave="hideArrow('s3-t2')">2001:db8:abcd:1200::</span> <span class="text-gray-500">(als Subnet-Router-Anycast reserviert)</span><br>
+                            <strong>Erste nutzbare IP:</strong> Netz + 1 &rarr; <strong id="s5-t1" class="connection-target connection-trigger text-white font-mono inline-block px-1 rounded" data-step="5" data-hint-text="Erste IP: 2001:db8:abcd:1200::1" onmouseenter="showArrowBottom(this, 's3-t2')" onmouseleave="hideArrow('s3-t2')">2001:db8:abcd:1200::</strong> + 1 = <strong class="text-blue-300 font-mono">2001:db8:abcd:1200::1</strong><br>
+                            <strong>Letzte IP:</strong> <strong id="s5-t2" class="connection-target connection-trigger text-white font-mono inline-block px-1 rounded" data-step="5" data-hint-text="Letzte IP: …:12ff:ffff:ffff:ffff:ffff" onmouseenter="showArrowBottom(this, 's4-t2')" onmouseleave="hideArrow('s4-t2')">2001:db8:abcd:12ff:ffff:ffff:ffff:ffff</strong> <span class="text-gray-500">(voll nutzbar – kein Broadcast!)</span>
                         </div>
                     </div>
 
@@ -972,27 +1220,19 @@
             return regex.test(str);
         }
 
-        /**
-         * Parst eine IPv6-Adresse (mit oder ohne ::, mit optionalem eingebetteten IPv4)
-         * und liefert ein Array aus 8 Zahlen (0..65535) oder null.
-         */
         function parseIPv6(input) {
             if (typeof input !== 'string') return null;
             let str = input.trim();
             if (str === '') return null;
 
-            // Klammern entfernen (z.B. [::1])
             if (str.startsWith('[') && str.endsWith(']')) str = str.slice(1, -1);
-            // Zone-Index entfernen (fe80::1%eth0)
             const pctIdx = str.indexOf('%');
             if (pctIdx !== -1) str = str.substring(0, pctIdx);
-            // Präfix abschneiden, falls mitgegeben
             const slashIdx = str.indexOf('/');
             if (slashIdx !== -1) str = str.substring(0, slashIdx);
 
             if (str === '') return null;
 
-            // Eingebettete IPv4-Schreibweise auflösen
             if (str.indexOf('.') !== -1) {
                 const lastColon = str.lastIndexOf(':');
                 if (lastColon === -1) return null;
@@ -1031,12 +1271,10 @@
             return hextets;
         }
 
-        /** 8 Hextets -> 8 vierstellige Hex-Blöcke, mit : verbunden */
         function expandIPv6(hextets) {
             return hextets.map(h => h.toString(16).padStart(4, '0')).join(':');
         }
 
-        /** 8 Hextets -> kürzeste Schreibweise mit :: */
         function compressIPv6(hextets) {
             const parts = hextets.map(h => h.toString(16));
 
@@ -1060,13 +1298,11 @@
             return before + '::' + after;
         }
 
-        /** Normalisiert eine Adresse für den Vergleich (voll ausgeschrieben) */
         function normalizeIPv6(str) {
             const p = parseIPv6(str);
             return p ? p.join(':') : null;
         }
 
-        /** Erhöht das letzte Hextet um 1 (mit Carry) */
         function incrementHextets(hextets) {
             const out = hextets.slice();
             for (let i = 7; i >= 0; i--) {
@@ -1190,7 +1426,6 @@
             document.getElementById('hex-ip').innerHTML = toHexNibbleString(details.hextets, prefix);
             document.getElementById('hex-mask').innerHTML = toHexNibbleString(details.maskHextets, prefix);
 
-            // Erklärung
             const hextetNames = ['1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.'];
             let html = '';
             html += `<p><strong>1. Präfix:</strong> /${prefix} bedeutet <strong class="text-white">${prefix}</strong> Netz-Bits und <strong class="text-white">${128 - prefix}</strong> Host-Bits.</p>`;
@@ -1225,7 +1460,6 @@
         function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
         function generateNewQuiz() {
-            // Präfixe, bei denen es immer ein "interessantes Hextet" gibt
             const prefixPool = [40, 44, 44, 52, 56, 56, 56, 56, 60, 60];
             const prefix = prefixPool[getRandomInt(0, prefixPool.length - 1)];
 
@@ -1264,7 +1498,6 @@
             if (!currentQuiz) return;
             let allCorrect = true;
 
-            // Adressvergleich normalisiert
             function checkAddress(id, correctFull) {
                 const el = document.getElementById(id);
                 if (!el) return;
@@ -1282,7 +1515,6 @@
             checkAddress('q-first', currentQuiz.firstHextets.join(':'));
             checkAddress('q-last', currentQuiz.lastHextets.join(':'));
 
-            // Anzahl /64-Subnetze
             const countEl = document.getElementById('q-count');
             if (countEl) {
                 countEl.classList.remove('correct-input', 'wrong-input');
@@ -1566,7 +1798,12 @@
             if (svg && !svg.classList.contains('hidden')) {
                 document.querySelectorAll('.target-active').forEach(el => el.classList.remove('target-active'));
                 svg.classList.add('hidden');
+                removeFloatingHint();
             }
+        });
+
+        window.addEventListener('resize', () => {
+            removeFloatingHint();
         });
 
         window.onload = () => {

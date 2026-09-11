@@ -224,6 +224,7 @@
 '    <\/div>\r\n';
 
         html += '    <script>\r\n' +
+'        window.kdeDesktopApps = [];\r\n' +
 '        function closeSTerminal() {\r\n' +
 '            try {\r\n' +
 '                if (window.parent && window.parent !== window) {\r\n' +
@@ -316,18 +317,16 @@
 '            \r\n' +
 '            const fallbackRegistry = {\r\n' +
 '                "apps": [\r\n' +
-'                    "fireFox",\r\n' +
-'                    "kate",\r\n' +
-'                    "kcalc",\r\n' +
-'                    "lyricsEditorApp",\r\n' +
-'                    "lyricseditor",\r\n' +
-'                    "radioPlayer",\r\n' +
-'                    "subnets",\r\n' +
-'                    "ipv6",\r\n' +
-'                    "wiso",\r\n' +
-'                    "wikipedia"\r\n' +
+'                    "textureEditor",\r\n' +
+'                    "blackjack",\r\n' +
+'                    "calculator",\r\n' +
+'                    "textEditor",\r\n' +
+'                    "fileBrowser",\r\n' +
+'                    "viona",\r\n' +
+'                    "quiz",\r\n' +
+'                    "blackboard"\r\n' +
 '                ],\r\n' +
-'                "desktop": ["wiso", "subnets", "ipv6", "kcalc", "kate"]\r\n' +
+'                "desktop": ["ipv4", "wiso", "ipv6", "netsim"]\r\n' +
 '            };\r\n' +
 '\r\n' +
 '            const possiblePaths = [\r\n' +
@@ -343,7 +342,7 @@
 '                        const response = await fetch(path);\r\n' +
 '                        if (response.ok) {\r\n' +
 '                            const data = await response.json();\r\n' +
-'                            if (data && data.apps) {\r\n' +
+'                            if (data && (data.apps || data.desktop)) {\r\n' +
 '                                return data;\r\n' +
 '                            }\r\n' +
 '                        }\r\n' +
@@ -353,9 +352,10 @@
 '            }\r\n' +
 '\r\n' +
 '            loadRegistry().then(registry => {\r\n' +
-'                availableApps = registry.apps || [];\r\n' +
+'                availableApps = registry.apps || fallbackRegistry.apps;\r\n' +
+'                window.kdeDesktopApps = registry.desktop || fallbackRegistry.desktop;\r\n' +
 '                renderAppList(availableApps);\r\n' +
-'                renderDesktopIcons(registry.desktop || []);\r\n' +
+'                renderDesktopIcons(window.kdeDesktopApps);\r\n' +
 '            });\r\n' +
 '        });\r\n' +
 '\r\n' +
@@ -443,26 +443,38 @@
 '            \'lyricsEditorApp\': { width: 1000, height: 650, maxizable: true },\r\n' +
 '            \'lyricseditor\': { width: 1000, height: 650, maxizable: true },\r\n' +
 '            \'radioPlayer\': { width: 460, height: 600, maxizable: false },\r\n' +
-'            \'ipv4\': { width: 1000, height: 700, maxizable: true, url: \'packages/desktop/IPv4.html\' },\r\n' +
-'            \'ipv6\': { width: 1000, height: 700, maxizable: true, url: \'packages/desktop/IPv6.html\' },\r\n' +
-'            \'wiso\': { width: 1200, height: 800, maxizable: true, url: \'packages/desktop/wiso.html\' },\r\n' +
-'            \'wikipedia\': { width: 920, height: 660, maxizable: true }\r\n' +
+'            \'wikipedia\': { width: 920, height: 660, maxizable: true },\r\n' +
+'            \'ipv4\': { width: 1000, height: 700, maxizable: true },\r\n' +
+'            \'ipv6\': { width: 1000, height: 700, maxizable: true },\r\n' +
+'            \'wiso\': { width: 1200, height: 800, maxizable: true },\r\n' +
+'            \'netsim\': { width: 1200, height: 800, maxizable: true }\r\n' +
 '        };\r\n' +
 '\r\n' +
 '        // Build a list of candidate paths for an HTML app file.\r\n' +
-'        // The wrapper will test each one with a HEAD request and use the\r\n' +
-'        // first that returns OK.\r\n' +
 '        function htmlAppCandidates(appName, primaryUrl) {\r\n' +
-'            const list = [\r\n' +
-'                primaryUrl,\r\n' +
-'                `packages/desktop/${appName}.html`,\r\n' +
-'                `packages/desktop/${appName.charAt(0).toUpperCase() + appName.slice(1)}.html`,\r\n' +
-'                `../desktop/${appName}.html`,\r\n' +
-'                `../desktop/${appName.charAt(0).toUpperCase() + appName.slice(1)}.html`,\r\n' +
-'                `./${appName}.html`,\r\n' +
-'                `${appName}.html`\r\n' +
-'            ].filter(Boolean);\r\n' +
-'            return list.filter((v, i, a) => a.indexOf(v) === i);\r\n' +
+'            // Prioritize correctly cased variants so dev servers don\'t return an empty fallback 200 OK\r\n' +
+'            const variations = Array.from(new Set([\r\n' +
+'                appName.replace(/netsim/i, \'SimNet\'),\r\n' +
+'                appName.replace(/netsim/i, \'NetSim\'),\r\n' +
+'                appName.replace(/^ipv/i, \'IPv\'),\r\n' +
+'                appName.toLowerCase() === \'wiso\' ? \'WISO\' : appName,\r\n' +
+'                appName,\r\n' +
+'                appName.charAt(0).toUpperCase() + appName.slice(1),\r\n' +
+'                appName.toLowerCase(),\r\n' +
+'                appName.toUpperCase()\r\n' +
+'            ]));\r\n' +
+'\r\n' +
+'            const list = primaryUrl ? [primaryUrl] : [];\r\n' +
+'            variations.forEach(v => {\r\n' +
+'                if (v) {\r\n' +
+'                    list.push(`packages/desktop/${v}.html`);\r\n' +
+'                    list.push(`../desktop/${v}.html`);\r\n' +
+'                    list.push(`./${v}.html`);\r\n' +
+'                    list.push(`${v}.html`);\r\n' +
+'                }\r\n' +
+'            });\r\n' +
+'            \r\n' +
+'            return list.filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);\r\n' +
 '        }\r\n' +
 '\r\n' +
 '        async function findFirstExistingHtml(candidates) {\r\n' +
@@ -522,19 +534,21 @@
 '                const winDiv = document.createElement(\'div\');\r\n' +
 '                winDiv.id = winId;\r\n' +
 '                \r\n' +
-'                let config = appConfig[appName];\r\n' +
+'                let config = appConfig[appName.toLowerCase()] || appConfig[appName];\r\n' +
 '                let isHtmlApp = false;\r\n' +
 '                let htmlUrl = \'\';\r\n' +
 '\r\n' +
-'                if (config && config.url) {\r\n' +
+'                // Dynamically resolve Desktop apps as HTML apps based on registry\r\n' +
+'                if (window.kdeDesktopApps && window.kdeDesktopApps.includes(appName)) {\r\n' +
 '                    isHtmlApp = true;\r\n' +
-'                    htmlUrl = config.url;\r\n' +
+'                    htmlUrl = `packages/desktop/${appName}.html`;\r\n' +
+'                    if (!config) config = { width: 1000, height: 700, maxizable: true };\r\n' +
 '                } else if (appName.toLowerCase().endsWith(\'.html\')) {\r\n' +
 '                    isHtmlApp = true;\r\n' +
 '                    htmlUrl = `packages/desktop/${appName}`;\r\n' +
-'                    config = { width: 1000, height: 700, maxizable: true };\r\n' +
+'                    if (!config) config = { width: 1000, height: 700, maxizable: true };\r\n' +
 '                } else {\r\n' +
-'                    config = config || { width: 800, height: 540, maxizable: true };\r\n' +
+'                    if (!config) config = { width: 800, height: 540, maxizable: true };\r\n' +
 '                }\r\n' +
 '                \r\n' +
 '                const winClasses = \'window absolute bg-kde-window-bg border border-kde-window-border rounded-lg shadow-2xl flex flex-col overflow-hidden transition-transform duration-100 ease-out pointer-events-auto\';\r\n' +
