@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ampel Code Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Noto Sans', 'sans-serif'], mono: ['Courier New', 'monospace'] },
+                    colors: {
+                        brand: { 300: '#54b6ec', 400: '#3daee9', 500: '#1b92d2', 600: '#1575a8', 900: '#0a3a54' }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        html, body { font-family: 'Noto Sans', sans-serif; background: #1a1b1e; color: #eff0f1; overscroll-behavior: none; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1a1b1e; }
+        ::-webkit-scrollbar-thumb { background: #4d5157; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6c7178; }
+
+        .block-palette-item {
+            background: #232629; border: 1px solid #31363b; border-left: 4px solid var(--b-color);
+            border-radius: 6px; padding: 8px 12px; margin-bottom: 8px;
+            font-size: 11px; font-weight: 600; cursor: grab;
+            display: flex; align-items: center; gap: 8px;
+            transition: transform 0.1s, box-shadow 0.1s; user-select: none;
+        }
+        .block-palette-item:hover { transform: translateX(2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .block-palette-item:active { cursor: grabbing; }
+
+        .workspace-block {
+            background: #232629; border: 1px solid #31363b; border-left: 6px solid var(--b-color);
+            border-radius: 8px; padding: 10px 14px; margin-bottom: 8px;
+            display: flex; flex-direction: column; align-items: stretch; gap: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: grab; user-select: none;
+            transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s; position: relative;
+        }
+        .workspace-block:active { cursor: grabbing; }
+        .workspace-block.active-run {
+            border-color: #facc15;
+            box-shadow: 0 0 0 2px rgba(250,204,21,0.4), 0 4px 20px rgba(250,204,21,0.2);
+            transform: scale(1.02); z-index: 10;
+        }
+        
+        /* Drag and Drop visual feedback */
+        .drag-over { border-top: 3px solid #3daee9; margin-top: 24px; }
+        .nested-blocks {
+            background: rgba(0,0,0,0.2); border: 2px dashed rgba(255,255,255,0.1);
+            border-radius: 6px; padding: 8px; margin-top: 4px; min-height: 45px;
+            width: 100%; display: flex; flex-direction: column; gap: 4px;
+        }
+        .nested-blocks.drag-over-bottom {
+            box-shadow: inset 0 -3px 0 0 #3daee9; background: rgba(61,174,233,0.1);
+        }
+
+        .block-input {
+            background: #15161a; border: 1px solid #31363b; border-radius: 4px;
+            padding: 2px 6px; font-size: 11px; color: white; outline: none;
+        }
+        
+        .ampel-body {
+            background: #111; border: 4px solid #333; border-radius: 20px;
+            padding: 15px; display: inline-flex; flex-direction: column; gap: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 15px rgba(255,255,255,0.1);
+        }
+        .ampel-light {
+            width: 50px; height: 50px; border-radius: 50%; background: #222;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8); transition: all 0.1s ease;
+            position: relative;
+        }
+        .ampel-light::after {
+            content: ''; position: absolute; top: 10%; left: 20%; width: 60%; height: 30%;
+            background: linear-gradient(rgba(255,255,255,0.4), transparent); border-radius: 50%; pointer-events: none;
+        }
+        .ampel-light.red.on { background: #ff2a2a; box-shadow: 0 0 30px #ff2a2a, inset 0 0 15px #ff8888; }
+        .ampel-light.yellow.on { background: #ffcc00; box-shadow: 0 0 30px #ffcc00, inset 0 0 15px #ffee88; }
+        .ampel-light.green.on { background: #00e600; box-shadow: 0 0 30px #00e600, inset 0 0 15px #88ff88; }
+
+        .log-entry { font-size: 11px; padding: 4px 8px; border-left: 2px solid; border-radius: 3px; margin-bottom: 4px; animation: log-in 0.2s ease-out; }
+        @keyframes log-in { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
+        .log-info { border-color: #3daee9; background: rgba(61,174,233,0.08); color: #b4e1f7; }
+        .log-error { border-color: #ef4444; background: rgba(239,68,68,0.08); color: #fca5a5; }
+        .log-warn { border-color: #facc15; background: rgba(250,204,21,0.08); color: #fef08a; }
+
+        .toast {
+            position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-20px);
+            opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.2, 1, 0.3, 1); z-index: 9999;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col">
+
+    <header class="bg-[#31363b] border-b border-[#1d2023] shadow-md z-40 flex-shrink-0">
+        <div class="max-w-[1700px] mx-auto px-4 h-14 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-green-900/40 border border-green-500/40 flex items-center justify-center">
+                    <i class="fa-solid fa-traffic-light text-green-400 text-sm"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm font-semibold text-white leading-none">Ampel Code</h1>
+                    <p class="text-[10px] text-gray-400 mt-0.5">Visuelle Programmierung & Logik</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button onclick="loadRandomPuzzle()" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/30 transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-puzzle-piece"></i> Rätsel
+                </button>
+                <div class="h-6 w-px bg-gray-600"></div>
+                <button id="btn-run" onclick="runCode()" class="px-4 py-1.5 rounded-md text-xs font-bold bg-green-600 hover:bg-green-500 text-white transition-colors flex items-center gap-2 shadow-lg shadow-green-900/50">
+                    <i class="fa-solid fa-play"></i> Ausführen
+                </button>
+                <button id="btn-stop" onclick="stopCode()" class="hidden px-4 py-1.5 rounded-md text-xs font-bold bg-red-600 hover:bg-red-500 text-white transition-colors flex items-center gap-2 shadow-lg shadow-red-900/50">
+                    <i class="fa-solid fa-stop"></i> Stopp
+                </button>
+                <button onclick="clearWorkspace()" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-gray-700 hover:bg-gray-600 text-white transition-colors" title="Alles löschen">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-[1700px] w-full mx-auto p-4 flex gap-4 overflow-hidden h-full">
+        
+        <!-- Left Sidebar: Palette -->
+        <aside class="w-64 flex flex-col gap-4 flex-shrink-0 overflow-y-auto">
+            <div class="bg-[#31363b] rounded-lg border border-[#1d2023] p-3 shadow">
+                <h2 class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Aktion</h2>
+                <div class="space-y-2">
+                    <div class="block-palette-item" draggable="true" data-type="light" style="--b-color: #3b82f6;" ondragstart="handleDragStartPalette(event)">
+                        <i class="fa-regular fa-lightbulb w-4 text-center text-blue-400"></i> Licht schalten
+                    </div>
+                </div>
+
+                <h2 class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3 mt-6">Steuerung</h2>
+                <div class="space-y-2">
+                    <div class="block-palette-item" draggable="true" data-type="wait" style="--b-color: #f59e0b;" ondragstart="handleDragStartPalette(event)">
+                        <i class="fa-regular fa-clock w-4 text-center text-yellow-400"></i> Warten
+                    </div>
+                    <div class="block-palette-item" draggable="true" data-type="loop" style="--b-color: #a855f7;" ondragstart="handleDragStartPalette(event)">
+                        <i class="fa-solid fa-rotate-right w-4 text-center text-purple-400"></i> Endlosschleife
+                    </div>
+                </div>
+                
+                <h2 class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3 mt-6">Logik</h2>
+                <div class="space-y-2">
+                    <div class="block-palette-item" draggable="true" data-type="if" style="--b-color: #10b981;" ondragstart="handleDragStartPalette(event)">
+                        <i class="fa-solid fa-code-branch w-4 text-center text-emerald-400"></i> Wenn ... dann
+                    </div>
+                    <div class="block-palette-item" draggable="true" data-type="ifelse" style="--b-color: #059669;" ondragstart="handleDragStartPalette(event)">
+                        <i class="fa-solid fa-code-branch w-4 text-center text-emerald-500"></i> Wenn ... sonst
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-[#31363b] rounded-lg border border-[#1d2023] p-3 shadow mt-auto text-xs text-gray-400">
+                <i class="fa-solid fa-circle-info text-brand-400"></i> Ziehe Blöcke in die Mitte, um ein Programm zu bauen.
+            </div>
+        </aside>
+
+        <!-- Center: Workspace -->
+        <section class="flex-grow flex flex-col relative bg-[#15161a] rounded-lg border border-[#1d2023] shadow-inner overflow-hidden">
+            <!-- Puzzle Overlay Header -->
+            <div id="puzzle-header" class="hidden bg-yellow-500/10 border-b border-yellow-500/20 px-4 py-3 flex flex-col relative z-20 shadow-md backdrop-blur-sm">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 id="puzzle-title" class="font-bold text-yellow-400 text-sm mb-1"></h3>
+                        <p id="puzzle-desc" class="text-xs text-gray-200"></p>
+                    </div>
+                    <button onclick="closePuzzle()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+
+            <div class="workspace-area flex-grow p-4 relative overflow-y-auto" id="workspace-container">
+                <div id="workspace-blocks" class="workspace-blocks min-h-full pb-32">
+                    <!-- Blocks will be injected here -->
+                </div>
+                
+                <div id="workspace-empty" class="absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity">
+                    <div class="text-center text-gray-600">
+                        <i class="fa-solid fa-download text-4xl mb-3 opacity-50"></i>
+                        <p class="text-sm font-semibold">Programm hier ablegen</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Sidebar: Output & Ampel -->
+        <aside class="w-72 flex flex-col gap-4 flex-shrink-0">
+            <!-- Traffic Light Display -->
+            <div class="bg-[#31363b] rounded-lg border border-[#1d2023] p-6 flex justify-center shadow-lg relative">
+                <div class="absolute top-2 left-2 flex items-center gap-2">
+                    <div id="status-indicator" class="text-[10px] font-mono text-gray-400 bg-black/40 px-2 py-1 rounded flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-gray-500"></span> Bereit
+                    </div>
+                </div>
+
+                <div class="ampel-body mt-4">
+                    <div class="ampel-light red" id="light-red"></div>
+                    <div class="ampel-light yellow" id="light-yellow"></div>
+                    <div class="ampel-light green" id="light-green"></div>
+                </div>
+            </div>
+
+            <!-- Execution Log -->
+            <div class="bg-[#31363b] rounded-lg border border-[#1d2023] p-3 shadow flex-grow flex flex-col min-h-0">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Ablaufprotokoll</h2>
+                    <button onclick="clearLog()" class="text-gray-500 hover:text-brand-400"><i class="fa-solid fa-eraser text-xs"></i></button>
+                </div>
+                <div id="log-container" class="flex-grow overflow-y-auto pr-1"></div>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast bg-[#31363b] border border-green-500/50 shadow-2xl rounded-lg px-4 py-2.5 flex items-center gap-3">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-green-400 text-lg"></i>
+        <div>
+            <p class="text-[12px] font-bold text-white leading-tight" id="toast-title">Erfolg</p>
+            <p class="text-[10px] text-gray-400 leading-tight mt-0.5" id="toast-text"></p>
+        </div>
+    </div>
+
+    <script>
+        let blockCounter = 0;
+        let isRunning = false;
+        let abortController = null;
+        let draggedItem = null;
+        let dragSource = null; 
+        let ampelState = { red: false, yellow: false, green: false };
+        let executionHistory = []; 
+
+        class RestartLoopError extends Error {}
+
+        const COND_HTML = `
+            <select class="block-input sel-cond font-semibold bg-gray-800 border-gray-600">
+                <option value="red_on" class="text-red-400">Rot ist AN</option>
+                <option value="red_off" class="text-gray-400">Rot ist AUS</option>
+                <option value="yellow_on" class="text-yellow-400">Gelb ist AN</option>
+                <option value="yellow_off" class="text-gray-400">Gelb ist AUS</option>
+                <option value="green_on" class="text-green-400">Grün ist AN</option>
+                <option value="green_off" class="text-gray-400">Grün ist AUS</option>
+                <option value="any_on">Irgendeine an</option>
+                <option value="all_off">Alle aus</option>
+            </select>
+        `;
+
+        const BLOCKS = {
+            light: {
+                color: '#3b82f6', icon: 'fa-lightbulb', name: 'Licht',
+                html: `
+                    <select class="block-input sel-color font-semibold w-20">
+                        <option value="red" class="text-red-400">Rot</option>
+                        <option value="yellow" class="text-yellow-400">Gelb</option>
+                        <option value="green" class="text-green-400">Grün</option>
+                    </select>
+                    <span class="text-xs">schalten auf</span>
+                    <select class="block-input sel-state font-semibold w-16">
+                        <option value="on" class="text-green-400">AN</option>
+                        <option value="off" class="text-gray-400">AUS</option>
+                    </select>
+                `
+            },
+            wait: {
+                color: '#f59e0b', icon: 'fa-clock', name: 'Warten',
+                html: `
+                    <span class="text-xs">Warte</span>
+                    <input type="number" class="block-input inp-time w-16 text-center" value="1" min="0.1" step="0.1">
+                    <span class="text-xs">Sekunden</span>
+                `
+            },
+            loop: {
+                color: '#a855f7', icon: 'fa-rotate-right', name: 'Endlosschleife',
+                html: `<span class="font-semibold text-xs">Wiederhole von vorne (Endlos)</span>`
+            },
+            if: {
+                color: '#10b981', icon: 'fa-code-branch', name: 'Wenn',
+                html: `<span class="font-semibold text-xs">Wenn</span> ${COND_HTML} <span class="font-semibold text-xs">dann:</span>`,
+                nestedHtml: `<div class="workspace-blocks nested-blocks w-full"></div>`
+            },
+            ifelse: {
+                color: '#059669', icon: 'fa-code-branch', name: 'Wenn / Sonst',
+                html: `<span class="font-semibold text-xs">Wenn</span> ${COND_HTML} <span class="font-semibold text-xs">dann:</span>`,
+                nestedHtml: `
+                    <div class="workspace-blocks nested-blocks w-full"></div>
+                    <div class="block-header flex items-center flex-wrap gap-2 w-full mt-1">
+                        <span class="font-semibold text-xs">Sonst:</span>
+                    </div>
+                    <div class="workspace-blocks nested-blocks w-full"></div>
+                `
+            }
+        };
+
+        const workspaceContainer = document.getElementById('workspace-container');
+        const mainWorkspaceBlocks = document.getElementById('workspace-blocks');
+        
+        workspaceContainer.addEventListener('dragover', handleDragOverWorkspace);
+        workspaceContainer.addEventListener('drop', handleDropWorkspace);
+        workspaceContainer.addEventListener('dragleave', clearDragOverClasses);
+
+        function handleDragStartPalette(e) {
+            dragSource = 'palette';
+            e.dataTransfer.setData('text/plain', e.target.dataset.type);
+            e.dataTransfer.effectAllowed = 'copy';
+        }
+
+        function handleDragStartWorkspace(e, blockEl) {
+            if (isRunning) { e.preventDefault(); return; }
+            dragSource = 'workspace';
+            draggedItem = blockEl;
+            e.dataTransfer.effectAllowed = 'move';
+            setTimeout(() => blockEl.classList.add('opacity-50', 'border-dashed'), 0);
+        }
+
+        function handleDragEndWorkspace(e, blockEl) {
+            blockEl.classList.remove('opacity-50', 'border-dashed');
+            draggedItem = null;
+            clearDragOverClasses();
+        }
+
+        function handleDragOverWorkspace(e) {
+            if (isRunning) return;
+            const dropZone = e.target.closest('.workspace-blocks');
+            if (!dropZone) return;
+            
+            e.preventDefault();
+            e.stopPropagation(); // VERY IMPORTANT for nested zones
+            e.dataTransfer.dropEffect = dragSource === 'palette' ? 'copy' : 'move';
+            
+            clearDragOverClasses();
+            const target = getDragAfterElement(dropZone, e.clientY);
+            if (target) {
+                target.classList.add('drag-over');
+            } else {
+                dropZone.classList.add('drag-over-bottom');
+            }
+        }
+
+        function clearDragOverClasses() {
+            document.querySelectorAll('.drag-over, .drag-over-bottom').forEach(el => {
+                el.classList.remove('drag-over', 'drag-over-bottom');
+            });
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll(':scope > .workspace-block:not(.opacity-50)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        function handleDropWorkspace(e) {
+            if (isRunning) return;
+            const dropZone = e.target.closest('.workspace-blocks');
+            if (!dropZone) return;
+            
+            e.preventDefault();
+            e.stopPropagation(); // Stop parent containers from also receiving the drop
+            clearDragOverClasses();
+
+            const targetEl = getDragAfterElement(dropZone, e.clientY);
+
+            if (dragSource === 'palette') {
+                const type = e.dataTransfer.getData('text/plain');
+                if (!type || !BLOCKS[type]) return;
+                const newBlock = createWorkspaceBlock(type);
+                if (targetEl) dropZone.insertBefore(newBlock, targetEl);
+                else dropZone.appendChild(newBlock);
+            } else if (dragSource === 'workspace' && draggedItem) {
+                // Prevent dropping a block inside itself!
+                if (draggedItem.contains(dropZone)) {
+                    toast('Fehler', 'Block kann nicht in sich selbst verschachtelt werden.', 'error');
+                    return;
+                }
+                if (targetEl) dropZone.insertBefore(draggedItem, targetEl);
+                else dropZone.appendChild(draggedItem);
+            }
+            updateWorkspaceEmptyState();
+        }
+
+        function createWorkspaceBlock(type) {
+            const def = BLOCKS[type];
+            const block = document.createElement('div');
+            block.className = 'workspace-block';
+            block.style.setProperty('--b-color', def.color);
+            block.dataset.type = type;
+            block.dataset.id = 'blk_' + (++blockCounter);
+            block.draggable = true;
+            
+            block.innerHTML = `
+                <div class="block-header flex items-center flex-wrap gap-2 w-full">
+                    <i class="fa-solid ${def.icon} w-4 text-center" style="color: ${def.color}"></i>
+                    ${def.html}
+                    <button class="btn-delete ml-auto text-gray-500 hover:text-red-400 px-2 py-0.5 rounded transition-colors" title="Löschen"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                ${def.nestedHtml || ''}
+            `;
+
+            block.addEventListener('dragstart', (e) => {
+                if (e.target !== block) return; // Prevent children causing drag
+                handleDragStartWorkspace(e, block);
+            });
+            block.addEventListener('dragend', (e) => handleDragEndWorkspace(e, block));
+            
+            const delBtn = block.querySelector('.btn-delete');
+            if (delBtn) {
+                delBtn.addEventListener('click', () => {
+                    if (isRunning) return;
+                    block.remove();
+                    updateWorkspaceEmptyState();
+                });
+            }
+            return block;
+        }
+
+        function updateWorkspaceEmptyState() {
+            const emptyHint = document.getElementById('workspace-empty');
+            if (mainWorkspaceBlocks.children.length === 0) {
+                emptyHint.style.opacity = '1';
+            } else {
+                emptyHint.style.opacity = '0';
+            }
+        }
+
+        function clearWorkspace() {
+            if (isRunning) return;
+            mainWorkspaceBlocks.innerHTML = '';
+            updateWorkspaceEmptyState();
+            log('Arbeitsfläche geleert.', 'warn');
+        }
+
+        const sleep = (ms, signal) => new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(resolve, ms);
+            if (signal) {
+                signal.addEventListener('abort', () => {
+                    clearTimeout(timeoutId);
+                    reject(new DOMException('Aborted', 'AbortError'));
+                });
+            }
+        });
+
+        function evalCondition(cond) {
+            switch(cond) {
+                case 'red_on': return ampelState.red === true;
+                case 'red_off': return ampelState.red === false;
+                case 'yellow_on': return ampelState.yellow === true;
+                case 'yellow_off': return ampelState.yellow === false;
+                case 'green_on': return ampelState.green === true;
+                case 'green_off': return ampelState.green === false;
+                case 'any_on': return ampelState.red || ampelState.yellow || ampelState.green;
+                case 'all_off': return !ampelState.red && !ampelState.yellow && !ampelState.green;
+                default: return false;
+            }
+        }
+
+        async function executeContainer(container, signal) {
+            const blocks = Array.from(container.children).filter(el => el.classList.contains('workspace-block'));
+            for (let i = 0; i < blocks.length; i++) {
+                if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+                
+                const block = blocks[i];
+                document.querySelectorAll('.workspace-block').forEach(b => b.classList.remove('active-run'));
+                block.classList.add('active-run');
+                
+                // Small visual delay to show execution flow
+                await sleep(250, signal);
+
+                const type = block.dataset.type;
+
+                if (type === 'light') {
+                    const colorMap = { 'red': 'Rot', 'yellow': 'Gelb', 'green': 'Grün' };
+                    const color = block.querySelector('.sel-color').value;
+                    const state = block.querySelector('.sel-state').value === 'on';
+                    
+                    setAmpelLight(color, state);
+                    executionHistory.push({...ampelState}); // For puzzle tracking
+                    log(`💡 ${colorMap[color]} ➔ <strong class="${state ? 'text-green-400' : 'text-gray-400'}">${state ? 'AN' : 'AUS'}</strong>`);
+                    
+                } else if (type === 'wait') {
+                    const sec = parseFloat(block.querySelector('.inp-time').value) || 1;
+                    log(`⏳ Warte ${sec}s...`);
+                    await sleep(sec * 1000, signal);
+                    
+                } else if (type === 'loop') {
+                    log(`🔄 Springe zum Anfang der Hauptschleife...`);
+                    throw new RestartLoopError();
+                    
+                } else if (type === 'if' || type === 'ifelse') {
+                    const cond = block.querySelector('.sel-cond').value;
+                    const isTrue = evalCondition(cond);
+                    log(`❓ Prüfe Bedingung: ${isTrue ? 'Wahr' : 'Falsch'}`);
+                    
+                    const nestedContainers = block.querySelectorAll(':scope > .nested-blocks');
+                    if (isTrue && nestedContainers[0]) {
+                        await executeContainer(nestedContainers[0], signal);
+                    } else if (!isTrue && type === 'ifelse' && nestedContainers[1]) {
+                        await executeContainer(nestedContainers[1], signal);
+                    }
+                }
+            }
+        }
+
+        async function runCode() {
+            if (isRunning) return;
+            if (mainWorkspaceBlocks.children.length === 0) {
+                toast('Fehler', 'Keine Blöcke auf der Arbeitsfläche.', 'error');
+                return;
+            }
+
+            isRunning = true;
+            abortController = new AbortController();
+            
+            document.getElementById('btn-run').classList.add('hidden');
+            document.getElementById('btn-stop').classList.remove('hidden');
+            document.getElementById('status-indicator').innerHTML = '<span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Läuft...';
+            
+            resetAmpel();
+            executionHistory = [{...ampelState}];
+            log('▶️ Ausführung gestartet');
+            
+            let loopCounter = 0;
+            let active = true;
+
+            try {
+                while (active && loopCounter++ < 500) {
+                    try {
+                        await executeContainer(mainWorkspaceBlocks, abortController.signal);
+                        active = false; // Program reached the end naturally
+                    } catch (err) {
+                        if (err instanceof RestartLoopError) {
+                            checkPuzzleCompletion();
+                            await sleep(50, abortController.signal);
+                        } else {
+                            throw err; // Abort or other error
+                        }
+                    }
+                }
+                
+                if (loopCounter >= 500) throw new Error("Unendliche Schleife ohne Wartezeit erkannt (Sicherheitsabbruch).");
+                
+                log('✅ Programm beendet.');
+                checkPuzzleCompletion();
+                
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    log('🛑 Manuell gestoppt.', 'warn');
+                } else {
+                    log('❌ Fehler: ' + err.message, 'error');
+                }
+            } finally {
+                isRunning = false;
+                document.querySelectorAll('.workspace-block').forEach(b => b.classList.remove('active-run'));
+                document.getElementById('btn-run').classList.remove('hidden');
+                document.getElementById('btn-stop').classList.add('hidden');
+                document.getElementById('status-indicator').innerHTML = '<span class="w-2 h-2 rounded-full bg-gray-500"></span> Bereit';
+            }
+        }
+
+        function stopCode() {
+            if (abortController) {
+                abortController.abort();
+            }
+        }
+
+        function setAmpelLight(color, isOn) {
+            ampelState[color] = isOn;
+            const el = document.getElementById(`light-${color}`);
+            if (isOn) el.classList.add('on');
+            else el.classList.remove('on');
+        }
+
+        function resetAmpel() {
+            setAmpelLight('red', false);
+            setAmpelLight('yellow', false);
+            setAmpelLight('green', false);
+            executionHistory = [];
+        }
+
+        function log(msg, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const t = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            entry.innerHTML = `<span class="text-gray-500 mr-2">[${t}]</span>${msg}`;
+            const logContainer = document.getElementById('log-container');
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            while (logContainer.children.length > 50) logContainer.removeChild(logContainer.firstChild);
+        }
+
+        function clearLog() {
+            document.getElementById('log-container').innerHTML = '';
+        }
+
+        let toastTimer = null;
+        function toast(title, text, type = 'success') {
+            const el = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-text').innerText = text || '';
+            el.style.borderColor = type === 'error' ? 'rgba(239,68,68,0.5)' : 'rgba(34,197,94,0.5)';
+            icon.className = type === 'error'
+                ? 'fa-solid fa-circle-exclamation text-red-400 text-lg'
+                : 'fa-solid fa-circle-check text-green-400 text-lg';
+            el.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+        }
+
+        const PUZZLES = [
+            {
+                title: "Standard Ampelphase",
+                desc: "Baue die klassische deutsche Ampelfolge: ROT -> ROT+GELB -> GRÜN -> GELB -> ROT. Warte zwischen jeder Phase 1 Sekunde und nutze eine Endlosschleife.",
+                check: (hist) => {
+                    if (hist.length < 5) return false;
+                    const str = hist.map(h => `${h.red?1:0}${h.yellow?1:0}${h.green?1:0}`).join('-');
+                    return str.includes('100-110-001-010-100');
+                }
+            },
+            {
+                title: "Nachtschaltung (Blinken)",
+                desc: "Simuliere eine ausgeschaltete Ampel in der Nacht. Das gelbe Licht soll 1 Sekunde an sein, dann 1 Sekunde aus, immer im Wechsel (Endlosschleife). Rot und Grün bleiben aus.",
+                check: (hist) => {
+                    if (hist.length < 4) return false;
+                    const str = hist.map(h => `${h.red?1:0}${h.yellow?1:0}${h.green?1:0}`).join('-');
+                    return str.includes('010-000-010') || str.includes('000-010-000');
+                }
+            },
+            {
+                title: "Logikschalter",
+                desc: "Schalte GRÜN an. Erstelle dann eine Logik: WENN Grün an ist, schalte Rot an. (Ergebnis: Beide leuchten).",
+                check: (hist) => {
+                    if (hist.length < 2) return false;
+                    return hist[hist.length-1].green === true && hist[hist.length-1].red === true;
+                }
+            }
+        ];
+
+        let activePuzzle = null;
+
+        function loadRandomPuzzle() {
+            if (isRunning) stopCode();
+            activePuzzle = PUZZLES[Math.floor(Math.random() * PUZZLES.length)];
+            
+            document.getElementById('puzzle-title').innerText = `Rätsel: ${activePuzzle.title}`;
+            document.getElementById('puzzle-desc').innerText = activePuzzle.desc;
+            document.getElementById('puzzle-header').classList.remove('hidden');
+            
+            toast('Neues Rätsel', activePuzzle.title, 'info');
+        }
+
+        function closePuzzle() {
+            activePuzzle = null;
+            document.getElementById('puzzle-header').classList.add('hidden');
+        }
+
+        function checkPuzzleCompletion() {
+            if (!activePuzzle) return;
+            if (activePuzzle.check(executionHistory)) {
+                toast('🎉 Gelöst!', 'Du hast das Rätsel erfolgreich absolviert.');
+                log(`🏆 Rätsel gelöst: ${activePuzzle.title}`, 'success');
+                closePuzzle();
+            }
+        }
+
+    </script>
+</body>
+</html>
