@@ -295,7 +295,6 @@
 '                toggleLauncher();\r\n' +
 '            }\r\n' +
 '            \r\n' +
-'            // Click on empty desktop area clears desktop icon selection\r\n' +
 '            if (event.target.id === \'desktop-area\') {\r\n' +
 '                document.querySelectorAll(\'.desktop-icon\').forEach(el => el.classList.remove(\'selected\'));\r\n' +
 '            }\r\n' +
@@ -325,9 +324,10 @@
 '                    "radioPlayer",\r\n' +
 '                    "subnets",\r\n' +
 '                    "ipv6",\r\n' +
+'                    "wiso",\r\n' +
 '                    "wikipedia"\r\n' +
 '                ],\r\n' +
-'                "desktop": ["subnets", "ipv6", "kcalc", "kate"]\r\n' +
+'                "desktop": ["wiso", "subnets", "ipv6", "kcalc", "kate"]\r\n' +
 '            };\r\n' +
 '\r\n' +
 '            const possiblePaths = [\r\n' +
@@ -375,14 +375,12 @@
 '                        <span class="text-white text-xs font-medium text-center drop-shadow-md leading-tight break-words w-full" style="text-shadow: 0 1px 3px rgba(0,0,0,0.8);">${formatAppName(appName)}<\\/span>\r\n' +
 '                    `;\r\n' +
 '                    \r\n' +
-'                    // Double click to launch\r\n' +
 '                    btn.ondblclick = (e) => {\r\n' +
 '                        e.stopPropagation();\r\n' +
 '                        launchApp(appName);\r\n' +
 '                        btn.classList.remove(\'selected\');\r\n' +
 '                    };\r\n' +
 '\r\n' +
-'                    // Single click to select\r\n' +
 '                    btn.onclick = (e) => {\r\n' +
 '                        e.stopPropagation();\r\n' +
 '                        document.querySelectorAll(\'.desktop-icon\').forEach(el => el.classList.remove(\'selected\'));\r\n' +
@@ -445,10 +443,58 @@
 '            \'lyricsEditorApp\': { width: 1000, height: 650, maxizable: true },\r\n' +
 '            \'lyricseditor\': { width: 1000, height: 650, maxizable: true },\r\n' +
 '            \'radioPlayer\': { width: 460, height: 600, maxizable: false },\r\n' +
-'            \'subnets\': { width: 1000, height: 700, maxizable: true, url: \'packages/desktop/SubNets.html\' },\r\n' +
+'            \'ipv4\': { width: 1000, height: 700, maxizable: true, url: \'packages/desktop/IPv4.html\' },\r\n' +
 '            \'ipv6\': { width: 1000, height: 700, maxizable: true, url: \'packages/desktop/IPv6.html\' },\r\n' +
+'            \'wiso\': { width: 1200, height: 800, maxizable: true, url: \'packages/desktop/wiso.html\' },\r\n' +
 '            \'wikipedia\': { width: 920, height: 660, maxizable: true }\r\n' +
 '        };\r\n' +
+'\r\n' +
+'        // Build a list of candidate paths for an HTML app file.\r\n' +
+'        // The wrapper will test each one with a HEAD request and use the\r\n' +
+'        // first that returns OK.\r\n' +
+'        function htmlAppCandidates(appName, primaryUrl) {\r\n' +
+'            const list = [\r\n' +
+'                primaryUrl,\r\n' +
+'                `packages/desktop/${appName}.html`,\r\n' +
+'                `packages/desktop/${appName.charAt(0).toUpperCase() + appName.slice(1)}.html`,\r\n' +
+'                `../desktop/${appName}.html`,\r\n' +
+'                `../desktop/${appName.charAt(0).toUpperCase() + appName.slice(1)}.html`,\r\n' +
+'                `./${appName}.html`,\r\n' +
+'                `${appName}.html`\r\n' +
+'            ].filter(Boolean);\r\n' +
+'            return list.filter((v, i, a) => a.indexOf(v) === i);\r\n' +
+'        }\r\n' +
+'\r\n' +
+'        async function findFirstExistingHtml(candidates) {\r\n' +
+'            for (const url of candidates) {\r\n' +
+'                try {\r\n' +
+'                    const resp = await fetch(url, { method: \'HEAD\', cache: \'no-store\' });\r\n' +
+'                    if (resp.ok) {\r\n' +
+'                        console.log(\'KDE Wrapper: found HTML app at\', url);\r\n' +
+'                        return url;\r\n' +
+'                    }\r\n' +
+'                } catch (e) {\r\n' +
+'                    // try next\r\n' +
+'                }\r\n' +
+'            }\r\n' +
+'            return null;\r\n' +
+'        }\r\n' +
+'\r\n' +
+'        function htmlNotFoundPage(appName, candidates) {\r\n' +
+'            const listHtml = candidates.map(u => `<li><code>${u}</code></li>`).join(\'\');\r\n' +
+'            return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>\r\n' +
+'                body{font-family:\'Noto Sans\',sans-serif;background:#31363b;color:#eff0f1;padding:2rem;line-height:1.6;}\r\n' +
+'                h2{color:#ef5b6b;margin-top:0;}\r\n' +
+'                code{background:#1a1b1e;padding:2px 7px;border-radius:3px;color:#3daee9;font-family:monospace;}\r\n' +
+'                ul{background:#262b30;padding:12px 12px 12px 32px;border-radius:6px;border:1px solid #3b4147;}\r\n' +
+'                p.note{color:#8f969e;font-size:0.9em;}\r\n' +
+'            <\/style><\/head><body>\r\n' +
+'                <h2><i>⚠<\/i> App-Datei nicht gefunden<\/h2>\r\n' +
+'                <p>Die Anwendung <code>${appName}<\/code> konnte nicht geladen werden.<br>Der Wrapper hat folgende Pfade getestet:<\/p>\r\n' +
+'                <ul>${listHtml}<\/ul>\r\n' +
+'                <p class="note">Lege die Datei in einen dieser Pfade, damit sie geladen werden kann.<br>Üblicherweise: <code>packages/desktop/${appName}.html<\/code><\/p>\r\n' +
+'            <\/body><\/html>`;\r\n' +
+'        }\r\n' +
 '\r\n' +
 '        function resolveAppJsUrl(appName) {\r\n' +
 '            const exact = `${appName}.js`;\r\n' +
@@ -524,8 +570,16 @@
 '                \r\n';
 
         html += '                if (isHtmlApp) {\r\n' +
-'                    console.log("KDE Wrapper: Loading HTML app directly:", htmlUrl);\r\n' +
-'                    iframe.src = htmlUrl;\r\n' +
+'                    console.log("KDE Wrapper: Loading HTML app:", appName, "primary:", htmlUrl);\r\n' +
+'                    const candidates = htmlAppCandidates(appName, htmlUrl);\r\n' +
+'                    findFirstExistingHtml(candidates).then(found => {\r\n' +
+'                        if (found) {\r\n' +
+'                            iframe.src = found;\r\n' +
+'                        } else {\r\n' +
+'                            console.error("KDE Wrapper: HTML app not found:", appName, candidates);\r\n' +
+'                            iframe.srcdoc = htmlNotFoundPage(appName, candidates);\r\n' +
+'                        }\r\n' +
+'                    });\r\n' +
 '                } else {\r\n' +
 '                    const jsUrl = resolveAppJsUrl(appName);\r\n' +
 '                    const iframeContent = `<!DOCTYPE html>\r\n' +
@@ -551,7 +605,6 @@
 '                                const lower = appName.toLowerCase() + ".js";\r\n' +
 '                                const exactApp = appName + "App.js";\r\n' +
 '                                \r\n' +
-'                                // Advanced robust cascade pathing - handles root, /packages/gui/, and generic fallback scenarios\r\n' +
 '                                const paths = [\r\n' +
 '                                    "packages/apps/" + exact,\r\n' +
 '                                    "packages/apps/" + exactApp,\r\n' +

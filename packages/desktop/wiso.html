@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Angebot &amp; Nachfrage – KDE Plasma</title>
+<title>Angebot &amp; Nachfrage</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
   :root{
@@ -37,15 +37,13 @@
   html,body{margin:0;padding:0;}
   html{font-size:16px;}
   body{
-    min-height:100vh;min-height:100dvh;
-    background:linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-    background-attachment:fixed;color:var(--kde-text);
+    min-height:100vh;
+    background:var(--kde-window-bg);
+    color:var(--kde-text);
     font-family:Verdana, Geneva, 'DejaVu Sans', sans-serif;
-    font-size:var(--fs-base);line-height:1.6;-webkit-font-smoothing:antialiased;
-    padding:
-      clamp(12px, 1.8vw, 24px)
-      clamp(10px, 1.6vw, 18px)
-      calc(46px + clamp(12px, 1.8vw, 24px));
+    font-size:var(--fs-base);line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-y:auto;
   }
 
   .hl{
@@ -73,36 +71,23 @@
   .hl[data-hl-form="power"]{border-bottom-color:rgba(253,196,91,.55);}
   .hl[data-hl-form="power"]:hover{background:rgba(253,196,91,.2);color:#fff;}
 
+  /* App window container — fills iframe, no chrome of its own */
   .kde-window{
-    max-width:min(1280px, 100%);margin:0 auto;background:var(--kde-window-bg);
-    border:1px solid var(--kde-window-border);border-radius:8px;
-    box-shadow:0 10px 40px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.03) inset;
-    overflow:hidden;display:flex;flex-direction:column;min-height:min(70vh, 640px);
+    width:100%;
+    min-height:100vh;
+    background:var(--kde-window-bg);
+    display:flex;flex-direction:column;
   }
-  .window-header{
-    height:clamp(38px, 3.2vw, 46px);background:var(--kde-window-header);
-    border-bottom:1px solid var(--kde-window-border);
-    display:flex;align-items:center;justify-content:space-between;
-    padding:0 4px 0 clamp(12px, 1.4vw, 18px);user-select:none;flex:0 0 auto;
-  }
-  .window-title{display:flex;align-items:center;gap:10px;font-size:var(--fs-sm);font-weight:bold;color:#e3e7eb;min-width:0;}
-  .window-title span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .window-title i{color:var(--kde-accent);font-size:var(--fs-sm);}
-  .window-buttons{display:flex;height:100%;flex:0 0 auto;}
-  .window-buttons button{
-    width:clamp(36px, 3vw, 46px);height:100%;border:none;background:transparent;color:#9ba1a8;
-    cursor:pointer;font-size:var(--fs-sm);transition:background .15s,color .15s;
-    display:flex;align-items:center;justify-content:center;
-  }
-  .window-buttons button:hover{background:rgba(255,255,255,.08);color:var(--kde-text);}
-  .window-buttons button.close:hover{background:var(--kde-red);color:#fff;}
 
+  /* Tabs at the very top — content navigation */
   .window-tabs{
-    display:flex;gap:2px;background:var(--kde-window-header);
+    display:flex;gap:2px;
+    background:var(--kde-window-header);
     border-bottom:1px solid var(--kde-window-border);
     padding:0 clamp(6px, 0.8vw, 12px);
     flex:0 0 auto;overflow-x:auto;align-items:stretch;
     scrollbar-width:none;
+    position:sticky;top:0;z-index:30;
   }
   .window-tabs::-webkit-scrollbar{display:none;}
   .tab-btn{
@@ -118,10 +103,9 @@
   .tab-btn:hover{color:var(--kde-text);background:rgba(255,255,255,.04);}
   .tab-btn.active{color:var(--kde-text);background:var(--kde-window-bg);border-bottom:2px solid var(--kde-accent);margin-bottom:-1px;}
   .tab-btn.active i{color:var(--kde-accent);opacity:1;}
-  .tab-panel{display:none;flex:1;min-height:0;overflow-y:auto;}
+  .tab-panel{display:none;flex:1;min-height:0;}
   .tab-panel.active{display:block;}
 
-  /* Quiz button in tab bar */
   .tab-spacer{flex:1;min-width:8px;}
   .quiz-toggle-btn{
     background:rgba(61,174,233,.12);
@@ -150,7 +134,7 @@
 
   .chart-layout{
     display:grid;grid-template-columns:minmax(0,1fr) minmax(280px, 360px);
-    gap:0;align-items:stretch;min-height:min(660px, calc(100vh - 200px));
+    gap:0;align-items:stretch;
   }
   @media (max-width:1100px){ .chart-layout{grid-template-columns:minmax(0,1fr) minmax(260px, 320px);} }
   @media (max-width:960px){
@@ -372,41 +356,10 @@
   .matrix-wrap p{margin:0 0 14px;font-size:var(--fs-base);color:var(--kde-text-muted);line-height:1.55;}
   .matrix-canvas{display:block;width:100%;aspect-ratio:5/3;min-height:300px;max-height:460px;border-radius:5px;border:1px solid #2a3036;background:var(--kde-plot);}
 
-  #panel{
-    position:fixed;bottom:0;left:0;right:0;height:46px;
-    background:var(--kde-panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-    border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;
-    padding:0 8px;z-index:100;font-size:var(--fs-sm);color:#cfd2d6;font-family:Verdana, Geneva, sans-serif;
-  }
-  #panel .launcher-btn{height:38px;width:38px;margin:0 4px;display:flex;align-items:center;justify-content:center;border-radius:5px;background:transparent;border:none;color:var(--kde-accent);cursor:pointer;transition:background .15s;flex:0 0 auto;}
-  #panel .launcher-btn:hover{background:var(--kde-panel-hover);}
-  #panel .panel-spacer{flex:1;min-width:8px;}
-  #panel .panel-item{height:36px;display:flex;align-items:center;gap:8px;padding:0 13px;border-radius:5px;cursor:pointer;transition:background .15s;flex:0 0 auto;}
-  #panel .panel-item:hover{background:var(--kde-panel-hover);}
-  #panel .panel-item.panel-brand{min-width:0;}
-  #panel .panel-item.panel-brand span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  @media (max-width:720px){
-    #panel .panel-item.panel-brand span{display:none;}
-    #panel .panel-item.panel-brand{padding:0 8px;}
-  }
-  @media (max-width:560px){
-    #panel .panel-item:not(.panel-brand):not(.clock){display:none;}
-  }
-  #panel .clock{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;padding:0 14px;flex:0 0 auto;}
-  #panel .clock .time{font-size:var(--fs-sm);font-weight:bold;}
-  #panel .clock .date{font-size:clamp(10px, 0.8vw, 11px);color:#8e9297;}
-  #panel .divider{width:1px;height:24px;background:rgba(255,255,255,.08);margin:0 6px;flex:0 0 auto;}
-
   ::-webkit-scrollbar{width:12px;height:12px;}
   ::-webkit-scrollbar-track{background:transparent;}
   ::-webkit-scrollbar-thumb{background:#3b4147;border-radius:6px;border:3px solid var(--kde-window-bg);}
   ::-webkit-scrollbar-thumb:hover{background:#4a5158;}
-
-  @media (max-height:640px){
-    .chart-layout{min-height:auto;}
-    .kde-window{min-height:auto;}
-    body{padding-bottom:56px;}
-  }
 
   /* ============================================================
      QUIZ SIDEBAR
@@ -421,7 +374,7 @@
 
   .quiz-sidebar{
     position:fixed;top:0;right:0;bottom:0;
-    width:min(440px, 100vw);
+    width:min(480px, 100vw);
     background:var(--kde-window-bg);
     border-left:1px solid var(--kde-window-border);
     box-shadow:-24px 0 48px rgba(0,0,0,.5);
@@ -471,8 +424,82 @@
 
   .quiz-body{
     flex:1;min-height:0;overflow-y:auto;
-    padding:clamp(16px, 1.8vw, 22px);
-    display:flex;flex-direction:column;gap:16px;
+    padding:clamp(14px, 1.6vw, 20px);
+    display:flex;flex-direction:column;gap:14px;
+  }
+
+  .quiz-helper{
+    background:linear-gradient(180deg, rgba(61,174,233,.10), rgba(61,174,233,.03));
+    border:1px solid rgba(61,174,233,.35);
+    border-radius:8px;
+    padding:14px 16px;
+  }
+  .quiz-helper-title{
+    display:flex;align-items:center;gap:8px;
+    font-size:var(--fs-sm);font-weight:bold;
+    color:var(--kde-accent);
+    text-transform:uppercase;letter-spacing:.08em;
+    margin-bottom:10px;
+  }
+  .quiz-helper-title i{font-size:var(--fs-sm);}
+  .quiz-helper-formula{
+    background:var(--kde-input);
+    border:1px solid #343a40;
+    border-radius:6px;
+    padding:12px 14px;
+    font-family:'DejaVu Sans Mono',Consolas,monospace;
+    font-size:var(--fs-base);
+    color:#e2e6ea;
+    text-align:center;
+    line-height:1.8;
+    margin-bottom:12px;
+    box-shadow:inset 0 1px 4px rgba(0,0,0,.4);
+  }
+  .quiz-helper-formula .eq-line{display:block;}
+  .quiz-helper-formula .hl-d{color:var(--kde-accent);}
+  .quiz-helper-formula .hl-s{color:var(--kde-red);}
+  .quiz-helper-formula .hl-y{color:var(--kde-yellow);}
+  .quiz-helper-formula .hl-g{color:var(--kde-green);}
+
+  .quiz-helper-steps{
+    margin:0;padding:0;list-style:none;
+    font-size:var(--fs-sm);
+    color:var(--kde-text-muted);
+    line-height:1.6;
+  }
+  .quiz-helper-steps li{
+    padding:5px 0 5px 28px;
+    position:relative;
+  }
+  .quiz-helper-steps li::before{
+    content:attr(data-n);
+    position:absolute;left:0;top:6px;
+    width:20px;height:20px;border-radius:50%;
+    background:rgba(61,174,233,.18);
+    border:1px solid rgba(61,174,233,.45);
+    color:var(--kde-accent);
+    font-size:10.5px;font-weight:bold;
+    display:flex;align-items:center;justify-content:center;
+    font-family:Verdana, sans-serif;
+  }
+
+  .quiz-symbols{
+    display:flex;flex-wrap:wrap;gap:8px;
+    padding:10px 12px;margin-top:12px;
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:6px;
+    font-size:var(--fs-sm);
+    color:var(--kde-text-muted);
+  }
+  .quiz-symbols .sym-item{
+    display:inline-flex;align-items:baseline;gap:6px;
+    padding:2px 4px;
+  }
+  .quiz-symbols .sym-item b{
+    font-family:'DejaVu Sans Mono',monospace;
+    color:var(--kde-accent);
+    font-size:var(--fs-sm);
   }
 
   .quiz-question-box{
@@ -481,17 +508,12 @@
     border-radius:6px;
     padding:clamp(12px, 1.4vw, 16px);
     color:#e2e6ea;font-size:var(--fs-base);
-    line-height:1.6;
+    line-height:1.7;
     box-shadow:inset 0 1px 4px rgba(0,0,0,.4);
     text-align:center;
+    font-family:'DejaVu Sans Mono',Consolas,monospace;
   }
   .quiz-question-box strong{color:#fff;}
-  .quiz-question-box .eq-line{
-    display:block;
-    font-family:'DejaVu Sans Mono', Consolas, monospace;
-    margin:4px 0;
-    font-weight:bold;
-  }
 
   .quiz-prompt{
     color:var(--kde-text-muted);
@@ -514,7 +536,7 @@
     background:var(--kde-input);
     border:1px solid #4a5157;
     border-radius:5px;
-    padding:10px 13px;
+    padding:11px 14px;
     color:var(--kde-text);
     font-family:'DejaVu Sans Mono', Consolas, monospace;
     font-size:var(--fs-base);
@@ -544,7 +566,7 @@
   }
   .quiz-option{
     display:flex;align-items:flex-start;gap:10px;
-    padding:11px 13px;
+    padding:12px 14px;
     background:var(--kde-input);
     border:1px solid #4a5157;
     border-radius:6px;
@@ -552,7 +574,7 @@
     transition:border-color .15s, background .15s, box-shadow .15s;
     font-size:var(--fs-base);
     color:var(--kde-text);
-    line-height:1.4;
+    line-height:1.45;
   }
   .quiz-option:hover{
     background:rgba(61,174,233,.08);
@@ -579,8 +601,8 @@
   .quiz-option.wrong-answer span{color:#f8a5ae;font-weight:bold;}
 
   .quiz-feedback{
-    padding:12px 14px;border-radius:6px;
-    font-size:var(--fs-sm);line-height:1.55;
+    padding:14px 16px;border-radius:6px;
+    font-size:var(--fs-base);line-height:1.6;
     border:1px solid;
     animation:quizFadeIn .3s ease;
   }
@@ -600,16 +622,26 @@
   }
   .quiz-feedback strong{color:#fff;}
   .quiz-feedback i{margin-right:5px;}
+  .quiz-feedback .solution{
+    display:block;margin-top:10px;padding-top:10px;
+    border-top:1px dashed rgba(255,255,255,.15);
+    font-family:'DejaVu Sans Mono',Consolas,monospace;
+    font-size:var(--fs-sm);
+    color:#e2e6ea;
+    line-height:1.7;
+  }
+  .quiz-feedback .solution b{color:var(--kde-green);}
 
   .quiz-hint{
-    padding:12px 14px;border-radius:6px;
-    font-size:var(--fs-sm);line-height:1.6;
+    padding:14px 16px;border-radius:6px;
+    font-size:var(--fs-sm);line-height:1.7;
     background:rgba(253,196,91,.1);
     border:1px solid rgba(253,196,91,.4);
     color:#f9d68a;
     animation:quizFadeIn .3s ease;
+    font-family:'DejaVu Sans Mono',Consolas,monospace;
   }
-  .quiz-hint strong{color:#fff;display:inline-block;margin-bottom:4px;}
+  .quiz-hint strong{color:#fff;display:block;margin-bottom:6px;font-family:Verdana, sans-serif;}
   .quiz-hint i{margin-right:5px;}
 
   .quiz-footer{
@@ -624,7 +656,7 @@
     background:var(--kde-accent);
     color:#0a1a24;
     border:none;
-    padding:11px 16px;
+    padding:12px 16px;
     border-radius:5px;
     font-family:inherit;
     font-size:var(--fs-base);
@@ -644,7 +676,7 @@
     background:var(--kde-input);
     color:var(--kde-text-muted);
     border:1px solid #4a5157;
-    padding:8px 10px;
+    padding:9px 10px;
     border-radius:5px;
     font-family:inherit;
     font-size:var(--fs-sm);
@@ -663,25 +695,13 @@
 
   @media (max-width:480px){
     .quiz-footer-row{flex-direction:column;}
-    .quiz-hint-btn, .quiz-new-btn{font-size:11px;padding:8px 6px;}
+    .quiz-hint-btn, .quiz-new-btn{font-size:11px;padding:9px 6px;}
   }
 </style>
 </head>
 <body>
 
 <div class="kde-window" id="appWindow">
-
-  <div class="window-header">
-    <div class="window-title">
-      <i class="fa-solid fa-chart-line"></i>
-      <span>Angebot &amp; Nachfrage — Wirtschaftsmodell</span>
-    </div>
-    <div class="window-buttons">
-      <button title="Minimieren"><i class="fa-solid fa-minus"></i></button>
-      <button title="Maximieren"><i class="fa-regular fa-square"></i></button>
-      <button class="close" title="Schließen"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-  </div>
 
   <div class="window-tabs">
     <button class="tab-btn active" data-tab="chart">
@@ -1190,9 +1210,7 @@
     </button>
   </div>
 
-  <div class="quiz-body" id="quiz-body">
-    <!-- Dynamically filled -->
-  </div>
+  <div class="quiz-body" id="quiz-body"></div>
 
   <div class="quiz-footer">
     <button class="quiz-check-btn" onclick="checkQuizAnswers()">
@@ -1200,7 +1218,7 @@
     </button>
     <div class="quiz-footer-row">
       <button class="quiz-hint-btn" onclick="showQuizHint()">
-        <i class="fa-regular fa-lightbulb"></i> Tipp (−2 Pkt)
+        <i class="fa-regular fa-lightbulb"></i> Tipp (−1 Pkt)
       </button>
       <button class="quiz-new-btn" onclick="generateNewQuiz()">
         <i class="fa-solid fa-rotate-right"></i> Neue Frage
@@ -1208,26 +1226,6 @@
     </div>
   </div>
 </aside>
-
-<div id="panel">
-  <button class="launcher-btn" title="Anwendungsstarter">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z"/>
-    </svg>
-  </button>
-  <div class="panel-item panel-brand" title="Angebot &amp; Nachfrage">
-    <i class="fa-solid fa-chart-line" style="color:var(--kde-accent);"></i>
-    <span>Angebot &amp; Nachfrage</span>
-  </div>
-  <div class="panel-spacer"></div>
-  <div class="panel-item" title="Lautstärke"><i class="fa-solid fa-volume-high"></i></div>
-  <div class="panel-item" title="Netzwerk"><i class="fa-solid fa-wifi"></i></div>
-  <div class="divider"></div>
-  <div class="clock">
-    <span class="time" id="clockTime">00:00</span>
-    <span class="date" id="clockDate">—</span>
-  </div>
-</div>
 
 <script>
 (() => {
@@ -2249,7 +2247,7 @@
           msg.classList.add("warn");
         }
       } else {
-        msg.textContent = `Im Gleichgewicht werden ${num(qe)} ME zum Preis von ${num(pe)} € gehandelt.`;
+        msg.textContent = `Im Gleichgewicht werden ${num(qe)} ME zum Preis von ${num(pe)} € gehandelt. Die nachgefragte Menge entspricht hier genau der angebotenen Menge.`;
         msg.classList.add("ok");
       }
     } else {
@@ -2281,9 +2279,6 @@
     drawMatrix();
   }
 
-  /* ================================
-     Highlight bindings
-     ================================ */
   document.querySelectorAll('[data-hl-chart]').forEach(el => {
     el.addEventListener('mouseenter', () => { mainHL = el.dataset.hlChart; draw(); });
     el.addEventListener('mouseleave', () => { mainHL = null; draw(); });
@@ -2331,7 +2326,6 @@
     });
   });
 
-  /* Tab switching */
   document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
@@ -2380,175 +2374,331 @@
   });
   window.addEventListener("orientationchange", () => setTimeout(resize, 200));
 
-  function tick(){
-    const now = new Date();
-    let h = now.getHours(), m = now.getMinutes();
-    const ampm = h >= 12 ? "PM" : "AM";
-    h = h % 12; h = h ? h : 12;
-    m = m < 10 ? "0" + m : m;
-    $("clockTime").textContent = `${h}:${m} ${ampm}`;
-    $("clockDate").textContent = now.toLocaleDateString("de-DE", {weekday:"short", month:"short", day:"numeric"});
-  }
-  tick(); setInterval(tick, 1000);
-
-  /* ================================
+  /* ================================================================
      QUIZ SYSTEM
-     ================================ */
+     ================================================================ */
   const getR = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const steps = arr => arr.map((s, i) => `<li data-n="${i+1}">${s}</li>`).join('');
 
   const quizGen = [
-    // Q1: Equilibrium calc (P* and Q*)
     () => {
-      const B = getR(10, 40);
-      const k = getR(5, 25);
+      const B = getR(1, 5) * 10;
+      const k = getR(2, 8) * 5;
       const A = B + 2*k;
-      const qe = k;
-      const pe = B + k;
-      return {
-        type: 'multi',
-        question: `<span class="eq-line" style="color:#3daee9">Nachfrage: P = ${A} − Q</span><span class="eq-line" style="color:#ef5b6b">Angebot: P = ${B} + Q</span>`,
-        prompt: 'Berechne das Gleichgewicht (Angebot = Nachfrage):',
-        fields: [
-          { id: 'qe', label: 'Gleichgewichtsmenge Q* (ME)', correct: qe, placeholder: 'z.B. 20' },
-          { id: 'pe', label: 'Gleichgewichtspreis P* (€)', correct: pe, placeholder: 'z.B. 60' }
-        ],
-        hint: `Setze beide Gleichungen gleich: <strong>${A} − Q = ${B} + Q</strong>. Löse dann nach Q auf und setze in eine der beiden Gleichungen ein.`,
-        explanation: `Aus ${A} − Q = ${B} + Q folgt 2Q = ${A - B} → Q* = ${qe}. Eingesetzt: P* = ${A} − ${qe} = ${pe} €.`
-      };
-    },
-
-    // Q2: Market type from Qd/Qs
-    () => {
-      const isVerk = Math.random() < 0.5;
-      const qd = isVerk ? getR(60, 90) : getR(20, 40);
-      const qs = isVerk ? getR(20, 40) : getR(60, 90);
-      return {
-        type: 'mc',
-        question: `Bei einem festgelegten Preis von 30 € werden <span style="color:#3daee9;font-weight:bold">${qd} ME</span> nachgefragt und <span style="color:#ef5b6b;font-weight:bold">${qs} ME</span> angeboten.`,
-        prompt: 'Welcher Markttyp liegt vor?',
-        options: [
-          'Verkäufermarkt (Nachfrageüberhang)',
-          'Käufermarkt (Angebotsüberhang)',
-          'Gleichgewichtsmarkt'
-        ],
-        correctIdx: isVerk ? 0 : 1,
-        hint: `Vergleiche: Ist Q<sub>d</sub> = ${qd} größer oder kleiner als Q<sub>s</sub> = ${qs}?`,
-        explanation: isVerk
-          ? `Q<sub>d</sub> (${qd}) > Q<sub>s</sub> (${qs}) → Nachfrageüberhang → <strong>Verkäufermarkt</strong>.`
-          : `Q<sub>s</sub> (${qs}) > Q<sub>d</sub> (${qd}) → Angebotsüberhang → <strong>Käufermarkt</strong>.`
-      };
-    },
-
-    // Q3: Demand intercept meaning (Höchstpreis)
-    () => {
-      const A = getR(60, 150);
       return {
         type: 'num',
-        question: `<span class="eq-line" style="color:#3daee9">Nachfrage: P = ${A} − 2 · Q</span>`,
-        prompt: 'Bei welchem Preis wird nichts mehr nachgefragt (Höchstpreis)?',
+        question: `<span class="eq-line hl-d">Nachfrage: P = ${A} − 1 · Q</span><span class="eq-line hl-s">Angebot:  P = ${B} + 1 · Q</span>`,
+        prompt: 'Bei welcher Menge Q* sind beide Seiten gleich groß?',
+        label: 'Gleichgewichtsmenge Q* (ME)',
+        correct: k,
+        placeholder: 'z.B. 30',
+        helper: {
+          title: 'So geht\'s: Gleichsetzen',
+          formula: `<span class="eq-line hl-d">${A} − Q</span><span class="eq-line" style="color:#8f969e">=</span><span class="eq-line hl-s">${B} + Q</span>`,
+          steps: steps([
+            'Beide Gleichungen gleichsetzen: Angebot = Nachfrage.',
+            `Alle Q auf eine Seite: + Q rechnen → <b>${B} + 2 · Q = ${A}</b>`,
+            `${B} auf beiden Seiten abziehen → <b>2 · Q = ${A - B}</b>`,
+            'Durch 2 teilen → <b>Q* ausrechnen</b>'
+          ])
+        },
+        symbols: [
+          { s: 'P', d: 'Preis' },
+          { s: 'Q', d: 'Menge (ME)' },
+          { s: 'Q*', d: 'Gleichgewichtsmenge' }
+        ],
+        hint: `${B} + Q = ${A} − Q  | + Q  →  ${B} + 2Q = ${A}  | − ${B}  →  2Q = ${A - B}  | :2  →  Q* = ?`,
+        explanation: `${B} + Q = ${A} − Q → 2·Q = ${A - B} → Q* = <b>${k} ME</b>`
+      };
+    },
+
+    () => {
+      const B = getR(1, 5) * 10;
+      const k = getR(2, 8) * 5;
+      const A = B + 2*k;
+      const pe = B + k;
+      return {
+        type: 'num',
+        question: `<span class="eq-line hl-d">Nachfrage: P = ${A} − 1 · Q</span><span class="eq-line hl-s">Angebot:  P = ${B} + 1 · Q</span>`,
+        prompt: `Wenn Q* = ${k} ME bekannt ist — welcher Preis P* herrscht dann?`,
+        label: 'Gleichgewichtspreis P* (€)',
+        correct: pe,
+        placeholder: 'z.B. 60',
+        helper: {
+          title: 'So geht\'s: Einsetzen',
+          formula: `<span class="eq-line hl-s">P* = ${B} + Q*</span><span class="eq-line" style="color:#8f969e">oder</span><span class="eq-line hl-d">P* = ${A} − Q*</span>`,
+          steps: steps([
+            `Bekannte Gleichgewichtsmenge einsetzen: Q* = <b>${k}</b>.`,
+            `Angebot: P* = ${B} + ${k}`,
+            'Ausrechnen → das ist der Gleichgewichtspreis.',
+            'Probe: beide Formeln müssen dasselbe ergeben.'
+          ])
+        },
+        symbols: [
+          { s: 'Q*', d: 'bekannte Menge' },
+          { s: 'P*', d: 'gesuchter Preis' }
+        ],
+        hint: `Setze Q = ${k} in eine der beiden Gleichungen ein:<br>Angebot: P = ${B} + ${k}<br>Nachfrage: P = ${A} − ${k}`,
+        explanation: `P* = ${B} + ${k} = ${A} − ${k} = <b>${pe} €</b>`
+      };
+    },
+
+    () => {
+      const A = getR(5, 15) * 10;
+      return {
+        type: 'num',
+        question: `<span class="eq-line hl-d">Nachfrage: P = ${A} − 2 · Q</span>`,
+        prompt: 'Bei welchem Preis kauft niemand mehr? (Setze Q = 0)',
         label: 'Höchstpreis P<sub>max</sub> (€)',
         correct: A,
         placeholder: 'z.B. 100',
-        hint: 'Setze Q = 0 in die Nachfragefunktion ein. Der y-Achsenabschnitt ist der Höchstpreis.',
-        explanation: `Bei Q = 0 ergibt sich P = ${A} €. Das ist der Höchstpreis — bei diesem Preis kauft niemand mehr.`
+        helper: {
+          title: 'So geht\'s: Q = 0 einsetzen',
+          formula: `<span class="eq-line hl-d">P = ${A} − 2 · 0</span>`,
+          steps: steps([
+            'Der Höchstpreis steht direkt vor dem Q-Term.',
+            'Er entspricht dem y-Achsenabschnitt.',
+            `Setze Q = 0: P = ${A} − 2 · 0 = <b>${A}</b>.`,
+            'Bei diesem Preis wird nichts mehr nachgefragt.'
+          ])
+        },
+        symbols: [
+          { s: 'Q = 0', d: 'niemand kauft' },
+          { s: 'P', d: 'Preis an der y-Achse' }
+        ],
+        hint: `Setze Q = 0 in die Nachfragefunktion ein:<br>P = ${A} − 2 · 0 = ?`,
+        explanation: `Bei Q = 0: P = ${A} − 2 · 0 = <b>${A} €</b>. Das ist der Höchstpreis.`
       };
     },
 
-    // Q4: Qd at fixed price
     () => {
-      const b = getR(2, 5);
-      const qd = getR(10, 30);
-      const P0 = getR(20, 60);
+      const B = getR(1, 12) * 10;
+      return {
+        type: 'num',
+        question: `<span class="eq-line hl-s">Angebot: P = ${B} + 3 · Q</span>`,
+        prompt: 'Ab welchem Preis beginnen Verkäufer überhaupt zu liefern? (Setze Q = 0)',
+        label: 'Mindestpreis P<sub>min</sub> (€)',
+        correct: B,
+        placeholder: 'z.B. 30',
+        helper: {
+          title: 'So geht\'s: Q = 0 einsetzen',
+          formula: `<span class="eq-line hl-s">P = ${B} + 3 · 0</span>`,
+          steps: steps([
+            'Der Mindestpreis ist der Startwert der Angebotskurve.',
+            'Er entspricht dem y-Achsenabschnitt.',
+            `Setze Q = 0: P = ${B} + 3 · 0 = <b>${B}</b>.`,
+            'Unter diesem Preis wird nichts produziert.'
+          ])
+        },
+        symbols: [
+          { s: 'Q = 0', d: 'noch kein Angebot' },
+          { s: 'P', d: 'Preis an der y-Achse' }
+        ],
+        hint: `Setze Q = 0 in die Angebotsfunktion ein:<br>P = ${B} + 3 · 0 = ?`,
+        explanation: `Bei Q = 0: P = ${B} + 3 · 0 = <b>${B} €</b>. Das ist der Mindestpreis.`
+      };
+    },
+
+    () => {
+      const b = getR(1, 4);
+      const qd = getR(5, 20) * 2;
+      const P0 = getR(2, 6) * 10;
       const A = P0 + b * qd;
       return {
         type: 'num',
-        question: `<span class="eq-line" style="color:#3daee9">Nachfrage: P = ${A} − ${b} · Q</span><span class="eq-line" style="color:#fdc45b">Festgelegter Preis: P = ${P0} €</span>`,
-        prompt: 'Wie viele ME werden zu diesem Preis nachgefragt?',
+        question: `<span class="eq-line hl-d">Nachfrage: P = ${A} − ${b} · Q</span><span class="eq-line hl-y">Staatspreis: P = ${P0} €</span>`,
+        prompt: 'Wie viel wird bei diesem festgelegten Preis nachgefragt?',
         label: 'Nachgefragte Menge Q<sub>d</sub> (ME)',
         correct: qd,
         placeholder: 'z.B. 20',
-        hint: `Setze P = ${P0} in die Nachfragefunktion ein: <strong>${P0} = ${A} − ${b} · Q</strong>. Löse nach Q auf.`,
-        explanation: `${P0} = ${A} − ${b}·Q → ${b}·Q = ${A - P0} → Q<sub>d</sub> = ${qd} ME.`
+        helper: {
+          title: 'So geht\'s: P einsetzen und nach Q umstellen',
+          formula: `<span class="eq-line hl-y">${P0}</span> <span style="color:#8f969e">=</span> <span class="eq-line hl-d">${A} − ${b} · Q</span>`,
+          steps: steps([
+            `Den festgelegten Preis einsetzen: P = ${P0}.`,
+            `${A} auf beiden Seiten abziehen → <b>${P0} − ${A} = −${b} · Q</b>`,
+            'Durch −' + b + ' teilen → Q auf einer Seite isolieren.',
+            'Ergebnis ist die nachgefragte Menge Q<sub>d</sub>.'
+          ])
+        },
+        symbols: [
+          { s: 'Q<sub>d</sub>', d: 'nachgefragte Menge' },
+          { s: 'P', d: 'festgelegter Preis' }
+        ],
+        hint: `Schritt 1: ${P0} = ${A} − ${b}·Q<br>Schritt 2: ${A} abziehen → ${P0 - A} = −${b}·Q<br>Schritt 3: durch −${b} teilen → Q = ?`,
+        explanation: `${P0} = ${A} − ${b}·Q → ${b}·Q = ${A - P0} → Q<sub>d</sub> = <b>${qd} ME</b>`
       };
     },
 
-    // Q5: Market form scenario
+    () => {
+      const b = getR(1, 4);
+      const qs = getR(5, 20) * 2;
+      const A = getR(1, 4) * 10;
+      const P0 = A + b * qs;
+      return {
+        type: 'num',
+        question: `<span class="eq-line hl-s">Angebot: P = ${A} + ${b} · Q</span><span class="eq-line hl-y">Staatspreis: P = ${P0} €</span>`,
+        prompt: 'Wie viel wird bei diesem festgelegten Preis angeboten?',
+        label: 'Angebotene Menge Q<sub>s</sub> (ME)',
+        correct: qs,
+        placeholder: 'z.B. 20',
+        helper: {
+          title: 'So geht\'s: P einsetzen und nach Q umstellen',
+          formula: `<span class="eq-line hl-y">${P0}</span> <span style="color:#8f969e">=</span> <span class="eq-line hl-s">${A} + ${b} · Q</span>`,
+          steps: steps([
+            `Den festgelegten Preis einsetzen: P = ${P0}.`,
+            `${A} auf beiden Seiten abziehen → <b>${P0} − ${A} = ${b} · Q</b>`,
+            `Durch ${b} teilen → Q alleine auf einer Seite.`,
+            'Ergebnis ist die angebotene Menge Q<sub>s</sub>.'
+          ])
+        },
+        symbols: [
+          { s: 'Q<sub>s</sub>', d: 'angebotene Menge' },
+          { s: 'P', d: 'festgelegter Preis' }
+        ],
+        hint: `Schritt 1: ${P0} = ${A} + ${b}·Q<br>Schritt 2: ${A} abziehen → ${P0 - A} = ${b}·Q<br>Schritt 3: durch ${b} teilen → Q = ?`,
+        explanation: `${P0} = ${A} + ${b}·Q → ${b}·Q = ${P0 - A} → Q<sub>s</sub> = <b>${qs} ME</b>`
+      };
+    },
+
     () => {
       const scenarios = [
-        { text: 'Ein einziger Anbieter steht vielen Nachfragern gegenüber.', correctIdx: 0 },
-        { text: 'Wenige große Anbieter teilen sich einen Markt mit vielen Nachfragern.', correctIdx: 1 },
-        { text: 'Viele kleine Anbieter treffen auf viele Nachfrager.', correctIdx: 2 },
-        { text: 'Ein einziger Nachfrager steht vielen Anbietern gegenüber.', correctIdx: 3 }
+        { text: 'Ein einziger Anbieter steht vielen Nachfragern gegenüber.',
+          correctIdx: 0, name: 'Angebotsmonopol',
+          why: 'Nur <b>ein</b> Anbieter → Monopol. Viele Nachfrager ändern nichts daran.' },
+        { text: 'Wenige große Anbieter teilen sich einen Markt mit vielen Nachfragern.',
+          correctIdx: 1, name: 'Angebotsoligopol',
+          why: '<b>Wenige</b> Anbieter → Oligopol. Sie reagieren aufeinander (strategische Interaktion).' },
+        { text: 'Viele kleine Anbieter treffen auf viele Nachfrager.',
+          correctIdx: 2, name: 'Polypol',
+          why: '<b>Viele</b> auf beiden Seiten → vollständige Konkurrenz. Keiner kann den Preis allein setzen.' },
+        { text: 'Ein einziger Nachfrager steht vielen Anbietern gegenüber.',
+          correctIdx: 3, name: 'Monopson',
+          why: 'Nur <b>ein</b> Nachfrager → Monopson. Er kann den Preis nach unten drücken.' }
       ];
       const s = scenarios[getR(0, 3)];
-      const names = ['Monopol', 'Oligopol', 'Polypol', 'Monopson'];
+      const names = ['Angebotsmonopol', 'Angebotsoligopol', 'Polypol', 'Monopson'];
       return {
         type: 'mc',
-        question: `<em style="color:#d5dde4">„${s.text}“</em>`,
-        prompt: 'Welche Marktform beschreibt dieser Satz?',
+        question: `<em style="color:#d5dde4;font-style:normal">„${s.text}“</em>`,
+        prompt: 'Welche Marktform passt zu dieser Beschreibung?',
         options: names,
         correctIdx: s.correctIdx,
-        hint: 'Achte darauf, ob "ein", "wenige" oder "viele" auf Anbieter- und Nachfragerseite steht.',
-        explanation: `→ <strong>${names[s.correctIdx]}</strong>.`
+        helper: {
+          title: 'So erkennst du den Markttyp',
+          formula: `<span class="eq-line">1 Anbieter  → <b class="hl-s">Monopol</b></span><span class="eq-line">wenige Anbieter  → <b class="hl-y">Oligopol</b></span><span class="eq-line">viele Anbieter  → <b class="hl-g">Polypol</b></span>`,
+          steps: steps([
+            'Zähle zuerst, wie viele <b>Anbieter</b> genannt sind (1 / wenige / viele).',
+            'Zähle dann, wie viele <b>Nachfrager</b> genannt sind.',
+            'Ein einzelner Nachfrager heißt <b>Monopson</b>.'
+          ])
+        },
+        symbols: [
+          { s: 'Monopol', d: 'ein Anbieter' },
+          { s: 'Oligopol', d: 'wenige Anbieter' },
+          { s: 'Polypol', d: 'viele Anbieter' },
+          { s: 'Monopson', d: 'ein Nachfrager' }
+        ],
+        hint: 'Achte auf die Zahlwörter: „ein“, „wenige“, „viele“ — auf beiden Marktseiten.',
+        explanation: `→ <b>${names[s.correctIdx]}</b>. ${s.why}`
       };
     },
 
-    // Q6: Price movement with surplus/shortage
     () => {
       const isShortage = Math.random() < 0.5;
       return {
         type: 'mc',
         question: isShortage
-          ? 'Bei einem festgelegten Preis entsteht ein <strong style="color:#fdc45b">Nachfrageüberhang</strong>.'
-          : 'Bei einem festgelegten Preis entsteht ein <strong style="color:#fdc45b">Angebotsüberhang</strong>.',
+          ? 'Bei einem festgelegten Preis entsteht ein <span class="hl-y" style="font-weight:bold">Nachfrageüberhang</span> (Q<sub>d</sub> &gt; Q<sub>s</sub>).'
+          : 'Bei einem festgelegten Preis entsteht ein <span class="hl-y" style="font-weight:bold">Angebotsüberhang</span> (Q<sub>s</sub> &gt; Q<sub>d</sub>).',
         prompt: 'Was passiert am freien Markt mit dem Preis?',
         options: [
           'Der Preis steigt.',
           'Der Preis fällt.',
-          'Der Preis bleibt unverändert.'
+          'Der Preis bleibt gleich.'
         ],
         correctIdx: isShortage ? 0 : 1,
-        hint: 'Nachfrageüberhang: Käufer konkurrieren um knappe Güter. Angebotsüberhang: Verkäufer konkurrieren um Käufer.',
+        helper: {
+          title: 'So merkst du es dir',
+          formula: `<span class="eq-line hl-d">Q<sub>d</sub> &gt; Q<sub>s</sub>  →  Preis ↑</span><span class="eq-line hl-s">Q<sub>s</sub> &gt; Q<sub>d</sub>  →  Preis ↓</span>`,
+          steps: steps([
+            '<b>Nachfrageüberhang:</b> Es ist zu wenig Ware da. Käufer überbieten sich → Preis steigt.',
+            '<b>Angebotsüberhang:</b> Es ist zu viel Ware da. Verkäufer senken Preise → Preis fällt.',
+            'Der Preis pendelt sich immer Richtung Gleichgewicht ein.'
+          ])
+        },
+        symbols: [
+          { s: 'Q<sub>d</sub>', d: 'nachgefragte Menge' },
+          { s: 'Q<sub>s</sub>', d: 'angebotene Menge' }
+        ],
+        hint: isShortage
+          ? 'Knappes Gut: Wer hat den längeren Hebel? Was ist der Käufer bereit zu tun?'
+          : 'Zu viel Ware: Wer muss sich bewegen, um sie loszuwerden?',
         explanation: isShortage
-          ? 'Nachfrageüberhang → Käufer überbieten sich → <strong>Preis steigt</strong>.'
-          : 'Angebotsüberhang → Verkäufer senken Preise → <strong>Preis fällt</strong>.'
+          ? 'Nachfrageüberhang → Käufer überbieten sich → <b>Preis steigt</b> bis zum Gleichgewicht.'
+          : 'Angebotsüberhang → Verkäufer senken Preise → <b>Preis fällt</b> bis zum Gleichgewicht.'
       };
     },
 
-    // Q7: Qs at fixed price
     () => {
-      const b = getR(2, 5);
-      const qs = getR(10, 30);
-      const A = getR(5, 20);
-      const P0 = A + b * qs;
-      return {
-        type: 'num',
-        question: `<span class="eq-line" style="color:#ef5b6b">Angebot: P = ${A} + ${b} · Q</span><span class="eq-line" style="color:#fdc45b">Festgelegter Preis: P = ${P0} €</span>`,
-        prompt: 'Wie viele ME werden zu diesem Preis angeboten?',
-        label: 'Angebotene Menge Q<sub>s</sub> (ME)',
-        correct: qs,
-        placeholder: 'z.B. 20',
-        hint: `Setze P = ${P0} in die Angebotsfunktion ein: <strong>${P0} = ${A} + ${b} · Q</strong>. Löse nach Q auf.`,
-        explanation: `${P0} = ${A} + ${b}·Q → ${b}·Q = ${P0 - A} → Q<sub>s</sub> = ${qs} ME.`
-      };
-    },
-
-    // Q8: Equilibrium P only
-    () => {
-      const B = getR(10, 40);
-      const k = getR(5, 25);
+      const B = getR(1, 4) * 10;
+      const k = getR(2, 6) * 5;
       const A = B + 2*k;
-      const qe = k;
       const pe = B + k;
       return {
-        type: 'num',
-        question: `<span class="eq-line" style="color:#3daee9">Nachfrage: P = ${A} − Q</span><span class="eq-line" style="color:#ef5b6b">Angebot: P = ${B} + Q</span>`,
-        prompt: 'Berechne den Gleichgewichtspreis P*.',
-        label: 'Gleichgewichtspreis P* (€)',
-        correct: pe,
-        placeholder: 'z.B. 60',
-        hint: `Setze die Gleichungen gleich: <strong>${A} − Q = ${B} + Q</strong>. Erst Q*, dann P* durch Einsetzen.`,
-        explanation: `Gleichsetzen ergibt Q* = ${qe}. Eingesetzt: P* = ${A} − ${qe} = ${pe} €.`
+        type: 'multi',
+        question: `<span class="eq-line hl-d">Nachfrage: P = ${A} − 1 · Q</span><span class="eq-line hl-s">Angebot:  P = ${B} + 1 · Q</span>`,
+        prompt: 'Berechne das komplette Gleichgewicht.',
+        fields: [
+          { id: 'qe', label: 'Gleichgewichtsmenge Q* (ME)', correct: k, placeholder: 'z.B. 30' },
+          { id: 'pe', label: 'Gleichgewichtspreis P* (€)', correct: pe, placeholder: 'z.B. 60' }
+        ],
+        helper: {
+          title: 'So geht\'s in 4 Schritten',
+          formula: `<span class="eq-line hl-s">${B} + Q</span> <span style="color:#8f969e">=</span> <span class="eq-line hl-d">${A} − Q</span>`,
+          steps: steps([
+            'Gleichsetzen: Angebot = Nachfrage.',
+            `Umformen: 2 · Q = ${A - B} → <b>Q* berechnen</b>.`,
+            `Q* in eine Gleichung einsetzen: P* = ${B} + Q*`,
+            'Ergebnis: beide Werte zusammen sind das Gleichgewicht.'
+          ])
+        },
+        symbols: [
+          { s: 'Q*', d: 'Gleichgewichtsmenge' },
+          { s: 'P*', d: 'Gleichgewichtspreis' }
+        ],
+        hint: `Schritt 1: ${B} + Q = ${A} − Q<br>Schritt 2: nach Q umstellen → Q*<br>Schritt 3: Q* einsetzen → P*`,
+        explanation: `Q* = ${k} ME · P* = ${pe} €. (Probe: ${A} − ${k} = ${B} + ${k} ✓)`
+      };
+    },
+
+    () => {
+      return {
+        type: 'mc',
+        question: 'Die Einkommen der Haushalte steigen. Dadurch wollen alle <b>mehr</b> von einem normalen Gut kaufen.',
+        prompt: 'Was passiert mit der Nachfragekurve?',
+        options: [
+          'Sie verschiebt sich nach rechts (nach oben).',
+          'Sie verschiebt sich nach links (nach unten).',
+          'Sie bleibt gleich — nur der Preis ändert sich.'
+        ],
+        correctIdx: 0,
+        helper: {
+          title: 'So liest du Kurven-Verschiebungen',
+          formula: `<span class="eq-line">mehr Nachfrage  →  Kurve <b class="hl-d">rechts / oben</b></span><span class="eq-line">weniger Nachfrage  →  Kurve <b class="hl-s">links / unten</b></span>`,
+          steps: steps([
+            'Frage: Wollen die Käufer <b>mehr</b> oder <b>weniger</b> kaufen?',
+            'Bei <b>mehr</b> Nachfrage verschiebt sich die Nachfragekurve nach rechts.',
+            'Bei <b>weniger</b> Nachfrage verschiebt sie sich nach links.',
+            'Der Preis steigt, wenn die Kurve nach rechts wandert.'
+          ])
+        },
+        symbols: [
+          { s: '→', d: 'mehr Nachfrage' },
+          { s: '←', d: 'weniger Nachfrage' }
+        ],
+        hint: 'Mehr Kaufwunsch bei gleichem Preis → was macht die Nachfragekurve?',
+        explanation: 'Bei steigendem Einkommen wollen Haushalte mehr kaufen → die Nachfragekurve verschiebt sich <b>nach rechts (nach oben)</b>. Der Preis steigt, die Menge steigt.'
       };
     }
   ];
@@ -2566,6 +2716,21 @@
     const body = $("quiz-body");
     if (!currentQuiz){ body.innerHTML = ''; return; }
     let html = '';
+
+    if (currentQuiz.helper){
+      html += `<div class="quiz-helper">`;
+      html += `<div class="quiz-helper-title"><i class="fa-solid fa-graduation-cap"></i>${currentQuiz.helper.title}</div>`;
+      html += `<div class="quiz-helper-formula">${currentQuiz.helper.formula}</div>`;
+      html += `<ol class="quiz-helper-steps">${currentQuiz.helper.steps}</ol>`;
+      if (currentQuiz.symbols && currentQuiz.symbols.length){
+        html += `<div class="quiz-symbols">`;
+        currentQuiz.symbols.forEach(sym => {
+          html += `<span class="sym-item"><b>${sym.s}</b> = ${sym.d}</span>`;
+        });
+        html += `</div>`;
+      }
+      html += `</div>`;
+    }
 
     html += `<div class="quiz-question-box">${currentQuiz.question}</div>`;
     html += `<div class="quiz-prompt">${currentQuiz.prompt}</div>`;
@@ -2598,19 +2763,19 @@
 
     body.innerHTML = html;
 
-    // Enter to submit
     body.querySelectorAll('.quiz-input').forEach(inp => {
       inp.addEventListener('keydown', e => {
         if (e.key === 'Enter'){ e.preventDefault(); checkQuizAnswers(); }
       });
     });
+    const first = body.querySelector('.quiz-input');
+    if (first) setTimeout(() => first.focus(), 50);
   }
 
   function generateNewQuiz(){
     let idx;
-    do {
-      idx = Math.floor(Math.random() * quizGen.length);
-    } while (idx === lastQuizIdx && quizGen.length > 1);
+    do { idx = Math.floor(Math.random() * quizGen.length); }
+    while (idx === lastQuizIdx && quizGen.length > 1);
     lastQuizIdx = idx;
     currentQuiz = quizGen[idx]();
     renderQuiz();
@@ -2647,9 +2812,7 @@
     } else if (currentQuiz.type === 'mc'){
       const selected = document.querySelector('input[name="qz-mc"]:checked');
       const radios = document.querySelectorAll('input[name="qz-mc"]');
-      radios.forEach(r => {
-        r.closest('.quiz-option').classList.remove('correct-answer', 'wrong-answer');
-      });
+      radios.forEach(r => r.closest('.quiz-option').classList.remove('correct-answer', 'wrong-answer'));
       if (!selected){
         allCorrect = false;
       } else {
@@ -2670,13 +2833,15 @@
 
     if (allCorrect){
       fb.classList.add('quiz-feedback-correct');
-      fb.innerHTML = `<i class="fa-solid fa-circle-check"></i><strong>Richtig!</strong> +10 Punkte.<br><span style="display:block;margin-top:6px;color:#c8f0d5">${currentQuiz.explanation || ''}</span>`;
+      fb.innerHTML = `<i class="fa-solid fa-circle-check"></i><strong>Richtig!</strong> +10 Punkte.
+        <span class="solution"><b>Lösung:</b> ${currentQuiz.explanation || ''}</span>`;
       quizScore += 10;
       updateScoreDisplay();
-      setTimeout(generateNewQuiz, 3500);
+      setTimeout(generateNewQuiz, 4000);
     } else {
       fb.classList.add('quiz-feedback-wrong');
-      fb.innerHTML = `<i class="fa-solid fa-circle-xmark"></i><strong>Noch nicht ganz.</strong> Prüfe die markierten Stellen oder nutze den Tipp.`;
+      fb.innerHTML = `<i class="fa-solid fa-circle-xmark"></i><strong>Noch nicht ganz.</strong> Schau dir die „So geht's"-Karte oben an — dort steht der Rechenweg.
+        <span class="solution"><b>Lösung:</b> ${currentQuiz.explanation || ''}</span>`;
     }
   }
 
@@ -2684,9 +2849,9 @@
     if (!currentQuiz) return;
     const hint = $("quiz-hint");
     hint.style.display = 'block';
-    hint.innerHTML = `<strong><i class="fa-regular fa-lightbulb"></i> Tipp:</strong> ${currentQuiz.hint || 'Denke an die Grundlagen.'}`;
+    hint.innerHTML = `<strong><i class="fa-regular fa-lightbulb"></i>Tipp:</strong> ${currentQuiz.hint || 'Denke an die Grundlagen.'}`;
     if (quizScore > 0){
-      quizScore = Math.max(0, quizScore - 2);
+      quizScore = Math.max(0, quizScore - 1);
       updateScoreDisplay();
     }
   }
@@ -2708,13 +2873,11 @@
     }
   }
 
-  // Expose to global scope (used by inline onclick)
   window.toggleQuizSidebar = toggleQuizSidebar;
   window.generateNewQuiz = generateNewQuiz;
   window.checkQuizAnswers = checkQuizAnswers;
   window.showQuizHint = showQuizHint;
 
-  // ESC closes sidebar
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape'){
       const sidebar = $("quiz-sidebar");
