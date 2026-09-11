@@ -1,0 +1,2741 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Angebot &amp; Nachfrage – KDE Plasma</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  :root{
+    --kde-panel:rgba(35, 38, 41, 0.85);
+    --kde-panel-hover:rgba(255, 255, 255, 0.1);
+    --kde-accent:#3daee9;
+    --kde-text:#eff0f1;
+    --kde-text-muted:#c5cbd2;
+    --kde-text-dim:#8f969e;
+    --kde-window-bg:#31363b;
+    --kde-window-bg-2:#262b30;
+    --kde-window-header:#232629;
+    --kde-window-border:#1d2023;
+    --kde-input:#1b1e20;
+    --kde-grid:#2c3238;
+    --kde-plot:#262b2f;
+    --kde-green:#3fbf6a;
+    --kde-red:#ef5b6b;
+    --kde-yellow:#fdc45b;
+    --kde-orange:#f67400;
+    --kde-purple:#b07cd6;
+
+    --fs-base: clamp(13px, 0.85vw + 8px, 16px);
+    --fs-sm:   clamp(11px, 0.4vw + 9px, 13px);
+    --fs-lg:   clamp(15px, 0.5vw + 11px, 18px);
+    --fs-xl:   clamp(17px, 0.8vw + 12px, 22px);
+    --gap-fluid: clamp(12px, 1.4vw, 22px);
+    --pad-fluid: clamp(14px, 1.6vw, 24px);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  html{font-size:16px;}
+  body{
+    min-height:100vh;min-height:100dvh;
+    background:linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    background-attachment:fixed;color:var(--kde-text);
+    font-family:Verdana, Geneva, 'DejaVu Sans', sans-serif;
+    font-size:var(--fs-base);line-height:1.6;-webkit-font-smoothing:antialiased;
+    padding:
+      clamp(12px, 1.8vw, 24px)
+      clamp(10px, 1.6vw, 18px)
+      calc(46px + clamp(12px, 1.8vw, 24px));
+  }
+
+  .hl{
+    border-bottom:1px dashed rgba(148,163,184,.5);
+    cursor:help;padding:0 2px;border-radius:2px;
+    transition:background-color .15s ease,color .15s ease,border-color .15s ease;
+  }
+  .hl:hover{background:rgba(61,174,233,.2);border-bottom-color:var(--kde-accent);color:#fff;}
+  .hl[data-hl-chart="demand"], .hl[data-hl-mini="demand"]{border-bottom-color:rgba(61,174,233,.55);}
+  .hl[data-hl-chart="demand"]:hover, .hl[data-hl-mini="demand"]:hover{background:rgba(61,174,233,.2);}
+  .hl[data-hl-chart="supply"], .hl[data-hl-mini="supply"]{border-bottom-color:rgba(239,91,107,.55);}
+  .hl[data-hl-chart="supply"]:hover, .hl[data-hl-mini="supply"]:hover{background:rgba(239,91,107,.2);}
+  .hl[data-hl-chart="eq"], .hl[data-hl-mini="eq"]{border-bottom-color:rgba(63,191,106,.55);}
+  .hl[data-hl-chart="eq"]:hover, .hl[data-hl-mini="eq"]:hover{background:rgba(63,191,106,.2);}
+  .hl[data-hl-chart="price"], .hl[data-hl-mini="price"]{border-bottom-color:rgba(253,196,91,.55);}
+  .hl[data-hl-chart="price"]:hover, .hl[data-hl-mini="price"]:hover{background:rgba(253,196,91,.2);}
+  .hl[data-hl-chart="axisQ"]{border-bottom-color:rgba(63,191,106,.55);}
+  .hl[data-hl-chart="axisQ"]:hover{background:rgba(63,191,106,.2);color:#fff;}
+  .hl[data-hl-chart="axisP"]{border-bottom-color:rgba(253,196,91,.55);}
+  .hl[data-hl-chart="axisP"]:hover{background:rgba(253,196,91,.2);color:#fff;}
+  .hl[data-hl-form="suppliers"]{border-bottom-color:rgba(239,91,107,.55);}
+  .hl[data-hl-form="suppliers"]:hover{background:rgba(239,91,107,.2);color:#fff;}
+  .hl[data-hl-form="buyers"]{border-bottom-color:rgba(61,174,233,.55);}
+  .hl[data-hl-form="buyers"]:hover{background:rgba(61,174,233,.2);color:#fff;}
+  .hl[data-hl-form="power"]{border-bottom-color:rgba(253,196,91,.55);}
+  .hl[data-hl-form="power"]:hover{background:rgba(253,196,91,.2);color:#fff;}
+
+  .kde-window{
+    max-width:min(1280px, 100%);margin:0 auto;background:var(--kde-window-bg);
+    border:1px solid var(--kde-window-border);border-radius:8px;
+    box-shadow:0 10px 40px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.03) inset;
+    overflow:hidden;display:flex;flex-direction:column;min-height:min(70vh, 640px);
+  }
+  .window-header{
+    height:clamp(38px, 3.2vw, 46px);background:var(--kde-window-header);
+    border-bottom:1px solid var(--kde-window-border);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 4px 0 clamp(12px, 1.4vw, 18px);user-select:none;flex:0 0 auto;
+  }
+  .window-title{display:flex;align-items:center;gap:10px;font-size:var(--fs-sm);font-weight:bold;color:#e3e7eb;min-width:0;}
+  .window-title span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .window-title i{color:var(--kde-accent);font-size:var(--fs-sm);}
+  .window-buttons{display:flex;height:100%;flex:0 0 auto;}
+  .window-buttons button{
+    width:clamp(36px, 3vw, 46px);height:100%;border:none;background:transparent;color:#9ba1a8;
+    cursor:pointer;font-size:var(--fs-sm);transition:background .15s,color .15s;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .window-buttons button:hover{background:rgba(255,255,255,.08);color:var(--kde-text);}
+  .window-buttons button.close:hover{background:var(--kde-red);color:#fff;}
+
+  .window-tabs{
+    display:flex;gap:2px;background:var(--kde-window-header);
+    border-bottom:1px solid var(--kde-window-border);
+    padding:0 clamp(6px, 0.8vw, 12px);
+    flex:0 0 auto;overflow-x:auto;align-items:stretch;
+    scrollbar-width:none;
+  }
+  .window-tabs::-webkit-scrollbar{display:none;}
+  .tab-btn{
+    background:transparent;border:none;color:var(--kde-text-muted);
+    font-family:inherit;font-size:var(--fs-sm);font-weight:bold;
+    padding:clamp(9px, 1vw, 12px) clamp(12px, 1.4vw, 20px) clamp(8px, 0.9vw, 11px);
+    cursor:pointer;position:relative;
+    border-top-left-radius:5px;border-top-right-radius:5px;
+    transition:color .15s,background .15s;
+    display:flex;align-items:center;gap:8px;white-space:nowrap;flex:0 0 auto;
+  }
+  .tab-btn i{font-size:var(--fs-sm);opacity:.85;}
+  .tab-btn:hover{color:var(--kde-text);background:rgba(255,255,255,.04);}
+  .tab-btn.active{color:var(--kde-text);background:var(--kde-window-bg);border-bottom:2px solid var(--kde-accent);margin-bottom:-1px;}
+  .tab-btn.active i{color:var(--kde-accent);opacity:1;}
+  .tab-panel{display:none;flex:1;min-height:0;overflow-y:auto;}
+  .tab-panel.active{display:block;}
+
+  /* Quiz button in tab bar */
+  .tab-spacer{flex:1;min-width:8px;}
+  .quiz-toggle-btn{
+    background:rgba(61,174,233,.12);
+    border:1px solid rgba(61,174,233,.35);
+    color:var(--kde-accent);
+    font-family:inherit;font-size:var(--fs-sm);font-weight:bold;
+    padding:clamp(7px, 0.8vw, 9px) clamp(11px, 1.2vw, 15px);
+    margin:5px 4px;
+    cursor:pointer;border-radius:5px;
+    display:flex;align-items:center;gap:8px;white-space:nowrap;
+    transition:background .15s,border-color .15s,color .15s;
+    flex:0 0 auto;
+  }
+  .quiz-toggle-btn:hover{background:rgba(61,174,233,.25);border-color:var(--kde-accent);color:#fff;}
+  .quiz-toggle-btn i{font-size:var(--fs-sm);}
+  .quiz-badge{
+    background:var(--kde-accent);color:#0a1a24;
+    padding:1px 8px;border-radius:99px;
+    font-size:clamp(10px, 0.7vw, 11.5px);font-weight:bold;
+    min-width:22px;text-align:center;
+    font-variant-numeric:tabular-nums;
+  }
+  @media (max-width:640px){
+    .quiz-toggle-btn span:not(.quiz-badge){display:none;}
+  }
+
+  .chart-layout{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(280px, 360px);
+    gap:0;align-items:stretch;min-height:min(660px, calc(100vh - 200px));
+  }
+  @media (max-width:1100px){ .chart-layout{grid-template-columns:minmax(0,1fr) minmax(260px, 320px);} }
+  @media (max-width:960px){
+    .chart-layout{grid-template-columns:1fr;}
+    .chart-side{border-left:none !important;border-top:1px solid var(--kde-window-border);}
+  }
+  .chart-main{padding:var(--pad-fluid);min-width:0;display:flex;flex-direction:column;}
+  .chart-side{background:var(--kde-window-bg-2);border-left:1px solid var(--kde-window-border);padding:var(--pad-fluid);min-width:0;}
+
+  .help-box{
+    background:rgba(61,174,233,.08);border:1px solid rgba(61,174,233,.3);
+    border-left:4px solid var(--kde-accent);border-radius:6px;
+    padding:clamp(11px, 1.2vw, 16px) clamp(13px, 1.4vw, 18px);
+    margin-bottom:clamp(12px, 1.4vw, 18px);
+    font-size:var(--fs-base);line-height:1.55;color:#d5dde4;
+  }
+  .help-box strong{color:var(--kde-accent);}
+  .help-box ul{margin:8px 0 0;padding-left:clamp(16px, 1.6vw, 22px);}
+  .help-box li{margin-bottom:5px;}
+  .help-box .tip{
+    display:block;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(61,174,233,.3);
+    font-size:var(--fs-sm);color:#9fc4dd;font-style:italic;
+  }
+  .help-box .tip i{margin-right:6px;color:var(--kde-accent);}
+
+  .notation-box{display:grid;grid-template-columns:1fr 1fr;gap:clamp(8px, 1vw, 12px);margin:clamp(10px, 1.2vw, 16px) 0 4px;}
+  @media (max-width:520px){ .notation-box{grid-template-columns:1fr;} }
+  .notation-card{background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:clamp(8px, 1vw, 12px) clamp(10px, 1.2vw, 14px);}
+  .notation-card .symbol{display:inline-block;font-family:'DejaVu Sans Mono', Consolas, monospace;font-weight:bold;font-size:var(--fs-lg);padding:2px 8px;border-radius:4px;margin-right:8px;}
+  .notation-card.d .symbol{background:rgba(61,174,233,.18);color:var(--kde-accent);border:1px solid rgba(61,174,233,.4);}
+  .notation-card.s .symbol{background:rgba(239,91,107,.18);color:var(--kde-red);border:1px solid rgba(239,91,107,.4);}
+  .notation-card .meaning{font-size:var(--fs-base);color:#d5dde4;}
+  .notation-card .desc{font-size:var(--fs-sm);color:var(--kde-text-dim);margin-top:4px;line-height:1.45;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:clamp(10px, 1.4vw, 22px);padding:0 2px clamp(10px, 1.2vw, 14px);font-size:var(--fs-base);color:var(--kde-text-muted);}
+  .legend span{display:inline-flex;align-items:center;gap:8px;}
+  .legend span.hl{border-bottom:none;padding:2px 6px;}
+  .legend span.hl:hover{background:rgba(61,174,233,.18);border-radius:4px;}
+  .swatch{width:20px;height:4px;border-radius:3px;display:inline-block;flex:0 0 auto;}
+  .sw-demand{background:var(--kde-accent);box-shadow:0 0 8px rgba(61,174,233,.6);}
+  .sw-supply{background:var(--kde-red);box-shadow:0 0 8px rgba(239,91,107,.55);}
+  .sw-eq{background:var(--kde-green);height:12px;width:12px;border-radius:50%;box-shadow:0 0 8px rgba(63,191,106,.6);}
+  .sw-price{background:var(--kde-yellow);box-shadow:0 0 8px rgba(253,196,91,.55);}
+
+  .canvas-box{width:100%;position:relative;}
+  canvas{display:block;border-radius:6px;max-width:100%;height:auto;}
+
+  .market-type{
+    display:flex;gap:clamp(10px, 1.2vw, 16px);align-items:flex-start;
+    margin:clamp(12px, 1.4vw, 16px) 0 0;
+    padding:clamp(11px, 1.2vw, 16px) clamp(13px, 1.4vw, 18px);
+    border-radius:6px;border:1px solid #3b4147;background:rgba(255,255,255,.03);
+    transition:background .25s,border-color .25s;min-width:0;
+  }
+  .mt-icon{flex:0 0 auto;width:clamp(38px, 3.6vw, 48px);height:clamp(38px, 3.6vw, 48px);border-radius:6px;display:grid;place-items:center;font-size:clamp(18px, 1.8vw, 24px);line-height:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);}
+  .mt-body{min-width:0;flex:1;}
+  .mt-label{display:block;font-size:var(--fs-sm);text-transform:uppercase;letter-spacing:.14em;color:var(--kde-text-dim);margin-bottom:5px;font-weight:bold;}
+  .mt-title{display:block;font-size:var(--fs-lg);font-weight:bold;letter-spacing:-.01em;margin-bottom:6px;color:#e2e6ea;line-height:1.3;word-break:break-word;}
+  .mt-desc{margin:0;font-size:var(--fs-base);line-height:1.6;color:var(--kde-text-muted);}
+  .mt-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px;}
+  .tag{font-size:var(--fs-sm);padding:4px 11px;border-radius:4px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#c6cdd4;font-variant-numeric:tabular-nums;white-space:nowrap;display:inline-block;}
+  .tag.d{background:rgba(61,174,233,.12);border-color:rgba(61,174,233,.4);color:#9ed9f5;}
+  .tag.s{background:rgba(239,91,107,.12);border-color:rgba(239,91,107,.4);color:#f8a5ae;}
+  .tag.warn{background:rgba(253,196,91,.12);border-color:rgba(253,196,91,.4);color:#f9d68a;}
+  .market-type.t-balance{background:rgba(63,191,106,.10);border-color:rgba(63,191,106,.42);}
+  .market-type.t-balance .mt-icon{background:rgba(63,191,106,.16);border-color:rgba(63,191,106,.35);}
+  .market-type.t-balance .mt-title{color:var(--kde-green);}
+  .market-type.t-seller{background:rgba(253,196,91,.10);border-color:rgba(253,196,91,.42);}
+  .market-type.t-seller .mt-icon{background:rgba(253,196,91,.16);border-color:rgba(253,196,91,.35);}
+  .market-type.t-seller .mt-title{color:var(--kde-yellow);}
+  .market-type.t-buyer{background:rgba(61,174,233,.10);border-color:rgba(61,174,233,.42);}
+  .market-type.t-buyer .mt-icon{background:rgba(61,174,233,.16);border-color:rgba(61,174,233,.35);}
+  .market-type.t-buyer .mt-title{color:var(--kde-accent);}
+  .market-type.t-none{background:rgba(239,91,107,.10);border-color:rgba(239,91,107,.42);}
+  .market-type.t-none .mt-icon{background:rgba(239,91,107,.16);border-color:rgba(239,91,107,.35);}
+  .market-type.t-none .mt-title{color:var(--kde-red);}
+
+  .live-calc{margin-top:clamp(12px, 1.4vw, 16px);background:rgba(253,196,91,.06);border:1px solid rgba(253,196,91,.32);border-left:4px solid var(--kde-yellow);border-radius:6px;padding:clamp(11px, 1.3vw, 16px) clamp(13px, 1.4vw, 18px);display:none;}
+  .live-calc.show{display:block;}
+  .live-calc h4{margin:0 0 12px;font-size:var(--fs-sm);text-transform:uppercase;letter-spacing:.1em;color:var(--kde-yellow);font-weight:bold;display:flex;align-items:center;gap:8px;}
+  .live-row{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:12px;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.06);font-size:var(--fs-base);}
+  .live-row:last-of-type{border-bottom:none;}
+  .live-row .lbl{color:var(--kde-text-muted);font-size:var(--fs-base);min-width:0;}
+  .live-row .lbl .hint{display:block;font-size:var(--fs-sm);color:var(--kde-text-dim);margin-top:2px;}
+  .live-row .val{font-variant-numeric:tabular-nums;font-weight:bold;font-size:var(--fs-lg);color:var(--kde-text);white-space:nowrap;}
+  .live-row.d .val{color:var(--kde-accent);}
+  .live-row.s .val{color:var(--kde-red);}
+  .live-row.diff{background:rgba(0,0,0,.15);padding:8px 10px;margin-top:6px;border-radius:4px;border-bottom:none;}
+  .live-row.diff .val{font-size:var(--fs-xl);}
+  .live-row.diff.pos .val, .live-row.diff.neg .val{color:var(--kde-yellow);}
+  .live-row.diff.zero .val{color:var(--kde-green);}
+  .live-note{margin-top:10px;padding-top:10px;border-top:1px dashed rgba(253,196,91,.28);font-size:var(--fs-sm);color:#e0cd9c;line-height:1.55;}
+  .live-note strong{color:var(--kde-yellow);}
+
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:clamp(8px, 1vw, 12px);margin-top:clamp(12px, 1.4vw, 16px);}
+  .stat{background:rgba(255,255,255,.035);border:1px solid #3b4147;border-radius:6px;padding:clamp(9px, 1vw, 13px) clamp(11px, 1.2vw, 15px);min-width:0;}
+  .stat span{display:block;font-size:var(--fs-sm);color:var(--kde-text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;font-weight:bold;}
+  .stat strong{font-size:var(--fs-xl);font-variant-numeric:tabular-nums;color:var(--kde-text);word-break:break-word;}
+  .stat.eq strong{color:var(--kde-green);}
+
+  .msg{margin-top:clamp(12px, 1.4vw, 16px);padding:clamp(11px, 1.2vw, 14px) clamp(13px, 1.4vw, 16px);border-radius:6px;font-size:var(--fs-base);line-height:1.55;background:rgba(255,255,255,.035);color:var(--kde-text-muted);border:1px solid #3b4147;}
+  .msg.warn{background:rgba(253,196,91,.09);border-color:rgba(253,196,91,.35);color:#f9d68a;}
+  .msg.ok{background:rgba(63,191,106,.09);border-color:rgba(63,191,106,.32);color:#7dd99c;}
+
+  .group{margin-bottom:clamp(18px, 2vw, 26px);}
+  .group:last-of-type{margin-bottom:14px;}
+  .group h2{font-size:var(--fs-sm);margin:0 0 12px;display:flex;align-items:center;gap:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--kde-text-muted);font-weight:bold;}
+  .group h2::before{content:"";width:10px;height:10px;border-radius:2px;background:#5a6169;flex:0 0 auto;}
+  .group.demand h2::before{background:var(--kde-accent);box-shadow:0 0 8px rgba(61,174,233,.7);}
+  .group.supply h2::before{background:var(--kde-red);box-shadow:0 0 8px rgba(239,91,107,.7);}
+  .group.price h2::before{background:var(--kde-yellow);box-shadow:0 0 8px rgba(253,196,91,.7);}
+  .group h2 .hl{padding:0 3px;}
+
+  .formula{font-family:'DejaVu Sans Mono', Consolas, monospace;font-size:var(--fs-sm);color:#c1c8cf;background:var(--kde-input);border:1px solid #343a40;border-radius:4px;padding:8px 12px;margin-bottom:14px;font-variant-numeric:tabular-nums;overflow-x:auto;}
+  .ctrl{margin-bottom:16px;}
+  .ctrl-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+  .ctrl-head label{font-size:var(--fs-base);color:var(--kde-text-muted);min-width:0;}
+  .ctrl-head output{font-size:var(--fs-base);font-weight:bold;color:var(--kde-text);font-variant-numeric:tabular-nums;background:rgba(61,174,233,.12);border:1px solid rgba(61,174,233,.25);border-radius:3px;padding:2px 9px;min-width:52px;text-align:center;flex:0 0 auto;}
+  .ctrl-hint{font-size:var(--fs-sm);color:var(--kde-text-dim);margin-top:6px;line-height:1.45;padding-left:2px;}
+
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:99px;background:#1b1e20;outline:none;cursor:pointer;border:1px solid #343a40;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:#d5d9dd;border:2px solid #6a7076;box-shadow:0 1px 4px rgba(0,0,0,.6);transition:transform .12s, box-shadow .15s, border-color .15s;}
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.13);}
+  input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#d5d9dd;border:2px solid #6a7076;box-shadow:0 1px 4px rgba(0,0,0,.6);cursor:pointer;}
+  .demand input[type=range]::-webkit-slider-thumb{border-color:var(--kde-accent);box-shadow:0 0 10px rgba(61,174,233,.6);}
+  .demand input[type=range]::-moz-range-thumb{border-color:var(--kde-accent);}
+  .supply input[type=range]::-webkit-slider-thumb{border-color:var(--kde-red);box-shadow:0 0 10px rgba(239,91,107,.6);}
+  .supply input[type=range]::-moz-range-thumb{border-color:var(--kde-red);}
+  .price input[type=range]::-webkit-slider-thumb{border-color:var(--kde-yellow);box-shadow:0 0 10px rgba(253,196,91,.6);}
+  .price input[type=range]::-moz-range-thumb{border-color:var(--kde-yellow);}
+  input[type=range]:disabled{opacity:.3;cursor:not-allowed;}
+
+  .switch{display:flex;align-items:center;gap:10px;font-size:var(--fs-base);color:var(--kde-text-muted);margin-bottom:14px;cursor:pointer;}
+  .switch input{width:17px;height:17px;accent-color:var(--kde-accent);cursor:pointer;flex:0 0 auto;}
+
+  .reset{width:100%;margin-top:6px;padding:11px 14px;border-radius:5px;border:1px solid #3b4147;background:rgba(255,255,255,.05);color:#d5d9dd;font-family:inherit;font-size:var(--fs-base);font-weight:bold;cursor:pointer;transition:background .15s,border-color .15s,color .15s;display:flex;align-items:center;justify-content:center;gap:9px;}
+  .reset:hover{background:rgba(61,174,233,.15);border-color:var(--kde-accent);color:#fff;}
+
+  .explain-wrap{padding:clamp(18px, 2vw, 30px) clamp(16px, 2vw, 30px) clamp(24px, 2.5vw, 36px);max-width:1080px;margin:0 auto;}
+  .explain-intro{margin-bottom:clamp(18px, 2vw, 26px);padding:clamp(14px, 1.6vw, 20px) clamp(16px, 1.8vw, 24px);border-radius:6px;background:rgba(61,174,233,.07);border:1px solid rgba(61,174,233,.25);border-left:4px solid var(--kde-accent);color:#d5dde4;font-size:var(--fs-base);line-height:1.65;}
+  .explain-intro strong{color:var(--kde-accent);}
+  .explain-intro p{margin:0 0 10px;}
+  .explain-intro p:last-child{margin-bottom:0;}
+
+  .explain-grid{display:grid;grid-template-columns:1fr;gap:clamp(14px, 1.6vw, 20px);}
+  @media (min-width:880px){ .explain-grid{grid-template-columns:1fr 1fr;} }
+
+  .explain-card{background:var(--kde-window-bg-2);border:1px solid #343a40;border-radius:6px;padding:clamp(16px, 1.8vw, 24px);position:relative;transition:border-color .25s,box-shadow .25s,background .25s,transform .15s;display:flex;flex-direction:column;min-width:0;}
+  .explain-card:hover{transform:translateY(-1px);}
+  .explain-card.current{border-color:var(--kde-accent);box-shadow:0 0 0 1px var(--kde-accent), 0 6px 22px -8px rgba(61,174,233,.6);background:rgba(61,174,233,.05);}
+  .explain-card.current::after{content:"AKTUELL";position:absolute;top:clamp(12px, 1.4vw, 18px);right:clamp(14px, 1.6vw, 20px);font-size:clamp(9.5px, 0.75vw, 10.5px);font-weight:bold;letter-spacing:.14em;color:var(--kde-accent);background:rgba(61,174,233,.18);border:1px solid rgba(61,174,233,.45);padding:3px 9px;border-radius:3px;}
+  .explain-head{display:flex;align-items:center;gap:clamp(10px, 1.2vw, 14px);margin-bottom:clamp(12px, 1.4vw, 16px);}
+  .explain-icon{width:clamp(38px, 3.6vw, 46px);height:clamp(38px, 3.6vw, 46px);border-radius:6px;display:grid;place-items:center;font-size:clamp(18px, 1.8vw, 22px);line-height:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);flex:0 0 auto;}
+  .explain-title{font-size:var(--fs-lg);font-weight:bold;color:#e2e6ea;margin:0;line-height:1.25;word-break:break-word;}
+  .explain-sub{font-size:var(--fs-sm);color:var(--kde-text-dim);text-transform:uppercase;letter-spacing:.09em;font-weight:bold;margin-top:3px;}
+
+  .explain-card.ec-balance .explain-icon{background:rgba(63,191,106,.16);border-color:rgba(63,191,106,.35);}
+  .explain-card.ec-balance .explain-title{color:var(--kde-green);}
+  .explain-card.ec-seller .explain-icon{background:rgba(253,196,91,.16);border-color:rgba(253,196,91,.35);}
+  .explain-card.ec-seller .explain-title{color:var(--kde-yellow);}
+  .explain-card.ec-buyer .explain-icon{background:rgba(61,174,233,.16);border-color:rgba(61,174,233,.35);}
+  .explain-card.ec-buyer .explain-title{color:var(--kde-accent);}
+  .explain-card.ec-none .explain-icon{background:rgba(239,91,107,.16);border-color:rgba(239,91,107,.35);}
+  .explain-card.ec-none .explain-title{color:var(--kde-red);}
+
+  .explain-card.ec-polypol .explain-icon{background:rgba(63,191,106,.16);border-color:rgba(63,191,106,.35);}
+  .explain-card.ec-polypol .explain-title{color:var(--kde-green);}
+  .explain-card.ec-monopol .explain-icon{background:rgba(253,196,91,.16);border-color:rgba(253,196,91,.35);}
+  .explain-card.ec-monopol .explain-title{color:var(--kde-yellow);}
+  .explain-card.ec-oligopol .explain-icon{background:rgba(246,116,0,.16);border-color:rgba(246,116,0,.35);}
+  .explain-card.ec-oligopol .explain-title{color:var(--kde-orange);}
+  .explain-card.ec-monopson .explain-icon{background:rgba(61,174,233,.16);border-color:rgba(61,174,233,.35);}
+  .explain-card.ec-monopson .explain-title{color:var(--kde-accent);}
+  .explain-card.ec-bilateral .explain-icon{background:rgba(176,124,214,.16);border-color:rgba(176,124,214,.35);}
+  .explain-card.ec-bilateral .explain-title{color:var(--kde-purple);}
+
+  .mini-chart{display:block;width:100%;aspect-ratio:16/9;min-height:150px;border-radius:5px;border:1px solid #2a3036;background:var(--kde-plot);margin-bottom:clamp(12px, 1.4vw, 18px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.015);}
+  .form-chart{display:block;width:100%;aspect-ratio:20/11;min-height:170px;border-radius:5px;border:1px solid #2a3036;background:var(--kde-plot);margin-bottom:clamp(12px, 1.4vw, 18px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.015);}
+  .explain-body{font-size:var(--fs-base);line-height:1.7;color:var(--kde-text-muted);}
+  .explain-body p{margin:0 0 12px;}
+  .explain-body p:last-child{margin-bottom:0;}
+  .explain-body ul{margin:8px 0 12px;padding-left:clamp(18px, 1.8vw, 22px);}
+  .explain-body li{margin-bottom:6px;}
+
+  .nb{display:inline-flex;align-items:baseline;gap:5px;padding:2px 8px 3px;border-radius:4px;font-size:var(--fs-sm);font-variant-numeric:tabular-nums;border:1px solid;line-height:1.3;white-space:nowrap;}
+  .nb.d{background:rgba(61,174,233,.13);border-color:rgba(61,174,233,.4);color:#b6e2f7;}
+  .nb.s{background:rgba(239,91,107,.13);border-color:rgba(239,91,107,.4);color:#f8b6bd;}
+  .nb .sym{font-family:'DejaVu Sans Mono', Consolas, monospace;font-weight:bold;font-size:var(--fs-sm);opacity:.85;}
+  .nb .lbl{font-size:var(--fs-sm);color:var(--kde-text-dim);font-weight:normal;}
+  .nb.g{background:rgba(63,191,106,.13);border-color:rgba(63,191,106,.4);color:#8fdfa8;}
+  .nb.y{background:rgba(253,196,91,.13);border-color:rgba(253,196,91,.4);color:#f9d68a;}
+  .nb b{color:#fff;font-weight:bold;}
+
+  .explain-body .hl{padding:1px 3px;}
+  .explain-body code{font-family:'DejaVu Sans Mono', Consolas, monospace;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);padding:2px 7px;border-radius:3px;font-size:var(--fs-sm);color:#c8cfd6;}
+  .explain-body .highlight{color:#e2e6ea;font-weight:bold;}
+
+  .next-step{margin-top:12px;padding:clamp(9px, 1vw, 12px) clamp(11px, 1.2vw, 14px);border-radius:5px;background:rgba(255,255,255,.04);border-left:3px solid var(--kde-accent);font-size:var(--fs-base);line-height:1.55;color:#c6cdd4;}
+  .next-step strong{color:var(--kde-accent);display:block;margin-bottom:3px;font-size:var(--fs-sm);text-transform:uppercase;letter-spacing:.08em;}
+  .ec-balance .next-step, .ec-polypol .next-step{border-left-color:var(--kde-green);}
+  .ec-balance .next-step strong, .ec-polypol .next-step strong{color:var(--kde-green);}
+  .ec-seller .next-step, .ec-monopol .next-step{border-left-color:var(--kde-yellow);}
+  .ec-seller .next-step strong, .ec-monopol .next-step strong{color:var(--kde-yellow);}
+  .ec-buyer .next-step, .ec-monopson .next-step{border-left-color:var(--kde-accent);}
+  .ec-buyer .next-step strong, .ec-monopson .next-step strong{color:var(--kde-accent);}
+  .ec-none .next-step{border-left-color:var(--kde-red);}
+  .ec-none .next-step strong{color:var(--kde-red);}
+  .ec-oligopol .next-step{border-left-color:var(--kde-orange);}
+  .ec-oligopol .next-step strong{color:var(--kde-orange);}
+  .ec-bilateral .next-step{border-left-color:var(--kde-purple);}
+  .ec-bilateral .next-step strong{color:var(--kde-purple);}
+
+  .explain-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:14px;border-top:1px dashed rgba(255,255,255,.08);}
+  .explain-meta .tag{font-size:var(--fs-sm);}
+
+  .matrix-wrap{margin:clamp(14px, 1.6vw, 20px) 0 clamp(20px, 2vw, 26px);padding:clamp(14px, 1.6vw, 20px);background:var(--kde-window-bg-2);border:1px solid #343a40;border-radius:6px;}
+  .matrix-wrap h3{margin:0 0 6px;font-size:var(--fs-lg);color:#e2e6ea;display:flex;align-items:center;gap:10px;}
+  .matrix-wrap h3 i{color:var(--kde-accent);}
+  .matrix-wrap p{margin:0 0 14px;font-size:var(--fs-base);color:var(--kde-text-muted);line-height:1.55;}
+  .matrix-canvas{display:block;width:100%;aspect-ratio:5/3;min-height:300px;max-height:460px;border-radius:5px;border:1px solid #2a3036;background:var(--kde-plot);}
+
+  #panel{
+    position:fixed;bottom:0;left:0;right:0;height:46px;
+    background:var(--kde-panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;
+    padding:0 8px;z-index:100;font-size:var(--fs-sm);color:#cfd2d6;font-family:Verdana, Geneva, sans-serif;
+  }
+  #panel .launcher-btn{height:38px;width:38px;margin:0 4px;display:flex;align-items:center;justify-content:center;border-radius:5px;background:transparent;border:none;color:var(--kde-accent);cursor:pointer;transition:background .15s;flex:0 0 auto;}
+  #panel .launcher-btn:hover{background:var(--kde-panel-hover);}
+  #panel .panel-spacer{flex:1;min-width:8px;}
+  #panel .panel-item{height:36px;display:flex;align-items:center;gap:8px;padding:0 13px;border-radius:5px;cursor:pointer;transition:background .15s;flex:0 0 auto;}
+  #panel .panel-item:hover{background:var(--kde-panel-hover);}
+  #panel .panel-item.panel-brand{min-width:0;}
+  #panel .panel-item.panel-brand span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  @media (max-width:720px){
+    #panel .panel-item.panel-brand span{display:none;}
+    #panel .panel-item.panel-brand{padding:0 8px;}
+  }
+  @media (max-width:560px){
+    #panel .panel-item:not(.panel-brand):not(.clock){display:none;}
+  }
+  #panel .clock{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;padding:0 14px;flex:0 0 auto;}
+  #panel .clock .time{font-size:var(--fs-sm);font-weight:bold;}
+  #panel .clock .date{font-size:clamp(10px, 0.8vw, 11px);color:#8e9297;}
+  #panel .divider{width:1px;height:24px;background:rgba(255,255,255,.08);margin:0 6px;flex:0 0 auto;}
+
+  ::-webkit-scrollbar{width:12px;height:12px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:#3b4147;border-radius:6px;border:3px solid var(--kde-window-bg);}
+  ::-webkit-scrollbar-thumb:hover{background:#4a5158;}
+
+  @media (max-height:640px){
+    .chart-layout{min-height:auto;}
+    .kde-window{min-height:auto;}
+    body{padding-bottom:56px;}
+  }
+
+  /* ============================================================
+     QUIZ SIDEBAR
+     ============================================================ */
+  .quiz-backdrop{
+    position:fixed;inset:0;background:rgba(0,0,0,.5);
+    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+    z-index:200;opacity:0;pointer-events:none;
+    transition:opacity .25s ease;
+  }
+  .quiz-backdrop.show{opacity:1;pointer-events:auto;}
+
+  .quiz-sidebar{
+    position:fixed;top:0;right:0;bottom:0;
+    width:min(440px, 100vw);
+    background:var(--kde-window-bg);
+    border-left:1px solid var(--kde-window-border);
+    box-shadow:-24px 0 48px rgba(0,0,0,.5);
+    z-index:201;
+    display:flex;flex-direction:column;
+    transform:translateX(100%);
+    transition:transform .3s cubic-bezier(.4,.0,.2,1);
+    font-family:Verdana, Geneva, 'DejaVu Sans', sans-serif;
+  }
+  .quiz-sidebar.open{transform:translateX(0);}
+
+  .quiz-header{
+    display:flex;align-items:center;gap:12px;
+    padding:14px 16px;
+    background:var(--kde-window-header);
+    border-bottom:1px solid var(--kde-window-border);
+    flex:0 0 auto;
+  }
+  .quiz-title{
+    display:flex;align-items:center;gap:10px;
+    color:#e2e6ea;font-size:var(--fs-base);font-weight:bold;flex:1;min-width:0;
+  }
+  .quiz-title i{color:var(--kde-accent);font-size:var(--fs-lg);}
+  .quiz-score-box{
+    display:flex;flex-direction:column;align-items:center;
+    background:var(--kde-input);border:1px solid #343a40;
+    border-radius:5px;padding:3px 10px;min-width:52px;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.5);
+  }
+  .quiz-score-label{
+    font-size:9px;text-transform:uppercase;
+    letter-spacing:.12em;color:var(--kde-text-dim);font-weight:bold;
+  }
+  .quiz-score-value{
+    font-size:var(--fs-lg);font-weight:bold;
+    color:var(--kde-accent);line-height:1.1;
+    font-variant-numeric:tabular-nums;
+  }
+  .quiz-close-btn{
+    background:transparent;border:none;color:var(--kde-text-muted);
+    cursor:pointer;padding:8px 10px;border-radius:5px;
+    font-size:var(--fs-lg);line-height:1;
+    transition:background .15s,color .15s;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .quiz-close-btn:hover{background:rgba(239,91,107,.2);color:var(--kde-red);}
+
+  .quiz-body{
+    flex:1;min-height:0;overflow-y:auto;
+    padding:clamp(16px, 1.8vw, 22px);
+    display:flex;flex-direction:column;gap:16px;
+  }
+
+  .quiz-question-box{
+    background:var(--kde-input);
+    border:1px solid #343a40;
+    border-radius:6px;
+    padding:clamp(12px, 1.4vw, 16px);
+    color:#e2e6ea;font-size:var(--fs-base);
+    line-height:1.6;
+    box-shadow:inset 0 1px 4px rgba(0,0,0,.4);
+    text-align:center;
+  }
+  .quiz-question-box strong{color:#fff;}
+  .quiz-question-box .eq-line{
+    display:block;
+    font-family:'DejaVu Sans Mono', Consolas, monospace;
+    margin:4px 0;
+    font-weight:bold;
+  }
+
+  .quiz-prompt{
+    color:var(--kde-text-muted);
+    font-size:var(--fs-base);
+    line-height:1.55;
+    padding:0 2px;
+  }
+
+  .quiz-field{
+    display:flex;flex-direction:column;gap:6px;
+  }
+  .quiz-field label{
+    color:var(--kde-text-muted);
+    font-size:var(--fs-sm);
+    font-weight:bold;
+    letter-spacing:.02em;
+  }
+  .quiz-input{
+    width:100%;
+    background:var(--kde-input);
+    border:1px solid #4a5157;
+    border-radius:5px;
+    padding:10px 13px;
+    color:var(--kde-text);
+    font-family:'DejaVu Sans Mono', Consolas, monospace;
+    font-size:var(--fs-base);
+    transition:border-color .15s, box-shadow .15s, background .15s;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.5);
+    outline:none;
+  }
+  .quiz-input:focus{
+    border-color:var(--kde-accent);
+    box-shadow:0 0 0 2px rgba(61,174,233,.25), inset 0 1px 3px rgba(0,0,0,.4);
+  }
+  .quiz-input.correct-input{
+    border-color:var(--kde-green) !important;
+    background:rgba(63,191,106,.12) !important;
+    color:#7dd99c !important;
+    box-shadow:0 0 0 2px rgba(63,191,106,.2);
+  }
+  .quiz-input.wrong-input{
+    border-color:var(--kde-red) !important;
+    background:rgba(239,91,107,.12) !important;
+    color:#f8a5ae !important;
+    box-shadow:0 0 0 2px rgba(239,91,107,.2);
+  }
+
+  .quiz-options{
+    display:flex;flex-direction:column;gap:10px;
+  }
+  .quiz-option{
+    display:flex;align-items:flex-start;gap:10px;
+    padding:11px 13px;
+    background:var(--kde-input);
+    border:1px solid #4a5157;
+    border-radius:6px;
+    cursor:pointer;
+    transition:border-color .15s, background .15s, box-shadow .15s;
+    font-size:var(--fs-base);
+    color:var(--kde-text);
+    line-height:1.4;
+  }
+  .quiz-option:hover{
+    background:rgba(61,174,233,.08);
+    border-color:var(--kde-accent);
+  }
+  .quiz-option input[type=radio]{
+    accent-color:var(--kde-accent);
+    margin-top:2px;
+    flex:0 0 auto;
+    cursor:pointer;
+  }
+  .quiz-option span{flex:1;min-width:0;}
+  .quiz-option.correct-answer{
+    background:rgba(63,191,106,.14) !important;
+    border-color:var(--kde-green) !important;
+    box-shadow:0 0 0 2px rgba(63,191,106,.25);
+  }
+  .quiz-option.correct-answer span{color:#7dd99c;font-weight:bold;}
+  .quiz-option.wrong-answer{
+    background:rgba(239,91,107,.14) !important;
+    border-color:var(--kde-red) !important;
+    box-shadow:0 0 0 2px rgba(239,91,107,.25);
+  }
+  .quiz-option.wrong-answer span{color:#f8a5ae;font-weight:bold;}
+
+  .quiz-feedback{
+    padding:12px 14px;border-radius:6px;
+    font-size:var(--fs-sm);line-height:1.55;
+    border:1px solid;
+    animation:quizFadeIn .3s ease;
+  }
+  @keyframes quizFadeIn{
+    from{opacity:0;transform:translateY(-4px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+  .quiz-feedback-correct{
+    background:rgba(63,191,106,.12);
+    border-color:rgba(63,191,106,.5);
+    color:#7dd99c;
+  }
+  .quiz-feedback-wrong{
+    background:rgba(239,91,107,.12);
+    border-color:rgba(239,91,107,.5);
+    color:#f8a5ae;
+  }
+  .quiz-feedback strong{color:#fff;}
+  .quiz-feedback i{margin-right:5px;}
+
+  .quiz-hint{
+    padding:12px 14px;border-radius:6px;
+    font-size:var(--fs-sm);line-height:1.6;
+    background:rgba(253,196,91,.1);
+    border:1px solid rgba(253,196,91,.4);
+    color:#f9d68a;
+    animation:quizFadeIn .3s ease;
+  }
+  .quiz-hint strong{color:#fff;display:inline-block;margin-bottom:4px;}
+  .quiz-hint i{margin-right:5px;}
+
+  .quiz-footer{
+    flex:0 0 auto;
+    padding:14px 16px;
+    background:var(--kde-window-header);
+    border-top:1px solid var(--kde-window-border);
+    display:flex;flex-direction:column;gap:9px;
+  }
+  .quiz-check-btn{
+    width:100%;
+    background:var(--kde-accent);
+    color:#0a1a24;
+    border:none;
+    padding:11px 16px;
+    border-radius:5px;
+    font-family:inherit;
+    font-size:var(--fs-base);
+    font-weight:bold;
+    cursor:pointer;
+    transition:background .15s, transform .1s;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    box-shadow:0 2px 6px rgba(61,174,233,.3);
+  }
+  .quiz-check-btn:hover{background:#5ebbea;}
+  .quiz-check-btn:active{transform:translateY(1px);}
+  .quiz-footer-row{
+    display:flex;gap:8px;
+  }
+  .quiz-hint-btn, .quiz-new-btn{
+    flex:1;
+    background:var(--kde-input);
+    color:var(--kde-text-muted);
+    border:1px solid #4a5157;
+    padding:8px 10px;
+    border-radius:5px;
+    font-family:inherit;
+    font-size:var(--fs-sm);
+    font-weight:bold;
+    cursor:pointer;
+    transition:background .15s,color .15s,border-color .15s;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    white-space:nowrap;
+  }
+  .quiz-hint-btn:hover, .quiz-new-btn:hover{
+    background:rgba(61,174,233,.12);
+    border-color:var(--kde-accent);
+    color:var(--kde-text);
+  }
+  .quiz-hint-btn i, .quiz-new-btn i{font-size:var(--fs-sm);}
+
+  @media (max-width:480px){
+    .quiz-footer-row{flex-direction:column;}
+    .quiz-hint-btn, .quiz-new-btn{font-size:11px;padding:8px 6px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="kde-window" id="appWindow">
+
+  <div class="window-header">
+    <div class="window-title">
+      <i class="fa-solid fa-chart-line"></i>
+      <span>Angebot &amp; Nachfrage — Wirtschaftsmodell</span>
+    </div>
+    <div class="window-buttons">
+      <button title="Minimieren"><i class="fa-solid fa-minus"></i></button>
+      <button title="Maximieren"><i class="fa-regular fa-square"></i></button>
+      <button class="close" title="Schließen"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+  </div>
+
+  <div class="window-tabs">
+    <button class="tab-btn active" data-tab="chart">
+      <i class="fa-solid fa-chart-area"></i> Grafik &amp; Regler
+    </button>
+    <button class="tab-btn" data-tab="explain">
+      <i class="fa-solid fa-book-open"></i> Markttypen erklärt
+    </button>
+    <button class="tab-btn" data-tab="forms">
+      <i class="fa-solid fa-sitemap"></i> Marktformen
+    </button>
+    <div class="tab-spacer"></div>
+    <button class="quiz-toggle-btn" onclick="toggleQuizSidebar()" title="Quiz starten">
+      <i class="fa-solid fa-graduation-cap"></i>
+      <span>Quiz-Trainer</span>
+      <span class="quiz-badge" id="sidebar-score-badge">0</span>
+    </button>
+  </div>
+
+  <!-- ============ TAB: CHART ============ -->
+  <div class="tab-panel active" id="tab-chart">
+    <div class="chart-layout">
+      <div class="chart-main">
+        <div class="help-box">
+          <strong>So liest du die Grafik</strong>
+          <ul>
+            <li>Die <span class="hl" data-hl-chart="demand">blaue Linie</span> ist die <span class="hl" data-hl-chart="demand">Nachfragekurve</span>: Je günstiger ein Gut, desto mehr <span class="hl" data-hl-chart="demand">Nachfrage</span> gibt es.</li>
+            <li>Die <span class="hl" data-hl-chart="supply">rote Linie</span> ist die <span class="hl" data-hl-chart="supply">Angebotskurve</span>: Je höher der Preis, desto mehr <span class="hl" data-hl-chart="supply">Angebot</span> gibt es.</li>
+            <li>Der <span class="hl" data-hl-chart="eq">grüne Punkt</span> zeigt das <span class="hl" data-hl-chart="eq">Gleichgewicht</span> — dort sind <span class="hl" data-hl-chart="supply">Angebot</span> und <span class="hl" data-hl-chart="demand">Nachfrage</span> gleich groß.</li>
+            <li><strong class="hl" data-hl-chart="axisQ">Q</strong> = Menge (in Mengeneinheiten ME), <strong class="hl" data-hl-chart="axisP">P</strong> = Preis (in Euro €).</li>
+          </ul>
+          <span class="tip"><i class="fa-solid fa-hand-pointer"></i>Fahre mit der Maus über die unterstrichenen Wörter — die passenden Elemente in der Grafik werden hervorgehoben.</span>
+        </div>
+
+        <div class="notation-box">
+          <div class="notation-card d">
+            <span class="symbol">Q<sub>d</sub></span>
+            <span class="meaning"><strong>Nachgefragte Menge</strong></span>
+            <div class="desc">So viel möchten die Käufer bei diesem Preis kaufen. <em>d</em> = demand (engl. <span class="hl" data-hl-chart="demand">Nachfrage</span>).</div>
+          </div>
+          <div class="notation-card s">
+            <span class="symbol">Q<sub>s</sub></span>
+            <span class="meaning"><strong>Angebotene Menge</strong></span>
+            <div class="desc">So viel möchten die Verkäufer bei diesem Preis liefern. <em>s</em> = supply (engl. <span class="hl" data-hl-chart="supply">Angebot</span>).</div>
+          </div>
+        </div>
+
+        <div class="legend">
+          <span class="hl" data-hl-chart="demand"><i class="swatch sw-demand"></i>Nachfrage</span>
+          <span class="hl" data-hl-chart="supply"><i class="swatch sw-supply"></i>Angebot</span>
+          <span class="hl" data-hl-chart="eq"><i class="swatch sw-eq"></i>Gleichgewicht</span>
+          <span class="hl" data-hl-chart="price"><i class="swatch sw-price"></i>Festgelegter Preis</span>
+        </div>
+
+        <div class="canvas-box" id="canvasBox">
+          <canvas id="chart"></canvas>
+        </div>
+
+        <div class="market-type t-balance" id="marketType">
+          <div class="mt-icon" id="mtIcon">⚖️</div>
+          <div class="mt-body">
+            <span class="mt-label">Aktueller Markttyp</span>
+            <strong class="mt-title" id="mtTitle">Gleichgewichtsmarkt</strong>
+            <p class="mt-desc" id="mtDesc">Angebot und Nachfrage treffen sich im Gleichgewicht.</p>
+            <div class="mt-tags" id="mtTags"></div>
+          </div>
+        </div>
+
+        <div class="live-calc" id="liveCalc">
+          <h4><i class="fa-solid fa-calculator"></i>Berechnung beim festgelegten Preis</h4>
+          <div class="live-row d">
+            <div class="lbl">
+              Nachgefragte Menge <span style="font-family:monospace;color:var(--kde-accent);">Q<sub>d</sub></span>
+              <span class="hint">Was Käufer bei diesem Preis kaufen möchten</span>
+            </div>
+            <div class="val" id="liveQd">–</div>
+          </div>
+          <div class="live-row s">
+            <div class="lbl">
+              Angebotene Menge <span style="font-family:monospace;color:var(--kde-red);">Q<sub>s</sub></span>
+              <span class="hint">Was Verkäufer bei diesem Preis liefern möchten</span>
+            </div>
+            <div class="val" id="liveQs">–</div>
+          </div>
+          <div class="live-row diff" id="liveDiffRow">
+            <div class="lbl">
+              <strong>Differenz</strong>
+              <span class="hint" id="liveDiffHint">–</span>
+            </div>
+            <div class="val" id="liveDiff">–</div>
+          </div>
+          <div class="live-note" id="liveNote">–</div>
+        </div>
+
+        <div class="stats">
+          <div class="stat eq"><span>Gleichgewichtspreis P*</span><strong id="statP">–</strong></div>
+          <div class="stat eq"><span>Gleichgewichtsmenge Q*</span><strong id="statQ">–</strong></div>
+        </div>
+
+        <div class="msg" id="msg">Verschiebe die Regler, um die Kurven zu verändern.</div>
+      </div>
+
+      <aside class="chart-side">
+        <div class="group demand">
+          <h2><span class="hl" data-hl-chart="demand">Nachfrage</span></h2>
+          <div class="formula" id="dFormula">P = 100 − 1,00 · Q</div>
+          <div class="ctrl">
+            <div class="ctrl-head">
+              <label for="ad">Höchstpreis (Achsenabschnitt)</label>
+              <output id="adOut">100</output>
+            </div>
+            <input type="range" id="ad" min="20" max="100" step="1" value="100">
+            <div class="ctrl-hint">Preis, bei dem niemand mehr kauft. Höher = <span class="hl" data-hl-chart="demand">Nachfrage</span> verschiebt sich nach oben.</div>
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-head">
+              <label for="bd">Steigung</label>
+              <output id="bdOut">1,00</output>
+            </div>
+            <input type="range" id="bd" min="0.2" max="3" step="0.05" value="1">
+            <div class="ctrl-hint">Wie stark die <span class="hl" data-hl-chart="demand">Nachfrage</span> auf Preise reagiert. Größer = flacher, empfindlicher.</div>
+          </div>
+        </div>
+
+        <div class="group supply">
+          <h2><span class="hl" data-hl-chart="supply">Angebot</span></h2>
+          <div class="formula" id="sFormula">P = 10 + 0,90 · Q</div>
+          <div class="ctrl">
+            <div class="ctrl-head">
+              <label for="as">Mindestpreis (Achsenabschnitt)</label>
+              <output id="asOut">10</output>
+            </div>
+            <input type="range" id="as" min="0" max="80" step="1" value="10">
+            <div class="ctrl-hint">Preis, unter dem nichts produziert wird. Höher = <span class="hl" data-hl-chart="supply">Angebot</span> verschiebt sich nach oben.</div>
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-head">
+              <label for="bs">Steigung</label>
+              <output id="bsOut">0,90</output>
+            </div>
+            <input type="range" id="bs" min="0.2" max="3" step="0.05" value="0.9">
+            <div class="ctrl-hint">Wie stark das <span class="hl" data-hl-chart="supply">Angebot</span> auf Preise reagiert. Größer = flacher, empfindlicher.</div>
+          </div>
+        </div>
+
+        <div class="group price">
+          <h2><span class="hl" data-hl-chart="price">Staatlicher Preis</span></h2>
+          <label class="switch" for="priceOn">
+            <input type="checkbox" id="priceOn">
+            <span class="hl" data-hl-chart="price">Festgelegten Preis anzeigen</span>
+          </label>
+          <div class="ctrl">
+            <div class="ctrl-head">
+              <label for="price">Preis P</label>
+              <output id="priceOut">50</output>
+            </div>
+            <input type="range" id="price" min="0" max="100" step="1" value="50" disabled>
+            <div class="ctrl-hint">Ein vom Staat vorgeschriebener Preis (z. B. Mietpreisbremse oder Mindestlohn).</div>
+          </div>
+        </div>
+
+        <button class="reset" id="reset">
+          <i class="fa-solid fa-rotate-left"></i> Zurücksetzen
+        </button>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ============ TAB: EXPLANATIONS ============ -->
+  <div class="tab-panel" id="tab-explain">
+    <div class="explain-wrap">
+      <div class="explain-intro">
+        <p><strong>Was ist ein Markttyp?</strong> Der Markttyp beschreibt, wie sich <span class="hl" data-hl-form="suppliers">Angebot</span> und <span class="hl" data-hl-form="buyers">Nachfrage</span> zueinander verhalten. Er sagt aus, ob gerade <em>Käufer</em> oder <em>Verkäufer</em> am längeren Hebel sitzen — oder ob sich beide im Gleichgewicht befinden.</p>
+        <p><strong style="color:var(--kde-text);">Kurz zur Schreibweise:</strong> <span class="nb d"><span class="sym">Q<sub>d</sub></span><span class="lbl">nachgefragte Menge</span></span> und <span class="nb s"><span class="sym">Q<sub>s</sub></span><span class="lbl">angebotene Menge</span></span> — beides in Mengeneinheiten (ME).</p>
+        <p><i class="fa-solid fa-hand-pointer" style="color:var(--kde-accent);margin-right:6px;"></i>Fahre über die unterstrichenen Begriffe in den Karten, um die entsprechenden Elemente im Mini-Diagramm hervorzuheben.</p>
+      </div>
+
+      <div class="explain-grid">
+
+        <div class="explain-card ec-balance" id="card-balance">
+          <div class="explain-head">
+            <div class="explain-icon">⚖️</div>
+            <div>
+              <h3 class="explain-title">Gleichgewichtsmarkt</h3>
+              <div class="explain-sub">Markträumung</div>
+            </div>
+          </div>
+          <canvas class="mini-chart" data-type="balance"></canvas>
+          <div class="explain-body">
+            <p><span class="hl" data-hl-mini="supply">Angebots</span>- und <span class="hl" data-hl-mini="demand">Nachfrage</span>kurve <span class="highlight">schneiden sich</span> in einem einzigen Punkt. Zu diesem Preis möchten Käufer genau so viel kaufen, wie Verkäufer <span class="hl" data-hl-mini="supply">anbieten</span> wollen.</p>
+            <p><span class="highlight">Kennzeichen:</span></p>
+            <ul>
+              <li>Es gibt <em>keinen</em> Überhang und <em>keine</em> Knappheit.</li>
+              <li>Der Preis hat keinen Grund, sich zu verändern:<br>
+                <span class="nb d"><span class="sym">Q<sub>d</sub></span><span class="lbl">nachgefragt</span></span>
+                <span style="color:var(--kde-green);font-weight:bold;margin:0 6px;">=</span>
+                <span class="nb s"><span class="sym">Q<sub>s</sub></span><span class="lbl">angeboten</span></span>
+              </li>
+              <li>Es entsteht ein stabiler <span class="hl" data-hl-mini="eq">Gleichgewichtspreis P*</span> und eine Gleichgewichtsmenge <code>Q*</code>.</li>
+            </ul>
+            <p><span class="highlight">Beispiele:</span> Wochenmärkte, Aktienmärkte, Rohstoffbörsen.</p>
+          </div>
+          <div class="next-step">
+            <strong>Was passiert als Nächstes?</strong>
+            Nichts — der Markt ist stabil. Ohne äußere Einflüsse bleibt der Preis gleich.
+          </div>
+          <div class="explain-meta">
+            <span class="tag d">Q<sub>d</sub> = Q<sub>s</sub></span>
+            <span class="tag">P* stabil</span>
+            <span class="tag">Kein staatl. Eingriff</span>
+          </div>
+        </div>
+
+        <div class="explain-card ec-seller" id="card-seller">
+          <div class="explain-head">
+            <div class="explain-icon">📈</div>
+            <div>
+              <h3 class="explain-title">Verkäufermarkt</h3>
+              <div class="explain-sub">Nachfrageüberhang · Knappheit</div>
+            </div>
+          </div>
+          <canvas class="mini-chart" data-type="seller"></canvas>
+          <div class="explain-body">
+            <p>Zu einem <span class="hl" data-hl-mini="price">festgelegten Preis</span> (unterhalb des <span class="hl" data-hl-mini="eq">Gleichgewichts</span>) wird <span class="hl" data-hl-mini="demand">mehr nachgefragt</span> als <span class="hl" data-hl-mini="supply">angeboten</span>:
+              <span class="nb d"><span class="sym">Q<sub>d</sub></span><span class="lbl">nachgefragt</span></span>
+              <span style="color:var(--kde-yellow);font-weight:bold;margin:0 6px;">&gt;</span>
+              <span class="nb s"><span class="sym">Q<sub>s</sub></span><span class="lbl">angeboten</span></span>
+            </p>
+            <p>Die Käufer konkurrieren um die wenigen Güter.</p>
+            <p><span class="highlight">Kennzeichen:</span></p>
+            <ul>
+              <li>Es entsteht ein <em>Nachfrageüberhang</em> (auch: Verknappung).</li>
+              <li>Tendenz zu <strong>steigenden Preisen</strong> — bis das <span class="hl" data-hl-mini="eq">Gleichgewicht</span> erreicht ist.</li>
+              <li>Typische Folgen: Warteschlangen, Rationierung, Schwarzmarkt.</li>
+            </ul>
+            <p><span class="highlight">Beispiele:</span> Wohnungsmarkt in Ballungsräumen, Konzertkarten, Grafikkarten in Knappheitsphasen.</p>
+          </div>
+          <div class="next-step">
+            <strong>Was passiert als Nächstes?</strong>
+            Weil mehr Käufer als Güter da sind, sind Käufer bereit, mehr zu zahlen. Der <span class="hl" data-hl-mini="price">Preis steigt</span> — bis <span class="hl" data-hl-mini="supply">Angebot</span> und <span class="hl" data-hl-mini="demand">Nachfrage</span> wieder übereinstimmen.
+          </div>
+          <div class="explain-meta">
+            <span class="tag d">Q<sub>d</sub> &gt; Q<sub>s</sub></span>
+            <span class="tag">Preis ↑</span>
+            <span class="tag">Knappheit</span>
+          </div>
+        </div>
+
+        <div class="explain-card ec-buyer" id="card-buyer">
+          <div class="explain-head">
+            <div class="explain-icon">📉</div>
+            <div>
+              <h3 class="explain-title">Käufermarkt</h3>
+              <div class="explain-sub">Angebotsüberhang · Überschuss</div>
+            </div>
+          </div>
+          <canvas class="mini-chart" data-type="buyer"></canvas>
+          <div class="explain-body">
+            <p>Zu einem <span class="hl" data-hl-mini="price">festgelegten Preis</span> (oberhalb des <span class="hl" data-hl-mini="eq">Gleichgewichts</span>) wird <span class="hl" data-hl-mini="supply">mehr angeboten</span> als <span class="hl" data-hl-mini="demand">nachgefragt</span>:
+              <span class="nb s"><span class="sym">Q<sub>s</sub></span><span class="lbl">angeboten</span></span>
+              <span style="color:var(--kde-yellow);font-weight:bold;margin:0 6px;">&gt;</span>
+              <span class="nb d"><span class="sym">Q<sub>d</sub></span><span class="lbl">nachgefragt</span></span>
+            </p>
+            <p>Die Verkäufer konkurrieren um die wenigen Käufer.</p>
+            <p><span class="highlight">Kennzeichen:</span></p>
+            <ul>
+              <li>Es entsteht ein <em>Angebotsüberhang</em> (auch: Überschuss).</li>
+              <li>Tendenz zu <strong>sinkenden Preisen</strong> — bis das <span class="hl" data-hl-mini="eq">Gleichgewicht</span> erreicht ist.</li>
+              <li>Typische Folgen: wachsende Lager, Rabatte, Sonderaktionen.</li>
+            </ul>
+            <p><span class="highlight">Beispiele:</span> Elektronik nach Weihnachten, Immobilienmarkt in Krisenregionen.</p>
+          </div>
+          <div class="next-step">
+            <strong>Was passiert als Nächstes?</strong>
+            Weil mehr Waren als Käufer da sind, senken Verkäufer ihre <span class="hl" data-hl-mini="price">Preise</span>, um ihre Ware loszuwerden — bis <span class="hl" data-hl-mini="supply">Angebot</span> und <span class="hl" data-hl-mini="demand">Nachfrage</span> wieder übereinstimmen.
+          </div>
+          <div class="explain-meta">
+            <span class="tag s">Q<sub>s</sub> &gt; Q<sub>d</sub></span>
+            <span class="tag">Preis ↓</span>
+            <span class="tag">Überschuss</span>
+          </div>
+        </div>
+
+        <div class="explain-card ec-none" id="card-none">
+          <div class="explain-head">
+            <div class="explain-icon">🚫</div>
+            <div>
+              <h3 class="explain-title">Kein Gleichgewicht</h3>
+              <div class="explain-sub">Kurven schneiden sich nicht</div>
+            </div>
+          </div>
+          <canvas class="mini-chart" data-type="none"></canvas>
+          <div class="explain-body">
+            <p>Die <span class="hl" data-hl-mini="supply">Angebotskurve</span> liegt im sichtbaren Bereich <span class="highlight">vollständig über</span> der <span class="hl" data-hl-mini="demand">Nachfragekurve</span>. Es gibt keinen Preis, bei dem beide Seiten übereinkommen.</p>
+            <p><span class="highlight">Kennzeichen:</span></p>
+            <ul>
+              <li>Bei <em>jedem</em> positiven Preis gilt:
+                <span class="nb s"><span class="sym">Q<sub>s</sub></span><span class="lbl">angeboten</span></span>
+                <span style="color:var(--kde-yellow);font-weight:bold;margin:0 6px;">&gt;</span>
+                <span class="nb d"><span class="sym">Q<sub>d</sub></span><span class="lbl">nachgefragt</span></span>
+              </li>
+              <li>Kein Marktpreis kann sich einpendeln.</li>
+              <li>Der Markt „verschwindet“ — es wird praktisch nichts gehandelt.</li>
+            </ul>
+            <p><span class="highlight">Beispiele:</span> Güter mit absurd hohen Produktionskosten, Nischenprodukte ohne ausreichende <span class="hl" data-hl-mini="demand">Nachfrage</span>.</p>
+          </div>
+          <div class="next-step">
+            <strong>Was passiert als Nächstes?</strong>
+            Ohne staatliche Subventionen oder technischen Fortschritt wird dieses Gut gar nicht produziert.
+          </div>
+          <div class="explain-meta">
+            <span class="tag s">Q<sub>s</sub> &gt; Q<sub>d</sub> ∀ P</span>
+            <span class="tag">Kein P*</span>
+            <span class="tag">Marktversagen</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB: MARKTFORMEN ============ -->
+  <div class="tab-panel" id="tab-forms">
+    <div class="explain-wrap">
+
+      <div class="explain-intro">
+        <p><strong>Marktformen</strong> beschreiben, wie viele <span class="hl" data-hl-form="suppliers">Anbieter</span> und <span class="hl" data-hl-form="buyers">Nachfrager</span> auf einem Markt aktiv sind. Davon hängt ab, wer den Preis bestimmen kann: Sind viele kleine <span class="hl" data-hl-form="suppliers">Anbieter</span> im Spiel, hat keiner <span class="hl" data-hl-form="power">Macht über den Preis</span>.</p>
+        <p><i class="fa-solid fa-hand-pointer" style="color:var(--kde-accent);margin-right:6px;"></i>Fahre über <span class="hl" data-hl-form="suppliers">Anbieter</span>, <span class="hl" data-hl-form="buyers">Nachfrager</span> oder <span class="hl" data-hl-form="power">Marktmacht</span>, um die passenden Symbole in den Diagrammen hervorzuheben.</p>
+      </div>
+
+      <div class="matrix-wrap">
+        <h3><i class="fa-solid fa-table-cells"></i> Marktformen-Schema</h3>
+        <p>Die 3×3-Matrix ordnet jeden Markt danach ein, wie viele <span class="hl" data-hl-form="suppliers">Anbieter</span> (Zeilen) und <span class="hl" data-hl-form="buyers">Nachfrager</span> (Spalten) es gibt. Die wichtigsten Formen sind farbig hervorgehoben.</p>
+        <canvas class="matrix-canvas" id="matrixCanvas"></canvas>
+      </div>
+
+      <div class="explain-grid">
+
+        <div class="explain-card ec-polypol">
+          <div class="explain-head">
+            <div class="explain-icon">👥</div>
+            <div>
+              <h3 class="explain-title">Polypol</h3>
+              <div class="explain-sub">Vollständige Konkurrenz · viele ↔ viele</div>
+            </div>
+          </div>
+          <canvas class="form-chart" data-form="polypol"></canvas>
+          <div class="explain-body">
+            <p><span class="highlight">Viele <span class="hl" data-hl-form="suppliers">Anbieter</span> treffen auf viele <span class="hl" data-hl-form="buyers">Nachfrager</span>.</span> Kein einzelner Marktteilnehmer ist groß genug, um den Preis zu beeinflussen — jeder ist <em>Mengenanpasser</em>.</p>
+            <p><span class="highlight">Kennzeichen:</span></p>
+            <ul>
+              <li>Homogene Güter, freier Marktzutritt.</li>
+              <li>Der Marktpreis entsteht durch das Zusammenspiel von <span class="hl" data-hl-form="suppliers">Angebot</span> und <span class="hl" data-hl-form="buyers">Nachfrage</span>.</li>
+              <li>Keiner hat <span class="hl" data-hl-form="power">Marktmacht</span>.</li>
+            </ul>
+            <p><span class="highlight">Beispiele:</span> Landwirtschaftliche Rohstoffe, Devisenmärkte.</p>
+          </div>
+          <div class="next-step">
+            <strong>Was passiert als Nächstes?</strong>
+            Der Markt ist selbstregulierend. Gewinne locken neue <span class="hl" data-hl-form="suppliers">Anbieter</span> an, Verluste treiben sie weg.
+          </div>
+          <div class="explain-meta">
+            <span class="tag">viele Anbieter</span>
+            <span class="tag">viele Nachfrager</span>
+            <span class="tag">Preis = Grenzkosten</span>
+          </div>
+        </div>
+
+        <div class="explain-card ec-monopol">
+          <div class="explain-head">
+            <div class="explain-icon">👑</div>
+            <div>
+              <h3 class="explain-title">Angebotsmonopol</h3>
+              <div class="explain-sub">Ein Anbieter · viele Nachfrager</div>
+            </div>
+          </div>
+          <canvas class="form-chart" data-form="monopol"></canvas>
+          <div class="explain-body">
+            <p><span class="highlight">Ein einziger <span class="hl" data-hl-form="suppliers">Anbieter</span> steht vielen <span class="hl" data-hl-form="buyers">Nachfragern</span> gegenüber.</span> Er kann den Preis frei setzen (Preissetzter) — begrenzt nur durch die Zahlungsbereitschaft der Käufer.</p>
+            <p><span class="highlight">Kennzeichen:</span></p>
+            <ul>
+              <li>Hohe Marktzutrittsbarrieren (Patente, Lizenzen, Netze, Rohstoffe).</li>
+              <li>Der Monopolist wählt den gewinnmaximalen Preis — meist <em>höher</em> und mit <em>geringerer Menge</em> als im <span class="hl" data-hl-form="suppliers">Angebot</span>-<span class="hl" data-hl-form="buyers">Nachfrage</span>-Gleichgewicht.</li>
+              <li>Er hat volle <span class="hl" data-hl-form="power">Marktmacht</span>.</li>
+            </ul>
+            <p><span class="highlight">Beispiele:</span> Bahnnetz, Stromnetz, Patent-Medikamente.</p>
+          </div>
+          <div class="next-step">
+            <strong>Was passiert als Nächstes?</strong>
+            Ohne Regulierung nutzt der Monopolist seine <span class="hl" data-hl-form="power">Marktmacht</span> aus. Der Staat greift oft durch Kartellrecht ein.
+          </div>
+          <div class="explain-meta">
+            <span class="tag">ein Anbieter</span>
+            <span class="tag">Preissetzter</span>
+            <span class="tag">Wohlfahrtsverlust</span>
+          </div>
+        </div>
+
+        <div class="explain-card ec-oligopol">
+          <div class="explain-head">
+            <div class="explain-icon">🤝</div>
+            <div>
+              <h3 class="explain-title">Angebotsoligopol</h3>
+              <div class="explain-sub">Wenige Anbieter · viele Nachfrager</div>
+            </div>
+          </div>
+          <canvas class="form-chart" data-form="oligopol"></canvas>
+          <div class="explain-body">
+            <p><span class="highlight">Einige wenige große <span class="hl" data-hl-form="suppliers">Anbieter</span> teilen sich den Markt.</span> Jeder reagiert auf die Entscheidungen der anderen („strategische Interaktion“).</p>
+            <p><span class="highlight">Zwei mögliche Ausgänge:</span></p>
+            <ul>
+              <li><strong>Kartell / Kooperation:</strong> Die <span class="hl" data-hl-form="suppliers">Anbieter</span> sprechen sich ab und verhalten sich <em>wie ein Monopol</em> — hohe Preise, geringe Menge.</li>
+              <li><strong>Wettbewerb:</strong> Die <span class="hl" data-hl-form="suppliers">Anbieter</span> konkurrieren hart — Preise sinken, Menge steigt.</li>
+            </ul>
+            <p><span class="highlight">Beispiele:</span> Mobilfunk, Automobilindustrie, Mineralölkonzerne.</p>
+          </div>
+          <div class="next-step">
+            <strong>Was passiert als Nächstes?</strong>
+            Weil Absprachen verboten sind, pendeln Oligopole zwischen Wettbewerb und stillschweigender Koordination.
+          </div>
+          <div class="explain-meta">
+            <span class="tag">wenige Anbieter</span>
+            <span class="tag">strategische Interaktion</span>
+            <span class="tag">Kartell möglich</span>
+          </div>
+        </div>
+
+        <div class="explain-card ec-monopson">
+          <div class="explain-head">
+            <div class="explain-icon">🎯</div>
+            <div>
+              <h3 class="explain-title">Monopson</h3>
+              <div class="explain-sub">Nachfragemonopol · viele Anbieter, ein Nachfrager</div>
+            </div>
+          </div>
+          <canvas class="form-chart" data-form="monopson"></canvas>
+          <div class="explain-body">
+            <p><span class="highlight">Ein einziger <span class="hl" data-hl-form="buyers">Nachfrager</span> steht vielen <span class="hl" data-hl-form="suppliers">Anbietern</span> gegenüber.</span> Er kann den Preis drücken — <span class="hl" data-hl-form="suppliers">Anbieter</span> müssen sich fügen oder aus dem Markt austreten.</p>
+            <p><span class="highlight">Kennzeichen:</span></p>
+            <ul>
+              <li>Der <span class="hl" data-hl-form="buyers">Nachfrager</span> wählt den <em>gewinnmaximalen</em> (also niedrigen) Preis.</li>
+              <li><span class="hl" data-hl-form="suppliers">Anbieter</span> bekommen weniger als im Wettbewerbsmarkt.</li>
+              <li>Volle <span class="hl" data-hl-form="power">Marktmacht</span> liegt beim <span class="hl" data-hl-form="buyers">Nachfrager</span>.</li>
+            </ul>
+            <p><span class="highlight">Beispiele:</span> Ein einziges Stahlwerk, das alle Erze aufkauft; Staat als einziger Arbeitgeber.</p>
+          </div>
+          <div class="next-step">
+            <strong>Was passiert als Nächstes?</strong>
+            Weil die <span class="hl" data-hl-form="suppliers">Anbieter</span> keine Alternative haben, bleibt der Preis niedrig. Auf Dauer verlassen sie den Markt.
+          </div>
+          <div class="explain-meta">
+            <span class="tag">ein Nachfrager</span>
+            <span class="tag">Preisdrücker</span>
+            <span class="tag">Angebotsrückgang</span>
+          </div>
+        </div>
+
+        <div class="explain-card ec-bilateral">
+          <div class="explain-head">
+            <div class="explain-icon">⚔️</div>
+            <div>
+              <h3 class="explain-title">Bilaterales Monopol</h3>
+              <div class="explain-sub">Ein Anbieter · ein Nachfrager</div>
+            </div>
+          </div>
+          <canvas class="form-chart" data-form="bilateral"></canvas>
+          <div class="explain-body">
+            <p><span class="highlight">Ein einziger <span class="hl" data-hl-form="suppliers">Anbieter</span> und ein einziger <span class="hl" data-hl-form="buyers">Nachfrager</span> stehen sich gegenüber.</span> Beide haben <span class="hl" data-hl-form="power">Marktmacht</span> — der Preis ist das Ergebnis von Verhandlungen.</p>
+            <p><span class="highlight">Kennzeichen:</span></p>
+            <ul>
+              <li>Kein Gleichgewichtspreis im klassischen Sinn — der Preis hängt von der <em>Verhandlungsmacht</em> ab.</li>
+              <li>Der Ausgang liegt zwischen dem Monopolpreis und dem Monopsonpreis.</li>
+            </ul>
+            <p><span class="highlight">Beispiele:</span> Ein Autohersteller mit einem einzigen Zulieferer; Rüstungsgeschäfte zwischen Staat und Rüstungskonzern.</p>
+          </div>
+          <div class="next-step">
+            <strong>Was passiert als Nächstes?</strong>
+            Der Preis ist Verhandlungssache. Wer die bessere Alternative hat, kann den Preis stärker zu seinen Gunsten drehen.
+          </div>
+          <div class="explain-meta">
+            <span class="tag">ein Anbieter</span>
+            <span class="tag">ein Nachfrager</span>
+            <span class="tag">Verhandlungspreis</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= QUIZ SIDEBAR ======================= -->
+<div id="quiz-backdrop" class="quiz-backdrop" onclick="toggleQuizSidebar()"></div>
+<aside id="quiz-sidebar" class="quiz-sidebar" aria-hidden="true">
+  <div class="quiz-header">
+    <div class="quiz-title">
+      <i class="fa-solid fa-graduation-cap"></i>
+      <span>Quiz-Trainer</span>
+    </div>
+    <div class="quiz-score-box">
+      <span class="quiz-score-label">Punkte</span>
+      <span class="quiz-score-value" id="quiz-score">0</span>
+    </div>
+    <button class="quiz-close-btn" onclick="toggleQuizSidebar()" title="Schließen">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <div class="quiz-body" id="quiz-body">
+    <!-- Dynamically filled -->
+  </div>
+
+  <div class="quiz-footer">
+    <button class="quiz-check-btn" onclick="checkQuizAnswers()">
+      <i class="fa-solid fa-check"></i> Antworten prüfen
+    </button>
+    <div class="quiz-footer-row">
+      <button class="quiz-hint-btn" onclick="showQuizHint()">
+        <i class="fa-regular fa-lightbulb"></i> Tipp (−2 Pkt)
+      </button>
+      <button class="quiz-new-btn" onclick="generateNewQuiz()">
+        <i class="fa-solid fa-rotate-right"></i> Neue Frage
+      </button>
+    </div>
+  </div>
+</aside>
+
+<div id="panel">
+  <button class="launcher-btn" title="Anwendungsstarter">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z"/>
+    </svg>
+  </button>
+  <div class="panel-item panel-brand" title="Angebot &amp; Nachfrage">
+    <i class="fa-solid fa-chart-line" style="color:var(--kde-accent);"></i>
+    <span>Angebot &amp; Nachfrage</span>
+  </div>
+  <div class="panel-spacer"></div>
+  <div class="panel-item" title="Lautstärke"><i class="fa-solid fa-volume-high"></i></div>
+  <div class="panel-item" title="Netzwerk"><i class="fa-solid fa-wifi"></i></div>
+  <div class="divider"></div>
+  <div class="clock">
+    <span class="time" id="clockTime">00:00</span>
+    <span class="date" id="clockDate">—</span>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const canvas = $("chart");
+  const ctx = canvas.getContext("2d");
+  const box = $("canvasBox");
+
+  const QMAX = 100, PMAX = 100;
+
+  const COL = {
+    demand: "#3daee9", supply: "#ef5b6b", eq: "#3fbf6a", price: "#fdc45b",
+    grid: "#2c3238", plot: "#262b2f", axis: "#5a6169", tick: "#9aa2aa",
+    title: "#c5cbd2", badgeBg: "rgba(35,38,41,.94)", badgeBd: "rgba(90,97,105,.6)"
+  };
+
+  let W = 800, H = 480;
+  let mainHL = null;
+
+  const num = n => n.toLocaleString("de-DE", {minimumFractionDigits:1, maximumFractionDigits:1});
+  const int = n => n.toLocaleString("de-DE", {maximumFractionDigits:0});
+
+  function roundRect(c, x,y,w,h,r){
+    c.beginPath();
+    if (c.roundRect) { c.roundRect(x,y,w,h,r); return; }
+    c.moveTo(x+r,y);
+    c.arcTo(x+w,y,x+w,y+h,r);
+    c.arcTo(x+w,y+h,x,y+h,r);
+    c.arcTo(x,y+h,x,y,r);
+    c.arcTo(x,y,x+w,y,r);
+    c.closePath();
+  }
+
+  function readState(){
+    return {
+      ad:+$("ad").value, bd:+$("bd").value,
+      as:+$("as").value, bs:+$("bs").value,
+      priceOn:$("priceOn").checked, price:+$("price").value
+    };
+  }
+
+  /* ================================
+     Mini charts
+     ================================ */
+  function drawMiniChart(cv){
+    const type = cv.dataset.type;
+    if (!type) return;
+
+    const h = cv._hl || null;
+    const dpr = window.devicePixelRatio || 1;
+    const w = cv.clientWidth || 300;
+    const ht = cv.clientHeight || 180;
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(ht * dpr);
+
+    const c = cv.getContext("2d");
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.clearRect(0, 0, w, ht);
+
+    const baseFont = Math.max(9, Math.min(12, w * 0.035));
+    const PAD = {l: Math.round(baseFont*3), r: Math.round(baseFont*1.4), t: Math.round(baseFont*2.2), b: Math.round(baseFont*2.2)};
+    const pw = w - PAD.l - PAD.r;
+    const ph = ht - PAD.t - PAD.b;
+
+    const X = q => PAD.l + (q/100)*pw;
+    const Y = p => PAD.t + (1 - p/100)*ph;
+
+    c.fillStyle = COL.plot;
+    c.fillRect(PAD.l, PAD.t, pw, ph);
+
+    c.strokeStyle = COL.grid;
+    c.lineWidth = 1;
+    for (let v=20; v<100; v+=20){
+      c.beginPath(); c.moveTo(Math.round(X(v))+.5, PAD.t); c.lineTo(Math.round(X(v))+.5, PAD.t+ph); c.stroke();
+      c.beginPath(); c.moveTo(PAD.l, Math.round(Y(v))+.5); c.lineTo(PAD.l+pw, Math.round(Y(v))+.5); c.stroke();
+    }
+
+    c.strokeStyle = COL.axis;
+    c.lineWidth = 1.3;
+    c.beginPath(); c.moveTo(PAD.l, PAD.t); c.lineTo(PAD.l, PAD.t+ph); c.stroke();
+    c.beginPath(); c.moveTo(PAD.l, PAD.t+ph); c.lineTo(PAD.l+pw, PAD.t+ph); c.stroke();
+
+    c.fillStyle = COL.tick;
+    c.font = `bold ${baseFont}px Verdana, Geneva, sans-serif`;
+    c.textAlign = "right"; c.textBaseline = "top";
+    c.fillText("P", PAD.l - 6, PAD.t - 2);
+    c.textAlign = "right"; c.textBaseline = "bottom";
+    c.fillText("Q", PAD.l + pw, PAD.t + ph + 16);
+
+    let demandFn, supplyFn, fixedP = null, showEq = false;
+    let eqQ = 0, eqP = 0;
+
+    if (type === "none"){
+      demandFn = q => 65 - 0.5*q;
+      supplyFn = q => 78 + 0.15*q;
+    } else if (type === "seller"){
+      demandFn = q => 95 - 1.0*q;
+      supplyFn = q => 10 + 0.9*q;
+      fixedP = 30;
+      eqQ = (95 - 10)/(1.0 + 0.9);
+      eqP = 95 - eqQ;
+      showEq = true;
+    } else if (type === "buyer"){
+      demandFn = q => 95 - 1.0*q;
+      supplyFn = q => 10 + 0.9*q;
+      fixedP = 72;
+      eqQ = (95 - 10)/(1.0 + 0.9);
+      eqP = 95 - eqQ;
+      showEq = true;
+    } else {
+      demandFn = q => 95 - 1.0*q;
+      supplyFn = q => 10 + 0.9*q;
+      eqQ = (95 - 10)/(1.0 + 0.9);
+      eqP = 95 - eqQ;
+      showEq = true;
+    }
+
+    c.save();
+    c.beginPath();
+    c.rect(PAD.l, PAD.t, pw, ph);
+    c.clip();
+
+    if (fixedP !== null){
+      const yP = Y(fixedP);
+      const qd = Math.max(0, Math.min(100, (95 - fixedP)/1.0));
+      const qs = Math.max(0, Math.min(100, (fixedP - 10)/0.9));
+
+      const dimPrice = h && h !== 'price';
+      c.save();
+      if (dimPrice) c.globalAlpha = 0.2;
+
+      const from = Math.min(qd, qs);
+      const to   = Math.max(qd, qs);
+      c.fillStyle = h === 'price' ? "rgba(253,196,91,.4)" : "rgba(253,196,91,.25)";
+      c.fillRect(X(from), yP - 6, X(to) - X(from), 12);
+
+      c.save();
+      c.setLineDash([6,4]);
+      c.strokeStyle = COL.price;
+      c.lineWidth = h === 'price' ? 2.6 : 1.8;
+      c.beginPath(); c.moveTo(PAD.l, yP); c.lineTo(PAD.l+pw, yP); c.stroke();
+      c.restore();
+
+      c.fillStyle = COL.price;
+      [qd, qs].forEach(q => {
+        c.beginPath();
+        c.arc(X(q), yP, h === 'price' ? 4 : 3, 0, Math.PI*2);
+        c.fill();
+      });
+      c.restore();
+    }
+
+    const drawCurve = (fn, color, key) => {
+      const dim = h && h !== key;
+      const strong = h === key;
+      c.save();
+      if (dim) c.globalAlpha = 0.18;
+
+      c.beginPath();
+      const N = 140;
+      let started = false;
+      for (let i=0;i<=N;i++){
+        const q = (i/N)*100;
+        const p = fn(q);
+        const x = X(q);
+        const y = Y(p);
+        if (p < -15 || p > 118){ started = false; continue; }
+        if (!started){ c.moveTo(x, y); started = true; }
+        else c.lineTo(x, y);
+      }
+
+      if (strong){
+        c.save();
+        c.strokeStyle = color;
+        c.lineWidth = 10;
+        c.lineJoin = "round"; c.lineCap = "round";
+        c.globalAlpha = 0.35;
+        c.stroke();
+        c.restore();
+      }
+
+      c.strokeStyle = color;
+      c.lineWidth = strong ? 3.4 : 2.4;
+      c.lineJoin = "round";
+      c.lineCap = "round";
+      c.stroke();
+      c.restore();
+    };
+
+    drawCurve(demandFn, COL.demand, 'demand');
+    drawCurve(supplyFn, COL.supply, 'supply');
+
+    if (showEq){
+      const dimEq = h && h !== 'eq';
+      const strongEq = h === 'eq';
+      c.save();
+      if (dimEq) c.globalAlpha = 0.2;
+      const x = X(eqQ), y = Y(eqP);
+      c.beginPath();
+      c.arc(x, y, strongEq ? 13 : 8, 0, Math.PI*2);
+      c.fillStyle = strongEq ? "rgba(63,191,106,.4)" : "rgba(63,191,106,.25)";
+      c.fill();
+      c.beginPath();
+      c.arc(x, y, strongEq ? 6 : 4.2, 0, Math.PI*2);
+      c.fillStyle = COL.eq;
+      c.fill();
+      c.strokeStyle = "#0a1a10";
+      c.lineWidth = 1.5;
+      c.stroke();
+      c.restore();
+    }
+
+    c.font = `bold ${baseFont}px Verdana, Geneva, sans-serif`;
+    c.textBaseline = "middle";
+
+    const dLabelQ = 82;
+    const dLabelP = demandFn(dLabelQ);
+    if (dLabelP > -10 && dLabelP < 110){
+      const lx = X(dLabelQ), ly = Y(dLabelP) - baseFont - 4;
+      c.save();
+      if (h && h !== 'demand') c.globalAlpha = 0.25;
+      c.fillStyle = "rgba(38,43,47,.9)";
+      const tw = c.measureText("Nachfrage").width;
+      roundRect(c, lx - tw/2 - 6, ly - baseFont*0.85, tw + 12, baseFont*1.7, 3);
+      c.fill();
+      c.fillStyle = COL.demand;
+      c.textAlign = "center";
+      c.fillText("Nachfrage", lx, ly);
+      c.restore();
+    }
+
+    const sLabelQ = 82;
+    const sLabelP = supplyFn(sLabelQ);
+    if (sLabelP > -10 && sLabelP < 110){
+      const lx = X(sLabelQ), ly = Y(sLabelP) + baseFont + 4;
+      c.save();
+      if (h && h !== 'supply') c.globalAlpha = 0.25;
+      c.fillStyle = "rgba(38,43,47,.9)";
+      const tw = c.measureText("Angebot").width;
+      roundRect(c, lx - tw/2 - 6, ly - baseFont*0.85, tw + 12, baseFont*1.7, 3);
+      c.fill();
+      c.fillStyle = COL.supply;
+      c.textAlign = "center";
+      c.fillText("Angebot", lx, ly);
+      c.restore();
+    }
+
+    if (fixedP !== null){
+      const yP = Y(fixedP);
+      const qd = Math.max(0, Math.min(100, (95 - fixedP)/1.0));
+      const qs = Math.max(0, Math.min(100, (fixedP - 10)/0.9));
+      const cx = (X(qd) + X(qs)) / 2;
+      const label = type === "seller" ? "Knappheit" : "Überschuss";
+      c.save();
+      if (h && h !== 'price') c.globalAlpha = 0.25;
+      c.font = `bold ${baseFont}px Verdana, Geneva, sans-serif`;
+      const tw = c.measureText(label).width;
+      let ly = yP - baseFont - 6;
+      if (ly < PAD.t + 8) ly = yP + baseFont + 6;
+      c.fillStyle = "rgba(38,43,47,.92)";
+      roundRect(c, cx - tw/2 - 6, ly - baseFont*0.85, tw + 12, baseFont*1.7, 3);
+      c.fill();
+      c.strokeStyle = COL.price;
+      c.lineWidth = 1;
+      c.stroke();
+      c.fillStyle = COL.price;
+      c.textAlign = "center";
+      c.textBaseline = "middle";
+      c.fillText(label, cx, ly);
+      c.restore();
+    }
+
+    if (type === "none"){
+      c.save();
+      if (h) c.globalAlpha = 0.35;
+      c.font = `bold ${baseFont}px Verdana, Geneva, sans-serif`;
+      const label = "keine Schnittmenge";
+      const tw = c.measureText(label).width;
+      const cx = PAD.l + pw/2;
+      const ly = PAD.t + ph/2;
+      c.fillStyle = "rgba(38,43,47,.92)";
+      roundRect(c, cx - tw/2 - 8, ly - baseFont*1.05, tw + 16, baseFont*2.1, 3);
+      c.fill();
+      c.strokeStyle = COL.supply;
+      c.lineWidth = 1.2;
+      c.stroke();
+      c.fillStyle = COL.supply;
+      c.textAlign = "center";
+      c.textBaseline = "middle";
+      c.fillText(label, cx, ly);
+      c.restore();
+    }
+
+    c.restore();
+  }
+
+  function drawAllMiniCharts(){
+    document.querySelectorAll(".mini-chart").forEach(cv => {
+      if (cv.clientWidth > 0) drawMiniChart(cv);
+    });
+  }
+
+  /* ================================
+     Form charts
+     ================================ */
+  const FORM_CONFIG = {
+    polypol:   {sCount:5, bCount:5, sLabel:"viele",  bLabel:"viele",  power:0.5,  color:"#3fbf6a"},
+    monopol:   {sCount:1, bCount:5, sLabel:"einer",  bLabel:"viele",  power:0.85, color:"#fdc45b"},
+    oligopol:  {sCount:3, bCount:5, sLabel:"wenige", bLabel:"viele",  power:0.7,  color:"#f67400"},
+    monopson:  {sCount:5, bCount:1, sLabel:"viele",  bLabel:"einer",  power:0.15, color:"#3daee9"},
+    bilateral: {sCount:1, bCount:1, sLabel:"einer",  bLabel:"einer",  power:0.5,  color:"#b07cd6"}
+  };
+
+  function drawParticipant(c, x, y, size, type, color, opts = {}){
+    const dim = opts.dim || false;
+    const strong = opts.strong || false;
+
+    c.save();
+    if (dim) c.globalAlpha = 0.2;
+
+    if (type === "supplier"){
+      if (strong){
+        c.save();
+        c.shadowColor = color;
+        c.shadowBlur = 16;
+        c.fillStyle = color;
+        roundRect(c, x, y, size, size, 4);
+        c.fill();
+        c.restore();
+      }
+      c.fillStyle = color;
+      roundRect(c, x, y, size, size, 4);
+      c.fill();
+      c.fillStyle = "rgba(38,43,47,.65)";
+      c.fillRect(x + size*0.62, y + 2, 4, size*0.28);
+      c.fillStyle = "rgba(255,255,255,.45)";
+      const wS = size * 0.18;
+      c.fillRect(x + size*0.14, y + size*0.55, wS, wS);
+      c.fillRect(x + size*0.42, y + size*0.55, wS, wS);
+      c.fillRect(x + size*0.70, y + size*0.55, wS, wS);
+      c.fillStyle = "rgba(0,0,0,.2)";
+      c.fillRect(x, y + size - 3, size, 3);
+    } else {
+      if (strong){
+        c.save();
+        c.shadowColor = color;
+        c.shadowBlur = 16;
+        c.fillStyle = color;
+        c.beginPath();
+        c.arc(x + size/2, y + size/2, size/2, 0, Math.PI*2);
+        c.fill();
+        c.restore();
+      }
+      c.fillStyle = color;
+      c.beginPath();
+      c.arc(x + size/2, y + size/2, size/2, 0, Math.PI*2);
+      c.fill();
+      c.fillStyle = "rgba(38,43,47,.75)";
+      c.beginPath();
+      c.arc(x + size/2, y + size*0.40, size*0.16, 0, Math.PI*2);
+      c.fill();
+      c.beginPath();
+      c.arc(x + size/2, y + size*0.80, size*0.28, Math.PI, 0);
+      c.fill();
+    }
+
+    c.restore();
+  }
+
+  function drawFormChart(cv){
+    const form = cv.dataset.form;
+    const cfg = FORM_CONFIG[form];
+    if (!cfg) return;
+
+    const h = cv._hl || null;
+    const dpr = window.devicePixelRatio || 1;
+    const w = cv.clientWidth || 400;
+    const ht = cv.clientHeight || 210;
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(ht * dpr);
+
+    const c = cv.getContext("2d");
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.clearRect(0, 0, w, ht);
+
+    c.fillStyle = COL.plot;
+    c.fillRect(0, 0, w, ht);
+
+    const dimSuppliers = h && h !== 'suppliers';
+    const dimBuyers = h && h !== 'buyers';
+
+    c.save();
+    if (dimSuppliers) c.globalAlpha = 0.35;
+    c.fillStyle = h === 'suppliers' ? "rgba(239,91,107,.14)" : "rgba(239,91,107,.05)";
+    c.fillRect(0, 0, w*0.5, ht);
+    c.restore();
+
+    c.save();
+    if (dimBuyers) c.globalAlpha = 0.35;
+    c.fillStyle = h === 'buyers' ? "rgba(61,174,233,.14)" : "rgba(61,174,233,.05)";
+    c.fillRect(w*0.5, 0, w*0.5, ht);
+    c.restore();
+
+    c.strokeStyle = "#3a4149";
+    c.lineWidth = 1;
+    c.beginPath();
+    c.moveTo(w*0.5, 0);
+    c.lineTo(w*0.5, ht);
+    c.stroke();
+
+    const baseFont = Math.max(10, Math.min(13, w * 0.028));
+
+    c.font = `bold ${baseFont}px Verdana, Geneva, sans-serif`;
+    c.fillStyle = "#e2e6ea";
+    c.textAlign = "center";
+    c.textBaseline = "top";
+    c.save();
+    if (dimSuppliers) c.globalAlpha = 0.3;
+    c.fillText("Anbieter", w*0.25, 10);
+    c.restore();
+    c.save();
+    if (dimBuyers) c.globalAlpha = 0.3;
+    c.fillText("Nachfrager", w*0.75, 10);
+    c.restore();
+
+    c.strokeStyle = "#ef5b6b";
+    c.lineWidth = h === 'suppliers' ? 3 : 2;
+    c.beginPath(); c.moveTo(w*0.25 - 36, 28); c.lineTo(w*0.25 + 36, 28); c.stroke();
+    c.strokeStyle = "#3daee9";
+    c.lineWidth = h === 'buyers' ? 3 : 2;
+    c.beginPath(); c.moveTo(w*0.75 - 40, 28); c.lineTo(w*0.75 + 40, 28); c.stroke();
+
+    const iconsTop = 48;
+    const iconsAreaH = ht * 0.38;
+    const iconSize = Math.max(20, Math.min(32, w * 0.075));
+    const gap = Math.max(5, w * 0.018);
+
+    const drawIconRow = (count, cx, color, kind, sideKey) => {
+      const totalW = count * iconSize + (count - 1) * gap;
+      const startX = cx - totalW/2;
+      const y = iconsTop + (iconsAreaH - iconSize)/2;
+      for (let i = 0; i < count; i++){
+        const x = startX + i * (iconSize + gap);
+        drawParticipant(c, x, y, iconSize, kind, color, {
+          dim: h && h !== sideKey,
+          strong: h === sideKey
+        });
+      }
+    };
+
+    drawIconRow(cfg.sCount, w*0.25, "#ef5b6b", "supplier", "suppliers");
+    drawIconRow(cfg.bCount, w*0.75, "#3daee9", "buyer", "buyers");
+
+    c.font = `bold ${baseFont}px Verdana, Geneva, sans-serif`;
+    c.textAlign = "center";
+    c.textBaseline = "top";
+    c.save();
+    if (dimSuppliers) c.globalAlpha = 0.3;
+    c.fillStyle = "#ef5b6b";
+    c.fillText(cfg.sLabel, w*0.25, iconsTop + iconsAreaH + 6);
+    c.restore();
+    c.save();
+    if (dimBuyers) c.globalAlpha = 0.3;
+    c.fillStyle = "#3daee9";
+    c.fillText(cfg.bLabel, w*0.75, iconsTop + iconsAreaH + 6);
+    c.restore();
+
+    const barMarginX = Math.max(12, w * 0.05);
+    const barH = Math.max(11, Math.min(15, ht * 0.07));
+    const barY = ht - barH - 22;
+    const barW = w - barMarginX*2;
+
+    c.save();
+    if (h && h !== 'power') c.globalAlpha = 0.35;
+
+    c.font = `bold ${Math.max(9, baseFont-1.5)}px Verdana, Geneva, sans-serif`;
+    c.fillStyle = "#8f969e";
+    c.textAlign = "left";
+    c.textBaseline = "bottom";
+    c.fillText("Marktmacht", barMarginX, barY - 4);
+
+    c.textAlign = "right";
+    c.fillStyle = "#3daee9";
+    c.fillText("Nachfrager", w - barMarginX, barY - 4);
+
+    c.fillStyle = "#1b1e20";
+    roundRect(c, barMarginX, barY, barW, barH, 7);
+    c.fill();
+
+    const fillW = barW * cfg.power;
+    if (fillW > 4){
+      c.save();
+      if (h === 'power'){
+        c.shadowColor = cfg.color;
+        c.shadowBlur = 12;
+      }
+      c.fillStyle = cfg.color;
+      roundRect(c, barMarginX, barY, fillW, barH, 7);
+      c.fill();
+      c.restore();
+    }
+
+    c.save();
+    c.setLineDash([3, 3]);
+    c.strokeStyle = "rgba(255,255,255,.25)";
+    c.lineWidth = 1;
+    c.beginPath();
+    c.moveTo(barMarginX + barW/2, barY - 2);
+    c.lineTo(barMarginX + barW/2, barY + barH + 2);
+    c.stroke();
+    c.restore();
+
+    c.restore();
+  }
+
+  function drawAllFormCharts(){
+    document.querySelectorAll(".form-chart").forEach(cv => {
+      if (cv.clientWidth > 0) drawFormChart(cv);
+    });
+  }
+
+  /* ================================
+     Matrix
+     ================================ */
+  function drawMatrix(){
+    const cv = $("matrixCanvas");
+    if (!cv) return;
+    const w = cv.clientWidth, h = cv.clientHeight;
+    if (!w || !h) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+    const c = cv.getContext("2d");
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.clearRect(0, 0, w, h);
+
+    c.fillStyle = COL.plot;
+    c.fillRect(0, 0, w, h);
+
+    const leftPad = Math.min(w * 0.18, 130);
+    const PAD = {l: leftPad, r: Math.max(12, w*0.02), t: Math.max(38, h*0.12), b: Math.max(20, h*0.06)};
+    const pw = w - PAD.l - PAD.r;
+    const ph = h - PAD.t - PAD.b;
+    const cellW = pw / 3, cellH = ph / 3;
+
+    const headerFont = Math.max(10.5, Math.min(14, w * 0.015));
+    const nameFont = Math.max(10, Math.min(13, w * 0.014));
+    const subFont = Math.max(9, Math.min(11, w * 0.012));
+
+    c.font = `bold ${headerFont}px Verdana, Geneva, sans-serif`;
+    c.fillStyle = "#3daee9";
+    c.textAlign = "center";
+    c.textBaseline = "bottom";
+    c.fillText("Anzahl der Nachfrager →", PAD.l + pw/2, PAD.t - 8);
+
+    c.save();
+    c.translate(Math.min(20, w*0.02), PAD.t + ph/2);
+    c.rotate(-Math.PI/2);
+    c.font = `bold ${headerFont}px Verdana, Geneva, sans-serif`;
+    c.fillStyle = "#ef5b6b";
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    c.fillText("Anzahl der Anbieter →", 0, 0);
+    c.restore();
+
+    const colLabels = ["viele", "wenige", "einer"];
+    c.font = `bold ${headerFont}px Verdana, Geneva, sans-serif`;
+    c.fillStyle = "#c5cbd2";
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    for (let i = 0; i < 3; i++) c.fillText(colLabels[i], PAD.l + cellW*(i + 0.5), PAD.t - 22);
+    c.textAlign = "right";
+    for (let i = 0; i < 3; i++) c.fillText(colLabels[i], PAD.l - 12, PAD.t + cellH*(i + 0.5));
+
+    const cells = [
+      [
+        {name:"Polypol", sub:"vollst. Konkurrenz", color:"#3fbf6a", main:true},
+        {name:"Nachfrage-Oligopol", sub:"Oligopson", color:"#3daee9", main:false},
+        {name:"Monopson", sub:"Nachfragemonopol", color:"#3daee9", main:true}
+      ],
+      [
+        {name:"Angebots-Oligopol", sub:"", color:"#f67400", main:true},
+        {name:"Bilaterales Oligopol", sub:"", color:"#f67400", main:false},
+        {name:"Beschränktes Monopson", sub:"", color:"#3daee9", main:false}
+      ],
+      [
+        {name:"Angebotsmonopol", sub:"", color:"#fdc45b", main:true},
+        {name:"Beschränktes Monopol", sub:"", color:"#fdc45b", main:false},
+        {name:"Bilaterales Monopol", sub:"", color:"#b07cd6", main:true}
+      ]
+    ];
+
+    for (let r = 0; r < 3; r++){
+      for (let col = 0; col < 3; col++){
+        const x = PAD.l + col * cellW;
+        const y = PAD.t + r * cellH;
+        const cell = cells[r][col];
+
+        c.fillStyle = cell.main ? cell.color + "22" : "rgba(255,255,255,.025)";
+        c.fillRect(x + 2, y + 2, cellW - 4, cellH - 4);
+        c.strokeStyle = cell.main ? cell.color + "80" : "rgba(255,255,255,.08)";
+        c.lineWidth = cell.main ? 1.5 : 1;
+        c.strokeRect(x + 2, y + 2, cellW - 4, cellH - 4);
+
+        c.textAlign = "center";
+        c.textBaseline = "middle";
+        c.font = `bold ${nameFont}px Verdana, Geneva, sans-serif`;
+        c.fillStyle = cell.main ? cell.color : "#a5adb5";
+        const textY = cell.sub ? y + cellH/2 - 8 : y + cellH/2;
+        c.fillText(cell.name, x + cellW/2, textY);
+        if (cell.sub){
+          c.font = `${subFont}px Verdana, Geneva, sans-serif`;
+          c.fillStyle = "#8f969e";
+          c.fillText(cell.sub, x + cellW/2, y + cellH/2 + 10);
+        }
+      }
+    }
+
+    c.strokeStyle = "#3a4149";
+    c.lineWidth = 1;
+    c.strokeRect(PAD.l, PAD.t, pw, ph);
+  }
+
+  /* ================================
+     Main chart
+     ================================ */
+  function draw(){
+    const s = readState();
+    const padScale = Math.min(W, H) / 480;
+    const PAD = {
+      l: Math.round(64 * Math.min(1, padScale + 0.15)),
+      r: Math.round(24 * Math.min(1.2, padScale + 0.1)),
+      t: Math.round(24 * Math.min(1.3, padScale + 0.2)),
+      b: Math.round(56 * Math.min(1.2, padScale + 0.15))
+    };
+    const pw = W - PAD.l - PAD.r;
+    const ph = H - PAD.t - PAD.b;
+    const X = q => PAD.l + (q/QMAX)*pw;
+    const Y = p => PAD.t + (1 - p/PMAX)*ph;
+    const xAxisY = PAD.t + ph;
+
+    const h = mainHL;
+    const dimDemand = h && h !== 'demand';
+    const dimSupply = h && h !== 'supply';
+    const dimEq     = h && h !== 'eq';
+    const dimPrice  = h && h !== 'price';
+    const strongAxisQ = h === 'axisQ';
+    const strongAxisP = h === 'axisP';
+    const dimAxisQ    = h === 'axisP';
+    const dimAxisP    = h === 'axisQ';
+
+    const tickFontSize = Math.max(10, Math.min(13, W * 0.016));
+    const axisTitleSize = Math.max(11.5, Math.min(15, W * 0.018));
+    const badgeSize = Math.max(11, Math.min(14, W * 0.017));
+
+    ctx.clearRect(0,0,W,H);
+
+    ctx.fillStyle = COL.plot;
+    roundRect(ctx, PAD.l, PAD.t, pw, ph, 6);
+    ctx.fill();
+
+    ctx.save();
+    if (strongAxisQ || strongAxisP) ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = COL.grid;
+    ctx.lineWidth = 1;
+    for (let v=0; v<=100; v+=10){
+      const x = X(v), y = Y(v);
+      ctx.beginPath(); ctx.moveTo(Math.round(x)+.5, PAD.t); ctx.lineTo(Math.round(x)+.5, xAxisY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(PAD.l, Math.round(y)+.5); ctx.lineTo(PAD.l+pw, Math.round(y)+.5); ctx.stroke();
+    }
+    ctx.restore();
+
+    ctx.save();
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    if (dimAxisQ) ctx.globalAlpha = 0.22;
+    ctx.fillStyle = strongAxisQ ? COL.eq : COL.tick;
+    ctx.font = strongAxisQ ? `bold ${tickFontSize+1}px Verdana, Geneva, sans-serif` : `${tickFontSize}px Verdana, Geneva, sans-serif`;
+    for (let v=0; v<=100; v+=20) ctx.fillText(int(v), X(v), xAxisY + 8);
+    ctx.restore();
+
+    ctx.save();
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    if (dimAxisP) ctx.globalAlpha = 0.22;
+    ctx.fillStyle = strongAxisP ? COL.price : COL.tick;
+    ctx.font = strongAxisP ? `bold ${tickFontSize+1}px Verdana, Geneva, sans-serif` : `${tickFontSize}px Verdana, Geneva, sans-serif`;
+    for (let v=0; v<=100; v+=20) ctx.fillText(int(v), PAD.l - 10, Y(v));
+    ctx.restore();
+
+    ctx.save();
+    if (dimAxisQ) ctx.globalAlpha = 0.2;
+    ctx.strokeStyle = strongAxisQ ? COL.eq : COL.axis;
+    ctx.lineWidth = strongAxisQ ? 3.5 : 1.6;
+    if (strongAxisQ){ ctx.shadowColor = COL.eq; ctx.shadowBlur = 14; }
+    ctx.beginPath(); ctx.moveTo(PAD.l, xAxisY); ctx.lineTo(PAD.l + pw + 8, xAxisY); ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    if (dimAxisP) ctx.globalAlpha = 0.2;
+    ctx.strokeStyle = strongAxisP ? COL.price : COL.axis;
+    ctx.lineWidth = strongAxisP ? 3.5 : 1.6;
+    if (strongAxisP){ ctx.shadowColor = COL.price; ctx.shadowBlur = 14; }
+    ctx.beginPath(); ctx.moveTo(PAD.l, PAD.t - 8); ctx.lineTo(PAD.l, xAxisY); ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    if (dimAxisQ) ctx.globalAlpha = 0.22;
+    ctx.fillStyle = strongAxisQ ? COL.eq : COL.title;
+    ctx.font = `bold ${axisTitleSize}px Verdana, Geneva, sans-serif`;
+    ctx.fillText("Menge Q (ME)", PAD.l + pw/2, xAxisY + 30);
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(Math.max(16, PAD.l * 0.3), PAD.t + ph/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    if (dimAxisP) ctx.globalAlpha = 0.22;
+    ctx.fillStyle = strongAxisP ? COL.price : COL.title;
+    ctx.font = `bold ${axisTitleSize}px Verdana, Geneva, sans-serif`;
+    ctx.fillText("Preis P (€/ME)", 0, 0);
+    ctx.restore();
+
+    ctx.save();
+    ctx.beginPath();
+    roundRect(ctx, PAD.l, PAD.t, pw, ph, 6);
+    ctx.clip();
+
+    const drawCurve = (fn, color, key) => {
+      const dim = h && h !== key;
+      const strong = h === key;
+      ctx.save();
+      if (dim) ctx.globalAlpha = 0.2;
+
+      ctx.beginPath();
+      const N = 240;
+      for (let i=0;i<=N;i++){
+        const q = (i/N)*QMAX;
+        const x = X(q), y = Y(fn(q));
+        i ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+      }
+
+      if (!dim){
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = strong ? 18 : 10;
+        ctx.lineJoin = "round"; ctx.lineCap = "round";
+        ctx.globalAlpha = strong ? .45 : .25;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = strong ? 5 : 3.2;
+      ctx.lineJoin = "round"; ctx.lineCap = "round";
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    drawCurve(q => s.ad - s.bd*q, COL.demand, 'demand');
+    drawCurve(q => s.as + s.bs*q, COL.supply, 'supply');
+
+    if (s.priceOn){
+      const p = s.price;
+      const y = Y(p);
+      const strong = h === 'price';
+
+      ctx.save();
+      if (dimPrice) ctx.globalAlpha = 0.2;
+
+      ctx.save();
+      ctx.setLineDash([9,6]);
+      ctx.strokeStyle = COL.price;
+      ctx.lineWidth = strong ? 3.5 : 2.2;
+      if (strong){ ctx.shadowColor = COL.price; ctx.shadowBlur = 14; }
+      ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l+pw, y); ctx.stroke();
+      ctx.restore();
+
+      const qd = Math.max(0, Math.min(QMAX, (s.ad - p)/s.bd));
+      const qs = Math.max(0, Math.min(QMAX, (p - s.as)/s.bs));
+      if (Math.abs(qd - qs) > 0.6){
+        ctx.beginPath();
+        ctx.moveTo(X(Math.min(qd,qs)), y);
+        ctx.lineTo(X(Math.max(qd,qs)), y);
+        ctx.strokeStyle = strong ? "rgba(253,196,91,1)" : "rgba(253,196,91,.85)";
+        ctx.lineWidth = strong ? 12 : 9;
+        ctx.lineCap = "round";
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    const qe = (s.ad - s.as)/(s.bd + s.bs);
+    const pe = s.ad - s.bd*qe;
+    const hasEq = qe>0 && qe<=QMAX && pe>=0 && pe<=PMAX;
+
+    if (hasEq){
+      const x = X(qe), y = Y(pe);
+      const strong = h === 'eq';
+
+      ctx.save();
+      if (dimEq) ctx.globalAlpha = 0.2;
+
+      ctx.save();
+      ctx.setLineDash([6,6]);
+      ctx.strokeStyle = strong ? "rgba(63,191,106,.9)" : "rgba(63,191,106,.55)";
+      ctx.lineWidth = strong ? 2.4 : 1.6;
+      ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(x, y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, xAxisY); ctx.lineTo(x, y); ctx.stroke();
+      ctx.restore();
+
+      ctx.beginPath();
+      ctx.arc(x, y, strong ? 22 : 13, 0, Math.PI*2);
+      ctx.fillStyle = strong ? "rgba(63,191,106,.4)" : "rgba(63,191,106,.20)";
+      if (strong){ ctx.shadowColor = COL.eq; ctx.shadowBlur = 16; }
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+      ctx.beginPath();
+      ctx.arc(x, y, strong ? 9 : 6.5, 0, Math.PI*2);
+      ctx.fillStyle = COL.eq;
+      ctx.fill();
+      ctx.strokeStyle = "#0a1a10";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    ctx.restore();
+
+    const badge = (text, x, y, align, baseline, color, opts = {}) => {
+      const dim = opts.dim || false;
+      const strong = opts.strong || false;
+      const fs = opts.fontSize || 13;
+      ctx.save();
+      if (dim) ctx.globalAlpha = 0.25;
+      ctx.font = `bold ${fs}px Verdana, Geneva, sans-serif`;
+      const w = ctx.measureText(text).width + 16;
+      const hh = fs + 10;
+      let bx = x;
+      if (align === "center") bx = x - w/2;
+      else if (align === "right") bx = x - w;
+      let by = y;
+      if (baseline === "middle") by = y - hh/2;
+      else if (baseline === "bottom") by = y - hh;
+      bx = Math.max(2, Math.min(W - w - 2, bx));
+      by = Math.max(2, Math.min(H - hh - 2, by));
+      ctx.fillStyle = COL.badgeBg;
+      roundRect(ctx, bx, by, w, hh, 5);
+      ctx.fill();
+      ctx.strokeStyle = strong ? color : COL.badgeBd;
+      ctx.lineWidth = strong ? 2 : 1;
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillText(text, bx + 8, by + hh/2 + 0.5);
+      ctx.restore();
+    };
+
+    if (hasEq){
+      badge(`P* = ${num(pe)} €`, PAD.l + 10, Y(pe), "left", "bottom", COL.eq, {dim: dimEq, strong: h === 'eq', fontSize: badgeSize});
+      badge(`Q* = ${num(qe)} ME`, X(qe), xAxisY - 8, "center", "bottom", COL.eq, {dim: dimEq, strong: h === 'eq', fontSize: badgeSize});
+    } else {
+      badge("Kein Gleichgewicht im sichtbaren Bereich",
+        PAD.l + pw/2, PAD.t + 12, "center", "top", COL.supply, {fontSize: badgeSize});
+    }
+
+    if (s.priceOn){
+      badge(`P = ${int(s.price)} €`, PAD.l + pw - 8, Y(s.price) - 8, "right", "bottom", COL.price, {dim: dimPrice, strong: h === 'price', fontSize: badgeSize});
+    }
+  }
+
+  function marketType(s){
+    const qe = (s.ad - s.as)/(s.bd + s.bs);
+    const pe = s.ad - s.bd*qe;
+
+    const slopeTag = (b, label) => {
+      let w = "mittel";
+      if (b < 0.75) w = "steil";
+      else if (b > 1.6) w = "flach";
+      return `${label}: ${w} (b = ${num(b)})`;
+    };
+    const tags = [slopeTag(s.bd, "Nachfrage"), slopeTag(s.bs, "Angebot")];
+
+    const valid = qe>0 && pe>=0 && qe<=QMAX && pe<=PMAX;
+    if (!valid){
+      return {cls: "t-none", icon: "🚫", key: "none",
+        title: "Kein Gleichgewicht",
+        desc: "Angebots- und Nachfragekurve schneiden sich nicht im sichtbaren positiven Bereich. Ein Marktpreis kann sich unter diesen Bedingungen nicht einpendeln.",
+        tags};
+    }
+
+    if (s.priceOn){
+      const qd = Math.max(0, (s.ad - s.price)/s.bd);
+      const qs = Math.max(0, (s.price - s.as)/s.bs);
+      const diff = qd - qs;
+      tags.push(`P fix = ${int(s.price)} €`);
+
+      if (Math.abs(diff) < 0.6){
+        return {cls: "t-balance", icon: "⚖️", key: "balance",
+          title: "Geräumter Markt (markträumender Preis)",
+          desc: "Der festgelegte Preis entspricht (nahezu) dem Gleichgewichtspreis. Angebot und Nachfrage sind im Einklang.",
+          tags};
+      }
+      if (diff > 0){
+        return {cls: "t-seller", icon: "📈", key: "seller",
+          title: "Verkäufermarkt – Nachfrageüberhang",
+          desc: `Beim Preis von ${int(s.price)} € möchten Käufer ${num(qd)} ME kaufen, aber Verkäufer bieten nur ${num(qs)} ME an. Es fehlen ${num(diff)} ME.`,
+          tags};
+      }
+      return {cls: "t-buyer", icon: "📉", key: "buyer",
+        title: "Käufermarkt – Angebotsüberhang",
+        desc: `Beim Preis von ${int(s.price)} € bieten Verkäufer ${num(qs)} ME an, aber Käufer möchten nur ${num(qd)} ME kaufen. Es bleiben ${num(-diff)} ME übrig.`,
+        tags};
+    }
+
+    const rel = pe / PMAX;
+    let level = "mittleres Preisniveau";
+    if (rel < 0.3) level = "niedriges Preisniveau";
+    else if (rel > 0.7) level = "hohes Preisniveau";
+    tags.push(`P* / Pmax = ${num(rel*100)} %`);
+
+    return {cls: "t-balance", icon: "⚖️", key: "balance",
+      title: "Gleichgewichtsmarkt",
+      desc: `Angebot und Nachfrage treffen sich bei P* = ${num(pe)} € und Q* = ${num(qe)} ME (${level}). Der Markt ist geräumt — die nachgefragte Menge entspricht genau der angebotenen Menge.`,
+      tags};
+  }
+
+  function updateUI(){
+    const s = readState();
+
+    $("adOut").textContent = int(s.ad);
+    $("bdOut").textContent = num(s.bd);
+    $("asOut").textContent = int(s.as);
+    $("bsOut").textContent = num(s.bs);
+    $("priceOut").textContent = int(s.price);
+    $("price").disabled = !s.priceOn;
+
+    $("dFormula").textContent = `P = ${int(s.ad)} − ${num(s.bd)} · Q`;
+    $("sFormula").textContent = `P = ${int(s.as)} + ${num(s.bs)} · Q`;
+
+    const mt = marketType(s);
+    const banner = $("marketType");
+    banner.className = "market-type " + mt.cls;
+    $("mtIcon").textContent = mt.icon;
+    $("mtTitle").textContent = mt.title;
+    $("mtDesc").textContent = mt.desc;
+
+    const tagHtml = [];
+    tagHtml.push(`<span class="tag">${mt.tags[0]}</span>`);
+    tagHtml.push(`<span class="tag">${mt.tags[1]}</span>`);
+    for (let i = 2; i < mt.tags.length; i++){
+      tagHtml.push(`<span class="tag warn">${mt.tags[i]}</span>`);
+    }
+    $("mtTags").innerHTML = tagHtml.join("");
+
+    ["balance","seller","buyer","none"].forEach(k => {
+      const el = $("card-" + k);
+      if (el) el.classList.toggle("current", k === mt.key);
+    });
+
+    const qe = (s.ad - s.as)/(s.bd + s.bs);
+    const pe = s.ad - s.bd*qe;
+    const msg = $("msg");
+    msg.className = "msg";
+
+    const liveCalc = $("liveCalc");
+    if (s.priceOn && qe > 0){
+      liveCalc.classList.add("show");
+      const qd = Math.max(0, (s.ad - s.price)/s.bd);
+      const qs = Math.max(0, (s.price - s.as)/s.bs);
+      const diff = qd - qs;
+
+      $("liveQd").textContent = num(qd) + " ME";
+      $("liveQs").textContent = num(qs) + " ME";
+
+      const diffRow = $("liveDiffRow");
+      const diffHint = $("liveDiffHint");
+      const noteEl = $("liveNote");
+
+      diffRow.classList.remove("pos","neg","zero");
+      if (Math.abs(diff) < 0.6){
+        diffRow.classList.add("zero");
+        $("liveDiff").textContent = "0 ME";
+        diffHint.textContent = "Nachgefragte und angebotene Menge sind gleich";
+        noteEl.innerHTML = `<strong>Ergebnis:</strong> Der festgelegte Preis entspricht dem Gleichgewichtspreis. Der Markt ist geräumt.`;
+      } else if (diff > 0){
+        diffRow.classList.add("pos");
+        $("liveDiff").textContent = "+" + num(diff) + " ME";
+        diffHint.textContent = "Qd ist größer als Qs → Nachfrageüberhang";
+        noteEl.innerHTML = `<strong>Das bedeutet:</strong> Bei diesem Preis wollen Käufer ${num(diff)} ME <em>mehr</em> kaufen, als Verkäufer liefern. Es entsteht eine <strong>Verknappung</strong>.`;
+      } else {
+        diffRow.classList.add("neg");
+        $("liveDiff").textContent = "−" + num(-diff) + " ME";
+        diffHint.textContent = "Qs ist größer als Qd → Angebotsüberhang";
+        noteEl.innerHTML = `<strong>Das bedeutet:</strong> Bei diesem Preis bieten Verkäufer ${num(-diff)} ME <em>mehr</em> an, als Käufer kaufen wollen. Es bleibt ein <strong>Überschuss</strong>.`;
+      }
+    } else {
+      liveCalc.classList.remove("show");
+    }
+
+    if (qe > 0){
+      $("statP").textContent = num(pe) + " €";
+      $("statQ").textContent = num(qe) + " ME";
+
+      if (s.priceOn){
+        const qd = Math.max(0, (s.ad - s.price)/s.bd);
+        const qs = Math.max(0, (s.price - s.as)/s.bs);
+        const diff = qd - qs;
+        if (Math.abs(diff) < 0.6){
+          msg.textContent = "Der festgelegte Preis entspricht ungefähr dem Gleichgewichtspreis — der Markt ist geräumt.";
+          msg.classList.add("ok");
+        } else if (diff > 0){
+          msg.textContent = `Nachfrageüberhang (Knappheit): Bei ${int(s.price)} € werden ${num(qd)} ME nachgefragt, aber nur ${num(qs)} ME angeboten — es fehlen ${num(diff)} ME.`;
+          msg.classList.add("warn");
+        } else {
+          msg.textContent = `Angebotsüberhang (Überschuss): Bei ${int(s.price)} € werden ${num(qs)} ME angeboten, aber nur ${num(qd)} ME nachgefragt — es bleiben ${num(-diff)} ME übrig.`;
+          msg.classList.add("warn");
+        }
+      } else {
+        msg.textContent = `Im Gleichgewicht werden ${num(qe)} ME zum Preis von ${num(pe)} € gehandelt.`;
+        msg.classList.add("ok");
+      }
+    } else {
+      $("statP").textContent = "–";
+      $("statQ").textContent = "–";
+      msg.textContent = "Die Angebotskurve liegt vollständig über der Nachfragekurve — es gibt kein Gleichgewicht im positiven Bereich.";
+      msg.classList.add("warn");
+    }
+  }
+
+  function update(){ updateUI(); draw(); }
+
+  function resize(){
+    const w = box.clientWidth;
+    if (w){
+      const dpr = window.devicePixelRatio || 1;
+      const maxH = Math.max(260, window.innerHeight * 0.7);
+      W = Math.max(280, w);
+      H = Math.round(Math.min(maxH, Math.max(300, W * 0.62)));
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      canvas.style.width = W + "px";
+      canvas.style.height = H + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      draw();
+    }
+    drawAllMiniCharts();
+    drawAllFormCharts();
+    drawMatrix();
+  }
+
+  /* ================================
+     Highlight bindings
+     ================================ */
+  document.querySelectorAll('[data-hl-chart]').forEach(el => {
+    el.addEventListener('mouseenter', () => { mainHL = el.dataset.hlChart; draw(); });
+    el.addEventListener('mouseleave', () => { mainHL = null; draw(); });
+  });
+
+  document.querySelectorAll('.explain-card').forEach(card => {
+    const miniCv = card.querySelector('.mini-chart');
+    if (!miniCv) return;
+    card.querySelectorAll('[data-hl-mini]').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        miniCv._hl = el.dataset.hlMini;
+        drawMiniChart(miniCv);
+      });
+      el.addEventListener('mouseleave', () => {
+        miniCv._hl = null;
+        drawMiniChart(miniCv);
+      });
+    });
+  });
+
+  const formCards = [];
+  document.querySelectorAll('.explain-card').forEach(card => {
+    const formCv = card.querySelector('.form-chart');
+    if (formCv) formCards.push({card, cv: formCv});
+  });
+
+  document.querySelectorAll('[data-hl-form]').forEach(el => {
+    const owningCard = el.closest('.explain-card');
+    el.addEventListener('mouseenter', () => {
+      const key = el.dataset.hlForm;
+      if (owningCard){
+        const cv = owningCard.querySelector('.form-chart');
+        if (cv){ cv._hl = key; drawFormChart(cv); }
+      } else {
+        formCards.forEach(({cv}) => { cv._hl = key; drawFormChart(cv); });
+      }
+    });
+    el.addEventListener('mouseleave', () => {
+      if (owningCard){
+        const cv = owningCard.querySelector('.form-chart');
+        if (cv){ cv._hl = null; drawFormChart(cv); }
+      } else {
+        formCards.forEach(({cv}) => { cv._hl = null; drawFormChart(cv); });
+      }
+    });
+  });
+
+  /* Tab switching */
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      const target = document.getElementById("tab-" + btn.dataset.tab);
+      if (target) target.classList.add("active");
+      setTimeout(() => {
+        const t = btn.dataset.tab;
+        if (t === "chart") resize();
+        else if (t === "explain") drawAllMiniCharts();
+        else if (t === "forms"){ drawAllFormCharts(); drawMatrix(); }
+      }, 50);
+    });
+  });
+
+  ["ad","bd","as","bs","price"].forEach(id => {
+    $(id).addEventListener("input", update);
+  });
+  $("priceOn").addEventListener("change", update);
+
+  $("reset").addEventListener("click", () => {
+    $("ad").value = 100; $("bd").value = 1;
+    $("as").value = 10;  $("bs").value = 0.9;
+    $("priceOn").checked = false;
+    $("price").value = 50;
+    update();
+  });
+
+  if (window.ResizeObserver){
+    const ro = new ResizeObserver(() => resize());
+    ro.observe(box);
+    const grid = document.querySelector(".explain-grid");
+    if (grid) new ResizeObserver(() => { drawAllMiniCharts(); drawAllFormCharts(); drawMatrix(); }).observe(grid);
+    const matrix = document.querySelector(".matrix-wrap");
+    if (matrix) new ResizeObserver(() => drawMatrix()).observe(matrix);
+  }
+  window.addEventListener("resize", () => {
+    clearTimeout(window._resizeTimer);
+    window._resizeTimer = setTimeout(() => {
+      resize();
+      drawAllMiniCharts();
+      drawAllFormCharts();
+      drawMatrix();
+    }, 60);
+  });
+  window.addEventListener("orientationchange", () => setTimeout(resize, 200));
+
+  function tick(){
+    const now = new Date();
+    let h = now.getHours(), m = now.getMinutes();
+    const ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12; h = h ? h : 12;
+    m = m < 10 ? "0" + m : m;
+    $("clockTime").textContent = `${h}:${m} ${ampm}`;
+    $("clockDate").textContent = now.toLocaleDateString("de-DE", {weekday:"short", month:"short", day:"numeric"});
+  }
+  tick(); setInterval(tick, 1000);
+
+  /* ================================
+     QUIZ SYSTEM
+     ================================ */
+  const getR = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+  const quizGen = [
+    // Q1: Equilibrium calc (P* and Q*)
+    () => {
+      const B = getR(10, 40);
+      const k = getR(5, 25);
+      const A = B + 2*k;
+      const qe = k;
+      const pe = B + k;
+      return {
+        type: 'multi',
+        question: `<span class="eq-line" style="color:#3daee9">Nachfrage: P = ${A} − Q</span><span class="eq-line" style="color:#ef5b6b">Angebot: P = ${B} + Q</span>`,
+        prompt: 'Berechne das Gleichgewicht (Angebot = Nachfrage):',
+        fields: [
+          { id: 'qe', label: 'Gleichgewichtsmenge Q* (ME)', correct: qe, placeholder: 'z.B. 20' },
+          { id: 'pe', label: 'Gleichgewichtspreis P* (€)', correct: pe, placeholder: 'z.B. 60' }
+        ],
+        hint: `Setze beide Gleichungen gleich: <strong>${A} − Q = ${B} + Q</strong>. Löse dann nach Q auf und setze in eine der beiden Gleichungen ein.`,
+        explanation: `Aus ${A} − Q = ${B} + Q folgt 2Q = ${A - B} → Q* = ${qe}. Eingesetzt: P* = ${A} − ${qe} = ${pe} €.`
+      };
+    },
+
+    // Q2: Market type from Qd/Qs
+    () => {
+      const isVerk = Math.random() < 0.5;
+      const qd = isVerk ? getR(60, 90) : getR(20, 40);
+      const qs = isVerk ? getR(20, 40) : getR(60, 90);
+      return {
+        type: 'mc',
+        question: `Bei einem festgelegten Preis von 30 € werden <span style="color:#3daee9;font-weight:bold">${qd} ME</span> nachgefragt und <span style="color:#ef5b6b;font-weight:bold">${qs} ME</span> angeboten.`,
+        prompt: 'Welcher Markttyp liegt vor?',
+        options: [
+          'Verkäufermarkt (Nachfrageüberhang)',
+          'Käufermarkt (Angebotsüberhang)',
+          'Gleichgewichtsmarkt'
+        ],
+        correctIdx: isVerk ? 0 : 1,
+        hint: `Vergleiche: Ist Q<sub>d</sub> = ${qd} größer oder kleiner als Q<sub>s</sub> = ${qs}?`,
+        explanation: isVerk
+          ? `Q<sub>d</sub> (${qd}) > Q<sub>s</sub> (${qs}) → Nachfrageüberhang → <strong>Verkäufermarkt</strong>.`
+          : `Q<sub>s</sub> (${qs}) > Q<sub>d</sub> (${qd}) → Angebotsüberhang → <strong>Käufermarkt</strong>.`
+      };
+    },
+
+    // Q3: Demand intercept meaning (Höchstpreis)
+    () => {
+      const A = getR(60, 150);
+      return {
+        type: 'num',
+        question: `<span class="eq-line" style="color:#3daee9">Nachfrage: P = ${A} − 2 · Q</span>`,
+        prompt: 'Bei welchem Preis wird nichts mehr nachgefragt (Höchstpreis)?',
+        label: 'Höchstpreis P<sub>max</sub> (€)',
+        correct: A,
+        placeholder: 'z.B. 100',
+        hint: 'Setze Q = 0 in die Nachfragefunktion ein. Der y-Achsenabschnitt ist der Höchstpreis.',
+        explanation: `Bei Q = 0 ergibt sich P = ${A} €. Das ist der Höchstpreis — bei diesem Preis kauft niemand mehr.`
+      };
+    },
+
+    // Q4: Qd at fixed price
+    () => {
+      const b = getR(2, 5);
+      const qd = getR(10, 30);
+      const P0 = getR(20, 60);
+      const A = P0 + b * qd;
+      return {
+        type: 'num',
+        question: `<span class="eq-line" style="color:#3daee9">Nachfrage: P = ${A} − ${b} · Q</span><span class="eq-line" style="color:#fdc45b">Festgelegter Preis: P = ${P0} €</span>`,
+        prompt: 'Wie viele ME werden zu diesem Preis nachgefragt?',
+        label: 'Nachgefragte Menge Q<sub>d</sub> (ME)',
+        correct: qd,
+        placeholder: 'z.B. 20',
+        hint: `Setze P = ${P0} in die Nachfragefunktion ein: <strong>${P0} = ${A} − ${b} · Q</strong>. Löse nach Q auf.`,
+        explanation: `${P0} = ${A} − ${b}·Q → ${b}·Q = ${A - P0} → Q<sub>d</sub> = ${qd} ME.`
+      };
+    },
+
+    // Q5: Market form scenario
+    () => {
+      const scenarios = [
+        { text: 'Ein einziger Anbieter steht vielen Nachfragern gegenüber.', correctIdx: 0 },
+        { text: 'Wenige große Anbieter teilen sich einen Markt mit vielen Nachfragern.', correctIdx: 1 },
+        { text: 'Viele kleine Anbieter treffen auf viele Nachfrager.', correctIdx: 2 },
+        { text: 'Ein einziger Nachfrager steht vielen Anbietern gegenüber.', correctIdx: 3 }
+      ];
+      const s = scenarios[getR(0, 3)];
+      const names = ['Monopol', 'Oligopol', 'Polypol', 'Monopson'];
+      return {
+        type: 'mc',
+        question: `<em style="color:#d5dde4">„${s.text}“</em>`,
+        prompt: 'Welche Marktform beschreibt dieser Satz?',
+        options: names,
+        correctIdx: s.correctIdx,
+        hint: 'Achte darauf, ob "ein", "wenige" oder "viele" auf Anbieter- und Nachfragerseite steht.',
+        explanation: `→ <strong>${names[s.correctIdx]}</strong>.`
+      };
+    },
+
+    // Q6: Price movement with surplus/shortage
+    () => {
+      const isShortage = Math.random() < 0.5;
+      return {
+        type: 'mc',
+        question: isShortage
+          ? 'Bei einem festgelegten Preis entsteht ein <strong style="color:#fdc45b">Nachfrageüberhang</strong>.'
+          : 'Bei einem festgelegten Preis entsteht ein <strong style="color:#fdc45b">Angebotsüberhang</strong>.',
+        prompt: 'Was passiert am freien Markt mit dem Preis?',
+        options: [
+          'Der Preis steigt.',
+          'Der Preis fällt.',
+          'Der Preis bleibt unverändert.'
+        ],
+        correctIdx: isShortage ? 0 : 1,
+        hint: 'Nachfrageüberhang: Käufer konkurrieren um knappe Güter. Angebotsüberhang: Verkäufer konkurrieren um Käufer.',
+        explanation: isShortage
+          ? 'Nachfrageüberhang → Käufer überbieten sich → <strong>Preis steigt</strong>.'
+          : 'Angebotsüberhang → Verkäufer senken Preise → <strong>Preis fällt</strong>.'
+      };
+    },
+
+    // Q7: Qs at fixed price
+    () => {
+      const b = getR(2, 5);
+      const qs = getR(10, 30);
+      const A = getR(5, 20);
+      const P0 = A + b * qs;
+      return {
+        type: 'num',
+        question: `<span class="eq-line" style="color:#ef5b6b">Angebot: P = ${A} + ${b} · Q</span><span class="eq-line" style="color:#fdc45b">Festgelegter Preis: P = ${P0} €</span>`,
+        prompt: 'Wie viele ME werden zu diesem Preis angeboten?',
+        label: 'Angebotene Menge Q<sub>s</sub> (ME)',
+        correct: qs,
+        placeholder: 'z.B. 20',
+        hint: `Setze P = ${P0} in die Angebotsfunktion ein: <strong>${P0} = ${A} + ${b} · Q</strong>. Löse nach Q auf.`,
+        explanation: `${P0} = ${A} + ${b}·Q → ${b}·Q = ${P0 - A} → Q<sub>s</sub> = ${qs} ME.`
+      };
+    },
+
+    // Q8: Equilibrium P only
+    () => {
+      const B = getR(10, 40);
+      const k = getR(5, 25);
+      const A = B + 2*k;
+      const qe = k;
+      const pe = B + k;
+      return {
+        type: 'num',
+        question: `<span class="eq-line" style="color:#3daee9">Nachfrage: P = ${A} − Q</span><span class="eq-line" style="color:#ef5b6b">Angebot: P = ${B} + Q</span>`,
+        prompt: 'Berechne den Gleichgewichtspreis P*.',
+        label: 'Gleichgewichtspreis P* (€)',
+        correct: pe,
+        placeholder: 'z.B. 60',
+        hint: `Setze die Gleichungen gleich: <strong>${A} − Q = ${B} + Q</strong>. Erst Q*, dann P* durch Einsetzen.`,
+        explanation: `Gleichsetzen ergibt Q* = ${qe}. Eingesetzt: P* = ${A} − ${qe} = ${pe} €.`
+      };
+    }
+  ];
+
+  let currentQuiz = null;
+  let quizScore = 0;
+  let lastQuizIdx = -1;
+
+  function updateScoreDisplay(){
+    $("quiz-score").textContent = quizScore;
+    $("sidebar-score-badge").textContent = quizScore;
+  }
+
+  function renderQuiz(){
+    const body = $("quiz-body");
+    if (!currentQuiz){ body.innerHTML = ''; return; }
+    let html = '';
+
+    html += `<div class="quiz-question-box">${currentQuiz.question}</div>`;
+    html += `<div class="quiz-prompt">${currentQuiz.prompt}</div>`;
+
+    if (currentQuiz.type === 'num'){
+      html += `<div class="quiz-field">
+        <label>${currentQuiz.label}</label>
+        <input type="text" id="qz-num" class="quiz-input" placeholder="${currentQuiz.placeholder || ''}" autocomplete="off" inputmode="numeric">
+      </div>`;
+    } else if (currentQuiz.type === 'multi'){
+      currentQuiz.fields.forEach(f => {
+        html += `<div class="quiz-field">
+          <label>${f.label}</label>
+          <input type="text" id="qz-${f.id}" class="quiz-input" placeholder="${f.placeholder || ''}" autocomplete="off" inputmode="numeric">
+        </div>`;
+      });
+    } else if (currentQuiz.type === 'mc'){
+      html += '<div class="quiz-options">';
+      currentQuiz.options.forEach((opt, i) => {
+        html += `<label class="quiz-option">
+          <input type="radio" name="qz-mc" value="${i}">
+          <span>${opt}</span>
+        </label>`;
+      });
+      html += '</div>';
+    }
+
+    html += '<div id="quiz-feedback" class="quiz-feedback" style="display:none"></div>';
+    html += '<div id="quiz-hint" class="quiz-hint" style="display:none"></div>';
+
+    body.innerHTML = html;
+
+    // Enter to submit
+    body.querySelectorAll('.quiz-input').forEach(inp => {
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter'){ e.preventDefault(); checkQuizAnswers(); }
+      });
+    });
+  }
+
+  function generateNewQuiz(){
+    let idx;
+    do {
+      idx = Math.floor(Math.random() * quizGen.length);
+    } while (idx === lastQuizIdx && quizGen.length > 1);
+    lastQuizIdx = idx;
+    currentQuiz = quizGen[idx]();
+    renderQuiz();
+  }
+
+  function checkQuizAnswers(){
+    if (!currentQuiz) return;
+    let allCorrect = true;
+
+    if (currentQuiz.type === 'num'){
+      const el = $("qz-num");
+      if (!el) return;
+      el.classList.remove('correct-input', 'wrong-input');
+      const v = parseFloat(el.value.replace(',', '.'));
+      if (!isNaN(v) && Math.abs(v - currentQuiz.correct) < 0.01){
+        el.classList.add('correct-input');
+      } else {
+        el.classList.add('wrong-input');
+        allCorrect = false;
+      }
+    } else if (currentQuiz.type === 'multi'){
+      currentQuiz.fields.forEach(f => {
+        const el = $("qz-" + f.id);
+        if (!el) return;
+        el.classList.remove('correct-input', 'wrong-input');
+        const v = parseFloat(el.value.replace(',', '.'));
+        if (!isNaN(v) && Math.abs(v - f.correct) < 0.01){
+          el.classList.add('correct-input');
+        } else {
+          el.classList.add('wrong-input');
+          allCorrect = false;
+        }
+      });
+    } else if (currentQuiz.type === 'mc'){
+      const selected = document.querySelector('input[name="qz-mc"]:checked');
+      const radios = document.querySelectorAll('input[name="qz-mc"]');
+      radios.forEach(r => {
+        r.closest('.quiz-option').classList.remove('correct-answer', 'wrong-answer');
+      });
+      if (!selected){
+        allCorrect = false;
+      } else {
+        const idx = parseInt(selected.value);
+        if (idx === currentQuiz.correctIdx){
+          selected.closest('.quiz-option').classList.add('correct-answer');
+        } else {
+          selected.closest('.quiz-option').classList.add('wrong-answer');
+          radios[currentQuiz.correctIdx].closest('.quiz-option').classList.add('correct-answer');
+          allCorrect = false;
+        }
+      }
+    }
+
+    const fb = $("quiz-feedback");
+    fb.style.display = 'block';
+    fb.classList.remove('quiz-feedback-correct', 'quiz-feedback-wrong');
+
+    if (allCorrect){
+      fb.classList.add('quiz-feedback-correct');
+      fb.innerHTML = `<i class="fa-solid fa-circle-check"></i><strong>Richtig!</strong> +10 Punkte.<br><span style="display:block;margin-top:6px;color:#c8f0d5">${currentQuiz.explanation || ''}</span>`;
+      quizScore += 10;
+      updateScoreDisplay();
+      setTimeout(generateNewQuiz, 3500);
+    } else {
+      fb.classList.add('quiz-feedback-wrong');
+      fb.innerHTML = `<i class="fa-solid fa-circle-xmark"></i><strong>Noch nicht ganz.</strong> Prüfe die markierten Stellen oder nutze den Tipp.`;
+    }
+  }
+
+  function showQuizHint(){
+    if (!currentQuiz) return;
+    const hint = $("quiz-hint");
+    hint.style.display = 'block';
+    hint.innerHTML = `<strong><i class="fa-regular fa-lightbulb"></i> Tipp:</strong> ${currentQuiz.hint || 'Denke an die Grundlagen.'}`;
+    if (quizScore > 0){
+      quizScore = Math.max(0, quizScore - 2);
+      updateScoreDisplay();
+    }
+  }
+
+  function toggleQuizSidebar(){
+    const sidebar = $("quiz-sidebar");
+    const backdrop = $("quiz-backdrop");
+    const isOpen = sidebar.classList.contains('open');
+
+    if (isOpen){
+      sidebar.classList.remove('open');
+      sidebar.setAttribute('aria-hidden', 'true');
+      backdrop.classList.remove('show');
+    } else {
+      sidebar.classList.add('open');
+      sidebar.setAttribute('aria-hidden', 'false');
+      backdrop.classList.add('show');
+      if (!currentQuiz) generateNewQuiz();
+    }
+  }
+
+  // Expose to global scope (used by inline onclick)
+  window.toggleQuizSidebar = toggleQuizSidebar;
+  window.generateNewQuiz = generateNewQuiz;
+  window.checkQuizAnswers = checkQuizAnswers;
+  window.showQuizHint = showQuizHint;
+
+  // ESC closes sidebar
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape'){
+      const sidebar = $("quiz-sidebar");
+      if (sidebar && sidebar.classList.contains('open')) toggleQuizSidebar();
+    }
+  });
+
+  /* ---------- Start ---------- */
+  requestAnimationFrame(() => {
+    resize();
+    update();
+    drawAllMiniCharts();
+    drawAllFormCharts();
+    drawMatrix();
+  });
+  window.addEventListener("load", () => {
+    setTimeout(resize, 60);
+    setTimeout(() => { drawAllMiniCharts(); drawAllFormCharts(); drawMatrix(); }, 120);
+    setTimeout(() => { drawAllMiniCharts(); drawAllFormCharts(); drawMatrix(); }, 300);
+  });
+})();
+</script>
+</body>
+</html>
