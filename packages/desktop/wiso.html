@@ -1020,6 +1020,59 @@
         </div>
 
       </div>
+
+      <div class="matrix-wrap" style="margin-top: clamp(24px, 3vw, 40px);">
+        <h3><i class="fa-solid fa-building-columns"></i> Staatliche Eingriffe</h3>
+        <p>Oft greift der Staat aus wirtschafts- oder sozialpolitischen Gründen in die Preisbildung ein. Man unterscheidet dabei, ob der freie Marktmechanismus erhalten bleibt oder durch Zwangsmaßnahmen blockiert wird.</p>
+      </div>
+
+      <div class="explain-grid">
+        <div class="explain-card ec-balance">
+          <div class="explain-head">
+            <div class="explain-icon">✔️</div>
+            <div>
+              <h3 class="explain-title">Marktkonforme Eingriffe</h3>
+              <div class="explain-sub">Preisbildungsmechanismus intakt</div>
+            </div>
+          </div>
+          <div class="explain-body">
+            <p>Der Mechanismus aus Angebot und Nachfrage bleibt erhalten. Der Staat schreibt <span class="highlight">keine Preise vor</span>, sondern beeinflusst indirekt die Kosten der Anbieter, das Einkommen der Haushalte oder die Nachfrage.</p>
+            <p><span class="highlight">Kennzeichen:</span></p>
+            <ul>
+              <li>Der Markt kann sich weiterhin selbst regulieren und ein <strong>neues Gleichgewicht</strong> finden.</li>
+              <li>Die Angebots- oder Nachfragekurve verschiebt sich.</li>
+            </ul>
+            <p><span class="highlight">Beispiele:</span> Steuern (z. B. CO₂-Steuer, Tabaksteuer), Subventionen (Kaufprämie für E-Autos, Agrarhilfen), Zölle, Kindergeld.</p>
+          </div>
+          <div class="next-step">
+            <strong>Was passiert als Nächstes?</strong>
+            Das Marktgleichgewicht verschiebt sich. Es bildet sich ein neuer Marktpreis und eine neue Menge, aber der Markt wird weiterhin "geräumt".
+          </div>
+        </div>
+
+        <div class="explain-card ec-none">
+          <div class="explain-head">
+            <div class="explain-icon">🛑</div>
+            <div>
+              <h3 class="explain-title">Nicht-konforme Eingriffe</h3>
+              <div class="explain-sub">Marktkonträr · Preisbildung blockiert</div>
+            </div>
+          </div>
+          <div class="explain-body">
+            <p>Der Preisbildungsmechanismus wird teilweise oder ganz außer Kraft gesetzt. Der Staat <span class="highlight">diktiert Preise</span> direkt und verhindert, dass der Markt sein natürliches Gleichgewicht erreichen kann.</p>
+            <p><span class="highlight">Kennzeichen:</span></p>
+            <ul>
+              <li>Der Preis darf nicht frei auf das Gleichgewichtsniveau steigen oder fallen.</li>
+              <li>Führt zwangsläufig zu <strong>dauerhaften Ungleichgewichten</strong>.</li>
+            </ul>
+            <p><span class="highlight">Beispiele:</span> <span class="hl" data-hl-chart="price">Mindestpreise</span> (z. B. Mindestlohn, landwirtschaftliche Garantiepreise), <span class="hl" data-hl-chart="price">Höchstpreise</span> (z. B. Mietpreisbremse, Preisstopps für Lebensmittel).</p>
+          </div>
+          <div class="next-step">
+            <strong>Was passiert als Nächstes?</strong>
+            Es entsteht ein dauerhafter Nachfrageüberhang (Käuferschlangen, Schwarzmärkte) oder Angebotsüberhang (Arbeitslosigkeit, Vernichtung von Gütern).
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1230,6 +1283,15 @@
 <script>
 (() => {
   "use strict";
+
+  // Unterdrückt die harmlose "ResizeObserver"-Warnung im Browser/Iframe
+  window.addEventListener('error', e => {
+    if (e.message === 'ResizeObserver loop limit exceeded' || 
+        e.message === 'ResizeObserver loop completed with undelivered notifications.') {
+      e.stopImmediatePropagation();
+    }
+  });
+
   const $ = id => document.getElementById(id);
   const canvas = $("chart");
   const ctx = canvas.getContext("2d");
@@ -2356,12 +2418,23 @@
   });
 
   if (window.ResizeObserver){
-    const ro = new ResizeObserver(() => resize());
+    // Wrapper, um Endlosschleifen beim Ändern von Canvas-Größen zu verhindern
+    const createDebouncedObserver = (callback) => {
+      let frameId = null;
+      return new ResizeObserver(() => {
+        if (frameId) cancelAnimationFrame(frameId);
+        frameId = requestAnimationFrame(callback);
+      });
+    };
+
+    const ro = createDebouncedObserver(() => resize());
     ro.observe(box);
+    
     const grid = document.querySelector(".explain-grid");
-    if (grid) new ResizeObserver(() => { drawAllMiniCharts(); drawAllFormCharts(); drawMatrix(); }).observe(grid);
+    if (grid) createDebouncedObserver(() => { drawAllMiniCharts(); drawAllFormCharts(); drawMatrix(); }).observe(grid);
+    
     const matrix = document.querySelector(".matrix-wrap");
-    if (matrix) new ResizeObserver(() => drawMatrix()).observe(matrix);
+    if (matrix) createDebouncedObserver(() => drawMatrix()).observe(matrix);
   }
   window.addEventListener("resize", () => {
     clearTimeout(window._resizeTimer);
