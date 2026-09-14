@@ -12,6 +12,28 @@
                     const hasNt = args && args.includes('-nt');
                     const hasNw = args && args.includes('-nw');
 
+                    // Generate and overwrite kde.log in the current directory
+                    try {
+                        if (this && this.currentPath && this.getNodeByPathArray) {
+                            const parentNode = this.getNodeByPathArray(this.currentPath);
+                            if (parentNode && parentNode.type === 'dir') {
+                                parentNode.children['kde.log'] = {
+                                    type: 'file',
+                                    description: 'KDE System Log',
+                                    content: `=== KDE Plasma Desktop Log ===\nStarted at: ${new Date().toISOString()}\nArguments: ${args ? args.join(' ') : 'none'}\nLaunch Mode: ${hasNw ? 'New Window' : (hasNt ? 'New Tab' : 'Embedded')}\nStatus: Successfully initialized desktop environment.\n`
+                                };
+                                
+                                if (typeof saveVFS === 'function') {
+                                    saveVFS();
+                                } else if (typeof vfs !== 'undefined') {
+                                    localStorage.setItem('sTerminal_vfs', JSON.stringify(vfs));
+                                }
+                            }
+                        }
+                    } catch (err) {
+                        console.warn("Failed to write kde.log:", err);
+                    }
+
                     let baseUrl = window.location.href.split('#')[0].split('?')[0];
                     baseUrl = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1);
 
@@ -42,7 +64,7 @@
                 }
             },
             commandInfo: {
-                kde: "what is this command?\nkde\n\nwhat is it used for?\nOpens a simulated KDE Plasma desktop environment."
+                kde: "what is this command?\nkde\n\nwhat is it used for?\nOpens a simulated KDE Plasma desktop environment. Overwrites kde.log in the current directory on launch."
             }
         };
     }
@@ -60,7 +82,11 @@
 '    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">\r\n' +
 '    <title>KDE Plasma Desktop Experience</title>\r\n' +
 '    \r\n' +
+'    <!-- Cascading path fallbacks to reliably locate colors directory -->\r\n' +
+'    <script src="colors/colorsKde.js"><\/script>\r\n' +
+'    <script src="../colors/colorsKde.js"><\/script>\r\n' +
 '    <script src="../../colors/colorsKde.js"><\/script>\r\n' +
+'    <script src="../../../colors/colorsKde.js"><\/script>\r\n' +
 '\r\n' +
 '    <script src="https://cdn.tailwindcss.com"><\/script>\r\n' +
 '    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">\r\n' +
@@ -68,19 +94,19 @@
 
         html += '    <script>\r\n' +
 '        const defaultKdeColors = {\r\n' +
-'            \'kde-bg\': \'#1a1b1e\', \r\n' +
-'            \'kde-panel\': \'rgba(35, 38, 41, 0.85)\', \r\n' +
-'            \'kde-panel-hover\': \'rgba(255, 255, 255, 0.1)\',\r\n' +
-'            \'kde-accent\': \'#3daee9\', \r\n' +
-'            \'kde-text\': \'#eff0f1\',\r\n' +
-'            \'kde-window-bg\': \'#31363b\',\r\n' +
-'            \'kde-window-border\': \'#1d2023\',\r\n' +
+'            \'kde-bg\': \'var(--color-kde-bg, #1a1b1e)\', \r\n' +
+'            \'kde-panel\': \'var(--color-kde-panel, rgba(35, 38, 41, 0.85))\', \r\n' +
+'            \'kde-panel-hover\': \'var(--color-kde-panel-hover, rgba(255, 255, 255, 0.1))\',\r\n' +
+'            \'kde-accent\': \'var(--color-kde-accent, #3daee9)\', \r\n' +
+'            \'kde-text\': \'var(--color-kde-text, #eff0f1)\',\r\n' +
+'            \'kde-window-bg\': \'var(--color-kde-window-bg, #31363b)\',\r\n' +
+'            \'kde-window-border\': \'var(--color-kde-window-border, #1d2023)\',\r\n' +
 '        };\r\n' +
 '\r\n' +
 '        tailwind.config = {\r\n' +
 '            theme: {\r\n' +
 '                extend: {\r\n' +
-'                    colors: window.kdeThemeColors || defaultKdeColors,\r\n' +
+'                    colors: defaultKdeColors,\r\n' +
 '                    fontFamily: {\r\n' +
 '                        sans: [\'Noto Sans\', \'Segoe UI\', \'Roboto\', \'Helvetica\', \'Arial\', \'sans-serif\'],\r\n' +
 '                    }\r\n' +
@@ -164,38 +190,22 @@
 '    <div id="windows-container" class="absolute top-0 left-0 w-full h-[calc(100vh-48px)] pointer-events-none z-10">\r\n' +
 '    <\/div>\r\n' +
 '\r\n' +
-'    <div id="app-launcher" class="hidden absolute bottom-12 left-0 mb-1 ml-2 w-96 h-[32rem] bg-kde-panel glass-effect border border-gray-600/50 rounded-lg shadow-2xl z-50 flex flex-col text-sm text-gray-200">\r\n' +
-'        <div class="p-3 border-b border-gray-600/50">\r\n' +
-'            <div class="bg-gray-800/80 rounded-full px-3 py-1.5 flex items-center border border-gray-600/30 focus-within:border-kde-accent focus-within:ring-1 focus-within:ring-kde-accent transition-all">\r\n' +
-'                <i class="fa-solid fa-magnifying-glass text-gray-400 mr-2"><\/i>\r\n' +
-'                <input type="text" id="app-search-input" placeholder="Search apps..." class="bg-transparent border-none outline-none w-full text-sm placeholder-gray-400" oninput="filterApps(this.value)">\r\n' +
+'    <div id="app-launcher" class="hidden absolute bottom-12 left-0 mb-1 ml-2 w-72 max-h-[75vh] bg-kde-panel glass-effect border border-gray-600/50 rounded-lg shadow-2xl z-50 flex flex-col text-sm text-gray-200 overflow-hidden">\r\n' +
+'        <div class="p-3 border-b border-gray-600/50 bg-gray-800/40 text-center font-semibold text-kde-accent">\r\n' +
+'            Applications\r\n' +
+'        <\/div>\r\n' +
+'        <div class="overflow-y-auto flex flex-col gap-1 p-2" id="apps-container">\r\n' +
+'            <div class="p-4 text-center text-gray-500 italic mt-2" id="no-apps-message">\r\n' +
+'                Loading applications...\r\n' +
 '            <\/div>\r\n' +
 '        <\/div>\r\n' +
-'        \r\n' +
-'        <div class="flex flex-1 overflow-hidden">\r\n' +
-'            <div class="w-1/3 border-r border-gray-600/50 flex flex-col">\r\n' +
-'                <button class="text-left px-4 py-2 hover:bg-white/10 bg-white/5 border-l-2 border-kde-accent"><i class="fa-solid fa-desktop w-6 text-gray-400"><\/i> Applications</button>\r\n' +
-'                <button onclick="closeSTerminal()" class="text-left px-4 py-2 hover:bg-white/10 mt-auto"><i class="fa-solid fa-power-off w-6 text-red-400"><\/i> Leave</button>\r\n' +
-'            <\/div>\r\n' +
-'            \r\n' +
-'            <div class="w-2/3 p-2 overflow-y-auto flex flex-col gap-1" id="apps-container">\r\n' +
-'                <div class="p-4 text-center text-gray-500 italic mt-10" id="no-apps-message">\r\n' +
-'                    Loading applications...\r\n' +
+'        <div class="p-2 border-t border-gray-600/50 bg-gray-900/30">\r\n' +
+'            <button onclick="openSettings()" class="w-full text-left px-3 py-2 rounded hover:bg-white/10 flex items-center gap-3 transition-colors">\r\n' +
+'                <div class="w-8 h-8 rounded bg-gray-700 flex items-center justify-center text-kde-accent shadow-inner">\r\n' +
+'                    <i class="fa-solid fa-gear text-xs"><\/i>\r\n' +
 '                <\/div>\r\n' +
-'            <\/div>\r\n' +
-'        <\/div>\r\n' +
-'        \r\n' +
-'        <div class="p-3 border-t border-gray-600/50 flex justify-between items-center bg-gray-900/30 rounded-b-lg">\r\n' +
-'            <div class="flex items-center gap-2">\r\n' +
-'                <div class="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center border border-gray-500">\r\n' +
-'                    <i class="fa-solid fa-user text-gray-300"><\/i>\r\n' +
-'                <\/div>\r\n' +
-'                <span class="font-semibold text-sm">Plasma User</span>\r\n' +
-'            <\/div>\r\n' +
-'            <div class="flex gap-2 text-gray-400">\r\n' +
-'                <button class="hover:text-white p-1"><i class="fa-solid fa-lock"><\/i></button>\r\n' +
-'                <button class="hover:text-red-400 p-1" onclick="closeSTerminal()"><i class="fa-solid fa-power-off"><\/i></button>\r\n' +
-'            <\/div>\r\n' +
+'                <span class="capitalize text-sm font-medium">Settings<\/span>\r\n' +
+'            <\/button>\r\n' +
 '        <\/div>\r\n' +
 '    <\/div>\r\n';
 
@@ -217,8 +227,8 @@
 '            <\/div>\r\n' +
 '\r\n' +
 '            <div id="clock" class="font-semibold text-center cursor-pointer hover:bg-kde-panel-hover px-2 py-1 rounded select-none flex flex-col justify-center leading-tight">\r\n' +
-'                <span id="time" class="text-[13px]">00:00 AM</span>\r\n' +
-'                <span id="date" class="text-[10px] text-gray-400">Date</span>\r\n' +
+'                <span id="time" class="text-[13px]">00:00 AM<\/span>\r\n' +
+'                <span id="date" class="text-[10px] text-gray-400">Date<\/span>\r\n' +
 '            <\/div>\r\n' +
 '        <\/div>\r\n' +
 '    <\/div>\r\n';
@@ -409,7 +419,7 @@
 '                        <div class="w-8 h-8 rounded bg-gray-700 flex items-center justify-center text-kde-accent shadow-inner">\r\n' +
 '                            <i class="fa-solid fa-window-maximize text-xs"><\/i>\r\n' +
 '                        <\/div>\r\n' +
-'                        <span class="capitalize text-sm font-medium">${formatAppName(app)}</span>\r\n' +
+'                        <span class="capitalize text-sm font-medium">${formatAppName(app)}<\/span>\r\n' +
 '                    `;\r\n' +
 '                    btn.onclick = () => {\r\n' +
 '                        launchApp(app);\r\n' +
@@ -423,13 +433,6 @@
 '                    noAppsMessage.textContent = \'No applications found\';\r\n' +
 '                }\r\n' +
 '            }\r\n' +
-'        }\r\n' +
-'\r\n' +
-'        function filterApps(query) {\r\n' +
-'            const filtered = availableApps.filter(app => \r\n' +
-'                formatAppName(app).toLowerCase().includes(query.toLowerCase())\r\n' +
-'            );\r\n' +
-'            renderAppList(filtered);\r\n' +
 '        }\r\n';
 
         html += '        const windows = {};\r\n' +
@@ -450,9 +453,7 @@
 '            \'netsim\': { width: 1200, height: 800, maxizable: true }\r\n' +
 '        };\r\n' +
 '\r\n' +
-'        // Build a list of candidate paths for an HTML app file.\r\n' +
 '        function htmlAppCandidates(appName, primaryUrl) {\r\n' +
-'            // Prioritize correctly cased variants so dev servers don\'t return an empty fallback 200 OK\r\n' +
 '            const variations = Array.from(new Set([\r\n' +
 '                appName.replace(/netsim/i, \'SimNet\'),\r\n' +
 '                appName.replace(/netsim/i, \'NetSim\'),\r\n' +
@@ -486,20 +487,19 @@
 '                        return url;\r\n' +
 '                    }\r\n' +
 '                } catch (e) {\r\n' +
-'                    // try next\r\n' +
 '                }\r\n' +
 '            }\r\n' +
 '            return null;\r\n' +
 '        }\r\n' +
 '\r\n' +
 '        function htmlNotFoundPage(appName, candidates) {\r\n' +
-'            const listHtml = candidates.map(u => `<li><code>${u}</code></li>`).join(\'\');\r\n' +
+'            const listHtml = candidates.map(u => `<li><code>${u}<\/code><\/li>`).join(\'\');\r\n' +
 '            return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>\r\n' +
-'                body{font-family:\'Noto Sans\',sans-serif;background:#31363b;color:#eff0f1;padding:2rem;line-height:1.6;}\r\n' +
+'                body{font-family:\'Noto Sans\',sans-serif;background:var(--color-kde-window-bg, #31363b);color:var(--color-kde-text, #eff0f1);padding:2rem;line-height:1.6;}\r\n' +
 '                h2{color:#ef5b6b;margin-top:0;}\r\n' +
-'                code{background:#1a1b1e;padding:2px 7px;border-radius:3px;color:#3daee9;font-family:monospace;}\r\n' +
-'                ul{background:#262b30;padding:12px 12px 12px 32px;border-radius:6px;border:1px solid #3b4147;}\r\n' +
-'                p.note{color:#8f969e;font-size:0.9em;}\r\n' +
+'                code{background:rgba(0,0,0,0.2);padding:2px 7px;border-radius:3px;color:var(--color-kde-accent, #3daee9);font-family:monospace;}\r\n' +
+'                ul{background:rgba(0,0,0,0.1);padding:12px 12px 12px 32px;border-radius:6px;border:1px solid var(--color-kde-window-border, #3b4147);}\r\n' +
+'                p.note{color:var(--color-kde-text, #8f969e);opacity:0.7;font-size:0.9em;}\r\n' +
 '            <\/style><\/head><body>\r\n' +
 '                <h2><i>⚠<\/i> App-Datei nicht gefunden<\/h2>\r\n' +
 '                <p>Die Anwendung <code>${appName}<\/code> konnte nicht geladen werden.<br>Der Wrapper hat folgende Pfade getestet:<\/p>\r\n' +
@@ -538,7 +538,6 @@
 '                let isHtmlApp = false;\r\n' +
 '                let htmlUrl = \'\';\r\n' +
 '\r\n' +
-'                // Dynamically resolve Desktop apps as HTML apps based on registry\r\n' +
 '                if (window.kdeDesktopApps && window.kdeDesktopApps.includes(appName)) {\r\n' +
 '                    isHtmlApp = true;\r\n' +
 '                    htmlUrl = `packages/desktop/${appName}.html`;\r\n' +
@@ -564,12 +563,12 @@
 '                    <div class="window-header h-9 bg-gray-800 flex justify-between items-center select-none group border-b border-gray-900">\r\n' +
 '                        <div class="flex items-center gap-2 px-3 text-gray-300">\r\n' +
 '                            <i class="fa-solid fa-window-maximize text-kde-accent text-xs"><\/i>\r\n' +
-'                            <span class="capitalize font-semibold text-sm tracking-wide drop-shadow-md">${formatAppName(appName)}</span>\r\n' +
+'                            <span class="capitalize font-semibold text-sm tracking-wide drop-shadow-md">${formatAppName(appName)}<\/span>\r\n' +
 '                        <\/div>\r\n' +
 '                        <div class="flex h-full">\r\n' +
-'                            <button onclick="minimizeWindow(\'${winId}\')" class="w-12 hover:bg-gray-600 flex items-center justify-center transition-colors text-gray-400 hover:text-white" title="Minimize"><i class="fa-solid fa-minus text-xs"><\/i></button>\r\n' +
-'                            <button onclick="maximizeWindow(\'${winId}\')" class="maximize-btn w-12 hover:bg-gray-600 flex items-center justify-center transition-colors text-gray-400 hover:text-white" title="Maximize"><i class="fa-regular fa-square text-xs max-icon"><\/i></button>\r\n' +
-'                            <button onclick="closeApp(\'${winId}\')" class="w-12 hover:bg-red-600 flex items-center justify-center transition-colors text-gray-400 hover:text-white" title="Close"><i class="fa-solid fa-xmark text-sm"><\/i></button>\r\n' +
+'                            <button onclick="minimizeWindow(\'${winId}\')" class="w-12 hover:bg-gray-600 flex items-center justify-center transition-colors text-gray-400 hover:text-white" title="Minimize"><i class="fa-solid fa-minus text-xs"><\/i><\/button>\r\n' +
+'                            <button onclick="maximizeWindow(\'${winId}\')" class="maximize-btn w-12 hover:bg-gray-600 flex items-center justify-center transition-colors text-gray-400 hover:text-white" title="Maximize"><i class="fa-regular fa-square text-xs max-icon"><\/i><\/button>\r\n' +
+'                            <button onclick="closeApp(\'${winId}\')" class="w-12 hover:bg-red-600 flex items-center justify-center transition-colors text-gray-400 hover:text-white" title="Close"><i class="fa-solid fa-xmark text-sm"><\/i><\/button>\r\n' +
 '                        <\/div>\r\n' +
 '                    <\/div>\r\n' +
 '                    <div class="flex-1 relative bg-kde-window-bg">\r\n' +
@@ -602,13 +601,23 @@
 '                        <meta charset="UTF-8">\r\n' +
 '                        <meta name="viewport" content="width=device-width, initial-scale=1.0">\r\n' +
 '                        ${window.KDE_BASE_URL ? `<base href="${window.KDE_BASE_URL}">` : \'\'}\r\n' +
+'                        <!-- Fallback paths for iframe -->\r\n' +
+'                        <script src="colors/colorsKde.js"><\\/script>\r\n' +
+'                        <script src="../colors/colorsKde.js"><\\/script>\r\n' +
 '                        <script src="../../colors/colorsKde.js"><\\/script>\r\n' +
+'                        <script src="../../../colors/colorsKde.js"><\\/script>\r\n' +
+'                        <script>\r\n' +
+'                            if (!window.kdeThemes && window.parent && window.parent.kdeThemes) {\r\n' +
+'                                window.kdeThemes = window.parent.kdeThemes;\r\n' +
+'                                window.applyKdeTheme = window.parent.applyKdeTheme;\r\n' +
+'                            }\r\n' +
+'                        <\\/script>\r\n' +
 '                        <script src="https://cdn.tailwindcss.com"><\\/script>\r\n' +
 '                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">\r\n' +
 '                        <style>\r\n' +
 '                            * { margin: 0; padding: 0; box-sizing: border-box; }\r\n' +
 '                            html, body { height: 100%; overflow: hidden; }\r\n' +
-'                            body { background-color: #31363b; color: #eff0f1; font-family: \\\'Noto Sans\\\', sans-serif; }\r\n' +
+'                            body { background-color: var(--color-kde-window-bg, #31363b); color: var(--color-kde-text, #eff0f1); font-family: \\\'Noto Sans\\\', sans-serif; }\r\n' +
 '                        <\/style>\r\n' +
 '                    <\/head>\r\n' +
 '                    <body>\r\n' +
@@ -644,7 +653,7 @@
 '                                function tryLoadScript() {\r\n' +
 '                                    if (currentIdx >= uniquePaths.length) {\r\n' +
 '                                        console.error("KDE Wrapper: Exhausted all paths for", appName);\r\n' +
-'                                        document.body.innerHTML = \'<div style="padding:20px;color:#ff4444;text-align:center;font-family:sans-serif;margin-top:2rem;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;"><strong>Failed to load application script:</strong><br>\' + appName + \'<br><br><span style="font-size:0.8em;color:#888;">Ensure the JS file is in the packages/apps/ directory.</span></div>\';\r\n' +
+'                                        document.body.innerHTML = \'<div style="padding:20px;color:#ff4444;text-align:center;font-family:sans-serif;margin-top:2rem;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;"><strong>Failed to load application script:<\/strong><br>\' + appName + \'<br><br><span style="font-size:0.8em;color:#888;">Ensure the JS file is in the packages/apps/ directory.<\/span><\/div>\';\r\n' +
 '                                        return;\r\n' +
 '                                    }\r\n' +
 '\r\n' +
@@ -694,7 +703,10 @@
 '                \r\n' +
 '            } catch (error) {\r\n' +
 '                console.error(\'Error launching app:\', appName, error);\r\n' +
-'                alert(`Failed to launch ${formatAppName(appName)}. Error: ${error.message}`);\r\n' +
+'                const errDiv = document.createElement(\'div\');\r\n' +
+'                errDiv.className = \'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-900/90 text-white p-4 rounded shadow-2xl z-[9999]\';\r\n' +
+'                errDiv.innerHTML = `<strong>Error<\\/strong><br>Failed to launch ${formatAppName(appName)}.<br><button onclick="this.parentElement.remove()" class="mt-2 bg-red-700 px-3 py-1 rounded">Dismiss<\\/button>`;\r\n' +
+'                document.body.appendChild(errDiv);\r\n' +
 '            }\r\n' +
 '        }\r\n' +
 '\r\n';
@@ -771,6 +783,86 @@
 '                windows[winId].element.style.zIndex = currentZIndex;\r\n' +
 '                updateTaskbarItemState(winId); \r\n' +
 '            }\r\n' +
+'        }\r\n';
+
+        html += '\r\n' +
+'        function openSettings() {\r\n' +
+'            if (windows[\'window-settings\']) {\r\n' +
+'                if (windows[\'window-settings\'].isMinimized) {\r\n' +
+'                    openWindow(\'settings\');\r\n' +
+'                } else {\r\n' +
+'                    bringToFront(\'window-settings\');\r\n' +
+'                }\r\n' +
+'                if (!launcher.classList.contains(\'hidden\')) toggleLauncher();\r\n' +
+'                return;\r\n' +
+'            }\r\n' +
+'\r\n' +
+'            const winId = \'window-settings\';\r\n' +
+'            const winDiv = document.createElement(\'div\');\r\n' +
+'            winDiv.id = winId;\r\n' +
+'            const config = { width: 450, height: 350, maxizable: false };\r\n' +
+'            \r\n' +
+'            const winClasses = \'window absolute bg-kde-window-bg border border-kde-window-border rounded-lg shadow-2xl flex flex-col overflow-hidden transition-transform duration-100 ease-out pointer-events-auto no-maximize\';\r\n' +
+'            winDiv.className = winClasses;\r\n' +
+'            \r\n' +
+'            const offset = (Object.keys(windows).length * 30) + 50;\r\n' +
+'            winDiv.style.width = config.width + \'px\';\r\n' +
+'            winDiv.style.height = config.height + \'px\';\r\n' +
+'            winDiv.style.top = offset + \'px\';\r\n' +
+'            winDiv.style.left = offset + \'px\';\r\n' +
+'            \r\n' +
+'            let themeOptions = \'\';\r\n' +
+'            if (window.kdeThemes) {\r\n' +
+'                for (const themeName of Object.keys(window.kdeThemes)) {\r\n' +
+'                    themeOptions += \'<button onclick="window.applyKdeTheme(\\\'\' + themeName + \'\\\')" class="px-4 py-3 bg-black/20 hover:bg-kde-accent hover:text-white rounded-md text-left transition-colors text-kde-text border border-white/5 flex items-center justify-between"><span>\' + themeName + \'</span><i class="fa-solid fa-palette opacity-50"><\/i><\/button>\';\r\n' +
+'                }\r\n' +
+'            } else {\r\n' +
+'                themeOptions = \'<p class="text-red-400 mb-2">Themes not found in colorsKde.js<\/p><p class="text-xs text-gray-400">Ensure the file is reachable at <code>colors/colorsKde.js<\/code><\/p>\';\r\n' +
+'            }\r\n' +
+'            \r\n' +
+'            winDiv.innerHTML = `\r\n' +
+'                <div class="window-header h-9 bg-gray-800 flex justify-between items-center select-none group border-b border-gray-900">\r\n' +
+'                    <div class="flex items-center gap-2 px-3 text-gray-300">\r\n' +
+'                        <i class="fa-solid fa-gear text-kde-accent text-xs"><\\/i>\r\n' +
+'                        <span class="capitalize font-semibold text-sm tracking-wide drop-shadow-md">System Settings<\\/span>\r\n' +
+'                    <\\/div>\r\n' +
+'                    <div class="flex h-full">\r\n' +
+'                        <button onclick="minimizeWindow(\'${winId}\')" class="w-12 hover:bg-gray-600 flex items-center justify-center transition-colors text-gray-400 hover:text-white" title="Minimize"><i class="fa-solid fa-minus text-xs"><\\/i><\\/button>\r\n' +
+'                        <button onclick="closeApp(\'${winId}\')" class="w-12 hover:bg-red-600 flex items-center justify-center transition-colors text-gray-400 hover:text-white" title="Close"><i class="fa-solid fa-xmark text-sm"><\\/i><\\/button>\r\n' +
+'                    <\\/div>\r\n' +
+'                <\\/div>\r\n' +
+'                <div class="flex-1 relative bg-kde-window-bg p-5 flex flex-col gap-4 overflow-y-auto">\r\n' +
+'                    <h2 class="text-xl font-semibold text-kde-text border-b border-kde-window-border pb-2 flex items-center gap-2">\r\n' +
+'                        <i class="fa-solid fa-brush"><\\/i> Appearance\r\n' +
+'                    <\\/h2>\r\n' +
+'                    <p class="text-sm text-kde-text opacity-70 mb-1">Select a color scheme to apply globally.<\\/p>\r\n' +
+'                    <div class="flex flex-col gap-2">\r\n' +
+'                        ${themeOptions}\r\n' +
+'                    <\\/div>\r\n' +
+'                <\\/div>\r\n' +
+'            `;\r\n' +
+'            \r\n' +
+'            document.getElementById(\'windows-container\').appendChild(winDiv);\r\n' +
+'            \r\n' +
+'            windows[winId] = {\r\n' +
+'                element: winDiv,\r\n' +
+'                isOpen: true,\r\n' +
+'                isMinimized: false,\r\n' +
+'                isMaximized: false,\r\n' +
+'                isSnapped: false,\r\n' +
+'                appName: \'settings\',\r\n' +
+'                iconClass: \'fa-gear\',\r\n' +
+'                iconColor: \'text-kde-accent\',\r\n' +
+'                title: \'System Settings\',\r\n' +
+'                config: config\r\n' +
+'            };\r\n' +
+'\r\n' +
+'            makeDraggable(winDiv);\r\n' +
+'            winDiv.addEventListener(\'mousedown\', () => bringToFront(winId));\r\n' +
+'            \r\n' +
+'            createTaskbarItem(winId);\r\n' +
+'            bringToFront(winId);\r\n' +
+'            if (!launcher.classList.contains(\'hidden\')) toggleLauncher();\r\n' +
 '        }\r\n';
 
         html += '\r\n' +

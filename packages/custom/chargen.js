@@ -11,11 +11,11 @@
         preInstalledOn: ['default'],
         commands: {
             chargen: function(args) {
-                return generateCharacter.call(this);
+                return generateCharacter.call(this, args);
             }
         },
         commandInfo: {
-            chargen: "what is this command?\nchargen\n\nwhat is it used for?\nGenerates a random D&D-style character with stats, biography, birthplace, and idol."
+            chargen: "what is this command?\nchargen\n\nwhat is it used for?\nGenerates a random D&D-style character with stats, biography, birthplace, and idol.\n\nUsage:\n  chargen [options]\n\nOptions:\n  -o, --output <file>   Write output to a text file (creates/overwrites)\n  -a, --append <file>   Append output to a text file\n  -h, --help            Show help\n  -v, --version         Show version"
         }
     };
 
@@ -29,12 +29,58 @@
     }
 
     // Main character generation function
-    function generateCharacter() {
+    function generateCharacter(args) {
         const term = this;
         
+        let showHelp = false;
+        let showVersion = false;
+        let outputFile = null;
+        let appendMode = false;
+
+        // Parse arguments
+        if (args) {
+            for (let i = 0; i < args.length; i++) {
+                const arg = args[i].toLowerCase();
+                if (arg === '-h' || arg === '--help' || arg === '-help') {
+                    showHelp = true;
+                } else if (arg === '-v' || arg === '--version' || arg === '-version') {
+                    showVersion = true;
+                } else if (arg === '-o' || arg === '--output' || arg === '-output') {
+                    if (i + 1 < args.length) {
+                        outputFile = args[++i];
+                    }
+                } else if (arg === '-a' || arg === '--append' || arg === '-append') {
+                    if (i + 1 < args.length) {
+                        outputFile = args[++i];
+                        appendMode = true;
+                    }
+                }
+            }
+        }
+
+        // Handle help first
+        if (showHelp) {
+            term.print("Usage: chargen [options]");
+            term.print("Options:");
+            term.print("  -o, --output <file>   Write output to a text file (creates/overwrites)");
+            term.print("  -a, --append <file>   Append output to a text file");
+            term.print("  -h, --help            Show this help message");
+            term.print("  -v, --version         Show version information");
+            term.scrollToBottom();
+            return;
+        }
+        
+        // Handle version
+        if (showVersion) {
+            const rV = () => Math.floor(Math.random() * 10);
+            term.print(`chargen version ${rV()}.${rV()}.${rV()}`);
+            term.scrollToBottom();
+            return;
+        }
+
         // Check if we have the data loaded already
         if (window._chargenData) {
-            displayCharacter(term, window._chargenData);
+            displayCharacter(term, window._chargenData, outputFile, appendMode);
             return;
         }
 
@@ -53,7 +99,7 @@
         let loadErrors = [];
         let completed = 0;
 
-        files.forEach((file, index) => {
+        files.forEach((file) => {
             fetch(basePath + file.name)
                 .then(res => {
                     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -71,7 +117,7 @@
                         }
                         window._chargenData = loadedData;
                         term.print('All files loaded successfully.\n');
-                        displayCharacter(term, loadedData);
+                        displayCharacter(term, loadedData, outputFile, appendMode);
                     }
                 })
                 .catch(err => {
@@ -85,7 +131,7 @@
         });
     }
 
-    function displayCharacter(term, data) {
+    function displayCharacter(term, data, outputFile, appendMode) {
         const { attributes, biography, birthplaces, idols, names } = data;
 
         // Generate character
@@ -165,9 +211,114 @@
         output.push(`  Generated:    ${new Date().toISOString()}`);
         output.push(headerLine);
 
-        // Print each line
-        output.forEach(line => term.print(line));
-        term.print('');
+        let message = output.join('\n');
+
+        // Handle file output
+        if (outputFile) {
+            try {
+                // Resolve the file path (supports relative, absolute, and ~)
+                let filePath = outputFile;
+                let fileExists = false;
+                let existingContent = '';
+
+                // Handle ~ expansion
+                if (filePath.startsWith('~/')) {
+                    filePath = filePath.replace(/^~/, '/home/user');
+                }
+
+                // Handle absolute vs relative paths
+                let pathArray;
+                if (filePath.startsWith('/')) {
+                    // Absolute path - remove leading slash and split
+                    pathArray = filePath.substring(1).split('/').filter(p => p !== '');
+                } else {
+                    // Relative path - use current directory
+                    pathArray = [...term.currentPath, ...filePath.split('/').filter(p => p !== '')];
+                }
+
+                // Build the path to the file
+                let parentPath = [...pathArray];
+                let fileName = parentPath.pop();
+                
+                // Validate file name
+                if (!fileName || fileName === '') {
+                    term.print("Error: Invalid file name.", 'error');
+                    term.scrollToBottom();
+                    return;
+                }
+
+                // Get the parent directory node
+                let parentNode = term.getNodeByPathArray(parentPath);
+                if (!parentNode || parentNode.type !== 'dir') {
+                    term.print(`Error: Directory '${parentPath.join('/') || '/'}' does not exist.`, 'error');
+                    term.scrollToBottom();
+                    return;
+                }
+
+                // Check if file already exists
+                if (parentNode.children && parentNode.children[fileName]) {
+                    fileExists = true;
+                    if (!appendMode) {
+                        // In overwrite mode, we'll replace the content
+                        existingContent = '';
+                    } else {
+                        // In append mode, get existing content
+                        const existingFile = parentNode.children[fileName];
+                        if (existingFile.type === 'file' && existingFile.content !== undefined) {
+                            existingContent = existingFile.content || '';
+                        } else {
+                            // If it's not a file or has no content, treat as empty
+                            existingContent = '';
+                        }
+                    }
+                } else if (appendMode) {
+                    // Trying to append to a file that doesn't exist
+                    term.print(`Error: File '${fileName}' does not exist. Use -o to create it first.`, 'error');
+                    term.scrollToBottom();
+                    return;
+                }
+
+                // Prepare the content
+                let newContent;
+                if (appendMode) {
+                    // Add a newline if existing content doesn't end with one
+                    const separator = existingContent && !existingContent.endsWith('\n') ? '\n' : '';
+                    newContent = existingContent + separator + message + '\n';
+                } else {
+                    // Overwrite mode
+                    newContent = message + '\n';
+                }
+
+                // Create or update the file
+                parentNode.children[fileName] = {
+                    type: 'file',
+                    description: `Text file containing generated character`,
+                    content: newContent
+                };
+
+                // Save the VFS
+                if (typeof saveVFS === 'function') {
+                    saveVFS();
+                } else {
+                    localStorage.setItem('sTerminal_vfs', JSON.stringify(typeof vfs !== 'undefined' ? vfs : {}));
+                }
+
+                // Show success message
+                const displayPath = (outputFile.startsWith('/') || outputFile.startsWith('~/')) ? outputFile : pathArray.join('/') + '/' + fileName;
+                if (appendMode) {
+                    term.print(`Appended to '${displayPath}' successfully.`);
+                } else {
+                    term.print(`Wrote to '${displayPath}' successfully.`);
+                }
+            } catch (error) {
+                term.print(`Error writing to file: ${error.message}`, 'error');
+            }
+        } else {
+            // No file output - just display the message
+            output.forEach(line => term.print(line));
+            term.print('');
+        }
+        
         term.scrollToBottom();
     }
 })();

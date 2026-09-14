@@ -3,266 +3,357 @@
 
     if (typeof window.packagesRegistry !== 'undefined') {
         window.packagesRegistry['blackboard'] = {
-            name: 'Blackboard',
-            version: '1.3.0',
-            description: 'A drawing board with shape tools and image search (KDE Edition)',
+            name: 'Virtual Whiteboard',
+            version: '2.6.0',
+            description: 'A KDE-themed virtual whiteboard with shape tools, canvas dark mode, i18n, and PNG export',
             preInstalledOn: ['default'],
             translations: {},
             commands: {
                 blackboard: function(args) {
-                    console.log("Blackboard launched.");
+                    console.log("Whiteboard launched.");
                 }
             },
             commandInfo: {
-                blackboard: "what is this command?\nblackboard\n\nwhat is it used for?\nOpens the Blackboard drawing application featuring a KDE-inspired visual theme, drawing tools, shapes, and image search."
+                blackboard: "what is this command?\nblackboard\n\nwhat is it used for?\nOpens the Virtual Whiteboard drawing application featuring a KDE-inspired visual theme, drawing tools, shapes, and image search."
             }
         };
     }
 
+    const i18n = {
+        en: {
+            menuFile: "File", menuEdit: "Edit", menuView: "View",
+            undoTitle: "Undo (Ctrl+Z)", redoTitle: "Redo (Ctrl+Y)",
+            clearBtn: "Clear", clearTitle: "Clear Board",
+            saveBtn: "Save PNG", saveTitle: "Export as PNG",
+            insertBtn: "Insert Image...", insertTitle: "Insert Image from Web",
+            canvasThemeTitle: "Toggle Canvas Dark/Light",
+            langTitle: "Switch Language (DE)",
+            sizeText: "Size:",
+            toolPen: "Pencil/Marker", toolEraser: "Eraser",
+            toolRect: "Rectangle", toolCircle: "Circle", toolLine: "Line",
+            statusReady: "Ready", statusExporting: "Preparing PNG export...", statusExported: "Board exported as PNG",
+            statusCleared: "Whiteboard cleared", statusInserted: "Image inserted", statusStamped: "Image stamped to board",
+            searchHeader: "Insert Web Image", searchPlaceholder: "Search Wikimedia Commons...", searchBtn: "Search",
+            searchEmpty: "Search to insert an image onto the whiteboard.", searchLoading: "Searching...",
+            searchNoResults: "No results found.", searchError: "Error fetching results.",
+            stampBtn: "Stamp", stampTitle: "Lock in place and flatten onto whiteboard",
+            colorWhiteTitle: "White (Whiteout)"
+        },
+        de: {
+            menuFile: "Datei", menuEdit: "Bearbeiten", menuView: "Ansicht",
+            undoTitle: "Rückgängig (Strg+Z)", redoTitle: "Wiederholen (Strg+Y)",
+            clearBtn: "Leeren", clearTitle: "Tafel leeren",
+            saveBtn: "Als PNG", saveTitle: "Als PNG exportieren",
+            insertBtn: "Bild einfügen...", insertTitle: "Bild aus dem Web einfügen",
+            canvasThemeTitle: "Leinwand Hell/Dunkel",
+            langTitle: "Sprache wechseln (EN)",
+            sizeText: "Größe:",
+            toolPen: "Stift/Marker", toolEraser: "Radiergummi",
+            toolRect: "Rechteck", toolCircle: "Kreis", toolLine: "Linie",
+            statusReady: "Bereit", statusExporting: "PNG-Export wird vorbereitet...", statusExported: "Tafel als PNG exportiert",
+            statusCleared: "Whiteboard geleert", statusInserted: "Bild eingefügt", statusStamped: "Bild auf die Tafel gestempelt",
+            searchHeader: "Web-Bild einfügen", searchPlaceholder: "Wikimedia Commons durchsuchen...", searchBtn: "Suchen",
+            searchEmpty: "Suchen Sie, um ein Bild auf das Whiteboard einzufügen.", searchLoading: "Suchen...",
+            searchNoResults: "Keine Ergebnisse gefunden.", searchError: "Fehler beim Abrufen der Ergebnisse.",
+            stampBtn: "Stempeln", stampTitle: "Sperren und auf die Tafel flachen",
+            colorWhiteTitle: "Weiß (Korrektur)"
+        }
+    };
+    let currentLang = 'en';
+
     const style = document.createElement('style');
     style.textContent = `
         :root {
-            --bg-color: #31363b;
-            --text-color: #eff0f1;
-            --font-family: 'Noto Sans', 'Segoe UI', 'Roboto', sans-serif;
-            --font-size: 13px;
-            --panel-bg: #2a2e32;
-            --sidebar-bg: #232629;
-            --border-solid: #1d2023;
-            --accent-color: #3daee9;
-            --warning-color: #f67400;
-            --danger-color: #da4453;
-            --success-color: #27ae60;
-            --sub-color: #888888;
+            /* Safely inherit KDE Plasma variables from the wrapper environment */
+            --color-kde-bg: var(--color-kde-bg, #1a1b1e);
+            --color-kde-panel: var(--color-kde-panel, rgba(35, 38, 41, 0.85));
+            --color-kde-panel-hover: var(--color-kde-panel-hover, rgba(255, 255, 255, 0.1));
+            --color-kde-accent: var(--color-kde-accent, #3daee9);
+            --color-kde-text: var(--color-kde-text, #eff0f1);
+            --color-kde-window-bg: var(--color-kde-window-bg, #31363b);
+            --color-kde-window-border: var(--color-kde-window-border, #1d2023);
         }
-        body.inverted {
-            --bg-color: #eff0f1;
-            --text-color: #31363b;
-            --panel-bg: #fcfcfc;
-            --sidebar-bg: #f0f0f0;
-            --border-solid: #bdc3c7;
-        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
         input, textarea { user-select: text !important; -webkit-user-select: text !important; }
+        
         body, html {
             height: 100%;
             width: 100%;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: var(--font-family);
-            font-size: var(--font-size);
+            background-color: var(--color-kde-bg);
+            color: var(--color-kde-text);
+            font-family: 'Noto Sans', 'Segoe UI', 'Roboto', sans-serif;
+            font-size: 13px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
         }
-        #waybar {
-            height: 36px;
-            min-height: 36px;
-            background-color: var(--panel-bg);
+
+        #menu-bar {
+            background-color: var(--color-kde-window-bg);
+            border-bottom: 1px solid var(--color-kde-window-border);
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 10px;
-            border-bottom: 1px solid var(--border-solid);
-            z-index: 100;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-            flex-shrink: 0;
-        }
-        .waybar-group { display: flex; align-items: center; gap: 4px; height: 100%; }
-        .waybar-btn {
-            cursor: pointer;
-            padding: 0 10px;
+            padding: 0 4px;
             height: 28px;
+            align-items: center;
+        }
+        .menu-item {
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .menu-item:hover { background-color: var(--color-kde-panel-hover); }
+
+        #tool-bar {
+            background-color: var(--color-kde-window-bg);
+            border-bottom: 1px solid var(--color-kde-window-border);
+            display: flex;
+            padding: 6px 8px;
+            gap: 12px;
+            align-items: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+        
+        .toolbar-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--color-kde-text);
+            border-radius: 4px;
+            padding: 4px 8px;
             display: flex;
             align-items: center;
             gap: 6px;
-            font-weight: 500;
-            color: var(--text-color);
-            background: transparent;
-            border: 1px solid transparent;
-            border-radius: 4px;
-            font-family: inherit;
-            font-size: 12px;
-            transition: all 0.15s ease;
+            cursor: pointer;
+            transition: all 0.15s;
         }
-        .waybar-btn:hover { background: rgba(61, 174, 233, 0.15); border-color: rgba(61, 174, 233, 0.3); }
-        .waybar-btn.active, .waybar-btn:active { background: var(--accent-color); color: #fff; border-color: #2980b9; }
-        .waybar-btn svg { width: 14px; height: 14px; fill: currentColor; }
+        .toolbar-btn:hover {
+            background-color: var(--color-kde-panel-hover);
+            border-color: rgba(127,127,127,0.2);
+        }
+        .toolbar-btn.active {
+            background-color: rgba(61, 174, 233, 0.3);
+            border-color: rgba(61, 174, 233, 0.5);
+        }
         
-        #workspace-container {
-            flex-grow: 1;
-            position: relative;
-            background-color: #1a1c1e;
-            cursor: crosshair;
+        .toolbar-separator {
+            width: 1px;
+            height: 20px;
+            background-color: var(--color-kde-window-border);
+        }
+
+        #main-area {
+            display: flex;
+            flex: 1;
             overflow: hidden;
-            min-height: 0;
         }
-        canvas {
-            display: block;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            touch-action: none;
+
+        #sidebar {
+            width: 52px;
+            background-color: var(--color-kde-window-bg);
+            border-right: 1px solid var(--color-kde-window-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 8px;
+            gap: 4px;
+            z-index: 10;
         }
-        #tabs-bar {
-            height: 42px;
-            min-height: 42px;
-            background-color: var(--panel-bg);
+
+        .side-tool {
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0 12px;
-            border-top: 1px solid var(--border-solid);
-            z-index: 101;
-            gap: 12px;
-            flex-shrink: 0;
-        }
-        .toolbar-group {
-            display: flex;
-            align-items: center;
-            height: 28px;
-            padding: 0 8px;
-            background: var(--sidebar-bg);
-            border: 1px solid var(--border-solid);
             border-radius: 4px;
-            gap: 8px;
-        }
-        input[type=range] {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 80px;
-            background: transparent;
-            height: 16px;
-        }
-        input[type=range]:focus { outline: none; }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 4px;
-            background: var(--border-solid);
-            border-radius: 2px;
             cursor: pointer;
+            border: 1px solid transparent;
+            color: var(--color-kde-text);
+            transition: all 0.1s;
         }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            height: 12px;
-            width: 12px;
-            background: var(--accent-color);
-            border-radius: 50%;
-            cursor: pointer;
-            margin-top: -4px;
+        .side-tool:hover { background-color: var(--color-kde-panel-hover); }
+        .side-tool.active {
+            background-color: rgba(61, 174, 233, 0.3);
+            border-color: var(--color-kde-accent);
+        }
+
+        #color-palette {
+            display: flex;
+            flex-wrap: wrap;
+            width: 44px;
+            gap: 2px;
+            justify-content: center;
+            margin-top: auto;
+            margin-bottom: 12px;
+            padding-top: 8px;
+            border-top: 1px solid var(--color-kde-window-border);
         }
         .color-btn {
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             cursor: pointer;
-            border: 2px solid transparent;
-            border-radius: 3px;
+            border: 1px solid rgba(0,0,0,0.5);
             box-sizing: border-box;
             transition: transform 0.1s;
         }
-        .color-btn:hover { transform: scale(1.15); }
-        .color-btn.active { border-color: #fff; box-shadow: 0 0 4px var(--accent-color); }
+        .color-btn:hover { transform: scale(1.15); z-index: 10; }
+        .color-btn.active { border: 2px solid var(--color-kde-accent); box-shadow: 0 0 4px var(--color-kde-accent); }
         input[type="color"]#color-picker {
             -webkit-appearance: none;
             appearance: none;
-            border: 1px solid var(--border-solid);
-            width: 18px;
-            height: 18px;
+            border: 1px solid rgba(127,127,127,0.5);
+            width: 38px;
+            height: 24px;
             padding: 0;
             background: transparent;
             cursor: pointer;
-            border-radius: 3px;
+            margin-top: 4px;
         }
         input[type="color"]#color-picker::-webkit-color-swatch-wrapper { padding: 0; }
-        input[type="color"]#color-picker::-webkit-color-swatch { border: none; border-radius: 2px; }
-        
-        #shape-context-menu {
-            position: fixed;
-            display: none;
-            flex-direction: column;
-            background-color: var(--panel-bg);
-            border: 1px solid var(--border-solid);
-            border-radius: 6px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-            z-index: 2000;
-            min-width: 140px;
+        input[type="color"]#color-picker::-webkit-color-swatch { border: none; }
+
+        #workspace-container {
+            flex-grow: 1;
+            position: relative;
+            background-color: rgba(0,0,0,0.1);
+            cursor: crosshair;
             overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px; 
         }
-        .ctx-item {
-            padding: 8px 14px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 500;
-            border-bottom: 1px solid var(--border-solid);
-            transition: background 0.1s;
+        
+        .canvas-wrapper {
+            background-color: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            position: relative;
+            height: 100%;
+            max-width: 100%;
+            aspect-ratio: 16 / 9;
+            flex-shrink: 0; 
         }
-        .ctx-item:last-child { border-bottom: none; }
-        .ctx-item:hover, .ctx-item.active { background-color: var(--accent-color); color: #fff; }
+
+        canvas {
+            display: block;
+            touch-action: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        #status-bar {
+            background-color: var(--color-kde-window-bg);
+            border-top: 1px solid var(--color-kde-window-border);
+            height: 24px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            font-size: 11px;
+            color: var(--color-kde-text);
+            opacity: 0.8;
+            gap: 16px;
+        }
 
         #image-search-panel {
             position: absolute;
-            bottom: 42px;
-            left: 0;
-            width: 100%;
-            height: 280px;
-            background-color: var(--panel-bg);
-            border-top: 1px solid var(--border-solid);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            height: 400px;
+            background-color: var(--color-kde-window-bg);
+            border: 1px solid var(--color-kde-window-border);
+            border-radius: 6px;
             display: none;
             flex-direction: column;
             z-index: 1500;
-            box-shadow: 0 -4px 16px rgba(0,0,0,0.4);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            overflow: hidden;
         }
-        .search-header {
+        
+        .modal-header {
+            background-color: var(--color-kde-panel);
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--color-kde-window-border);
             display: flex;
-            padding: 10px 14px;
-            border-bottom: 1px solid var(--border-solid);
-            gap: 10px;
+            justify-content: space-between;
             align-items: center;
-            background: var(--sidebar-bg);
+            font-weight: 600;
         }
-        .search-header input {
-            background: var(--bg-color);
-            border: 1px solid var(--border-solid);
-            color: var(--text-color);
-            font-family: inherit;
-            font-size: inherit;
+        .modal-close {
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+        .modal-close:hover { background-color: rgba(218, 68, 83, 0.8); color: white; }
+
+        .search-controls {
+            display: flex;
+            padding: 12px;
+            gap: 8px;
+            background: var(--color-kde-bg);
+        }
+        .search-controls input {
+            background: var(--color-kde-window-bg);
+            border: 1px solid var(--color-kde-window-border);
+            color: var(--color-kde-text);
             padding: 6px 10px;
             border-radius: 4px;
             flex-grow: 1;
             outline: none;
         }
-        .search-header input:focus { border-color: var(--accent-color); }
+        .search-controls input:focus { border-color: var(--color-kde-accent); }
+        
         #image-search-results {
             display: flex;
             flex-wrap: wrap;
             gap: 12px;
-            padding: 14px;
+            padding: 12px;
             overflow-y: auto;
             flex-grow: 1;
-            justify-content: center;
             align-content: flex-start;
+            background: rgba(0,0,0,0.05);
         }
         .search-result-img {
-            max-height: 110px;
+            max-height: 90px;
             cursor: pointer;
             border: 2px solid transparent;
             border-radius: 4px;
             transition: transform 0.15s, border-color 0.15s;
         }
-        .search-result-img:hover {
-            transform: scale(1.03);
-            border-color: var(--accent-color);
+        .search-result-img:hover { transform: scale(1.05); border-color: var(--color-kde-accent); }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100px;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(127,127,127,0.3);
+            border-radius: 2px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 12px;
+            width: 12px;
+            background: var(--color-kde-accent);
+            border-radius: 50%;
+            margin-top: -4px;
+            cursor: pointer;
         }
         
         .floating-img-wrapper {
             position: absolute;
-            border: 1px dashed var(--accent-color);
+            border: 1px dashed var(--color-kde-accent);
             box-sizing: border-box;
             z-index: 100;
-            background: rgba(0,0,0,0.1);
         }
         .floating-img-wrapper.locked { border: 1px solid transparent; }
         .floating-img-wrapper img {
@@ -272,32 +363,31 @@
             pointer-events: none;
             display: block;
         }
-        body.inverted .floating-img-wrapper img { filter: invert(1); }
         .floating-controls {
             position: absolute;
-            top: -22px; right: -1px;
+            top: -24px; right: -1px;
             display: flex;
-            gap: 2px;
+            gap: 4px;
             pointer-events: auto;
         }
         .floating-btn {
-            background: var(--panel-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-solid);
-            font-family: inherit;
+            background: var(--color-kde-window-bg);
+            color: var(--color-kde-text);
+            border: 1px solid var(--color-kde-window-border);
             font-size: 10px;
-            font-weight: bold;
             cursor: pointer;
-            padding: 2px 6px;
-            border-radius: 3px 3px 0 0;
+            padding: 4px 8px;
+            border-radius: 4px;
         }
-        .floating-btn:hover { background: var(--accent-color); color: #fff; }
+        .floating-btn:hover { background: var(--color-kde-panel-hover); }
+        .floating-btn.delete-btn:hover { background: #da4453; color: white; }
+        
         .resize-handle {
             position: absolute;
             bottom: -6px; right: -6px;
             width: 12px; height: 12px;
-            background: var(--accent-color);
-            border: 1px solid var(--panel-bg);
+            background: var(--color-kde-accent);
+            border: 1px solid #fff;
             border-radius: 50%;
             cursor: se-resize;
             pointer-events: auto;
@@ -312,124 +402,160 @@
         .floating-img-wrapper.locked .resize-handle,
         .floating-img-wrapper.locked .drag-area,
         .floating-img-wrapper.locked .delete-btn { display: none; }
-        .floating-img-wrapper.locked .floating-controls { opacity: 0.2; transition: opacity 0.2s; }
+        .floating-img-wrapper.locked .floating-controls { opacity: 0; transition: opacity 0.2s; }
         .floating-img-wrapper.locked:hover .floating-controls { opacity: 1; }
     `;
     document.head.appendChild(style);
 
+    if (!document.querySelector('link[href*="font-awesome"]')) {
+        const faLink = document.createElement('link');
+        faLink.rel = 'stylesheet';
+        faLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+        document.head.appendChild(faLink);
+    }
+
     document.body.innerHTML = `
-        <div id="waybar">
-            <div class="waybar-group">
-                <button id="theme-toggle" class="waybar-btn" title="Toggle Theme">INV</button>
-                <button id="undo-btn" class="waybar-btn" title="Undo">UNDO</button>
-                <button id="redo-btn" class="waybar-btn" title="Redo">REDO</button>
-                <button id="clear-btn" class="waybar-btn" title="Clear Board">CLR</button>
-                <button id="download-btn" class="waybar-btn" title="Save Image">SAVE</button>
-                <button id="close-app-btn" class="waybar-btn" title="Close">CLOSE</button>
+        <div id="menu-bar">
+            <div class="menu-item" id="menu-file" data-i18n="menuFile">File</div>
+            <div class="menu-item" id="menu-edit" data-i18n="menuEdit">Edit</div>
+            <div class="menu-item" id="menu-view" data-i18n="menuView">View</div>
+        </div>
+        
+        <div id="tool-bar">
+            <button id="undo-btn" class="toolbar-btn" data-i18n-title="undoTitle"><i class="fa-solid fa-rotate-left"></i></button>
+            <button id="redo-btn" class="toolbar-btn" data-i18n-title="redoTitle"><i class="fa-solid fa-rotate-right"></i></button>
+            <div class="toolbar-separator"></div>
+            <button id="clear-btn" class="toolbar-btn" data-i18n-title="clearTitle"><i class="fa-solid fa-chalkboard"></i> <span data-i18n="clearBtn">Clear</span></button>
+            <button id="download-btn" class="toolbar-btn" data-i18n-title="saveTitle"><i class="fa-solid fa-download"></i> <span data-i18n="saveBtn">Save PNG</span></button>
+            <div class="toolbar-separator"></div>
+            <button id="import-btn" class="toolbar-btn" data-i18n-title="insertTitle"><i class="fa-solid fa-image"></i> <span data-i18n="insertBtn">Insert Image...</span></button>
+            
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+                <button id="canvas-theme-toggle" class="toolbar-btn" data-i18n-title="canvasThemeTitle">
+                    <i class="fa-solid fa-circle-half-stroke"></i>
+                </button>
+                <button id="lang-toggle" class="toolbar-btn font-bold" data-i18n-title="langTitle">
+                    DE
+                </button>
+                <div class="toolbar-separator"></div>
+                <i class="fa-solid fa-weight-hanging text-[10px]"></i> <span data-i18n="sizeText">Size:</span>
+                <input type="range" id="size-slider" min="1" max="50" value="4">
+                <span id="size-display" style="width: 24px; text-align: right;">4</span>
             </div>
-            <div class="waybar-group">
-                <span id="msg-text" style="font-family: monospace; font-size: 11px; color: var(--sub-color); padding-right: 8px;">SYSTEM.READY</span>
+        </div>
+
+        <div id="main-area">
+            <div id="sidebar">
+                <div class="side-tool active main-tool" data-tool="pen" data-i18n-title="toolPen"><i class="fa-solid fa-pen"></i></div>
+                <div class="side-tool main-tool" data-tool="eraser" data-i18n-title="toolEraser"><i class="fa-solid fa-eraser"></i></div>
+                <div class="side-tool main-tool" data-tool="rect" data-i18n-title="toolRect"><i class="fa-regular fa-square"></i></div>
+                <div class="side-tool main-tool" data-tool="circle" data-i18n-title="toolCircle"><i class="fa-regular fa-circle"></i></div>
+                <div class="side-tool main-tool" data-tool="line" data-i18n-title="toolLine"><i class="fa-solid fa-minus"></i></div>
+                
+                <div id="color-palette">
+                    <!-- Standard Whiteboard Marker Colors -->
+                    <div class="color-btn active" style="background:#000000;" data-color="#000000" title="Black"></div>
+                    <div class="color-btn" style="background:#ed1c24;" data-color="#ed1c24" title="Red"></div>
+                    <div class="color-btn" style="background:#22b14c;" data-color="#22b14c" title="Green"></div>
+                    <div class="color-btn" style="background:#3f48cc;" data-color="#3f48cc" title="Blue"></div>
+                    <div class="color-btn" style="background:#ffc90e;" data-color="#ffc90e" title="Yellow"></div>
+                    <div class="color-btn" style="background:#a349a4;" data-color="#a349a4" title="Purple"></div>
+                    <div class="color-btn" style="background:#ff7f27;" data-color="#ff7f27" title="Orange"></div>
+                    <div class="color-btn" id="whiteout-btn" style="background:#ffffff;" data-color="#ffffff" data-i18n-title="colorWhiteTitle"></div>
+                    <input type="color" id="color-picker" title="Custom Color" value="#000000">
+                </div>
+            </div>
+            
+            <div id="workspace-container">
+                <div class="canvas-wrapper" id="canvas-wrapper">
+                    <canvas id="board" width="1920" height="1080"></canvas>
+                </div>
             </div>
         </div>
-        <div id="workspace-container">
-            <canvas id="board"></canvas>
+
+        <div id="status-bar">
+            <span id="coords-display"><i class="fa-solid fa-location-crosshairs"></i> 0, 0px</span>
+            <div class="toolbar-separator" style="height: 12px;"></div>
+            <span id="canvas-size-display"><i class="fa-solid fa-maximize"></i> 1920 x 1080px</span>
+            <div class="toolbar-separator" style="height: 12px;"></div>
+            <span id="status-msg" data-i18n="statusReady">Ready</span>
         </div>
-        <div id="shape-context-menu">
-            <div class="ctx-item" data-tool="pen">PENCIL</div>
-            <div class="ctx-item" data-tool="rect">RECTANGLE</div>
-            <div class="ctx-item" data-tool="square">SQUARE</div>
-            <div class="ctx-item" data-tool="circle">CIRCLE</div>
-            <div class="ctx-item" data-tool="triangle">TRIANGLE</div>
-            <div class="ctx-item" id="ctx-pictures">PICTURES</div>
-        </div>
+
         <div id="image-search-panel">
-            <div class="search-header">
-                <span style="font-weight:700;font-size:11px;color:var(--sub-color);">IMG_SEARCH:</span>
-                <input type="text" id="image-search-input" placeholder="Search Wikimedia Commons...">
-                <button id="image-search-btn" class="waybar-btn">SEARCH</button>
-                <button id="image-search-close" class="waybar-btn">CLOSE</button>
+            <div class="modal-header">
+                <span data-i18n="searchHeader">Insert Web Image</span>
+                <div class="modal-close" id="image-search-close"><i class="fa-solid fa-xmark"></i></div>
             </div>
-            <div id="image-search-results"></div>
-        </div>
-        <div id="tabs-bar">
-            <button class="waybar-btn main-tool active" data-tool="pen">PEN</button>
-            <button class="waybar-btn main-tool" data-tool="eraser">ERASE</button>
-            <div class="toolbar-group" title="Stroke Width">
-                <span style="font-size:11px;font-weight:700;color:var(--sub-color);">SZ:</span>
-                <input type="range" id="size-slider" min="1" max="50" value="3">
-                <span id="size-display" style="width: 2ch; text-align: right; font-family: monospace; font-size: 11px;">03</span>
+            <div class="search-controls">
+                <input type="text" id="image-search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search Wikimedia Commons...">
+                <button id="image-search-btn" class="toolbar-btn" style="background: var(--color-kde-panel-hover);"><span data-i18n="searchBtn">Search</span></button>
             </div>
-            <div class="toolbar-group" id="color-palette">
-                <div class="color-btn active" style="background:#ffffff;" data-color="#ffffff" title="White"></div>
-                <div class="color-btn" style="background:#ff0000;" data-color="#ff0000" title="Red"></div>
-                <div class="color-btn" style="background:#00ff00;" data-color="#00ff00" title="Green"></div>
-                <div class="color-btn" style="background:#0000ff;" data-color="#0000ff" title="Blue"></div>
-                <div class="color-btn" style="background:#ffff00;" data-color="#ffff00" title="Yellow"></div>
-                <div class="color-btn" style="background:#ff00ff;" data-color="#ff00ff" title="Magenta"></div>
-                <div class="color-btn" style="background:#00ffff;" data-color="#00ffff" title="Cyan"></div>
-                <div style="width: 1px; height: 14px; background: var(--border-solid); margin: 0 2px;"></div>
-                <input type="color" id="color-picker" title="Custom Color" value="#ff0000">
+            <div id="image-search-results">
+                <div style="color: rgba(127,127,127,0.8); width: 100%; text-align: center; margin-top: 40px;" data-i18n="searchEmpty">
+                    Search to insert an image onto the whiteboard.
+                </div>
             </div>
         </div>
     `;
 
-    // --- Application Logic ---
     const canvas = document.getElementById('board');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const container = document.getElementById('workspace-container');
-    const msgText = document.getElementById('msg-text');
+    const canvasWrapper = document.getElementById('canvas-wrapper');
+    const coordsDisplay = document.getElementById('coords-display');
+    const statusMsg = document.getElementById('status-msg');
+    
     let isDrawing = false, lastX = 0, lastY = 0, startX = 0, startY = 0;
-    let draftState = null, currentTool = 'pen', currentColor = '#ffffff', currentSize = 3;
-    let undoStack = [], redoStack = [], msgTimer = null;
+    let draftState = null;
+    let currentTool = 'pen';
+    let currentColor = '#000000'; 
+    let currentSize = 4;
+    let undoStack = [], redoStack = [];
     
-    function updateClock() {
-        if (msgTimer !== null) return;
-        const now = new Date();
-        msgText.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).toUpperCase();
-    }
-    
-    function showMessage(msg) {
-        msgText.textContent = msg.toUpperCase();
-        clearTimeout(msgTimer);
-        msgTimer = setTimeout(() => { msgTimer = null; updateClock(); }, 2000);
-    }
-    
-    setInterval(updateClock, 1000);
-    updateClock();
-    
-    function resizeCanvas() {
-        const rect = container.getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
-        let tempCanvas = null;
-        if (canvas.width > 0 && canvas.height > 0) {
-            tempCanvas = document.createElement('canvas');
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
-            tempCanvas.getContext('2d').drawImage(canvas, 0, 0);
+    // Canvas dark mode variables
+    let isCanvasDark = false;
+    let canvasBgColor = '#ffffff';
+
+    function applyLanguage() {
+        const dict = i18n[currentLang];
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            el.textContent = dict[el.dataset.i18n];
+        });
+        document.querySelectorAll('[data-i18n-title]').forEach(el => {
+            el.title = dict[el.dataset.i18nTitle];
+        });
+        const searchInput = document.getElementById('image-search-input');
+        if (searchInput && dict.searchPlaceholder) {
+            searchInput.placeholder = dict.searchPlaceholder;
         }
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        if (tempCanvas) {
-            ctx.save();
-            ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
-            ctx.restore();
-        } else if (undoStack.length === 0) { 
-            saveState(); 
+        
+        const langBtn = document.getElementById('lang-toggle');
+        if(langBtn) {
+            langBtn.textContent = currentLang === 'en' ? 'DE' : 'EN';
         }
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
-    
-    setTimeout(resizeCanvas, 50);
-    let resizeTimeout;
-    window.addEventListener('resize', () => { 
-        clearTimeout(resizeTimeout); 
-        resizeTimeout = setTimeout(resizeCanvas, 150); 
+
+    document.getElementById('lang-toggle').addEventListener('click', () => {
+        currentLang = currentLang === 'en' ? 'de' : 'en';
+        applyLanguage();
     });
+
+    function initCanvas() {
+        ctx.fillStyle = canvasBgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        saveState();
+        
+        applyLanguage();
+    }
+
+    function setStatus(msgKey) {
+        const msg = i18n[currentLang][msgKey] || msgKey;
+        statusMsg.textContent = msg;
+        setTimeout(() => { if (statusMsg.textContent === msg) statusMsg.textContent = i18n[currentLang].statusReady; }, 4000);
+    }
     
     function saveState() {
-        if (undoStack.length > 25) undoStack.shift();
+        if (undoStack.length > 25) undoStack.shift(); 
         undoStack.push(canvas.toDataURL());
         redoStack = [];
     }
@@ -447,18 +573,35 @@
     }
     
     function getCoords(e) {
-        const rect = container.getBoundingClientRect();
-        return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return { 
+            x: (e.clientX - rect.left) * scaleX, 
+            y: (e.clientY - rect.top) * scaleY 
+        };
     }
+
+    container.addEventListener('pointermove', (e) => {
+        if (e.target === canvas || canvasWrapper.contains(e.target)) {
+            const c = getCoords(e);
+            coordsDisplay.innerHTML = `<i class="fa-solid fa-location-crosshairs"></i> ${Math.round(c.x)}, ${Math.round(c.y)}px`;
+        }
+    });
     
     function applyBrush() {
         ctx.lineWidth = currentSize;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
         if (currentTool === 'eraser') {
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.strokeStyle = 'rgba(0,0,0,1)';
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.strokeStyle = canvasBgColor; 
+            ctx.fillStyle = canvasBgColor;
         } else {
             ctx.globalCompositeOperation = 'source-over';
             ctx.strokeStyle = currentColor;
+            ctx.fillStyle = currentColor;
         }
     }
     
@@ -467,9 +610,12 @@
         isDrawing = true;
         const c = getCoords(e);
         startX = c.x; startY = c.y; lastX = c.x; lastY = c.y;
+        
         draftState = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
         ctx.beginPath();
         ctx.moveTo(lastX, lastY);
+        
         if (['pen', 'eraser'].includes(currentTool)) {
             ctx.lineTo(lastX, lastY);
             applyBrush();
@@ -481,6 +627,7 @@
         if (!isDrawing) return;
         e.preventDefault();
         const c = getCoords(e);
+        
         if (['pen', 'eraser'].includes(currentTool)) {
             ctx.beginPath();
             ctx.moveTo(lastX, lastY);
@@ -492,28 +639,31 @@
             ctx.putImageData(draftState, 0, 0);
             ctx.beginPath();
             applyBrush();
-            const dx = c.x - startX, dy = c.y - startY;
+            
+            const dx = c.x - startX;
+            const dy = c.y - startY;
+            
             if (currentTool === 'rect') {
                 ctx.rect(startX, startY, dx, dy);
-            } else if (currentTool === 'square') {
-                const side = Math.max(Math.abs(dx), Math.abs(dy));
-                const signX = dx < 0 ? -1 : 1, signY = dy < 0 ? -1 : 1;
-                ctx.rect(startX, startY, side * signX, side * signY);
             } else if (currentTool === 'circle') {
-                const radius = Math.hypot(dx, dy);
-                ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
-            } else if (currentTool === 'triangle') {
-                ctx.moveTo(startX + dx / 2, startY);
-                ctx.lineTo(startX, startY + dy);
-                ctx.lineTo(startX + dx, startY + dy);
-                ctx.closePath();
+                const rx = Math.abs(dx) / 2;
+                const ry = Math.abs(dy) / 2;
+                const cx = startX + dx / 2;
+                const cy = startY + dy / 2;
+                ctx.ellipse(cx, cy, rx, ry, 0, 0, 2 * Math.PI);
+            } else if (currentTool === 'line') {
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(c.x, c.y);
             }
             ctx.stroke();
         }
     }
     
     function stopDrawing() {
-        if (isDrawing) { isDrawing = false; saveState(); }
+        if (isDrawing) { 
+            isDrawing = false; 
+            saveState(); 
+        }
     }
     
     canvas.addEventListener('pointerdown', startDrawing);
@@ -521,39 +671,8 @@
     window.addEventListener('pointerup', stopDrawing);
     window.addEventListener('pointercancel', stopDrawing);
     
-    const ctxMenu = document.getElementById('shape-context-menu');
-    canvas.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        ctxMenu.style.display = 'flex';
-        let left = e.clientX, top = e.clientY;
-        if (left + ctxMenu.offsetWidth > window.innerWidth) left = window.innerWidth - ctxMenu.offsetWidth;
-        if (top + ctxMenu.offsetHeight > window.innerHeight) top = window.innerHeight - ctxMenu.offsetHeight;
-        ctxMenu.style.left = left + 'px';
-        ctxMenu.style.top = top + 'px';
-    });
-    
-    window.addEventListener('pointerdown', (e) => {
-        if (e.button !== 2 && !ctxMenu.contains(e.target)) { ctxMenu.style.display = 'none'; }
-    });
-    
-    document.querySelectorAll('.ctx-item').forEach(item => {
-        item.addEventListener('click', function() {
-            if (this.id === 'ctx-pictures') {
-                document.getElementById('image-search-panel').style.display = 'flex';
-                ctxMenu.style.display = 'none';
-                document.getElementById('image-search-input').focus();
-                return;
-            }
-            document.querySelectorAll('.main-tool').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.ctx-item').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            currentTool = this.dataset.tool;
-            showMessage('TOOL:' + currentTool.toUpperCase());
-            ctxMenu.style.display = 'none';
-        });
-    });
-    
     const colorPicker = document.getElementById('color-picker');
+    
     document.querySelectorAll('.color-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
@@ -561,7 +680,6 @@
             this.classList.add('active');
             currentColor = this.dataset.color;
             if (currentTool === 'eraser') { document.querySelector('[data-tool="pen"]')?.click(); }
-            showMessage('COLOR:' + currentColor);
         });
     });
     
@@ -570,22 +688,22 @@
         this.classList.add('active');
         currentColor = e.target.value;
         if (currentTool === 'eraser') { document.querySelector('[data-tool="pen"]')?.click(); }
-        showMessage('COLOR:' + currentColor);
     });
     
     const sizeDisplay = document.getElementById('size-display');
     document.getElementById('size-slider').addEventListener('input', e => {
         currentSize = parseFloat(e.target.value);
-        sizeDisplay.textContent = Math.round(currentSize).toString().padStart(2, '0');
+        sizeDisplay.textContent = Math.round(currentSize);
     });
     
     document.querySelectorAll('.main-tool').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.main-tool').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.ctx-item').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             currentTool = this.dataset.tool;
-            showMessage('TOOL:' + currentTool.toUpperCase());
+            const dict = i18n[currentLang];
+            const toolNameKey = 'tool' + currentTool.charAt(0).toUpperCase() + currentTool.slice(1);
+            setStatus(dict[toolNameKey] ? dict[toolNameKey] : currentTool);
         });
     });
     
@@ -593,37 +711,17 @@
         if (undoStack.length > 1) {
             redoStack.push(undoStack.pop());
             restoreState(undoStack[undoStack.length - 1]);
-            showMessage('ACTION:UNDO');
         }
     }
-    
     function redo() {
         if (redoStack.length > 0) {
             const state = redoStack.pop();
             undoStack.push(state);
             restoreState(state);
-            showMessage('ACTION:REDO');
         }
     }
-    
     document.getElementById('undo-btn').addEventListener('click', undo);
     document.getElementById('redo-btn').addEventListener('click', redo);
-    
-    document.getElementById('close-app-btn').addEventListener('click', () => {
-        const parentContainer = document.getElementById('app-container-blackboard');
-        if (parentContainer) parentContainer.remove();
-        else if (window.parent && window.parent !== window) {
-            try {
-                if (typeof window.parent.closeWrapperTab === 'function') {
-                    window.parent.closeWrapperTab();
-                } else if (typeof window.parent.closeWrapperWindow === 'function') {
-                    window.parent.closeWrapperWindow();
-                }
-            } catch(e) {}
-        } else {
-            document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#232629;color:#eff0f1;font-family:sans-serif;">Blackboard Closed</div>';
-        }
-    });
     
     document.addEventListener('keydown', e => {
         if (e.ctrlKey || e.metaKey) {
@@ -631,61 +729,120 @@
             if (e.key === 'y') { e.preventDefault(); redo(); }
         }
         if (e.key === 'Escape') {
-            const searchPanel = document.getElementById('image-search-panel');
-            if (searchPanel.style.display === 'flex') searchPanel.style.display = 'none';
-            if (ctxMenu.style.display === 'flex') ctxMenu.style.display = 'none';
+            document.getElementById('image-search-panel').style.display = 'none';
         }
     });
     
     document.getElementById('clear-btn').addEventListener('click', () => {
-        ctx.save();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.restore();
+        ctx.fillStyle = canvasBgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         saveState();
         document.querySelectorAll('.floating-img-wrapper').forEach(el => el.remove());
-        showMessage('MEM:FLUSHED');
+        setStatus('statusCleared');
     });
-    
-    document.getElementById('download-btn').addEventListener('click', () => {
+
+    const canvasThemeBtn = document.getElementById('canvas-theme-toggle');
+    canvasThemeBtn.addEventListener('click', () => {
+        isCanvasDark = !isCanvasDark;
+        canvasBgColor = isCanvasDark ? '#1a1b1e' : '#ffffff';
+        canvasWrapper.style.backgroundColor = canvasBgColor;
+
+        // Invert current drawn canvas pixels
         const tmp = document.createElement('canvas');
         tmp.width = canvas.width; tmp.height = canvas.height;
         const tctx = tmp.getContext('2d');
-        const bg = window.getComputedStyle(document.body).getPropertyValue('--bg-color').trim();
-        tctx.fillStyle = bg || '#31363b';
-        tctx.fillRect(0, 0, tmp.width, tmp.height);
         tctx.drawImage(canvas, 0, 0);
-        const dpr = window.devicePixelRatio || 1;
+        
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.filter = 'invert(1)';
+        ctx.drawImage(tmp, 0, 0);
+        ctx.restore();
+
+        // Hex inversion helper
+        function invertHex(hex) {
+            if (!hex) return '#ffffff';
+            let h = hex.replace('#', '');
+            if (h.length === 3) h = h.split('').map(x => x + x).join('');
+            const r = (255 - parseInt(h.slice(0, 2), 16)).toString(16).padStart(2, '0');
+            const g = (255 - parseInt(h.slice(2, 4), 16)).toString(16).padStart(2, '0');
+            const b = (255 - parseInt(h.slice(4, 6), 16)).toString(16).padStart(2, '0');
+            return '#' + r + g + b;
+        }
+
+        // Invert palette buttons logic
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            const currentHex = btn.dataset.color;
+            const newHex = invertHex(currentHex);
+            btn.dataset.color = newHex;
+            btn.style.background = newHex;
+        });
+
+        colorPicker.value = invertHex(colorPicker.value);
+        currentColor = invertHex(currentColor);
+
+        // Reset undo history to prevent mismatch bugs 
+        undoStack = [];
+        redoStack = [];
+        saveState();
+    });
+    
+    document.getElementById('download-btn').addEventListener('click', () => {
+        setStatus('statusExporting');
+        const tmp = document.createElement('canvas');
+        tmp.width = canvas.width; 
+        tmp.height = canvas.height;
+        const tctx = tmp.getContext('2d');
+        
+        tctx.drawImage(canvas, 0, 0);
+        
         const cRect = canvas.getBoundingClientRect();
         document.querySelectorAll('.floating-img-wrapper').forEach(f => {
             const img = f.querySelector('img');
-            const rect = f.getBoundingClientRect();
-            const x = (rect.left - cRect.left) * dpr;
-            const y = (rect.top - cRect.top) * dpr;
-            const w = rect.width * dpr, h = rect.height * dpr;
-            tctx.filter = document.body.classList.contains('inverted') ? 'invert(1)' : 'none';
-            tctx.drawImage(img, x, y, w, h);
+            const left = parseFloat(f.style.left) || 0;
+            const top = parseFloat(f.style.top) || 0;
+            const w = parseFloat(f.style.width) || 0;
+            const h = parseFloat(f.style.height) || 0;
+            
+            const scaleX = canvas.width / cRect.width;
+            const scaleY = canvas.height / cRect.height;
+            
+            tctx.drawImage(img, left * scaleX, top * scaleY, w * scaleX, h * scaleY);
         });
+        
         const link = document.createElement('a');
-        link.download = 'BLACKBOARD_' + Math.floor(Date.now() / 1000) + '.png';
+        link.download = 'Virtual_Whiteboard_Export.png';
         link.href = tmp.toDataURL('image/png');
         link.click();
-        showMessage('DATA:EXPORTED');
+        setStatus('statusExported');
     });
     
+    const searchPanel = document.getElementById('image-search-panel');
     const searchInput = document.getElementById('image-search-input');
-    const searchBtn = document.getElementById('image-search-btn');
-    const searchClose = document.getElementById('image-search-close');
-    const searchResults = document.getElementById('image-search-results');
     
+    document.getElementById('import-btn').addEventListener('click', () => {
+        searchPanel.style.display = 'flex';
+        searchInput.focus();
+    });
+    
+    document.getElementById('image-search-close').addEventListener('click', () => {
+        searchPanel.style.display = 'none';
+    });
+
     async function searchImages(query) {
         if (!query.trim()) return;
-        searchResults.innerHTML = '<span style="padding:12px;color:var(--sub-color);">SEARCHING...</span>';
+        const resultsDiv = document.getElementById('image-search-results');
+        const loadingMsg = i18n[currentLang].searchLoading;
+        resultsDiv.innerHTML = `<div style="width:100%; text-align:center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin text-2xl"></i><br>${loadingMsg}</div>`;
+        
         try {
             const url = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=' + encodeURIComponent(query) + '&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url|dimensions&iiurlwidth=200&format=json&origin=*';
             const res = await fetch(url);
             const data = await res.json();
-            searchResults.innerHTML = '';
+            
+            resultsDiv.innerHTML = '';
             if (data.query && data.query.pages) {
                 Object.values(data.query.pages).forEach(page => {
                     if (page.imageinfo && page.imageinfo[0]) {
@@ -697,42 +854,54 @@
                         img.src = thumbUrl;
                         img.className = 'search-result-img';
                         img.title = 'Click to insert';
+                        
                         img.addEventListener('click', () => {
-                            const rect = container.getBoundingClientRect();
+                            const rect = canvasWrapper.getBoundingClientRect();
                             const maxDim = Math.min(rect.width, rect.height) / 2;
-                            let w = info.width || 100, h = info.height || 100;
+                            let w = info.width || 200, h = info.height || 200;
+                            
                             if (w > maxDim || h > maxDim) {
                                 const ratio = Math.min(maxDim / w, maxDim / h);
                                 w *= ratio; h *= ratio;
                             }
+                            
                             const wrapper = document.createElement('div');
                             wrapper.className = 'floating-img-wrapper';
                             wrapper.style.width = w + 'px';
                             wrapper.style.height = h + 'px';
-                            wrapper.style.left = (rect.width / 2 - w / 2) + 'px';
-                            wrapper.style.top = (rect.height / 2 - h / 2) + 'px';
+                            const centerLeft = (rect.width / 2) - (w / 2);
+                            const centerTop = (rect.height / 2) - (h / 2);
+                            wrapper.style.left = centerLeft + 'px';
+                            wrapper.style.top = centerTop + 'px';
+                            
                             const innerImg = document.createElement('img');
                             innerImg.crossOrigin = 'Anonymous';
                             innerImg.src = fullUrl;
+                            
                             const dragArea = document.createElement('div');
                             dragArea.className = 'drag-area';
                             const resizeHandle = document.createElement('div');
                             resizeHandle.className = 'resize-handle';
                             const controls = document.createElement('div');
                             controls.className = 'floating-controls';
+                            
                             const lockBtn = document.createElement('button');
                             lockBtn.className = 'floating-btn lock-btn';
-                            lockBtn.innerText = 'LOCK';
+                            lockBtn.innerHTML = `<i class="fa-solid fa-lock-open"></i> <span>${i18n[currentLang].stampBtn}</span>`;
+                            lockBtn.title = i18n[currentLang].stampTitle;
+                            
                             const delBtn = document.createElement('button');
                             delBtn.className = 'floating-btn delete-btn';
-                            delBtn.innerText = 'DEL';
+                            delBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                            
                             controls.appendChild(lockBtn);
                             controls.appendChild(delBtn);
                             wrapper.appendChild(innerImg);
                             wrapper.appendChild(dragArea);
                             wrapper.appendChild(resizeHandle);
                             wrapper.appendChild(controls);
-                            container.appendChild(wrapper);
+                            canvasWrapper.appendChild(wrapper);
+                            
                             let isDragging = false, startX, startY, initL, initT;
                             dragArea.addEventListener('pointerdown', e => {
                                 isDragging = true;
@@ -753,6 +922,7 @@
                                 dragArea.releasePointerCapture(e.pointerId);
                                 e.stopPropagation();
                             });
+                            
                             let isResizing = false, initW, initH;
                             resizeHandle.addEventListener('pointerdown', e => {
                                 isResizing = true;
@@ -764,8 +934,8 @@
                             });
                             resizeHandle.addEventListener('pointermove', e => {
                                 if (!isResizing) return;
-                                wrapper.style.width = Math.max(40, initW + (e.clientX - startX)) + 'px';
-                                wrapper.style.height = Math.max(40, initH + (e.clientY - startY)) + 'px';
+                                wrapper.style.width = Math.max(20, initW + (e.clientX - startX)) + 'px';
+                                wrapper.style.height = Math.max(20, initH + (e.clientY - startY)) + 'px';
                                 e.stopPropagation();
                             });
                             resizeHandle.addEventListener('pointerup', e => {
@@ -773,76 +943,49 @@
                                 resizeHandle.releasePointerCapture(e.pointerId);
                                 e.stopPropagation();
                             });
-                            let isLocked = false;
+                            
                             lockBtn.addEventListener('click', e => {
-                                isLocked = !isLocked;
-                                wrapper.classList.toggle('locked', isLocked);
-                                lockBtn.innerText = isLocked ? 'UNLOCK' : 'LOCK';
+                                // Fetch a fresh bounding rect in case the window was resized
+                                const currentRect = canvasWrapper.getBoundingClientRect();
+                                const currentScaleX = canvas.width / currentRect.width;
+                                const currentScaleY = canvas.height / currentRect.height;
+                                ctx.drawImage(
+                                    innerImg, 
+                                    parseFloat(wrapper.style.left) * currentScaleX, 
+                                    parseFloat(wrapper.style.top) * currentScaleY, 
+                                    parseFloat(wrapper.style.width) * currentScaleX, 
+                                    parseFloat(wrapper.style.height) * currentScaleY
+                                );
+                                saveState();
+                                wrapper.remove();
+                                setStatus('statusStamped');
                                 e.stopPropagation();
                             });
+                            
                             delBtn.addEventListener('click', e => {
                                 wrapper.remove();
                                 e.stopPropagation();
                             });
-                            showMessage('PICTURE:ADDED');
+                            
+                            searchPanel.style.display = 'none';
+                            setStatus('statusInserted');
                         });
-                        searchResults.appendChild(img);
+                        resultsDiv.appendChild(img);
                     }
                 });
             } else {
-                searchResults.innerHTML = '<span style="padding:12px;color:var(--sub-color);">NO RESULTS FOUND.</span>';
+                resultsDiv.innerHTML = `<div style="width:100%; text-align:center; padding: 20px;">${i18n[currentLang].searchNoResults}</div>`;
             }
         } catch (e) {
-            searchResults.innerHTML = '<span style="padding:12px;color:var(--danger-color);">ERROR FETCHING RESULTS.</span>';
+            resultsDiv.innerHTML = `<div style="width:100%; text-align:center; padding: 20px; color:#da4453;">${i18n[currentLang].searchError}</div>`;
         }
     }
     
-    searchBtn.addEventListener('click', () => searchImages(searchInput.value));
-    searchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') searchImages(searchInput.value);
-    });
+    document.getElementById('image-search-btn').addEventListener('click', () => searchImages(searchInput.value));
+    searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') searchImages(searchInput.value); });
     
-    searchClose.addEventListener('click', () => {
-        document.getElementById('image-search-panel').style.display = 'none';
-    });
+    document.getElementById('menu-file').addEventListener('click', () => document.getElementById('download-btn').click());
     
-    const themeToggle = document.getElementById('theme-toggle');
-    let inverted = false;
-    themeToggle.addEventListener('click', function() {
-        inverted = !inverted;
-        document.body.classList.toggle('inverted', inverted);
-        const tmp = document.createElement('canvas');
-        tmp.width = canvas.width; tmp.height = canvas.height;
-        const tctx = tmp.getContext('2d');
-        tctx.drawImage(canvas, 0, 0);
-        ctx.save();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.filter = 'invert(1)';
-        ctx.drawImage(tmp, 0, 0);
-        ctx.restore();
-        
-        function invertHex(hex) {
-            if (!hex) return '#ffffff';
-            let h = hex.replace('#', '');
-            if (h.length === 3) h = h.split('').map(x => x + x).join('');
-            const r = (255 - parseInt(h.slice(0, 2), 16)).toString(16).padStart(2, '0');
-            const g = (255 - parseInt(h.slice(2, 4), 16)).toString(16).padStart(2, '0');
-            const b = (255 - parseInt(h.slice(4, 6), 16)).toString(16).padStart(2, '0');
-            return '#' + r + g + b;
-        }
-        
-        document.querySelectorAll('.color-btn').forEach(btn => {
-            const baseColor = btn.dataset.color;
-            btn.style.background = inverted ? invertHex(baseColor) : baseColor;
-        });
-        
-        colorPicker.value = invertHex(colorPicker.value);
-        currentColor = invertHex(currentColor);
-        while (undoStack.length > 0) undoStack.pop();
-        saveState();
-    });
-
-    console.log("Blackboard initialized successfully.");
+    initCanvas();
+    console.log("Virtual Whiteboard initialized successfully.");
 })();
