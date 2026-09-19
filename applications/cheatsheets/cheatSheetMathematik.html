@@ -39,6 +39,21 @@
             --panel-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
             --col-einer: #38bdf8; --col-zehner: #4ade80; --col-hunderter: #facc15;
             --col-tausender: #f472b6; --col-zehntausender: #a855f7;
+
+            /* Layout tuning for large (maximized 1080p) viewports */
+            --content-max: 1600px;
+            --sidebar-w: 20rem; /* 320px */
+
+            /* Panel borders & strengthened omni-directional encasing shadow */
+            --panel-border: #383c42;
+            --card-shadow:
+                0 0 22px 0 rgba(0, 0, 0, 0.55),
+                0 0 10px 0 rgba(0, 0, 0, 0.45),
+                0 4px 24px 0 rgba(0, 0, 0, 0.35);
+            --card-shadow-hover:
+                0 0 40px 0 rgba(0, 0, 0, 0.7),
+                0 0 18px 0 rgba(0, 0, 0, 0.55),
+                0 8px 36px 0 rgba(0, 0, 0, 0.45);
         }
         html.light {
             --bg-color: #f1f3f5; --panel-color: #ffffff; --sidebar-color: #ffffff;
@@ -51,18 +66,39 @@
             --panel-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.08);
             --col-einer: #0284c7; --col-zehner: #16a34a; --col-hunderter: #ca8a04;
             --col-tausender: #db2777; --col-zehntausender: #7e22ce;
+
+            /* Stronger encasing shadow for light mode as well */
+            --panel-border: #e2e8f0;
+            --card-shadow:
+                0 0 28px 0 rgba(0, 0, 0, 0.18),
+                0 0 12px 0 rgba(0, 0, 0, 0.12),
+                0 4px 24px 0 rgba(0, 0, 0, 0.10);
+            --card-shadow-hover:
+                0 0 48px 0 rgba(0, 0, 0, 0.28),
+                0 0 22px 0 rgba(0, 0, 0, 0.20),
+                0 8px 36px 0 rgba(0, 0, 0, 0.16);
         }
+
+        html { font-size: 16px; }
+
+        /* Scale the document up on very wide (maximized 1080p) viewports */
+        @media (min-width: 1536px)  { html { font-size: 17px; } }
+        @media (min-width: 1800px)  { html { font-size: 18px; } }
+
         body {
             background-color: var(--bg-color); color: var(--text-color);
             font-family: 'Inter', sans-serif; line-height: 1.6;
             transition: background-color 0.2s, color 0.2s;
+            overflow-x: hidden;
         }
         h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 800 !important; }
-        h1 { font-size: 3rem !important; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
-        h2 { font-size: 2rem !important; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; margin-bottom: 1rem; }
+        h1 { font-size: clamp(2.1rem, 3vw, 3.1rem) !important; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        h2 { font-size: clamp(1.6rem, 2.1vw, 2.15rem) !important; border-bottom: 1px solid var(--border-color); padding-bottom: 0.4rem; margin-bottom: 1rem; }
         a { color: var(--link-color); text-decoration: none; cursor: pointer; }
         a:hover { color: var(--link-hover); text-decoration: underline; }
         p { margin-bottom: 1rem; }
+
+        /* ---------- DIN A4 calculation sheet ---------- */
         .din4-sheet {
             background-color: var(--paper-bg);
             background-image:
@@ -71,7 +107,7 @@
             background-size: 24px 24px;
             border: 2px solid var(--border-color); border-radius: 12px;
             padding: 40px 30px; box-shadow: var(--panel-shadow);
-            position: relative; max-width: 850px; margin: 0 auto 2rem auto;
+            position: relative; max-width: 850px; margin: 0 auto;
             transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s; overflow: hidden;
         }
         .din4-sheet::before {
@@ -91,7 +127,7 @@
         .pos-hunderter { color: var(--col-hunderter) !important; font-weight: 700; cursor: pointer; }
         .pos-tausender { color: var(--col-tausender) !important; font-weight: 700; cursor: pointer; }
         .pos-zehntausender { color: var(--col-zehntausender) !important; font-weight: 700; cursor: pointer; }
-        
+
         .math-digit-box {
             display: inline-block; width: 32px; text-align: center; padding: 0;
             border-radius: 4px; border: 2px solid transparent;
@@ -166,36 +202,117 @@
             color: var(--text-color); padding: 2px 8px; border-radius: 12px; flex-shrink: 0;
         }
 
+        /* ---------- Navigation tabs ---------- */
         .nav-tab {
             display: block; padding: 8px 12px; border-radius: 6px; color: var(--link-color); font-weight: 500;
             transition: background 0.15s, color 0.15s; cursor: pointer;
         }
         .nav-tab:hover { background-color: var(--panel-color); color: var(--link-hover); }
         .nav-tab.active { background-color: var(--info-box); color: var(--heading-color); font-weight: 600; border-left: 3px solid var(--link-color); }
+
         .topic-page { display: none; }
         .topic-page.active-page { display: block; }
-        aside { box-shadow: var(--panel-shadow); }
+
+        /* ---------- Layout helpers ---------- */
+        .app-sidebar {
+            width: var(--sidebar-w);
+            max-height: 50vh;
+        }
+        @media (min-width: 1024px) {
+            .app-sidebar { max-height: 100vh; }
+        }
+
+        .app-main {
+            flex: 1 1 0%;
+            min-width: 0;
+            width: 100%;
+            max-width: var(--content-max);
+            padding: 1rem;
+        }
+        @media (min-width: 1024px) { .app-main { padding: 1.5rem; } }
+        @media (min-width: 1280px) { .app-main { padding: 2rem; } }
+        @media (min-width: 1600px) { .app-main { padding: 2.25rem 2.5rem; } }
+
+        /* ---------- Topic Panel (outer container) ---------- */
+        .topic-panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            transition: box-shadow 0.3s ease;
+        }
+        @media (min-width: 1024px) {
+            .topic-panel { padding: 2.25rem; }
+        }
+        .topic-panel:hover {
+            box-shadow: var(--card-shadow-hover);
+        }
+        /* When the topic-panel is also a topic-page, keep the hide/show behaviour */
+        .topic-page.topic-panel { display: none; }
+        .topic-page.topic-panel.active-page { display: block; }
+        .topic-panel.mt-0 { margin-top: 0; }
+        .topic-panel.mb-8 { margin-bottom: 2rem; }
+
+        /* ---------- Subtopic Card (inner block) ---------- */
+        .subtopic-card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .subtopic-card:last-child {
+            margin-bottom: 0;
+        }
+        .subtopic-card:hover {
+            box-shadow: var(--card-shadow);
+            transform: translateY(-2px);
+        }
+
+        /* Tool cards inside the dashboard subtopic grid */
+        .tool-card {
+            display: block;
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .tool-card:hover {
+            border-color: var(--link-color);
+            box-shadow: var(--card-shadow);
+            transform: translateY(-2px);
+        }
+
+        /* Sidebar shadow */
+        aside { box-shadow: var(--card-shadow); }
+
+        /* Scrollbars */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-color); }
         ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
         .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
         [data-lang-de], [data-lang-en] { transition: opacity 0.15s ease-in-out; }
     </style>
 </head>
 <body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
 
-    <aside class="lg:w-72 flex-shrink-0 bg-[var(--sidebar-color)] border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
-        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-lg border border-[var(--border-color)] shadow-sm">
-            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--bg-color)] py-1.5 rounded text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent hover:border-[var(--border-color)]" title="Toggle Language">
+    <aside class="app-sidebar flex-shrink-0 bg-[var(--sidebar-color)] border-b lg:border-b-0 lg:border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
                 <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
             </button>
             <div class="w-px h-4 bg-[var(--border-color)]"></div>
-            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--bg-color)] py-1.5 rounded text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent hover:border-[var(--border-color)]" title="Toggle Theme">
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
                 <i id="theme-icon" class="fa-solid fa-sun"></i>
             </button>
             <div class="w-px h-4 bg-[var(--border-color)]"></div>
-            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--bg-color)] py-1.5 rounded text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent hover:border-[var(--border-color)]" title="Download Cheatsheet">
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Cheatsheet">
                 <i class="fa-solid fa-download"></i>
             </button>
         </div>
@@ -209,10 +326,10 @@
             <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">DIN A4 Karo-Papier Edition</div>
         </div>
         <div class="mb-6 relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                 <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
             </div>
-            <input type="text" id="wikiSearch" placeholder="Search..." class="w-full bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg pl-9 pr-3 py-2 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-colors shadow-sm" onkeyup="filterWiki()">
+            <input type="text" id="wikiSearch" placeholder="Search..." class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-xl pl-10 pr-3 py-2.5 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-all shadow-sm" onkeyup="filterWiki()">
         </div>
         <nav class="text-sm space-y-1" id="topic-nav">
             <a class="nav-tab active mb-4" onclick="switchTopic('dashboard', event)">
@@ -238,40 +355,89 @@
         </nav>
     </aside>
 
-    <main class="flex-grow p-6 lg:p-12 max-w-5xl lg:ml-0" id="main-content">
-        <div id="page-dashboard" class="topic-page active-page searchable-block">
-            <h2 class="text-3xl mb-4 font-serif flex items-center gap-3 border-none"><i class="fa-solid fa-gauge-high text-[var(--link-color)]"></i><span data-lang-de>Mathematik Tools Dashboard</span><span data-lang-en style="display:none;">Math Tools Dashboard</span></h2>
-            <p class="text-[var(--text-muted)] mb-8 text-lg"><span data-lang-de>Schnellzugriff auf die wichtigsten Online-Werkzeuge und Rechner für Studium, Ausbildung und Schule.</span><span data-lang-en style="display:none;">Quick access to the most important online tools and calculators for university and school.</span></p>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                <a href="https://www.wolframalpha.com/" target="_blank" class="block bg-[var(--panel-color)] border border-[var(--border-color)] rounded-xl p-6 hover:border-[var(--link-color)] transition-colors shadow-sm group">
-                    <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-lg bg-[var(--info-box)] text-[var(--link-color)] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-square-root-variable"></i></div><div><h3 class="font-bold text-lg text-[var(--heading-color)] m-0 border-none pb-0">Wolfram Alpha</h3><div class="text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold mt-1"><span data-lang-de>Universal-Rechner</span><span data-lang-en style="display:none;">Universal Calculator</span></div></div></div>
-                    <p class="text-sm text-[var(--text-color)] opacity-80 m-0"><span data-lang-de>Löst komplexe Gleichungen, Integrale, Ableitungen und liefert detaillierte Schritt-für-Schritt Lösungswege.</span><span data-lang-en style="display:none;">Solves complex equations, integrals, derivatives, and provides step-by-step solutions.</span></p>
-                </a>
-                <a href="https://www.desmos.com/calculator" target="_blank" class="block bg-[var(--panel-color)] border border-[var(--border-color)] rounded-xl p-6 hover:border-[var(--link-color)] transition-colors shadow-sm group">
-                    <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-lg bg-[var(--info-box)] text-[#2563eb] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-chart-line"></i></div><div><h3 class="font-bold text-lg text-[var(--heading-color)] m-0 border-none pb-0">Desmos</h3><div class="text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold mt-1"><span data-lang-de>Grafikrechner</span><span data-lang-en style="display:none;">Graphing Calculator</span></div></div></div>
-                    <p class="text-sm text-[var(--text-color)] opacity-80 m-0"><span data-lang-de>Interaktiver, webbasierter Grafikrechner zur Visualisierung von Funktionen, Kurven und Datenpunkten.</span><span data-lang-en style="display:none;">Interactive, web-based graphing calculator to visualize functions, curves, and data points.</span></p>
-                </a>
-                <a href="https://www.geogebra.org/" target="_blank" class="block bg-[var(--panel-color)] border border-[var(--border-color)] rounded-xl p-6 hover:border-[var(--link-color)] transition-colors shadow-sm group">
-                    <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-lg bg-[var(--info-box)] text-[#7e22ce] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-shapes"></i></div><div><h3 class="font-bold text-lg text-[var(--heading-color)] m-0 border-none pb-0">GeoGebra</h3><div class="text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold mt-1"><span data-lang-de>Geometrie &amp; Algebra</span><span data-lang-en style="display:none;">Geometry &amp; Algebra</span></div></div></div>
-                    <p class="text-sm text-[var(--text-color)] opacity-80 m-0"><span data-lang-de>Kombiniert Geometrie, Algebra, Tabellen, grafische Darstellungen, Statistik und Analysis in einem Paket.</span><span data-lang-en style="display:none;">Combines geometry, algebra, spreadsheets, graphing, statistics, and calculus in one package.</span></p>
-                </a>
-                <a href="https://www.symbolab.com/" target="_blank" class="block bg-[var(--panel-color)] border border-[var(--border-color)] rounded-xl p-6 hover:border-[var(--link-color)] transition-colors shadow-sm group">
-                    <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-lg bg-[var(--info-box)] text-[#dc2626] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-calculator"></i></div><div><h3 class="font-bold text-lg text-[var(--heading-color)] m-0 border-none pb-0">Symbolab</h3><div class="text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold mt-1"><span data-lang-de>Schritt-für-Schritt</span><span data-lang-en style="display:none;">Step-by-Step</span></div></div></div>
-                    <p class="text-sm text-[var(--text-color)] opacity-80 m-0"><span data-lang-de>Fortgeschrittener Mathe-Löser mit detaillierten Rechenwegen für Algebra, Analysis und Trigonometrie.</span><span data-lang-en style="display:none;">Advanced math solver with detailed calculation steps for algebra, calculus, and trigonometry.</span></p>
-                </a>
-                <a href="https://www.integralrechner.de/" target="_blank" class="block bg-[var(--panel-color)] border border-[var(--border-color)] rounded-xl p-6 hover:border-[var(--link-color)] transition-colors shadow-sm group">
-                    <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-lg bg-[var(--info-box)] text-[#059669] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform"><span class="font-serif italic text-3xl pb-1">∫</span></div><div><h3 class="font-bold text-lg text-[var(--heading-color)] m-0 border-none pb-0">Integralrechner</h3><div class="text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold mt-1">Analysis</div></div></div>
-                    <p class="text-sm text-[var(--text-color)] opacity-80 m-0"><span data-lang-de>Berechnet Stammfunktionen und bestimmte Integrale mit komplettem Rechenweg und Graphen.</span><span data-lang-en style="display:none;">Calculates antiderivatives and definite integrals with complete step-by-step solutions and graphs.</span></p>
-                </a>
-                <a href="https://www.ableitungsrechner.net/" target="_blank" class="block bg-[var(--panel-color)] border border-[var(--border-color)] rounded-xl p-6 hover:border-[var(--link-color)] transition-colors shadow-sm group">
-                    <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-lg bg-[var(--info-box)] text-[#ea580c] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform"><span class="font-serif italic text-2xl">d/dx</span></div><div><h3 class="font-bold text-lg text-[var(--heading-color)] m-0 border-none pb-0">Ableitungsrechner</h3><div class="text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold mt-1">Analysis</div></div></div>
-                    <p class="text-sm text-[var(--text-color)] opacity-80 m-0"><span data-lang-de>Bestimmt partielle und vollständige Ableitungen von Funktionen mit detaillierter Schritt-für-Schritt-Anleitung.</span><span data-lang-en style="display:none;">Determines partial and complete derivatives of functions with detailed step-by-step guidance.</span></p>
-                </a>
+    <main class="app-main" id="main-content">
+
+        <!-- ========================================== -->
+        <!-- Dashboard                                  -->
+        <!-- ========================================== -->
+        <div id="page-dashboard" class="topic-page active-page searchable-block topic-panel mt-0 mb-8">
+            <h2 class="text-3xl mb-4 font-serif flex items-center gap-3 border-none">
+                <i class="fa-solid fa-gauge-high text-[var(--link-color)]"></i>
+                <span data-lang-de>Mathematik Tools Dashboard</span><span data-lang-en style="display:none;">Math Tools Dashboard</span>
+            </h2>
+            <p class="text-[var(--text-muted)] mb-6 text-lg">
+                <span data-lang-de>Schnellzugriff auf die wichtigsten Online-Werkzeuge und Rechner für Studium, Ausbildung und Schule.</span>
+                <span data-lang-en style="display:none;">Quick access to the most important online tools and calculators for university and school.</span>
+            </p>
+
+            <div class="subtopic-card">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <a href="https://www.wolframalpha.com/" target="_blank" class="tool-card group">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-lg bg-[var(--info-box)] text-[var(--link-color)] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-square-root-variable"></i></div>
+                            <div>
+                                <h3 class="font-bold text-lg text-[var(--heading-color)] m-0 border-none pb-0">Wolfram Alpha</h3>
+                                <div class="text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold mt-1"><span data-lang-de>Universal-Rechner</span><span data-lang-en style="display:none;">Universal Calculator</span></div>
+                            </div>
+                        </div>
+                        <p class="text-sm text-[var(--text-color)] opacity-80 m-0"><span data-lang-de>Löst komplexe Gleichungen, Integrale, Ableitungen und liefert detaillierte Schritt-für-Schritt Lösungswege.</span><span data-lang-en style="display:none;">Solves complex equations, integrals, derivatives, and provides step-by-step solutions.</span></p>
+                    </a>
+                    <a href="https://www.desmos.com/calculator" target="_blank" class="tool-card group">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-lg bg-[var(--info-box)] text-[#2563eb] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-chart-line"></i></div>
+                            <div>
+                                <h3 class="font-bold text-lg text-[var(--heading-color)] m-0 border-none pb-0">Desmos</h3>
+                                <div class="text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold mt-1"><span data-lang-de>Grafikrechner</span><span data-lang-en style="display:none;">Graphing Calculator</span></div>
+                            </div>
+                        </div>
+                        <p class="text-sm text-[var(--text-color)] opacity-80 m-0"><span data-lang-de>Interaktiver, webbasierter Grafikrechner zur Visualisierung von Funktionen, Kurven und Datenpunkten.</span><span data-lang-en style="display:none;">Interactive, web-based graphing calculator to visualize functions, curves, and data points.</span></p>
+                    </a>
+                    <a href="https://www.geogebra.org/" target="_blank" class="tool-card group">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-lg bg-[var(--info-box)] text-[#7e22ce] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-shapes"></i></div>
+                            <div>
+                                <h3 class="font-bold text-lg text-[var(--heading-color)] m-0 border-none pb-0">GeoGebra</h3>
+                                <div class="text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold mt-1"><span data-lang-de>Geometrie &amp; Algebra</span><span data-lang-en style="display:none;">Geometry &amp; Algebra</span></div>
+                            </div>
+                        </div>
+                        <p class="text-sm text-[var(--text-color)] opacity-80 m-0"><span data-lang-de>Kombiniert Geometrie, Algebra, Tabellen, grafische Darstellungen, Statistik und Analysis in einem Paket.</span><span data-lang-en style="display:none;">Combines geometry, algebra, spreadsheets, graphing, statistics, and calculus in one package.</span></p>
+                    </a>
+                    <a href="https://www.symbolab.com/" target="_blank" class="tool-card group">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-lg bg-[var(--info-box)] text-[#dc2626] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-calculator"></i></div>
+                            <div>
+                                <h3 class="font-bold text-lg text-[var(--heading-color)] m-0 border-none pb-0">Symbolab</h3>
+                                <div class="text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold mt-1"><span data-lang-de>Schritt-für-Schritt</span><span data-lang-en style="display:none;">Step-by-Step</span></div>
+                            </div>
+                        </div>
+                        <p class="text-sm text-[var(--text-color)] opacity-80 m-0"><span data-lang-de>Fortgeschrittener Mathe-Löser mit detaillierten Rechenwegen für Algebra, Analysis und Trigonometrie.</span><span data-lang-en style="display:none;">Advanced math solver with detailed calculation steps for algebra, calculus, and trigonometry.</span></p>
+                    </a>
+                    <a href="https://www.integralrechner.de/" target="_blank" class="tool-card group">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-lg bg-[var(--info-box)] text-[#059669] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform"><span class="font-serif italic text-3xl pb-1">∫</span></div>
+                            <div>
+                                <h3 class="font-bold text-lg text-[var(--heading-color)] m-0 border-none pb-0">Integralrechner</h3>
+                                <div class="text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold mt-1">Analysis</div>
+                            </div>
+                        </div>
+                        <p class="text-sm text-[var(--text-color)] opacity-80 m-0"><span data-lang-de>Berechnet Stammfunktionen und bestimmte Integrale mit komplettem Rechenweg und Graphen.</span><span data-lang-en style="display:none;">Calculates antiderivatives and definite integrals with complete step-by-step solutions and graphs.</span></p>
+                    </a>
+                    <a href="https://www.ableitungsrechner.net/" target="_blank" class="tool-card group">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-lg bg-[var(--info-box)] text-[#ea580c] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform"><span class="font-serif italic text-2xl">d/dx</span></div>
+                            <div>
+                                <h3 class="font-bold text-lg text-[var(--heading-color)] m-0 border-none pb-0">Ableitungsrechner</h3>
+                                <div class="text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold mt-1">Analysis</div>
+                            </div>
+                        </div>
+                        <p class="text-sm text-[var(--text-color)] opacity-80 m-0"><span data-lang-de>Bestimmt partielle und vollständige Ableitungen von Funktionen mit detaillierter Schritt-für-Schritt-Anleitung.</span><span data-lang-en style="display:none;">Determines partial and complete derivatives of functions with detailed step-by-step guidance.</span></p>
+                    </a>
+                </div>
             </div>
         </div>
 
         <!-- ============== ADDITION ============== -->
-        <div id="page-add" class="topic-page searchable-block">
+        <div id="page-add" class="topic-page searchable-block topic-panel mt-8">
             <h2 class="text-3xl mb-4 font-serif">
                 <span data-lang-de>Schriftliche Addition</span><span data-lang-en style="display:none;">Written Addition</span>
             </h2>
@@ -288,9 +454,7 @@
                 </div>
                 <div class="pl-8 relative z-10">
                     <div class="font-hand text-2xl font-bold mb-6 text-[var(--heading-color)] inline-block">
-                        <!-- Row 0: Carries placed above hundreds (index 0) and tens (index 1) -->
                         <span class="math-op"></span><span class="math-space"></span><span id="add-carry-2" class="carry-badge">1</span><span id="add-carry-1" class="carry-badge">1</span><span class="math-space"></span><br>
-                        <!-- Row 1: Numbers -->
                         <span class="math-op"></span><span id="add-n1"><span class="pos-hunderter math-digit-box" id="add-h1">4</span><span class="pos-zehner math-digit-box" id="add-z1">7</span><span class="pos-einer math-digit-box" id="add-e1">8</span></span><br>
                         <span class="math-op">+</span><span id="add-n2"><span class="pos-hunderter math-digit-box" id="add-h2">3</span><span class="pos-zehner math-digit-box" id="add-z2">6</span><span class="pos-einer math-digit-box" id="add-e2">5</span></span><br>
                         <div class="border-t-2 border-[var(--border-color)] my-1 w-full"></div>
@@ -306,7 +470,7 @@
         </div>
 
         <!-- ============== SUBTRACTION ============== -->
-        <div id="page-sub" class="topic-page searchable-block">
+        <div id="page-sub" class="topic-page searchable-block topic-panel mt-8">
             <h2 class="text-3xl mb-4 font-serif">
                 <span data-lang-de>Schriftliche Subtraktion</span><span data-lang-en style="display:none;">Written Subtraction</span>
             </h2>
@@ -340,7 +504,7 @@
         </div>
 
         <!-- ============== MULTIPLICATION ============== -->
-        <div id="page-mul" class="topic-page searchable-block">
+        <div id="page-mul" class="topic-page searchable-block topic-panel mt-8">
             <h2 class="text-3xl mb-4 font-serif">
                 <span data-lang-de>Schriftliche Multiplikation</span><span data-lang-en style="display:none;">Written Multiplication</span>
             </h2>
@@ -369,7 +533,7 @@
         </div>
 
         <!-- ============== DIVISION ============== -->
-        <div id="page-div" class="topic-page searchable-block">
+        <div id="page-div" class="topic-page searchable-block topic-panel mt-8">
             <h2 class="text-3xl mb-4 font-serif">
                 <span data-lang-de>Schriftliche Division</span><span data-lang-en style="display:none;">Written Division</span>
             </h2>
@@ -399,7 +563,7 @@
         </div>
 
         <!-- ============== FRACTIONS ============== -->
-        <div id="page-frac" class="topic-page searchable-block">
+        <div id="page-frac" class="topic-page searchable-block topic-panel mt-8">
             <h2 class="text-3xl mb-4 font-serif">
                 <span data-lang-de>Bruchrechnung</span><span data-lang-en style="display:none;">Fractions</span>
             </h2>
@@ -426,7 +590,7 @@
         </div>
 
         <!-- ============== PERCENTAGES ============== -->
-        <div id="page-pct" class="topic-page searchable-block">
+        <div id="page-pct" class="topic-page searchable-block topic-panel mt-8">
             <h2 class="text-3xl mb-4 font-serif">
                 <span data-lang-de>Prozentrechnung</span><span data-lang-en style="display:none;">Percentages</span>
             </h2>
@@ -453,7 +617,7 @@
         </div>
 
         <!-- ============== BINARY ============== -->
-        <div id="page-bin" class="topic-page searchable-block">
+        <div id="page-bin" class="topic-page searchable-block topic-panel mt-8">
             <h2 class="text-3xl mb-4 font-serif">
                 <span data-lang-de>Binär Addition (Basis 2)</span><span data-lang-en style="display:none;">Binary Addition (Base 2)</span>
             </h2>
@@ -491,7 +655,7 @@
         </div>
 
         <!-- ============== HEX ============== -->
-        <div id="page-hex" class="topic-page searchable-block">
+        <div id="page-hex" class="topic-page searchable-block topic-panel mt-8">
             <h2 class="text-3xl mb-4 font-serif">
                 <span data-lang-de>Hexadezimal Umrechnung</span><span data-lang-en style="display:none;">Hexadecimal Conversion</span>
             </h2>
