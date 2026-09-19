@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samba Setup Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root {
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #202122;
+            --border-color: #54595d;
+            --text-color: #eaecf0;
+            --text-muted: #a8aeb3;
+            --link-color: #99c1f1;
+            --link-hover: #629deb;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --info-box: #2c2d30;
+            --table-alt: rgba(255,255,255,0.02);
+            --search-match: rgba(250, 204, 21, 0.3);
+            --search-text: #ffffff;
+            /* Omni-directional encasing shadow */
+            --card-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.3), 0 0 4px 0 rgba(0, 0, 0, 0.2);
+            --card-shadow-hover: 0 0 20px 0 rgba(0, 0, 0, 0.4), 0 0 8px 0 rgba(0, 0, 0, 0.3);
+            --panel-border: #54595d;
+        }
+
+        html.light {
+            --bg-color: #f4f6f9;
+            --panel-color: #ffffff;
+            --sidebar-color: #ffffff;
+            --border-color: #cbd5e1;
+            /* Pure black for maximum readability */
+            --text-color: #000000;      
+            --text-muted: #000000;      
+            --heading-color: #000000;   
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --code-bg: #f1f5f9;
+            --info-box: #e0f2fe;
+            --table-alt: rgba(0,0,0,0.015);
+            --search-match: rgba(250, 204, 21, 0.5);
+            --search-text: #000000;
+            /* Omni-directional encasing shadow for light mode */
+            --card-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.1), 0 0 6px 0 rgba(0, 0, 0, 0.05);
+            --card-shadow-hover: 0 0 25px 0 rgba(0, 0, 0, 0.15), 0 0 12px 0 rgba(0, 0, 0, 0.08);
+            --panel-border: #e2e8f0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 800 !important; }
+        h1 { font-size: 3.5rem !important; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        h2 { font-size: 2.25rem !important; margin-bottom: 1rem; }
+        h3 { font-size: 1.85rem !important; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        h4 { font-size: 1.5rem !important; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+        p { margin-bottom: 1rem; }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--text-color);
+        }
+
+        code a { color: var(--link-color); font-weight: 500; }
+        code a:hover { color: var(--link-hover); }
+
+        .wikitable {
+            width: 100%; border-collapse: collapse; margin: 1em 0;
+            background-color: var(--bg-color); font-size: 0.9em;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid var(--panel-border);
+        }
+        .wikitable th, .wikitable td {
+            border: 1px solid var(--panel-border); padding: 0.75rem 1rem;
+            text-align: left; vertical-align: top;
+        }
+        .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); }
+        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
+
+        .toc-link.active { font-weight: 600; color: var(--link-color); position: relative; }
+        .toc-link.active::before {
+            content: ''; position: absolute; left: -1rem; top: 0; height: 100%;
+            width: 3px; background-color: var(--link-color);
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
+
+        /* Ensuring text wraps correctly inside panels */
+        .topic-panel, .subtopic-card {
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+
+        .topic-panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            transition: box-shadow 0.3s ease;
+        }
+        @media (min-width: 1024px) {
+            .topic-panel { padding: 2.5rem; }
+        }
+        .topic-panel:hover {
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .subtopic-card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .subtopic-card:last-child { margin-bottom: 0; }
+        .subtopic-card:hover { box-shadow: var(--card-shadow); transform: translateY(-2px); }
+
+        /* Code Block Copy Features */
+        .code-container {
+            position: relative;
+        }
+        
+        .code-content {
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            padding-right: 2.5rem; /* Ensures text doesn't overlap the copy button */
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 0.4rem;
+            right: 0.4rem;
+            opacity: 0;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            background: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            z-index: 10;
+        }
+        
+        .code-container:hover .copy-btn { opacity: 1; }
+        .copy-btn:hover { color: var(--link-color); border-color: var(--link-color); background: var(--bg-color); }
+        @media (hover: none) { .copy-btn { opacity: 1; } }
+
+        .lang-en { display: none; }
+        body[data-active-lang="en"] .lang-de { display: none !important; }
+        body[data-active-lang="en"] .lang-en { display: block !important; }
+        body[data-active-lang="en"] span.lang-en, body[data-active-lang="en"] a.lang-en { display: inline !important; }
+        body[data-active-lang="de"] .lang-en { display: none !important; }
+        body[data-active-lang="de"] .lang-de { display: block !important; }
+        body[data-active-lang="de"] span.lang-de, body[data-active-lang="de"] a.lang-de { display: inline !important; }
+        
+        /* Specific coloring for warnings */
+        .warning-text { color: #ef4444; font-weight: 600; }
+        html.light .warning-text { color: #dc2626; }
+    </style>
+</head>
+
+<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
+
+    <aside class="lg:w-80 flex-shrink-0 bg-[var(--sidebar-color)] border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative shadow-lg transition-colors">
+        
+        <!-- Controls: Language, Theme, Download -->
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
+                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Guide">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+            <i class="fa-solid fa-folder-tree text-3xl mb-3 text-[var(--text-color)] opacity-80"></i>
+            <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span class="lang-de">Samba<br>Guide</span>
+                <span class="lang-en">Samba<br>Guide</span>
+            </div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v1.0 - Networking</div>
+        </div>
+
+        <div class="mb-6 relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
+            </div>
+            <input type="text" id="wikiSearch" placeholder="Search..." class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-xl pl-10 pr-3 py-2.5 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-all shadow-sm" onkeyup="filterWiki()">
+        </div>
+
+        <nav class="text-sm space-y-1.5" id="toc-nav">
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span class="lang-de">Inhaltsverzeichnis</span>
+                <span class="lang-en">Table of Contents</span>
+            </div>
+            
+            <ul class="space-y-1">
+                <li><a href="#uebersicht" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">1. Einführung & Installation</span><span class="lang-en">1. Intro & Installation</span>
+                </a></li>
+                <li class="pt-2"><a href="#config" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">2. Globale Konfiguration</span><span class="lang-en">2. Global Configuration</span>
+                </a></li>
+                <li class="pt-2"><a href="#shares" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">3. Freigaben einrichten</span><span class="lang-en">3. Setting up Shares</span>
+                </a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#public" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors">
+                            <span class="lang-de">Öffentliche Freigabe</span><span class="lang-en">Public Share</span>
+                        </a></li>
+                        <li><a href="#private" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors">
+                            <span class="lang-de">Authentifizierte Freigabe</span><span class="lang-en">Authenticated Share</span>
+                        </a></li>
+                    </ul>
+                </li>
+                <li class="pt-2"><a href="#users" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">4. Samba-Benutzerverwaltung</span><span class="lang-en">4. Samba User Management</span>
+                </a></li>
+                <li class="pt-2"><a href="#clients" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">5. Client-Zugriff</span><span class="lang-en">5. Client Access</span>
+                </a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="flex-grow p-4 lg:p-12 max-w-5xl lg:ml-0" id="main-content">
+        
+        <div class="searchable-block topic-panel mt-0 mb-8">
+            <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0">
+                <span class="lang-de">Samba Setup & Referenz</span>
+                <span class="lang-en">Samba Setup & Reference</span>
+            </h1>
+            <p class="text-lg mb-0 text-[var(--text-color)]">
+                <span class="lang-de"><strong>Samba</strong> ist eine freie Software-Suite, die das <strong>Server Message Block (SMB)</strong> bzw. <strong>Common Internet File System (CIFS)</strong> Protokoll implementiert. Es ermöglicht die nahtlose Datei- und Druckerfreigabe zwischen Linux/Unix-Servern und Windows-, macOS- oder anderen Linux-Clients. Dieser Guide behandelt Installation, Konfiguration von öffentlichen/privaten Shares und die Benutzerverwaltung.</span>
+                <span class="lang-en"><strong>Samba</strong> is a free software suite that implements the <strong>Server Message Block (SMB)</strong> or <strong>Common Internet File System (CIFS)</strong> protocol. It enables seamless file and print sharing between Linux/Unix servers and Windows, macOS, or other Linux clients. This guide covers installation, configuring public/private shares, and user management.</span>
+            </p>
+        </div>
+
+        <section id="uebersicht" class="scroll-mt-10 searchable-block topic-panel mt-8">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">1. Einführung & Installation</span>
+                <span class="lang-en">1. Intro & Installation</span>
+            </h2>
+            
+            <p class="mb-6 text-[var(--text-color)]">
+                <span class="lang-de">Samba ist in den Standard-Repositories fast aller Linux-Distributionen verfügbar.</span>
+                <span class="lang-en">Samba is available in the standard repositories of almost all Linux distributions.</span>
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="subtopic-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                        <span class="lang-de">Installation (Debian/Ubuntu)</span>
+                        <span class="lang-en">Installation (Debian/Ubuntu)</span>
+                    </h4>
+                    <div class="code-container bg-[var(--code-bg)] rounded-lg border border-[var(--border-color)] font-mono text-sm mt-3">
+                        <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                        <div class="code-content p-3">sudo apt update
+sudo apt install samba smbclient</div>
+                    </div>
+                </div>
+                <div class="subtopic-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                        <span class="lang-de">Installation (Arch Linux)</span>
+                        <span class="lang-en">Installation (Arch Linux)</span>
+                    </h4>
+                    <div class="code-container bg-[var(--code-bg)] rounded-lg border border-[var(--border-color)] font-mono text-sm mt-3">
+                        <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                        <div class="code-content p-3">sudo pacman -S samba
+sudo systemctl enable --now smb nmb</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="subtopic-card mt-6">
+                <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                    <span class="lang-de">Dienste überprüfen</span>
+                    <span class="lang-en">Checking Services</span>
+                </h4>
+                <p class="text-[var(--text-color)] text-sm my-3">
+                    <span class="lang-de">Samba besteht hauptsächlich aus zwei Daemons: <code>smbd</code> (für Datei-/Druckdienste und Authentifizierung) und <code>nmbd</code> (für NetBIOS-Namensauflösung).</span>
+                    <span class="lang-en">Samba mainly consists of two daemons: <code>smbd</code> (for file/print services and authentication) and <code>nmbd</code> (for NetBIOS name resolution).</span>
+                </p>
+                <div class="code-container bg-[var(--code-bg)] rounded-lg border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-3">sudo systemctl status smbd
+sudo systemctl status nmbd</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="config" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">2. Globale Konfiguration</span>
+                <span class="lang-en">2. Global Configuration</span>
+            </h2>
+
+            <div class="subtopic-card scroll-mt-10">
+                <p class="text-[var(--text-color)] text-sm mb-4">
+                    <span class="lang-de">Die Hauptkonfigurationsdatei von Samba ist <code>/etc/samba/smb.conf</code>. Bevor Sie Änderungen vornehmen, ist es ratsam, ein Backup der Originaldatei zu erstellen.</span>
+                    <span class="lang-en">The main configuration file for Samba is <code>/etc/samba/smb.conf</code>. Before making changes, it is advisable to back up the original file.</span>
+                </p>
+                
+                <h4 class="text-sm font-bold mb-1"><span class="lang-de">Backup erstellen:</span><span class="lang-en">Create a backup:</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded-lg border border-[var(--border-color)] font-mono text-sm mb-4">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-3">sudo cp /etc/samba/smb.conf /etc/samba/smb.conf.backup</div>
+                </div>
+
+                <h4 class="text-sm font-bold mb-1"><span class="lang-de">Globale Einstellungen bearbeiten:</span><span class="lang-en">Edit global settings:</span></h4>
+                <p class="text-[var(--text-color)] text-xs mb-2">
+                    <span class="lang-de">Suchen Sie nach dem Block <code>[global]</code>. Hier definieren Sie grundlegende Parameter wie die Arbeitsgruppe (Workgroup).</span>
+                    <span class="lang-en">Look for the <code>[global]</code> block. Here you define basic parameters such as the Workgroup.</span>
+                </p>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-3">[global]
+    workgroup = WORKGROUP
+    server string = Samba Server %v
+    netbios name = debian-server
+    security = user
+    map to guest = bad user
+    dns proxy = no</div>
+                </div>
+                <p class="text-xs text-[var(--text-muted)] mt-2">
+                    <span class="lang-de"><code>map to guest = bad user</code> ist wichtig, um anonymen Zugriff (Gast-Zugriff) für Freigaben ohne Passwortabfrage zu erlauben.</span>
+                    <span class="lang-en"><code>map to guest = bad user</code> is important to allow anonymous (guest) access for shares without password prompts.</span>
+                </p>
+            </div>
+        </section>
+
+        <section id="shares" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">3. Freigaben einrichten</span>
+                <span class="lang-en">3. Setting up Shares</span>
+            </h2>
+
+            <div id="public" class="subtopic-card scroll-mt-10">
+                <div class="flex items-center justify-between border-b border-[var(--border-color)] pb-2 mb-3">
+                    <h3 class="mt-0 mb-0"><span class="lang-de">Öffentliche Freigabe (Ohne Passwort)</span><span class="lang-en">Public Share (No Password)</span></h3>
+                </div>
+                
+                <h4 class="text-sm font-bold mb-1"><span class="lang-de">1. Verzeichnis erstellen & Rechte setzen:</span><span class="lang-en">1. Create directory & set permissions:</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-4">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-2">sudo mkdir -p /srv/samba/public
+sudo chmod -R 0775 /srv/samba/public
+sudo chown -R nobody:nogroup /srv/samba/public</div>
+                </div>
+
+                <h4 class="text-sm font-bold mb-1"><span class="lang-de">2. In <code>smb.conf</code> eintragen:</span><span class="lang-en">2. Add to <code>smb.conf</code>:</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-2">[Public]
+    path = /srv/samba/public
+    browsable = yes
+    writable = yes
+    guest ok = yes
+    read only = no
+    create mask = 0664
+    directory mask = 0775</div>
+                </div>
+            </div>
+
+            <div id="private" class="subtopic-card scroll-mt-10">
+                <div class="flex items-center justify-between border-b border-[var(--border-color)] pb-2 mb-3">
+                    <h3 class="mt-0 mb-0"><span class="lang-de">Authentifizierte Freigabe (Privat)</span><span class="lang-en">Authenticated Share (Private)</span></h3>
+                    <i class="fa-solid fa-lock text-[var(--link-color)]"></i>
+                </div>
+                
+                <h4 class="text-sm font-bold mb-1"><span class="lang-de">1. Verzeichnis erstellen & Rechte setzen:</span><span class="lang-en">1. Create directory & set permissions:</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-4">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-2">sudo mkdir -p /srv/samba/private
+sudo chown -R root:sambashare /srv/samba/private
+sudo chmod -R 0770 /srv/samba/private</div>
+                </div>
+
+                <h4 class="text-sm font-bold mb-1"><span class="lang-de">2. In <code>smb.conf</code> eintragen:</span><span class="lang-en">2. Add to <code>smb.conf</code>:</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-2">[Private]
+    path = /srv/samba/private
+    valid users = @sambashare
+    browsable = yes
+    writable = yes
+    guest ok = no
+    read only = no</div>
+                </div>
+                <p class="text-xs text-[var(--text-muted)] mt-2">
+                    <span class="lang-de">Das <code>@</code> vor <code>sambashare</code> bedeutet, dass der Zugriff für alle Mitglieder dieser Linux-Gruppe erlaubt ist. Alternativ können Sie auch spezifische Nutzernamen (z.B. <code>valid users = john, jane</code>) verwenden.</span>
+                    <span class="lang-en">The <code>@</code> before <code>sambashare</code> means access is allowed for all members of this Linux group. Alternatively, you can specify individual usernames (e.g., <code>valid users = john, jane</code>).</span>
+                </p>
+            </div>
+        </section>
+
+        <section id="users" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">4. Samba-Benutzerverwaltung</span>
+                <span class="lang-en">4. Samba User Management</span>
+            </h2>
+
+            <div class="subtopic-card scroll-mt-10 border-l-4 border-l-[#eab308]">
+                <p class="text-[var(--text-color)] text-sm mb-4">
+                    <span class="lang-de">Samba verwaltet seine Passwörter unabhängig vom Linux-System. Ein Benutzer <strong>muss zwingend als Linux-Benutzer existieren</strong>, bevor er als Samba-Benutzer hinzugefügt werden kann.</span>
+                    <span class="lang-en">Samba manages its passwords independently from the Linux system. A user <strong>must exist as a Linux user</strong> before they can be added as a Samba user.</span>
+                </p>
+                
+                <h4 class="text-sm font-bold mb-1"><span class="lang-de">Benutzer erstellen und Passwort setzen:</span><span class="lang-en">Create user and set password:</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-4">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-2"># 1. Linux-Benutzer erstellen (falls nicht vorhanden)
+sudo adduser username
+
+# 2. Zur Gruppe 'sambashare' hinzufügen (für Private Share)
+sudo usermod -aG sambashare username
+
+# 3. Samba-Passwort setzen
+sudo smbpasswd -a username</div>
+                </div>
+
+                <h4 class="text-sm font-bold mb-1"><span class="lang-de">Samba aktivieren & Benutzer aktivieren:</span><span class="lang-en">Enable Samba & activate user:</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-2">sudo smbpasswd -e username</div>
+                </div>
+            </div>
+            
+            <div class="subtopic-card bg-[var(--bg-color)] shadow-sm mt-4">
+                 <h4 class="text-sm font-bold mb-1 text-[var(--heading-color)]"><span class="lang-de">Dienste neu starten</span><span class="lang-en">Restart Services</span></h4>
+                <p class="text-[var(--text-color)] text-xs mb-2">
+                    <span class="lang-de">Nach jeder Änderung an der <code>smb.conf</code> oder nach dem Hinzufügen von Benutzern sollten die Samba-Dienste neu gestartet werden.</span>
+                    <span class="lang-en">After making changes to <code>smb.conf</code> or adding users, the Samba services should be restarted.</span>
+                </p>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-2">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-2">sudo systemctl restart smbd nmbd</div>
+                </div>
+                
+                <h4 class="text-sm font-bold mt-4 mb-1 text-[var(--heading-color)]"><span class="lang-de">Konfiguration prüfen</span><span class="lang-en">Test Configuration</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-2">testparm</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="clients" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">5. Client-Zugriff</span>
+                <span class="lang-en">5. Client Access</span>
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="subtopic-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2 flex items-center">
+                        <i class="fa-brands fa-windows mr-2 text-blue-500"></i> Windows
+                    </h4>
+                    <p class="text-sm text-[var(--text-muted)] mt-2">
+                        <span class="lang-de">Öffnen Sie den Windows-Explorer (Win + E) und geben Sie in die Adressleiste die IP-Adresse oder den Hostnamen des Servers ein:</span>
+                        <span class="lang-en">Open Windows File Explorer (Win + E) and type the IP address or hostname of the server into the address bar:</span>
+                    </p>
+                    <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mt-3">
+                        <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                        <div class="code-content p-2">\\192.168.1.100\
+\\debian-server\Public</div>
+                    </div>
+                </div>
+                
+                <div class="subtopic-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2 flex items-center">
+                        <i class="fa-brands fa-linux mr-2 text-yellow-500"></i> Linux (CLI)
+                    </h4>
+                    <p class="text-sm text-[var(--text-muted)] mt-2">
+                        <span class="lang-de">Verbindung über das Terminal mit <code>smbclient</code> testen:</span>
+                        <span class="lang-en">Test connection via terminal using <code>smbclient</code>:</span>
+                    </p>
+                    <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mt-3">
+                        <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                        <div class="code-content p-2">smbclient -L //192.168.1.100 -U username
+smbclient //192.168.1.100/Private -U username</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="subtopic-card mt-6">
+                <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                    <span class="lang-de">Dauerhaft Mounten (Linux fstab)</span>
+                    <span class="lang-en">Permanent Mount (Linux fstab)</span>
+                </h4>
+                <p class="text-[var(--text-color)] text-sm my-3">
+                    <span class="lang-de">Um eine Samba-Freigabe dauerhaft in Linux einzubinden, installieren Sie <code>cifs-utils</code> und fügen Sie einen Eintrag in die <code>/etc/fstab</code> ein:</span>
+                    <span class="lang-en">To permanently mount a Samba share in Linux, install <code>cifs-utils</code> and add an entry to <code>/etc/fstab</code>:</span>
+                </p>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-3">//192.168.1.100/Private  /mnt/samba  cifs  username=username,password=secret,uid=1000,gid=1000  0  0</div>
+                </div>
+                <p class="text-xs text-red-500 mt-2 font-semibold">
+                    <span class="lang-de">Sicherer ist die Verwendung einer credentials-Datei anstelle des Passworts im Klartext!</span>
+                    <span class="lang-en">It is safer to use a credentials file instead of putting the password in plain text!</span>
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+                    
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                        if(tocLink) tocLink.classList.add('active');
+                    }
+                });
+            }, {
+                rootMargin: '-10% 0px -80% 0px',
+                threshold: [0, 0.1, 1]
+            });
+
+            document.querySelectorAll('section, h3[id], div[id^="defaults"], div[id^="enable"], div[id^="public"], div[id^="private"], div[id^="delete"], div[id^="limit"]').forEach((section) => {
+                observer.observe(section);
+            });
+        });
+
+        function filterWiki() {
+            const input = document.getElementById('wikiSearch');
+            const filter = input.value.toLowerCase();
+            const blocks = document.querySelectorAll('.searchable-block');
+            const mainContent = document.getElementById('main-content');
+
+            removeHighlights(mainContent);
+
+            if (!filter) {
+                blocks.forEach(block => block.style.display = 'block');
+                return;
+            }
+
+            blocks.forEach(block => {
+                const text = block.innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    block.style.display = 'block';
+                    highlightText(block, input.value);
+                } else {
+                    block.style.display = 'none';
+                }
+            });
+        }
+
+        function highlightText(element, keyword) {
+            if (!keyword) return;
+            const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+
+            let node;
+            while (node = treeWalker.nextNode()) {
+                if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                    if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE' && !node.parentNode.classList.contains('katex')) {
+                        nodesToReplace.push(node);
+                    }
+                }
+            }
+
+            nodesToReplace.forEach(n => {
+                const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+                const fragment = document.createDocumentFragment();
+                let match;
+                let lastIndex = 0;
+                const text = n.nodeValue;
+
+                while ((match = regex.exec(text)) !== null) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    const span = document.createElement('span');
+                    span.className = 'search-match font-semibold';
+                    span.textContent = match[0];
+                    fragment.appendChild(span);
+                    lastIndex = regex.lastIndex;
+                }
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                n.parentNode.replaceChild(fragment, n);
+            });
+        }
+
+        function removeHighlights(element) {
+            const highlights = element.querySelectorAll('.search-match');
+            highlights.forEach(span => {
+                const parent = span.parentNode;
+                parent.replaceChild(document.createTextNode(span.textContent), span);
+                parent.normalize();
+            });
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('light')) {
+                html.classList.remove('light');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        let isGerman = true;
+        function toggleLang() {
+            isGerman = !isGerman;
+            const indicator = document.getElementById('lang-indicator');
+            indicator.textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+        }
+
+        function copyCode(btn) {
+            const container = btn.closest('.code-container');
+            const codeContent = container.querySelector('.code-content').innerText;
+            
+            // Using execCommand to ensure clipboard works reliably in iframe environments
+            const textarea = document.createElement('textarea');
+            textarea.value = codeContent;
+            textarea.style.position = 'fixed'; // fixed prevents screen from scrolling to bottom
+            textarea.style.left = '-9999px';
+            textarea.style.top = '0';
+            document.body.appendChild(textarea);
+            
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+                // Give visual feedback
+                const icon = btn.querySelector('i');
+                icon.className = 'fa-solid fa-check text-green-500';
+                setTimeout(() => {
+                    icon.className = 'fa-regular fa-copy';
+                }, 2000);
+            } catch (err) {
+                console.error('Copy failed', err);
+            }
+            
+            document.body.removeChild(textarea);
+        }
+
+        function downloadHTML() {
+            removeHighlights(document.getElementById('main-content'));
+            
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Samba_Setup_Guide.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

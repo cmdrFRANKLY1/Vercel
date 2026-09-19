@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Texture Generator</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root {
+            /* Dark Mode Defaults (From Cheatsheets) */
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #202122;
+            --border-color: #54595d;
+            --text-color: #eaecf0;
+            --text-muted: #a8aeb3;
+            --link-color: #99c1f1;
+            --link-hover: #629deb;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --info-box: #2c2d30;
+        }
+
+        html.light {
+            /* Light Mode Overrides (From Cheatsheets) */
+            --bg-color: #ffffff;
+            --panel-color: #f8f9fa;
+            --sidebar-color: #f8f9fa;
+            --border-color: #a2a9b1;
+            --text-color: #202122;
+            --text-muted: #54595d;
+            --link-color: #3366cc;
+            --link-hover: #0645ad;
+            --heading-color: #000000;
+            --code-bg: #eaecf0;
+            --info-box: #eaf3ff;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 800 !important; }
+        h1 { font-size: 3.5rem !important; margin-bottom: 1.5rem; }
+
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+
+        /* Custom Checkered Background for Canvas Container */
+        .checkered-bg {
+            background-image: linear-gradient(45deg, var(--code-bg) 25%, transparent 25%), 
+                              linear-gradient(-45deg, var(--code-bg) 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, var(--code-bg) 75%), 
+                              linear-gradient(-45deg, transparent 75%, var(--code-bg) 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            transition: background-image 0.2s;
+        }
+
+        /* Sidebar scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* Global Language Switcher Support */
+        [data-lang-de], [data-lang-en] { transition: opacity 0.15s ease-in-out; }
+    </style>
+</head>
+<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)] select-none" data-active-lang="de">
+
+    <!-- SIDEBAR -->
+    <aside class="lg:w-72 flex-shrink-0 bg-[var(--sidebar-color)] border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
+        
+        <!-- Controls: Language, Theme, Download HTML -->
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded border border-[var(--border-color)]">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--bg-color)] py-1 rounded text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent hover:border-[var(--border-color)]" title="Toggle Language">
+                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--bg-color)] py-1 rounded text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent hover:border-[var(--border-color)]" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--bg-color)] py-1 rounded text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent hover:border-[var(--border-color)]" title="Download HTML File">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <!-- Title -->
+        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+            <i class="fa-solid fa-layer-group text-3xl mb-3 text-[var(--text-color)] opacity-80"></i>
+            <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span data-lang-de>Textur-<br>Generator</span>
+                <span data-lang-en style="display:none;">Texture<br>Generator</span>
+            </div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">Procedural Patterns</div>
+        </div>
+
+        <!-- Generator Controls -->
+        <nav class="text-sm space-y-5" id="toc-nav">
+            <!-- Pattern Style -->
+            <div>
+                <div class="font-bold text-[var(--heading-color)] mb-2 uppercase tracking-wider text-xs">
+                    <span data-lang-de>1. Muster (Style)</span><span data-lang-en style="display:none;">1. Pattern Style</span>
+                </div>
+                <select id="styleSelect" class="w-full bg-[var(--bg-color)] border border-[var(--border-color)] text-[var(--text-color)] text-sm rounded px-3 py-2.5 outline-none focus:border-[var(--link-color)] transition-colors cursor-pointer shadow-inner">
+                    <option value="random">🎲 Surprise Me (Random)</option>
+                    <optgroup label="Camouflage">
+                        <option value="wwi">WWI Dazzle</option>
+                        <option value="splinter">Splinter Tarn</option>
+                        <option value="tiger">Tiger Stripe</option>
+                        <option value="digital">Digital MARPAT</option>
+                        <option value="flecktarn">Flecktarn</option>
+                    </optgroup>
+                    <optgroup label="Abstract & Organic">
+                        <option value="cubist">Cubist Abstract</option>
+                        <option value="hex">Hex Tactical</option>
+                        <option value="brushstroke">Brushstroke</option>
+                        <option value="topographic">Topographic</option>
+                        <option value="shapes">Geometric Shapes</option>
+                        <option value="zebra">Zebra Stripes</option>
+                        <option value="leopard">Leopard Print</option>
+                        <option value="rust">Rust & Patina</option>
+                        <option value="wood">Wood Grain</option>
+                    </optgroup>
+                    <optgroup label="Tech & Industrial">
+                        <option value="warning">Warning Sign</option>
+                        <option value="wireframe">Cyber Wireframe</option>
+                        <option value="carbon">Carbon Fibre</option>
+                        <option value="circuit">Circuit Board</option>
+                        <option value="glitch">Data Glitch</option>
+                    </optgroup>
+                    <optgroup label="Novelty">
+                        <option value="emojis">Emoji Pattern</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <!-- Palette Select -->
+            <div>
+                <div class="font-bold text-[var(--heading-color)] mb-2 uppercase tracking-wider text-xs">
+                    <span data-lang-de>2. Farbpalette</span><span data-lang-en style="display:none;">2. Color Palette</span>
+                </div>
+                <select id="paletteSelect" class="w-full bg-[var(--bg-color)] border border-[var(--border-color)] text-[var(--text-color)] text-sm rounded px-3 py-2.5 outline-none focus:border-[var(--link-color)] transition-colors cursor-pointer shadow-inner">
+                    <option value="random">🎨 Random Palette</option>
+                    <option value="monochrome">Grayscale</option>
+                    <option value="nature">Nature / Camo</option>
+                    <option value="vibrant">Vibrant / Tech</option>
+                    <option value="dark">Dark Mode</option>
+                    <option value="warm">Warm / Rust</option>
+                </select>
+            </div>
+
+            <!-- Options -->
+            <div>
+                <div class="font-bold text-[var(--heading-color)] mb-2 uppercase tracking-wider text-xs">
+                    <span data-lang-de>3. Optionen</span><span data-lang-en style="display:none;">3. Options</span>
+                </div>
+                <label class="flex items-center gap-3 cursor-pointer group bg-[var(--panel-color)] p-3 rounded border border-[var(--border-color)] hover:border-[var(--link-color)] transition-colors shadow-sm">
+                    <!-- Custom Checkbox -->
+                    <input type="checkbox" id="outlineToggle" class="peer sr-only" checked>
+                    <div class="w-5 h-5 rounded bg-[var(--code-bg)] border border-[var(--border-color)] peer-checked:bg-[var(--link-color)] peer-checked:border-[var(--link-color)] flex items-center justify-center transition-colors">
+                        <i class="fa-solid fa-check text-[var(--bg-color)] text-xs opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                    </div>
+                    <span class="text-sm font-medium text-[var(--text-color)]">
+                        <span data-lang-de>Konturen zeichnen</span><span data-lang-en style="display:none;">Draw Outlines</span>
+                    </span>
+                </label>
+            </div>
+
+            <!-- Generate Button -->
+            <div class="pt-4 border-t border-[var(--border-color)]">
+                <button id="generateBtn" class="w-full bg-[var(--info-box)] text-[var(--link-color)] border border-[var(--border-color)] hover:border-[var(--link-color)] hover:bg-[var(--bg-color)] px-4 py-3 rounded font-bold transition-all active:scale-95 flex items-center justify-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-dice"></i> 
+                    <span data-lang-de>Neu Generieren</span><span data-lang-en style="display:none;">Generate New</span>
+                </button>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-grow p-6 lg:p-12 max-w-6xl lg:ml-0 flex flex-col" id="main-content">
+        
+        <!-- Header -->
+        <div class="searchable-block mb-6">
+            <h1 id="top" class="border-b-2 border-[var(--border-color)] pb-3 text-[var(--heading-color)]">
+                <span data-lang-de>Textur-Vorschau</span>
+                <span data-lang-en style="display:none;">Texture Preview</span>
+            </h1>
+            <p class="text-lg text-[var(--text-muted)] mt-4">
+                <span data-lang-de>Schneller prozeduraler Textur-Generator. Wähle ein Muster aus der Seitenleiste.</span>
+                <span data-lang-en style="display:none;">Fast procedural texture generator. Select a pattern from the sidebar to begin.</span>
+            </p>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="bg-[var(--panel-color)] border border-[var(--border-color)] rounded shadow-sm flex flex-col w-full relative mb-8 flex-grow" style="min-h: 500px;">
+            
+            <!-- Internal Toolbar (Info & Download) -->
+            <div class="h-14 border-b border-[var(--border-color)] bg-[var(--info-box)] flex items-center justify-between px-4 shrink-0 rounded-t">
+                
+                <!-- Texture Info Display -->
+                <div class="text-xs font-mono text-[var(--text-muted)] flex gap-4">
+                    <div><span data-lang-de>Stil:</span><span data-lang-en style="display:none;">Style:</span> <strong id="info-style" class="text-[var(--heading-color)]">--</strong></div>
+                    <div class="hidden sm:block">Seed: <strong id="info-seed" class="text-[var(--heading-color)]">--</strong></div>
+                    <div class="hidden md:block">Palette: <strong id="info-colors" class="text-[var(--heading-color)]">--</strong></div>
+                </div>
+                
+                <!-- Download Resolution Options -->
+                <div class="relative group" id="downloadContainer">
+                    <button id="downloadBtn" class="text-sm bg-[var(--bg-color)] border border-[var(--border-color)] hover:border-[var(--link-color)] text-[var(--text-color)] px-4 py-2 rounded transition-colors flex items-center gap-2 cursor-pointer shadow-sm font-medium">
+                        <i class="fa-solid fa-image text-[var(--link-color)]"></i> 
+                        <span id="dl-btn-text">
+                            <span data-lang-de>Bild Speichern</span><span data-lang-en style="display:none;">Save Image</span>
+                        </span>
+                    </button>
+                    <!-- Popup -->
+                    <div id="downloadPopup" class="absolute right-0 top-full mt-1 w-48 bg-[var(--panel-color)] border border-[var(--border-color)] rounded shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 flex flex-col overflow-hidden z-50">
+                        <div class="px-4 py-2 text-xs font-bold text-[var(--heading-color)] border-b border-[var(--border-color)] bg-[var(--info-box)]">
+                            <span data-lang-de>Auflösung wählen</span><span data-lang-en style="display:none;">Resolution Options</span>
+                        </div>
+                        <button class="dl-opt text-left px-4 py-2 text-sm hover:bg-[var(--bg-color)] hover:text-[var(--link-color)] transition-colors border-b border-[var(--border-color)]/50" data-res="1280x720">720p HD</button>
+                        <button class="dl-opt text-left px-4 py-2 text-sm hover:bg-[var(--bg-color)] hover:text-[var(--link-color)] transition-colors border-b border-[var(--border-color)]/50" data-res="1920x1080">1080p FHD</button>
+                        <button class="dl-opt text-left px-4 py-2 text-sm hover:bg-[var(--bg-color)] hover:text-[var(--link-color)] transition-colors border-b border-[var(--border-color)]/50" data-res="2560x1440">1440p QHD</button>
+                        <button class="dl-opt text-left px-4 py-2 text-sm hover:bg-[var(--bg-color)] hover:text-[var(--link-color)] transition-colors" data-res="3840x2160">4K UHD</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Render Area -->
+            <div class="flex-1 relative checkered-bg flex items-center justify-center p-4 overflow-hidden rounded-b">
+                <canvas id="previewCanvas" class="max-w-full max-h-full object-contain shadow-md transition-opacity duration-300 border border-[var(--border-color)] bg-[var(--bg-color)]"></canvas>
+            </div>
+        </div>
+        
+    </main>
+
+    <!-- LOGIC SCRIPT -->
+    <script>
+        const canvas = document.getElementById('previewCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        
+        // Base preview dimensions
+        const previewW = 1280;
+        const previewH = 720;
+        canvas.width = previewW;
+        canvas.height = previewH;
+
+        // Generator state variables
+        let currentStyle = 'random';
+        let seedValue = 1234;
+        let scaleDensity = 50;
+        let complexityVal = 5;
+        let strokeWidthVal = 2;
+        let enableOutline = true;
+        
+        let currentSeedTracker = seedValue;
+        let activePalette = [];
+        
+        const infoStyle = document.getElementById('info-style');
+        const infoSeed = document.getElementById('info-seed');
+        const infoColors = document.getElementById('info-colors');
+
+        // Color Palettes
+        const stylePalettes = {
+            wwi: [['#101010', '#F0F0F0', '#404040', '#808080', '#C0C0C0'], ['#050505', '#B0B5B9', '#556370', '#2B3948', '#FFFFFF']],
+            splinter: [['#4A5320', '#3B4219', '#2E3414', '#D4C5A9', '#1C200C'], ['#313B2E', '#505E4C', '#72816D', '#222821', '#C5CFC3']],
+            tiger: [['#2D3822', '#4B5C3C', '#6B7A59', '#182012', '#939E83'], ['#1E2229', '#3D4654', '#5D6B80', '#101317', '#8894A6']],
+            digital: [['#3F4433', '#5D664D', '#2B2F23', '#8C9479', '#1C1F16'], ['#222B36', '#3B4B5E', '#5D7491', '#141A21', '#859AB5']],
+            cubist: [['#1A2530', '#34495E', '#1ABC9C', '#E74C3C', '#ECF0F1'], ['#111111', '#333333', '#E74C3C', '#F1C40F', '#3498DB']],
+            flecktarn: [['#3B4232', '#2E3524', '#596547', '#1A1E14', '#7A6246'], ['#545148', '#3F3D36', '#727464', '#26241F', '#8C775D']],
+            hex: [['#1E2226', '#2C3539', '#44535C', '#5F7380', '#0F1113'], ['#726C60', '#8F897B', '#A8A295', '#4A463D', '#C4BDB1']],
+            brushstroke: [['#474B32', '#2F3420', '#63503B', '#1E2114', '#8B9467'], ['#2D2E30', '#4A4C4F', '#1F2021', '#74777C', '#0A0A0A']],
+            topographic: [['#151C15', '#243024', '#3E503E', '#8F998F'], ['#0D1117', '#1A232E', '#2B394A', '#536E8C']],
+            zebra: [['#F2F2F2', '#1A1A1A'], ['#E5D3B3', '#402619']],
+            leopard: [['#E0B876', '#BA7A3A', '#201812'], ['#7B8C70', '#4A5D23', '#1F2416']],
+            rust: [['#2C2621', '#5B3322', '#8F4321', '#C26331', '#1A1513', '#4A2A18']],
+            wood: [['#C19A6B', '#966F33', '#6F4E37', '#4A3219'], ['#A89689', '#786C63', '#4A413A', '#241E1A']],
+            shapes: [['#1A2530', '#34495E', '#1ABC9C', '#E74C3C'], ['#2C3E50', '#8E44AD', '#3498DB', '#E67E22']],
+            emojis: [['#111827', '#1F2937', '#374151']],
+            warning: [['#FFCC00', '#000000'], ['#F5D300', '#0A0A0A'], ['#E5A900', '#111111', '#333333']],
+            wireframe: [['#050505', '#00ffff', '#ff00ff'], ['#0a0a1a', '#4444ff', '#00ffaa']],
+            carbon: [['#111111', '#1f1f1f', '#2a2a2a', '#050505']],
+            circuit: [['#003300', '#00ff00', '#00aa00', '#c0c0c0'], ['#001133', '#00ffff', '#0066aa', '#ffd700']],
+            glitch: [['#0f0f0f', '#ff0055', '#00ffff', '#ffffff', '#222222'], ['#000022', '#ff00ff', '#00ffaa', '#ffff00', '#222255']]
+        };
+
+        const styleKeys = Object.keys(stylePalettes);
+
+        const paletteCategories = {
+            monochrome: [['#101010', '#F0F0F0', '#404040', '#808080', '#C0C0C0'], ['#F2F2F2', '#1A1A1A'], ['#111111', '#1f1f1f', '#2a2a2a', '#050505']],
+            nature: [['#4A5320', '#3B4219', '#2E3414', '#D4C5A9', '#1C200C'], ['#313B2E', '#505E4C', '#72816D', '#222821', '#C5CFC3'], ['#2D3822', '#4B5C3C', '#6B7A59', '#182012', '#939E83'], ['#3B4232', '#2E3524', '#596547', '#1A1E14', '#7A6246'], ['#151C15', '#243024', '#3E503E', '#8F998F']],
+            vibrant: [['#111111', '#333333', '#E74C3C', '#F1C40F', '#3498DB'], ['#2C3E50', '#8E44AD', '#3498DB', '#E67E22'], ['#050505', '#00ffff', '#ff00ff'], ['#0f0f0f', '#ff0055', '#00ffff', '#ffffff', '#222222']],
+            dark: [['#1E2229', '#3D4654', '#5D6B80', '#101317', '#8894A6'], ['#222B36', '#3B4B5E', '#5D7491', '#141A21', '#859AB5'], ['#1E2226', '#2C3539', '#44535C', '#5F7380', '#0F1113'], ['#0D1117', '#1A232E', '#2B394A', '#536E8C'], ['#111827', '#1F2937', '#374151']],
+            warm: [['#E0B876', '#BA7A3A', '#201812'], ['#2C2621', '#5B3322', '#8F4321', '#C26331', '#1A1513', '#4A2A18'], ['#C19A6B', '#966F33', '#6F4E37', '#4A3219']]
+        };
+
+        function random() {
+            const x = Math.sin(currentSeedTracker++) * 10000;
+            return x - Math.floor(x);
+        }
+        function randomInt(min, max) { return Math.floor(random() * (max - min + 1) + min); }
+        function randomChoice(arr) { return arr[Math.floor(random() * arr.length)]; }
+        function getContrastingColors() {
+            const color1 = randomChoice(activePalette);
+            let color2 = randomChoice(activePalette);
+            while (color2 === color1) color2 = randomChoice(activePalette);
+            return [color1, color2];
+        }
+
+        function createRandomPolygon(cx, cy, minRadius, maxRadius, verticesCount) {
+            const vertices = [];
+            let angleStart = random() * Math.PI * 2;
+            for (let i = 0; i < verticesCount; i++) {
+                const angle = angleStart + (i / verticesCount) * Math.PI * 2 + (random() - 0.5) * (Math.PI / verticesCount);
+                const r = minRadius + random() * (maxRadius - minRadius);
+                vertices.push({ x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r });
+            }
+            return vertices;
+        }
+
+        function createIntersectingBand(width, height) {
+            const cx = width / 2;
+            const cy = height / 2;
+            const maxDimension = Math.max(width, height);
+            const angle = random() * Math.PI;
+            const thickness = randomInt(50, 300);
+            const length = maxDimension * 3;
+            const offsetX = (random() - 0.5) * width;
+            const offsetY = (random() - 0.5) * height;
+            const dx = Math.cos(angle) * (length / 2);
+            const dy = Math.sin(angle) * (length / 2);
+            const tx = Math.cos(angle + Math.PI/2) * (thickness / 2);
+            const ty = Math.sin(angle + Math.PI/2) * (thickness / 2);
+            return [
+                {x: cx + offsetX - dx + tx, y: cy + offsetY - dy + ty},
+                {x: cx + offsetX + dx + tx, y: cy + offsetY + dy + ty},
+                {x: cx + offsetX + dx - tx, y: cy + offsetY + dy - tx},
+                {x: cx + offsetX - dx - tx, y: cy + offsetY - dy - ty}
+            ];
+        }
+
+        function applyPolygonPath(tCtx, vertices) {
+            tCtx.beginPath();
+            tCtx.moveTo(vertices[0].x, vertices[0].y);
+            for (let i = 1; i < vertices.length; i++) tCtx.lineTo(vertices[i].x, vertices[i].y);
+            tCtx.closePath();
+        }
+
+        function strokeCheck(tCtx) {
+            if (enableOutline && strokeWidthVal > 0) {
+                tCtx.lineWidth = strokeWidthVal;
+                tCtx.strokeStyle = 'rgba(0,0,0,0.85)'; // Enforce dark explicit color for proper outline contrast
+                tCtx.stroke();
+            }
+        }
+
+        function drawStripes(tCtx, w, h, color1, color2, angle, stripeWidth) {
+            const diag = Math.sqrt(w * w + h * h) * 1.5;
+            tCtx.save();
+            tCtx.translate(w / 2, h / 2);
+            tCtx.rotate(angle);
+            const startY = -diag / 2;
+            const endY = diag / 2;
+            tCtx.fillStyle = color1;
+            tCtx.fillRect(-diag/2, -diag/2, diag, diag);
+            tCtx.fillStyle = color2;
+            for (let y = startY; y < endY; y += stripeWidth * 2) {
+                const currentWidth = random() > 0.9 ? stripeWidth * 1.5 : stripeWidth;
+                tCtx.fillRect(-diag / 2, y, diag, currentWidth);
+                
+                // Add outlines for individual stripes if enabled
+                if (enableOutline) {
+                    tCtx.beginPath();
+                    tCtx.rect(-diag / 2, y, diag, currentWidth);
+                    strokeCheck(tCtx);
+                }
+            }
+            tCtx.restore();
+        }
+
+        function generateWWIDazzle(tCtx, w, h) {
+            const scaleFactor = Math.max(w, h) / 1500;
+            const s = (val) => val * (scaleFactor > 0.5 ? scaleFactor : 1);
+            const [c1, c2] = getContrastingColors();
+            drawStripes(tCtx, w, h, c1, c2, random() * Math.PI, s(randomInt(40, 150)));
+
+            const numBands = randomInt(4, 10) * (complexityVal/5);
+            for (let i = 0; i < numBands; i++) {
+                tCtx.save();
+                const bandPath = createIntersectingBand(w, h);
+                applyPolygonPath(tCtx, bandPath);
+                tCtx.clip();
+                const [ac1, ac2] = getContrastingColors();
+                if (random() < 0.3) { tCtx.fillStyle = ac1; tCtx.fill(); }
+                else { drawStripes(tCtx, w, h, ac1, ac2, random() * Math.PI, s(randomInt(15, 80))); }
+                tCtx.restore();
+                
+                applyPolygonPath(tCtx, bandPath);
+                strokeCheck(tCtx);
+            }
+
+            const numBlocks = randomInt(8, 25) * (scaleDensity/50);
+            for (let i = 0; i < numBlocks; i++) {
+                tCtx.save();
+                const blockPath = createRandomPolygon(random()*w, random()*h, s(randomInt(50, 150)), s(randomInt(100, 450)), randomInt(3, 6));
+                applyPolygonPath(tCtx, blockPath);
+                tCtx.clip();
+                const [bc1, bc2] = getContrastingColors();
+                if (random() < 0.4) { tCtx.fillStyle = bc1; tCtx.fill(); }
+                else { drawStripes(tCtx, w, h, bc1, bc2, random() * Math.PI, s(randomInt(20, 60))); }
+                tCtx.restore();
+                
+                applyPolygonPath(tCtx, blockPath);
+                strokeCheck(tCtx);
+            }
+        }
+
+        function generateSplinter(tCtx, w, h) {
+            const cols = Math.floor(9 * (scaleDensity/50));
+            const rows = Math.floor(9 * (scaleDensity/50));
+            const cellW = w / cols;
+            const cellH = h / rows;
+            for (let y = 0; y <= rows; y++) {
+                for (let x = 0; x <= cols; x++) {
+                    const cx = x * cellW + (random() - 0.5) * cellW;
+                    const cy = y * cellH + (random() - 0.5) * cellH;
+                    applyPolygonPath(tCtx, createRandomPolygon(cx, cy, cellW * 0.4, cellW * 1.3, randomInt(4, 7)));
+                    tCtx.fillStyle = randomChoice(activePalette);
+                    tCtx.fill();
+                    strokeCheck(tCtx);
+                }
+            }
+        }
+
+        function generateTigerStripe(tCtx, w, h) {
+            const numStripes = Math.floor(45 * (scaleDensity/50));
+            tCtx.save();
+            tCtx.translate(w/2, h/2);
+            tCtx.rotate((random() - 0.5) * 0.4);
+            tCtx.translate(-w/2, -h/2);
+            const stepY = h / numStripes;
+            for (let i = -10; i < numStripes + 10; i++) {
+                let y = i * stepY;
+                tCtx.beginPath();
+                tCtx.moveTo(-100, y);
+                let cx = -100;
+                while (cx < w + 200) { cx += randomInt(40, 140); y += (random() - 0.5) * 100; tCtx.lineTo(cx, y); }
+                tCtx.lineTo(w + 200, y + randomInt(40, 100));
+                let bx = w + 200;
+                while (bx > -100) { bx -= randomInt(40, 140); y -= (random() - 0.5) * 100; tCtx.lineTo(bx, y); }
+                tCtx.closePath();
+                tCtx.fillStyle = randomChoice(activePalette);
+                tCtx.fill();
+                strokeCheck(tCtx);
+            }
+            tCtx.restore();
+        }
+
+        function generateDigital(tCtx, w, h) {
+            const blockSize = Math.max(5, Math.floor(Math.min(w, h) / (scaleDensity * 1.5)));
+            const cols = Math.ceil(w / blockSize);
+            const rows = Math.ceil(h / blockSize);
+            const grid = Array.from({ length: rows }, () => Array(cols).fill(0));
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) grid[r][c] = Math.floor(random() * activePalette.length);
+            }
+            for (let iter = 0; iter < Math.floor(complexityVal/2); iter++) {
+                for (let r = 1; r < rows - 1; r++) {
+                    for (let c = 1; c < cols - 1; c++) {
+                        if (random() < 0.35) grid[r][c] = grid[r + (random() > 0.5 ? 1 : -1)][c + (random() > 0.5 ? 1 : -1)];
+                    }
+                }
+            }
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    tCtx.fillStyle = activePalette[grid[r][c]];
+                    tCtx.fillRect(c * blockSize, r * blockSize, blockSize + 0.5, blockSize + 0.5);
+                    if (enableOutline) {
+                        tCtx.beginPath();
+                        tCtx.rect(c * blockSize, r * blockSize, blockSize, blockSize);
+                        tCtx.lineWidth = 1;
+                        tCtx.strokeStyle = 'rgba(0,0,0,0.1)';
+                        tCtx.stroke();
+                    }
+                }
+            }
+        }
+
+        function generateCubist(tCtx, w, h) {
+            const shapes = Math.floor(randomInt(45, 85) * (scaleDensity/50));
+            for (let i = 0; i < shapes; i++) {
+                tCtx.save();
+                const cx = random() * w, cy = random() * h;
+                const size = randomInt(80, Math.max(w, h) * 0.45);
+                tCtx.beginPath();
+                if (random() < 0.5) applyPolygonPath(tCtx, createRandomPolygon(cx, cy, size * 0.2, size, 3));
+                else {
+                    tCtx.translate(cx, cy); tCtx.rotate(random() * Math.PI); tCtx.rect(-size/2, -size/4, size, size/2);
+                }
+                tCtx.fillStyle = randomChoice(activePalette);
+                tCtx.globalAlpha = 0.8 + random() * 0.2;
+                tCtx.fill();
+                tCtx.globalAlpha = 1.0;
+                strokeCheck(tCtx);
+                tCtx.restore();
+            }
+        }
+
+        function generateFlecktarn(tCtx, w, h) {
+            tCtx.fillStyle = activePalette[0];
+            tCtx.fillRect(0, 0, w, h);
+            const numClusters = Math.floor((w * h) / 8000 * (scaleDensity/50));
+            for (let i = 0; i < numClusters; i++) {
+                const cx = random() * w;
+                const cy = random() * h;
+                const color = randomChoice(activePalette.slice(1));
+                const numDots = randomInt(8, 30);
+                tCtx.fillStyle = color;
+                for (let j = 0; j < numDots; j++) {
+                    const angle = random() * Math.PI * 2;
+                    const dist = random() * randomInt(5, 80);
+                    const radius = randomInt(2, 12);
+                    tCtx.beginPath();
+                    tCtx.arc(cx + Math.cos(angle)*dist, cy + Math.sin(angle)*dist, radius, 0, Math.PI*2);
+                    tCtx.fill();
+                    strokeCheck(tCtx);
+                }
+            }
+        }
+
+        function generateHex(tCtx, w, h) {
+            tCtx.fillStyle = activePalette[0];
+            tCtx.fillRect(0, 0, w, h);
+            const r = randomInt(15, 35);
+            const dx = r * 1.5;
+            const dy = r * Math.sqrt(3);
+            for (let y = -dy; y < h + dy; y += dy) {
+                for (let x = -dx; x < w + dx; x += dx * 2) {
+                    for (let offset of [0, 1]) {
+                        const cx = x + (offset * dx);
+                        const cy = y + (offset * (dy / 2));
+                        tCtx.beginPath();
+                        for (let i = 0; i < 6; i++) {
+                            const angle = (Math.PI / 180) * (60 * i);
+                            const px = cx + r * Math.cos(angle);
+                            const py = cy + r * Math.sin(angle);
+                            if (i === 0) tCtx.moveTo(px, py); else tCtx.lineTo(px, py);
+                        }
+                        tCtx.closePath();
+                        tCtx.fillStyle = randomChoice(activePalette);
+                        tCtx.fill();
+                        strokeCheck(tCtx);
+                    }
+                }
+            }
+        }
+
+        function generateBrushstroke(tCtx, w, h) {
+            tCtx.fillStyle = activePalette[0];
+            tCtx.fillRect(0, 0, w, h);
+            const numStrokes = Math.floor((w * h) / 4000 * (scaleDensity/50));
+            for (let i = 0; i < numStrokes; i++) {
+                const cx = random() * w, cy = random() * h;
+                const length = randomInt(40, 200);
+                const thickness = randomInt(8, 30);
+                tCtx.beginPath();
+                tCtx.moveTo(cx, cy);
+                let px = cx, py = cy;
+                for (let j = 0; j < 3; j++) {
+                    const dx = (length / 3) * (random() > 0.5 ? 1 : -1);
+                    const dy = (random() - 0.5) * 50;
+                    px += dx; py += dy;
+                    tCtx.lineTo(px, py);
+                }
+                tCtx.lineWidth = thickness;
+                tCtx.lineCap = 'round';
+                tCtx.strokeStyle = randomChoice(activePalette.slice(1));
+                tCtx.stroke();
+            }
+        }
+
+        function generateTopographic(tCtx, w, h) {
+            tCtx.fillStyle = activePalette[0];
+            tCtx.fillRect(0, 0, w, h);
+            const numPeaks = randomInt(4, 10);
+            for(let i = 0; i < numPeaks; i++) {
+                const cx = random() * w, cy = random() * h;
+                const maxRad = randomInt(150, Math.max(w,h) * 0.8);
+                const rings = randomInt(8, 25);
+                for(let r = rings; r >= 1; r--) {
+                    const baseRadius = (r / rings) * maxRad;
+                    tCtx.beginPath();
+                    const points = 30;
+                    for(let p = 0; p <= points; p++) {
+                        const angle = (p / points) * Math.PI * 2;
+                        const noise = Math.sin(angle * 3 + currentSeedTracker) * (baseRadius * 0.15);
+                        const finalR = Math.max(1, baseRadius + noise);
+                        const px = cx + Math.cos(angle) * finalR;
+                        const py = cy + Math.sin(angle) * finalR;
+                        if (p === 0) tCtx.moveTo(px, py); else tCtx.lineTo(px, py);
+                    }
+                    tCtx.closePath();
+                    tCtx.fillStyle = randomChoice(activePalette);
+                    tCtx.fill();
+                    strokeCheck(tCtx);
+                }
+            }
+        }
+
+        function generateZebra(tCtx, w, h) {
+            tCtx.fillStyle = activePalette[0];
+            tCtx.fillRect(0, 0, w, h);
+            tCtx.fillStyle = activePalette[1] || '#1a1a1a';
+            const numStripes = Math.floor(w / 35);
+            for(let i = -10; i < numStripes + 10; i++) {
+                let x = i * 45;
+                tCtx.beginPath();
+                let cx = x;
+                for(let y = 0; y <= h + 50; y += 20) {
+                    cx += Math.sin(y * 0.015 + i) * 20;
+                    tCtx.lineTo(cx, y);
+                }
+                for(let y = h + 50; y >= 0; y -= 20) {
+                    tCtx.lineTo(cx + 25, y);
+                }
+                tCtx.closePath();
+                tCtx.fill();
+                strokeCheck(tCtx);
+            }
+        }
+
+        function generateLeopard(tCtx, w, h) {
+            tCtx.fillStyle = activePalette[0];
+            tCtx.fillRect(0, 0, w, h);
+            const numSpots = Math.floor(w * h / 3500);
+            for(let i=0; i<numSpots; i++) {
+                const cx = random() * w, cy = random() * h;
+                const r = randomInt(12, 35);
+                tCtx.fillStyle = activePalette[1] || '#BA7A3A';
+                tCtx.beginPath();
+                tCtx.arc(cx, cy, r, 0, Math.PI*2);
+                tCtx.fill();
+                tCtx.strokeStyle = activePalette[2] || '#201812';
+                tCtx.lineWidth = r * 0.35;
+                tCtx.beginPath();
+                tCtx.arc(cx, cy, r*1.05, 0, Math.PI*1.2);
+                tCtx.stroke();
+            }
+        }
+
+        function generateRust(tCtx, w, h) {
+            tCtx.fillStyle = activePalette[0];
+            tCtx.fillRect(0, 0, w, h);
+            for(let i=0; i<150; i++) {
+                tCtx.fillStyle = randomChoice(activePalette.slice(1));
+                tCtx.globalAlpha = 0.1 + random()*0.2;
+                tCtx.beginPath();
+                tCtx.arc(random()*w, random()*h, randomInt(50, 250), 0, Math.PI*2);
+                tCtx.fill();
+            }
+            tCtx.globalAlpha = 1.0;
+        }
+
+        function generateWoodGrain(tCtx, w, h) {
+            tCtx.fillStyle = activePalette[0];
+            tCtx.fillRect(0, 0, w, h);
+            for(let i=0; i<w; i+=4) {
+                tCtx.fillStyle = randomChoice(activePalette.slice(1));
+                const noise = Math.sin(i * 0.05) * 20;
+                tCtx.fillRect(i + noise, 0, randomInt(1,3), h);
+            }
+        }
+
+        function generateEmojis(tCtx, w, h) {
+            tCtx.fillStyle = '#111827';
+            tCtx.fillRect(0, 0, w, h);
+            const emojis = ['🪖', '🌿', '💥', '🚁', '🎖️', '🔥', '⚙️', '💎', '🚀', '⭐', '💀', '👾'];
+            for(let i=0; i<80; i++) {
+                tCtx.font = `${randomInt(20, 60)}px sans-serif`;
+                tCtx.fillText(randomChoice(emojis), random()*w, random()*h);
+            }
+        }
+
+        function generateShapes(tCtx, w, h) {
+            tCtx.fillStyle = activePalette[0];
+            tCtx.fillRect(0, 0, w, h);
+            for(let i=0; i<60; i++) {
+                tCtx.fillStyle = randomChoice(activePalette);
+                tCtx.beginPath();
+                tCtx.arc(random()*w, random()*h, randomInt(20, 80), 0, Math.PI*2);
+                tCtx.fill();
+                strokeCheck(tCtx);
+            }
+        }
+
+        function generateWarningSign(tCtx, w, h) {
+            const pal = activePalette.length >= 2 ? activePalette : ['#FFCC00', '#000000'];
+            tCtx.fillStyle = pal[0];
+            tCtx.fillRect(0, 0, w, h);
+
+            tCtx.fillStyle = pal[1];
+            const stripeWidth = Math.max(10, 80 * (scaleDensity / 50));
+            const diag = Math.sqrt(w*w + h*h) * 2; 
+
+            tCtx.save();
+            tCtx.translate(w/2, h/2);
+            const isFlipped = random() > 0.5 ? 1 : -1;
+            const angle = (Math.PI / 4) * isFlipped + (random() - 0.5) * 0.1;
+            tCtx.rotate(angle);
+            tCtx.translate(-diag/2, -diag/2);
+
+            for(let x = 0; x < diag; x += stripeWidth * 2) {
+                tCtx.fillRect(x, 0, stripeWidth, diag);
+                if(enableOutline) {
+                    tCtx.beginPath(); tCtx.rect(x, 0, stripeWidth, diag); strokeCheck(tCtx);
+                }
+            }
+            tCtx.restore();
+
+            const grungeLevel = complexityVal;
+            if (grungeLevel > 1) {
+                const numScratches = Math.floor((w * h) / 10000 * grungeLevel);
+                
+                tCtx.fillStyle = pal[0];
+                for(let i = 0; i < numScratches; i++) {
+                    tCtx.globalAlpha = 0.4 + random() * 0.6;
+                    tCtx.beginPath();
+                    tCtx.arc(random()*w, random()*h, randomInt(1, 4), 0, Math.PI*2);
+                    tCtx.fill();
+                }
+                
+                tCtx.fillStyle = pal[1];
+                for(let i = 0; i < numScratches; i++) {
+                    tCtx.globalAlpha = 0.4 + random() * 0.6;
+                    tCtx.beginPath();
+                    tCtx.arc(random()*w, random()*h, randomInt(1, 4), 0, Math.PI*2);
+                    tCtx.fill();
+                }
+                tCtx.globalAlpha = 1.0;
+                
+                if (random() > 0.5 && grungeLevel >= 3) {
+                    tCtx.lineWidth = strokeWidthVal > 0 ? strokeWidthVal * 3 : 5;
+                    tCtx.strokeStyle = pal[1];
+                    tCtx.fillStyle = pal[0];
+                    tCtx.beginPath();
+                    const cx = w / 2 + (random() - 0.5) * (w/2);
+                    const cy = h / 2 + (random() - 0.5) * (h/2);
+                    const r = 50 + random() * 80;
+                    
+                    tCtx.moveTo(cx, cy - r);
+                    tCtx.lineTo(cx + r, cy + r - 15);
+                    tCtx.lineTo(cx - r, cy + r - 15);
+                    tCtx.closePath();
+                    tCtx.fill();
+                    tCtx.stroke();
+                    
+                    tCtx.fillStyle = pal[1];
+                    tCtx.fillRect(cx - r*0.1, cy - r*0.3, r*0.2, r*0.7);
+                    tCtx.beginPath();
+                    tCtx.arc(cx, cy + r*0.6, r*0.1, 0, Math.PI*2);
+                    tCtx.fill();
+                }
+            }
+        }
+
+        function generateWireframe(tCtx, w, h) {
+            const pal = activePalette.length >= 3 ? activePalette : ['#050505', '#00ffff', '#ff00ff'];
+            tCtx.fillStyle = pal[0];
+            tCtx.fillRect(0, 0, w, h);
+            const cell = 50;
+            const cols = Math.ceil(w / cell) + 1;
+            const rows = Math.ceil(h / cell) + 1;
+            tCtx.lineWidth = strokeWidthVal > 0 ? strokeWidthVal : 1.5;
+            tCtx.lineJoin = 'round';
+            tCtx.lineCap = 'round';
+            const nodes = [];
+            for (let r = 0; r < rows; r++) {
+                nodes[r] = [];
+                for (let c = 0; c < cols; c++) {
+                    const noiseX = Math.sin(r * 0.4 + currentSeedTracker) * 20;
+                    const noiseY = Math.cos(c * 0.4 + currentSeedTracker) * 20;
+                    nodes[r][c] = { x: c * cell + noiseX, y: r * cell + noiseY };
+                }
+            }
+            tCtx.strokeStyle = pal[1];
+            tCtx.beginPath();
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (c < cols - 1) { tCtx.moveTo(nodes[r][c].x, nodes[r][c].y); tCtx.lineTo(nodes[r][c+1].x, nodes[r][c+1].y); }
+                    if (r < rows - 1) { tCtx.moveTo(nodes[r][c].x, nodes[r][c].y); tCtx.lineTo(nodes[r+1][c].x, nodes[r+1][c].y); }
+                }
+            }
+            tCtx.stroke();
+        }
+
+        function generateCarbonFibre(tCtx, w, h) {
+            const pal = activePalette.length >= 4 ? activePalette : ['#111111', '#1f1f1f', '#2a2a2a', '#050505'];
+            tCtx.fillStyle = pal[0];
+            tCtx.fillRect(0, 0, w, h);
+            const weaveSize = 20;
+            const cols = Math.ceil(w / weaveSize);
+            const rows = Math.ceil(h / weaveSize);
+            for(let r = 0; r < rows; r++) {
+                for(let c = 0; c < cols; c++) {
+                    const x = c * weaveSize, y = r * weaveSize;
+                    const isVertical = (r + c) % 2 === 0;
+                    tCtx.fillStyle = isVertical ? pal[1] : pal[2];
+                    tCtx.fillRect(x, y, weaveSize, weaveSize);
+                    if (enableOutline && strokeWidthVal > 0) {
+                        tCtx.lineWidth = strokeWidthVal;
+                        tCtx.strokeStyle = pal[3];
+                        tCtx.beginPath();
+                        if (isVertical) {
+                            for(let i=3; i<weaveSize; i+=5) { tCtx.moveTo(x + i, y); tCtx.lineTo(x + i, y + weaveSize); }
+                        } else {
+                            for(let i=3; i<weaveSize; i+=5) { tCtx.moveTo(x, y + i); tCtx.lineTo(x + weaveSize, y + i); }
+                        }
+                        tCtx.stroke();
+                    }
+                }
+            }
+        }
+
+        function generateCircuit(tCtx, w, h) {
+            const pal = activePalette.length >= 4 ? activePalette : ['#003300', '#00ff00', '#00aa00', '#c0c0c0'];
+            tCtx.fillStyle = pal[0];
+            tCtx.fillRect(0, 0, w, h);
+            const cell = 25;
+            const cols = Math.floor(w / cell), rows = Math.floor(h / cell);
+            const numTraces = Math.floor((cols * rows) * 0.12);
+            tCtx.lineCap = 'round'; tCtx.lineJoin = 'round';
+            for (let i = 0; i < numTraces; i++) {
+                let currC = randomInt(1, cols - 2), currR = randomInt(1, rows - 2);
+                tCtx.beginPath(); tCtx.moveTo(currC * cell, currR * cell);
+                let len = randomInt(4, 18);
+                let dir = randomInt(0, 7);
+                const dx = [0, 1, 1, 1, 0, -1, -1, -1];
+                const dy = [-1, -1, 0, 1, 1, 1, 0, -1];
+                for (let j = 0; j < len; j++) {
+                    if (random() > 0.65) dir = (dir + (random() > 0.5 ? 1 : -1) + 8) % 8;
+                    currC += dx[dir]; currR += dy[dir];
+                    if (currC < 0 || currC >= cols || currR < 0 || currR >= rows) break;
+                    tCtx.lineTo(currC * cell, currR * cell);
+                }
+                tCtx.lineWidth = strokeWidthVal > 0 ? strokeWidthVal * 1.5 : 3;
+                tCtx.strokeStyle = random() > 0.6 ? pal[2] : pal[1];
+                tCtx.stroke();
+                if (random() > 0.4) {
+                    tCtx.fillStyle = pal[3];
+                    tCtx.beginPath();
+                    tCtx.arc(currC * cell, currR * cell, 5, 0, Math.PI*2);
+                    tCtx.fill();
+                }
+            }
+        }
+
+        function generateGlitch(tCtx, w, h) {
+            const pal = activePalette.length >= 5 ? activePalette : ['#0f0f0f', '#ff0055', '#00ffff', '#ffffff', '#222222'];
+            tCtx.fillStyle = pal[0];
+            tCtx.fillRect(0, 0, w, h);
+            const numBlocks = randomInt(30, 70);
+            for(let i=0; i<numBlocks; i++) {
+                tCtx.fillStyle = pal[4] || pal[1];
+                tCtx.fillRect(random()*w, random()*h, random()*300, random()*80);
+            }
+            for(let i=0; i<45; i++) {
+                const x = random() * w, y = random() * h;
+                const bw = random() * 250 + 50, bh = random() * 60 + 10;
+                tCtx.globalCompositeOperation = 'screen';
+                tCtx.fillStyle = pal[1];
+                tCtx.fillRect(x - 15, y, bw, bh);
+                tCtx.fillStyle = pal[2];
+                tCtx.fillRect(x + 15, y, bw, bh);
+                tCtx.globalCompositeOperation = 'source-over';
+            }
+            for(let i=0; i<100; i++) {
+                tCtx.fillStyle = randomChoice(pal);
+                tCtx.fillRect(0, random()*h, w, random()*4);
+            }
+        }
+
+        function renderPatternToContext(tCtx, styleToRender, w, h) {
+            currentSeedTracker = seedValue;
+            const paletteSelection = document.getElementById('paletteSelect').value;
+            
+            if (paletteSelection === 'random') {
+                if (random() > 0.5) {
+                    const randomPaletteGroup = stylePalettes[randomChoice(styleKeys)];
+                    activePalette = randomChoice(randomPaletteGroup);
+                } else {
+                    const styleList = stylePalettes[styleToRender] || stylePalettes.wwi;
+                    activePalette = randomChoice(styleList);
+                }
+            } else {
+                const categoryList = paletteCategories[paletteSelection];
+                activePalette = randomChoice(categoryList);
+            }
+
+            switch(styleToRender) {
+                case 'wwi': generateWWIDazzle(tCtx, w, h); break;
+                case 'splinter': generateSplinter(tCtx, w, h); break;
+                case 'tiger': generateTigerStripe(tCtx, w, h); break;
+                case 'digital': generateDigital(tCtx, w, h); break;
+                case 'cubist': generateCubist(tCtx, w, h); break;
+                case 'flecktarn': generateFlecktarn(tCtx, w, h); break;
+                case 'hex': generateHex(tCtx, w, h); break;
+                case 'brushstroke': generateBrushstroke(tCtx, w, h); break;
+                case 'topographic': generateTopographic(tCtx, w, h); break;
+                case 'zebra': generateZebra(tCtx, w, h); break;
+                case 'leopard': generateLeopard(tCtx, w, h); break;
+                case 'rust': generateRust(tCtx, w, h); break;
+                case 'wood': generateWoodGrain(tCtx, w, h); break;
+                case 'emojis': generateEmojis(tCtx, w, h); break;
+                case 'shapes': generateShapes(tCtx, w, h); break;
+                case 'warning': generateWarningSign(tCtx, w, h); break;
+                case 'wireframe': generateWireframe(tCtx, w, h); break;
+                case 'carbon': generateCarbonFibre(tCtx, w, h); break;
+                case 'circuit': generateCircuit(tCtx, w, h); break;
+                case 'glitch': generateGlitch(tCtx, w, h); break;
+                default: generateCubist(tCtx, w, h);
+            }
+            
+            // Randomly apply a fast radial vignette
+            if (Math.random() > 0.3) {
+                tCtx.save();
+                const gradient = tCtx.createRadialGradient(w/2, h/2, Math.max(w,h)*0.3, w/2, h/2, Math.max(w,h)*0.8);
+                gradient.addColorStop(0, 'rgba(0,0,0,0)');
+                gradient.addColorStop(1, 'rgba(0,0,0,0.7)');
+                tCtx.fillStyle = gradient;
+                tCtx.fillRect(0, 0, w, h);
+                tCtx.restore();
+            }
+        }
+
+        function renderScene(activeStyle, randomizeParams) {
+            canvas.style.opacity = '0.5';
+            
+            setTimeout(() => {
+                if (randomizeParams) {
+                    seedValue = Math.floor(Math.random() * 9999) + 1;
+                    scaleDensity = Math.floor(Math.random() * 90) + 10;
+                    complexityVal = Math.floor(Math.random() * 10) + 1;
+                    strokeWidthVal = Math.floor(Math.random() * 3) + 1;
+                }
+                
+                enableOutline = document.getElementById('outlineToggle').checked;
+                
+                ctx.clearRect(0, 0, previewW, previewH);
+                ctx.globalCompositeOperation = 'source-over';
+                
+                renderPatternToContext(ctx, activeStyle, previewW, previewH);
+                
+                // Safe UI Updates
+                if (infoStyle) infoStyle.textContent = activeStyle.toUpperCase();
+                if (infoSeed) infoSeed.textContent = seedValue;
+                if (infoColors) infoColors.textContent = activePalette.length;
+                
+                canvas.style.opacity = '1';
+            }, 50);
+        }
+
+        function triggerGeneration() {
+            const selected = document.getElementById('styleSelect').value;
+            const activeStyle = selected === 'random' ? styleKeys[Math.floor(Math.random() * styleKeys.length)] : selected;
+            renderScene(activeStyle, true);
+        }
+        
+        function updateCurrent() {
+            let activeStyle = infoStyle.textContent.toLowerCase();
+            if (activeStyle === '--' || activeStyle === 'random') activeStyle = 'cubist';
+            renderScene(activeStyle, false);
+        }
+
+        document.getElementById('generateBtn').addEventListener('click', triggerGeneration);
+        document.getElementById('outlineToggle').addEventListener('change', updateCurrent);
+        document.getElementById('paletteSelect').addEventListener('change', updateCurrent);
+        document.getElementById('styleSelect').addEventListener('change', (e) => {
+            if (e.target.value !== 'random') {
+                renderScene(e.target.value, false);
+            }
+        });
+        
+        document.querySelectorAll('.dl-opt').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const resVal = e.target.getAttribute('data-res');
+                const [w, h] = resVal.split('x').map(Number);
+                
+                const originalText = document.getElementById('dl-btn-text').innerHTML;
+                const procText = document.body.getAttribute('data-active-lang') === 'de' ? 'Arbeitet...' : 'Processing...';
+                document.getElementById('dl-btn-text').innerHTML = `<span class="hidden lg:inline-block">${procText}</span>`;
+                
+                setTimeout(() => {
+                    const offCanvas = document.createElement('canvas');
+                    offCanvas.width = w;
+                    offCanvas.height = h;
+                    const offCtx = offCanvas.getContext('2d', { alpha: false });
+                    
+                    const activeStyle = infoStyle.textContent.toLowerCase();
+                    renderPatternToContext(offCtx, activeStyle, w, h);
+                    
+                    const link = document.createElement('a');
+                    link.download = `sHyprTexture_${activeStyle}_${w}x${h}_${seedValue}.png`;
+                    link.href = offCanvas.toDataURL('image/png');
+                    link.click();
+                    
+                    document.getElementById('dl-btn-text').innerHTML = originalText;
+                }, 50);
+            });
+        });
+
+        // Initialize first texture
+        triggerGeneration();
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('light')) {
+                html.classList.remove('light');
+                if (icon) icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('light');
+                if (icon) icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        let isGerman = true;
+        function toggleLang() {
+            isGerman = !isGerman;
+            const indicator = document.getElementById('lang-indicator');
+            if (indicator) indicator.textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+            
+            const deEls = document.querySelectorAll('[data-lang-de]');
+            const enEls = document.querySelectorAll('[data-lang-en]');
+            
+            if (isGerman) {
+                deEls.forEach(el => el.style.display = '');
+                enEls.forEach(el => el.style.display = 'none');
+            } else {
+                deEls.forEach(el => el.style.display = 'none');
+                enEls.forEach(el => el.style.display = '');
+            }
+
+            // Update Select Options
+            const styleSelect = document.getElementById('styleSelect');
+            if (styleSelect) styleSelect.options[0].text = isGerman ? '🎲 Zufall (Random)' : '🎲 Surprise Me (Random)';
+            
+            const paletteSelect = document.getElementById('paletteSelect');
+            if (paletteSelect) {
+                paletteSelect.options[0].text = isGerman ? '🎨 Zufallspalette' : '🎨 Random Palette';
+                paletteSelect.options[1].text = isGerman ? 'Graustufen' : 'Grayscale';
+                paletteSelect.options[2].text = isGerman ? 'Natur / Tarn' : 'Nature / Camo';
+                paletteSelect.options[3].text = isGerman ? 'Lebhaft / Tech' : 'Vibrant / Tech';
+                paletteSelect.options[4].text = isGerman ? 'Dunkelmodus' : 'Dark Mode';
+                paletteSelect.options[5].text = isGerman ? 'Warm / Rost' : 'Warm / Rust';
+            }
+        }
+        
+        // Initial setup for standard UI text
+        toggleLang();
+        toggleLang();
+
+        function downloadHTML() {
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Texture_Generator.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

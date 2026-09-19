@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mkdir Command Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root {
+            /* Dark Mode Defaults */
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #202122;
+            --border-color: #54595d;
+            --text-color: #eaecf0;
+            --text-muted: #a8aeb3;
+            --link-color: #99c1f1;
+            --link-hover: #629deb;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --info-box: #2c2d30;
+            --table-alt: rgba(255,255,255,0.02);
+            --search-match: rgba(250, 204, 21, 0.3);
+            --search-text: #ffffff;
+            
+            /* Omni-directional encasing shadows */
+            --card-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.3), 0 0 4px 0 rgba(0, 0, 0, 0.2);
+            --card-shadow-hover: 0 0 20px 0 rgba(0, 0, 0, 0.4), 0 0 8px 0 rgba(0, 0, 0, 0.3);
+            --panel-border: #54595d;
+        }
+
+        html.light {
+            /* Light Mode Overrides */
+            --bg-color: #f4f6f9;
+            --panel-color: #ffffff;
+            --sidebar-color: #ffffff;
+            --border-color: #cbd5e1;
+            /* Pure black for maximum readability */
+            --text-color: #000000;      
+            --text-muted: #000000;      
+            --heading-color: #000000;   
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --code-bg: #f1f5f9;
+            --info-box: #e0f2fe;
+            --table-alt: rgba(0,0,0,0.015);
+            --search-match: rgba(250, 204, 21, 0.5);
+            --search-text: #000000;
+            
+            /* Omni-directional encasing shadow for light mode */
+            --card-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.1), 0 0 6px 0 rgba(0, 0, 0, 0.05);
+            --card-shadow-hover: 0 0 25px 0 rgba(0, 0, 0, 0.15), 0 0 12px 0 rgba(0, 0, 0, 0.08);
+            --panel-border: #e2e8f0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 800 !important; }
+        h1 { font-size: 3.5rem !important; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        h2 { font-size: 2.25rem !important; margin-bottom: 1rem; }
+        h3 { font-size: 1.85rem !important; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        h4 { font-size: 1.5rem !important; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+        p { margin-bottom: 1rem; }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--text-color);
+        }
+
+        /* Wiki-style Tables */
+        .wikitable {
+            width: 100%; border-collapse: collapse; margin: 1em 0;
+            background-color: var(--bg-color); font-size: 0.9em;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid var(--panel-border);
+        }
+        .wikitable th, .wikitable td {
+            border: 1px solid var(--panel-border); padding: 0.75rem 1rem;
+            text-align: left; vertical-align: top;
+        }
+        .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); }
+        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
+
+        /* TOC Styles */
+        .toc-link.active { font-weight: 600; color: var(--link-color); position: relative; }
+        .toc-link.active::before {
+            content: ''; position: absolute; left: -1rem; top: 0; height: 100%;
+            width: 3px; background-color: var(--link-color);
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
+
+        /* Panels with Omni-directional Shadows */
+        .topic-panel, .subtopic-card {
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+
+        .topic-panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            transition: box-shadow 0.3s ease;
+        }
+        @media (min-width: 1024px) {
+            .topic-panel { padding: 2.5rem; }
+        }
+        .topic-panel:hover {
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .subtopic-card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .subtopic-card:last-child { margin-bottom: 0; }
+        .subtopic-card:hover { box-shadow: var(--card-shadow); transform: translateY(-2px); }
+
+        /* Code Block Copy Features */
+        .code-container {
+            position: relative;
+        }
+        
+        .code-content {
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            padding-right: 2.5rem; 
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 0.4rem;
+            right: 0.4rem;
+            opacity: 0;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            background: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            z-index: 10;
+        }
+        
+        .code-container:hover .copy-btn { opacity: 1; }
+        .copy-btn:hover { color: var(--link-color); border-color: var(--link-color); background: var(--bg-color); }
+        @media (hover: none) { .copy-btn { opacity: 1; } }
+
+        /* Global Language Switcher */
+        .lang-en { display: none; }
+        body[data-active-lang="en"] .lang-de { display: none !important; }
+        body[data-active-lang="en"] .lang-en { display: block !important; }
+        body[data-active-lang="en"] span.lang-en, body[data-active-lang="en"] a.lang-en { display: inline !important; }
+        body[data-active-lang="de"] .lang-en { display: none !important; }
+        body[data-active-lang="de"] .lang-de { display: block !important; }
+        body[data-active-lang="de"] span.lang-de, body[data-active-lang="de"] a.lang-de { display: inline !important; }
+    </style>
+</head>
+
+<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
+
+    <aside class="lg:w-80 flex-shrink-0 bg-[var(--sidebar-color)] border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative shadow-lg transition-colors">
+        
+        <!-- Controls: Language, Theme, Download -->
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
+                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Guide">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+            <i class="fa-solid fa-folder-plus text-3xl mb-3 text-[var(--text-color)] opacity-80"></i>
+            <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span class="lang-de">mkdir Command<br>Referenz</span>
+                <span class="lang-en">mkdir Command<br>Reference</span>
+            </div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v1.0 - Coreutils</div>
+        </div>
+
+        <div class="mb-6 relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
+            </div>
+            <input type="text" id="wikiSearch" placeholder="Search..." class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-xl pl-10 pr-3 py-2.5 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-all shadow-sm" onkeyup="filterWiki()">
+        </div>
+
+        <nav class="text-sm space-y-1.5" id="toc-nav">
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span class="lang-de">Inhaltsverzeichnis</span>
+                <span class="lang-en">Table of Contents</span>
+            </div>
+            
+            <ul class="space-y-1">
+                <li><a href="#intro" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">1. Einführung & Basics</span><span class="lang-en">1. Intro & Basics</span>
+                </a></li>
+                <li class="pt-2"><a href="#options" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">2. Wichtige Optionen (-p, -v)</span><span class="lang-en">2. Essential Options (-p, -v)</span>
+                </a></li>
+                <li class="pt-2"><a href="#expansion" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">3. Brace Expansion (Profi-Tipp)</span><span class="lang-en">3. Brace Expansion (Pro Tip)</span>
+                </a></li>
+                <li class="pt-2"><a href="#errors" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">4. Häufige Fehler</span><span class="lang-en">4. Common Errors</span>
+                </a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="flex-grow p-4 lg:p-12 max-w-5xl lg:ml-0" id="main-content">
+        
+        <div class="searchable-block topic-panel mt-0 mb-8">
+            <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0">
+                <span class="lang-de">Linux <code>mkdir</code> Referenz</span>
+                <span class="lang-en">Linux <code>mkdir</code> Reference</span>
+            </h1>
+            <p class="text-lg mb-0 text-[var(--text-color)]">
+                <span class="lang-de">Der Befehl <strong><code>mkdir</code> (make directory)</strong> wird in Unix/Linux-Systemen verwendet, um neue Verzeichnisse (Ordner) zu erstellen. Er ist ein fundamentaler Bestandteil der Dateisystemverwaltung und bietet nützliche Flags zum Erstellen ganzer Verzeichnisstrukturen auf einmal.</span>
+                <span class="lang-en">The <strong><code>mkdir</code> (make directory)</strong> command is used in Unix/Linux systems to create new directories (folders). It is a fundamental part of file system management and offers useful flags for creating entire directory structures at once.</span>
+            </p>
+        </div>
+
+        <section id="intro" class="scroll-mt-10 searchable-block topic-panel mt-8">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">1. Einführung & Basics</span>
+                <span class="lang-en">1. Introduction & Basics</span>
+            </h2>
+            
+            <p class="mb-4 text-[var(--text-color)]">
+                <span class="lang-de">Standardmäßig erstellt <code>mkdir</code> ein neues Verzeichnis im aktuellen Pfad. Sie können auch mehrere Verzeichnisse gleichzeitig erstellen, indem Sie sie durch Leerzeichen trennen.</span>
+                <span class="lang-en">By default, <code>mkdir</code> creates a new directory in the current path. You can also create multiple directories simultaneously by separating them with spaces.</span>
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="subtopic-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                        <span class="lang-de">Einzelnes Verzeichnis</span>
+                        <span class="lang-en">Single Directory</span>
+                    </h4>
+                    <p class="text-sm text-[var(--text-muted)] mt-2 mb-3">
+                        <span class="lang-de">Erstellt einen einzelnen neuen Ordner im aktuellen Verzeichnis.</span>
+                        <span class="lang-en">Creates a single new folder in the current directory.</span>
+                    </p>
+                    <div class="code-container bg-[var(--code-bg)] rounded-lg border border-[var(--border-color)] font-mono text-sm">
+                        <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                        <div class="code-content p-3">mkdir projekte</div>
+                    </div>
+                </div>
+                
+                <div class="subtopic-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                        <span class="lang-de">Mehrere Verzeichnisse</span>
+                        <span class="lang-en">Multiple Directories</span>
+                    </h4>
+                    <p class="text-sm text-[var(--text-muted)] mt-2 mb-3">
+                        <span class="lang-de">Erstellt alle angegebenen Ordner auf einmal (auf gleicher Ebene).</span>
+                        <span class="lang-en">Creates all specified folders at once (on the same level).</span>
+                    </p>
+                    <div class="code-container bg-[var(--code-bg)] rounded-lg border border-[var(--border-color)] font-mono text-sm">
+                        <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                        <div class="code-content p-3">mkdir docs bilder scripts</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="options" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">2. Wichtige Optionen (Flags)</span>
+                <span class="lang-en">2. Essential Options (Flags)</span>
+            </h2>
+
+            <div class="subtopic-card scroll-mt-10">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/6">Flag</th>
+                        <th><span class="lang-de">Erklärung</span><span class="lang-en">Explanation</span></th>
+                    </tr>
+                    <tr>
+                        <td class="font-bold text-center font-mono text-lg text-blue-500">-p</td>
+                        <td class="text-[var(--text-muted)]">
+                            <span class="lang-de"><strong>Parents:</strong> Dies ist die wichtigste Option. Sie erlaubt das Erstellen von <em>verschachtelten Verzeichnisstrukturen</em> (Unterordner in Unterordnern), ohne dass die übergeordneten Ordner bereits existieren müssen. Außerdem unterdrückt sie Fehlermeldungen, falls ein Ordner bereits existiert.</span>
+                            <span class="lang-en"><strong>Parents:</strong> This is the most important option. It allows the creation of <em>nested directory trees</em> (subfolders within subfolders) without requiring the parent folders to already exist. It also suppresses error messages if a folder already exists.</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-bold text-center font-mono text-lg">-v</td>
+                        <td class="text-[var(--text-muted)]">
+                            <span class="lang-de"><strong>Verbose (Ausführlich):</strong> Gibt für jedes erfolgreich erstellte Verzeichnis eine Bestätigungsmeldung auf dem Bildschirm aus. Sehr nützlich in Skripten oder in Kombination mit <code>-p</code>.</span>
+                            <span class="lang-en"><strong>Verbose:</strong> Prints a confirmation message to the screen for each successfully created directory. Very useful in scripts or in combination with <code>-p</code>.</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-bold text-center font-mono text-lg">-m</td>
+                        <td class="text-[var(--text-muted)]">
+                            <span class="lang-de"><strong>Mode (Berechtigungen):</strong> Erlaubt es, die Dateiberechtigungen (im Oktal-Format wie bei <code>chmod</code>) direkt beim Erstellen des Ordners festzulegen, anstatt die Standard-Umask zu verwenden.</span>
+                            <span class="lang-en"><strong>Mode (Permissions):</strong> Allows you to set the file permissions (in octal format like <code>chmod</code>) directly when creating the folder, bypassing the default umask.</span>
+                        </td>
+                    </tr>
+                </table>
+                
+                <div class="mt-6 border-t border-[var(--border-color)] pt-4">
+                    <h4 class="text-sm font-bold mb-2"><span class="lang-de">Beispiele:</span><span class="lang-en">Examples:</span></h4>
+                    
+                    <div class="mb-3">
+                        <p class="text-[var(--text-color)] text-xs mb-1"><span class="lang-de">Verschachtelte Struktur erstellen (Erstellt <code>src</code>, darin <code>js</code>, darin <code>components</code>):</span><span class="lang-en">Create nested structure (Creates <code>src</code>, then <code>js</code> inside it, then <code>components</code> inside that):</span></p>
+                        <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                            <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                            <div class="code-content p-3">mkdir -p src/js/components</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p class="text-[var(--text-color)] text-xs mb-1"><span class="lang-de">Ordner direkt mit Lese-/Schreibrechten für alle (777) erstellen:</span><span class="lang-en">Create folder directly with read/write permissions for everyone (777):</span></p>
+                        <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                            <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                            <div class="code-content p-3">mkdir -m 777 public_share</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="expansion" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">3. Brace Expansion (Profi-Tipp)</span>
+                <span class="lang-en">3. Brace Expansion (Pro Tip)</span>
+            </h2>
+
+            <div class="subtopic-card scroll-mt-10">
+                <p class="text-[var(--text-color)] text-sm mb-4">
+                    <span class="lang-de">In der Bash und Zsh können Sie geschweifte Klammern <code>{}</code> verwenden (Brace Expansion), um komplexe Verzeichnisstrukturen mit einem einzigen Befehl zu erstellen. Dies ist extrem effizient für das Scaffolding von Projekten.</span>
+                    <span class="lang-en">In Bash and Zsh, you can use curly braces <code>{}</code> (Brace Expansion) to create complex directory structures with a single command. This is extremely efficient for scaffolding projects.</span>
+                </p>
+                
+                <div class="grid grid-cols-1 gap-6">
+                    <div>
+                        <h4 class="text-sm font-bold mb-1 text-[var(--heading-color)]"><span class="lang-de">Mehrere Unterordner in einem Zielordner</span><span class="lang-en">Multiple subfolders in one target folder</span></h4>
+                        <p class="text-[var(--text-muted)] text-xs mb-2">
+                            <span class="lang-de">Erstellt den Ordner <code>project</code> und darin gleichzeitig <code>src</code>, <code>bin</code> und <code>doc</code>. Vergessen Sie nicht das <code>-p</code> Flag!</span>
+                            <span class="lang-en">Creates the <code>project</code> folder and simultaneously <code>src</code>, <code>bin</code>, and <code>doc</code> inside it. Don't forget the <code>-p</code> flag!</span>
+                        </p>
+                        <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-2">
+                            <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                            <div class="code-content p-3">mkdir -p project/{src,bin,doc}</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-sm font-bold mb-1 text-[var(--heading-color)]"><span class="lang-de">Jahres- und Monatsordner generieren</span><span class="lang-en">Generate year and month folders</span></h4>
+                        <p class="text-[var(--text-muted)] text-xs mb-2">
+                            <span class="lang-de">Nutzt Zahlenbereiche (<code>..</code>), um Ordner für die Jahre 2024 bis 2026 zu erstellen, und darin jeweils Ordner für die Monate 01 bis 12. Dies generiert auf einen Schlag 36 Ordner!</span>
+                            <span class="lang-en">Uses number ranges (<code>..</code>) to create folders for the years 2024 to 2026, and inside each, folders for months 01 to 12. This generates 36 folders instantly!</span>
+                        </p>
+                        <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-2">
+                            <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                            <div class="code-content p-3">mkdir -p archive/{2024..2026}/{01..12}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="errors" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">4. Häufige Fehler</span>
+                <span class="lang-en">4. Common Errors</span>
+            </h2>
+
+            <div class="subtopic-card scroll-mt-10">
+                
+                <div class="mb-5">
+                    <h4 class="text-sm font-bold mb-1 text-red-500">File exists</h4>
+                    <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-2">
+                        <div class="code-content p-2">mkdir: cannot create directory 'backup': File exists</div>
+                    </div>
+                    <p class="text-[var(--text-color)] text-xs">
+                        <span class="lang-de"><strong>Ursache:</strong> Es gibt bereits eine Datei oder einen Ordner mit exakt diesem Namen. <br><strong>Lösung:</strong> Nutzen Sie <code>mkdir -p backup</code>, um den Fehler zu ignorieren, falls es ein Ordner ist, oder wählen Sie einen anderen Namen.</span>
+                        <span class="lang-en"><strong>Cause:</strong> A file or folder with exactly this name already exists. <br><strong>Solution:</strong> Use <code>mkdir -p backup</code> to silently ignore the error if it's a directory, or choose a different name.</span>
+                    </p>
+                </div>
+
+                <div class="mb-5">
+                    <h4 class="text-sm font-bold mb-1 text-yellow-500">No such file or directory</h4>
+                    <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-2">
+                        <div class="code-content p-2">mkdir: cannot create directory 'a/b/c': No such file or directory</div>
+                    </div>
+                    <p class="text-[var(--text-color)] text-xs">
+                        <span class="lang-de"><strong>Ursache:</strong> Sie versuchen, einen verschachtelten Ordner (<code>c</code>) zu erstellen, aber die übergeordneten Ordner (<code>a</code> oder <code>b</code>) existieren noch nicht. <br><strong>Lösung:</strong> Hängen Sie das Flag <code>-p</code> an: <code>mkdir -p a/b/c</code>.</span>
+                        <span class="lang-en"><strong>Cause:</strong> You are trying to create a nested folder (<code>c</code>), but the parent folders (<code>a</code> or <code>b</code>) do not exist yet. <br><strong>Solution:</strong> Append the <code>-p</code> flag: <code>mkdir -p a/b/c</code>.</span>
+                    </p>
+                </div>
+
+                <div>
+                    <h4 class="text-sm font-bold mb-1 text-blue-500">Permission denied</h4>
+                    <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-2">
+                        <div class="code-content p-2">mkdir: cannot create directory '/etc/myconfig': Permission denied</div>
+                    </div>
+                    <p class="text-[var(--text-color)] text-xs">
+                        <span class="lang-de"><strong>Ursache:</strong> Sie haben keine Schreibrechte in dem Verzeichnis, in dem Sie den neuen Ordner anlegen wollen (hier z.B. <code>/etc</code>). <br><strong>Lösung:</strong> Stellen Sie <code>sudo</code> voran: <code>sudo mkdir /etc/myconfig</code>.</span>
+                        <span class="lang-en"><strong>Cause:</strong> You do not have write permissions in the directory where you are trying to create the new folder (e.g., <code>/etc</code>). <br><strong>Solution:</strong> Prefix with <code>sudo</code>: <code>sudo mkdir /etc/myconfig</code>.</span>
+                    </p>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+                    
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                        if(tocLink) tocLink.classList.add('active');
+                    }
+                });
+            }, {
+                rootMargin: '-10% 0px -80% 0px',
+                threshold: [0, 0.1, 1]
+            });
+
+            document.querySelectorAll('section, h3[id]').forEach((section) => {
+                observer.observe(section);
+            });
+        });
+
+        function filterWiki() {
+            const input = document.getElementById('wikiSearch');
+            const filter = input.value.toLowerCase();
+            const blocks = document.querySelectorAll('.searchable-block');
+            const mainContent = document.getElementById('main-content');
+
+            removeHighlights(mainContent);
+
+            if (!filter) {
+                blocks.forEach(block => block.style.display = 'block');
+                return;
+            }
+
+            blocks.forEach(block => {
+                const text = block.innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    block.style.display = 'block';
+                    highlightText(block, input.value);
+                } else {
+                    block.style.display = 'none';
+                }
+            });
+        }
+
+        function highlightText(element, keyword) {
+            if (!keyword) return;
+            const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+
+            let node;
+            while (node = treeWalker.nextNode()) {
+                if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                    if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE' && !node.parentNode.classList.contains('katex')) {
+                        nodesToReplace.push(node);
+                    }
+                }
+            }
+
+            nodesToReplace.forEach(node => {
+                const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+                const fragment = document.createDocumentFragment();
+                let match;
+                let lastIndex = 0;
+                const text = node.nodeValue;
+
+                while ((match = regex.exec(text)) !== null) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    const span = document.createElement('span');
+                    span.className = 'search-match font-semibold';
+                    span.textContent = match[0];
+                    fragment.appendChild(span);
+                    lastIndex = regex.lastIndex;
+                }
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                node.parentNode.replaceChild(fragment, node);
+            });
+        }
+
+        function removeHighlights(element) {
+            const highlights = element.querySelectorAll('.search-match');
+            highlights.forEach(span => {
+                const parent = span.parentNode;
+                parent.replaceChild(document.createTextNode(span.textContent), span);
+                parent.normalize();
+            });
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('light')) {
+                html.classList.remove('light');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        let isGerman = true;
+        function toggleLang() {
+            isGerman = !isGerman;
+            const indicator = document.getElementById('lang-indicator');
+            indicator.textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+        }
+
+        function copyCode(btn) {
+            const container = btn.closest('.code-container');
+            const codeContent = container.querySelector('.code-content').innerText;
+            
+            const textarea = document.createElement('textarea');
+            textarea.value = codeContent;
+            textarea.style.position = 'fixed'; 
+            textarea.style.left = '-9999px';
+            textarea.style.top = '0';
+            document.body.appendChild(textarea);
+            
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+                const icon = btn.querySelector('i');
+                icon.className = 'fa-solid fa-check text-green-500';
+                setTimeout(() => {
+                    icon.className = 'fa-regular fa-copy';
+                }, 2000);
+            } catch (err) {
+                console.error('Copy failed', err);
+            }
+            
+            document.body.removeChild(textarea);
+        }
+
+        function downloadHTML() {
+            removeHighlights(document.getElementById('main-content'));
+            
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'mkdir_Command_Guide.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

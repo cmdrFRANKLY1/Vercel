@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cd Command Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root {
+            /* Dark Mode Defaults */
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #202122;
+            --border-color: #54595d;
+            --text-color: #eaecf0;
+            --text-muted: #a8aeb3;
+            --link-color: #99c1f1;
+            --link-hover: #629deb;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --info-box: #2c2d30;
+            --table-alt: rgba(255,255,255,0.02);
+            --search-match: rgba(250, 204, 21, 0.3);
+            --search-text: #ffffff;
+            
+            /* Omni-directional encasing shadows */
+            --card-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.3), 0 0 4px 0 rgba(0, 0, 0, 0.2);
+            --card-shadow-hover: 0 0 20px 0 rgba(0, 0, 0, 0.4), 0 0 8px 0 rgba(0, 0, 0, 0.3);
+            --panel-border: #54595d;
+        }
+
+        html.light {
+            /* Light Mode Overrides */
+            --bg-color: #f4f6f9;
+            --panel-color: #ffffff;
+            --sidebar-color: #ffffff;
+            --border-color: #cbd5e1;
+            /* Pure black for maximum readability */
+            --text-color: #000000;      
+            --text-muted: #000000;      
+            --heading-color: #000000;   
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --code-bg: #f1f5f9;
+            --info-box: #e0f2fe;
+            --table-alt: rgba(0,0,0,0.015);
+            --search-match: rgba(250, 204, 21, 0.5);
+            --search-text: #000000;
+            
+            /* Omni-directional encasing shadow for light mode */
+            --card-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.1), 0 0 6px 0 rgba(0, 0, 0, 0.05);
+            --card-shadow-hover: 0 0 25px 0 rgba(0, 0, 0, 0.15), 0 0 12px 0 rgba(0, 0, 0, 0.08);
+            --panel-border: #e2e8f0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 800 !important; }
+        h1 { font-size: 3.5rem !important; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        h2 { font-size: 2.25rem !important; margin-bottom: 1rem; }
+        h3 { font-size: 1.85rem !important; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        h4 { font-size: 1.5rem !important; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+        p { margin-bottom: 1rem; }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--text-color);
+        }
+
+        /* Wiki-style Tables */
+        .wikitable {
+            width: 100%; border-collapse: collapse; margin: 1em 0;
+            background-color: var(--bg-color); font-size: 0.9em;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid var(--panel-border);
+        }
+        .wikitable th, .wikitable td {
+            border: 1px solid var(--panel-border); padding: 0.75rem 1rem;
+            text-align: left; vertical-align: top;
+        }
+        .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); }
+        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
+
+        /* TOC Styles */
+        .toc-link.active { font-weight: 600; color: var(--link-color); position: relative; }
+        .toc-link.active::before {
+            content: ''; position: absolute; left: -1rem; top: 0; height: 100%;
+            width: 3px; background-color: var(--link-color);
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
+
+        /* Panels with Omni-directional Shadows */
+        .topic-panel, .subtopic-card {
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+
+        .topic-panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            transition: box-shadow 0.3s ease;
+        }
+        @media (min-width: 1024px) {
+            .topic-panel { padding: 2.5rem; }
+        }
+        .topic-panel:hover {
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .subtopic-card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .subtopic-card:last-child { margin-bottom: 0; }
+        .subtopic-card:hover { box-shadow: var(--card-shadow); transform: translateY(-2px); }
+
+        /* Code Block Copy Features */
+        .code-container {
+            position: relative;
+        }
+        
+        .code-content {
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            padding-right: 2.5rem; 
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 0.4rem;
+            right: 0.4rem;
+            opacity: 0;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            background: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            z-index: 10;
+        }
+        
+        .code-container:hover .copy-btn { opacity: 1; }
+        .copy-btn:hover { color: var(--link-color); border-color: var(--link-color); background: var(--bg-color); }
+        @media (hover: none) { .copy-btn { opacity: 1; } }
+
+        /* Global Language Switcher */
+        .lang-en { display: none; }
+        body[data-active-lang="en"] .lang-de { display: none !important; }
+        body[data-active-lang="en"] .lang-en { display: block !important; }
+        body[data-active-lang="en"] span.lang-en, body[data-active-lang="en"] a.lang-en { display: inline !important; }
+        body[data-active-lang="de"] .lang-en { display: none !important; }
+        body[data-active-lang="de"] .lang-de { display: block !important; }
+        body[data-active-lang="de"] span.lang-de, body[data-active-lang="de"] a.lang-de { display: inline !important; }
+    </style>
+</head>
+
+<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
+
+    <aside class="lg:w-80 flex-shrink-0 bg-[var(--sidebar-color)] border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative shadow-lg transition-colors">
+        
+        <!-- Controls: Language, Theme, Download -->
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
+                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Guide">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+            <i class="fa-solid fa-folder-open text-3xl mb-3 text-[var(--text-color)] opacity-80"></i>
+            <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span class="lang-de">cd Command<br>Referenz</span>
+                <span class="lang-en">cd Command<br>Reference</span>
+            </div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v1.0 - Navigation</div>
+        </div>
+
+        <div class="mb-6 relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
+            </div>
+            <input type="text" id="wikiSearch" placeholder="Search..." class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-xl pl-10 pr-3 py-2.5 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-all shadow-sm" onkeyup="filterWiki()">
+        </div>
+
+        <nav class="text-sm space-y-1.5" id="toc-nav">
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span class="lang-de">Inhaltsverzeichnis</span>
+                <span class="lang-en">Table of Contents</span>
+            </div>
+            
+            <ul class="space-y-1">
+                <li><a href="#intro" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">1. Einführung & Pfade</span><span class="lang-en">1. Intro & Paths</span>
+                </a></li>
+                <li class="pt-2"><a href="#shortcuts" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">2. Wichtige Shortcuts</span><span class="lang-en">2. Essential Shortcuts</span>
+                </a></li>
+                <li class="pt-2"><a href="#spaces" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">3. Leerzeichen im Namen</span><span class="lang-en">3. Spaces & Special Chars</span>
+                </a></li>
+                <li class="pt-2"><a href="#options" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">4. Optionen (-P / -L)</span><span class="lang-en">4. Options (-P / -L)</span>
+                </a></li>
+                <li class="pt-2"><a href="#errors" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">5. Häufige Fehler</span><span class="lang-en">5. Common Errors</span>
+                </a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="flex-grow p-4 lg:p-12 max-w-5xl lg:ml-0" id="main-content">
+        
+        <div class="searchable-block topic-panel mt-0 mb-8">
+            <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0">
+                <span class="lang-de">Linux <code>cd</code> Referenz</span>
+                <span class="lang-en">Linux <code>cd</code> Reference</span>
+            </h1>
+            <p class="text-lg mb-0 text-[var(--text-color)]">
+                <span class="lang-de">Der Befehl <strong><code>cd</code> (change directory)</strong> ist in Unix/Linux-Systemen unerlässlich, um das aktuelle Arbeitsverzeichnis im Terminal zu wechseln. Da <code>cd</code> ein <em>Shell-Builtin</em> ist (und kein externes Programm), ist er extrem schnell. Dieser Guide erklärt Pfade, Shortcuts und den Umgang mit Symlinks.</span>
+                <span class="lang-en">The <strong><code>cd</code> (change directory)</strong> command is essential in Unix/Linux systems for changing the current working directory in the terminal. Because <code>cd</code> is a <em>shell builtin</em> (and not an external program), it is extremely fast. This guide explains paths, shortcuts, and handling symlinks.</span>
+            </p>
+        </div>
+
+        <section id="intro" class="scroll-mt-10 searchable-block topic-panel mt-8">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">1. Einführung: Absolute vs. Relative Pfade</span>
+                <span class="lang-en">1. Introduction: Absolute vs. Relative Paths</span>
+            </h2>
+            
+            <p class="mb-4 text-[var(--text-color)]">
+                <span class="lang-de">Beim Navigieren mit <code>cd</code> können Sie den Zielordner auf zwei Arten angeben.</span>
+                <span class="lang-en">When navigating with <code>cd</code>, you can specify the target folder in two ways.</span>
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="subtopic-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                        <span class="lang-de">Absolute Pfade</span>
+                        <span class="lang-en">Absolute Paths</span>
+                    </h4>
+                    <p class="text-sm text-[var(--text-muted)] mt-2 mb-3">
+                        <span class="lang-de">Beginnen <strong>immer</strong> mit einem Schrägstrich <code>/</code> (Root-Verzeichnis). Der Pfad ist vom aktuellen Standort unabhängig.</span>
+                        <span class="lang-en"><strong>Always</strong> start with a forward slash <code>/</code> (root directory). The path works regardless of your current location.</span>
+                    </p>
+                    <div class="code-container bg-[var(--code-bg)] rounded-lg border border-[var(--border-color)] font-mono text-sm">
+                        <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                        <div class="code-content p-3">cd /var/log/nginx
+cd /etc/ssh</div>
+                    </div>
+                </div>
+                
+                <div class="subtopic-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                        <span class="lang-de">Relative Pfade</span>
+                        <span class="lang-en">Relative Paths</span>
+                    </h4>
+                    <p class="text-sm text-[var(--text-muted)] mt-2 mb-3">
+                        <span class="lang-de">Gehen vom <strong>aktuellen Verzeichnis</strong> aus. Sie beginnen <em>nicht</em> mit einem Schrägstrich.</span>
+                        <span class="lang-en">Start from the <strong>current directory</strong>. They do <em>not</em> start with a forward slash.</span>
+                    </p>
+                    <div class="code-container bg-[var(--code-bg)] rounded-lg border border-[var(--border-color)] font-mono text-sm">
+                        <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                        <div class="code-content p-3">cd Downloads/Music
+cd ../src</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="shortcuts" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">2. Wichtige Shortcuts</span>
+                <span class="lang-en">2. Essential Shortcuts</span>
+            </h2>
+
+            <div class="subtopic-card scroll-mt-10">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th><span class="lang-de">Erklärung</span><span class="lang-en">Explanation</span></th>
+                    </tr>
+                    <tr>
+                        <td class="font-bold text-center font-mono">cd<br><span class="text-xs font-normal text-[var(--text-muted)]">oder / or</span><br>cd ~</td>
+                        <td class="text-[var(--text-muted)]">
+                            <span class="lang-de">Wechselt sofort in das <strong>Home-Verzeichnis</strong> des aktuellen Benutzers (z.B. <code>/home/user</code>).<br><code>cd ~username</code> wechselt in das Home-Verzeichnis eines anderen Benutzers.</span>
+                            <span class="lang-en">Switches immediately to the current user's <strong>home directory</strong> (e.g. <code>/home/user</code>).<br><code>cd ~username</code> switches to another user's home directory.</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-bold text-center font-mono">cd ..</td>
+                        <td class="text-[var(--text-muted)]">
+                            <span class="lang-de">Geht im Verzeichnisbaum <strong>eine Ebene nach oben</strong> in das Elternverzeichnis (Parent Directory). Um zwei Ebenen hochzugehen: <code>cd ../..</code></span>
+                            <span class="lang-en">Moves <strong>one level up</strong> in the directory tree to the parent directory. To move up two levels: <code>cd ../..</code></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-bold text-center font-mono">cd -</td>
+                        <td class="text-[var(--text-muted)]">
+                            <span class="lang-de">Wechselt zurück in das <strong>zuletzt besuchte Verzeichnis</strong> (Previous Directory). Sehr nützlich, um zwischen zwei Ordnern hin- und herzuspringen.</span>
+                            <span class="lang-en">Switches back to the <strong>previously visited directory</strong>. Very useful for jumping back and forth between two folders.</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-bold text-center font-mono">cd /</td>
+                        <td class="text-[var(--text-muted)]">
+                            <span class="lang-de">Wechselt direkt in das <strong>Root-Verzeichnis</strong> (Wurzelverzeichnis), die höchste Ebene im Dateisystem.</span>
+                            <span class="lang-en">Switches directly to the <strong>root directory</strong>, the highest level in the file system hierarchy.</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <section id="spaces" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">3. Leerzeichen & Sonderzeichen im Namen</span>
+                <span class="lang-en">3. Spaces & Special Characters</span>
+            </h2>
+
+            <div class="subtopic-card scroll-mt-10">
+                <p class="text-[var(--text-color)] text-sm mb-4">
+                    <span class="lang-de">Wenn ein Verzeichnis Leerzeichen enthält, liest die Shell jedes Wort als separates Argument. Um dies zu verhindern, müssen Sie den Pfad entweder in Anführungszeichen setzen oder das Leerzeichen <em>escapen</em> (mit einem Backslash).</span>
+                    <span class="lang-en">If a directory contains spaces, the shell reads each word as a separate argument. To prevent this, you must either wrap the path in quotes or <em>escape</em> the space (using a backslash).</span>
+                </p>
+                
+                <h4 class="text-sm font-bold mb-2"><span class="lang-de">Methode 1: Anführungszeichen (Empfohlen)</span><span class="lang-en">Method 1: Quotes (Recommended)</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-6">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-3">cd "My Documents"
+cd 'Backup 2026'</div>
+                </div>
+
+                <h4 class="text-sm font-bold mb-2"><span class="lang-de">Methode 2: Backslash (Escaping)</span><span class="lang-en">Method 2: Backslash (Escaping)</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-6">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-3">cd My\ Documents</div>
+                </div>
+
+                <h4 class="text-sm font-bold mb-2"><span class="lang-de">Verzeichnisse, die mit einem Bindestrich beginnen</span><span class="lang-en">Directories starting with a dash</span></h4>
+                <p class="text-[var(--text-color)] text-sm mb-2">
+                    <span class="lang-de">Wenn ein Ordner <code>-reports</code> heißt, denkt <code>cd</code> fälschlicherweise, <code>-r</code> sei eine Option. Verwenden Sie <code>--</code>, um das Ende der Optionen zu signalisieren:</span>
+                    <span class="lang-en">If a folder is named <code>-reports</code>, <code>cd</code> mistakenly thinks <code>-r</code> is an option. Use <code>--</code> to signal the end of options:</span>
+                </p>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-3">cd -- -reports</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="options" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">4. Optionen (-P vs. -L) und Symlinks</span>
+                <span class="lang-en">4. Options (-P vs. -L) and Symlinks</span>
+            </h2>
+
+            <div class="subtopic-card scroll-mt-10">
+                <p class="text-[var(--text-color)] text-sm mb-4">
+                    <span class="lang-de">Ein symbolischer Link (Symlink) ist eine Verknüpfung, die auf einen anderen Ordner zeigt. Der <code>cd</code>-Befehl geht standardmäßig davon aus, dass Sie den <strong>logischen</strong> Pfad beibehalten wollen.</span>
+                    <span class="lang-en">A symbolic link (symlink) is a shortcut pointing to another folder. By default, the <code>cd</code> command assumes you want to keep the <strong>logical</strong> path.</span>
+                </p>
+                
+                <table class="wikitable text-sm mb-6">
+                    <tr>
+                        <th class="w-1/6">Flag</th>
+                        <th><span class="lang-de">Erklärung</span><span class="lang-en">Explanation</span></th>
+                    </tr>
+                    <tr>
+                        <td class="font-mono font-bold text-center">-L</td>
+                        <td class="text-[var(--text-muted)]">
+                            <span class="lang-de"><strong>Logical (Standard):</strong> Folgt dem Symlink und zeigt den Symlink-Pfad im Prompt an.</span>
+                            <span class="lang-en"><strong>Logical (Default):</strong> Follows the symlink and displays the symlink path in the prompt.</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-mono font-bold text-center">-P</td>
+                        <td class="text-[var(--text-muted)]">
+                            <span class="lang-de"><strong>Physical:</strong> Löst den Symlink auf und wechselt in den physischen (echten) Zielordner.</span>
+                            <span class="lang-en"><strong>Physical:</strong> Resolves the symlink and switches to the physical (actual) target folder.</span>
+                        </td>
+                    </tr>
+                </table>
+
+                <h4 class="text-sm font-bold mb-2"><span class="lang-de">Beispiel:</span><span class="lang-en">Example:</span></h4>
+                <p class="text-[var(--text-color)] text-xs mb-2">
+                    <span class="lang-de">Angenommen, <code>/var/www/html</code> ist ein Link auf <code>/mnt/data/web</code>.</span>
+                    <span class="lang-en">Assuming <code>/var/www/html</code> is a link to <code>/mnt/data/web</code>.</span>
+                </p>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-3">cd -P /var/www/html
+pwd
+# Output: /mnt/data/web</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="errors" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">5. Häufige Fehler</span>
+                <span class="lang-en">5. Common Errors</span>
+            </h2>
+
+            <div class="subtopic-card scroll-mt-10">
+                
+                <div class="mb-5">
+                    <h4 class="text-sm font-bold mb-1 text-red-500">Permission denied</h4>
+                    <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-2">
+                        <div class="code-content p-2">bash: cd: /root: Permission denied</div>
+                    </div>
+                    <p class="text-[var(--text-color)] text-xs">
+                        <span class="lang-de"><strong>Ursache:</strong> Sie haben keine Lese-/Ausführungsrechte für diesen Ordner. Verwenden Sie <code>sudo su</code> oder wechseln Sie zu einem privilegierten Benutzer.</span>
+                        <span class="lang-en"><strong>Cause:</strong> You don't have read/execute permissions for this folder. Use <code>sudo su</code> or switch to a privileged user.</span>
+                    </p>
+                </div>
+
+                <div class="mb-5">
+                    <h4 class="text-sm font-bold mb-1 text-yellow-500">No such file or directory</h4>
+                    <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-2">
+                        <div class="code-content p-2">bash: cd: /invalid/path: No such file or directory</div>
+                    </div>
+                    <p class="text-[var(--text-color)] text-xs">
+                        <span class="lang-de"><strong>Ursache:</strong> Der Ordner existiert nicht oder Sie haben sich vertippt. Denken Sie daran: Linux unterscheidet zwischen Groß- und Kleinschreibung (<code>Dokumente</code> vs. <code>dokumente</code>).</span>
+                        <span class="lang-en"><strong>Cause:</strong> The folder does not exist or there is a typo. Remember: Linux is case-sensitive (<code>Documents</code> vs. <code>documents</code>).</span>
+                    </p>
+                </div>
+
+                <div>
+                    <h4 class="text-sm font-bold mb-1 text-blue-500">Not a directory</h4>
+                    <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-2">
+                        <div class="code-content p-2">bash: cd: /etc/passwd: Not a directory</div>
+                    </div>
+                    <p class="text-[var(--text-color)] text-xs">
+                        <span class="lang-de"><strong>Ursache:</strong> Sie versuchen, in eine <em>Datei</em> zu wechseln. <code>cd</code> funktioniert nur mit Verzeichnissen.</span>
+                        <span class="lang-en"><strong>Cause:</strong> You are trying to cd into a <em>file</em>. <code>cd</code> only works with directories.</span>
+                    </p>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+                    
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                        if(tocLink) tocLink.classList.add('active');
+                    }
+                });
+            }, {
+                rootMargin: '-10% 0px -80% 0px',
+                threshold: [0, 0.1, 1]
+            });
+
+            document.querySelectorAll('section, h3[id]').forEach((section) => {
+                observer.observe(section);
+            });
+        });
+
+        function filterWiki() {
+            const input = document.getElementById('wikiSearch');
+            const filter = input.value.toLowerCase();
+            const blocks = document.querySelectorAll('.searchable-block');
+            const mainContent = document.getElementById('main-content');
+
+            removeHighlights(mainContent);
+
+            if (!filter) {
+                blocks.forEach(block => block.style.display = 'block');
+                return;
+            }
+
+            blocks.forEach(block => {
+                const text = block.innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    block.style.display = 'block';
+                    highlightText(block, input.value);
+                } else {
+                    block.style.display = 'none';
+                }
+            });
+        }
+
+        function highlightText(element, keyword) {
+            if (!keyword) return;
+            const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+
+            let node;
+            while (node = treeWalker.nextNode()) {
+                if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                    if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE' && !node.parentNode.classList.contains('katex')) {
+                        nodesToReplace.push(node);
+                    }
+                }
+            }
+
+            nodesToReplace.forEach(node => {
+                const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+                const fragment = document.createDocumentFragment();
+                let match;
+                let lastIndex = 0;
+                const text = node.nodeValue;
+
+                while ((match = regex.exec(text)) !== null) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    const span = document.createElement('span');
+                    span.className = 'search-match font-semibold';
+                    span.textContent = match[0];
+                    fragment.appendChild(span);
+                    lastIndex = regex.lastIndex;
+                }
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                node.parentNode.replaceChild(fragment, node);
+            });
+        }
+
+        function removeHighlights(element) {
+            const highlights = element.querySelectorAll('.search-match');
+            highlights.forEach(span => {
+                const parent = span.parentNode;
+                parent.replaceChild(document.createTextNode(span.textContent), span);
+                parent.normalize();
+            });
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('light')) {
+                html.classList.remove('light');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        let isGerman = true;
+        function toggleLang() {
+            isGerman = !isGerman;
+            const indicator = document.getElementById('lang-indicator');
+            indicator.textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+        }
+
+        function copyCode(btn) {
+            const container = btn.closest('.code-container');
+            const codeContent = container.querySelector('.code-content').innerText;
+            
+            const textarea = document.createElement('textarea');
+            textarea.value = codeContent;
+            textarea.style.position = 'fixed'; 
+            textarea.style.left = '-9999px';
+            textarea.style.top = '0';
+            document.body.appendChild(textarea);
+            
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+                const icon = btn.querySelector('i');
+                icon.className = 'fa-solid fa-check text-green-500';
+                setTimeout(() => {
+                    icon.className = 'fa-regular fa-copy';
+                }, 2000);
+            } catch (err) {
+                console.error('Copy failed', err);
+            }
+            
+            document.body.removeChild(textarea);
+        }
+
+        function downloadHTML() {
+            removeHighlights(document.getElementById('main-content'));
+            
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'cd_Command_Guide.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal & CLI Referenz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root {
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #202122;
+            --border-color: #54595d;
+            --text-color: #eaecf0;
+            --text-muted: #a8aeb3;
+            --link-color: #99c1f1;
+            --link-hover: #629deb;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --info-box: #2c2d30;
+            --table-alt: rgba(255,255,255,0.02);
+            --search-match: rgba(250, 204, 21, 0.3);
+            --search-text: #ffffff;
+        }
+
+        html.light {
+            --bg-color: #ffffff;
+            --panel-color: #f8f9fa;
+            --sidebar-color: #f8f9fa;
+            --border-color: #a2a9b1;
+            --text-color: #202122;
+            --text-muted: #54595d;
+            --link-color: #3366cc;
+            --link-hover: #0645ad;
+            --heading-color: #000000;
+            --code-bg: #eaecf0;
+            --info-box: #eaf3ff;
+            --table-alt: rgba(0,0,0,0.03);
+            --search-match: rgba(250, 204, 21, 0.5);
+            --search-text: #000000;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 800 !important; }
+        h1 { font-size: 3.5rem !important; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        h2 { font-size: 2.5rem !important; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; margin-top: 2.5rem; margin-bottom: 1rem; }
+        h3 { font-size: 1.85rem !important; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        h4 { font-size: 1.5rem !important; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+        p { margin-bottom: 1rem; }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--text-color);
+        }
+
+        /* Wiki-style Tables */
+        .wikitable {
+            width: 100%; border-collapse: collapse; margin: 1em 0;
+            background-color: var(--panel-color); font-size: 0.9em;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .wikitable th, .wikitable td {
+            border: 1px solid var(--border-color); padding: 0.6em 0.8em;
+            text-align: left; vertical-align: top;
+        }
+        .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); }
+        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
+
+        /* Wiki-style Infobox */
+        .infobox {
+            float: right; width: 320px; margin: 0.5em 0 1em 1.5em;
+            background-color: var(--panel-color); border: 1px solid var(--border-color);
+            padding: 0.5em; font-size: 0.85em;
+        }
+        .infobox th { background-color: var(--info-box); text-align: left; padding: 0.4em 0.6em; width: 35%; color: var(--heading-color); }
+        .infobox td { padding: 0.4em 0.6em; }
+        .infobox-title {
+            text-align: center; font-size: 1.1em; font-weight: bold;
+            background-color: var(--info-box); padding: 0.6em; margin-bottom: 0.5em;
+            border-bottom: 1px solid var(--border-color); color: var(--heading-color);
+        }
+
+        /* TOC Styles */
+        .toc-link.active { font-weight: 600; color: var(--heading-color); position: relative; }
+        .toc-link.active::before {
+            content: ''; position: absolute; left: -1rem; top: 0; height: 100%;
+            width: 3px; background-color: var(--link-color);
+        }
+
+        /* Sidebar scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
+
+        @media (max-width: 1024px) {
+            .infobox { float: none; width: 100%; margin: 1em 0; }
+        }
+
+        [data-lang-de], [data-lang-en] { transition: opacity 0.15s ease-in-out; }
+    </style>
+</head>
+<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
+
+    <aside class="lg:w-72 flex-shrink-0 bg-[var(--sidebar-color)] border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
+        
+        <!-- Controls: Language, Theme, Download -->
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded border border-[var(--border-color)]">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--bg-color)] py-1 rounded text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent hover:border-[var(--border-color)]" title="Toggle Language">
+                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--bg-color)] py-1 rounded text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent hover:border-[var(--border-color)]" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--bg-color)] py-1 rounded text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent hover:border-[var(--border-color)]" title="Download Cheatsheet">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+            <i class="fa-solid fa-terminal text-3xl mb-3 text-[var(--text-color)] opacity-80"></i>
+            <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span data-lang-de>Terminal-<br>Referenz</span>
+                <span data-lang-en style="display:none;">Terminal<br>Cheatsheet</span>
+            </div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">Umschulung FISI Edition</div>
+        </div>
+
+        <div class="mb-6 relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
+            </div>
+            <input type="text" id="wikiSearch" placeholder="Search..." class="w-full bg-[var(--bg-color)] border border-[var(--border-color)] rounded pl-9 pr-3 py-2 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-colors shadow-inner" onkeyup="filterWiki()">
+        </div>
+
+        <nav class="text-sm space-y-1.5" id="toc-nav">
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span data-lang-de>Inhaltsverzeichnis</span>
+                <span data-lang-en style="display:none;">Table of Contents</span>
+            </div>
+            
+            <ul class="space-y-1">
+                <li><a href="#filesystem" class="toc-link block py-1 text-[var(--link-color)] hover:underline font-medium"><span data-lang-de>1. Dateisystem & Navigation</span><span data-lang-en style="display:none;">1. Filesystem & Navigation</span></a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#fs-list" class="toc-link block py-0.5 text-[var(--text-muted)] hover:text-[var(--link-color)]"><span data-lang-de>1.1 Auflisten & Pfade</span><span data-lang-en style="display:none;">1.1 Listing & Paths</span></a></li>
+                        <li><a href="#fs-manage" class="toc-link block py-0.5 text-[var(--text-muted)] hover:text-[var(--link-color)]"><span data-lang-de>1.2 Erstellen, Kopieren & Löschen</span><span data-lang-en style="display:none;">1.2 Create, Copy & Delete</span></a></li>
+                        <li><a href="#fs-search" class="toc-link block py-0.5 text-[var(--text-muted)] hover:text-[var(--link-color)]"><span data-lang-de>1.3 Suchen & Finden</span><span data-lang-en style="display:none;">1.3 Search & Find</span></a></li>
+                    </ul>
+                </li>
+                <li class="pt-2"><a href="#process" class="toc-link block py-1 text-[var(--link-color)] hover:underline font-medium">
+                    <span data-lang-de>2. Prozesse & System</span><span data-lang-en style="display:none;">2. Processes & System</span>
+                </a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#proc-monitor" class="toc-link block py-0.5 text-[var(--text-muted)] hover:text-[var(--link-color)]"><span data-lang-de>2.1 Überwachung & Hardware</span><span data-lang-en style="display:none;">2.1 Monitoring & Hardware</span></a></li>
+                        <li><a href="#proc-kill" class="toc-link block py-0.5 text-[var(--text-muted)] hover:text-[var(--link-color)]"><span data-lang-de>2.2 Steuerung & Beenden</span><span data-lang-en style="display:none;">2.2 Control & Termination</span></a></li>
+                        <li><a href="#proc-service" class="toc-link block py-0.5 text-[var(--text-muted)] hover:text-[var(--link-color)]"><span data-lang-de>2.3 Dienste & daemons</span><span data-lang-en style="display:none;">2.3 Services & Daemons</span></a></li>
+                    </ul>
+                </li>
+                <li class="pt-2"><a href="#permissions" class="toc-link block py-1 text-[var(--link-color)] hover:underline font-medium"><span data-lang-de>3. Rechte & Benutzer</span><span data-lang-en style="display:none;">3. Permissions & Users</span></a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#perm-chmod" class="toc-link block py-0.5 text-[var(--text-muted)] hover:text-[var(--link-color)]"><span data-lang-de>3.1 Linux Chmod Oktal</span><span data-lang-en style="display:none;">3.1 Linux Chmod Octal</span></a></li>
+                        <li><a href="#perm-users" class="toc-link block py-0.5 text-[var(--text-muted)] hover:text-[var(--link-color)]"><span data-lang-de>3.2 Benutzer- & Gruppenverwaltung</span><span data-lang-en style="display:none;">3.2 User & Group Management</span></a></li>
+                    </ul>
+                </li>
+                <li class="pt-2"><a href="#networking" class="toc-link block py-1 text-[var(--link-color)] hover:underline font-medium"><span data-lang-de>4. Netzwerk & Diagnose</span><span data-lang-en style="display:none;">4. Network & Diagnostics</span></a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#net-config" class="toc-link block py-0.5 text-[var(--text-muted)] hover:text-[var(--link-color)]"><span data-lang-de>4.1 Konfiguration & IP</span><span data-lang-en style="display:none;">4.1 Configuration & IP</span></a></li>
+                        <li><a href="#net-tools" class="toc-link block py-0.5 text-[var(--text-muted)] hover:text-[var(--link-color)]"><span data-lang-de>4.2 Diagnose & Ports</span><span data-lang-en style="display:none;">4.2 Diagnostics & Ports</span></a></li>
+                    </ul>
+                </li>
+                <li class="pt-2"><a href="#storage" class="toc-link block py-1 text-[var(--link-color)] hover:underline font-medium"><span data-lang-de>5. Speicher & Pakete</span><span data-lang-en style="display:none;">5. Storage & Packages</span></a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#disk-mgmt" class="toc-link block py-0.5 text-[var(--text-muted)] hover:text-[var(--link-color)]"><span data-lang-de>5.1 Datenträger & Mounts</span><span data-lang-en style="display:none;">5.1 Disks & Mounts</span></a></li>
+                        <li><a href="#pkg-mgmt" class="toc-link block py-0.5 text-[var(--text-muted)] hover:text-[var(--link-color)]"><span data-lang-de>5.2 Paketmanagement</span><span data-lang-en style="display:none;">5.2 Package Management</span></a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="flex-grow p-6 lg:p-12 max-w-5xl lg:ml-0" id="main-content">
+        
+        <div class="searchable-block">
+            <h1 id="top"><span data-lang-de>Terminal & CLI Referenz für FISI</span><span data-lang-en style="display:none;">Terminal & CLI Reference for FISI</span></h1>
+            <p class="text-lg" data-lang-de>Umfassendes Kompendium wichtiger Terminal-Befehle für die Umschulung zum <strong>Fachinformatiker für Systemintegration (FISI)</strong>. Beinhaltet essenzielle Linux-Befehle (Bash) sowie Windows-Befehle (CMD und PowerShell) für Administration, Fehlerbehebung und Systemkonfiguration.</p>
+            
+            <p class="text-lg" data-lang-en style="display:none;">Comprehensive compendium of essential terminal commands for IT System Integration training. Includes key Linux commands (Bash) and Windows commands (CMD and PowerShell) for administration, troubleshooting, and system configuration.</p>
+        </div>
+
+        <hr class="border-[var(--border-color)] my-8">
+
+        <!-- SECTION 1: FILESYSTEM -->
+        <section id="filesystem" class="scroll-mt-10 searchable-block">
+            <h2>
+                <span data-lang-de>1. Dateisystem & Navigation</span>
+                <span data-lang-en style="display:none;">1. Filesystem & Navigation</span>
+            </h2>
+            
+            <p data-lang-de>Die Navigation durch Verzeichnisse, Dateimanipulation und die präzise Handhabung von Pfaden bilden das Fundament jeder Systemadministration.</p>
+            <p data-lang-en style="display:none;">Navigating directories, manipulating files, and precise path handling form the foundation of system administration.</p>
+
+            <h3 id="fs-list" class="scroll-mt-10">
+                <span data-lang-de>1.1 Auflisten & Pfade</span>
+                <span data-lang-en style="display:none;">1.1 Listing & Paths</span>
+            </h3>
+
+            <div class="infobox">
+                <div class="infobox-title"><span data-lang-de>Tastaturkürzel CLI</span><span data-lang-en style="display:none;">CLI Keyboard Shortcuts</span></div>
+                <table style="width: 100%;">
+                    <tr><th>Tab</th><td><span data-lang-de>Autovervollständigung</span><span data-lang-en style="display:none;">Auto-completion</span></td></tr>
+                    <tr><th>Ctrl + C</th><td><span data-lang-de>Prozess abbrechen</span><span data-lang-en style="display:none;">Cancel process</span></td></tr>
+                    <tr><th>Ctrl + L</th><td><span data-lang-de>Bildschirm leeren</span><span data-lang-en style="display:none;">Clear screen</span></td></tr>
+                    <tr><th>Up / Down</th><td><span data-lang-de>Befehlshistorie</span><span data-lang-en style="display:none;">Command history</span></td></tr>
+                </table>
+            </div>
+
+            <table class="wikitable">
+                <tr>
+                    <th class="w-1/4"><span data-lang-de>Aktion</span><span data-lang-en style="display:none;">Action</span></th>
+                    <th class="w-1/3">Linux (Bash)</th>
+                    <th>Windows (PowerShell / CMD)</th>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Aktuelles Verzeichnis</span><span data-lang-en style="display:none;">Current Directory</span></strong></td>
+                    <td><code>pwd</code></td>
+                    <td><code>pwd</code> (PS) / <code>cd</code> (CMD)</td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Inhalt auflisten (Standard)</span><span data-lang-en style="display:none;">List Contents</span></strong></td>
+                    <td><code>ls</code></td>
+                    <td><code>Get-ChildItem</code> (Alias: <code>ls</code> / <code>dir</code>)</td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Inhalt (inkl. versteckt, lang)</span><span data-lang-en style="display:none;">List (hidden, long format)</span></strong></td>
+                    <td><code>ls -la</code></td>
+                    <td><code>Get-ChildItem -Force</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Verzeichnis wechseln</span><span data-lang-en style="display:none;">Change Directory</span></strong></td>
+                    <td><code>cd /path/to/dir</code></td>
+                    <td><code>cd C:\path\to\dir</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Ein Verzeichnis hoch</span><span data-lang-en style="display:none;">Parent Directory</span></strong></td>
+                    <td><code>cd ..</code></td>
+                    <td><code>cd ..</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Zum Home-Verzeichnis</span><span data-lang-en style="display:none;">To Home Directory</span></strong></td>
+                    <td><code>cd ~</code></td>
+                    <td><code>cd ~</code> (PS) / <code>cd %USERPROFILE%</code></td>
+                </tr>
+            </table>
+
+            <h3 id="fs-manage" class="scroll-mt-10">
+                <span data-lang-de>1.2 Erstellen, Kopieren & Löschen</span>
+                <span data-lang-en style="display:none;">1.2 Create, Copy & Delete</span>
+            </h3>
+            <table class="wikitable">
+                <tr><th class="w-1/4"><span data-lang-de>Aktion</span><span data-lang-en style="display:none;">Action</span></th><th class="w-1/3">Linux (Bash)</th><th>Windows (PowerShell / CMD)</th></tr>
+                <tr>
+                    <td><strong><span data-lang-de>Ordner erstellen (inkl. Eltern)</span><span data-lang-en style="display:none;">Create Folder</span></strong></td>
+                    <td><code>mkdir -p /path/to/folder</code></td>
+                    <td><code>New-Item -ItemType Directory -Path "C:\folder"</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Leere Datei erstellen</span><span data-lang-en style="display:none;">Create File</span></strong></td>
+                    <td><code>touch filename.txt</code></td>
+                    <td><code>New-Item filename.txt -ItemType File</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Datei kopieren</span><span data-lang-en style="display:none;">Copy File</span></strong></td>
+                    <td><code>cp source.txt dest.txt</code></td>
+                    <td><code>Copy-Item source.txt dest.txt</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Ordner rekursiv kopieren</span><span data-lang-en style="display:none;">Copy Folder Recursively</span></strong></td>
+                    <td><code>cp -r /src/dir /dest/dir</code></td>
+                    <td><code>Copy-Item C:\src C:\dest -Recurse</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Verschieben / Umbenennen</span><span data-lang-en style="display:none;">Move / Rename</span></strong></td>
+                    <td><code>mv old.txt new.txt</code></td>
+                    <td><code>Move-Item old.txt new.txt</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Datei löschen</span><span data-lang-en style="display:none;">Delete File</span></strong></td>
+                    <td><code>rm file.txt</code></td>
+                    <td><code>Remove-Item file.txt</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Ordner rekursiv erzwingen</span><span data-lang-en style="display:none;">Force Delete Recursive</span></strong></td>
+                    <td><code>rm -rf /path/to/dir</code></td>
+                    <td><code>Remove-Item path -Recurse -Force</code></td>
+                </tr>
+            </table>
+
+            <h3 id="fs-search" class="scroll-mt-10">
+                <span data-lang-de>1.3 Suchen & Finden</span>
+                <span data-lang-en style="display:none;">1.3 Search & Find</span>
+            </h3>
+            <table class="wikitable">
+                <tr><th class="w-1/4"><span data-lang-de>Aktion</span><span data-lang-en style="display:none;">Action</span></th><th class="w-1/3">Linux (Bash)</th><th>Windows (PowerShell / CMD)</th></tr>
+                <tr>
+                    <td><strong><span data-lang-de>Dateien nach Name suchen</span><span data-lang-en style="display:none;">Search File by Name</span></strong></td>
+                    <td><code>find /var/log -name "*.log"</code></td>
+                    <td><code>Get-ChildItem -Path C:\ -Filter "*.log" -Recurse</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Text in Dateien suchen</span><span data-lang-en style="display:none;">Search Text in Files</span></strong></td>
+                    <td><code>grep -rn "error" /var/log/</code></td>
+                    <td><code>Select-String -Path "C:\logs\*.log" -Pattern "error"</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Pfad eines Befehls finden</span><span data-lang-en style="display:none;">Locate Command Path</span></strong></td>
+                    <td><code>which nginx</code> / <code>whereis ssh</code></td>
+                    <td><code>Get-Command ssh</code> (PS) / <code>where ssh</code> (CMD)</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- SECTION 2: PROCESSES & SYSTEM -->
+        <section id="process" class="scroll-mt-10 searchable-block mt-12">
+            <h2>
+                <span data-lang-de>2. Prozesse & Systemüberwachung</span>
+                <span data-lang-en style="display:none;">2. Processes & System Monitoring</span>
+            </h2>
+            
+            <p data-lang-de>Fehlerbehebung erfordert detaillierte Einblicke in Systemressourcen, CPU-/RAM-Auslastung sowie das gezielte Steuern von Hintergrundprozessen und Diensten.</p>
+            <p data-lang-en style="display:none;">Troubleshooting requires detailed insights into system resources, CPU/RAM utilization, and the precise control of background processes and services.</p>
+
+            <h3 id="proc-monitor" class="scroll-mt-10">
+                <span data-lang-de>2.1 Überwachung & Hardware</span>
+                <span data-lang-en style="display:none;">2.1 Monitoring & Hardware</span>
+            </h3>
+            <table class="wikitable">
+                <tr><th class="w-1/4"><span data-lang-de>Aktion</span><span data-lang-en style="display:none;">Action</span></th><th class="w-1/3">Linux (Bash)</th><th>Windows (PowerShell / CMD)</th></tr>
+                <tr>
+                    <td><strong><span data-lang-de>Laufende Prozesse anzeigen</span><span data-lang-en style="display:none;">List Running Processes</span></strong></td>
+                    <td><code>ps aux</code> / <code>top</code> / <code>htop</code></td>
+                    <td><code>Get-Process</code> (Alias: <code>gps</code>)</td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Speicherauslastung (RAM/Swap)</span><span data-lang-en style="display:none;">Memory Usage</span></strong></td>
+                    <td><code>free -h</code></td>
+                    <td><code>Get-CimInstance Win32_OperatingSystem | Select FreePhysicalMemory, TotalVisibleMemorySize</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Festplattenspeicher (df)</span><span data-lang-en style="display:none;">Disk Space</span></strong></td>
+                    <td><code>df -h</code></td>
+                    <td><code>Get-PSDrive -PSProvider FileSystem</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>System-Uptime / Last</span><span data-lang-en style="display:none;">System Uptime / Load</span></strong></td>
+                    <td><code>uptime</code></td>
+                    <td><code>systeminfo</code> (CMD)</td>
+                </tr>
+            </table>
+
+            <h3 id="proc-kill" class="scroll-mt-10">
+                <span data-lang-de>2.2 Steuerung & Beenden</span>
+                <span data-lang-en style="display:none;">2.2 Control & Termination</span>
+            </h3>
+            <table class="wikitable">
+                <tr><th class="w-1/4"><span data-lang-de>Aktion</span><span data-lang-en style="display:none;">Action</span></th><th class="w-1/3">Linux (Bash)</th><th>Windows (PowerShell / CMD)</th></tr>
+                <tr>
+                    <td><strong><span data-lang-de>Prozess nach PID beenden</span><span data-lang-en style="display:none;">Kill Process by PID</span></strong></td>
+                    <td><code>kill 1234</code> (Erzwungen: <code>kill -9 1234</code>)</td>
+                    <td><code>Stop-Process -Id 1234</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Prozess nach Name beenden</span><span data-lang-en style="display:none;">Kill Process by Name</span></strong></td>
+                    <td><code>killall apache2</code></td>
+                    <td><code>Stop-Process -Name "notepad" -Force</code> (CMD: <code>taskkill /f /im notepad.exe</code>)</td>
+                </tr>
+            </table>
+
+            <h3 id="proc-service" class="scroll-mt-10">
+                <span data-lang-de>2.3 Dienste & Daemons</span>
+                <span data-lang-en style="display:none;">2.3 Services & Daemons</span>
+            </h3>
+            <table class="wikitable">
+                <tr><th class="w-1/4"><span data-lang-de>Aktion</span><span data-lang-en style="display:none;">Action</span></th><th class="w-1/3">Linux (Systemd)</th><th>Windows (PowerShell)</th></tr>
+                <tr>
+                    <td><strong><span data-lang-de>Dienststatus prüfen</span><span data-lang-en style="display:none;">Check Service Status</span></strong></td>
+                    <td><code>systemctl status sshd</code></td>
+                    <td><code>Get-Service wuauserv</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Dienst starten</span><span data-lang-en style="display:none;">Start Service</span></strong></td>
+                    <td><code>systemctl start nginx</code></td>
+                    <td><code>Start-Service wuauserv</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Dienst stoppen</span><span data-lang-en style="display:none;">Stop Service</span></strong></td>
+                    <td><code>systemctl stop nginx</code></td>
+                    <td><code>Stop-Service wuauserv</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Dienst neustarten</span><span data-lang-en style="display:none;">Restart Service</span></strong></td>
+                    <td><code>systemctl restart networking</code></td>
+                    <td><code>Restart-Service wuauserv</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Autostart aktivieren</span><span data-lang-en style="display:none;">Enable Autostart</span></strong></td>
+                    <td><code>systemctl enable docker</code></td>
+                    <td><code>Set-Service wuauserv -StartupType Automatic</code></td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- SECTION 3: PERMISSIONS & USERS -->
+        <section id="permissions" class="scroll-mt-10 searchable-block mt-12">
+            <h2>
+                <span data-lang-de>3. Rechte & Benutzer</span>
+                <span data-lang-en style="display:none;">3. Permissions & Users</span>
+            </h2>
+            <p class="lang-de">In Linux-Systemen werden Dateirechte strikt nach dem Owner-Group-Others (UGO) Modell geregelt. Die Benutzerverwaltung erfolgt über zentrale Systemdateien und Befehle.</p>
+            <p class="lang-en hidden">In Linux systems, file permissions are strictly governed by the Owner-Group-Others (UGO) model. User management is handled through central system files and CLI utilities.</p>
+
+            <h3 id="perm-chmod" class="scroll-mt-10">
+                <span data-lang-de>3.1 Linux Chmod Oktal-Tabelle</span>
+                <span data-lang-en style="display:none;">3.1 Linux Chmod Octal Table</span>
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 text-sm">
+                <div class="bg-[var(--panel-color)] p-4 border border-[var(--border-color)] rounded">
+                    <h4 class="mt-0 text-[var(--link-color)]">4 = Read (r)</h4>
+                    <p class="text-[var(--text-muted)] mb-0" data-lang-de>Berechtigung zum Lesen des Inhalts.</p>
+                    <p class="text-[var(--text-muted)] mb-0" data-lang-en style="display:none;">Permission to read file contents.</p>
+                </div>
+                <div class="bg-[var(--panel-color)] p-4 border border-[var(--border-color)] rounded">
+                    <h4 class="mt-0 text-[var(--link-color)]">2 = Write (w)</h4>
+                    <p class="text-[var(--text-muted)] mb-0" data-lang-de>Berechtigung zum Schreiben / Ändern.</p>
+                    <p class="text-[var(--text-muted)] mb-0" data-lang-en style="display:none;">Permission to write / modify.</p>
+                </div>
+                <div class="bg-[var(--panel-color)] p-4 border border-[var(--border-color)] rounded">
+                    <h4 class="mt-0 text-[var(--link-color)]">1 = Execute (x)</h4>
+                    <p class="text-[var(--text-muted)] mb-0" data-lang-de>Berechtigung zum Ausführen als Programm.</p>
+                    <p class="text-[var(--text-muted)] mb-0" data-lang-en style="display:none;">Permission to execute as a program.</p>
+                </div>
+                <div class="bg-[var(--panel-color)] p-4 border border-[var(--border-color)] rounded">
+                    <h4 class="mt-0 text-[var(--link-color)]">0 = None (-)</h4>
+                    <p class="text-[var(--text-muted)] mb-0" data-lang-de>Keinerlei Berechtigungen.</p>
+                    <p class="text-[var(--text-muted)] mb-0" data-lang-en style="display:none;">No permissions granted.</p>
+                </div>
+            </div>
+
+            <table class="wikitable">
+                <tr><th><span data-lang-de>Kommando / Beispiel</span><span data-lang-en style="display:none;">Command / Example</span></th><th><span data-lang-de>Beschreibung</span><span data-lang-en style="display:none;">Description</span></th></tr>
+                <tr>
+                    <td><code>chmod 755 script.sh</code></td>
+                    <td class="text-[var(--text-muted)]"><span data-lang-de>Owner hat rwx (7), Gruppe und andere haben r-x (5). Standard für ausführbare Skripte.</span><span data-lang-en style="display:none;">Owner gets rwx (7), group and others get r-x (5). Standard for executable scripts.</span></td>
+                </tr>
+                <tr>
+                    <td><code>chmod 600 id_rsa</code></td>
+                    <td class="text-[var(--text-muted)]"><span data-lang-de>Nur der Besitzer darf lesen und schreiben (z.B. essenziell für SSH Private Keys).</span><span data-lang-en style="display:none;">Only owner can read/write (essential security for SSH private keys).</span></td>
+                </tr>
+                <tr>
+                    <td><code>chmod -R 750 /var/www</code></td>
+                    <td class="text-[var(--text-muted)]"><span data-lang-de>Rekursive Rechtevergabe für Verzeichnisse und Dateien.</span><span data-lang-en style="display:none;">Recursive permission assignment across directories and files.</span></td>
+                </tr>
+                <tr>
+                    <td><code>chown -R user:group /dir</code></td>
+                    <td class="text-[var(--text-muted)]"><span data-lang-de>Ändert den Besitzer (User) und die Gruppe einer Datei oder eines Ordners rekursiv.</span><span data-lang-en style="display:none;">Recursively changes the user owner and group of a file or folder.</span></td>
+                </tr>
+            </table>
+
+            <h3 id="perm-users" class="scroll-mt-10">
+                <span data-lang-de>3.2 Benutzer- & Gruppenverwaltung</span>
+                <span data-lang-en style="display:none;">3.2 User & Group Management</span>
+            </h3>
+            <table class="wikitable">
+                <tr><th class="w-1/4"><span data-lang-de>Aktion</span><span data-lang-en style="display:none;">Action</span></th><th class="w-1/3">Linux (Bash)</th><th>Windows (PowerShell)</th></tr>
+                <tr>
+                    <td><strong><span data-lang-de>Benutzer hinzufügen</span><span data-lang-en style="display:none;">Add User</span></strong></td>
+                    <td><code>useradd -m -s /bin/bash username</code></td>
+                    <td><code>New-LocalUser -Name "username" -Password (ConvertTo-SecureString "Pass123!" -AsPlainText -Force)</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Passwort ändern</span><span data-lang-en style="display:none;">Change Password</span></strong></td>
+                    <td><code>passwd username</code></td>
+                    <td><code>Set-LocalUser -Name "username" -Password (ConvertTo-SecureString "NewPass!" -AsPlainText -Force)</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Benutzer zu Gruppe hinzufügen</span><span data-lang-en style="display:none;">Add User to Group</span></strong></td>
+                    <td><code>usermod -aG sudo username</code></td>
+                    <td><code>Add-LocalGroupMember -Group "Administrators" -Member "username"</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Benutzer löschen</span><span data-lang-en style="display:none;">Delete User</span></strong></td>
+                    <td><code>userdel -r username</code></td>
+                    <td><code>Remove-LocalUser -Name "username"</code></td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- SECTION 4: NETWORKING -->
+        <section id="networking" class="scroll-mt-10 searchable-block mt-12">
+            <h2>
+                <span data-lang-de>4. Netzwerk & Diagnose</span>
+                <span data-lang-en style="display:none;">4. Network & Diagnostics</span>
+            </h2>
+            
+            <h3 id="net-config" class="scroll-mt-10">
+                <span data-lang-de>4.1 Konfiguration & IP</span>
+                <span data-lang-en style="display:none;">4.1 Configuration & IP</span>
+            </h3>
+            <table class="wikitable">
+                <tr><th class="w-1/4"><span data-lang-de>Zweck</span><span data-lang-en style="display:none;">Purpose</span></th><th class="w-1/3">Linux (Bash)</th><th>Windows (PowerShell / CMD)</th></tr>
+                <tr>
+                    <td><strong><span data-lang-de>IP-Konfiguration anzeigen</span><span data-lang-en style="display:none;">Show IP Configuration</span></strong></td>
+                    <td><code>ip a</code> / <code>ifconfig</code></td>
+                    <td><code>ipconfig /all</code> / <code>Get-NetIPAddress</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Routing-Tabelle anzeigen</span><span data-lang-en style="display:none;">Show Routing Table</span></strong></td>
+                    <td><code>ip route show</code></td>
+                    <td><code>route print</code> / <code>Get-NetRoute</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>DNS-Cache leeren</span><span data-lang-en style="display:none;">Flush DNS Cache</span></strong></td>
+                    <td><code>resolvectl flush-caches</code></td>
+                    <td><code>ipconfig /flushdns</code> / <code>Clear-DnsClientCache</code></td>
+                </tr>
+            </table>
+
+            <h3 id="net-tools" class="scroll-mt-10">
+                <span data-lang-de>4.2 Diagnose & Ports</span>
+                <span data-lang-en style="display:none;">4.2 Diagnostics & Ports</span>
+            </h3>
+            <table class="wikitable">
+                <tr><th class="w-1/4"><span data-lang-de>Zweck</span><span data-lang-en style="display:none;">Purpose</span></th><th class="w-1/3">Linux (Bash)</th><th>Windows (PowerShell / CMD)</th></tr>
+                <tr>
+                    <td><strong>Ping (ICMP Test)</strong></td>
+                    <td><code>ping -c 4 8.8.8.8</code></td>
+                    <td><code>ping 8.8.8.8</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Traceroute (Wegverfolgung)</strong></td>
+                    <td><code>traceroute google.com</code></td>
+                    <td><code>tracert google.com</code></td>
+                </tr>
+                <tr>
+                    <td><strong>DNS-Abfrage (Lookup)</strong></td>
+                    <td><code>dig heise.de</code> / <code>nslookup heise.de</code></td>
+                    <td><code>nslookup heise.de</code> / <code>Resolve-DnsName heise.de</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Aktive Sockets / Ports</strong></td>
+                    <td><code>ss -tulpn</code> / <code>netstat -tulnp</code></td>
+                    <td><code>netstat -ano</code> / <code>Get-NetTCPConnection</code></td>
+                </tr>
+                <tr>
+                    <td><strong>TCP-Port Verbindungstest</strong></td>
+                    <td><code>nc -vz 192.168.1.1 443</code></td>
+                    <td><code>Test-NetConnection 192.168.1.1 -Port 443</code></td>
+                </tr>
+                <tr>
+                    <td><strong>ARP-Tabelle einsehen</strong></td>
+                    <td><code>ip neigh</code> / <code>arp -a</code></td>
+                    <td><code>arp -a</code> / <code>Get-NetNeighbor</code></td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- SECTION 5: STORAGE & PACKAGES -->
+        <section id="storage" class="scroll-mt-10 searchable-block mt-12 mb-20">
+            <h2>
+                <span data-lang-de>5. Speicher & Paketmanagement</span>
+                <span data-lang-en style="display:none;">5. Storage & Package Management</span>
+            </h2>
+            
+            <h3 id="disk-mgmt" class="scroll-mt-10">
+                <span data-lang-de>5.1 Datenträger & Mounts</span>
+                <span data-lang-en style="display:none;">5.1 Disks & Mounts</span>
+            </h3>
+            <table class="wikitable">
+                <tr><th class="w-1/4"><span data-lang-de>Aktion</span><span data-lang-en style="display:none;">Action</span></th><th class="w-1/3">Linux (Bash)</th><th>Windows (PowerShell)</th></tr>
+                <tr>
+                    <td><strong><span data-lang-de>Festplatten & Partitionen auflisten</span><span data-lang-en style="display:none;">List Disks & Partitions</span></strong></td>
+                    <td><code>lsblk</code> / <code>fdisk -l</code></td>
+                    <td><code>Get-Disk</code> / <code>Get-Partition</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Einhängepunkte (Mounts) anzeigen</span><span data-lang-en style="display:none;">Show Mounts</span></strong></td>
+                    <td><code>mount</code> / <code>findmnt</code></td>
+                    <td><code>Get-Volume</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Dateisystem manuell mounten</span><span data-lang-en style="display:none;">Mount Filesystem</span></strong></td>
+                    <td><code>mount /dev/sdb1 /mnt/data</code></td>
+                    <td><code>Mount-DiskImage -ImagePath "C:\iso\file.iso"</code></td>
+                </tr>
+            </table>
+
+            <h3 id="pkg-mgmt" class="scroll-mt-10">
+                <span data-lang-de>5.2 Paketmanagement</span>
+                <span data-lang-en style="display:none;">5.2 Package Management</span>
+            </h3>
+            <table class="wikitable">
+                <tr><th class="w-1/4"><span data-lang-de>Aktion</span><span data-lang-en style="display:none;">Action</span></th><th>Linux (APT / Debian / Ubuntu)</th><th>Linux (YUM / DNF / RHEL / Rocky)</th></tr>
+                <tr>
+                    <td><strong><span data-lang-de>Paketquellen aktualisieren</span><span data-lang-en style="display:none;">Update Repositories</span></strong></td>
+                    <td><code>apt update</code></td>
+                    <td><code>dnf check-update</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Pakete aktualisieren</span><span data-lang-en style="display:none;">Upgrade Packages</span></strong></td>
+                    <td><code>apt upgrade -y</code></td>
+                    <td><code>dnf upgrade -y</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Paket installieren</span><span data-lang-en style="display:none;">Install Package</span></strong></td>
+                    <td><code>apt install curl git -y</code></td>
+                    <td><code>dnf install curl git -y</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Paket deinstallieren</span><span data-lang-en style="display:none;">Remove Package</span></strong></td>
+                    <td><code>apt remove apache2 --purge</code></td>
+                    <td><code>dnf remove httpd</code></td>
+                </tr>
+                <tr>
+                    <td><strong><span data-lang-de>Nach Paket suchen</span><span data-lang-en style="display:none;">Search Package</span></strong></td>
+                    <td><code>apt search nginx</code></td>
+                    <td><code>dnf search nginx</code></td>
+                </tr>
+            </table>
+        </section>
+
+    </main>
+
+    <script>
+        // Smooth scrolling active state update for TOC
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+                    
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                        if(tocLink) tocLink.classList.add('active');
+                    }
+                });
+            }, {
+                rootMargin: '-10% 0px -80% 0px',
+                threshold: [0, 0.1, 1]
+            });
+
+            document.querySelectorAll('section, h3[id]').forEach((section) => {
+                observer.observe(section);
+            });
+        });
+
+        // Search logic
+        function filterWiki() {
+            const input = document.getElementById('wikiSearch');
+            const filter = input.value.toLowerCase();
+            const blocks = document.querySelectorAll('.searchable-block');
+            const mainContent = document.getElementById('main-content');
+
+            removeHighlights(mainContent);
+
+            if (!filter) {
+                blocks.forEach(block => block.style.display = 'block');
+                return;
+            }
+
+            blocks.forEach(block => {
+                const text = block.innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    block.style.display = 'block';
+                    highlightText(block, input.value);
+                } else {
+                    block.style.display = 'none';
+                }
+            });
+        }
+
+        function highlightText(element, keyword) {
+            if (!keyword) return;
+            const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+
+            let node;
+            while (node = treeWalker.nextNode()) {
+                if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                    if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE') {
+                        nodesToReplace.push(node);
+                    }
+                }
+            }
+
+            nodesToReplace.forEach(node => {
+                const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+                const fragment = document.createDocumentFragment();
+                let match;
+                let lastIndex = 0;
+                const text = node.nodeValue;
+
+                while ((match = regex.exec(text)) !== null) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    const span = document.createElement('span');
+                    span.className = 'search-match font-semibold';
+                    span.textContent = match[0];
+                    fragment.appendChild(span);
+                    lastIndex = regex.lastIndex;
+                }
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                node.parentNode.replaceChild(fragment, node);
+            });
+        }
+
+        function removeHighlights(element) {
+            const highlights = element.querySelectorAll('.search-match');
+            highlights.forEach(span => {
+                const parent = span.parentNode;
+                parent.replaceChild(document.createTextNode(span.textContent), span);
+                parent.normalize();
+            });
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('light')) {
+                html.classList.remove('light');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        // Global Language Toggle
+        let isGerman = true;
+        function toggleLang() {
+            isGerman = !isGerman;
+            const indicator = document.getElementById('lang-indicator');
+            indicator.textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+
+            const deEls = document.querySelectorAll('[data-lang-de]');
+            const enEls = document.querySelectorAll('[data-lang-en]');
+
+            if (isGerman) {
+                deEls.forEach(el => el.style.display = '');
+                enEls.forEach(el => el.style.display = 'none');
+            } else {
+                deEls.forEach(el => el.style.display = 'none');
+                enEls.forEach(el => el.style.display = '');
+            }
+        }
+
+        // Download HTML
+        function downloadHTML() {
+            removeHighlights(document.getElementById('main-content'));
+            
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Terminal_Commands_FISI.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supply & Demand Cheatsheet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- LaTeX Support via KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root {
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #202122;
+            --border-color: #54595d;
+            --text-color: #eaecf0;
+            --text-muted: #a8aeb3;
+            --link-color: #99c1f1;
+            --link-hover: #629deb;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --info-box: #2c2d30;
+            --table-alt: rgba(255,255,255,0.02);
+            --search-match: rgba(250, 204, 21, 0.3);
+            --search-text: #ffffff;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+            --panel-border: #54595d;
+        }
+
+        html.light {
+            --bg-color: #f4f6f9;
+            --panel-color: #ffffff;
+            --sidebar-color: #ffffff;
+            --border-color: #cbd5e1;
+            --text-color: #1e293b;
+            --text-muted: #64748b;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --heading-color: #0f172a;
+            --code-bg: #f1f5f9;
+            --info-box: #e0f2fe;
+            --table-alt: rgba(0,0,0,0.015);
+            --search-match: rgba(250, 204, 21, 0.5);
+            --search-text: #0f172a;
+            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+            --panel-border: #e2e8f0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 800 !important; }
+        h1 { font-size: 3.5rem !important; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        h2 { font-size: 2.5rem !important; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; margin-top: 2.5rem; margin-bottom: 1rem; }
+        h3 { font-size: 1.85rem !important; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        h4 { font-size: 1.5rem !important; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+        p { margin-bottom: 1rem; }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--text-color);
+        }
+
+        .wikitable {
+            width: 100%; border-collapse: collapse; margin: 1em 0;
+            background-color: var(--panel-color); font-size: 0.9em;
+            box-shadow: var(--card-shadow);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid var(--panel-border);
+        }
+        .wikitable th, .wikitable td {
+            border: 1px solid var(--panel-border); padding: 0.75rem 1rem;
+            text-align: left; vertical-align: top;
+        }
+        .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); }
+        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
+
+        .toc-link.active { font-weight: 600; color: var(--link-color); position: relative; }
+        .toc-link.active::before {
+            content: ''; position: absolute; left: -1rem; top: 0; height: 100%;
+            width: 3px; background-color: var(--link-color);
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
+
+        /* Card panels with enhanced shadows */
+        .content-card {
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        
+        .content-card:hover {
+            box-shadow: 0 14px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        @media (max-width: 1024px) {
+            .infobox { float: none; width: 100%; margin: 1em 0; }
+        }
+
+        /* Language visibility controls */
+        .lang-en { display: none; }
+        body[data-active-lang="en"] .lang-de { display: none !important; }
+        body[data-active-lang="en"] .lang-en { display: block !important; }
+        body[data-active-lang="en"] span.lang-en, body[data-active-lang="en"] a.lang-en { display: inline !important; }
+        body[data-active-lang="de"] .lang-en { display: none !important; }
+        body[data-active-lang="de"] .lang-de { display: block !important; }
+        body[data-active-lang="de"] span.lang-de, body[data-active-lang="de"] a.lang-de { display: inline !important; }
+    </style>
+</head>
+<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
+
+    <aside class="lg:w-80 flex-shrink-0 bg-[var(--sidebar-color)] border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative shadow-lg transition-colors">
+        
+        <!-- Controls: Language, Theme, Download -->
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
+                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Cheatsheet">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+            <i class="fa-solid fa-chart-line text-3xl mb-3 text-[var(--text-color)] opacity-80"></i>
+            <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span class="lang-de">Angebot &<br>Nachfrage</span>
+                <span class="lang-en">Supply &<br>Demand</span>
+            </div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v1.2 - Microeconomics</div>
+        </div>
+
+        <div class="mb-6 relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
+            </div>
+            <input type="text" id="wikiSearch" placeholder="Search..." class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-xl pl-10 pr-3 py-2.5 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-all shadow-sm" onkeyup="filterWiki()">
+        </div>
+
+        <nav class="text-sm space-y-1.5" id="toc-nav">
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span class="lang-de">Inhaltsverzeichnis</span>
+                <span class="lang-en">Table of Contents</span>
+            </div>
+            
+            <ul class="space-y-1">
+                <li><a href="#grundlagen" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">1. Grundkonzepte</span><span class="lang-en">1. Core Concepts</span>
+                </a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#nachfrage" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors">
+                            <span class="lang-de">1.1 Nachfragefunktion</span><span class="lang-en">1.1 Demand Function</span>
+                        </a></li>
+                        <li><a href="#angebot" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors">
+                            <span class="lang-de">1.2 Angebotsfunktion</span><span class="lang-en">1.2 Supply Function</span>
+                        </a></li>
+                    </ul>
+                </li>
+                <li class="pt-2"><a href="#marktgleichgewicht" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">2. Marktgleichgewicht</span><span class="lang-en">2. Market Equilibrium</span>
+                </a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#gleichgewichtspreis" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors">
+                            <span class="lang-de">2.1 Preisbildung</span><span class="lang-en">2.1 Price Formation</span>
+                        </a></li>
+                        <li><a href="#stoerungen" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors">
+                            <span class="lang-de">2.2 Marktstörungen</span><span class="lang-en">2.2 Market Shocks</span>
+                        </a></li>
+                    </ul>
+                </li>
+                <li class="pt-2"><a href="#elastizitaeten" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">3. Elastizitäten</span><span class="lang-en">3. Elasticities</span>
+                </a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#preiselastizitaet" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors">
+                            <span class="lang-de">3.1 Preiselastizität</span><span class="lang-en">3.1 Price Elasticity</span>
+                        </a></li>
+                        <li><a href="#einkommenselastizitaet" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors">
+                            <span class="lang-de">3.2 Einkommenselastizität</span><span class="lang-en">3.2 Income Elasticity</span>
+                        </a></li>
+                    </ul>
+                </li>
+                <li class="pt-2"><a href="#wohlfahrt" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">4. Markt- & Wohlfahrtsanalyse</span><span class="lang-en">4. Welfare Analysis</span>
+                </a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#konsumentenrente" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors">
+                            <span class="lang-de">4.1 Rente & Surplus</span><span class="lang-en">4.1 Surplus Analysis</span>
+                        </a></li>
+                        <li><a href="#eingriffe" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors">
+                            <span class="lang-de">4.2 Staatliche Eingriffe</span><span class="lang-en">4.2 Government Interventions</span>
+                        </a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="flex-grow p-6 lg:p-12 max-w-5xl lg:ml-0" id="main-content">
+        
+        <div class="searchable-block content-card">
+            <h1 id="top" class="border-b-0 pb-0 mb-4">
+                <span class="lang-de">Angebot, Nachfrage & Marktgleichgewicht</span>
+                <span class="lang-en">Supply, Demand & Market Equilibrium</span>
+            </h1>
+            <p class="text-lg">
+                <span class="lang-de">Das Modell von <strong>Angebot und Nachfrage</strong> ist das Fundament der Mikroökonomie. Es erklärt, wie Preise und Mengen von Gütern in wettbewerblichen Märkten durch das Zusammenspiel von Konsumenten (Nachfrager) und Unternehmen (Anbieter) bestimmt werden.</span>
+                <span class="lang-en">The model of <strong>supply and demand</strong> is the cornerstone of microeconomics. It explains how prices and quantities of goods are determined in competitive markets through the interaction of consumers and firms.</span>
+            </p>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 1. Grundkonzepte                           -->
+        <!-- ========================================== -->
+        <section id="grundlagen" class="scroll-mt-10 searchable-block mt-8">
+            <h2>
+                <span class="lang-de">1. Grundkonzepte: Nachfrage & Angebot</span>
+                <span class="lang-en">1. Core Concepts: Demand & Supply</span>
+            </h2>
+            
+            <h3 id="nachfrage" class="scroll-mt-10">
+                <span class="lang-de">1.1 Nachfragefunktion</span>
+                <span class="lang-en">1.1 Demand Function</span>
+            </h3>
+            <p>
+                <span class="lang-de">Die Nachfragefunktion gibt an, welche Menge eines Gutes Konsumenten bei einem bestimmten Preis zu kaufen bereit sind. Nach dem <strong>Gesetz der Nachfrage</strong> sinkt die nachgefragte Menge in der Regel, wenn der Preis steigt (negativer Zusammenhang).</span>
+                <span class="lang-en">The demand function specifies the quantity of a good consumers are willing to buy at a given price. According to the <strong>law of demand</strong>, quantity demanded generally falls as price rises (negative relationship).</span>
+            </p>
+
+            <div class="content-card">
+                <p class="font-mono text-sm mb-2 font-semibold">
+                    <span class="lang-de">Lineare Nachfragegleichung:</span>
+                    <span class="lang-en">Linear demand equation:</span>
+                </p>
+                <div class="text-center py-3 text-lg">
+                    $$Q_D = a - b \cdot P$$
+                </div>
+                <p class="text-xs text-[var(--text-muted)] mt-2">
+                    <span class="lang-de">Wo $a > 0$ die Sättigungsmenge und $b > 0$ die Preissensitivität (Steigungsparameter) darstellt.</span>
+                    <span class="lang-en">Where $a > 0$ is the saturation quantity and $b > 0$ represents price sensitivity.</span>
+                </p>
+            </div>
+
+            <h3 id="angebot" class="scroll-mt-10">
+                <span class="lang-de">1.2 Angebotsfunktion</span>
+                <span class="lang-en">1.2 Supply Function</span>
+            </h3>
+            <p>
+                <span class="lang-de">Die Angebotsfunktion beschreibt die Menge, die Unternehmen bei verschiedenen Preisen zu produzieren und zu verkaufen bereit sind. Das <strong>Gesetz des Angebots</strong> besagt, dass die angebotene Menge bei steigenden Preisen zunimmt (positiver Zusammenhang).</span>
+                <span class="lang-en">The supply function describes the quantity firms are willing to produce and sell at various prices. The <strong>law of supply</strong> states that quantity supplied increases as prices rise (positive relationship).</span>
+            </p>
+
+            <div class="content-card">
+                <p class="font-mono text-sm mb-2 font-semibold">
+                    <span class="lang-de">Lineare Angebotsgleichung:</span>
+                    <span class="lang-en">Linear supply equation:</span>
+                </p>
+                <div class="text-center py-3 text-lg">
+                    $$Q_S = c + d \cdot P$$
+                </div>
+                <p class="text-xs text-[var(--text-muted)] mt-2">
+                    <span class="lang-de">Wo $c$ den Fixterm (oft $c \le 0$) und $d > 0$ die Preisreagibilität der Anbieter darstellt.</span>
+                    <span class="lang-en">Where $c$ is the intercept and $d > 0$ represents the suppliers' price responsiveness.</span>
+                </p>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 2. Marktgleichgewicht                      -->
+        <!-- ========================================== -->
+        <section id="marktgleichgewicht" class="scroll-mt-10 searchable-block mt-12">
+            <h2>
+                <span class="lang-de">2. Marktgleichgewicht</span>
+                <span class="lang-en">2. Market Equilibrium</span>
+            </h2>
+            
+            <h3 id="gleichgewichtspreis" class="scroll-mt-10">
+                <span class="lang-de">2.1 Preisbildung im Marktgleichgewicht</span>
+                <span class="lang-en">2.1 Price Formation in Equilibrium</span>
+            </h3>
+            <p>
+                <span class="lang-de">Ein Markt befindet sich im Gleichgewicht, wenn die nachgefragte Menge genau der angebotenen Menge entspricht ($Q_D = Q_S$). Der dazugehörige Preis wird als <strong>Gleichgewichtsmarktpreis</strong> ($P^*$) bezeichnet.</span>
+                <span class="lang-en">A market is in equilibrium when the quantity demanded equals the quantity supplied ($Q_D = Q_S$). The corresponding price is called the <strong>equilibrium price</strong> ($P^*$).</span>
+            </p>
+
+            <div class="content-card">
+                <p class="font-mono text-sm mb-2 font-semibold">
+                    <span class="lang-de">Gleichgewichtsbedingung:</span>
+                    <span class="lang-en">Equilibrium Condition:</span>
+                </p>
+                <div class="text-center py-3 text-lg">
+                    $$a - b \cdot P^* = c + d \cdot P^* \implies P^* = \frac{a - c}{b + d}$$
+                </div>
+            </div>
+
+            <table class="wikitable mt-4">
+                <tr>
+                    <th class="w-1/3"><span class="lang-de">Marktzustand</span><span class="lang-en">Market State</span></th>
+                    <th class="w-1/3"><span class="lang-de">Bedingung</span><span class="lang-en">Condition</span></th>
+                    <th><span class="lang-de">Marktreaktion & Tendenz</span><span class="lang-en">Market Reaction & Tendency</span></th>
+                </tr>
+                <tr>
+                    <td><strong><span class="lang-de">Nachfrageüberschuss</span><span class="lang-en">Excess Demand</span></strong></td>
+                    <td class="font-mono">$Q_D > Q_S$ (<span class="lang-de">zu niedriger Preis</span><span class="lang-en">price too low</span>)</td>
+                    <td class="text-[var(--text-muted)]">
+                        <span class="lang-de">Warenknappheit. Käufer überbieten sich, der Preis <strong>steigt</strong> Richtung $P^*$.</span>
+                        <span class="lang-en">Scarcity. Buyers outbid each other, price <strong>rises</strong> towards $P^*$.</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong><span class="lang-de">Angebotsüberschuss</span><span class="lang-en">Excess Supply</span></strong></td>
+                    <td class="font-mono">$Q_S > Q_D$ (<span class="lang-de">zu hohem Preis</span><span class="lang-en">price too high</span>)</td>
+                    <td class="text-[var(--text-muted)]">
+                        <span class="lang-de">Lagerhüter. Anbieter senken Preise, der Preis <strong>fällt</strong> Richtung $P^*$.</span>
+                        <span class="lang-en">Surplus. Sellers lower prices, price <strong>falls</strong> towards $P^*$.</span>
+                    </td>
+                </tr>
+            </table>
+
+            <h3 id="stoerungen" class="scroll-mt-10 mt-8">
+                <span class="lang-de">2.2 Marktstörungen (Shocks)</span>
+                <span class="lang-en">2.2 Market Shocks</span>
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div class="content-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                        <span class="lang-de">Nachfrageschock</span>
+                        <span class="lang-en">Demand Shock</span>
+                    </h4>
+                    <p class="text-sm text-[var(--text-muted)] mt-2">
+                        <span class="lang-de">Verschiebung der Nachfragekurve (z.B. durch Einkommenssteigerung oder Modetrends). Eine Rechtsverschiebung erhöht sowohl den Gleichgewichtspreis als auch die Menge.</span>
+                        <span class="lang-en">Shift of the demand curve (e.g., income growth or trends). A rightward shift increases both equilibrium price and quantity.</span>
+                    </p>
+                </div>
+                <div class="content-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                        <span class="lang-de">Angebotsschock</span>
+                        <span class="lang-en">Supply Shock</span>
+                    </h4>
+                    <p class="text-sm text-[var(--text-muted)] mt-2">
+                        <span class="lang-de">Verschiebung der Angebotskurve (z.B. durch technologischen Fortschritt oder höhere Rohstoffpreise). Kostenerhöhungen verschieben das Angebot nach links.</span>
+                        <span class="lang-en">Shift of supply curve (e.g., tech progress or raw material costs). Cost hikes shift supply left (higher price, lower quantity).</span>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 3. Elastizitäten                           -->
+        <!-- ========================================== -->
+        <section id="elastizitaeten" class="scroll-mt-10 searchable-block mt-12">
+            <h2>
+                <span class="lang-de">3. Elastizitäten</span>
+                <span class="lang-en">3. Elasticities</span>
+            </h2>
+
+            <p class="mb-4">
+                <span class="lang-de">Elastizitäten messen die prozentuale Änderung einer Variablen als Reaktion auf eine prozentuale Änderung einer anderen Variablen (Reaktionsstärke).</span>
+                <span class="lang-en">Elasticities measure the percentage change in one variable in response to a percentage change in another variable.</span>
+            </p>
+
+            <h3 id="preiselastizitaet" class="scroll-mt-10">
+                <span class="lang-de">3.1 Preiselastizität der Nachfrage ($\epsilon$)</span>
+                <span class="lang-en">3.1 Price Elasticity of Demand ($\epsilon$)</span>
+            </h3>
+            
+            <div class="content-card">
+                <div class="text-center py-2 text-lg">
+                    $$\epsilon = \frac{\% \text{ Änderung } Q_D}{\% \text{ Änderung } P} = \frac{dQ_D}{dP} \cdot \frac{P}{Q_D}$$
+                </div>
+            </div>
+
+            <table class="wikitable mt-4">
+                <tr>
+                    <th class="w-1/3"><span class="lang-de">Kategorie</span><span class="lang-en">Category</span></th>
+                    <th class="w-1/3"><span class="lang-de">Mathematischer Wert</span><span class="lang-en">Mathematical Value</span></th>
+                    <th><span class="lang-de">Bedeutung & Beispiel</span><span class="lang-en">Meaning & Example</span></th>
+                </tr>
+                <tr>
+                    <td><strong><span class="lang-de">Unelastisch</span><span class="lang-en">Inelastic</span></strong></td>
+                    <td class="font-mono">$|\epsilon| < 1$</td>
+                    <td class="text-[var(--text-muted)]">
+                        <span class="lang-de">Preisänderung hat geringen Mengeneffekt (z.B. lebensnotwendige Medikamente).</span>
+                        <span class="lang-en">Price change has little quantity effect (e.g., life-saving medicines).</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong><span class="lang-de">Elastisch</span><span class="lang-en">Elastic</span></strong></td>
+                    <td class="font-mono">$|\epsilon| > 1$</td>
+                    <td class="text-[var(--text-muted)]">
+                        <span class="lang-de">Nachfrage reagiert stark auf Preisschwankungen (z.B. Luxusgüter, Urlaubsreisen).</span>
+                        <span class="lang-en">Demand reacts strongly to price shifts (e.g., luxury goods, vacations).</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong><span class="lang-de">Vollkommen unelastisch</span><span class="lang-en">Perfectly Inelastic</span></strong></td>
+                    <td class="font-mono">$\epsilon = 0$</td>
+                    <td class="text-[var(--text-muted)]">
+                        <span class="lang-de">Vertikale Nachfragekurve (Mengennachfrage absolut preisunabhängig).</span>
+                        <span class="lang-en">Vertical demand curve (quantity totally independent of price).</span>
+                    </td>
+                </tr>
+            </table>
+
+            <h3 id="einkommenselastizitaet" class="scroll-mt-10 mt-8">
+                <span class="lang-de">3.2 Einkommenselastizität</span>
+                <span class="lang-en">3.2 Income Elasticity</span>
+            </h3>
+            <p class="text-[var(--text-muted)]">
+                <span class="lang-de">Misst die Reaktion der Nachfrage bei Einkommensänderungen ($Y$). Man unterscheidet zwischen <strong>normalen Gütern</strong> (positive Elastizität) und <strong>inferioren Gütern</strong> (negative Elastizität).</span>
+                <span class="lang-en">Measures demand response to income changes ($Y$). Distinction between <strong>normal goods</strong> (positive elasticity) and <strong>inferior goods</strong> (negative elasticity).</span>
+            </p>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 4. Markt- & Wohlfahrtsanalyse              -->
+        <!-- ========================================== -->
+        <section id="wohlfahrt" class="scroll-mt-10 searchable-block mt-12 mb-20">
+            <h2>
+                <span class="lang-de">4. Markt- & Wohlfahrtsanalyse</span>
+                <span class="lang-en">4. Market & Welfare Analysis</span>
+            </h2>
+
+            <h3 id="konsumentenrente" class="scroll-mt-10">
+                <span class="lang-de">4.1 Konsumenten- und Produzentenrente</span>
+                <span class="lang-en">4.1 Consumer and Producer Surplus</span>
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div class="content-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                        <span class="lang-de">Konsumentenrente (KR)</span>
+                        <span class="lang-en">Consumer Surplus (CS)</span>
+                    </h4>
+                    <p class="text-sm text-[var(--text-muted)] mt-2">
+                        <span class="lang-de">Der monetäre Vorteil von Käufern, die bereit gewesen wären, einen höheren Preis zu zahlen als den tatsächlichen Marktpreis $P^*$. Entspricht grafisch der Fläche unter der Nachfragekurve.</span>
+                        <span class="lang-en">The monetary benefit to buyers willing to pay more than market price $P^*$. Graphically, the area below the demand curve and above price.</span>
+                    </p>
+                </div>
+                <div class="content-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                        <span class="lang-de">Produzentenrente (PR)</span>
+                        <span class="lang-en">Producer Surplus (PS)</span>
+                    </h4>
+                    <p class="text-sm text-[var(--text-muted)] mt-2">
+                        <span class="lang-de">Der Erlösüberschuss von Anbietern, die zu niedrigeren Grenzkosten produzieren könnten als dem erzielten Marktpreis $P^*$. Entspricht grafisch der Fläche über der Angebotskurve.</span>
+                        <span class="lang-en">The revenue surplus of suppliers able to produce at lower costs than market price $P^*$. Graphically, the area above supply curve and below price.</span>
+                    </p>
+                </div>
+            </div>
+
+            <h3 id="eingriffe" class="scroll-mt-10 mt-8">
+                <span class="lang-de">4.2 Staatliche Markteingriffe</span>
+                <span class="lang-en">4.2 Government Interventions</span>
+            </h3>
+            <table class="wikitable">
+                <tr>
+                    <th class="w-1/3"><span class="lang-de">Eingriffsart</span><span class="lang-en">Intervention Type</span></th>
+                    <th><span class="lang-de">Funktionsweise & Effekte</span><span class="lang-en">Mechanism & Effects</span></th>
+                </tr>
+                <tr>
+                    <td><strong><span class="lang-de">Höchstpreis (Preisdeckel)</span><span class="lang-en">Price Ceiling</span></strong></td>
+                    <td class="text-[var(--text-muted)]">
+                        <span class="lang-de">Staatlich verordneter Höchstpreis <em>unterhalb</em> des Gleichgewichtspreises (z.B. Mietpreisbremse). Führt zu einem anhaltenden <strong>Nachfrageüberschuss</strong> und Wohlfahrtsverlusten.</span>
+                        <span class="lang-en">Mandated maximum price <em>below</em> equilibrium (e.g., rent control). Causes sustained <strong>excess demand</strong> and deadweight loss.</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong><span class="lang-de">Mindestpreis</span><span class="lang-en">Price Floor</span></strong></td>
+                    <td class="text-[var(--text-muted)]">
+                        <span class="lang-de">Staatlich garantierter Mindestpreis <em>oberhalb</em> des Gleichgewichtspreises. Führt zu einem dauerhaften <strong>Angebotsüberschuss</strong> (z.B. Arbeitslosigkeit bei Mindestlöhnen).</span>
+                        <span class="lang-en">Guaranteed minimum price <em>above</em> equilibrium. Causes permanent <strong>excess supply</strong> (e.g., unemployment above market value).</span>
+                    </td>
+                </tr>
+            </table>
+        </section>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+                    
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                        if(tocLink) tocLink.classList.add('active');
+                    }
+                });
+            }, {
+                rootMargin: '-10% 0px -80% 0px',
+                threshold: [0, 0.1, 1]
+            });
+
+            document.querySelectorAll('section, h3[id]').forEach((section) => {
+                observer.observe(section);
+            });
+        });
+
+        function filterWiki() {
+            const input = document.getElementById('wikiSearch');
+            const filter = input.value.toLowerCase();
+            const blocks = document.querySelectorAll('.searchable-block');
+            const mainContent = document.getElementById('main-content');
+
+            removeHighlights(mainContent);
+
+            if (!filter) {
+                blocks.forEach(block => block.style.display = 'block');
+                return;
+            }
+
+            blocks.forEach(block => {
+                const text = block.innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    block.style.display = 'block';
+                    highlightText(block, input.value);
+                } else {
+                    block.style.display = 'none';
+                }
+            });
+        }
+
+        function highlightText(element, keyword) {
+            if (!keyword) return;
+            const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+
+            let node;
+            while (node = treeWalker.nextNode()) {
+                if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                    if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE' && !node.parentNode.classList.contains('katex')) {
+                        nodesToReplace.push(node);
+                    }
+                }
+            }
+
+            nodesToReplace.forEach(node => {
+                const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+                const fragment = document.createDocumentFragment();
+                let match;
+                let lastIndex = 0;
+                const text = node.nodeValue;
+
+                while ((match = regex.exec(text)) !== null) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    const span = document.createElement('span');
+                    span.className = 'search-match font-semibold';
+                    span.textContent = match[0];
+                    fragment.appendChild(span);
+                    lastIndex = regex.lastIndex;
+                }
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                node.parentNode.replaceChild(fragment, node);
+            });
+        }
+
+        function removeHighlights(element) {
+            const highlights = element.querySelectorAll('.search-match');
+            highlights.forEach(span => {
+                const parent = span.parentNode;
+                parent.replaceChild(document.createTextNode(span.textContent), span);
+                parent.normalize();
+            });
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('light')) {
+                html.classList.remove('light');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        let isGerman = true;
+        function toggleLang() {
+            isGerman = !isGerman;
+            const indicator = document.getElementById('lang-indicator');
+            indicator.textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+        }
+
+        function downloadHTML() {
+            removeHighlights(document.getElementById('main-content'));
+            
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Supply_And_Demand_Cheatsheet.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

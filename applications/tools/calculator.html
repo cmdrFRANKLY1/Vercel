@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rechner &amp; Subnetting Cheatsheet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            /* Dark Mode Defaults */
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #202122;
+            --border-color: #54595d;
+            --text-color: #ffffff;
+            --text-muted: #a8aeb3;
+            --link-color: #99c1f1;
+            --link-hover: #629deb;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --info-box: #2c2d30;
+            --table-alt: rgba(255,255,255,0.02);
+            --search-match: rgba(250, 204, 21, 0.3);
+            --search-text: #ffffff;
+            --error-color: #ff7b72;
+            --ok-color: #7ee787;
+
+            /* Shadow tokens (dark: subtle / minimal) */
+            --panel-shadow: 0 1px 3px rgba(0,0,0,0.25);
+            --panel-shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+            --btn-shadow: none;
+            --sidebar-shadow: none;
+            --field-shadow: none;
+        }
+
+        html.light {
+            /* Light Mode Overrides */
+            --bg-color: #ffffff;
+            --panel-color: #f8f9fa;
+            --sidebar-color: #f8f9fa;
+            --border-color: #a2a9b1;
+            --text-color: #202122;
+            --text-muted: #54595d;
+            --link-color: #3366cc;
+            --link-hover: #0645ad;
+            --heading-color: #000000;
+            --code-bg: #eaecf0;
+            --info-box: #eaf3ff;
+            --table-alt: rgba(0,0,0,0.03);
+            --search-match: rgba(250, 204, 21, 0.5);
+            --search-text: #000000;
+            --error-color: #b91c1c;
+            --ok-color: #15803d;
+
+            /* Shadow tokens (light: layered for depth & readability) */
+            --panel-shadow:
+                0 1px 2px rgba(0,0,0,0.04),
+                0 2px 6px rgba(0,0,0,0.04),
+                0 4px 12px rgba(0,0,0,0.03);
+            --panel-shadow-sm:
+                0 1px 2px rgba(0,0,0,0.05),
+                0 2px 4px rgba(0,0,0,0.03);
+            --btn-shadow:
+                0 1px 2px rgba(0,0,0,0.05),
+                0 1px 3px rgba(0,0,0,0.03);
+            --sidebar-shadow:
+                2px 0 12px rgba(0,0,0,0.04),
+                1px 0 3px rgba(0,0,0,0.03);
+            --field-shadow:
+                inset 0 1px 1px rgba(255,255,255,0.8),
+                0 1px 2px rgba(0,0,0,0.03);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 800 !important; }
+        h1 { font-size: 3.5rem !important; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        h2 { font-size: 2.5rem !important; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; margin-top: 2.5rem; margin-bottom: 1rem; }
+        h3 { font-size: 1.85rem !important; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        h4 { font-size: 1.5rem !important; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+        p { margin-bottom: 1rem; }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--text-color);
+        }
+
+        /* Wiki-style Tables */
+        .wikitable {
+            width: 100%; border-collapse: collapse; margin: 1em 0;
+            background-color: var(--panel-color); font-size: 0.9em;
+            box-shadow: var(--panel-shadow);
+            transition: box-shadow 0.2s;
+        }
+        .wikitable th, .wikitable td {
+            border: 1px solid var(--border-color); padding: 0.6em 0.8em;
+            text-align: left; vertical-align: top;
+        }
+        .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); }
+        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
+
+        /* TOC Styles */
+        .toc-link.active { font-weight: 600; color: var(--heading-color); position: relative; }
+        .toc-link.active::before {
+            content: ''; position: absolute; left: -1rem; top: 0; height: 100%;
+            width: 3px; background-color: var(--link-color);
+        }
+
+        /* Sidebar scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
+
+        /* ====== Sidebar shadow (light mode readability) ====== */
+        aside { box-shadow: var(--sidebar-shadow); transition: box-shadow 0.2s; }
+
+        /* Sidebar controls + search box get a small lift in light mode */
+        #sidebar-controls { box-shadow: var(--panel-shadow-sm); transition: box-shadow 0.2s; }
+        #wikiSearch { box-shadow: var(--field-shadow); transition: box-shadow 0.2s, border-color .15s; }
+
+        /* ====== Calculator / Tool styles ====== */
+        .field {
+            width: 100%;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            transition: border-color .15s, box-shadow .2s;
+            box-shadow: var(--field-shadow);
+        }
+        .field:focus { outline: none; border-color: var(--link-color); }
+        .field::placeholder { color: var(--text-muted); opacity: .7; }
+
+        .mono { font-family: 'Fira Code', 'Consolas', monospace; font-size: 0.85em; word-break: break-all; }
+        .err { color: var(--error-color); font-size: 0.82rem; min-height: 1.2em; font-family: 'Fira Code', monospace; }
+
+        .calc-btn {
+            background-color: var(--panel-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.65rem 0.25rem;
+            border-radius: 0.375rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 1rem;
+            line-height: 1;
+            transition: background-color .12s, border-color .12s, transform .05s, box-shadow .12s;
+            user-select: none;
+            cursor: pointer;
+            box-shadow: var(--btn-shadow);
+        }
+        .calc-btn:hover { background-color: var(--code-bg); border-color: var(--link-color); }
+        .calc-btn:active { transform: translateY(1px); box-shadow: none; }
+        .calc-btn.op { color: var(--link-color); font-weight: 600; }
+        .calc-btn.fn { font-size: 0.82rem; color: var(--text-muted); }
+        .calc-btn.eq { background-color: var(--link-color); color: var(--bg-color); border-color: var(--link-color); font-weight: 700; }
+        .calc-btn.eq:hover { background-color: var(--link-hover); border-color: var(--link-hover); }
+
+        .calc-screen {
+            background-color: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            box-shadow: var(--panel-shadow-sm);
+            transition: box-shadow 0.2s;
+        }
+
+        .kv-list {
+            background-color: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            overflow: hidden;
+            box-shadow: var(--panel-shadow);
+            transition: box-shadow 0.2s;
+        }
+        .kv { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 0.45rem 0.75rem; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
+        .kv:last-child { border-bottom: none; }
+        .kv .k { color: var(--text-muted); flex-shrink: 0; }
+        .kv .v { font-family: 'Fira Code', monospace; color: var(--heading-color); word-break: break-all; text-align: right; }
+
+        .chip {
+            background-color: var(--panel-color); border: 1px solid var(--border-color);
+            border-radius: 0.25rem; padding: 0.3rem 0.5rem;
+            font-family: 'Fira Code', monospace; font-size: 0.78rem;
+            color: var(--text-color); white-space: nowrap;
+            box-shadow: var(--panel-shadow-sm);
+            transition: box-shadow 0.2s;
+        }
+        .ascii-cell {
+            background-color: var(--panel-color); border: 1px solid var(--border-color);
+            border-radius: 0.25rem; padding: 0.2rem 0.1rem; text-align: center;
+            font-family: 'Fira Code', monospace; font-size: 0.72rem;
+            box-shadow: var(--panel-shadow-sm);
+            transition: box-shadow 0.2s;
+        }
+        .tool-card {
+            background-color: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: var(--panel-shadow);
+            transition: box-shadow 0.2s;
+        }
+
+        @media (max-width: 1024px) {
+            .infobox { float: none; width: 100%; margin: 1em 0; }
+            aside { box-shadow: none; }
+        }
+
+        [data-lang-de], [data-lang-en] { transition: opacity 0.15s ease-in-out; }
+    </style>
+</head>
+<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
+
+    <aside class="lg:w-72 flex-shrink-0 bg-[var(--sidebar-color)] border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
+
+        <!-- Controls: Language, Theme, Download -->
+        <div id="sidebar-controls" class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded border border-[var(--border-color)]">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--bg-color)] py-1 rounded text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent hover:border-[var(--border-color)]" title="Toggle Language">
+                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--bg-color)] py-1 rounded text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent hover:border-[var(--border-color)]" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--bg-color)] py-1 rounded text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent hover:border-[var(--border-color)]" title="Download Cheatsheet">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+            <i class="fa-solid fa-calculator text-3xl mb-3 text-[var(--text-color)] opacity-80"></i>
+            <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span data-lang-de>Rechner &amp;<br>Subnetting</span>
+                <span data-lang-en style="display:none;">Calculator &amp;<br>Subnetting</span>
+            </div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">MATH / BIN / IP v1.0</div>
+        </div>
+
+        <div class="mb-6 relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
+            </div>
+            <input type="text" id="wikiSearch" placeholder="Search..." class="w-full bg-[var(--bg-color)] border border-[var(--border-color)] rounded pl-9 pr-3 py-2 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-colors" onkeyup="filterWiki()">
+        </div>
+
+        <nav class="text-sm space-y-1.5" id="toc-nav">
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span data-lang-de>Inhaltsverzeichnis</span>
+                <span data-lang-en style="display:none;">Table of Contents</span>
+            </div>
+
+            <ul class="space-y-1">
+                <li><a href="#grundrechner" class="toc-link block py-1 text-[var(--link-color)] hover:underline font-medium"><span data-lang-de>1. Grundrechner</span><span data-lang-en style="display:none;">1. Basic Calculator</span></a></li>
+                <li class="pt-2"><a href="#zahlensysteme" class="toc-link block py-1 text-[var(--link-color)] hover:underline font-medium"><span data-lang-de>2. Zahlensysteme</span><span data-lang-en style="display:none;">2. Number Systems</span></a></li>
+                <li class="pt-2"><a href="#bitops" class="toc-link block py-1 text-[var(--link-color)] hover:underline font-medium"><span data-lang-de>3. Bitoperationen</span><span data-lang-en style="display:none;">3. Bitwise Operations</span></a></li>
+                <li class="pt-2"><a href="#prozent" class="toc-link block py-1 text-[var(--link-color)] hover:underline font-medium"><span data-lang-de>4. Prozentrechnung</span><span data-lang-en style="display:none;">4. Percentages</span></a></li>
+                <li class="pt-2"><a href="#ipv4" class="toc-link block py-1 text-[var(--link-color)] hover:underline font-medium"><span data-lang-de>5. IPv4-Subnetting</span><span data-lang-en style="display:none;">5. IPv4 Subnetting</span></a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#cidr-tabelle" class="toc-link block py-0.5 text-[var(--text-muted)] hover:text-[var(--link-color)]"><span data-lang-de>5.1 CIDR-Tabelle</span><span data-lang-en style="display:none;">5.1 CIDR Table</span></a></li>
+                    </ul>
+                </li>
+                <li class="pt-2"><a href="#ipv6" class="toc-link block py-1 text-[var(--link-color)] hover:underline font-medium"><span data-lang-de>6. IPv6</span><span data-lang-en style="display:none;">6. IPv6</span></a></li>
+                <li class="pt-2"><a href="#datenmengen" class="toc-link block py-1 text-[var(--link-color)] hover:underline font-medium"><span data-lang-de>7. Datenmengen</span><span data-lang-en style="display:none;">7. Data Sizes</span></a></li>
+                <li class="pt-2"><a href="#referenz" class="toc-link block py-1 text-[var(--link-color)] hover:underline font-medium"><span data-lang-de>8. Referenztabellen</span><span data-lang-en style="display:none;">8. Reference Tables</span></a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#zweierpotenzen" class="toc-link block py-0.5 text-[var(--text-muted)] hover:text-[var(--link-color)]"><span data-lang-de>8.1 Zweierpotenzen</span><span data-lang-en style="display:none;">8.1 Powers of Two</span></a></li>
+                        <li><a href="#ascii" class="toc-link block py-0.5 text-[var(--text-muted)] hover:text-[var(--link-color)]"><span data-lang-de>8.2 ASCII-Tabelle</span><span data-lang-en style="display:none;">8.2 ASCII Table</span></a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="flex-grow p-6 lg:p-12 max-w-5xl lg:ml-0" id="main-content">
+
+        <div class="searchable-block">
+            <h1 id="top"><span data-lang-de>Rechner &amp; Subnetting</span><span data-lang-en style="display:none;">Calculator &amp; Subnetting</span></h1>
+            <p class="text-lg" data-lang-de>Eine interaktive Referenz für alle grundlegenden Rechenoperationen, Zahlensysteme, Bitmanipulation und IP-Subnetzberechnungen. Alle Werkzeuge rechnen live beim Tippen – ohne Server, ohne Tracking, vollständig clientseitig.</p>
+            <p class="text-lg" data-lang-en style="display:none;">An interactive reference for all basic arithmetic operations, number systems, bit manipulation and IP subnet calculations. Every tool computes live as you type – no server, no tracking, fully client-side.</p>
+        </div>
+
+        <hr class="border-[var(--border-color)] my-8">
+
+        <!-- ========================================== -->
+        <!-- 1. Grundrechner                            -->
+        <!-- ========================================== -->
+        <section id="grundrechner" class="scroll-mt-10 searchable-block">
+            <h2>
+                <span data-lang-de>1. Grundrechner</span>
+                <span data-lang-en style="display:none;">1. Basic Calculator</span>
+            </h2>
+            <p data-lang-de>Unterstützt die vier Grundrechenarten, Potenzen, Wurzeln, Fakultät, Logarithmen und trigonometrische Funktionen. Die Eingabe kann auch direkt über die Tastatur erfolgen.</p>
+            <p data-lang-en style="display:none;">Supports the four basic operations, powers, roots, factorials, logarithms and trigonometric functions. Input can also be made directly via keyboard.</p>
+
+            <div class="grid lg:grid-cols-5 gap-6 mt-4">
+                <div class="lg:col-span-3">
+                    <div class="calc-screen p-3 mb-3">
+                        <div id="calc-preview" class="text-sm text-[var(--text-muted)] font-mono h-5 text-right overflow-hidden whitespace-nowrap"></div>
+                        <div id="calc-display" class="text-3xl font-mono text-right overflow-x-auto whitespace-nowrap text-[var(--heading-color)]">0</div>
+                    </div>
+
+                    <div id="calc-pad" class="grid grid-cols-5 gap-2">
+                        <button class="calc-btn fn" data-k="C">C</button>
+                        <button class="calc-btn fn" data-k="BACK"><i class="fa-solid fa-delete-left"></i></button>
+                        <button class="calc-btn fn" data-k="(">(</button>
+                        <button class="calc-btn fn" data-k=")">)</button>
+                        <button class="calc-btn op" data-k="/">&divide;</button>
+
+                        <button class="calc-btn" data-k="7">7</button>
+                        <button class="calc-btn" data-k="8">8</button>
+                        <button class="calc-btn" data-k="9">9</button>
+                        <button class="calc-btn op" data-k="*">&times;</button>
+                        <button class="calc-btn fn" data-k="sqrt(">&radic;</button>
+
+                        <button class="calc-btn" data-k="4">4</button>
+                        <button class="calc-btn" data-k="5">5</button>
+                        <button class="calc-btn" data-k="6">6</button>
+                        <button class="calc-btn op" data-k="-">&minus;</button>
+                        <button class="calc-btn fn" data-k="^2">x&sup2;</button>
+
+                        <button class="calc-btn" data-k="1">1</button>
+                        <button class="calc-btn" data-k="2">2</button>
+                        <button class="calc-btn" data-k="3">3</button>
+                        <button class="calc-btn op" data-k="+">+</button>
+                        <button class="calc-btn fn" data-k="^">x<sup>y</sup></button>
+
+                        <button class="calc-btn" data-k="0">0</button>
+                        <button class="calc-btn" data-k=".">.</button>
+                        <button class="calc-btn fn" data-k="sign">&plusmn;</button>
+                        <button class="calc-btn eq" data-k="=">=</button>
+                        <button class="calc-btn fn" data-k="pi">&pi;</button>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-2 mt-2">
+                        <button class="calc-btn fn" data-k="!">n!</button>
+                        <button class="calc-btn fn" data-k="1/(">1/x</button>
+                        <button class="calc-btn fn" data-k="ln(">ln</button>
+                        <button class="calc-btn fn" data-k="log(">log</button>
+                        <button class="calc-btn fn" data-k="sin(">sin</button>
+                        <button class="calc-btn fn" data-k="cos(">cos</button>
+                        <button class="calc-btn fn" data-k="tan(">tan</button>
+                        <button class="calc-btn fn" data-k="e">e</button>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2">
+                    <div class="tool-card h-full">
+                        <h4 class="!mt-0">
+                            <span data-lang-de>Funktionen &amp; Operatoren</span>
+                            <span data-lang-en style="display:none;">Functions &amp; Operators</span>
+                        </h4>
+                        <table class="wikitable !mt-2 !text-xs">
+                            <tr>
+                                <th><span data-lang-de>Eingabe</span><span data-lang-en style="display:none;">Input</span></th>
+                                <th><span data-lang-de>Bedeutung</span><span data-lang-en style="display:none;">Meaning</span></th>
+                            </tr>
+                            <tr><td class="mono">+ &minus; * /</td><td><span data-lang-de>Grundrechenarten</span><span data-lang-en style="display:none;">Basic operations</span></td></tr>
+                            <tr><td class="mono">^</td><td><span data-lang-de>Potenz (rechtsassoziativ)</span><span data-lang-en style="display:none;">Power (right-assoc.)</span></td></tr>
+                            <tr><td class="mono">%</td><td><span data-lang-de>Modulo (Rest)</span><span data-lang-en style="display:none;">Modulo (remainder)</span></td></tr>
+                            <tr><td class="mono">!</td><td><span data-lang-de>Fakultät (postfix)</span><span data-lang-en style="display:none;">Factorial (postfix)</span></td></tr>
+                            <tr><td class="mono">sqrt(x)</td><td><span data-lang-de>Quadratwurzel</span><span data-lang-en style="display:none;">Square root</span></td></tr>
+                            <tr><td class="mono">log(x)</td><td><span data-lang-de>Zehnerlogarithmus</span><span data-lang-en style="display:none;">Common logarithm</span></td></tr>
+                            <tr><td class="mono">log(x, b)</td><td><span data-lang-de>Logarithmus zur Basis b</span><span data-lang-en style="display:none;">Logarithm base b</span></td></tr>
+                            <tr><td class="mono">ln(x)</td><td><span data-lang-de>Natürlicher Logarithmus</span><span data-lang-en style="display:none;">Natural logarithm</span></td></tr>
+                            <tr><td class="mono">pi, e</td><td><span data-lang-de>Konstanten</span><span data-lang-en style="display:none;">Constants</span></td></tr>
+                        </table>
+                        <p class="text-xs text-[var(--text-muted)] mb-0">
+                            <i class="fa-solid fa-keyboard mr-1"></i>
+                            <span data-lang-de>Tastatur: Ziffern, <code>+ - * / ( ) . ^ %</code>, <code>Enter</code> = Ergebnis, <code>Backspace</code> = löschen, <code>Esc</code> = alles löschen.</span>
+                            <span data-lang-en style="display:none;">Keyboard: digits, <code>+ - * / ( ) . ^ %</code>, <code>Enter</code> = equals, <code>Backspace</code> = delete, <code>Esc</code> = clear all.</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 2. Zahlensysteme                           -->
+        <!-- ========================================== -->
+        <section id="zahlensysteme" class="scroll-mt-10 searchable-block mt-12">
+            <h2>
+                <span data-lang-de>2. Zahlensysteme</span>
+                <span data-lang-en style="display:none;">2. Number Systems</span>
+            </h2>
+            <p data-lang-de>Beliebige ganze Zahlen zwischen Dezimal, Binär, Oktal und Hexadezimal umrechnen. In ein beliebiges Feld tippen – alle anderen werden live aktualisiert. Es werden beliebig große Ganzzahlen (BigInt) unterstützt.</p>
+            <p data-lang-en style="display:none;">Convert arbitrary integers between decimal, binary, octal and hexadecimal. Type into any field – all others update live. Arbitrarily large integers (BigInt) are supported.</p>
+
+            <div class="grid md:grid-cols-2 gap-4 mt-4">
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 font-semibold">Dezimal (Basis 10)</label>
+                    <input id="ns-dec" class="field" placeholder="z. B. 255" oninput="nsInput('ns-dec')" autocomplete="off" spellcheck="false">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 font-semibold">Hexadezimal (Basis 16)</label>
+                    <input id="ns-hex" class="field" placeholder="z. B. FF" oninput="nsInput('ns-hex')" autocomplete="off" spellcheck="false">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 font-semibold">Binär (Basis 2)</label>
+                    <input id="ns-bin" class="field" placeholder="z. B. 11111111" oninput="nsInput('ns-bin')" autocomplete="off" spellcheck="false">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 font-semibold">Oktal (Basis 8)</label>
+                    <input id="ns-oct" class="field" placeholder="z. B. 377" oninput="nsInput('ns-oct')" autocomplete="off" spellcheck="false">
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-4 mt-4">
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 font-semibold">
+                        <span data-lang-de>Basis (2–36)</span><span data-lang-en style="display:none;">Base (2–36)</span>
+                    </label>
+                    <select id="ns-cbase" class="field" onchange="nsRefresh()"></select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 font-semibold">
+                        <span data-lang-de>Beliebige Basis</span><span data-lang-en style="display:none;">Custom base</span>
+                    </label>
+                    <input id="ns-custom" class="field" placeholder="z. B. Z4" oninput="nsInput('ns-custom')" autocomplete="off" spellcheck="false">
+                </div>
+            </div>
+
+            <div class="err mt-2" id="ns-error"></div>
+
+            <div class="kv-list mt-2">
+                <div class="kv">
+                    <span class="k"><span data-lang-de>Bitlänge</span><span data-lang-en style="display:none;">Bit length</span></span>
+                    <span class="v" id="ns-bits">—</span>
+                </div>
+                <div class="kv">
+                    <span class="k"><span data-lang-de>Binär (4er-Gruppen)</span><span data-lang-en style="display:none;">Binary (nibbles)</span></span>
+                    <span class="v" id="ns-grouped">—</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 3. Bitoperationen                          -->
+        <!-- ========================================== -->
+        <section id="bitops" class="scroll-mt-10 searchable-block mt-12">
+            <h2>
+                <span data-lang-de>3. Bitoperationen</span>
+                <span data-lang-en style="display:none;">3. Bitwise Operations</span>
+            </h2>
+            <p data-lang-de>Logische Verknüpfung zweier Operanden. Eingaben akzeptieren Dezimal, <code>0x…</code> (Hex), <code>0b…</code> (Binär) und <code>0o…</code> (Oktal). Die Wortbreite bestimmt, wie das bitweise NICHT und die Verschiebungen berechnet werden.</p>
+            <p data-lang-en style="display:none;">Logical combination of two operands. Inputs accept decimal, <code>0x…</code> (hex), <code>0b…</code> (binary) and <code>0o…</code> (octal). The word width determines how bitwise NOT and shifts are computed.</p>
+
+            <div class="grid md:grid-cols-4 gap-4 mt-4">
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 font-semibold">Operand A</label>
+                    <input id="bw-a" class="field" value="0b11001010" oninput="updateBitwise()" autocomplete="off" spellcheck="false">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 font-semibold">Operand B</label>
+                    <input id="bw-b" class="field" value="0x0F" oninput="updateBitwise()" autocomplete="off" spellcheck="false">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 font-semibold">
+                        <span data-lang-de>Wortbreite</span><span data-lang-en style="display:none;">Word width</span>
+                    </label>
+                    <select id="bw-width" class="field" onchange="updateBitwise()">
+                        <option value="8">8 Bit</option>
+                        <option value="16">16 Bit</option>
+                        <option value="32" selected>32 Bit</option>
+                        <option value="64">64 Bit</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 font-semibold">
+                        <span data-lang-de>Shift n</span><span data-lang-en style="display:none;">Shift n</span>
+                    </label>
+                    <input id="bw-shift" type="number" min="0" max="63" value="2" class="field" oninput="updateBitwise()">
+                </div>
+            </div>
+
+            <div class="err mt-2" id="bw-error"></div>
+
+            <table class="wikitable mt-2">
+                <thead>
+                    <tr>
+                        <th class="w-[15%]"><span data-lang-de>Operation</span><span data-lang-en style="display:none;">Operation</span></th>
+                        <th class="w-[15%]">DEC</th>
+                        <th class="w-[15%]">HEX</th>
+                        <th>BIN</th>
+                    </tr>
+                </thead>
+                <tbody id="bw-tbody"></tbody>
+            </table>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 4. Prozentrechnung                         -->
+        <!-- ========================================== -->
+        <section id="prozent" class="scroll-mt-10 searchable-block mt-12">
+            <h2>
+                <span data-lang-de>4. Prozentrechnung</span>
+                <span data-lang-en style="display:none;">4. Percentage Calculator</span>
+            </h2>
+            <p data-lang-de>Die drei klassischen Prozentaufgaben. Dezimaltrennzeichen: Punkt oder Komma.</p>
+            <p data-lang-en style="display:none;">The three classic percentage problems. Decimal separator: dot or comma.</p>
+
+            <div class="tool-card mt-4 space-y-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="w-24"><input id="p1-a" class="field" value="15" oninput="updatePercent()"></div>
+                    <span class="text-[var(--text-muted)] text-sm">% <span data-lang-de>von</span><span data-lang-en style="display:none;">of</span></span>
+                    <div class="w-32"><input id="p1-b" class="field" value="200" oninput="updatePercent()"></div>
+                    <span class="text-[var(--text-muted)]">=</span>
+                    <span id="p1-r" class="font-mono text-lg text-[var(--heading-color)]">—</span>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3 border-t border-[var(--border-color)] pt-4">
+                    <div class="w-24"><input id="p2-a" class="field" value="30" oninput="updatePercent()"></div>
+                    <span class="text-[var(--text-muted)] text-sm"><span data-lang-de>ist wie viel % von</span><span data-lang-en style="display:none;">is what % of</span></span>
+                    <div class="w-32"><input id="p2-b" class="field" value="200" oninput="updatePercent()"></div>
+                    <span class="text-[var(--text-muted)]">=</span>
+                    <span id="p2-r" class="font-mono text-lg text-[var(--heading-color)]">—</span>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3 border-t border-[var(--border-color)] pt-4">
+                    <span class="text-[var(--text-muted)] text-sm"><span data-lang-de>Änderung von</span><span data-lang-en style="display:none;">Change from</span></span>
+                    <div class="w-24"><input id="p3-a" class="field" value="80" oninput="updatePercent()"></div>
+                    <span class="text-[var(--text-muted)] text-sm"><span data-lang-de>auf</span><span data-lang-en style="display:none;">to</span></span>
+                    <div class="w-24"><input id="p3-b" class="field" value="100" oninput="updatePercent()"></div>
+                    <span class="text-[var(--text-muted)]">=</span>
+                    <span id="p3-r" class="font-mono text-lg text-[var(--heading-color)]">—</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 5. IPv4-Subnetting                         -->
+        <!-- ========================================== -->
+        <section id="ipv4" class="scroll-mt-10 searchable-block mt-12">
+            <h2>
+                <span data-lang-de>5. IPv4-Subnetzrechner</span>
+                <span data-lang-en style="display:none;">5. IPv4 Subnet Calculator</span>
+            </h2>
+            <p data-lang-de>Adresse mit Präfixlänge oder Subnetzmaske eingeben. Formate: <code>192.168.1.10/24</code>, <code>192.168.1.10/255.255.255.0</code> oder <code>192.168.1.10 255.255.255.0</code>. Ohne Angabe wird <code>/32</code> angenommen.</p>
+            <p data-lang-en style="display:none;">Enter an address with prefix length or subnet mask. Formats: <code>192.168.1.10/24</code>, <code>192.168.1.10/255.255.255.0</code> or <code>192.168.1.10 255.255.255.0</code>. Without a prefix, <code>/32</code> is assumed.</p>
+
+            <div class="mt-4">
+                <label class="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 font-semibold">IPv4 / CIDR</label>
+                <input id="ipv4-input" class="field" value="192.168.1.10/24" oninput="updateIPv4()" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="err mt-2" id="ipv4-error"></div>
+
+            <div class="kv-list mt-2">
+                <div class="kv"><span class="k"><span data-lang-de>Netzadresse</span><span data-lang-en style="display:none;">Network address</span></span><span class="v" id="ipv4-network">—</span></div>
+                <div class="kv"><span class="k"><span data-lang-de>Broadcast-Adresse</span><span data-lang-en style="display:none;">Broadcast address</span></span><span class="v" id="ipv4-broadcast">—</span></div>
+                <div class="kv"><span class="k"><span data-lang-de>Erste nutzbare Adresse</span><span data-lang-en style="display:none;">First usable address</span></span><span class="v" id="ipv4-first">—</span></div>
+                <div class="kv"><span class="k"><span data-lang-de>Letzte nutzbare Adresse</span><span data-lang-en style="display:none;">Last usable address</span></span><span class="v" id="ipv4-last">—</span></div>
+                <div class="kv"><span class="k"><span data-lang-de>Nutzbare Hosts</span><span data-lang-en style="display:none;">Usable hosts</span></span><span class="v" id="ipv4-hosts">—</span></div>
+                <div class="kv"><span class="k"><span data-lang-de>Adressen gesamt</span><span data-lang-en style="display:none;">Total addresses</span></span><span class="v" id="ipv4-total">—</span></div>
+                <div class="kv"><span class="k"><span data-lang-de>Subnetzmaske</span><span data-lang-en style="display:none;">Subnet mask</span></span><span class="v" id="ipv4-mask">—</span></div>
+                <div class="kv"><span class="k"><span data-lang-de>Wildcard-Maske</span><span data-lang-en style="display:none;">Wildcard mask</span></span><span class="v" id="ipv4-wildcard">—</span></div>
+                <div class="kv"><span class="k"><span data-lang-de>Adressklasse</span><span data-lang-en style="display:none;">Address class</span></span><span class="v" id="ipv4-class">—</span></div>
+                <div class="kv"><span class="k"><span data-lang-de>Adresstyp</span><span data-lang-en style="display:none;">Address type</span></span><span class="v" id="ipv4-type">—</span></div>
+                <div class="kv"><span class="k"><span data-lang-de>Binär (IP)</span><span data-lang-en style="display:none;">Binary (IP)</span></span><span class="v" id="ipv4-bin-ip">—</span></div>
+                <div class="kv"><span class="k"><span data-lang-de>Binär (Maske)</span><span data-lang-en style="display:none;">Binary (mask)</span></span><span class="v" id="ipv4-bin-mask">—</span></div>
+                <div class="kv"><span class="k"><span data-lang-de>Hexadezimal (IP)</span><span data-lang-en style="display:none;">Hexadecimal (IP)</span></span><span class="v" id="ipv4-hex-ip">—</span></div>
+            </div>
+
+            <h3 id="cidr-tabelle" class="scroll-mt-10">
+                <span data-lang-de>5.1 CIDR-Referenztabelle</span>
+                <span data-lang-en style="display:none;">5.1 CIDR Reference Table</span>
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="wikitable">
+                    <thead>
+                        <tr>
+                            <th>CIDR</th>
+                            <th><span data-lang-de>Netzmaske</span><span data-lang-en style="display:none;">Netmask</span></th>
+                            <th>Wildcard</th>
+                            <th><span data-lang-de>Adressen gesamt</span><span data-lang-en style="display:none;">Total addresses</span></th>
+                            <th><span data-lang-de>Nutzbare Hosts</span><span data-lang-en style="display:none;">Usable hosts</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cidr-tbody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 6. IPv6                                    -->
+        <!-- ========================================== -->
+        <section id="ipv6" class="scroll-mt-10 searchable-block mt-12">
+            <h2>
+                <span data-lang-de>6. IPv6-Kurzrechner</span>
+                <span data-lang-en style="display:none;">6. IPv6 Quick Calculator</span>
+            </h2>
+            <p data-lang-de>IPv6-Adresse expandieren, komprimieren und klassifizieren. Optional mit Präfixlänge, z. B. <code>2001:db8::1/64</code>.</p>
+            <p data-lang-en style="display:none;">Expand, compress and classify an IPv6 address. Optionally with prefix length, e.g. <code>2001:db8::1/64</code>.</p>
+
+            <div class="mt-4">
+                <label class="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 font-semibold">IPv6</label>
+                <input id="ipv6-input" class="field" value="2001:db8::1/64" oninput="updateIPv6()" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="err mt-2" id="ipv6-error"></div>
+
+            <div class="kv-list mt-2">
+                <div class="kv"><span class="k"><span data-lang-de>Vollständig (expandiert)</span><span data-lang-en style="display:none;">Full (expanded)</span></span><span class="v" id="ipv6-expanded">—</span></div>
+                <div class="kv"><span class="k"><span data-lang-de>Komprimiert</span><span data-lang-en style="display:none;">Compressed</span></span><span class="v" id="ipv6-compressed">—</span></div>
+                <div class="kv"><span class="k"><span data-lang-de>Präfixlänge</span><span data-lang-en style="display:none;">Prefix length</span></span><span class="v" id="ipv6-prefix">—</span></div>
+                <div class="kv"><span class="k"><span data-lang-de>Adresstyp</span><span data-lang-en style="display:none;">Address type</span></span><span class="v" id="ipv6-type">—</span></div>
+                <div class="kv"><span class="k"><span data-lang-de>Gruppen (hex)</span><span data-lang-en style="display:none;">Groups (hex)</span></span><span class="v" id="ipv6-groups">—</span></div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 7. Datenmengen                             -->
+        <!-- ========================================== -->
+        <section id="datenmengen" class="scroll-mt-10 searchable-block mt-12">
+            <h2>
+                <span data-lang-de>7. Datenmengen-Umrechner</span>
+                <span data-lang-en style="display:none;">7. Data Size Converter</span>
+            </h2>
+            <p data-lang-de>Umrechnung zwischen Bit, Byte und den dezimalen (KB, MB, GB …) sowie binären (KiB, MiB, GiB …) Vielfachen. Der Unterschied ist wichtig: Hersteller von Speichermedien rechnen dezimal, Betriebssysteme meist binär.</p>
+            <p data-lang-en style="display:none;">Convert between bits, bytes and decimal (KB, MB, GB …) as well as binary (KiB, MiB, GiB …) multiples. The distinction matters: storage vendors use decimal, operating systems usually binary.</p>
+
+            <div class="grid md:grid-cols-3 gap-4 mt-4">
+                <div class="md:col-span-2">
+                    <label class="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 font-semibold">
+                        <span data-lang-de>Wert</span><span data-lang-en style="display:none;">Value</span>
+                    </label>
+                    <input id="ds-value" class="field" value="1" oninput="updateDataSize()" autocomplete="off" spellcheck="false">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 font-semibold">
+                        <span data-lang-de>Einheit</span><span data-lang-en style="display:none;">Unit</span>
+                    </label>
+                    <select id="ds-unit" class="field" onchange="updateDataSize()">
+                        <option value="bit">Bit</option>
+                        <option value="byte" selected>Byte</option>
+                        <option value="kib">KiB (1024 B)</option>
+                        <option value="mib">MiB</option>
+                        <option value="gib">GiB</option>
+                        <option value="tib">TiB</option>
+                        <option value="pib">PiB</option>
+                        <option value="kb">KB (1000 B)</option>
+                        <option value="mb">MB</option>
+                        <option value="gb">GB</option>
+                        <option value="tb">TB</option>
+                        <option value="pb">PB</option>
+                    </select>
+                </div>
+            </div>
+
+            <table class="wikitable mt-4">
+                <thead>
+                    <tr>
+                        <th class="w-1/2"><span data-lang-de>Einheit</span><span data-lang-en style="display:none;">Unit</span></th>
+                        <th><span data-lang-de>Wert</span><span data-lang-en style="display:none;">Value</span></th>
+                    </tr>
+                </thead>
+                <tbody id="ds-tbody"></tbody>
+            </table>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 8. Referenztabellen                        -->
+        <!-- ========================================== -->
+        <section id="referenz" class="scroll-mt-10 searchable-block mt-12 mb-20">
+            <h2>
+                <span data-lang-de>8. Referenztabellen</span>
+                <span data-lang-en style="display:none;">8. Reference Tables</span>
+            </h2>
+
+            <h3 id="zweierpotenzen" class="scroll-mt-10">
+                <span data-lang-de>8.1 Zweierpotenzen</span>
+                <span data-lang-en style="display:none;">8.1 Powers of Two</span>
+            </h3>
+            <p data-lang-de>Grundlage jeder Subnetzberechnung: Die Anzahl der Adressen in einem Subnetz ist immer eine Zweierpotenz.</p>
+            <p data-lang-en style="display:none;">The foundation of every subnet calculation: the number of addresses in a subnet is always a power of two.</p>
+            <div id="pow2-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-3"></div>
+
+            <h3 id="ascii" class="scroll-mt-10">
+                <span data-lang-de>8.2 ASCII-Tabelle (druckbare Zeichen)</span>
+                <span data-lang-en style="display:none;">8.2 ASCII Table (printable characters)</span>
+            </h3>
+            <p data-lang-de>Dezimalwert, Zeichen und Hexadezimalwert der druckbaren ASCII-Zeichen (32–126).</p>
+            <p data-lang-en style="display:none;">Decimal value, character and hexadecimal value of the printable ASCII characters (32–126).</p>
+            <div id="ascii-grid" class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-1 mt-3"></div>
+        </section>
+
+    </main>
+
+    <script>
+    /* =========================================================
+       GLOBAL STATE
+       ========================================================= */
+    let isGerman = true;
+    function t(de, en) { return isGerman ? de : en; }
+
+    /* =========================================================
+       EXPRESSION PARSER (safe, no eval)
+       ========================================================= */
+    function tokenizeCalc(s) {
+        const tokens = [];
+        let i = 0;
+        while (i < s.length) {
+            const c = s[i];
+            if (/\s/.test(c)) { i++; continue; }
+            if (/[0-9]/.test(c) || (c === '.' && /[0-9]/.test(s[i + 1] || ''))) {
+                let j = i;
+                while (j < s.length && /[0-9]/.test(s[j])) j++;
+                if (s[j] === '.') { j++; while (j < s.length && /[0-9]/.test(s[j])) j++; }
+                tokens.push({ type: 'num', value: parseFloat(s.slice(i, j)) });
+                i = j; continue;
+            }
+            if (/[a-zA-Z]/.test(c)) {
+                let j = i;
+                while (j < s.length && /[a-zA-Z]/.test(s[j])) j++;
+                tokens.push({ type: 'name', value: s.slice(i, j).toLowerCase() });
+                i = j; continue;
+            }
+            if ('+-*/%^()!,'.includes(c)) { tokens.push({ type: 'op', value: c }); i++; continue; }
+            throw new Error('Bad char: ' + c);
+        }
+        return tokens;
+    }
+
+    function factorial(n) {
+        if (n < 0 || !Number.isInteger(n)) return NaN;
+        if (n > 170) return Infinity;
+        let r = 1;
+        for (let i = 2; i <= n; i++) r *= i;
+        return r;
+    }
+
+    function applyFunction(name, args) {
+        const x = args[0];
+        switch (name) {
+            case 'sqrt': return Math.sqrt(x);
+            case 'cbrt': return Math.cbrt(x);
+            case 'abs': return Math.abs(x);
+            case 'ln': return Math.log(x);
+            case 'log': return args.length > 1 ? Math.log(x) / Math.log(args[1]) : Math.log10(x);
+            case 'log2': return Math.log2(x);
+            case 'log10': return Math.log10(x);
+            case 'exp': return Math.exp(x);
+            case 'sin': return Math.sin(x);
+            case 'cos': return Math.cos(x);
+            case 'tan': return Math.tan(x);
+            case 'asin': return Math.asin(x);
+            case 'acos': return Math.acos(x);
+            case 'atan': return Math.atan(x);
+            case 'sinh': return Math.sinh(x);
+            case 'cosh': return Math.cosh(x);
+            case 'tanh': return Math.tanh(x);
+            case 'round': return Math.round(x);
+            case 'floor': return Math.floor(x);
+            case 'ceil': return Math.ceil(x);
+            case 'sign': return Math.sign(x);
+            case 'fact': return factorial(x);
+            case 'pow': return Math.pow(x, args[1]);
+            case 'mod': return x % args[1];
+            case 'min': return Math.min(...args);
+            case 'max': return Math.max(...args);
+            default: throw new Error('Unknown function: ' + name);
+        }
+    }
+
+    function evaluate(expr) {
+        const tokens = tokenizeCalc(expr);
+        let pos = 0;
+        const peek = () => tokens[pos];
+        const next = () => tokens[pos++];
+
+        function parseExpr() {
+            let left = parseTerm();
+            while (peek() && peek().type === 'op' && (peek().value === '+' || peek().value === '-')) {
+                const op = next().value;
+                const right = parseTerm();
+                left = op === '+' ? left + right : left - right;
+            }
+            return left;
+        }
+        function parseTerm() {
+            let left = parseUnary();
+            while (peek() && peek().type === 'op' && ['*', '/', '%'].includes(peek().value)) {
+                const op = next().value;
+                const right = parseUnary();
+                if (op === '*') left *= right;
+                else if (op === '/') left /= right;
+                else left = left % right;
+            }
+            return left;
+        }
+        function parseUnary() {
+            if (peek() && peek().type === 'op' && (peek().value === '-' || peek().value === '+')) {
+                const op = next().value;
+                const v = parseUnary();
+                return op === '-' ? -v : v;
+            }
+            return parsePower();
+        }
+        function parsePower() {
+            const base = parsePostfix();
+            if (peek() && peek().type === 'op' && peek().value === '^') {
+                next();
+                const exp = parseUnary();
+                return Math.pow(base, exp);
+            }
+            return base;
+        }
+        function parsePostfix() {
+            let v = parsePrimary();
+            while (peek() && peek().type === 'op' && peek().value === '!') {
+                next();
+                v = factorial(v);
+            }
+            return v;
+        }
+        function parsePrimary() {
+            const tok = peek();
+            if (!tok) throw new Error('Unexpected end');
+            if (tok.type === 'num') { next(); return tok.value; }
+            if (tok.type === 'name') {
+                next();
+                const name = tok.value;
+                if (peek() && peek().type === 'op' && peek().value === '(') {
+                    next();
+                    const args = [];
+                    if (!(peek() && peek().type === 'op' && peek().value === ')')) {
+                        args.push(parseExpr());
+                        while (peek() && peek().type === 'op' && peek().value === ',') {
+                            next();
+                            args.push(parseExpr());
+                        }
+                    }
+                    if (!(peek() && peek().type === 'op' && peek().value === ')')) throw new Error('Missing )');
+                    next();
+                    return applyFunction(name, args);
+                }
+                if (name === 'pi') return Math.PI;
+                if (name === 'e') return Math.E;
+                throw new Error('Unknown: ' + name);
+            }
+            if (tok.type === 'op' && tok.value === '(') {
+                next();
+                const v = parseExpr();
+                if (!(peek() && peek().type === 'op' && peek().value === ')')) throw new Error('Missing )');
+                next();
+                return v;
+            }
+            throw new Error('Unexpected: ' + tok.value);
+        }
+
+        const result = parseExpr();
+        if (pos < tokens.length) throw new Error('Unexpected token');
+        return result;
+    }
+
+    function formatNumber(v) {
+        if (typeof v === 'bigint') return v.toString();
+        if (Number.isNaN(v)) return 'NaN';
+        if (!isFinite(v)) return v > 0 ? '\u221E' : '-\u221E';
+        const abs = Math.abs(v);
+        if (abs !== 0 && (abs >= 1e15 || abs < 1e-9)) {
+            return v.toExponential(8).replace(/\.?0+e/, 'e');
+        }
+        return String(parseFloat(v.toPrecision(12)));
+    }
+
+    function fmtInt(n) {
+        return Number(n).toLocaleString(isGerman ? 'de-DE' : 'en-US');
+    }
+
+    /* =========================================================
+       1. CALCULATOR
+       ========================================================= */
+    let calcExpr = '';
+    let calcJustEvaluated = false;
+
+    function calcRender() {
+        const disp = document.getElementById('calc-display');
+        const prev = document.getElementById('calc-preview');
+        disp.textContent = calcExpr || '0';
+        disp.scrollLeft = disp.scrollWidth;
+        if (!calcExpr || calcJustEvaluated) { prev.textContent = ''; return; }
+        try {
+            const v = evaluate(calcExpr);
+            prev.textContent = '= ' + formatNumber(v);
+        } catch (e) {
+            prev.textContent = '';
+        }
+    }
+
+    function calcAppend(str) {
+        if (calcJustEvaluated) {
+            if (/^[0-9]$/.test(str) || str === '.') calcExpr = '';
+            calcJustEvaluated = false;
+        }
+        calcExpr += str;
+        calcRender();
+    }
+
+    function calcEquals() {
+        if (!calcExpr) return;
+        try {
+            const v = evaluate(calcExpr);
+            calcExpr = formatNumber(v);
+            calcJustEvaluated = true;
+            calcRender();
+        } catch (e) {
+            document.getElementById('calc-preview').textContent = t('Ungültiger Ausdruck', 'Invalid expression');
+        }
+    }
+
+    function handleCalcKey(k) {
+        if (k === 'C') { calcExpr = ''; calcJustEvaluated = false; calcRender(); return; }
+        if (k === 'BACK') { calcExpr = calcExpr.slice(0, -1); calcJustEvaluated = false; calcRender(); return; }
+        if (k === 'sign') {
+            calcExpr = calcExpr.startsWith('-') ? calcExpr.slice(1) : (calcExpr ? '-' + calcExpr : '-');
+            calcRender(); return;
+        }
+        if (k === '=') { calcEquals(); return; }
+        calcAppend(k);
+    }
+
+    document.getElementById('calc-pad').addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-k]');
+        if (btn) handleCalcKey(btn.dataset.k);
+    });
+    document.querySelectorAll('button[data-k]').forEach(btn => {
+        if (!btn.closest('#calc-pad')) {
+            btn.addEventListener('click', () => handleCalcKey(btn.dataset.k));
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        const tag = (e.target.tagName || '').toUpperCase();
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        const k = e.key;
+        if (/^[0-9]$/.test(k) || '+-*/().^%'.includes(k)) { calcAppend(k); e.preventDefault(); }
+        else if (k === 'Enter' || k === '=') { calcEquals(); e.preventDefault(); }
+        else if (k === 'Backspace') { calcExpr = calcExpr.slice(0, -1); calcJustEvaluated = false; calcRender(); e.preventDefault(); }
+        else if (k === 'Escape') { calcExpr = ''; calcJustEvaluated = false; calcRender(); e.preventDefault(); }
+    });
+
+    /* =========================================================
+       2. NUMBER SYSTEMS
+       ========================================================= */
+    const NS_FIELDS = [
+        { id: 'ns-dec', base: 10 },
+        { id: 'ns-bin', base: 2 },
+        { id: 'ns-oct', base: 8 },
+        { id: 'ns-hex', base: 16 }
+    ];
+    let nsSourceId = 'ns-dec';
+
+    function parseBigIntInBase(str, base) {
+        str = String(str).trim().replace(/[\s_]/g, '');
+        if (!str) return null;
+        let neg = false;
+        if (str[0] === '-') { neg = true; str = str.slice(1); }
+        else if (str[0] === '+') { str = str.slice(1); }
+        if (!str || str.length > 128) return null;
+        const digits = '0123456789abcdefghijklmnopqrstuvwxyz';
+        const b = BigInt(base);
+        let r = 0n;
+        for (const ch of str.toLowerCase()) {
+            const d = digits.indexOf(ch);
+            if (d < 0 || d >= base) return null;
+            r = r * b + BigInt(d);
+        }
+        return neg ? -r : r;
+    }
+
+    function bigIntToBase(val, base) {
+        const s = val.toString(base);
+        return base > 10 ? s.toUpperCase() : s;
+    }
+
+    function groupBits(bin) {
+        const pad = (4 - (bin.length % 4)) % 4;
+        const padded = '0'.repeat(pad) + bin;
+        return (padded.match(/.{1,4}/g) || []).join(' ');
+    }
+
+    function nsInput(id) {
+        nsSourceId = id;
+        nsRefresh();
+    }
+
+    function nsRefresh() {
+        const errEl = document.getElementById('ns-error');
+        errEl.textContent = '';
+        const customBase = parseInt(document.getElementById('ns-cbase').value, 10) || 10;
+        const srcField = NS_FIELDS.find(f => f.id === nsSourceId);
+        const srcBase = nsSourceId === 'ns-custom' ? customBase : (srcField ? srcField.base : 10);
+        const raw = document.getElementById(nsSourceId).value;
+
+        if (raw.trim() === '') {
+            NS_FIELDS.forEach(f => { if (f.id !== nsSourceId) document.getElementById(f.id).value = ''; });
+            if (nsSourceId !== 'ns-custom') document.getElementById('ns-custom').value = '';
+            document.getElementById('ns-bits').textContent = '—';
+            document.getElementById('ns-grouped').textContent = '—';
+            return;
+        }
+
+        const val = parseBigIntInBase(raw, srcBase);
+        if (val === null) {
+            errEl.textContent = t('Ungültige Ziffernfolge für Basis ' + srcBase + '.',
+                                  'Invalid digit sequence for base ' + srcBase + '.');
+            return;
+        }
+
+        NS_FIELDS.forEach(f => {
+            if (f.id !== nsSourceId) document.getElementById(f.id).value = bigIntToBase(val, f.base);
+        });
+        if (nsSourceId !== 'ns-custom') {
+            document.getElementById('ns-custom').value = bigIntToBase(val, customBase);
+        }
+
+        const neg = val < 0n;
+        const abs = neg ? -val : val;
+        const bin = abs.toString(2);
+        document.getElementById('ns-bits').textContent =
+            bin.length + (neg ? ' ' + t('(Betrag)', '(magnitude)') : '');
+        document.getElementById('ns-grouped').textContent = groupBits(bin);
+    }
+
+    /* =========================================================
+       3. BITWISE OPERATIONS
+       ========================================================= */
+    function parseFlexible(str) {
+        str = String(str).trim().replace(/[\s_]/g, '');
+        if (!str) return null;
+        let neg = false;
+        if (str[0] === '-') { neg = true; str = str.slice(1); }
+        else if (str[0] === '+') { str = str.slice(1); }
+        if (!str || str.length > 128) return null;
+        let v;
+        try {
+            if (/^0x[0-9a-f]+$/i.test(str)) v = BigInt(str);
+            else if (/^0b[01]+$/i.test(str)) v = BigInt(str);
+            else if (/^0o[0-7]+$/i.test(str)) v = BigInt(str);
+            else if (/^[0-9]+$/.test(str)) v = BigInt(str);
+            else return null;
+        } catch (e) { return null; }
+        return neg ? -v : v;
+    }
+
+    function toUnsigned(v, width) {
+        const mod = 1n << BigInt(width);
+        return ((v % mod) + mod) % mod;
+    }
+
+    function updateBitwise() {
+        const errEl = document.getElementById('bw-error');
+        const tbody = document.getElementById('bw-tbody');
+        const width = parseInt(document.getElementById('bw-width').value, 10);
+        let shift = parseInt(document.getElementById('bw-shift').value, 10);
+        if (isNaN(shift) || shift < 0) shift = 0;
+        if (shift > width - 1) shift = width - 1;
+
+        const aRaw = document.getElementById('bw-a').value.trim();
+        const bRaw = document.getElementById('bw-b').value.trim();
+        const a = parseFlexible(aRaw);
+        const b = parseFlexible(bRaw);
+
+        errEl.textContent = '';
+        if (aRaw && a === null) errEl.textContent = t('Operand A ungültig (erlaubt: dezimal, 0x…, 0b…, 0o…).', 'Operand A invalid (allowed: decimal, 0x…, 0b…, 0o…).');
+        else if (bRaw && b === null) errEl.textContent = t('Operand B ungültig (erlaubt: dezimal, 0x…, 0b…, 0o…).', 'Operand B invalid (allowed: decimal, 0x…, 0b…, 0o…).');
+
+        if (a === null || b === null) { tbody.innerHTML = ''; return; }
+
+        const mask = (1n << BigInt(width)) - 1n;
+        const au = toUnsigned(a, width);
+        const bu = toUnsigned(b, width);
+
+        const rows = [
+            ['AND', au & bu],
+            ['OR', au | bu],
+            ['XOR', au ^ bu],
+            ['NOT A', (~au) & mask],
+            ['A &lt;&lt; ' + shift, (au << BigInt(shift)) & mask],
+            ['A &gt;&gt; ' + shift, au >> BigInt(shift)]
+        ];
+
+        tbody.innerHTML = rows.map(([name, v]) => `<tr>
+            <td><strong class="mono">${name}</strong></td>
+            <td class="mono">${v.toString(10)}</td>
+            <td class="mono">${v.toString(16).toUpperCase()}</td>
+            <td class="mono">${groupBits(v.toString(2))}</td>
+        </tr>`).join('');
+    }
+
+    /* =========================================================
+       4. PERCENTAGES
+       ========================================================= */
+    function numVal(id) {
+        const el = document.getElementById(id);
+        const v = parseFloat(String(el.value).replace(',', '.'));
+        return v;
+    }
+
+    function updatePercent() {
+        const a1 = numVal('p1-a'), b1 = numVal('p1-b');
+        document.getElementById('p1-r').textContent =
+            (isFinite(a1) && isFinite(b1)) ? formatNumber(a1 * b1 / 100) : '—';
+
+        const a2 = numVal('p2-a'), b2 = numVal('p2-b');
+        document.getElementById('p2-r').textContent =
+            (isFinite(a2) && isFinite(b2) && b2 !== 0) ? formatNumber(a2 / b2 * 100) + ' %' : '—';
+
+        const a3 = numVal('p3-a'), b3 = numVal('p3-b');
+        if (isFinite(a3) && isFinite(b3) && a3 !== 0) {
+            const change = (b3 - a3) / Math.abs(a3) * 100;
+            document.getElementById('p3-r').textContent =
+                (change >= 0 ? '+' : '') + formatNumber(change) + ' %';
+        } else {
+            document.getElementById('p3-r').textContent = '—';
+        }
+    }
+
+    /* =========================================================
+       5. IPv4 SUBNETTING
+       ========================================================= */
+    function ipToInt(ip) {
+        const parts = String(ip).trim().split('.');
+        if (parts.length !== 4) return null;
+        let n = 0;
+        for (const p of parts) {
+            if (!/^\d{1,3}$/.test(p)) return null;
+            const v = parseInt(p, 10);
+            if (v > 255) return null;
+            n = n * 256 + v;
+        }
+        return n >>> 0;
+    }
+
+    function intToIp(n) {
+        n = n >>> 0;
+        return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+    }
+
+    function maskToPrefix(mask) {
+        let prefix = 0;
+        let seenZero = false;
+        for (let i = 31; i >= 0; i--) {
+            const bit = (mask >>> i) & 1;
+            if (bit === 1) { if (seenZero) return null; prefix++; }
+            else seenZero = true;
+        }
+        return prefix;
+    }
+
+    function parseIPv4Input(str) {
+        if (!str) return null;
+        let ipPart = str.trim();
+        let prefix = null;
+
+        const applyMaskOrPrefix = (p) => {
+            if (/^\d{1,2}$/.test(p)) {
+                const n = parseInt(p, 10);
+                if (n > 32) return false;
+                prefix = n;
+                return true;
+            }
+            const m = ipToInt(p);
+            if (m === null) return false;
+            const pr = maskToPrefix(m);
+            if (pr === null) return false;
+            prefix = pr;
+            return true;
+        };
+
+        if (ipPart.includes('/')) {
+            const parts = ipPart.split('/');
+            if (parts.length !== 2) return null;
+            ipPart = parts[0].trim();
+            if (!applyMaskOrPrefix(parts[1].trim())) return null;
+        } else if (/\s/.test(ipPart)) {
+            const parts = ipPart.split(/\s+/);
+            if (parts.length !== 2) return null;
+            ipPart = parts[0];
+            if (!applyMaskOrPrefix(parts[1])) return null;
+        }
+
+        const ip = ipToInt(ipPart);
+        if (ip === null) return null;
+        if (prefix === null) prefix = 32;
+        return { ip, prefix };
+    }
+
+    function ipv4Class(ip) {
+        const first = (ip >>> 24) & 255;
+        if (first < 128) return 'A';
+        if (first < 192) return 'B';
+        if (first < 224) return 'C';
+        if (first < 240) return 'D (Multicast)';
+        return 'E (Reserviert / Reserved)';
+    }
+
+    function ipv4Type(ip) {
+        const inRange = (net, pref) => {
+            const mask = pref === 0 ? 0 : (0xFFFFFFFF << (32 - pref)) >>> 0;
+            return ((ip & mask) >>> 0) === ((ipToInt(net) & mask) >>> 0);
+        };
+        if (inRange('0.0.0.0', 8)) return t('Reserviert (0.0.0.0/8)', 'Reserved (0.0.0.0/8)');
+        if (inRange('10.0.0.0', 8)) return t('Privat (RFC 1918)', 'Private (RFC 1918)');
+        if (inRange('100.64.0.0', 10)) return t('CGNAT (RFC 6598)', 'CGNAT (RFC 6598)');
+        if (inRange('127.0.0.0', 8)) return t('Loopback (127.0.0.0/8)', 'Loopback (127.0.0.0/8)');
+        if (inRange('169.254.0.0', 16)) return t('Link-Local / APIPA', 'Link-Local / APIPA');
+        if (inRange('172.16.0.0', 12)) return t('Privat (RFC 1918)', 'Private (RFC 1918)');
+        if (inRange('192.168.0.0', 16)) return t('Privat (RFC 1918)', 'Private (RFC 1918)');
+        if (inRange('224.0.0.0', 4)) return t('Multicast (224.0.0.0/4)', 'Multicast (224.0.0.0/4)');
+        if (ip === 0xFFFFFFFF) return t('Broadcast (limited)', 'Broadcast (limited)');
+        if (inRange('240.0.0.0', 4)) return t('Reserviert (240.0.0.0/4)', 'Reserved (240.0.0.0/4)');
+        return t('Öffentlich / Global', 'Public / Global');
+    }
+
+    const IPV4_IDS = ['ipv4-network','ipv4-broadcast','ipv4-first','ipv4-last','ipv4-hosts',
+                      'ipv4-total','ipv4-mask','ipv4-wildcard','ipv4-class','ipv4-type',
+                      'ipv4-bin-ip','ipv4-bin-mask','ipv4-hex-ip'];
+
+    function clearIPv4() {
+        IPV4_IDS.forEach(id => document.getElementById(id).textContent = '—');
+    }
+
+    function updateIPv4() {
+        const raw = document.getElementById('ipv4-input').value.trim();
+        const errEl = document.getElementById('ipv4-error');
+        errEl.textContent = '';
+
+        if (!raw) { clearIPv4(); return; }
+
+        const parsed = parseIPv4Input(raw);
+        if (!parsed) {
+            clearIPv4();
+            errEl.textContent = t('Ungültige Eingabe. Beispiel: 192.168.1.10/24',
+                                  'Invalid input. Example: 192.168.1.10/24');
+            return;
+        }
+
+        const { ip, prefix } = parsed;
+        const mask = prefix === 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) >>> 0;
+        const wildcard = (~mask) >>> 0;
+        const network = (ip & mask) >>> 0;
+        const broadcast = (network | wildcard) >>> 0;
+
+        let first, last, hosts;
+        if (prefix === 32) {
+            first = last = network; hosts = 1;
+        } else if (prefix === 31) {
+            first = network; last = broadcast; hosts = 2;
+        } else {
+            first = (network + 1) >>> 0;
+            last = (broadcast - 1) >>> 0;
+            hosts = Math.pow(2, 32 - prefix) - 2;
+        }
+
+        const binIp = [(ip >>> 24) & 255, (ip >>> 16) & 255, (ip >>> 8) & 255, ip & 255]
+            .map(o => o.toString(2).padStart(8, '0')).join('.');
+        const binMask = [mask >>> 24, (mask >>> 16) & 255, (mask >>> 8) & 255, mask & 255]
+            .map(o => o.toString(2).padStart(8, '0')).join('.');
+
+        document.getElementById('ipv4-network').textContent = intToIp(network);
+        document.getElementById('ipv4-broadcast').textContent = intToIp(broadcast);
+        document.getElementById('ipv4-first').textContent = intToIp(first);
+        document.getElementById('ipv4-last').textContent = intToIp(last);
+        document.getElementById('ipv4-hosts').textContent = fmtInt(hosts);
+        document.getElementById('ipv4-total').textContent = fmtInt(Math.pow(2, 32 - prefix));
+        document.getElementById('ipv4-mask').textContent = intToIp(mask) + ' /' + prefix;
+        document.getElementById('ipv4-wildcard').textContent = intToIp(wildcard);
+        document.getElementById('ipv4-class').textContent = ipv4Class(ip);
+        document.getElementById('ipv4-type').textContent = ipv4Type(ip);
+        document.getElementById('ipv4-bin-ip').textContent = binIp;
+        document.getElementById('ipv4-bin-mask').textContent = binMask;
+        document.getElementById('ipv4-hex-ip').textContent = '0x' + ip.toString(16).toUpperCase().padStart(8, '0');
+    }
+
+    function buildCidrTable() {
+        const tbody = document.getElementById('cidr-tbody');
+        if (!tbody) return;
+        let html = '';
+        for (let p = 0; p <= 32; p++) {
+            const mask = p === 0 ? 0 : (0xFFFFFFFF << (32 - p)) >>> 0;
+            const wildcard = (~mask) >>> 0;
+            let hosts;
+            if (p === 32) hosts = 1;
+            else if (p === 31) hosts = 2;
+            else hosts = Math.pow(2, 32 - p) - 2;
+            html += `<tr>
+                <td class="mono">/${p}</td>
+                <td class="mono">${intToIp(mask)}</td>
+                <td class="mono">${intToIp(wildcard)}</td>
+                <td class="mono">${fmtInt(Math.pow(2, 32 - p))}</td>
+                <td class="mono">${fmtInt(hosts)}</td>
+            </tr>`;
+        }
+        tbody.innerHTML = html;
+    }
+
+    /* =========================================================
+       6. IPv6
+       ========================================================= */
+    function parseIPv6(input) {
+        let str = String(input).trim().replace(/^\[|\]$/g, '').split('%')[0];
+        if (str === '') return null;
+
+        const v4match = str.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+        if (v4match) {
+            const v4 = ipToInt(v4match[1]);
+            if (v4 === null) return null;
+            const hi = ((v4 >>> 16) & 0xffff).toString(16);
+            const lo = (v4 & 0xffff).toString(16);
+            str = str.slice(0, v4match.index) + hi + ':' + lo;
+        }
+
+        let groups;
+        if (str.includes('::')) {
+            if (str.indexOf('::') !== str.lastIndexOf('::')) return null;
+            const parts = str.split('::');
+            const hg = parts[0] === '' ? [] : parts[0].split(':');
+            const tg = parts[1] === '' ? [] : parts[1].split(':');
+            const missing = 8 - hg.length - tg.length;
+            if (missing < 0) return null;
+            groups = [...hg, ...Array(missing).fill('0'), ...tg];
+        } else {
+            groups = str.split(':');
+        }
+
+        if (groups.length !== 8) return null;
+        const nums = [];
+        for (const g of groups) {
+            if (!/^[0-9a-f]{1,4}$/i.test(g)) return null;
+            nums.push(parseInt(g, 16));
+        }
+        return nums;
+    }
+
+    function compressIPv6(nums) {
+        const hex = nums.map(n => n.toString(16));
+        let bestStart = -1, bestLen = 0, curStart = -1, curLen = 0;
+        for (let i = 0; i < 8; i++) {
+            if (nums[i] === 0) {
+                if (curStart === -1) curStart = i;
+                curLen++;
+                if (curLen > bestLen) { bestLen = curLen; bestStart = curStart; }
+            } else {
+                curStart = -1; curLen = 0;
+            }
+        }
+        if (bestLen < 2) return hex.join(':');
+        const before = hex.slice(0, bestStart).join(':');
+        const after = hex.slice(bestStart + bestLen).join(':');
+        return before + '::' + after;
+    }
+
+    function ipv6Type(g) {
+        if (g.every(x => x === 0)) return t('Nicht spezifiziert (::)', 'Unspecified (::)');
+        if (g.slice(0, 7).every(x => x === 0) && g[7] === 1) return t('Loopback (::1)', 'Loopback (::1)');
+        if (g[0] === 0 && g[1] === 0 && g[2] === 0 && g[3] === 0 && g[4] === 0 && g[5] === 0xffff)
+            return t('IPv4-mapped (::ffff:0:0/96)', 'IPv4-mapped (::ffff:0:0/96)');
+        if ((g[0] & 0xFFC0) === 0xFE80) return t('Link-Local (fe80::/10)', 'Link-Local (fe80::/10)');
+        if ((g[0] & 0xFE00) === 0xFC00) return t('Unique Local (fc00::/7)', 'Unique Local (fc00::/7)');
+        if ((g[0] & 0xFF00) === 0xFF00) return t('Multicast (ff00::/8)', 'Multicast (ff00::/8)');
+        if (g[0] === 0x2001 && g[1] === 0x0DB8) return t('Dokumentation (2001:db8::/32)', 'Documentation (2001:db8::/32)');
+        if ((g[0] & 0xE000) === 0x2000) return t('Global Unicast (2000::/3)', 'Global Unicast (2000::/3)');
+        return t('Sonstige / Reserviert', 'Other / Reserved');
+    }
+
+    function updateIPv6() {
+        const raw = document.getElementById('ipv6-input').value.trim();
+        const errEl = document.getElementById('ipv6-error');
+        errEl.textContent = '';
+        const ids = ['ipv6-expanded', 'ipv6-compressed', 'ipv6-prefix', 'ipv6-type', 'ipv6-groups'];
+
+        if (!raw) { ids.forEach(i => document.getElementById(i).textContent = '—'); return; }
+
+        let addr = raw;
+        let prefix = null;
+        if (raw.includes('/')) {
+            const parts = raw.split('/');
+            if (parts.length !== 2) {
+                ids.forEach(i => document.getElementById(i).textContent = '—');
+                errEl.textContent = t('Ungültiges Format.', 'Invalid format.');
+                return;
+            }
+            addr = parts[0];
+            prefix = parseInt(parts[1], 10);
+            if (isNaN(prefix) || prefix < 0 || prefix > 128) {
+                ids.forEach(i => document.getElementById(i).textContent = '—');
+                errEl.textContent = t('Präfixlänge muss zwischen 0 und 128 liegen.', 'Prefix length must be between 0 and 128.');
+                return;
+            }
+        }
+
+        const g = parseIPv6(addr);
+        if (!g) {
+            ids.forEach(i => document.getElementById(i).textContent = '—');
+            errEl.textContent = t('Ungültige IPv6-Adresse.', 'Invalid IPv6 address.');
+            return;
+        }
+
+        document.getElementById('ipv6-expanded').textContent =
+            g.map(n => n.toString(16).padStart(4, '0')).join(':');
+        document.getElementById('ipv6-compressed').textContent = compressIPv6(g);
+        document.getElementById('ipv6-prefix').textContent = prefix === null ? '—' : '/' + prefix;
+        document.getElementById('ipv6-type').textContent = ipv6Type(g);
+        document.getElementById('ipv6-groups').textContent =
+            g.map(n => n.toString(16).padStart(4, '0')).join(' ');
+    }
+
+    /* =========================================================
+       7. DATA SIZES
+       ========================================================= */
+    const DATA_UNITS = [
+        { id: 'bit', label: 'Bit', bytes: 1 / 8 },
+        { id: 'byte', label: 'Byte', bytes: 1 },
+        { id: 'kib', label: 'KiB', bytes: Math.pow(1024, 1) },
+        { id: 'mib', label: 'MiB', bytes: Math.pow(1024, 2) },
+        { id: 'gib', label: 'GiB', bytes: Math.pow(1024, 3) },
+        { id: 'tib', label: 'TiB', bytes: Math.pow(1024, 4) },
+        { id: 'pib', label: 'PiB', bytes: Math.pow(1024, 5) },
+        { id: 'kb', label: 'KB', bytes: Math.pow(1000, 1) },
+        { id: 'mb', label: 'MB', bytes: Math.pow(1000, 2) },
+        { id: 'gb', label: 'GB', bytes: Math.pow(1000, 3) },
+        { id: 'tb', label: 'TB', bytes: Math.pow(1000, 4) },
+        { id: 'pb', label: 'PB', bytes: Math.pow(1000, 5) }
+    ];
+
+    function updateDataSize() {
+        const tbody = document.getElementById('ds-tbody');
+        if (!tbody) return;
+        const v = parseFloat(String(document.getElementById('ds-value').value).replace(',', '.'));
+        const unitId = document.getElementById('ds-unit').value;
+        const u = DATA_UNITS.find(x => x.id === unitId);
+
+        if (!isFinite(v) || !u) { tbody.innerHTML = ''; return; }
+
+        const bytes = v * u.bytes;
+        tbody.innerHTML = DATA_UNITS.map(x => {
+            const val = bytes / x.bytes;
+            const mark = x.id === unitId ? ' style="color:var(--link-color);font-weight:600"' : '';
+            return `<tr><td class="mono"${mark}>${x.label}</td><td class="mono">${formatNumber(val)}</td></tr>`;
+        }).join('');
+    }
+
+    /* =========================================================
+       8. REFERENCE TABLES
+       ========================================================= */
+    function buildPow2() {
+        const el = document.getElementById('pow2-grid');
+        if (!el) return;
+        let html = '';
+        for (let i = 0; i <= 32; i++) {
+            html += `<div class="chip">2<sup>${i}</sup> = ${fmtInt(Math.pow(2, i))}</div>`;
+        }
+        el.innerHTML = html;
+    }
+
+    function buildAscii() {
+        const el = document.getElementById('ascii-grid');
+        if (!el) return;
+        let html = '';
+        for (let i = 32; i <= 126; i++) {
+            const ch = i === 32 ? '\u2420' : String.fromCharCode(i);
+            const esc = ch.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            html += `<div class="ascii-cell">
+                <div class="text-[var(--text-muted)]">${i}</div>
+                <div class="text-base leading-tight text-[var(--heading-color)]">${esc}</div>
+                <div class="text-[var(--text-muted)]">${i.toString(16).toUpperCase().padStart(2, '0')}</div>
+            </div>`;
+        }
+        el.innerHTML = html;
+    }
+
+    /* =========================================================
+       GLOBAL UPDATE
+       ========================================================= */
+    function updateAll() {
+        calcRender();
+        nsRefresh();
+        updateBitwise();
+        updatePercent();
+        updateIPv4();
+        updateIPv6();
+        updateDataSize();
+        buildCidrTable();
+        buildPow2();
+    }
+
+    /* =========================================================
+       THEME / LANGUAGE / DOWNLOAD
+       ========================================================= */
+    function toggleTheme() {
+        const html = document.documentElement;
+        const icon = document.getElementById('theme-icon');
+        if (html.classList.contains('light')) {
+            html.classList.remove('light');
+            icon.className = 'fa-solid fa-sun';
+        } else {
+            html.classList.add('light');
+            icon.className = 'fa-solid fa-moon';
+        }
+    }
+
+    function toggleLang() {
+        isGerman = !isGerman;
+        document.getElementById('lang-indicator').textContent = isGerman ? 'DE' : 'EN';
+        document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+
+        const deEls = document.querySelectorAll('[data-lang-de]');
+        const enEls = document.querySelectorAll('[data-lang-en]');
+
+        if (isGerman) {
+            deEls.forEach(el => el.style.display = '');
+            enEls.forEach(el => el.style.display = 'none');
+        } else {
+            deEls.forEach(el => el.style.display = 'none');
+            enEls.forEach(el => el.style.display = '');
+        }
+
+        updateAll();
+    }
+
+    function downloadHTML() {
+        removeHighlights(document.getElementById('main-content'));
+
+        // Persist current input values / selections into the markup
+        document.querySelectorAll('input').forEach(inp => {
+            if (inp.type === 'checkbox' || inp.type === 'radio') {
+                if (inp.checked) inp.setAttribute('checked', 'checked');
+                else inp.removeAttribute('checked');
+            } else {
+                inp.setAttribute('value', inp.value);
+            }
+        });
+        document.querySelectorAll('select').forEach(sel => {
+            Array.from(sel.options).forEach(opt => {
+                if (opt.selected) opt.setAttribute('selected', 'selected');
+                else opt.removeAttribute('selected');
+            });
+        });
+
+        const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+        const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Rechner_Subnetting_Cheatsheet.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    /* =========================================================
+       SEARCH
+       ========================================================= */
+    function filterWiki() {
+        const input = document.getElementById('wikiSearch');
+        const filter = input.value.toLowerCase();
+        const blocks = document.querySelectorAll('.searchable-block');
+        const mainContent = document.getElementById('main-content');
+
+        removeHighlights(mainContent);
+
+        if (!filter) {
+            blocks.forEach(block => block.style.display = 'block');
+            return;
+        }
+
+        blocks.forEach(block => {
+            const text = block.innerText.toLowerCase();
+            if (text.includes(filter)) {
+                block.style.display = 'block';
+                highlightText(block, input.value);
+            } else {
+                block.style.display = 'none';
+            }
+        });
+    }
+
+    function highlightText(element, keyword) {
+        if (!keyword) return;
+        const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+        const nodesToReplace = [];
+
+        let node;
+        while (node = treeWalker.nextNode()) {
+            if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                const p = node.parentNode;
+                if (p && p.tagName !== 'SCRIPT' && p.tagName !== 'STYLE' && p.tagName !== 'INPUT') {
+                    nodesToReplace.push(node);
+                }
+            }
+        }
+
+        nodesToReplace.forEach(n => {
+            const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+            const fragment = document.createDocumentFragment();
+            let match;
+            let lastIndex = 0;
+            const text = n.nodeValue;
+
+            while ((match = regex.exec(text)) !== null) {
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                const span = document.createElement('span');
+                span.className = 'search-match font-semibold';
+                span.textContent = match[0];
+                fragment.appendChild(span);
+                lastIndex = regex.lastIndex;
+            }
+            fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+            n.parentNode.replaceChild(fragment, n);
+        });
+    }
+
+    function removeHighlights(element) {
+        if (!element) return;
+        const highlights = element.querySelectorAll('.search-match');
+        highlights.forEach(span => {
+            const parent = span.parentNode;
+            parent.replaceChild(document.createTextNode(span.textContent), span);
+            parent.normalize();
+        });
+    }
+
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    /* =========================================================
+       TOC ACTIVE STATE
+       ========================================================= */
+    document.addEventListener('DOMContentLoaded', () => {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const id = entry.target.getAttribute('id');
+                const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+                if (entry.isIntersecting) {
+                    document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                    if (tocLink) tocLink.classList.add('active');
+                }
+            });
+        }, {
+            rootMargin: '-10% 0px -80% 0px',
+            threshold: [0, 0.1, 1]
+        });
+
+        document.querySelectorAll('section, h3[id]').forEach((section) => {
+            observer.observe(section);
+        });
+    });
+
+    /* =========================================================
+       INIT
+       ========================================================= */
+    (function init() {
+        // Custom base dropdown 2..36
+        const sel = document.getElementById('ns-cbase');
+        for (let b = 2; b <= 36; b++) {
+            const opt = document.createElement('option');
+            opt.value = b;
+            opt.textContent = b;
+            if (b === 16) opt.selected = true;
+            sel.appendChild(opt);
+        }
+
+        buildAscii();
+        updateAll();
+        calcRender();
+    })();
+    </script>
+</body>
+</html>
