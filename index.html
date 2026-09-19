@@ -175,7 +175,7 @@
         <!-- Start Menu Launcher -->
         <div id="start-menu" class="hidden absolute w-[360px] h-[520px] bg-hypr-base glass-effect border-2 border-hypr-surface1 rounded-xl shadow-[0_10px_50px_rgba(0,0,0,0.9)] z-[60] flex-row overflow-hidden animate-menu-pop">
             <div class="w-12 bg-hypr-surface0/60 border-r border-hypr-surface1 flex flex-col items-center py-3 justify-end gap-3 z-10">
-                <button onclick="openSettings(); toggleLauncher();" class="w-8 h-8 rounded-lg hover:bg-hypr-surface1 text-hypr-subtext hover:text-hypr-text flex items-center justify-center transition-colors group relative" title="Settings">
+                <button onclick="event.stopPropagation(); openSettings(); toggleLauncher();" class="w-8 h-8 rounded-lg hover:bg-hypr-surface1 text-hypr-subtext hover:text-hypr-text flex items-center justify-center transition-colors group relative" title="Settings">
                     <i class="fa-solid fa-gear group-hover:rotate-90 transition-transform duration-300"></i>
                 </button>
             </div>
@@ -350,6 +350,15 @@
                 } else {
                     wb.classList.remove('top-2');
                     wb.classList.add('bottom-2');
+                }
+                // Keep the position buttons in the settings window in sync
+                const topBtn = document.getElementById('btn-waybar-top');
+                const bottomBtn = document.getElementById('btn-waybar-bottom');
+                if (topBtn && bottomBtn) {
+                    const activeCls = 'p-2.5 rounded-lg border text-center font-medium transition-all bg-white text-black border-white';
+                    const inactiveCls = 'p-2.5 rounded-lg border text-center font-medium transition-all bg-hypr-surface0 text-hypr-subtext border-hypr-surface1 hover:border-hypr-text';
+                    topBtn.className = (value === 'top') ? activeCls : inactiveCls;
+                    bottomBtn.className = (value === 'bottom') ? activeCls : inactiveCls;
                 }
                 const launcher = document.getElementById('start-menu');
                 if (!launcher.classList.contains('hidden')) toggleLauncher();
@@ -686,6 +695,10 @@
             winDiv.style.width = "420px"; winDiv.style.height = "640px";
             winDiv.style.top = window.getTopOffset() + "px"; winDiv.style.left = GAP + "px";
             
+            const isTop = window.hyprConfig.waybarPosition === 'top';
+            const activeBtnCls = 'p-2.5 rounded-lg border text-center font-medium transition-all bg-white text-black border-white';
+            const inactiveBtnCls = 'p-2.5 rounded-lg border text-center font-medium transition-all bg-hypr-surface0 text-hypr-subtext border-hypr-surface1 hover:border-hypr-text';
+
             winDiv.innerHTML = `
                 <div class="window-header h-8 bg-hypr-surface0 flex justify-between items-center px-3 border-b border-hypr-surface1 select-none">
                     <span class="text-xs font-semibold tracking-wider text-hypr-subtext truncate flex items-center gap-2"><i class="fa-solid fa-gear"></i> sHyprland Settings</span>
@@ -722,10 +735,10 @@
                     <div class="flex flex-col gap-3">
                         <span class="text-xs font-bold uppercase tracking-wider text-hypr-subtext opacity-70">Topbar Position</span>
                         <div class="grid grid-cols-2 gap-2">
-                            <button onclick="updateHyprConfig('waybarPosition', 'top')" class="p-2.5 rounded-lg border text-center font-medium transition-all ${window.hyprConfig.waybarPosition === 'top' ? 'bg-white text-black border-white' : 'bg-hypr-surface0 text-hypr-subtext border-hypr-surface1 hover:border-hypr-text'}">
+                            <button id="btn-waybar-top" onclick="updateHyprConfig('waybarPosition', 'top')" class="${isTop ? activeBtnCls : inactiveBtnCls}">
                                 Top Bar
                             </button>
-                            <button onclick="updateHyprConfig('waybarPosition', 'bottom')" class="p-2.5 rounded-lg border text-center font-medium transition-all ${window.hyprConfig.waybarPosition === 'bottom' ? 'bg-white text-black border-white' : 'bg-hypr-surface0 text-hypr-subtext border-hypr-surface1 hover:border-hypr-text'}">
+                            <button id="btn-waybar-bottom" onclick="updateHyprConfig('waybarPosition', 'bottom')" class="${!isTop ? activeBtnCls : inactiveBtnCls}">
                                 Bottom Bar
                             </button>
                         </div>
