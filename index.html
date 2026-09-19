@@ -131,6 +131,36 @@
         ::-webkit-scrollbar-thumb:hover { background: var(--tw-colors-hypr-accent); }
         
         .start-menu-scrollbar::-webkit-scrollbar { width: 4px; }
+
+        /* Taskbar horizontal scrollbar (thin, unobtrusive) */
+        .taskbar-scrollbar::-webkit-scrollbar { height: 3px; width: 3px; }
+        .taskbar-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .taskbar-scrollbar::-webkit-scrollbar-thumb { background: var(--tw-colors-hypr-surface1); border-radius: 3px; }
+        .taskbar-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--tw-colors-hypr-accent); }
+
+        /* Smooth appearance for taskbar items */
+        .taskbar-item {
+            transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+        }
+        .taskbar-item:active {
+            transform: scale(0.96);
+        }
+
+        /* Small active-indicator dot below the active taskbar item */
+        .taskbar-item.is-active {
+            position: relative;
+        }
+        .taskbar-item.is-active::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 2px;
+            background: var(--tw-colors-hypr-accent);
+            border-radius: 1px;
+        }
     </style>
 </head>
 
@@ -146,7 +176,7 @@
 
         <!-- Waybar (Top/Bottom Bar) -->
         <div id="waybar" class="absolute top-2 left-2 right-2 h-9 glass-effect rounded-full border border-hypr-surface1 flex items-center justify-between px-4 z-50 transition-all duration-300">
-            <div class="flex items-center gap-2 h-full">
+            <div class="flex items-center gap-2 h-full flex-shrink-0">
                 <button id="launcher-btn" class="text-hypr-accent hover:text-white mr-2 transition-transform hover:scale-110" onclick="toggleLauncher(event)" title="Start Menu">
                     <i class="fa-brands fa-linux text-lg"></i>
                 </button>
@@ -158,11 +188,13 @@
                 </div>
             </div>
 
-            <div id="active-window-title" class="text-sm font-medium text-hypr-text truncate max-w-[30%] opacity-80">
-                ~
+            <!-- Center: active window title + taskbar (taskbar only visible when auto-tiling is OFF) -->
+            <div class="flex-1 flex items-center justify-center gap-3 overflow-hidden min-w-0 px-4">
+                <div id="active-window-title" class="text-sm font-medium text-hypr-text truncate opacity-80 flex-shrink min-w-0">~</div>
+                <div id="taskbar" class="hidden items-center gap-1 overflow-x-auto taskbar-scrollbar flex-shrink-0 max-w-[65%] py-1"></div>
             </div>
 
-            <div class="flex items-center h-full gap-2 text-sm text-hypr-subtext">
+            <div class="flex items-center h-full gap-2 text-sm text-hypr-subtext flex-shrink-0">
                 <div id="date-display" class="font-medium text-hypr-text bg-hypr-surface0 px-3 py-0.5 rounded-full border border-hypr-surface1 cursor-pointer hover:border-hypr-accent transition-colors" onclick="toggleDateFormat()">
                     <span id="date"></span>
                 </div>
@@ -232,6 +264,90 @@
         function getScrW() { return window.innerWidth / window.hyprConfig.scale; }
         function getScrH() { return window.innerHeight / window.hyprConfig.scale; }
 
+        /* ============================================================
+           TASKBAR (visible only when auto-tiling is OFF)
+           ============================================================ */
+        window.renderTaskbar = function() {
+            const taskbar = document.getElementById('taskbar');
+            if (!taskbar) return;
+
+            // Only show the taskbar in "normal windows" mode
+            if (window.hyprConfig.autoTiling) {
+                taskbar.classList.add('hidden');
+                taskbar.classList.remove('flex');
+                return;
+            }
+
+            // Collect all open windows on the current workspace
+            const wsWindows = windowOrder.filter(id => 
+                windows[id] && windows[id].isOpen && windows[id].workspace === currentWorkspace
+            );
+
+            // If none, keep it hidden
+            if (wsWindows.length === 0) {
+                taskbar.classList.add('hidden');
+                taskbar.classList.remove('flex');
+                taskbar.innerHTML = '';
+                return;
+            }
+
+            // Show it and rebuild entries
+            taskbar.classList.remove('hidden');
+            taskbar.classList.add('flex');
+            taskbar.innerHTML = '';
+
+            wsWindows.forEach(id => {
+                const w = windows[id];
+                const isActive = (id === activeWindowId) && !w.isMinimized;
+                const isMinimized = !!w.isMinimized;
+
+                const btn = document.createElement('button');
+                const baseCls = 'taskbar-item flex items-center gap-1.5 h-6 px-2 rounded-md border text-[11px] font-medium flex-shrink-0 cursor-pointer';
+
+                let stateCls;
+                if (isActive) {
+                    stateCls = 'bg-hypr-accent text-black border-hypr-accent';
+                } else if (isMinimized) {
+                    stateCls = 'bg-hypr-surface0/30 text-hypr-subtext/60 border-hypr-surface1/60 hover:border-hypr-text hover:text-hypr-text';
+                } else {
+                    stateCls = 'bg-hypr-surface0 text-hypr-subtext border-hypr-surface1 hover:border-hypr-text hover:text-hypr-text';
+                }
+
+                btn.className = `${baseCls} ${stateCls}${isActive ? ' is-active' : ''}`;
+
+                const iconClass = w.isJs
+                    ? 'fa-brands fa-js text-yellow-400'
+                    : 'fa-brands fa-html5 text-orange-500';
+
+                const label = w.appName || w.title || 'App';
+                btn.innerHTML = `<i class="${iconClass} text-[10px]"></i><span class="truncate max-w-[110px]">${label}</span>`;
+                btn.title = isMinimized ? `${label} (minimized)` : label;
+
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (w.isMinimized) {
+                        openWindow(id);
+                    } else if (id === activeWindowId) {
+                        // Already active — leave it focused
+                        bringToFront(id);
+                    } else {
+                        if (w.workspace !== currentWorkspace) switchWorkspace(w.workspace);
+                        bringToFront(id);
+                    }
+                };
+
+                // Middle-click closes (bonus, feels natural on taskbars)
+                btn.onauxclick = (e) => {
+                    if (e.button === 1) {
+                        e.preventDefault();
+                        closeApp(id);
+                    }
+                };
+
+                taskbar.appendChild(btn);
+            });
+        };
+
         // Click outside to close start menu or settings menu if it loses focus
         document.addEventListener('click', (e) => {
             const menu = document.getElementById('start-menu');
@@ -254,6 +370,7 @@
             if (windows[winId]) {
                 windows[winId].workspace = ws;
                 window.switchWorkspace(ws);
+                window.renderTaskbar();
             }
         };
 
@@ -325,12 +442,15 @@
                 }
             });
             window.tileWindows();
+            window.renderTaskbar();
         }
 
         window.updateHyprConfig = function(key, value) {
             if (key === "autoTiling") {
                 window.hyprConfig.autoTiling = value;
                 if (value) window.tileWindows();
+                // Toggling auto-tiling changes the taskbar visibility
+                window.renderTaskbar();
             } else if (key === "scale") {
                 window.hyprConfig.scale = parseFloat(value);
                 const root = document.getElementById("hypr-root");
@@ -530,6 +650,7 @@
             window.allApps = items;
             window.currentCategory = null;
             renderStartMenuView();
+            window.renderTaskbar();
         });
 
         function renderStartMenuView() {
@@ -666,7 +787,8 @@
 
                 windows[winId] = {
                     element: winDiv, isOpen: true, isMaximized: false, isSnapped: false, isFloating: false,
-                    appName: app.name, title: app.name, config: config, workspace: currentWorkspace
+                    appName: app.name, title: app.name, config: config, workspace: currentWorkspace,
+                    isJs: app.type === 'js'
                 };
                 
                 windowOrder.push(winId);
@@ -675,6 +797,7 @@
                 winDiv.addEventListener('mousedown', () => bringToFront(winId));
                 bringToFront(winId);
                 window.tileWindows();
+                window.renderTaskbar();
             } catch (err) {
                 console.error(err);
             }
@@ -788,11 +911,12 @@
                 </div>
             `;
             document.getElementById('windows-container').appendChild(winDiv);
-            windows[winId] = { element: winDiv, isOpen: true, isMaximized: false, isSnapped: false, isFloating: true, config: {maxizable: false}, workspace: currentWorkspace };
+            windows[winId] = { element: winDiv, isOpen: true, isMaximized: false, isSnapped: false, isFloating: true, config: {maxizable: false}, workspace: currentWorkspace, isJs: false };
             windowOrder.push(winId);
             makeDraggable(winDiv);
             winDiv.addEventListener("mousedown", () => bringToFront(winId));
             bringToFront(winId);
+            window.renderTaskbar();
         };
 
         window.toggleFloating = function(winId) {
@@ -800,6 +924,7 @@
             if (!w) return;
             w.isFloating = !w.isFloating;
             window.tileWindows();
+            window.renderTaskbar();
         }
 
         window.openWindow = function(winId) {
@@ -809,6 +934,7 @@
             w.element.classList.remove('minimized');
             bringToFront(winId);
             window.tileWindows();
+            window.renderTaskbar();
         }
 
         function closeApp(winId) {
@@ -821,6 +947,7 @@
             if(remaining.length > 0) bringToFront(remaining[remaining.length - 1]);
             else document.getElementById('active-window-title').textContent = '~';
             window.tileWindows();
+            window.renderTaskbar();
         }
 
         function bringToFront(winId) {
@@ -831,6 +958,7 @@
                 windows[winId].element.classList.add('active-window');
                 document.getElementById('active-window-title').textContent = windows[winId].title;
                 activeWindowId = winId;
+                window.renderTaskbar();
             }
         }
 
@@ -1019,6 +1147,7 @@
                         window.tileWindows();
                     }
                 }
+                window.renderTaskbar();
             }
         }
     </script>
