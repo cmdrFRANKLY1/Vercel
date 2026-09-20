@@ -195,6 +195,9 @@
                     <!-- Favorites will be injected here -->
                 </div>
                 <div class="flex flex-col gap-3 w-full items-center pb-1">
+                    <button id="fullscreen-btn" onclick="toggleFullscreen()" class="w-8 h-8 rounded-lg hover:bg-hypr-surface1 text-hypr-subtext hover:text-hypr-text flex items-center justify-center transition-colors group relative" title="Toggle Fullscreen">
+                        <i id="fullscreen-icon" class="fa-solid fa-expand group-hover:scale-110 transition-transform duration-300"></i>
+                    </button>
                     <button onclick="openSettings(); toggleLauncher();" class="w-8 h-8 rounded-lg hover:bg-hypr-surface1 text-hypr-subtext hover:text-hypr-text flex items-center justify-center transition-colors group relative" title="Settings">
                         <i class="fa-solid fa-gear group-hover:rotate-90 transition-transform duration-300"></i>
                     </button>
@@ -252,6 +255,65 @@
 
         function getScrW() { return window.innerWidth / window.hyprConfig.scale; }
         function getScrH() { return window.innerHeight / window.hyprConfig.scale; }
+
+        /* ---------------- Fullscreen ---------------- */
+        function getFullscreenElement() {
+            return document.fullscreenElement ||
+                   document.webkitFullscreenElement ||
+                   document.mozFullScreenElement ||
+                   document.msFullscreenElement || null;
+        }
+
+        window.toggleFullscreen = function() {
+            const doc = document;
+            const el = document.documentElement;
+
+            if (!getFullscreenElement()) {
+                const req = el.requestFullscreen ||
+                            el.webkitRequestFullscreen ||
+                            el.webkitRequestFullScreen ||
+                            el.mozRequestFullScreen ||
+                            el.msRequestFullscreen;
+                if (req) {
+                    const result = req.call(el);
+                    if (result && typeof result.catch === 'function') result.catch(() => {});
+                }
+            } else {
+                const exit = doc.exitFullscreen ||
+                             doc.webkitExitFullscreen ||
+                             doc.webkitCancelFullScreen ||
+                             doc.mozCancelFullScreen ||
+                             doc.msExitFullscreen;
+                if (exit) {
+                    const result = exit.call(doc);
+                    if (result && typeof result.catch === 'function') result.catch(() => {});
+                }
+            }
+        };
+
+        function updateFullscreenIcon() {
+            const icon = document.getElementById('fullscreen-icon');
+            const btn = document.getElementById('fullscreen-btn');
+            if (!icon) return;
+            const isFs = !!getFullscreenElement();
+            icon.className = isFs
+                ? 'fa-solid fa-compress group-hover:scale-110 transition-transform duration-300'
+                : 'fa-solid fa-expand group-hover:scale-110 transition-transform duration-300';
+            if (btn) btn.title = isFs ? 'Exit Fullscreen' : 'Enter Fullscreen';
+        }
+
+        function handleFullscreenChange() {
+            updateFullscreenIcon();
+            // Viewport size changes dramatically in/out of fullscreen: re-fit the desktop.
+            window.hyprConfig.scale = parseFloat((window.innerHeight / 1080).toFixed(2)) || 1.0;
+            applyInitialScale();
+            window.tileWindows();
+        }
+
+        ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange']
+            .forEach(evt => document.addEventListener(evt, handleFullscreenChange));
+
+        /* -------------------------------------------- */
 
         window.moveToWorkspace = function(winId, ws) {
             if (windows[winId]) {
@@ -435,6 +497,7 @@
                 launcher.classList.remove('hidden');
                 launcher.classList.add('flex');
                 if (overlay) overlay.classList.remove('hidden');
+                updateFullscreenIcon();
                 
                 setTimeout(() => {
                     searchInput.focus();
@@ -544,6 +607,7 @@
             window.currentCategory = null;
             renderStartMenuView();
             renderFavorites();
+            updateFullscreenIcon();
         });
 
         function renderFavorites() {
