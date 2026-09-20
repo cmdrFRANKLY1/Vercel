@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCP vs. UDP Cheatsheet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- LaTeX Support via KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #202122;
+            --border-color: #54595d;
+            --text-color: #eaecf0;
+            --text-muted: #a8aeb3;
+            --link-color: #99c1f1;
+            --link-hover: #629deb;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --info-box: #2c2d30;
+            --table-alt: rgba(255,255,255,0.02);
+            --search-match: rgba(250, 204, 21, 0.3);
+            --search-text: #ffffff;
+
+            /* Network Protocol Colors */
+            --c-tcp: #3b82f6;      /* Blue */
+            --c-udp: #f59e0b;      /* Orange */
+            --c-ack: #10b981;      /* Green */
+            --c-error: #ef4444;    /* Red */
+
+            /* Layout tuning */
+            --content-max: 1600px;
+            --sidebar-w: 20rem; /* 320px */
+
+            /* Shadows */
+            --panel-border: #54595d;
+            --card-shadow:
+                0 0 22px 0 rgba(0, 0, 0, 0.55),
+                0 0 10px 0 rgba(0, 0, 0, 0.45),
+                0 4px 24px 0 rgba(0, 0, 0, 0.35);
+            --card-shadow-hover:
+                0 0 40px 0 rgba(0, 0, 0, 0.7),
+                0 0 18px 0 rgba(0, 0, 0, 0.55),
+                0 8px 36px 0 rgba(0, 0, 0, 0.45);
+        }
+
+        html.light {
+            --bg-color: #f4f6f9;
+            --panel-color: #ffffff;
+            --sidebar-color: #ffffff;
+            --border-color: #cbd5e1;
+            --text-color: #0f172a;
+            --text-muted: #475569;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --heading-color: #020617;
+            --code-bg: #f1f5f9;
+            --info-box: #e0f2fe;
+            --table-alt: rgba(0,0,0,0.015);
+            --search-match: rgba(250, 204, 21, 0.5);
+            --search-text: #000000;
+
+            --panel-border: #e2e8f0;
+            --card-shadow:
+                0 0 28px 0 rgba(0, 0, 0, 0.18),
+                0 0 12px 0 rgba(0, 0, 0, 0.12),
+                0 4px 24px 0 rgba(0, 0, 0, 0.10);
+            --card-shadow-hover:
+                0 0 48px 0 rgba(0, 0, 0, 0.28),
+                0 0 22px 0 rgba(0, 0, 0, 0.20),
+                0 8px 36px 0 rgba(0, 0, 0, 0.16);
+        }
+
+        html { font-size: 16px; }
+        @media (min-width: 1536px)  { html { font-size: 17px; } }
+        @media (min-width: 1800px)  { html { font-size: 18px; } }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.65;
+            transition: background-color 0.2s, color 0.2s;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 800 !important; line-height: 1.15; text-wrap: balance; }
+        h1 { font-size: clamp(2.1rem, 3vw, 3.1rem) !important; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+        h2 { font-size: clamp(1.6rem, 2.1vw, 2.15rem) !important; padding-bottom: 0.4rem; margin-top: 0; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); }
+        h3 { font-size: clamp(1.25rem, 1.5vw, 1.6rem) !important; margin-top: 1.25rem; margin-bottom: 0.7rem; }
+        h4 { font-size: clamp(1.1rem, 1.2vw, 1.35rem) !important; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+        
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+        p { margin-bottom: 1rem; max-width: 90ch; }
+
+        code { background-color: var(--code-bg); padding: 0.15rem 0.4rem; border-radius: 0.25rem; border: 1px solid var(--border-color); font-family: 'Fira Code', monospace; font-size: 0.85em; color: var(--text-color); }
+
+        /* Tables & Layout */
+        .wikitable { width: 100%; border-collapse: collapse; margin: 1em 0; background-color: var(--bg-color); font-size: 0.95em; border: 1px solid var(--panel-border); border-radius: 0.5rem; overflow: hidden; }
+        .wikitable th, .wikitable td { border: 1px solid var(--panel-border); padding: 0.7em 0.95em; text-align: left; vertical-align: top; }
+        .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); }
+        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
+
+        .toc-link.active { font-weight: 600; color: var(--heading-color); position: relative; }
+        .toc-link.active::before { content: ''; position: absolute; left: -1rem; top: 0; height: 100%; width: 3px; background-color: var(--link-color); }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+        .app-sidebar { width: var(--sidebar-w); max-height: 50vh; }
+        @media (min-width: 1024px) { .app-sidebar { max-height: 100vh; } }
+        .app-main { flex: 1 1 0%; min-width: 0; width: 100%; max-width: var(--content-max); padding: 1rem; }
+        @media (min-width: 1024px) { .app-main { padding: 1.5rem; } }
+        @media (min-width: 1280px) { .app-main { padding: 2rem; } }
+
+        /* Cards */
+        .topic-panel { background-color: var(--panel-color); border: 1px solid var(--panel-border); box-shadow: var(--card-shadow); border-radius: 1rem; padding: 1.5rem; margin: 2rem 0; transition: box-shadow 0.3s ease; }
+        .topic-panel:hover { box-shadow: var(--card-shadow-hover); }
+        .topic-panel.mt-0 { margin-top: 0; }
+        
+        .subtopic-card { background-color: var(--bg-color); border: 1px solid var(--panel-border); border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem; transition: transform 0.2s ease; }
+        .subtopic-card:hover { box-shadow: var(--card-shadow); transform: translateY(-2px); }
+
+        /* Math & Legends */
+        .math-card { background-color: var(--panel-color); border: 1px solid var(--panel-border); border-radius: 0.5rem; padding: 1.25rem; margin: 1rem 0; }
+        .symbol-legend { display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1rem; align-items: start; font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+        .symbol-legend .sym { font-family: 'Fira Code', monospace; color: var(--heading-color); font-weight: 500; text-align: right; }
+
+        /* Custom buttons and sliders */
+        .btn-primary { background-color: var(--link-color); color: #fff; transition: transform 0.1s, opacity 0.2s; border: none; }
+        html:not(.light) .btn-primary { color: #000; }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(1px); }
+
+        .range-slider { -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: var(--border-color); outline: none; }
+        .range-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--link-color); cursor: pointer; }
+        
+        .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
+
+        /* Language Toggle Classes */
+        .lang-en { display: none; }
+        body[data-active-lang="en"] .lang-de { display: none !important; }
+        body[data-active-lang="en"] .lang-en { display: block !important; }
+        body[data-active-lang="en"] span.lang-en, body[data-active-lang="en"] a.lang-en { display: inline !important; }
+        body[data-active-lang="de"] .lang-en { display: none !important; }
+        body[data-active-lang="de"] .lang-de { display: block !important; }
+        body[data-active-lang="de"] span.lang-de, body[data-active-lang="de"] a.lang-de { display: inline !important; }
+    </style>
+</head>
+
+<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
+
+    <aside class="app-sidebar flex-shrink-0 bg-[var(--sidebar-color)] border-b lg:border-b-0 lg:border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
+        
+        <!-- Controls -->
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
+                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Cheatsheet">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+            <i class="fa-solid fa-network-wired text-3xl mb-3 text-[var(--text-color)] opacity-80"></i>
+            <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span class="lang-de">TCP & UDP<br>Protokolle</span>
+                <span class="lang-en">TCP & UDP<br>Protocols</span>
+            </div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v1.0 - Computer Networks</div>
+        </div>
+
+        <div class="mb-6 relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
+            </div>
+            <input type="text" id="wikiSearch" placeholder="Search..." class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-xl pl-10 pr-3 py-2.5 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-all shadow-sm" onkeyup="filterWiki()">
+        </div>
+
+        <nav class="text-sm space-y-1.5" id="toc-nav">
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span class="lang-de">Inhaltsverzeichnis</span>
+                <span class="lang-en">Table of Contents</span>
+            </div>
+            <ul class="space-y-1">
+                <li><a href="#simulation" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors mb-2">
+                    <i class="fa-solid fa-play-circle mr-1"></i>
+                    <span class="lang-de">Interaktive Simulation</span><span class="lang-en">Interactive Simulation</span>
+                </a></li>
+                <li><a href="#tcp" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">1. TCP (Zuverlässig)</span><span class="lang-en">1. TCP (Reliable)</span>
+                </a></li>
+                <li><a href="#udp" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">2. UDP (Schnell)</span><span class="lang-en">2. UDP (Fast)</span>
+                </a></li>
+                <li><a href="#matrix" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">3. Direkter Vergleich</span><span class="lang-en">3. Direct Comparison</span>
+                </a></li>
+                <li><a href="#sockets" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">4. Ports & Sockets</span><span class="lang-en">4. Ports & Sockets</span>
+                </a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="app-main" id="main-content">
+        <!-- Intro -->
+        <div class="searchable-block topic-panel mt-0 mb-8">
+            <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0">
+                <span class="lang-de">Transportschicht: TCP & UDP</span>
+                <span class="lang-en">Transport Layer: TCP & UDP</span>
+            </h1>
+            <p class="text-lg mb-0">
+                <span class="lang-de">Auf der <strong>Transportschicht</strong> des Internets (Layer 4) gibt es zwei Hauptakteure: <strong>TCP</strong> und <strong>UDP</strong>. Sie entscheiden, <em>wie</em> Datenpakete von A nach B geschickt werden. TCP ist der sorgfältige Einschreibebrief, UDP ist der rasende Zeitungsausträger.</span>
+                <span class="lang-en">At the <strong>Transport Layer</strong> of the internet (Layer 4), there are two main protocols: <strong>TCP</strong> and <strong>UDP</strong>. They decide <em>how</em> packets are delivered from A to B. TCP is the careful certified mailman, while UDP is the reckless paperboy.</span>
+            </p>
+        </div>
+
+        <!-- INTERACTIVE SIMULATION -->
+        <section id="simulation" class="scroll-mt-10 searchable-block topic-panel mb-8 !p-0 overflow-hidden border-2 border-[var(--border-color)]">
+            <div class="p-5 border-b border-[var(--border-color)] bg-[var(--panel-color)] flex justify-between items-center flex-wrap gap-4">
+                <div>
+                    <h2 class="!mt-0 !mb-1 text-[var(--link-color)] border-none">
+                        <i class="fa-solid fa-satellite-dish mr-2"></i>
+                        <span class="lang-de">Das große Netzwerk-Rennen</span>
+                        <span class="lang-en">The Great Network Race</span>
+                    </h2>
+                    <p class="text-sm text-[var(--text-muted)] !mb-0">
+                        <span class="lang-de">Sende ein Bild (aufgeteilt in 5 Pakete). Beobachte, was bei Netzwerk-Chaos passiert.</span>
+                        <span class="lang-en">Send an image (split into 5 packets). Watch how they handle network chaos.</span>
+                    </p>
+                </div>
+                
+                <div class="flex items-center gap-4 bg-[var(--bg-color)] p-3 rounded-lg border border-[var(--border-color)] w-full md:w-auto">
+                    <div class="flex-grow md:w-48">
+                        <div class="flex justify-between text-xs font-bold text-[var(--text-muted)] mb-1 uppercase">
+                            <span class="lang-de">Chaos (Paketverlust)</span><span class="lang-en">Chaos (Drop Rate)</span>
+                            <span id="dropRateDisplay">0%</span>
+                        </div>
+                        <input type="range" id="dropRateSlider" class="range-slider" min="0" max="80" value="0">
+                    </div>
+                    <button onclick="startSimulation()" class="btn-primary px-4 py-2 rounded-lg font-bold text-sm shadow flex-shrink-0">
+                        <i class="fa-solid fa-paper-plane mr-2"></i> 
+                        <span class="lang-de">Daten Senden</span><span class="lang-en">Send Data</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="w-full bg-[var(--bg-color)] relative" style="height: 400px;">
+                <canvas id="simCanvas"></canvas>
+            </div>
+        </section>
+
+        <section id="tcp" class="scroll-mt-10 searchable-block topic-panel mt-8">
+            <h2>
+                <span class="lang-de">1. TCP (Transmission Control Protocol)</span>
+                <span class="lang-en">1. TCP (Transmission Control Protocol)</span>
+            </h2>
+
+            <div class="subtopic-card">
+                <p>
+                    <span class="lang-de">TCP ist verbindungsorientiert und absolut zuverlässig. Es garantiert, dass Daten <strong>fehlerfrei, vollständig und in der richtigen Reihenfolge</strong> ankommen. Geht ein Paket verloren, wird es so lange neu gesendet, bis der Empfänger den Erhalt bestätigt (ACK).</span>
+                    <span class="lang-en">TCP is connection-oriented and absolutely reliable. It guarantees that data arrives <strong>error-free, intact, and in the correct order</strong>. If a packet is lost, it is retransmitted until the receiver acknowledges it (ACK).</span>
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div class="bg-[var(--info-box)] p-4 rounded-lg border border-[var(--border-color)]">
+                        <h4 class="mt-0 text-[var(--link-color)]"><i class="fa-solid fa-handshake mr-2"></i><span class="lang-de">Erklärung</span><span class="lang-en">Explanation</span></h4>
+                        <p class="text-sm mb-0">
+                            <span class="lang-de">Stell dir einen Paketboten vor, der dir 5 Pakete bringt. Er ruft vorher an, ob du da bist (<strong>3-Way Handshake</strong>). Er gibt dir Paket 1 und wartet, bis du unterschreibst (<strong>ACK</strong>), bevor er Paket 2 holt. Wenn ihm ein Paket geklaut wird, bestellt er sofort Ersatz (<strong>Retransmission</strong>).</span>
+                            <span class="lang-en">Imagine a delivery guy bringing 5 boxes. He calls first to check if you're home (<strong>3-Way Handshake</strong>). He hands you Box 1 and waits for your signature (<strong>ACK</strong>) before grabbing Box 2. If a box is stolen, he immediately orders a replacement (<strong>Retransmission</strong>).</span>
+                        </p>
+                    </div>
+                    
+                    <div class="math-card my-0 flex flex-col justify-center">
+                        <p class="font-mono text-sm mb-2 font-semibold mt-0 border-b border-[var(--border-color)] pb-2">
+                            <span class="lang-de">Einsatzgebiete (Use Cases)</span><span class="lang-en">Use Cases</span>
+                        </p>
+                        <ul class="list-disc pl-5 text-sm space-y-1 text-[var(--text-color)] mt-2">
+                            <li><strong>HTTP / HTTPS</strong> (Webseiten)</li>
+                            <li><strong>SMTP / IMAP</strong> (E-Mails)</li>
+                            <li><strong>FTP</strong> (Datei-Downloads)</li>
+                            <li><span class="lang-de">Alles, wo kein einziges Bit fehlen darf!</span><span class="lang-en">Anything where missing a single byte breaks the file!</span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="math-card mt-4">
+                    <p class="font-mono text-sm mb-2 font-semibold mt-0">
+                        <span class="lang-de">Der 3-Way Handshake (Verbindungsaufbau)</span>
+                        <span class="lang-en">The 3-Way Handshake (Connection Setup)</span>
+                    </p>
+                    <div class="symbol-legend mt-2">
+                        <div class="col-span-2 text-xs uppercase tracking-wider font-bold text-[var(--heading-color)] mb-1">
+                            Client $\longleftrightarrow$ Server
+                        </div>
+                        <div class="sym text-[var(--link-color)]">1. SYN $\rightarrow$</div>
+                        <div><span class="lang-de">"Hallo Server, bist du wach? Lass uns reden."</span><span class="lang-en">"Hello Server, are you awake? Let's talk."</span></div>
+                        
+                        <div class="sym text-[var(--c-ack)]">$\leftarrow$ SYN-ACK 2.</div>
+                        <div><span class="lang-de">"Hallo Client, ich bin wach. Bin bereit!"</span><span class="lang-en">"Hello Client, I'm awake. Ready to receive!"</span></div>
+                        
+                        <div class="sym text-[var(--link-color)]">3. ACK $\rightarrow$</div>
+                        <div><span class="lang-de">"Super, hier kommen die Daten..."</span><span class="lang-en">"Awesome, here comes the data..."</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="udp" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2>
+                <span class="lang-de">2. UDP (User Datagram Protocol)</span>
+                <span class="lang-en">2. UDP (User Datagram Protocol)</span>
+            </h2>
+
+            <div class="subtopic-card">
+                <p>
+                    <span class="lang-de">UDP ist verbindungs<strong>los</strong> und unzuverlässig, dafür aber <strong>extrem schnell</strong> und leichtgewichtig. Es schießt Pakete (Datagramme) einfach ins Netz, ohne vorher "Hallo" zu sagen und ohne zu prüfen, ob sie jemals ankommen.</span>
+                    <span class="lang-en">UDP is connection<strong>less</strong> and unreliable, but <strong>extremely fast</strong> and lightweight. It just shoots packets (datagrams) into the network without saying "hello" first, and without checking if they ever arrive.</span>
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div class="bg-[var(--info-box)] p-4 rounded-lg border border-[var(--border-color)]">
+                        <h4 class="mt-0 text-[var(--c-udp)]"><i class="fa-solid fa-paper-plane mr-2"></i><span class="lang-de">Idiotensicher erklärt</span><span class="lang-en">Idiot-Proof Explanation</span></h4>
+                        <p class="text-sm mb-0">
+                            <span class="lang-de">Stell dir einen rasenden Zeitungsausträger auf dem Fahrrad vor. Er fährt an deinem Haus vorbei und wirft 5 Zeitungen grob in Richtung deiner Tür (<strong>Fire and Forget</strong>). Wenn eine Zeitung im Busch landet oder geklaut wird, ist ihm das völlig egal. Er fährt einfach weiter.</span>
+                            <span class="lang-en">Imagine a speeding paperboy on a bike. He rides past your house and hurls 5 newspapers roughly at your door (<strong>Fire and Forget</strong>). If a paper lands in the bushes or gets stolen, he doesn't care at all. He just keeps riding.</span>
+                        </p>
+                    </div>
+                    
+                    <div class="math-card my-0 flex flex-col justify-center">
+                        <p class="font-mono text-sm mb-2 font-semibold mt-0 border-b border-[var(--border-color)] pb-2">
+                            <span class="lang-de">Einsatzgebiete (Use Cases)</span><span class="lang-en">Use Cases</span>
+                        </p>
+                        <ul class="list-disc pl-5 text-sm space-y-1 text-[var(--text-color)] mt-2">
+                            <li><strong><span class="lang-de">Live-Video / Zoom</span><span class="lang-en">Live-Video / Zoom</span></strong></li>
+                            <li><strong><span class="lang-de">Online-Gaming</span><span class="lang-en">Online Gaming</span></strong> (Shooter)</li>
+                            <li><strong>DNS</strong> (Domain Name System)</li>
+                            <li><span class="lang-de">Alles, wo <em>Aktualität</em> wichtiger ist als <em>Vollständigkeit</em>. Besser ein ruckelndes Bild als 5 Sekunden Delay!</span><span class="lang-en">Anything where <em>speed</em> is more important than <em>completeness</em>. A glitchy video frame is better than a 5-second lag!</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="matrix" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2>
+                <span class="lang-de">3. Direkter Vergleich</span>
+                <span class="lang-en">3. Direct Comparison</span>
+            </h2>
+
+            <table class="wikitable mt-6">
+                <tr>
+                    <th class="w-1/4">Feature</th>
+                    <th class="w-2/5"><span class="text-[var(--c-tcp)]"><i class="fa-solid fa-shield-halved mr-1"></i> TCP</span></th>
+                    <th class="w-2/5"><span class="text-[var(--c-udp)]"><i class="fa-solid fa-bolt mr-1"></i> UDP</span></th>
+                </tr>
+                <tr>
+                    <td><strong><span class="lang-de">Verbindungsaufbau</span><span class="lang-en">Connection</span></strong></td>
+                    <td><span class="lang-de">Verbindungsorientiert (3-Way Handshake).</span><span class="lang-en">Connection-oriented (3-way handshake).</span></td>
+                    <td><span class="lang-de">Verbindungslos (Einfach senden).</span><span class="lang-en">Connectionless (Just send it).</span></td>
+                </tr>
+                <tr>
+                    <td><strong><span class="lang-de">Zuverlässigkeit</span><span class="lang-en">Reliability</span></strong></td>
+                    <td><span class="lang-de">Hoch. Fehlende Pakete werden neu angefordert.</span><span class="lang-en">High. Missing packets are requested again.</span></td>
+                    <td><span class="lang-de">Keine. Verloren ist verloren.</span><span class="lang-en">None. Lost is lost.</span></td>
+                </tr>
+                <tr>
+                    <td><strong><span class="lang-de">Reihenfolge</span><span class="lang-en">Ordering</span></strong></td>
+                    <td><span class="lang-de">Garantiert (durch Sequence Numbers sortiert).</span><span class="lang-en">Guaranteed (sorted via Sequence Numbers).</span></td>
+                    <td><span class="lang-de">Zufällig (Wie sie eben ankommen).</span><span class="lang-en">Random (Whichever arrives first).</span></td>
+                </tr>
+                <tr>
+                    <td><strong><span class="lang-de">Geschwindigkeit</span><span class="lang-en">Speed</span></strong></td>
+                    <td><span class="lang-de">Langsam (Overhead durch ACKs & Header).</span><span class="lang-en">Slower (Overhead from ACKs & Headers).</span></td>
+                    <td><span class="lang-de">Sehr schnell (Minimaler Overhead).</span><span class="lang-en">Very fast (Minimal overhead).</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Header Größe</strong></td>
+                    <td class="font-mono">20 - 60 Bytes</td>
+                    <td class="font-mono">8 Bytes</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="sockets" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
+            <h2>
+                <span class="lang-de">4. Ports & Sockets</span>
+                <span class="lang-en">4. Ports & Sockets</span>
+            </h2>
+            <div class="subtopic-card">
+                <p>
+                    <span class="lang-de">Damit ein Paket nicht nur beim richtigen Computer (IP-Adresse), sondern auch beim richtigen <em>Programm</em> auf diesem Computer ankommt, werden <strong>Ports</strong> genutzt. Die Kombination aus beidem nennt man <strong>Socket</strong>.</span>
+                    <span class="lang-en">For a packet to reach not just the correct computer (IP address) but the correct <em>application</em> on that computer, <strong>Ports</strong> are used. The combination of both is called a <strong>Socket</strong>.</span>
+                </p>
+
+                <div class="math-card">
+                    <p class="font-mono text-sm mb-2 font-semibold mt-0">
+                        <span class="lang-de">Socket Adressierung:</span>
+                        <span class="lang-en">Socket Addressing:</span>
+                    </p>
+                    <div class="text-center py-3 text-2xl font-mono tracking-widest bg-[var(--code-bg)] rounded border border-[var(--border-color)] my-2">
+                        <span class="text-blue-400">192.168.1.100</span>:<span class="text-green-400">443</span>
+                    </div>
+                    
+                    <div class="symbol-legend mt-4">
+                        <div class="col-span-2 text-xs uppercase tracking-wider font-bold text-[var(--heading-color)] mb-1">
+                            <span class="lang-de">Was bedeutet das?</span><span class="lang-en">What does this mean?</span>
+                        </div>
+                        <div class="sym text-blue-400">IP-Adresse</div>
+                        <div><span class="lang-de">Die Hausnummer des Computers (Layer 3).</span><span class="lang-en">The street address of the computer (Layer 3).</span></div>
+                        
+                        <div class="sym text-green-400">Port</div>
+                        <div><span class="lang-de">Die Zimmernummer / Tür zum spezifischen Programm (Layer 4). Port 443 ist z.B. die Tür für sicheren Web-Traffic (HTTPS).</span><span class="lang-en">The room number / door for a specific app (Layer 4). Port 443 is the door for secure web traffic (HTTPS).</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // --- GLOBAL VARIABLES & THEME STATE ---
+        let isGerman = true;
+
+        // Dynamic Colors
+        let C_BG, C_GRID, C_TEXT, C_PANEL;
+        const C_TCP = "#3b82f6";   // Blue
+        const C_UDP = "#f59e0b";   // Orange
+        const C_ACK = "#10b981";   // Green
+        const C_ERR = "#ef4444";   // Red
+
+        function updateDynamicColors() {
+            const style = getComputedStyle(document.body);
+            C_BG = style.getPropertyValue('--bg-color').trim() || "#181a1b";
+            C_GRID = style.getPropertyValue('--border-color').trim() || "#2c2d30";
+            C_TEXT = style.getPropertyValue('--text-color').trim() || "#eaecf0";
+            C_PANEL = style.getPropertyValue('--panel-color').trim() || "#202324";
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('light')) {
+                html.classList.remove('light');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon';
+            }
+            updateDynamicColors();
+        }
+
+        function toggleLang() {
+            isGerman = !isGerman;
+            const indicator = document.getElementById('lang-indicator');
+            indicator.textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+        }
+
+        // --- ANIMATION / SIMULATION LOGIC ---
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let lastTime = 0;
+
+        // Simulation parameters
+        let dropRate = 0;
+        document.getElementById('dropRateSlider').addEventListener('input', (e) => {
+            dropRate = parseInt(e.target.value);
+            document.getElementById('dropRateDisplay').innerText = dropRate + "%";
+        });
+
+        const LANES = { TCP: 0, UDP: 1 };
+        let packets = [];
+        let tcpState = { sequenceNum: 1, waitingForAck: false, timer: 0, nextPacketTime: 0, finished: true, total: 5, sent: 0, delivered: 0, statusText: "" };
+        let udpState = { nextPacketTime: 0, finished: true, total: 5, sent: 0, delivered: 0, statusText: "" };
+        
+        // Visual constants
+        let senderBox = {x:0, y:0, w:80, h:160};
+        let receiverBox = {x:0, y:0, w:80, h:160};
+        let laneHeight = 0;
+
+        function resizeCanvas() {
+            const wrapper = canvas.parentElement;
+            if(!wrapper) return;
+            const rect = wrapper.getBoundingClientRect();
+            if(rect.width === 0) return;
+            
+            width = canvas.width = rect.width;
+            height = canvas.height = rect.height;
+            
+            laneHeight = height / 2;
+            
+            senderBox = { x: 40, y: height/2 - 80, w: 80, h: 160 };
+            receiverBox = { x: width - 120, y: height/2 - 80, w: 80, h: 160 };
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        class Packet {
+            constructor(protocol, seq, isAck = false, startY) {
+                this.protocol = protocol;
+                this.seq = seq;
+                this.isAck = isAck;
+                
+                this.startX = isAck ? receiverBox.x : senderBox.x + senderBox.w;
+                this.targetX = isAck ? senderBox.x + senderBox.w : receiverBox.x;
+                
+                this.x = this.startX;
+                this.y = startY;
+                
+                this.speed = (protocol === LANES.UDP) ? 400 : 250; // UDP is faster
+                if(isAck) this.speed = 350;
+                
+                this.progress = 0; // 0 to 1
+                
+                // Determine if this packet will drop
+                this.willDrop = (Math.random() * 100) < dropRate;
+                this.dropped = false;
+                this.dropPoint = 0.3 + Math.random() * 0.4; // Drop somewhere in the middle
+                this.alpha = 1;
+                
+                this.dead = false;
+            }
+
+            update(dt) {
+                if (this.dead) return;
+
+                if (this.willDrop && !this.dropped && this.progress >= this.dropPoint) {
+                    this.dropped = true;
+                }
+
+                if (this.dropped) {
+                    this.alpha -= 2 * dt;
+                    this.y += 50 * dt; // Fall down
+                    if (this.alpha <= 0) {
+                        this.dead = true;
+                    }
+                    return;
+                }
+
+                // Move
+                const distance = Math.abs(this.targetX - this.startX);
+                const step = (this.speed * dt) / distance;
+                this.progress += step;
+
+                if (this.progress >= 1) {
+                    this.progress = 1;
+                    this.dead = true;
+                    this.onArrive();
+                }
+
+                this.x = this.startX + (this.targetX - this.startX) * this.progress;
+            }
+
+            onArrive() {
+                if(this.protocol === LANES.TCP) {
+                    if(!this.isAck) {
+                        // Emit ACK
+                        packets.push(new Packet(LANES.TCP, this.seq, true, laneHeight * 0.5 + 30));
+                        if(tcpState.delivered < this.seq) tcpState.delivered = this.seq;
+                    } else {
+                        // Sender receives ACK
+                        if (this.seq === tcpState.sent + 1) {
+                            tcpState.waitingForAck = false;
+                            tcpState.sent++;
+                            tcpState.statusText = "ACK " + this.seq + (isGerman ? " erhalten! Nächstes..." : " received! Next...");
+                            tcpState.nextPacketTime = Date.now() + 400; // slight delay before next packet
+                        }
+                    }
+                } else if (this.protocol === LANES.UDP) {
+                    udpState.delivered++;
+                }
+            }
+
+            draw(ctx) {
+                if (this.dead && this.alpha <= 0) return;
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.alpha);
+                
+                let w = 28, h = 20;
+                let cFill = this.protocol === LANES.TCP ? C_TCP : C_UDP;
+                let label = "P" + this.seq;
+
+                if (this.isAck) {
+                    cFill = C_ACK;
+                    w = 48;
+                    label = "ACK " + this.seq;
+                }
+
+                if(this.dropped) {
+                    cFill = C_ERR;
+                    label = "X";
+                }
+
+                ctx.fillStyle = cFill;
+                ctx.beginPath();
+                ctx.roundRect(this.x - w/2, this.y - h/2, w, h, 4);
+                ctx.fill();
+
+                ctx.fillStyle = "#fff";
+                ctx.font = "bold 11px Inter";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(label, this.x, this.y + 1);
+
+                ctx.restore();
+            }
+        }
+
+        function startSimulation() {
+            // Reset states
+            packets = [];
+            tcpState = { sequenceNum: 1, waitingForAck: false, timer: 0, nextPacketTime: Date.now() + 500, finished: false, total: 5, sent: 0, delivered: 0, statusText: isGerman ? "Bereit..." : "Ready..." };
+            udpState = { nextPacketTime: Date.now() + 500, finished: false, total: 5, sent: 0, delivered: 0, statusText: isGerman ? "Bereit..." : "Ready..." };
+        }
+
+        function updateSimulation(dt) {
+            // TCP Logic (Stop and Wait)
+            if (!tcpState.finished) {
+                if (!tcpState.waitingForAck && tcpState.sent < tcpState.total) {
+                    if (Date.now() > tcpState.nextPacketTime) {
+                        // Send packet
+                        packets.push(new Packet(LANES.TCP, tcpState.sent + 1, false, laneHeight * 0.5 - 15));
+                        tcpState.waitingForAck = true;
+                        tcpState.timer = Date.now() + 2500; // 2.5s timeout
+                        tcpState.statusText = (isGerman ? "Sende P" : "Sending P") + (tcpState.sent + 1) + (isGerman ? " -> Warte auf ACK..." : " -> Waiting for ACK...");
+                    }
+                } else if (tcpState.waitingForAck) {
+                    // Check timeout
+                    if (Date.now() > tcpState.timer) {
+                        // Timeout! Retransmit
+                        tcpState.waitingForAck = false;
+                        tcpState.nextPacketTime = Date.now() + 300; // slight delay before retry
+                        tcpState.statusText = (isGerman ? "TIMEOUT! Sende P" : "TIMEOUT! Resending P") + (tcpState.sent + 1) + " neu!";
+                    }
+                } else if (tcpState.sent >= tcpState.total) {
+                    tcpState.finished = true;
+                    tcpState.statusText = isGerman ? "Alle Pakete sicher übertragen!" : "All packets transmitted safely!";
+                }
+            }
+
+            // UDP Logic (Blast away)
+            if (!udpState.finished) {
+                if (udpState.sent < udpState.total) {
+                    if (Date.now() > udpState.nextPacketTime) {
+                        packets.push(new Packet(LANES.UDP, udpState.sent + 1, false, laneHeight * 1.5 - 15));
+                        udpState.sent++;
+                        udpState.nextPacketTime = Date.now() + 250; // Fire rapidly every 250ms
+                        udpState.statusText = (isGerman ? "Feuere P" : "Blasting P") + udpState.sent + (isGerman ? " ohne Rücksicht!" : " blindly!");
+                    }
+                } else {
+                    let hasActiveUDP = packets.some(p => p.protocol === LANES.UDP && !p.dead);
+                    if(!hasActiveUDP) {
+                        udpState.finished = true;
+                        udpState.statusText = isGerman ? "Fertig! (Egal ob alles ankam)" : "Done! (Doesn't care if lost)";
+                    }
+                }
+            }
+
+            // Update and prune packets
+            for (let i = packets.length - 1; i >= 0; i--) {
+                packets[i].update(dt);
+                if (packets[i].dead && packets[i].alpha <= 0) {
+                    packets.splice(i, 1);
+                }
+            }
+        }
+
+        function drawEnvironment() {
+            // Split Line
+            ctx.strokeStyle = C_GRID;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 8]);
+            ctx.beginPath();
+            ctx.moveTo(0, laneHeight);
+            ctx.lineTo(width, laneHeight);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Lane Labels
+            ctx.fillStyle = C_TCP;
+            ctx.font = "bold 20px Inter";
+            ctx.textAlign = "center";
+            ctx.fillText("TCP", width / 2, laneHeight * 0.15);
+            
+            ctx.fillStyle = C_TEXT;
+            ctx.font = "italic 13px Inter";
+            if(tcpState.statusText) ctx.fillText(tcpState.statusText, width / 2, laneHeight * 0.28);
+            
+            ctx.fillStyle = C_UDP;
+            ctx.font = "bold 20px Inter";
+            ctx.fillText("UDP", width / 2, laneHeight * 1.15);
+
+            ctx.fillStyle = C_TEXT;
+            ctx.font = "italic 13px Inter";
+            if(udpState.statusText) ctx.fillText(udpState.statusText, width / 2, laneHeight * 1.28);
+
+            // Draw Sender Box
+            ctx.fillStyle = C_PANEL;
+            ctx.strokeStyle = C_GRID;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(senderBox.x, senderBox.y, senderBox.w, senderBox.h, 8);
+            ctx.fill(); ctx.stroke();
+            
+            // Draw Receiver Box
+            ctx.beginPath();
+            ctx.roundRect(receiverBox.x, receiverBox.y, receiverBox.w, receiverBox.h, 8);
+            ctx.fill(); ctx.stroke();
+
+            // Client / Server text
+            ctx.fillStyle = C_TEXT;
+            ctx.font = "bold 14px Inter";
+            ctx.textAlign = "center";
+            ctx.fillText("CLIENT", senderBox.x + senderBox.w/2, senderBox.y - 15);
+            ctx.fillText("SERVER", receiverBox.x + receiverBox.w/2, receiverBox.y - 15);
+
+            // Draw Server Reassembled image placeholders
+            drawImageBlocks(senderBox.x + 20, senderBox.y + 20, 5, 5, 0); // Client always has 5
+            
+            // Server TCP blocks
+            drawImageBlocks(receiverBox.x + 20, receiverBox.y + 10, 5, tcpState.delivered, C_TCP);
+            // Server UDP blocks
+            drawImageBlocks(receiverBox.x + 20, receiverBox.y + 90, 5, udpState.delivered, C_UDP);
+
+            // File status labels
+            ctx.font = "10px Inter";
+            ctx.fillStyle = C_TEXT;
+            ctx.fillText(tcpState.delivered + "/5", receiverBox.x + receiverBox.w/2, receiverBox.y + 70);
+            ctx.fillText(udpState.delivered + "/5", receiverBox.x + receiverBox.w/2, receiverBox.y + 150);
+        }
+
+        function drawImageBlocks(ox, oy, total, received, color) {
+            const bw = 40;
+            const bh = 10;
+            const gap = 2;
+            for(let i=0; i<total; i++) {
+                ctx.fillStyle = (i < received) ? color : C_GRID;
+                if(color === 0) ctx.fillStyle = C_TEXT; // Client full file
+                
+                ctx.fillRect(ox, oy + i*(bh+gap), bw, bh);
+            }
+        }
+
+        function animateLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+            lastTime = timestamp;
+
+            ctx.clearRect(0, 0, width, height);
+            
+            updateSimulation(dt);
+            drawEnvironment();
+            
+            // Draw packets
+            packets.forEach(p => p.draw(ctx));
+
+            requestAnimationFrame(animateLoop);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                        if(tocLink) tocLink.classList.add('active');
+                    }
+                });
+            }, { rootMargin: '-10% 0px -80% 0px', threshold: [0, 0.1, 1] });
+
+            document.querySelectorAll('section, h3[id]').forEach((section) => {
+                observer.observe(section);
+            });
+
+            updateDynamicColors();
+            setTimeout(() => {
+                resizeCanvas();
+                requestAnimationFrame(animateLoop);
+            }, 100); 
+        });
+
+        function filterWiki() {
+            const input = document.getElementById('wikiSearch');
+            const filter = input.value.toLowerCase();
+            const blocks = document.querySelectorAll('.searchable-block');
+            const mainContent = document.getElementById('main-content');
+
+            removeHighlights(mainContent);
+            if (!filter) { blocks.forEach(block => block.style.display = 'block'); return; }
+
+            blocks.forEach(block => {
+                const text = block.innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    block.style.display = 'block';
+                    highlightText(block, input.value);
+                } else {
+                    block.style.display = 'none';
+                }
+            });
+        }
+
+        function highlightText(element, keyword) {
+            if (!keyword) return;
+            const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+            let node;
+            while (node = treeWalker.nextNode()) {
+                if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                    if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE' && !node.parentNode.classList.contains('katex')) {
+                        nodesToReplace.push(node);
+                    }
+                }
+            }
+            nodesToReplace.forEach(node => {
+                const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+                const fragment = document.createDocumentFragment();
+                let match; let lastIndex = 0; const text = node.nodeValue;
+                while ((match = regex.exec(text)) !== null) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    const span = document.createElement('span');
+                    span.className = 'search-match font-semibold';
+                    span.textContent = match[0];
+                    fragment.appendChild(span);
+                    lastIndex = regex.lastIndex;
+                }
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                node.parentNode.replaceChild(fragment, node);
+            });
+        }
+
+        function removeHighlights(element) {
+            const highlights = element.querySelectorAll('.search-match');
+            highlights.forEach(span => {
+                const parent = span.parentNode;
+                parent.replaceChild(document.createTextNode(span.textContent), span);
+                parent.normalize();
+            });
+        }
+
+        function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+        function downloadHTML() {
+            removeHighlights(document.getElementById('main-content'));
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'TCP_UDP_Cheatsheet.html';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
