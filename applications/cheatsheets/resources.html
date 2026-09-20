@@ -101,12 +101,15 @@
                 0 8px 36px 0 rgba(0, 0, 0, 0.16);
         }
 
-        html { font-size: 16px; }
+        /* When the sidebar is collapsed, the main content gains ~260px of freed width.
+           Bump the max-width cap so the content actually fills that space. */
+        body.sidebar-collapsed {
+            --content-max: 1850px;
+        }
 
-        /* When the iframe viewport is large (maximized window ~1900px wide),
-           scale the whole document up slightly so nothing looks tiny. */
-        @media (min-width: 1536px)  { html { font-size: 17px; } }
-        @media (min-width: 1800px)  { html { font-size: 18px; } }
+        /* Base font size — actual value is driven by JS in updateScaling()
+           so it can react to both viewport width and sidebar state. */
+        html { font-size: 16px; }
 
         body {
             background-color: var(--bg-color);
@@ -177,6 +180,7 @@
             width: 100%;
             max-width: var(--content-max);
             padding: 1rem;
+            transition: max-width 0.25s ease;
         }
         @media (min-width: 1024px) { .app-main { padding: 1.5rem; } }
         @media (min-width: 1280px) { .app-main { padding: 2rem; } }
@@ -1453,6 +1457,44 @@
     </div>
 
     <script>
+        // ==========================================
+        // VIEWPORT-AWARE SCALING (responds to sidebar state)
+        // ==========================================
+        function updateScaling() {
+            const w = window.innerWidth;
+            const isDesktop = w >= 721;
+            const collapsed = isDesktop && document.body.classList.contains('sidebar-collapsed');
+            let size = 16;
+
+            // Base scaling by viewport width
+            if (w >= 1800) size = 18;
+            else if (w >= 1536) size = 17;
+
+            // When the sidebar is collapsed, the effective content area is ~260px
+            // wider than what the viewport suggests. Trigger the next scaling tier
+            // earlier so the content grows into the freed space.
+            if (collapsed) {
+                if (w >= 1540) size = Math.max(size, 18);
+                else if (w >= 1280) size = Math.max(size, 17);
+            }
+
+            document.documentElement.style.fontSize = size + 'px';
+        }
+
+        // ==========================================
+        // SIDEBAR TOGGLE (ported from viona.html)
+        // ==========================================
+        window.toggleSidebarCollapse = function() {
+            document.body.classList.toggle('sidebar-collapsed');
+            const isCollapsed = document.body.classList.contains('sidebar-collapsed');
+            const icon = document.getElementById('collapseIcon');
+            if (icon) {
+                icon.className = isCollapsed ? 'fa-solid fa-angles-right text-xs' : 'fa-solid fa-angles-left text-xs';
+            }
+            try { localStorage.setItem('resources-sidebar-collapsed', isCollapsed ? '1' : '0'); } catch(e) {}
+            updateScaling();
+        };
+
         // Smooth scrolling active state update for TOC
         document.addEventListener('DOMContentLoaded', () => {
             const observer = new IntersectionObserver((entries) => {
@@ -1482,20 +1524,13 @@
                     if (icon) icon.className = 'fa-solid fa-angles-right text-xs';
                 }
             } catch(e) {}
+
+            // Apply the correct font size on load
+            updateScaling();
         });
 
-        // ==========================================
-        // SIDEBAR TOGGLE (ported from viona.html)
-        // ==========================================
-        window.toggleSidebarCollapse = function() {
-            document.body.classList.toggle('sidebar-collapsed');
-            const isCollapsed = document.body.classList.contains('sidebar-collapsed');
-            const icon = document.getElementById('collapseIcon');
-            if (icon) {
-                icon.className = isCollapsed ? 'fa-solid fa-angles-right text-xs' : 'fa-solid fa-angles-left text-xs';
-            }
-            try { localStorage.setItem('resources-sidebar-collapsed', isCollapsed ? '1' : '0'); } catch(e) {}
-        };
+        // Recompute font size when the viewport changes
+        window.addEventListener('resize', updateScaling);
 
         // Search logic (filters resource cards)
         function filterWiki() {
