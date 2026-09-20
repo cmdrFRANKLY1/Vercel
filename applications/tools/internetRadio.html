@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internet Radio Player</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                screens: {
+                    'sm': '640px',
+                    'md': '768px',
+                    'lg': '1024px',
+                    'xl': '1280px',
+                    '2xl': '1536px',
+                    '3xl': '1920px',
+                    '4xl': '2400px',
+                },
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    },
+                    animation: {
+                        'equalizer': 'equalizer 1s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        equalizer: {
+                            '0%, 100%': { height: '8px' },
+                            '50%': { height: '24px' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #1d1e1f;
+            --border-color: #3b3e40;
+            --text-color: #eaecf0;
+            --text-muted: #a8aeb3;
+            --link-color: #99c1f1;
+            --link-hover: #629deb;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --info-box: #2c2d30;
+            
+            --c-play: #10b981;  
+            --c-pause: #f59e0b; 
+
+            --content-max: 2000px; /* Widened for large screens */
+            --sidebar-w: 14rem;    /* Made more compact */
+
+            /* Panel borders & strengthened omni-directional encasing shadow */
+            --panel-border: #54595d;
+            --card-shadow:
+                0 0 22px 0 rgba(0, 0, 0, 0.55),
+                0 0 10px 0 rgba(0, 0, 0, 0.45),
+                0 4px 24px 0 rgba(0, 0, 0, 0.35);
+            --card-shadow-hover:
+                0 0 40px 0 rgba(0, 0, 0, 0.7),
+                0 0 18px 0 rgba(0, 0, 0, 0.55),
+                0 8px 36px 0 rgba(0, 0, 0, 0.45);
+        }
+
+        html.light {
+            --bg-color: #f4f6f9;
+            --panel-color: #ffffff;
+            --sidebar-color: #f8fafc;
+            --border-color: #e2e8f0;
+            --text-color: #0f172a;
+            --text-muted: #475569;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --heading-color: #020617;
+            --code-bg: #f1f5f9;
+            --info-box: #e0f2fe;
+
+            /* Stronger encasing shadow for light mode as well */
+            --panel-border: #e2e8f0;
+            --card-shadow:
+                0 0 28px 0 rgba(0, 0, 0, 0.18),
+                0 0 12px 0 rgba(0, 0, 0, 0.12),
+                0 4px 24px 0 rgba(0, 0, 0, 0.10);
+            --card-shadow-hover:
+                0 0 48px 0 rgba(0, 0, 0, 0.28),
+                0 0 22px 0 rgba(0, 0, 0, 0.20),
+                0 8px 36px 0 rgba(0, 0, 0, 0.16);
+        }
+
+        /* Base 16px, then scale up on large/maximized viewports so cards don't look tiny */
+        html { font-size: 16px; }
+        @media (min-width: 1536px) { html { font-size: 17px; } }
+        @media (min-width: 1920px) { html { font-size: 18px; } }
+        @media (min-width: 2400px) { html { font-size: 20px; } }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            transition: background-color 0.2s, color 0.2s;
+            overflow-x: hidden;
+            padding-bottom: 100px; /* Space for dock */
+        }
+
+        h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 700 !important; line-height: 1.15; }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+        .app-sidebar {
+            width: var(--sidebar-w);
+            max-height: 50vh;
+            transition: box-shadow 0.3s ease, background-color 0.2s;
+            box-shadow: var(--card-shadow);
+        }
+        @media (min-width: 1024px) { .app-sidebar { max-height: 100vh; position: fixed; top: 0; left: 0; } }
+        @media (min-width: 1920px) { :root { --sidebar-w: 15rem; } }
+
+        /* ---------- Main content: subtract sidebar so grid never overflows ---------- */
+        .app-main {
+            min-width: 0;
+            width: 100%;
+            max-width: var(--content-max);
+            padding: 1rem;
+            margin-left: 0;
+        }
+        @media (min-width: 1024px) {
+            .app-main {
+                padding: 1.5rem 2rem;
+                margin-left: var(--sidebar-w);
+                width: calc(100% - var(--sidebar-w));
+                max-width: calc(var(--content-max) - var(--sidebar-w));
+            }
+        }
+
+        /* Tabs Segmented Control */
+        .tab-btn {
+            padding: 0.35rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .tab-btn:hover { color: var(--heading-color); }
+        .tab-btn.active {
+            background-color: var(--panel-color);
+            color: var(--heading-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Compact Station Cards — now with full panel shadowing */
+        .station-card { 
+            background-color: var(--panel-color); 
+            border: 1px solid var(--panel-border); 
+            border-radius: 0.75rem; 
+            padding: 0.5rem 0.75rem; 
+            cursor: pointer;
+            transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.15s ease, background-color 0.15s ease; 
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-width: 0;
+            box-shadow: var(--card-shadow);
+        }
+        .station-card:hover { 
+            border-color: var(--link-hover); 
+            transform: translateY(-2px); 
+            box-shadow: var(--card-shadow-hover); 
+        }
+        .station-card.active { 
+            border-color: var(--c-play); 
+            background-color: var(--info-box); 
+            box-shadow: var(--card-shadow-hover);
+        }
+        
+        .station-icon { font-size: 1.25rem; width: 1.5rem; text-align: center; color: var(--text-muted); transition: color 0.2s; flex-shrink: 0; }
+        .station-card.active .station-icon { color: var(--c-play); }
+
+        /* Genre Cards — now with full panel shadowing */
+        .genre-card {
+            background-color: var(--panel-color); 
+            border: 1px solid var(--panel-border); 
+            border-radius: 1rem; 
+            padding: 1.5rem; 
+            cursor: pointer;
+            transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.2s ease;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 0;
+            box-shadow: var(--card-shadow);
+        }
+        .genre-card:hover { 
+            border-color: var(--link-color); 
+            transform: translateY(-3px); 
+            box-shadow: var(--card-shadow-hover); 
+        }
+        .genre-icon { font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.8; }
+
+        /* Let cards breathe more on very large screens */
+        @media (min-width: 1920px) {
+            .station-card { padding: 0.65rem 1rem; gap: 1rem; }
+            .genre-card   { padding: 1.85rem; gap: 0.65rem; }
+            .genre-icon   { font-size: 3rem; }
+        }
+
+        /* Player Dock — enhanced with matching panel shadow */
+        .player-dock {
+            position: fixed; bottom: 1rem; left: 1rem; right: 1rem; z-index: 50;
+            background-color: var(--panel-color); 
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow-hover); 
+            border-radius: 1rem;
+            padding: 0.75rem 1.25rem; 
+            display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+            backdrop-filter: blur(10px);
+            transition: box-shadow 0.3s ease;
+        }
+        @media (min-width: 1024px) {
+            .player-dock {
+                left: calc(var(--sidebar-w) + 1.5rem);
+                right: 1.5rem;
+                bottom: 1.5rem;
+                max-width: calc(var(--content-max) - var(--sidebar-w));
+            }
+        }
+
+        .btn-play {
+            width: 3rem; height: 3rem; border-radius: 50%;
+            background-color: var(--c-play); color: #fff; border: none;
+            display: flex; align-items: center; justify-content: center; font-size: 1.25rem;
+            cursor: pointer; transition: transform 0.1s, background-color 0.2s;
+            flex-shrink: 0;
+        }
+        .btn-play:hover { transform: scale(1.05); }
+        .btn-play:active { transform: scale(0.95); }
+        .btn-play.paused { background-color: var(--link-color); }
+
+        .volume-slider { -webkit-appearance: none; width: 100px; height: 4px; border-radius: 2px; background: var(--border-color); outline: none; }
+        .volume-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--text-color); cursor: pointer; }
+
+        .eq-bar { width: 3px; background-color: var(--c-play); border-radius: 1.5px; height: 8px; opacity: 0.2; transition: opacity 0.2s; }
+        .is-playing .eq-bar { opacity: 1; animation: equalizer 1s ease-in-out infinite; }
+        .is-playing .eq-bar:nth-child(1) { animation-delay: 0.0s; }
+        .is-playing .eq-bar:nth-child(2) { animation-delay: 0.2s; }
+        .is-playing .eq-bar:nth-child(3) { animation-delay: 0.4s; }
+
+        /* Languages */
+        .lang-en { display: none; }
+        body[data-active-lang="en"] .lang-de { display: none !important; }
+        body[data-active-lang="en"] .lang-en { display: block !important; }
+        body[data-active-lang="en"] span.lang-en, body[data-active-lang="en"] a.lang-en { display: inline !important; }
+        body[data-active-lang="de"] .lang-en { display: none !important; }
+        body[data-active-lang="de"] .lang-de { display: block !important; }
+        body[data-active-lang="de"] span.lang-de, body[data-active-lang="de"] a.lang-de { display: inline !important; }
+    </style>
+</head>
+<body data-active-lang="de">
+
+    <aside class="app-sidebar bg-[var(--sidebar-color)] border-b lg:border-b-0 lg:border-r border-[var(--border-color)] p-4 z-40">
+        
+        <div class="flex items-center justify-between gap-1 mb-6 bg-[var(--bg-color)] p-1.5 rounded-lg border border-[var(--panel-border)]">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--panel-color)] py-1 rounded text-xs font-semibold text-[var(--text-muted)] transition-colors" title="Toggle Language">
+                <i class="fa-solid fa-language"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--panel-color)] py-1 rounded text-xs font-semibold text-[var(--text-muted)] transition-colors" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--panel-color)] py-1 rounded text-xs font-semibold text-[var(--link-color)] transition-colors" title="Download">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <div class="mb-4">
+            <i class="fa-solid fa-broadcast-tower text-2xl mb-2 text-[var(--link-color)]"></i>
+            <div class="font-serif text-xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span class="lang-de">Internet<br>Radio</span>
+                <span class="lang-en">Internet<br>Radio</span>
+            </div>
+            <div class="text-[0.65rem] uppercase tracking-widest text-[var(--text-muted)] mt-1 font-semibold">Live Web Streams</div>
+        </div>
+
+        <div class="text-xs text-[var(--text-muted)] leading-relaxed hidden lg:block">
+            <span class="lang-de">Nutze die Tabs, um alle Sender durchzusuchen oder lass dich per Genre überraschen.</span>
+            <span class="lang-en">Use the tabs to browse all stations or play a random stream by genre.</span>
+        </div>
+    </aside>
+
+    <main class="app-main">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+                <h1 class="text-2xl lg:text-3xl !mb-0 !pb-0 border-none">
+                    <span class="lang-de">Entdecken</span>
+                    <span class="lang-en">Discover</span>
+                </h1>
+            </div>
+
+            <!-- Segmented Control Tabs -->
+            <div class="bg-[var(--bg-color)] p-1 rounded-lg border border-[var(--panel-border)] inline-flex self-start shadow-sm">
+                <button id="tab-btn-stations" onclick="switchTab('stations')" class="tab-btn active">
+                    <i class="fa-solid fa-list-ul mr-1"></i> <span class="lang-de">Alle Sender</span><span class="lang-en">All Stations</span>
+                </button>
+                <button id="tab-btn-genres" onclick="switchTab('genres')" class="tab-btn">
+                    <i class="fa-solid fa-shapes mr-1"></i> Genres
+                </button>
+            </div>
+        </div>
+
+        <!-- Views Container -->
+        <div id="view-stations" class="block">
+            <!-- Tighter grid for maximized layouts, extra columns on ultra-wide screens -->
+            <div id="station-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 4xl:grid-cols-7 gap-2">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <div id="view-genres" class="hidden">
+            <div id="genre-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 3xl:grid-cols-6 4xl:grid-cols-7 gap-3">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+    </main>
+
+    <div class="player-dock">
+        <div class="flex items-center gap-3 flex-1 min-w-0">
+            <button id="btn-play-pause" class="btn-play paused" onclick="togglePlayPause()" disabled>
+                <i class="fa-solid fa-play ml-0.5" id="play-icon"></i>
+            </button>
+            
+            <div class="min-w-0 flex-1">
+                <div class="text-[0.65rem] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-0.5 truncate" id="player-status">
+                    <span class="lang-de">Bereit</span><span class="lang-en">Ready</span>
+                </div>
+                <div class="text-sm font-bold text-[var(--heading-color)] truncate" id="player-title">
+                    <span class="lang-de">Wähle einen Sender...</span><span class="lang-en">Select a station...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 flex-shrink-0">
+            <div id="visualizer" class="hidden sm:flex items-end gap-[2px] h-6 pb-1">
+                <div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div>
+            </div>
+            <div class="hidden sm:flex items-center gap-2">
+                <i class="fa-solid fa-volume-low text-[var(--text-muted)] text-xs"></i>
+                <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01" value="0.5" oninput="changeVolume(this.value)">
+            </div>
+        </div>
+    </div>
+
+    <audio id="audio-player" preload="none"></audio>
+
+    <script>
+        const genresData = [
+            { id: 'chill', name: { de: 'Chill & Ambient', en: 'Chill & Ambient' }, icon: 'fa-mug-hot', color: '#8b5cf6' },
+            { id: 'electronic', name: { de: 'Electronic & Dance', en: 'Electronic & Dance' }, icon: 'fa-headphones', color: '#ec4899' },
+            { id: 'pop', name: { de: 'Pop & Hits', en: 'Pop & Hits' }, icon: 'fa-star', color: '#f59e0b' },
+            { id: 'rock', name: { de: 'Rock & Indie', en: 'Rock & Indie' }, icon: 'fa-guitar', color: '#ef4444' },
+            { id: 'retro', name: { de: 'Retro (80s/90s)', en: 'Retro (80s/90s)' }, icon: 'fa-compact-disc', color: '#10b981' },
+            { id: 'jazz', name: { de: 'Jazz & Klassik', en: 'Jazz & Classical' }, icon: 'fa-saxophone', color: '#6366f1' },
+            { id: 'hiphop', name: { de: 'Hip Hop & Urban', en: 'Hip Hop & Urban' }, icon: 'fa-microphone', color: '#f97316' },
+            { id: 'focus', name: { de: 'Fokus & Arbeit', en: 'Focus & Work' }, icon: 'fa-brain', color: '#0ea5e9' },
+            { id: 'reggae', name: { de: 'Reggae & Dub', en: 'Reggae & Dub' }, icon: 'fa-drum', color: '#22c55e' },
+            { id: 'country', name: { de: 'Country & Folk', en: 'Country & Folk' }, icon: 'fa-hat-cowboy', color: '#a16207' },
+            { id: 'news', name: { de: 'News & Talk', en: 'News & Talk' }, icon: 'fa-newspaper', color: '#dc2626' }
+        ];
+
+        // Expanded stations list with many more free streams
+        const stations = [
+            // Chill / Ambient
+            { id: 'soma_groove', genre: 'chill', name: { de: 'Groove Salad', en: 'Groove Salad' }, desc: { de: 'Ambient & Downtempo', en: 'Ambient & Downtempo' }, icon: 'fa-mug-hot', url: 'https://ice1.somafm.com/groovesalad-128-mp3' },
+            { id: 'soma_drone', genre: 'chill', name: { de: 'Drone Zone', en: 'Drone Zone' }, desc: { de: 'Atmosphärischer Space', en: 'Atmospheric space music' }, icon: 'fa-cloud', url: 'https://ice1.somafm.com/dronezone-128-mp3' },
+            { id: 'soma_space', genre: 'chill', name: { de: 'Space Station', en: 'Space Station' }, desc: { de: 'Synthesizer aus dem All', en: 'Synthesizers from outer space' }, icon: 'fa-rocket', url: 'https://ice1.somafm.com/spacestation-128-mp3' },
+            { id: 'soma_defcon', genre: 'chill', name: { de: 'DEF CON Radio', en: 'DEF CON Radio' }, desc: { de: 'Hacking & Chill Beats', en: 'Hacking & Chill Beats' }, icon: 'fa-terminal', url: 'https://ice1.somafm.com/defcon-128-mp3' },
+            { id: 'soma_lush', genre: 'chill', name: { de: 'Lush', en: 'Lush' }, desc: { de: 'Sensual Downtempo', en: 'Sensual Downtempo' }, icon: 'fa-leaf', url: 'https://ice1.somafm.com/lush-128-mp3' },
+            { id: 'soma_fluid', genre: 'chill', name: { de: 'Fluid', en: 'Fluid' }, desc: { de: 'Instrumental Hip-Hop', en: 'Instrumental Hip-Hop' }, icon: 'fa-droplet', url: 'https://ice1.somafm.com/fluid-128-mp3' },
+            { id: 'soma_seventies', genre: 'chill', name: { de: '70s Soma', en: '70s Soma' }, desc: { de: 'Classic 70s Sounds', en: 'Classic 70s Sounds' }, icon: 'fa-record-vinyl', url: 'https://ice1.somafm.com/seventies-320-mp3' },
+            { id: 'soma_bossa', genre: 'chill', name: { de: 'Bossa Beyond', en: 'Bossa Beyond' }, desc: { de: 'Brazilian Bossa Nova', en: 'Brazilian Bossa Nova' }, icon: 'fa-sun', url: 'https://ice1.somafm.com/bossa-256-mp3' },
+            { id: 'soma_gsclassic', genre: 'chill', name: { de: 'Groove Salad Classic', en: 'Groove Salad Classic' }, desc: { de: 'Classic Ambient Beats', en: 'Classic Ambient Beats' }, icon: 'fa-mug-hot', url: 'https://ice1.somafm.com/gsclassic-128-mp3' },
+            { id: 'soma_illstreet', genre: 'chill', name: { de: 'Illinois Street Lounge', en: 'Illinois Street Lounge' }, desc: { de: 'Vintage Lounge', en: 'Vintage Lounge' }, icon: 'fa-martini-glass', url: 'https://ice1.somafm.com/illstreet-128-mp3' },
+            
+            // Focus
+            { id: 'soma_cliq', genre: 'focus', name: { de: 'cLIQUiD', en: 'cLIQUiD' }, desc: { de: 'Fließender Electronic Focus', en: 'Fluid Electronic Focus' }, icon: 'fa-droplet', url: 'https://ice1.somafm.com/cliqhop-128-mp3' },
+            { id: 'soma_synphaera', genre: 'focus', name: { de: 'Synphaera', en: 'Synphaera' }, desc: { de: 'Tiefgehende Konzentration', en: 'Deep Concentration' }, icon: 'fa-brain', url: 'https://ice1.somafm.com/synphaera-128-mp3' },
+            { id: 'lofi247', genre: 'focus', name: { de: 'Lofi 24/7', en: 'Lofi 24/7' }, desc: { de: 'Lofi Hip-Hop Beats', en: 'Lofi Hip-Hop Beats' }, icon: 'fa-headphones', url: 'https://streams.ilovemusic.de/iloveradio17.mp3' },
+            { id: 'calm_sleep', genre: 'focus', name: { de: 'Calm Sleep', en: 'Calm Sleep' }, desc: { de: 'Ambient für Schlaf', en: 'Ambient for Sleep' }, icon: 'fa-moon', url: 'https://streams.calmradio.com/api/1279/128/stream' },
+            
+            // Electronic
+            { id: 'ilove_dance', genre: 'electronic', name: { de: 'Electronic Dance', en: 'Electronic Dance' }, desc: { de: 'Club Sounds', en: 'Club Sounds' }, icon: 'fa-compact-disc', url: 'https://streams.ilovemusic.de/iloveradio2.mp3' },
+            { id: 'ilove_hardstyle', genre: 'electronic', name: { de: 'Hardstyle', en: 'Hardstyle' }, desc: { de: '150+ BPM Bässe', en: '150+ BPM Bass' }, icon: 'fa-fire', url: 'https://streams.ilovemusic.de/iloveradio21.mp3' },
+            { id: 'soma_beat', genre: 'electronic', name: { de: 'Beat Blender', en: 'Beat Blender' }, desc: { de: 'Deep House & Electronic', en: 'Deep House & Electronic' }, icon: 'fa-wave-square', url: 'https://ice1.somafm.com/beatblender-128-mp3' },
+            { id: 'ilove_mainstage', genre: 'electronic', name: { de: 'Mainstage Madness', en: 'Mainstage Madness' }, desc: { de: 'EDM & Bigroom', en: 'EDM & Bigroom' }, icon: 'fa-bolt', url: 'https://streams.ilovemusic.de/iloveradio4.mp3' },
+            { id: 'ilove_techno', genre: 'electronic', name: { de: 'Techno Base', en: 'Techno Base' }, desc: { de: 'Techno & Trance', en: 'Techno & Trance' }, icon: 'fa-microchip', url: 'https://listen.technobase.fm/tunein-mp3' },
+            { id: 'frisky_radio', genre: 'electronic', name: { de: 'FRISKY Radio', en: 'FRISKY Radio' }, desc: { de: 'Progressive & Deep House', en: 'Progressive & Deep House' }, icon: 'fa-headphones', url: 'https://stream.friskyradio.com/frisky_mp3_hi' },
+            
+            // Pop
+            { id: 'ilove_pop', genre: 'pop', name: { de: 'Top 40 Hits', en: 'Top 40 Hits' }, desc: { de: 'Aktuelle Charts', en: 'Current Charts' }, icon: 'fa-star', url: 'https://streams.ilovemusic.de/iloveradio1.mp3' },
+            { id: 'ilove_2000s', genre: 'pop', name: { de: '2000s Pop', en: '2000s Pop' }, desc: { de: 'Millennium Vibes', en: 'Millennium Vibes' }, icon: 'fa-mobile-screen', url: 'https://streams.ilovemusic.de/iloveradio37.mp3' },
+            { id: 'ilove_kpop', genre: 'pop', name: { de: 'K-Pop', en: 'K-Pop' }, desc: { de: 'Koreanische Popmusik', en: 'Korean Pop Music' }, icon: 'fa-heart', url: 'https://streams.ilovemusic.de/iloveradio19.mp3' },
+            { id: 'ilove_workout', genre: 'pop', name: { de: 'Workout Hits', en: 'Workout Hits' }, desc: { de: 'Motivation für Sport', en: 'Gym Motivation' }, icon: 'fa-dumbbell', url: 'https://streams.ilovemusic.de/iloveradio23.mp3' },
+            { id: 'ilove_poptron', genre: 'pop', name: { de: 'PopTron', en: 'PopTron' }, desc: { de: 'Elektro Pop', en: 'Electro Pop' }, icon: 'fa-bolt', url: 'https://ice1.somafm.com/poptron-128-mp3' },
+            { id: 'planet_radio', genre: 'pop', name: { de: 'Planet Radio', en: 'Planet Radio' }, desc: { de: 'Classic Hits', en: 'Classic Hits' }, icon: 'fa-globe', url: 'https://media.planetradio.ie/radio/8000/OnAir' },
+            
+            // Rock & Indie
+            { id: 'ilove_rock', genre: 'rock', name: { de: 'Rock & Alternative', en: 'Rock & Alt' }, desc: { de: 'Gitarren & Energie', en: 'Guitars & Energy' }, icon: 'fa-bolt', url: 'https://streams.ilovemusic.de/iloveradio14.mp3' },
+            { id: 'soma_indie', genre: 'rock', name: { de: 'Indie Pop Rocks', en: 'Indie Pop Rocks' }, desc: { de: 'Unabhängige Künstler', en: 'Independent artists' }, icon: 'fa-guitar', url: 'https://ice1.somafm.com/indiepop-128-mp3' },
+            { id: 'soma_bagel', genre: 'rock', name: { de: 'BAGeL Radio', en: 'BAGeL Radio' }, desc: { de: 'Alternative Rock', en: 'Alternative Rock' }, icon: 'fa-record-vinyl', url: 'https://ice1.somafm.com/bagel-128-mp3' },
+            { id: 'soma_boot', genre: 'rock', name: { de: 'Boot Liquor', en: 'Boot Liquor' }, desc: { de: 'Americana & Roots', en: 'Americana & Roots' }, icon: 'fa-hat-cowboy', url: 'https://ice1.somafm.com/bootliquor-128-mp3' },
+            { id: 'radio_paradise', genre: 'rock', name: { de: 'Radio Paradise', en: 'Radio Paradise' }, desc: { de: 'Eclectic Rock Mix', en: 'Eclectic Rock Mix' }, icon: 'fa-mountain-sun', url: 'https://stream.radioparadise.com/rock-128' },
+            
+            // Retro
+            { id: 'ilove_80s', genre: 'retro', name: { de: '80s Retro', en: '80s Retro' }, desc: { de: 'Synthesizer & Nostalgie', en: 'Synthesizers & Nostalgia' }, icon: 'fa-cassette-tape', url: 'https://streams.ilovemusic.de/ilove80s.mp3' },
+            { id: 'ilove_90s', genre: 'retro', name: { de: '90s Hits', en: '90s Hits' }, desc: { de: 'Das beste Jahrzehnt', en: 'The best decade' }, icon: 'fa-gamepad', url: 'https://streams.ilovemusic.de/iloveradio24.mp3' },
+            { id: 'soma_underground', genre: 'retro', name: { de: 'Underground 80s', en: 'Underground 80s' }, desc: { de: 'UK Synthpop', en: 'UK Synthpop' }, icon: 'fa-tv', url: 'https://ice1.somafm.com/u80s-128-mp3' },
+            { id: 'ilove_2000throw', genre: 'retro', name: { de: '2000+ Throwbacks', en: '2000+ Throwbacks' }, desc: { de: 'Hits der 2000er', en: '2000s Throwbacks' }, icon: 'fa-clock-rotate-left', url: 'https://streams.ilovemusic.de/ilove2000throwbacks.mp3' },
+            
+            // Jazz & Classical
+            { id: 'npo_classical', genre: 'jazz', name: { de: 'NPO Klassik', en: 'NPO Classical' }, desc: { de: 'Meisterwerke', en: 'Masterpieces' }, icon: 'fa-music', url: 'https://icecast.omroep.nl/radio4-bb-mp3' },
+            { id: '1fm_jazz', genre: 'jazz', name: { de: 'Smooth Jazz', en: 'Smooth Jazz' }, desc: { de: 'Feinster Jazz', en: 'Finest jazz' }, icon: 'fa-saxophone', url: 'https://strm112.1.fm/ajazz_mobile_mp3' },
+            { id: 'soma_agent', genre: 'jazz', name: { de: 'Secret Agent', en: 'Secret Agent' }, desc: { de: 'Spion-Lounge', en: 'Spy Lounge' }, icon: 'fa-user-secret', url: 'https://ice1.somafm.com/secretagent-128-mp3' },
+            { id: 'fip_jazz', genre: 'jazz', name: { de: 'FIP Jazz', en: 'FIP Jazz' }, desc: { de: 'Französischer Jazz', en: 'French Jazz' }, icon: 'fa-saxophone', url: 'https://direct.fipradio.fr/live/fip-webradio2.mp3' },
+            { id: 'radio_swiss_classic', genre: 'jazz', name: { de: 'Radio Swiss Classic', en: 'Radio Swiss Classic' }, desc: { de: 'Klassische Musik', en: 'Classical Music' }, icon: 'fa-music', url: 'https://stream.srg-ssr.ch/m/rsc_de/mp3_128' },
+            { id: 'baroque_1fm', genre: 'jazz', name: { de: "Otto's Baroque", en: "Otto's Baroque" }, desc: { de: 'Barockmusik', en: 'Baroque Music' }, icon: 'fa-violin', url: 'https://strm112.1.fm/baroque_mobile_mp3' },
+            
+            // Hip Hop
+            { id: 'ilove_hiphop', genre: 'hiphop', name: { de: 'Hip Hop & Rap', en: 'Hip Hop & Rap' }, desc: { de: 'Beats und Rhymes', en: 'Beats and rhymes' }, icon: 'fa-microphone', url: 'https://streams.ilovemusic.de/iloveradio3.mp3' },
+            { id: 'ilove_mashup', genre: 'hiphop', name: { de: 'Mashup & Remix', en: 'Mashup & Remix' }, desc: { de: 'Urban Mixes', en: 'Urban Mixes' }, icon: 'fa-sliders', url: 'https://streams.ilovemusic.de/iloveradio5.mp3' },
+            { id: 'planet_hiphop', genre: 'hiphop', name: { de: 'Planet HipHop', en: 'Planet HipHop' }, desc: { de: 'Old-school Rap', en: 'Old-school Rap' }, icon: 'fa-microphone-lines', url: 'https://strm112.1.fm/hiphop_mobile_mp3' },
+            
+            // Reggae & Dub
+            { id: 'reggae_1fm', genre: 'reggae', name: { de: '1.FM Reggae', en: '1.FM Reggae' }, desc: { de: 'Roots & Dub', en: 'Roots & Dub' }, icon: 'fa-drum', url: 'https://strm112.1.fm/reggae_mobile_mp3' },
+            { id: 'roots_legacy', genre: 'reggae', name: { de: 'Roots Legacy Radio', en: 'Roots Legacy Radio' }, desc: { de: 'Dub & Roots Reggae', en: 'Dub & Roots Reggae' }, icon: 'fa-tree', url: 'https://l.rootslegacy.fr/' },
+            { id: 'radio_caroline', genre: 'reggae', name: { de: 'Radio Caroline', en: 'Radio Caroline' }, desc: { de: 'Reggae & Ska', en: 'Reggae & Ska' }, icon: 'fa-anchor', url: 'https://sc6.radiocaroline.net:8040/' },
+            
+            // Country & Folk
+            { id: 'soma_folk', genre: 'country', name: { de: 'Folk Forward', en: 'Folk Forward' }, desc: { de: 'Indie Folk & Americana', en: 'Indie Folk & Americana' }, icon: 'fa-guitar', url: 'https://ice1.somafm.com/folkfwd-128-mp3' },
+            { id: 'cool_radio_folk', genre: 'country', name: { de: 'Cool Radio Folk', en: 'Cool Radio Folk' }, desc: { de: 'Folk Musik', en: 'Folk Music' }, icon: 'fa-music', url: 'https://stream.coolradio.rs:8000/folk' },
+            { id: 'truckstop_fm', genre: 'country', name: { de: 'Truckstop FM', en: 'Truckstop FM' }, desc: { de: 'Country & Trucker Hits', en: 'Country & Trucker Hits' }, icon: 'fa-truck', url: 'https://truckstopfm.stream.laut.fm/truckstopfm' },
+            
+            // News & Talk
+            { id: 'npr', genre: 'news', name: { de: 'NPR Program Stream', en: 'NPR Program Stream' }, desc: { de: 'US Nachrichten & Talk', en: 'US News & Talk' }, icon: 'fa-newspaper', url: 'https://npr-ice.streamguys1.com/live.mp3' },
+            { id: 'bbc_world', genre: 'news', name: { de: 'BBC World Service', en: 'BBC World Service' }, desc: { de: 'Internationale Nachrichten', en: 'International News' }, icon: 'fa-globe', url: 'https://stream.live.vc.bbcmedia.co.uk/bbc_world_service' },
+            { id: 'france_info', genre: 'news', name: { de: 'France Info', en: 'France Info' }, desc: { de: 'Französische Nachrichten', en: 'French News' }, icon: 'fa-newspaper', url: 'https://direct.franceinfo.fr/live/franceinfo-midfi.mp3' }
+        ];
+
+        let isGerman = true;
+        let currentTab = 'stations';
+        let currentStationId = null;
+        let isPlaying = false;
+        const audio = document.getElementById('audio-player');
+        audio.volume = 0.5;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderStations();
+            renderGenres();
+            setupAudioListeners();
+        });
+
+        // Tabs Logic
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            document.getElementById('tab-btn-stations').className = `tab-btn ${tab === 'stations' ? 'active' : ''}`;
+            document.getElementById('tab-btn-genres').className = `tab-btn ${tab === 'genres' ? 'active' : ''}`;
+            
+            document.getElementById('view-stations').className = tab === 'stations' ? 'block animate-[fadeIn_0.2s_ease-out]' : 'hidden';
+            document.getElementById('view-genres').className = tab === 'genres' ? 'block animate-[fadeIn_0.2s_ease-out]' : 'hidden';
+        }
+
+        // Render Functions
+        function renderStations() {
+            const grid = document.getElementById('station-grid');
+            grid.innerHTML = ''; 
+
+            stations.forEach(station => {
+                const name = isGerman ? station.name.de : station.name.en;
+                const desc = isGerman ? station.desc.de : station.desc.en;
+                const isActive = currentStationId === station.id;
+
+                const card = document.createElement('div');
+                card.className = `station-card ${isActive ? 'active' : ''}`;
+                card.onclick = () => selectStation(station.id);
+                
+                card.innerHTML = `
+                    <i class="fa-solid ${station.icon} station-icon"></i>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-sm font-bold !mt-0 !mb-0 border-none text-[var(--heading-color)] truncate">${name}</h3>
+                        <p class="text-[0.65rem] leading-tight text-[var(--text-muted)] mt-0.5 truncate">${desc}</p>
+                    </div>
+                    <div class="text-[var(--c-play)] ${isActive && isPlaying ? 'opacity-100' : 'opacity-0'} transition-opacity flex-shrink-0 text-xs">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderGenres() {
+            const grid = document.getElementById('genre-grid');
+            grid.innerHTML = '';
+
+            genresData.forEach(genre => {
+                const name = isGerman ? genre.name.de : genre.name.en;
+                
+                const card = document.createElement('div');
+                card.className = `genre-card`;
+                card.onclick = () => playRandomInGenre(genre.id);
+                
+                card.innerHTML = `
+                    <i class="fa-solid ${genre.icon} genre-icon" style="color: ${genre.color}"></i>
+                    <h3 class="text-sm font-bold !mt-0 !mb-0 border-none text-[var(--heading-color)]">${name}</h3>
+                    <div class="text-[0.65rem] text-[var(--text-muted)] mt-1 uppercase font-semibold">
+                        <i class="fa-solid fa-shuffle mr-1"></i> ${isGerman ? 'Zufällig' : 'Random Play'}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Action Functions
+        function playRandomInGenre(genreId) {
+            const genreStations = stations.filter(s => s.genre === genreId);
+            if (genreStations.length > 0) {
+                const randomStation = genreStations[Math.floor(Math.random() * genreStations.length)];
+                selectStation(randomStation.id);
+            }
+        }
+
+        function selectStation(id) {
+            const station = stations.find(s => s.id === id);
+            if (!station) return;
+
+            if (currentStationId === id) {
+                togglePlayPause();
+                return;
+            }
+
+            currentStationId = id;
+            audio.src = station.url;
+            
+            updatePlayerUI(station);
+            renderStations(); // Update active card styling
+            playAudio();
+        }
+
+        function togglePlayPause() {
+            if (!currentStationId) return;
+            if (audio.paused) playAudio(); else pauseAudio();
+        }
+
+        function playAudio() {
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.error("Autoplay prevented or stream error:", error);
+                    updatePlayState(false);
+                });
+            }
+        }
+
+        function pauseAudio() { audio.pause(); }
+        function changeVolume(val) { audio.volume = parseFloat(val); }
+
+        function setupAudioListeners() {
+            audio.addEventListener('play', () => updatePlayState(true));
+            audio.addEventListener('pause', () => updatePlayState(false));
+            audio.addEventListener('playing', () => updatePlayState(true));
+            
+            audio.addEventListener('waiting', () => {
+                document.getElementById('player-status').innerHTML = isGerman ? 
+                    '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Puffern...' : 
+                    '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Buffering...';
+            });
+
+            audio.addEventListener('error', (e) => {
+                document.getElementById('player-status').innerHTML = isGerman ? 
+                    '<span class="text-red-500"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Fehler</span>' : 
+                    '<span class="text-red-500"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Error</span>';
+                updatePlayState(false);
+            });
+        }
+
+        function updatePlayerUI(station) {
+            const name = isGerman ? station.name.de : station.name.en;
+            document.getElementById('player-title').innerText = name;
+            document.getElementById('btn-play-pause').disabled = false;
+        }
+
+        function updatePlayState(playing) {
+            isPlaying = playing;
+            const btn = document.getElementById('btn-play-pause');
+            const icon = document.getElementById('play-icon');
+            const visualizer = document.getElementById('visualizer');
+            const status = document.getElementById('player-status');
+
+            if (playing) {
+                btn.classList.remove('paused');
+                icon.className = 'fa-solid fa-pause';
+                visualizer.classList.add('is-playing');
+                status.innerHTML = '<span class="text-[var(--c-play)]">LIVE STREAM</span>';
+            } else {
+                btn.classList.add('paused');
+                icon.className = 'fa-solid fa-play ml-0.5';
+                visualizer.classList.remove('is-playing');
+                status.innerHTML = isGerman ? 'Pausiert' : 'Paused';
+            }
+            renderStations();
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('light')) {
+                html.classList.remove('light');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        function toggleLang() {
+            isGerman = !isGerman;
+            const indicator = document.getElementById('lang-indicator');
+            indicator.textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+            
+            renderStations();
+            renderGenres();
+            
+            if (currentStationId) {
+                const station = stations.find(s => s.id === currentStationId);
+                updatePlayerUI(station);
+                if (audio.paused) {
+                    document.getElementById('player-status').innerHTML = isGerman ? 'Pausiert' : 'Paused';
+                } else {
+                    document.getElementById('player-status').innerHTML = '<span class="text-[var(--c-play)]">LIVE STREAM</span>';
+                }
+            } else {
+                document.getElementById('player-title').innerHTML = isGerman ? 'Wähle einen Sender...' : 'Select a station...';
+                document.getElementById('player-status').innerHTML = isGerman ? 'Bereit' : 'Ready';
+            }
+        }
+
+        function downloadHTML() {
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; 
+            a.download = 'Internet_Radio.html';
+            document.body.appendChild(a); 
+            a.click(); 
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Simple utility animation for smooth tab switching
+        tailwind.config.theme.extend.keyframes = {
+            ...tailwind.config.theme.extend.keyframes,
+            fadeIn: {
+                '0%': { opacity: '0', transform: 'translateY(4px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+            }
+        };
+    </script>
+</body>
+</html>
