@@ -1,0 +1,1968 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>skate — Texteditor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            /* Dark Mode Defaults */
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #202122;
+            --border-color: #54595d;
+            --text-color: #ffffff;
+            --text-muted: #a8aeb3;
+            --link-color: #99c1f1;
+            --link-hover: #629deb;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --info-box: #2c2d30;
+            --table-alt: rgba(255,255,255,0.02);
+            --search-match: rgba(250, 204, 21, 0.3);
+            --search-text: #ffffff;
+
+            /* Syntax token colours (dark) */
+            --tok-comment:  #6a9955;
+            --tok-string:   #ce9178;
+            --tok-keyword:  #569cd6;
+            --tok-number:   #b5cea8;
+            --tok-function: #dcdcaa;
+            --tok-builtin:  #4ec9b0;
+            --tok-variable: #9cdcfe;
+            --tok-operator: #d4d4d4;
+            --tok-tag:      #569cd6;
+            --tok-attr:     #9cdcfe;
+            --tok-preproc:  #c586c0;
+            --tok-doctype:  #808080;
+            --tok-label:    #d7ba7d;
+            --tok-decorator:#c586c0;
+            --tok-param:    #9cdcfe;
+            --tok-entity:   #d7ba7d;
+
+            /* Layout tuning for large (maximized 1080p) viewports */
+            --content-max: 1600px;
+            --sidebar-w: 20rem; /* 320px */
+
+            /* Editor metrics (overwritten by JS) */
+            --editor-font-size: 15px;
+            --editor-line-height: 26px;
+            --editor-pad-y: .9rem;
+            --editor-pad-x: 1rem;
+
+            /* Panel borders & strengthened omni-directional encasing shadow */
+            --panel-border: #54595d;
+            --card-shadow:
+                0 0 22px 0 rgba(0, 0, 0, 0.55),
+                0 0 10px 0 rgba(0, 0, 0, 0.45),
+                0 4px 24px 0 rgba(0, 0, 0, 0.35);
+            --card-shadow-hover:
+                0 0 40px 0 rgba(0, 0, 0, 0.7),
+                0 0 18px 0 rgba(0, 0, 0, 0.55),
+                0 8px 36px 0 rgba(0, 0, 0, 0.45);
+        }
+
+        html.light {
+            /* Light Mode Overrides */
+            --bg-color: #f4f6f9;
+            --panel-color: #ffffff;
+            --sidebar-color: #ffffff;
+            --border-color: #cbd5e1;
+            --text-color: #000000;
+            --text-muted: #1f2937;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --heading-color: #000000;
+            --code-bg: #f1f5f9;
+            --info-box: #e0f2fe;
+            --table-alt: rgba(0,0,0,0.015);
+            --search-match: rgba(250, 204, 21, 0.5);
+            --search-text: #000000;
+
+            /* Syntax token colours (light) */
+            --tok-comment:  #008000;
+            --tok-string:   #a31515;
+            --tok-keyword:  #0000ff;
+            --tok-number:   #098658;
+            --tok-function: #795e26;
+            --tok-builtin:  #267f99;
+            --tok-variable: #001080;
+            --tok-operator: #000000;
+            --tok-tag:      #800000;
+            --tok-attr:     #e50000;
+            --tok-preproc:  #af00db;
+            --tok-doctype:  #808080;
+            --tok-label:    #795e26;
+            --tok-decorator:#af00db;
+            --tok-param:    #001080;
+            --tok-entity:   #795e26;
+
+            /* Stronger encasing shadow for light mode as well */
+            --panel-border: #e2e8f0;
+            --card-shadow:
+                0 0 28px 0 rgba(0, 0, 0, 0.18),
+                0 0 12px 0 rgba(0, 0, 0, 0.12),
+                0 4px 24px 0 rgba(0, 0, 0, 0.10);
+            --card-shadow-hover:
+                0 0 48px 0 rgba(0, 0, 0, 0.28),
+                0 0 22px 0 rgba(0, 0, 0, 0.20),
+                0 8px 36px 0 rgba(0, 0, 0, 0.16);
+        }
+
+        html { font-size: 16px; }
+
+        /* When the iframe viewport is large (maximized window ~1900px wide),
+           scale the whole document up slightly so nothing looks tiny. */
+        @media (min-width: 1536px)  { html { font-size: 17px; } }
+        @media (min-width: 1800px)  { html { font-size: 18px; } }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.65;
+            transition: background-color 0.2s, color 0.2s;
+            overflow-x: hidden;
+        }
+
+        /* ---------- Fluid, viewport-aware typography ---------- */
+        h1, h2, h3, h4 {
+            font-family: 'Lora', serif;
+            color: var(--heading-color);
+            font-weight: 800 !important;
+            line-height: 1.15;
+            text-wrap: balance;
+        }
+        h1 {
+            font-size: clamp(2.1rem, 3vw, 3.1rem) !important;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        h2 {
+            font-size: clamp(1.6rem, 2.1vw, 2.15rem) !important;
+            padding-bottom: 0.4rem;
+            margin-top: 0;
+            margin-bottom: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        h3 {
+            font-size: clamp(1.25rem, 1.5vw, 1.6rem) !important;
+            margin-top: 1.25rem;
+            margin-bottom: 0.7rem;
+        }
+        h4 {
+            font-size: clamp(1.1rem, 1.2vw, 1.35rem) !important;
+            margin-top: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+        p { margin-bottom: 1rem; max-width: 90ch; }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--text-color);
+        }
+
+        kbd {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.7rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 0.3rem;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        /* ---------- Wiki-style Tables ---------- */
+        .wikitable {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1em 0;
+            background-color: var(--bg-color);
+            font-size: 0.95em;
+            border: 1px solid var(--panel-border);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            table-layout: auto;
+        }
+        .wikitable th, .wikitable td {
+            border: 1px solid var(--panel-border);
+            padding: 0.7em 0.95em;
+            text-align: left;
+            vertical-align: top;
+            overflow-wrap: break-word;
+            word-break: normal;
+        }
+        .wikitable th {
+            background-color: var(--info-box);
+            font-weight: 600;
+            color: var(--heading-color);
+            font-size: 0.95em;
+            letter-spacing: 0.01em;
+        }
+        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
+
+        /* ---------- Sidebar scrollbar ---------- */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* ---------- Layout helpers ---------- */
+        .app-sidebar {
+            width: var(--sidebar-w);
+            max-height: 50vh;
+        }
+        @media (min-width: 1024px) {
+            .app-sidebar { max-height: 100vh; }
+        }
+
+        .app-main {
+            flex: 1 1 0%;
+            min-width: 0;
+            width: 100%;
+            max-width: var(--content-max);
+            padding: 1rem;
+        }
+        @media (min-width: 1024px) { .app-main { padding: 1.5rem; } }
+        @media (min-width: 1280px) { .app-main { padding: 2rem; } }
+        @media (min-width: 1600px) { .app-main { padding: 2.25rem 2.5rem; } }
+
+        /* ---------- Topic Panel (outer container) ---------- */
+        .topic-panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            transition: box-shadow 0.3s ease;
+        }
+        @media (min-width: 1024px) {
+            .topic-panel { padding: 2.25rem; }
+        }
+        .topic-panel:hover {
+            box-shadow: var(--card-shadow-hover);
+        }
+        .topic-panel.mt-0 { margin-top: 0; }
+        .topic-panel.mb-0 { margin-bottom: 0; }
+        .topic-panel.mb-8 { margin-bottom: 2rem; }
+        .topic-panel.mb-20 { margin-bottom: 5rem; }
+        .topic-panel.tight { padding: 1.25rem 1.5rem; }
+        @media (min-width: 1024px) { .topic-panel.tight { padding: 1.5rem 1.75rem; } }
+
+        /* ---------- Subtopic Card (inner block) ---------- */
+        .subtopic-card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .subtopic-card:last-child { margin-bottom: 0; }
+        .subtopic-card:hover {
+            box-shadow: var(--card-shadow);
+            transform: translateY(-2px);
+        }
+        .subtopic-card > h3:first-child { margin-top: 0; }
+
+        .panel-intro {
+            margin-bottom: 1.5rem;
+            color: var(--text-color);
+        }
+
+        @media (max-width: 1024px) {
+            .infobox { float: none; width: 100%; margin: 1em 0; }
+        }
+
+        /* Global Language Switcher Support */
+        [data-lang-de], [data-lang-en] { transition: opacity 0.15s ease-in-out; }
+
+        /* =========================================================
+           skate — editor specific styles
+           ========================================================= */
+
+        /* Sidebar document entries */
+        .doc-item { transition: background-color .15s, color .15s, border-color .15s; }
+
+        /* Settings toggles */
+        .setting-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .5rem;
+            width: 100%;
+            padding: .35rem .6rem;
+            border-radius: .5rem;
+            border: 1px solid var(--panel-border);
+            background-color: var(--bg-color);
+            color: var(--text-muted);
+            font-size: .78rem;
+            font-weight: 500;
+            transition: all .15s;
+        }
+        .setting-btn:hover { color: var(--heading-color); border-color: var(--link-color); }
+        .setting-btn.on {
+            background-color: var(--info-box);
+            color: var(--heading-color);
+            border-color: var(--link-color);
+        }
+        .step-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.6rem; height: 1.6rem;
+            border-radius: .4rem;
+            border: 1px solid var(--panel-border);
+            background-color: var(--bg-color);
+            color: var(--text-muted);
+            font-size: .7rem;
+            transition: all .15s;
+        }
+        .step-btn:hover { color: var(--heading-color); border-color: var(--link-color); }
+
+        /* Toolbar */
+        .tb-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2.1rem;
+            height: 2.1rem;
+            padding: 0 .5rem;
+            border-radius: .5rem;
+            border: 1px solid var(--panel-border);
+            background-color: var(--bg-color);
+            color: var(--text-muted);
+            font-size: .85rem;
+            transition: all .15s;
+        }
+        .tb-btn:hover {
+            color: var(--heading-color);
+            border-color: var(--link-color);
+            background-color: var(--code-bg);
+        }
+        .tb-btn:active { transform: translateY(1px); }
+        .tb-sep { width: 1px; height: 1.35rem; background-color: var(--border-color); margin: 0 .3rem; }
+
+        /* Language selector */
+        .lang-select {
+            background-color: var(--bg-color);
+            color: var(--text-muted);
+            border: 1px solid var(--panel-border);
+            border-radius: .5rem;
+            padding: .3rem 1.6rem .3rem .6rem;
+            font-size: .75rem;
+            font-family: 'Fira Code', monospace;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23a8aeb3'%3E%3Cpath d='M4.4 6.2 8 9.8l3.6-3.6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right .4rem center;
+            background-size: .8rem;
+            transition: all .15s;
+        }
+        .lang-select:hover { border-color: var(--link-color); color: var(--heading-color); }
+        .lang-select:focus { border-color: var(--link-color); }
+        .lang-select option { background-color: var(--panel-color); color: var(--text-color); }
+
+        /* Editor shell */
+        .editor-shell {
+            display: flex;
+            position: relative;
+            height: clamp(320px, 58vh, 900px);
+            background-color: var(--code-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: .75rem;
+            overflow: hidden;
+        }
+        .gutter {
+            flex: 0 0 auto;
+            min-width: 3.1rem;
+            padding: var(--editor-pad-y) .7rem;
+            text-align: right;
+            font-family: 'Fira Code', monospace;
+            font-size: var(--editor-font-size);
+            line-height: var(--editor-line-height);
+            color: var(--text-muted);
+            background-color: var(--panel-color);
+            border-right: 1px solid var(--panel-border);
+            user-select: none;
+            overflow: hidden;
+            white-space: pre;
+            opacity: .7;
+        }
+
+        /* The pane stacks the highlight layer behind the transparent textarea */
+        .editor-pane {
+            position: relative;
+            flex: 1 1 auto;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .highlight-layer,
+        #editor {
+            position: absolute;
+            inset: 0;
+            margin: 0;
+            padding: var(--editor-pad-y) var(--editor-pad-x);
+            border: 0;
+            font-family: 'Fira Code', monospace;
+            font-size: var(--editor-font-size);
+            line-height: var(--editor-line-height);
+            white-space: pre;
+            tab-size: 4;
+            box-sizing: border-box;
+        }
+
+        .highlight-layer {
+            z-index: 1;
+            overflow: hidden;
+            pointer-events: none;
+            background: transparent;
+            color: var(--text-color);
+        }
+
+        #editor {
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            outline: none;
+            resize: none;
+            background: transparent;
+            color: transparent;
+            caret-color: var(--link-color);
+            overflow: auto;
+        }
+        #editor::placeholder { color: var(--text-muted); opacity: .6; }
+        #editor::selection { background: rgba(120, 170, 255, .38); color: transparent; }
+
+        /* ---- syntax token colours ---- */
+        .tok-comment  { color: var(--tok-comment);  font-style: italic; }
+        .tok-string   { color: var(--tok-string); }
+        .tok-keyword  { color: var(--tok-keyword);  font-weight: 500; }
+        .tok-number   { color: var(--tok-number); }
+        .tok-function { color: var(--tok-function); }
+        .tok-builtin  { color: var(--tok-builtin); }
+        .tok-variable { color: var(--tok-variable); }
+        .tok-operator { color: var(--tok-operator); }
+        .tok-tag      { color: var(--tok-tag); }
+        .tok-attr     { color: var(--tok-attr); }
+        .tok-preproc  { color: var(--tok-preproc); }
+        .tok-doctype  { color: var(--tok-doctype); }
+        .tok-label    { color: var(--tok-label); }
+        .tok-decorator{ color: var(--tok-decorator); }
+        .tok-param    { color: var(--tok-param); }
+        .tok-entity   { color: var(--tok-entity); }
+
+        /* Markdown preview */
+        .md-preview {
+            display: none;
+            flex: 1 1 50%;
+            min-width: 0;
+            overflow: auto;
+            padding: .9rem 1.1rem;
+            border-left: 1px solid var(--panel-border);
+            background-color: var(--panel-color);
+        }
+        .editor-shell.split .md-preview { display: block; }
+        .editor-shell.split .editor-pane { flex: 1 1 50%; }
+
+        @media (max-width: 900px) {
+            .editor-shell.split { flex-direction: column; height: auto; }
+            .editor-shell.split .editor-pane { flex: 0 0 auto; height: 45vh; }
+            .editor-shell.split .md-preview {
+                border-left: 0;
+                border-top: 1px solid var(--panel-border);
+                max-height: 45vh;
+            }
+        }
+
+        .md-preview h1 { font-size: 1.55rem !important; margin: .3rem 0 .7rem !important; padding: 0 !important; }
+        .md-preview h2 { font-size: 1.25rem !important; margin: 1rem 0 .5rem !important; padding-bottom: .2rem; }
+        .md-preview h3 { font-size: 1.1rem !important; margin: .9rem 0 .4rem !important; }
+        .md-preview h4 { font-size: 1rem !important; margin: .8rem 0 .35rem !important; }
+        .md-preview p { margin-bottom: .7rem; max-width: none; }
+        .md-preview ul { list-style: disc; padding-left: 1.4rem; margin-bottom: .7rem; }
+        .md-preview ol { list-style: decimal; padding-left: 1.4rem; margin-bottom: .7rem; }
+        .md-preview li { margin-bottom: .2rem; }
+        .md-preview blockquote {
+            border-left: 3px solid var(--border-color);
+            padding-left: .8rem;
+            color: var(--text-muted);
+            margin-bottom: .7rem;
+            font-style: italic;
+        }
+        .md-preview pre {
+            background-color: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: .5rem;
+            padding: .7rem .85rem;
+            overflow: auto;
+            margin-bottom: .8rem;
+        }
+        .md-preview pre code { background: none; border: 0; padding: 0; }
+        .md-preview hr { border: 0; border-top: 1px solid var(--border-color); margin: 1.1rem 0; }
+        .md-preview a { color: var(--link-color); text-decoration: underline; }
+        .md-preview .md-empty { color: var(--text-muted); font-style: italic; font-size: .9rem; }
+
+        .status-bar { font-variant-numeric: tabular-nums; }
+
+        /* ---------- Download dialog ---------- */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: rgba(0, 0, 0, .55);
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+            animation: skateFade .15s ease;
+        }
+        @keyframes skateFade { from { opacity: 0 } to { opacity: 1 } }
+
+        .modal-card {
+            width: 100%;
+            max-width: 32rem;
+            padding: 1.75rem;
+            border-radius: 1rem;
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow-hover);
+            animation: skatePop .18s ease;
+        }
+        @keyframes skatePop {
+            from { transform: translateY(10px) scale(.98); opacity: 0 }
+            to   { transform: none; opacity: 1 }
+        }
+
+        .dl-opt {
+            display: flex;
+            align-items: center;
+            gap: .9rem;
+            width: 100%;
+            padding: .85rem 1rem;
+            border-radius: .75rem;
+            border: 1px solid var(--panel-border);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            text-align: left;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .dl-opt:hover {
+            border-color: var(--link-color);
+            background-color: var(--code-bg);
+            transform: translateY(-1px);
+            box-shadow: var(--card-shadow);
+        }
+        .dl-opt i { font-size: 1.15rem; width: 1.5rem; text-align: center; color: var(--link-color); }
+    </style>
+</head>
+<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
+
+    <aside class="app-sidebar flex-shrink-0 bg-[var(--sidebar-color)] border-b lg:border-b-0 lg:border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
+
+        <!-- Controls: Language, Theme, Download -->
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Sprache / Language">
+                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Design / Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="openDownloadDialog()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Dokument herunterladen / Download document">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <!-- Brand -->
+        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+            <i class="fa-solid fa-feather-pointed text-3xl mb-3 text-[var(--text-color)] opacity-80"></i>
+            <div class="font-serif text-3xl tracking-tight text-[var(--heading-color)] leading-tight">skate</div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">
+                <span data-lang-de>Texteditor</span><span data-lang-en style="display:none;">Text Editor</span> · v1.1
+            </div>
+        </div>
+
+        <!-- Documents -->
+        <div class="mb-6">
+            <div class="flex items-center justify-between mb-3">
+                <span class="font-bold text-[var(--heading-color)] uppercase tracking-wider text-xs">
+                    <span data-lang-de>Dokumente</span><span data-lang-en style="display:none;">Documents</span>
+                </span>
+                <button onclick="newDoc()" class="text-[var(--link-color)] hover:text-[var(--link-hover)] text-xs font-semibold transition-colors">
+                    <i class="fa-solid fa-plus mr-1"></i><span data-lang-de>Neu</span><span data-lang-en style="display:none;">New</span>
+                </button>
+            </div>
+
+            <div id="docList" class="space-y-1"></div>
+
+            <button onclick="document.getElementById('fileInput').click()" class="w-full mt-3 py-2 rounded-lg border border-dashed border-[var(--panel-border)] text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--link-color)] hover:border-[var(--link-color)] transition-colors">
+                <i class="fa-solid fa-file-import mr-1"></i>
+                <span data-lang-de>Datei importieren</span><span data-lang-en style="display:none;">Import file</span>
+            </button>
+            <input type="file" id="fileInput" class="hidden" accept=".txt,.md,.markdown,.html,.htm,.json,.csv,.log,.tex,.py,.cs,.cpp,.cc,.cxx,.h,.hpp,.lua,.bat,.cmd,.ps1,.sh,.bash,.bas,text/*" onchange="importFile(event)">
+        </div>
+
+        <!-- Settings -->
+        <div class="mb-6 pt-4 border-t border-[var(--border-color)]">
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span data-lang-de>Einstellungen</span><span data-lang-en style="display:none;">Settings</span>
+            </div>
+
+            <div class="space-y-2">
+                <div class="flex items-center justify-between gap-2 px-1">
+                    <span class="text-xs text-[var(--text-muted)] font-medium">
+                        <span data-lang-de>Schriftgröße</span><span data-lang-en style="display:none;">Font size</span>
+                    </span>
+                    <div class="flex items-center gap-2">
+                        <button class="step-btn" onclick="changeFontSize(-1)"><i class="fa-solid fa-minus"></i></button>
+                        <span id="fontSizeVal" class="text-xs font-mono text-[var(--text-muted)] w-10 text-center">15px</span>
+                        <button class="step-btn" onclick="changeFontSize(1)"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between gap-2 px-1">
+                    <span class="text-xs text-[var(--text-muted)] font-medium">
+                        <span data-lang-de>Zeilenabstand</span><span data-lang-en style="display:none;">Line height</span>
+                    </span>
+                    <div class="flex items-center gap-2">
+                        <button class="step-btn" onclick="changeLineHeight(-0.1)"><i class="fa-solid fa-minus"></i></button>
+                        <span id="lineHeightVal" class="text-xs font-mono text-[var(--text-muted)] w-10 text-center">1.7</span>
+                        <button class="step-btn" onclick="changeLineHeight(0.1)"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between gap-2 px-1">
+                    <span class="text-xs text-[var(--text-muted)] font-medium">
+                        <span data-lang-de>Tab-Größe</span><span data-lang-en style="display:none;">Tab size</span>
+                    </span>
+                    <button class="step-btn" style="width:auto;padding:0 .5rem;" onclick="cycleTabSize()"><span id="tabSizeVal">4</span></button>
+                </div>
+
+                <button id="btnWrap" class="setting-btn" onclick="toggleSetting('wrap')">
+                    <span><i class="fa-solid fa-text-width mr-1.5"></i><span data-lang-de>Zeilenumbruch</span><span data-lang-en style="display:none;">Word wrap</span></span>
+                    <i class="fa-solid fa-toggle-off"></i>
+                </button>
+                <button id="btnLineNumbers" class="setting-btn" onclick="toggleSetting('lineNumbers')">
+                    <span><i class="fa-solid fa-list-ol mr-1.5"></i><span data-lang-de>Zeilennummern</span><span data-lang-en style="display:none;">Line numbers</span></span>
+                    <i class="fa-solid fa-toggle-off"></i>
+                </button>
+                <button id="btnPreview" class="setting-btn" onclick="toggleSetting('preview')">
+                    <span><i class="fa-regular fa-eye mr-1.5"></i><span data-lang-de>Markdown-Vorschau</span><span data-lang-en style="display:none;">Markdown preview</span></span>
+                    <i class="fa-solid fa-toggle-off"></i>
+                </button>
+                <button id="btnHighlight" class="setting-btn" onclick="toggleSetting('highlight')">
+                    <span><i class="fa-solid fa-highlighter mr-1.5"></i><span data-lang-de>Syntaxhervorhebung</span><span data-lang-en style="display:none;">Syntax highlighting</span></span>
+                    <i class="fa-solid fa-toggle-off"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Shortcuts -->
+        <div class="mb-2 pt-4 border-t border-[var(--border-color)]">
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span data-lang-de>Tastenkürzel</span><span data-lang-en style="display:none;">Shortcuts</span>
+            </div>
+            <ul class="space-y-1.5 text-xs text-[var(--text-muted)]">
+                <li class="flex justify-between items-center gap-2"><span data-lang-de>Herunterladen</span><span data-lang-en style="display:none;">Download</span><kbd>Strg + S</kbd></li>
+                <li class="flex justify-between items-center gap-2"><span data-lang-de>Suchen</span><span data-lang-en style="display:none;">Find</span><kbd>Strg + F</kbd></li>
+                <li class="flex justify-between items-center gap-2"><span data-lang-de>Ersetzen</span><span data-lang-en style="display:none;">Replace</span><kbd>Strg + H</kbd></li>
+                <li class="flex justify-between items-center gap-2"><span data-lang-de>Fett</span><span data-lang-en style="display:none;">Bold</span><kbd>Strg + B</kbd></li>
+                <li class="flex justify-between items-center gap-2"><span data-lang-de>Kursiv</span><span data-lang-en style="display:none;">Italic</span><kbd>Strg + I</kbd></li>
+                <li class="flex justify-between items-center gap-2"><span data-lang-de>Neues Dokument</span><span data-lang-en style="display:none;">New document</span><kbd>Strg + N</kbd></li>
+                <li class="flex justify-between items-center gap-2"><span data-lang-de>Einrücken</span><span data-lang-en style="display:none;">Indent</span><kbd>Tab</kbd></li>
+            </ul>
+        </div>
+    </aside>
+
+    <main class="app-main" id="main-content">
+
+        <!-- ========================================== -->
+        <!-- Header panel                               -->
+        <!-- ========================================== -->
+        <div class="topic-panel tight mt-0 mb-8">
+            <h1 id="top" class="border-b-0 pb-0 mb-3 mt-0">skate</h1>
+            <p class="mb-4 text-[var(--text-color)]" data-lang-de><strong>skate</strong> ist ein schlanker Texteditor, der vollständig im Browser läuft — ohne Server, ohne Installation. Es wird <em>nichts</em> automatisch gespeichert: Du bestimmst mit dem Download-Knopf, wann und in welchem Format (TXT, MD, DOC) dein Dokument deinen Rechner verlässt. Syntaxhervorhebung gibt es für BASIC, Python, C#, C++, Lua, HTML, Batch, PowerShell und Shell.</p>
+            <p class="mb-4 text-[var(--text-color)]" data-lang-en style="display:none;"><strong>skate</strong> is a lean text editor running entirely in your browser — no server, no installation. <em>Nothing</em> is saved automatically: the download button is the only way out, and you choose the format (TXT, MD, DOC). Syntax highlighting is available for BASIC, Python, C#, C++, Lua, HTML, Batch, PowerShell and Shell.</p>
+
+            <div class="flex flex-col sm:flex-row gap-3 sm:items-center mt-5 pt-4 border-t border-[var(--border-color)]">
+                <div class="relative flex-1 min-w-0">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <i class="fa-regular fa-file-lines text-[var(--text-muted)] text-sm"></i>
+                    </div>
+                    <input type="text" id="docTitle" placeholder="Unbenannt" oninput="renameDoc(this.value)"
+                        class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-xl pl-10 pr-3 py-2.5 text-sm font-semibold text-[var(--heading-color)] focus:outline-none focus:border-[var(--link-color)] transition-all shadow-sm">
+                </div>
+                <div id="saveState" class="text-xs font-mono text-[var(--text-muted)] whitespace-nowrap px-1"></div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- Editor panel                               -->
+        <!-- ========================================== -->
+        <div class="topic-panel mt-0 mb-20">
+
+            <!-- Toolbar -->
+            <div class="flex flex-wrap items-center gap-1.5 mb-3 pb-3 border-b border-[var(--border-color)]">
+                <button class="tb-btn" onclick="execCmd('undo')" title="Rückgängig / Undo"><i class="fa-solid fa-rotate-left"></i></button>
+                <button class="tb-btn" onclick="execCmd('redo')" title="Wiederholen / Redo"><i class="fa-solid fa-rotate-right"></i></button>
+                <div class="tb-sep"></div>
+                <button class="tb-btn" onclick="wrapSelection('**','**')" title="Fett / Bold"><i class="fa-solid fa-bold"></i></button>
+                <button class="tb-btn" onclick="wrapSelection('*','*')" title="Kursiv / Italic"><i class="fa-solid fa-italic"></i></button>
+                <button class="tb-btn" onclick="wrapSelection('`','`')" title="Code"><i class="fa-solid fa-code"></i></button>
+                <button class="tb-btn" onclick="toggleLinePrefix('# ')" title="Überschrift / Heading"><i class="fa-solid fa-heading"></i></button>
+                <button class="tb-btn" onclick="toggleLinePrefix('- ')" title="Liste / List"><i class="fa-solid fa-list-ul"></i></button>
+                <button class="tb-btn" onclick="toggleLinePrefix('> ')" title="Zitat / Quote"><i class="fa-solid fa-quote-left"></i></button>
+                <button class="tb-btn" onclick="insertLink()" title="Link"><i class="fa-solid fa-link"></i></button>
+                <div class="tb-sep"></div>
+                <button class="tb-btn" onclick="toggleFind()" title="Suchen &amp; Ersetzen / Find &amp; Replace"><i class="fa-solid fa-magnifying-glass"></i></button>
+                <button class="tb-btn" onclick="copyAll()" title="Alles kopieren / Copy all"><i class="fa-regular fa-copy"></i></button>
+                <button class="tb-btn" onclick="clearDoc()" title="Leeren / Clear"><i class="fa-regular fa-trash-can"></i></button>
+                <div class="tb-sep"></div>
+                <button class="tb-btn" onclick="openDownloadDialog()" title="Herunterladen / Download"><i class="fa-solid fa-file-arrow-down"></i></button>
+
+                <div class="ml-auto flex items-center gap-2 pl-2">
+                    <i class="fa-solid fa-highlighter text-[var(--text-muted)] text-xs hidden sm:inline"></i>
+                    <select id="langSelect" class="lang-select" onchange="changeLang(this.value)" title="Syntax / Language">
+                        <option value="plain">Plain Text</option>
+                        <option value="basic">BASIC</option>
+                        <option value="python">Python</option>
+                        <option value="csharp">C#</option>
+                        <option value="cpp">C++</option>
+                        <option value="lua">Lua</option>
+                        <option value="html">HTML</option>
+                        <option value="bat">Batch</option>
+                        <option value="ps1">PowerShell</option>
+                        <option value="sh">Shell</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Find & Replace bar -->
+            <div id="findBar" style="display:none;" class="mb-3 p-3 rounded-xl border border-[var(--panel-border)] bg-[var(--code-bg)] flex flex-wrap items-center gap-2">
+                <input type="text" id="findInput" placeholder="Suchen …" oninput="updateFindCount()" onkeydown="if(event.key==='Enter'){event.preventDefault();findNext();}"
+                    class="flex-1 min-w-[8rem] bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-lg px-3 py-1.5 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-all">
+                <input type="text" id="replaceInput" placeholder="Ersetzen …" onkeydown="if(event.key==='Enter'){event.preventDefault();replaceOne();}"
+                    class="flex-1 min-w-[8rem] bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-lg px-3 py-1.5 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-all">
+                <button onclick="findNext()" class="tb-btn" title="Weiter / Next"><i class="fa-solid fa-arrow-down"></i></button>
+                <button onclick="replaceOne()" class="tb-btn" title="Ersetzen / Replace"><i class="fa-solid fa-right-left"></i></button>
+                <button onclick="replaceAll()" class="tb-btn" title="Alle ersetzen / Replace all"><i class="fa-solid fa-layer-group"></i></button>
+                <span id="findCount" class="text-xs font-mono text-[var(--text-muted)] px-1"></span>
+                <button onclick="toggleFind()" class="tb-btn ml-auto" title="Schließen / Close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Editor -->
+            <div class="editor-shell" id="editorShell">
+                <div class="gutter" id="gutter">1</div>
+                <div class="editor-pane">
+                    <pre class="highlight-layer" id="highlightLayer" aria-hidden="true"><code id="highlightCode"></code></pre>
+                    <textarea id="editor" spellcheck="false" placeholder="Schreibe etwas … / Start typing …"></textarea>
+                </div>
+                <div class="md-preview" id="preview"></div>
+            </div>
+
+            <!-- Status bar -->
+            <div class="status-bar flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 px-1 text-xs font-mono text-[var(--text-muted)]">
+                <span id="statPos">—</span>
+                <span id="statCounts">—</span>
+                <span id="statRead">—</span>
+                <span id="statLang">—</span>
+                <span id="statSel" class="text-[var(--link-color)]"></span>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- Download dialog                            -->
+    <!-- ========================================== -->
+    <div id="dlModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="dlTitleEl">
+            <div class="flex items-start gap-3 mb-1">
+                <i class="fa-solid fa-file-arrow-down text-2xl text-[var(--link-color)] mt-0.5"></i>
+                <div class="min-w-0">
+                    <div id="dlTitleEl" class="font-serif text-xl font-bold text-[var(--heading-color)] leading-tight">
+                        <span data-lang-de>Dokument herunterladen</span><span data-lang-en style="display:none;">Download document</span>
+                    </div>
+                    <div class="text-xs text-[var(--text-muted)] mt-1 truncate font-mono" id="dlFileName"></div>
+                </div>
+            </div>
+
+            <p class="text-sm text-[var(--text-muted)] mt-3 mb-4">
+                <span data-lang-de>Wähle ein Dateiformat. Es wird nichts automatisch gespeichert — der Download ist die einzige Sicherung.</span>
+                <span data-lang-en style="display:none;">Pick a file format. Nothing is saved automatically — this download is your only backup.</span>
+            </p>
+
+            <div class="space-y-2">
+                <button class="dl-opt" onclick="downloadAs('txt')">
+                    <i class="fa-regular fa-file-lines"></i>
+                    <span class="flex-1 min-w-0">
+                        <span class="block text-sm font-semibold text-[var(--heading-color)]">.txt</span>
+                        <span class="block text-xs text-[var(--text-muted)]">
+                            <span data-lang-de>Reiner Text, unverändert</span><span data-lang-en style="display:none;">Plain text, unmodified</span>
+                        </span>
+                    </span>
+                </button>
+
+                <button class="dl-opt" onclick="downloadAs('md')">
+                    <i class="fa-brands fa-markdown"></i>
+                    <span class="flex-1 min-w-0">
+                        <span class="block text-sm font-semibold text-[var(--heading-color)]">.md</span>
+                        <span class="block text-xs text-[var(--text-muted)]">
+                            <span data-lang-de>Markdown-Quelltext</span><span data-lang-en style="display:none;">Markdown source</span>
+                        </span>
+                    </span>
+                </button>
+
+                <button class="dl-opt" onclick="downloadAs('doc')">
+                    <i class="fa-regular fa-file-word"></i>
+                    <span class="flex-1 min-w-0">
+                        <span class="block text-sm font-semibold text-[var(--heading-color)]">.doc</span>
+                        <span class="block text-xs text-[var(--text-muted)]">
+                            <span data-lang-de>Word-Dokument (Markdown wird formatiert)</span><span data-lang-en style="display:none;">Word document (Markdown is formatted)</span>
+                        </span>
+                    </span>
+                </button>
+            </div>
+
+            <button onclick="closeDownloadDialog()" class="w-full mt-5 py-2.5 rounded-xl border border-[var(--panel-border)] text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--heading-color)] hover:border-[var(--link-color)] transition-colors">
+                <span data-lang-de>Abbrechen</span><span data-lang-en style="display:none;">Cancel</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* =========================================================
+           skate — logic
+           ========================================================= */
+
+        const LS_SETTINGS = 'skate.settings.v2';
+
+        let isGerman = true;
+        let docs = [];
+        let activeId = null;
+        let dirty = false;
+        let lastExportTime = null;
+
+        let settings = {
+            fontSize: 15,
+            lineHeight: 1.7,
+            tabSize: 4,
+            wrap: false,
+            lineNumbers: true,
+            preview: false,
+            highlight: true
+        };
+
+        const editor = document.getElementById('editor');
+        const gutter = document.getElementById('gutter');
+        const preview = document.getElementById('preview');
+        const editorShell = document.getElementById('editorShell');
+        const highlightLayer = document.getElementById('highlightLayer');
+        const highlightCode = document.getElementById('highlightCode');
+        const docTitle = document.getElementById('docTitle');
+        const docList = document.getElementById('docList');
+        const findBar = document.getElementById('findBar');
+        const findInput = document.getElementById('findInput');
+        const replaceInput = document.getElementById('replaceInput');
+        const findCount = document.getElementById('findCount');
+        const langSelect = document.getElementById('langSelect');
+        const dlModal = document.getElementById('dlModal');
+
+        /* ---------- tiny i18n for dynamic strings ---------- */
+        const T = {
+            de: {
+                untitled: 'Unbenannt', unsaved: 'Nicht gespeichert', noChanges: 'Keine Änderungen',
+                downloaded: 'Heruntergeladen',
+                line: 'Zeile', col: 'Spalte', chars: 'Zeichen', words: 'Wörter',
+                lines: 'Zeilen', read: 'Min. Lesezeit', sel: 'markiert',
+                confirmDelete: 'Dokument wirklich löschen?', noMatch: 'Kein Treffer',
+                matches: 'Treffer', empty: 'Noch kein Inhalt — fange einfach an zu tippen.',
+                replaced: 'ersetzt', lang: 'Sprache'
+            },
+            en: {
+                untitled: 'Untitled', unsaved: 'Unsaved changes', noChanges: 'No changes',
+                downloaded: 'Downloaded',
+                line: 'Line', col: 'Col', chars: 'Chars', words: 'Words',
+                lines: 'Lines', read: 'min read', sel: 'selected',
+                confirmDelete: 'Really delete this document?', noMatch: 'No match',
+                matches: 'matches', empty: 'No content yet — just start typing.',
+                replaced: 'replaced', lang: 'Language'
+            }
+        };
+        function t(key) { return T[isGerman ? 'de' : 'en'][key]; }
+
+        /* ---------- helpers ---------- */
+        function uid() { return 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
+        function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+        function currentDoc() { return docs.find(d => d.id === activeId) || null; }
+
+        function currentLang() {
+            const doc = currentDoc();
+            return (doc && doc.lang) ? doc.lang : 'plain';
+        }
+
+        /* =========================================================
+           Syntax highlighting
+           ---------------------------------------------------------
+           Tiny regex tokenizer. Rules are tried in order at the
+           current scan position (sticky flag). First hit wins.
+           ========================================================= */
+
+        const R = (type, src, flags) => ({ type, re: new RegExp(src, 'y' + (flags || '')) });
+
+        const LANGS = {
+            plain: null,
+
+            basic: [
+                R('comment', "'[^\\n]*"),
+                R('comment', '\\bREM\\b[^\\n]*', 'i'),
+                R('string', '"(?:[^"\\n]|"")*"'),
+                R('keyword', '\\b(?:PRINT|INPUT|LINE|IF|THEN|ELSE|ELSEIF|END|FOR|TO|STEP|NEXT|WHILE|WEND|DO|LOOP|UNTIL|GOTO|GOSUB|RETURN|DIM|REDIM|AS|INTEGER|STRING|DOUBLE|SINGLE|LONG|BOOLEAN|SUB|FUNCTION|CALL|LET|CONST|DATA|READ|RESTORE|SELECT|CASE|TYPE|DECLARE|BYVAL|BYREF|AND|OR|NOT|MOD|XOR|TRUE|FALSE|NULL|CLS|LOCATE|COLOR|SLEEP|RANDOMIZE|SWAP|EXIT|SHARED|STATIC|OPTION|EXPLICIT|SCREEN|OPEN|CLOSE|WRITE|SEEK|KILL|MKDIR|CHDIR|FILES|ON|ERROR|RESUME)\\b', 'i'),
+                R('number', '\\b(?:&H[0-9A-Fa-f]+|\\d+\\.?\\d*(?:[eEdD][+-]?\\d+)?)\\b'),
+                R('function', '\\b[A-Za-z_]\\w*(?=\\s*\\()')
+            ],
+
+            python: [
+                R('comment', '#[^\\n]*'),
+                R('string', '"""[\\s\\S]*?"""'),
+                R('string', "'''[\\s\\S]*?'''"),
+                R('string', '[rRbBuUfF]{0,2}"(?:\\\\.|[^"\\\\\\n])*"'),
+                R('string', "[rRbBuUfF]{0,2}'(?:\\\\.|[^'\\\\\\n])*'"),
+                R('decorator', '@[A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*'),
+                R('keyword', '\\b(?:def|class|return|if|elif|else|for|while|import|from|as|with|try|except|finally|raise|lambda|yield|global|nonlocal|pass|break|continue|and|or|not|in|is|None|True|False|assert|del|async|await|match|case)\\b'),
+                R('builtin', '\\b(?:print|len|range|str|int|float|list|dict|set|tuple|bool|bytes|bytearray|open|type|isinstance|issubclass|super|self|enumerate|zip|map|filter|sum|min|max|abs|sorted|reversed|input|format|repr|hash|id|iter|next|all|any|round|divmod|pow|callable|getattr|setattr|hasattr|delattr|vars|dir|globals|locals|exec|eval|compile|__init__|__name__|__main__|__file__)\\b'),
+                R('number', '\\b(?:0[xX][0-9a-fA-F_]+|0[bB][01_]+|0[oO][0-7_]+|\\d[\\d_]*(?:\\.\\d[\\d_]*)?(?:[eE][+-]?\\d+)?j?)\\b'),
+                R('function', '\\b[A-Za-z_]\\w*(?=\\s*\\()')
+            ],
+
+            csharp: [
+                R('comment', '//[^\\n]*'),
+                R('comment', '/\\*[\\s\\S]*?\\*/'),
+                R('preproc', '^\\s*#\\s*\\w+', 'm'),
+                R('string', '@"(?:""|[^"])*"'),
+                R('string', '\\$?"(?:\\\\.|[^"\\\\\\n])*"'),
+                R('string', "'(?:\\\\.|[^'\\\\\\n])*'"),
+                R('keyword', '\\b(?:abstract|as|base|bool|break|byte|case|catch|char|checked|class|const|continue|decimal|default|delegate|do|double|else|enum|event|explicit|extern|false|finally|fixed|float|for|foreach|goto|if|implicit|in|int|interface|internal|is|lock|long|namespace|new|null|object|operator|out|override|params|private|protected|public|readonly|ref|return|sbyte|sealed|short|sizeof|stackalloc|static|string|struct|switch|this|throw|true|try|typeof|uint|ulong|unchecked|unsafe|ushort|using|virtual|void|volatile|while|var|async|await|yield|record|when|where|nameof|dynamic|partial|global|init|required|file|scoped)\\b'),
+                R('builtin', '\\b(?:Console|Math|String|Int32|Int64|Double|Boolean|Object|Array|List|Dictionary|IEnumerable|Task|Exception|Convert|DateTime|Guid|Environment|Enumerable)\\b'),
+                R('number', '\\b(?:0[xX][0-9a-fA-F_]+|\\d[\\d_]*(?:\\.\\d+)?(?:[eE][+-]?\\d+)?[fFdDmMuUlL]*)\\b'),
+                R('function', '\\b[A-Za-z_]\\w*(?=\\s*\\()')
+            ],
+
+            cpp: [
+                R('preproc', '^\\s*#\\s*\\w+', 'm'),
+                R('comment', '//[^\\n]*'),
+                R('comment', '/\\*[\\s\\S]*?\\*/'),
+                R('string', '"(?:\\\\.|[^"\\\\\\n])*"'),
+                R('string', "'(?:\\\\.|[^'\\\\\\n])*'"),
+                R('keyword', '\\b(?:alignas|alignof|asm|auto|bool|break|case|catch|char|char8_t|char16_t|char32_t|class|const|consteval|constexpr|constinit|const_cast|continue|co_await|co_return|co_yield|decltype|default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|false|float|for|friend|goto|if|inline|int|long|mutable|namespace|new|noexcept|nullptr|operator|private|protected|public|register|reinterpret_cast|requires|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|template|this|thread_local|throw|true|try|typedef|typeid|typename|union|unsigned|using|virtual|void|volatile|wchar_t|while|concept|module|import|override|final|constexpr|and|or|not|xor)\\b'),
+                R('builtin', '\\b(?:std|string|vector|map|set|unordered_map|unordered_set|pair|tuple|queue|stack|deque|array|cout|cin|cerr|clog|endl|printf|scanf|malloc|free|size_t|int8_t|int16_t|int32_t|int64_t|uint8_t|uint16_t|uint32_t|uint64_t|shared_ptr|unique_ptr|weak_ptr|make_shared|make_unique|move|forward)\\b'),
+                R('number', '\\b(?:0[xX][0-9a-fA-F]+|0[bB][01]+|\\d+\\.?\\d*(?:[eE][+-]?\\d+)?[fFuUlL]*)\\b'),
+                R('function', '\\b[A-Za-z_]\\w*(?=\\s*\\()')
+            ],
+
+            lua: [
+                R('comment', '--\\[\\[[\\s\\S]*?\\]\\]'),
+                R('comment', '--[^\\n]*'),
+                R('string', '\\[\\[[\\s\\S]*?\\]\\]'),
+                R('string', '"(?:\\\\.|[^"\\\\\\n])*"'),
+                R('string', "'(?:\\\\.|[^'\\\\\\n])*'"),
+                R('keyword', '\\b(?:and|break|do|else|elseif|end|false|for|function|goto|if|in|local|nil|not|or|repeat|return|then|true|until|while)\\b'),
+                R('builtin', '\\b(?:print|pairs|ipairs|type|tostring|tonumber|require|setmetatable|getmetatable|rawget|rawset|rawequal|select|next|unpack|pcall|xpcall|error|assert|collectgarbage|load|dofile|loadstring|coroutine|table|string|math|io|os|debug|self|_G|_ENV|_VERSION)\\b'),
+                R('number', '\\b(?:0[xX][0-9a-fA-F]+|\\d+\\.?\\d*(?:[eE][+-]?\\d+)?)\\b'),
+                R('function', '\\b[A-Za-z_]\\w*(?=\\s*\\()')
+            ],
+
+            html: [
+                R('comment', '<!--[\\s\\S]*?-->'),
+                R('comment', '<!\\[CDATA\\[[\\s\\S]*?\\]\\]>'),
+                R('doctype', '<!DOCTYPE[^>]*>', 'i'),
+                R('tag', '</?[A-Za-z][\\w:-]*'),
+                R('tag', '/?>'),
+                R('attr', '[A-Za-z_:@#][\\w:.-]*(?=\\s*=)'),
+                R('string', '"[^"\\n]*"'),
+                R('string', "'[^'\\n]*'"),
+                R('entity', '&[a-zA-Z#0-9]+;'),
+                R('number', '\\b\\d+\\b')
+            ],
+
+            bat: [
+                R('comment', '^\\s*::[^\\n]*', 'm'),
+                R('comment', '^\\s*REM\\b[^\\n]*', 'im'),
+                R('label', '^\\s*:[A-Za-z_][\\w.-]*', 'm'),
+                R('string', '"[^"\\n]*"'),
+                R('variable', '%[^%\\n]*%'),
+                R('variable', '![^!\\n]*!'),
+                R('variable', '%[0-9*~]'),
+                R('keyword', '\\b(?:if|else|for|in|do|goto|call|set|setlocal|endlocal|echo|exit|not|exist|defined|errorlevel|pause|cd|chdir|dir|copy|move|del|erase|md|mkdir|rd|rmdir|start|title|cls|rem|shift|type|find|findstr|sort|more|ren|rename|attrib|pushd|popd|choice|timeout|ping|tasklist|taskkill|net|reg|sc|wmic|powershell|assoc|ftype|ver|vol|date|time|break|color|mode|path|prompt|verify)\\b', 'i'),
+                R('number', '\\b\\d+\\b')
+            ],
+
+            ps1: [
+                R('comment', '<#[\\s\\S]*?#>'),
+                R('comment', '#[^\\n]*'),
+                R('string', '"(?:`[\\s\\S]|[^"`])*"'),
+                R('string', "'(?:''|[^'])*'"),
+                R('variable', '\\$\\{[^}\\n]*\\}'),
+                R('variable', '\\$[A-Za-z_][\\w:]*'),
+                R('variable', '\\$[?^$_]'),
+                R('param', '-[A-Za-z][\\w-]*'),
+                R('keyword', '\\b(?:function|param|if|else|elseif|switch|foreach|for|while|do|until|try|catch|finally|throw|return|break|continue|begin|process|end|in|filter|class|enum|using|hidden|static|var|default|exit|trap|data|dynamicparam|workflow|parallel|sequence)\\b', 'i'),
+                R('builtin', '\\b(?:Write-Host|Write-Output|Write-Error|Write-Warning|Write-Verbose|Get-ChildItem|Get-Content|Set-Content|Add-Content|Get-Item|Remove-Item|New-Item|Copy-Item|Move-Item|Start-Process|Stop-Process|Select-Object|Where-Object|ForEach-Object|Sort-Object|Measure-Object|Get-Process|Get-Service|Test-Path|Join-Path|Split-Path|Out-File|Out-String|Read-Host|New-Object|Add-Type|Invoke-Expression|Invoke-Command|Select-String|Get-Member|Get-Help)\\b'),
+                R('number', '\\b(?:0[xX][0-9a-fA-F]+|\\d+\\.?\\d*)\\b'),
+                R('function', '\\b[A-Za-z][\\w]*-[A-Za-z]\\w*\\b')
+            ],
+
+            sh: [
+                R('comment', '#[^\\n]*'),
+                R('string', '"(?:\\\\.|[^"\\\\])*"'),
+                R('string', "'[^']*'"),
+                R('string', '`(?:\\\\.|[^`\\\\])*`'),
+                R('variable', '\\$\\{[^}\\n]*\\}'),
+                R('variable', '\\$[A-Za-z_][\\w]*'),
+                R('variable', '\\$[0-9@#?*!$-]'),
+                R('keyword', '\\b(?:if|then|else|elif|fi|for|while|until|do|done|case|esac|function|in|select|time|return|break|continue|local|export|readonly|declare|typeset|unset|shift|exit|source|alias|unalias|echo|printf|read|cd|pwd|set|trap|eval|exec|test|let|getopts|wait|kill|umask|ulimit|hash|type|command|builtin|enable|help|history|jobs|fg|bg|disown|suspend|logout|dirs|pushd|popd)\\b'),
+                R('number', '\\b\\d+\\b'),
+                R('function', '\\b[A-Za-z_]\\w*(?=\\s*\\(\\))')
+            ]
+        };
+
+        const LANG_LABELS = {
+            plain: 'Plain Text', basic: 'BASIC', python: 'Python', csharp: 'C#',
+            cpp: 'C++', lua: 'Lua', html: 'HTML', bat: 'Batch', ps1: 'PowerShell', sh: 'Shell'
+        };
+
+        const MAX_HIGHLIGHT_CHARS = 120000;
+
+        function tokenize(code, langKey) {
+            const rules = LANGS[langKey];
+            if (!rules) return escapeHtml(code);
+
+            let out = '';
+            let plain = '';
+            const n = code.length;
+            let i = 0;
+
+            while (i < n) {
+                let matched = false;
+                for (let r = 0; r < rules.length; r++) {
+                    const rule = rules[r];
+                    rule.re.lastIndex = i;
+                    const m = rule.re.exec(code);
+                    if (m && m[0].length > 0) {
+                        if (plain) { out += escapeHtml(plain); plain = ''; }
+                        out += '<span class="tok-' + rule.type + '">' + escapeHtml(m[0]) + '</span>';
+                        i += m[0].length;
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched) { plain += code[i]; i++; }
+            }
+            if (plain) out += escapeHtml(plain);
+            return out;
+        }
+
+        let highlightRaf = null;
+
+        function scheduleHighlight() {
+            if (highlightRaf) return;
+            highlightRaf = requestAnimationFrame(() => {
+                highlightRaf = null;
+                updateHighlight();
+            });
+        }
+
+        function updateHighlight() {
+            const text = editor.value;
+            const lang = currentLang();
+
+            if (!settings.highlight || lang === 'plain' || text.length > MAX_HIGHLIGHT_CHARS) {
+                highlightCode.textContent = text;
+                highlightLayer.style.display = 'block';
+                // keep dimensions sane even without token colours
+                if (text.length > MAX_HIGHLIGHT_CHARS) {
+                    highlightCode.textContent = text.slice(0, MAX_HIGHLIGHT_CHARS);
+                }
+                syncHighlightPadding();
+                syncScroll();
+                return;
+            }
+
+            let html = tokenize(text, lang);
+            // make sure a trailing newline still occupies a line box
+            if (text.endsWith('\n') || text.length === 0) html += ' ';
+            highlightCode.innerHTML = html;
+
+            syncHighlightPadding();
+            syncScroll();
+        }
+
+        /**
+         * The textarea may show a scrollbar that reduces its content width.
+         * The highlight layer sits behind it with `overflow:hidden`, so we
+         * compensate with extra right padding to keep wrapped lines aligned.
+         */
+        function syncHighlightPadding() {
+            const sbw = Math.max(0, editor.offsetWidth - editor.clientWidth);
+            highlightLayer.style.paddingRight = 'calc(var(--editor-pad-x) + ' + sbw + 'px)';
+        }
+
+        function syncScroll() {
+            gutter.scrollTop = editor.scrollTop;
+            highlightLayer.scrollTop = editor.scrollTop;
+            highlightLayer.scrollLeft = editor.scrollLeft;
+        }
+
+        /* ---------- welcome document ---------- */
+        function welcomeText() {
+            return [
+                '# Willkommen bei skate',
+                '',
+                'skate ist ein schlanker Texteditor für den Browser. Es wird **nichts** automatisch gespeichert —',
+                'du entscheidest mit dem Download-Knopf, wann dein Dokument deinen Rechner verlässt.',
+                '',
+                '## Funktionen',
+                '',
+                '- Mehrere Dokumente (nur im Arbeitsspeicher)',
+                '- Download als `.txt`, `.md` oder `.doc`',
+                '- Syntaxhervorhebung für BASIC, Python, C#, C++, Lua, HTML, Batch, PowerShell und Shell',
+                '- Markdown-Vorschau (umschaltbar in der Seitenleiste)',
+                '- Suchen & Ersetzen mit `Strg + F`',
+                '- Import von Text- und Codedateien',
+                '- Dunkles und helles Design, Deutsch und Englisch',
+                '',
+                '## Markdown-Beispiel',
+                '',
+                '**Fett**, *kursiv*, `Inline-Code` und [ein Link](https://example.com).',
+                '',
+                '> Ein Zitat sieht so aus.',
+                '',
+                '```',
+                'function hello() {',
+                '  return "Hallo Welt";',
+                '}',
+                '```',
+                '',
+                '---',
+                '',
+                '### English',
+                '',
+                'skate is a lean text editor for the browser. Nothing is saved automatically — use the',
+                'download button to export your work as `.txt`, `.md` or `.doc`.',
+                '',
+                'Viel Spaß beim Schreiben!'
+            ].join('\n');
+        }
+
+        /* ---------- persistence (settings only — documents are never auto-saved) ---------- */
+        function saveSettings() {
+            try { localStorage.setItem(LS_SETTINGS, JSON.stringify(settings)); } catch (e) {}
+        }
+
+        function loadSettings() {
+            try {
+                const raw = JSON.parse(localStorage.getItem(LS_SETTINGS));
+                if (raw && typeof raw === 'object') settings = Object.assign(settings, raw);
+            } catch (e) {}
+            settings.fontSize = Math.min(24, Math.max(12, settings.fontSize || 15));
+            settings.lineHeight = Math.min(2.2, Math.max(1.2, settings.lineHeight || 1.7));
+            settings.tabSize = [2, 4, 8].includes(settings.tabSize) ? settings.tabSize : 4;
+            settings.wrap = !!settings.wrap;
+            settings.lineNumbers = settings.lineNumbers !== false;
+            settings.preview = !!settings.preview;
+            settings.highlight = settings.highlight !== false;
+        }
+
+        function initDocs() {
+            docs = [{
+                id: uid(),
+                title: isGerman ? 'Willkommen' : 'Welcome',
+                content: welcomeText(),
+                lang: 'plain',
+                updated: Date.now()
+            }];
+            activeId = docs[0].id;
+        }
+
+        /* ---------- dirty state ---------- */
+        function setDirty(v) {
+            dirty = v;
+            renderSaveState();
+        }
+
+        function renderSaveState() {
+            const el = document.getElementById('saveState');
+            if (!el) return;
+            if (dirty) {
+                el.innerHTML = '<i class="fa-solid fa-circle" style="font-size:.5rem;color:#f59e0b;margin-right:.45rem;vertical-align:middle;"></i>' + t('unsaved');
+            } else if (lastExportTime) {
+                el.innerHTML = '<i class="fa-solid fa-circle-check mr-1" style="color:var(--link-color)"></i>' + t('downloaded') + ' · ' + lastExportTime;
+            } else {
+                el.innerHTML = '<i class="fa-regular fa-circle-check mr-1"></i>' + t('noChanges');
+            }
+        }
+
+        /* ---------- document handling ---------- */
+        function openDoc(id, focus) {
+            const doc = docs.find(d => d.id === id);
+            if (!doc) return;
+            activeId = id;
+            editor.value = doc.content || '';
+            docTitle.value = doc.title || '';
+            langSelect.value = LANGS[doc.lang] !== undefined ? doc.lang : 'plain';
+
+            editor.scrollTop = 0;
+            gutter.scrollTop = 0;
+
+            renderDocList();
+            updateGutter();
+            updateStatus();
+            renderPreview();
+            updateHighlight();
+            setDirty(false);
+
+            if (focus) { editor.focus(); }
+        }
+
+        function newDoc() {
+            const doc = {
+                id: uid(),
+                title: t('untitled'),
+                content: '',
+                lang: 'plain',
+                updated: Date.now()
+            };
+            docs.unshift(doc);
+            renderDocList();
+            openDoc(doc.id, true);
+            docTitle.focus();
+            docTitle.select();
+        }
+
+        function deleteDoc(id) {
+            const doc = docs.find(d => d.id === id);
+            if (!doc) return;
+            if (!confirm(t('confirmDelete') + '\n\n"' + (doc.title || t('untitled')) + '"')) return;
+
+            docs = docs.filter(d => d.id !== id);
+            if (docs.length === 0) {
+                docs = [{ id: uid(), title: t('untitled'), content: '', lang: 'plain', updated: Date.now() }];
+            }
+            if (id === activeId) activeId = docs[0].id;
+            renderDocList();
+            openDoc(activeId);
+        }
+
+        function renameDoc(value) {
+            const doc = currentDoc();
+            if (!doc) return;
+            doc.title = value;
+            doc.updated = Date.now();
+            setDirty(true);
+        }
+
+        function renderDocList() {
+            docList.innerHTML = '';
+            docs.forEach(doc => {
+                const isActive = doc.id === activeId;
+                const el = document.createElement('div');
+                el.className = 'doc-item group flex items-center gap-2 rounded-lg px-2 py-1.5 cursor-pointer border ' +
+                    (isActive
+                        ? 'bg-[var(--code-bg)] border-[var(--panel-border)] text-[var(--heading-color)]'
+                        : 'border-transparent text-[var(--text-muted)] hover:bg-[var(--code-bg)] hover:text-[var(--text-color)]');
+                el.onclick = () => openDoc(doc.id, true);
+
+                const icon = document.createElement('i');
+                icon.className = 'fa-regular fa-file-lines text-xs ' + (isActive ? 'text-[var(--link-color)]' : '');
+
+                const label = document.createElement('span');
+                label.className = 'flex-1 truncate text-sm font-medium';
+                label.textContent = doc.title || t('untitled');
+
+                const del = document.createElement('button');
+                del.className = 'opacity-0 group-hover:opacity-100 text-[var(--text-muted)] hover:text-red-400 text-xs px-1 transition-opacity';
+                del.title = 'Löschen / Delete';
+                del.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+                del.onclick = (e) => { e.stopPropagation(); deleteDoc(doc.id); };
+
+                el.appendChild(icon);
+                el.appendChild(label);
+                el.appendChild(del);
+                docList.appendChild(el);
+            });
+        }
+
+        /* ---------- gutter / status ---------- */
+        function updateGutter() {
+            const count = editor.value.split('\n').length;
+            const parts = new Array(count);
+            for (let i = 0; i < count; i++) parts[i] = i + 1;
+            gutter.textContent = parts.join('\n');
+        }
+
+        function updateStatus() {
+            const value = editor.value;
+            const pos = editor.selectionStart;
+            const before = value.slice(0, pos);
+            const line = before.split('\n').length;
+            const col = pos - before.lastIndexOf('\n');
+
+            const chars = value.length;
+            const words = (value.trim().match(/\S+/g) || []).length;
+            const lines = value.split('\n').length;
+            const minutes = Math.max(1, Math.round(words / 200));
+
+            document.getElementById('statPos').textContent =
+                t('line') + ' ' + line + ', ' + t('col') + ' ' + col;
+            document.getElementById('statCounts').textContent =
+                chars.toLocaleString() + ' ' + t('chars') + ' · ' +
+                words.toLocaleString() + ' ' + t('words') + ' · ' +
+                lines.toLocaleString() + ' ' + t('lines');
+            document.getElementById('statRead').textContent = '~' + minutes + ' ' + t('read');
+
+            const langKey = currentLang();
+            document.getElementById('statLang').textContent =
+                t('lang') + ': ' + (LANG_LABELS[langKey] || langKey);
+
+            const selEl = document.getElementById('statSel');
+            const selLen = editor.selectionEnd - editor.selectionStart;
+            selEl.textContent = selLen > 0 ? selLen + ' ' + t('sel') : '';
+        }
+
+        function scrollToSelection() {
+            const pos = editor.selectionStart;
+            const line = editor.value.slice(0, pos).split('\n').length;
+            const lh = settings.fontSize * settings.lineHeight;
+            const target = (line - 1) * lh - editor.clientHeight / 2 + lh;
+            editor.scrollTop = Math.max(0, target);
+            syncScroll();
+        }
+
+        /* ---------- editing helpers ---------- */
+        function execCmd(cmd) {
+            editor.focus();
+            try { document.execCommand(cmd); } catch (e) {}
+            updateStatus();
+        }
+
+        function replaceRange(text, start, end, selStart, selEnd) {
+            editor.focus();
+            editor.setSelectionRange(start, end);
+            let ok = false;
+            try { ok = document.execCommand('insertText', false, text); } catch (e) { ok = false; }
+            if (!ok) {
+                editor.setRangeText(text, start, end, 'end');
+                editor.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            if (typeof selStart === 'number') {
+                editor.setSelectionRange(selStart, selEnd);
+            }
+            updateStatus();
+        }
+
+        function wrapSelection(before, after) {
+            const s = editor.selectionStart;
+            const e = editor.selectionEnd;
+            const sel = editor.value.slice(s, e);
+            replaceRange(before + sel + after, s, e,
+                s + before.length, s + before.length + sel.length);
+        }
+
+        function toggleLinePrefix(prefix) {
+            const s = editor.selectionStart;
+            const e = editor.selectionEnd;
+            const start = editor.value.lastIndexOf('\n', s - 1) + 1;
+            let end = editor.value.indexOf('\n', e);
+            if (end === -1) end = editor.value.length;
+
+            const block = editor.value.slice(start, end);
+            const lines = block.split('\n');
+            const allHave = lines.every(l => l.startsWith(prefix));
+            const newBlock = lines
+                .map(l => allHave ? l.slice(prefix.length) : prefix + l)
+                .join('\n');
+
+            replaceRange(newBlock, start, end, start, start + newBlock.length);
+        }
+
+        function insertLink() {
+            const s = editor.selectionStart;
+            const e = editor.selectionEnd;
+            const sel = editor.value.slice(s, e) || 'Link';
+            const text = '[' + sel + '](https://)';
+            replaceRange(text, s, e, s + sel.length + 3, s + sel.length + 11);
+        }
+
+        function copyAll() {
+            const value = editor.value;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(value).then(() => flashButton(), () => {});
+            } else {
+                editor.select();
+                try { document.execCommand('copy'); } catch (e) {}
+                editor.setSelectionRange(0, 0);
+            }
+        }
+
+        function flashButton() {
+            const btns = document.querySelectorAll('.tb-btn');
+            btns.forEach(b => {
+                const title = b.getAttribute('title') || '';
+                if (title.indexOf('kopieren') > -1) {
+                    const original = b.innerHTML;
+                    b.innerHTML = '<i class="fa-solid fa-check"></i>';
+                    b.style.color = 'var(--link-color)';
+                    setTimeout(() => { b.innerHTML = original; b.style.color = ''; }, 900);
+                }
+            });
+        }
+
+        function clearDoc() {
+            const doc = currentDoc();
+            if (!doc) return;
+            if (editor.value.trim() !== '' && !confirm(t('confirmDelete'))) return;
+            editor.value = '';
+            editor.dispatchEvent(new Event('input', { bubbles: true }));
+            editor.focus();
+        }
+
+        /* ---------- find & replace ---------- */
+        function toggleFind() {
+            const visible = findBar.style.display !== 'none';
+            findBar.style.display = visible ? 'none' : 'flex';
+            if (!visible) {
+                findInput.focus();
+                findInput.select();
+                updateFindCount();
+            } else {
+                editor.focus();
+            }
+        }
+
+        function countMatches() {
+            const q = findInput.value;
+            if (!q) return 0;
+            const re = new RegExp(escapeRegExp(q), 'gi');
+            return (editor.value.match(re) || []).length;
+        }
+
+        function updateFindCount() {
+            const q = findInput.value;
+            if (!q) { findCount.textContent = ''; return; }
+            const n = countMatches();
+            findCount.textContent = n === 0 ? t('noMatch') : n + ' ' + t('matches');
+            findCount.style.color = n === 0 ? '#f87171' : 'var(--text-muted)';
+        }
+
+        function findNext() {
+            const q = findInput.value;
+            if (!q) return;
+            const text = editor.value;
+            const lower = text.toLowerCase();
+            const needle = q.toLowerCase();
+
+            let idx = lower.indexOf(needle, editor.selectionEnd);
+            if (idx === -1) idx = lower.indexOf(needle, 0);
+            if (idx === -1) { updateFindCount(); return; }
+
+            editor.focus();
+            editor.setSelectionRange(idx, idx + q.length);
+            scrollToSelection();
+            updateStatus();
+        }
+
+        function replaceOne() {
+            const q = findInput.value;
+            if (!q) return;
+            const s = editor.selectionStart;
+            const e = editor.selectionEnd;
+            const sel = editor.value.slice(s, e);
+
+            if (sel.toLowerCase() === q.toLowerCase()) {
+                const r = replaceInput.value.replace(/\$/g, '$$$$');
+                replaceRange(r, s, e, s + r.length, s + r.length);
+                updateFindCount();
+            }
+            findNext();
+        }
+
+        function replaceAll() {
+            const q = findInput.value;
+            if (!q) return;
+            const r = replaceInput.value;
+            const re = new RegExp(escapeRegExp(q), 'gi');
+            const n = (editor.value.match(re) || []).length;
+            if (n === 0) { updateFindCount(); return; }
+            editor.value = editor.value.replace(re, r);
+            editor.dispatchEvent(new Event('input', { bubbles: true }));
+            updateFindCount();
+            findCount.textContent = n + ' ' + t('replaced');
+        }
+
+        /* ---------- markdown preview ---------- */
+        function mdToHtml(src) {
+            const esc = s => String(s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            const inline = s => esc(s)
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
+                .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+            const lines = String(src).split(/\r?\n/);
+            const out = [];
+            let i = 0;
+            let list = null;
+
+            const closeList = () => { if (list) { out.push('</' + list + '>'); list = null; } };
+
+            while (i < lines.length) {
+                const line = lines[i];
+
+                if (/^```/.test(line)) {
+                    closeList();
+                    const buf = [];
+                    i++;
+                    while (i < lines.length && !/^```/.test(lines[i])) { buf.push(lines[i]); i++; }
+                    i++;
+                    out.push('<pre><code>' + esc(buf.join('\n')) + '</code></pre>');
+                    continue;
+                }
+
+                if (/^\s*$/.test(line)) { closeList(); i++; continue; }
+
+                if (/^\s*([-*_])\1{2,}\s*$/.test(line)) { closeList(); out.push('<hr>'); i++; continue; }
+
+                let m = line.match(/^(#{1,6})\s+(.*)$/);
+                if (m) {
+                    closeList();
+                    const lvl = m[1].length;
+                    out.push('<h' + lvl + '>' + inline(m[2]) + '</h' + lvl + '>');
+                    i++; continue;
+                }
+
+                m = line.match(/^\s*>\s?(.*)$/);
+                if (m) { closeList(); out.push('<blockquote>' + inline(m[1]) + '</blockquote>'); i++; continue; }
+
+                m = line.match(/^\s*[-*+]\s+(.*)$/);
+                if (m) {
+                    if (list !== 'ul') { closeList(); out.push('<ul>'); list = 'ul'; }
+                    out.push('<li>' + inline(m[1]) + '</li>');
+                    i++; continue;
+                }
+
+                m = line.match(/^\s*\d+[.)]\s+(.*)$/);
+                if (m) {
+                    if (list !== 'ol') { closeList(); out.push('<ol>'); list = 'ol'; }
+                    out.push('<li>' + inline(m[1]) + '</li>');
+                    i++; continue;
+                }
+
+                closeList();
+                out.push('<p>' + inline(line) + '</p>');
+                i++;
+            }
+            closeList();
+            return out.join('\n');
+        }
+
+        function renderPreview() {
+            if (!settings.preview) return;
+            const value = editor.value.trim();
+            preview.innerHTML = value === ''
+                ? '<p class="md-empty">' + escapeHtml(t('empty')) + '</p>'
+                : mdToHtml(editor.value);
+        }
+
+        /* ---------- settings ---------- */
+        function applySettings() {
+            document.documentElement.style.setProperty('--editor-font-size', settings.fontSize + 'px');
+            document.documentElement.style.setProperty('--editor-line-height',
+                Math.round(settings.fontSize * settings.lineHeight) + 'px');
+
+            const ws = settings.wrap ? 'pre-wrap' : 'pre';
+            const ow = settings.wrap ? 'break-word' : 'normal';
+            [editor, highlightLayer].forEach(el => {
+                el.style.whiteSpace = ws;
+                el.style.overflowWrap = ow;
+                el.style.tabSize = settings.tabSize;
+            });
+
+            const showGutter = settings.lineNumbers && !settings.wrap;
+            gutter.style.display = showGutter ? 'block' : 'none';
+
+            editorShell.classList.toggle('split', settings.preview);
+
+            document.getElementById('fontSizeVal').textContent = settings.fontSize + 'px';
+            document.getElementById('lineHeightVal').textContent = settings.lineHeight.toFixed(1);
+            document.getElementById('tabSizeVal').textContent = settings.tabSize;
+
+            setToggle('btnWrap', settings.wrap);
+            setToggle('btnLineNumbers', settings.lineNumbers);
+            setToggle('btnPreview', settings.preview);
+            setToggle('btnHighlight', settings.highlight);
+        }
+
+        function setToggle(id, on) {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+            btn.classList.toggle('on', on);
+            const icon = btn.querySelector('i:last-child');
+            if (icon) icon.className = on ? 'fa-solid fa-toggle-on' : 'fa-solid fa-toggle-off';
+        }
+
+        function toggleSetting(key) {
+            settings[key] = !settings[key];
+            saveSettings();
+            applySettings();
+            renderPreview();
+            updateGutter();
+            updateHighlight();
+            // scrollbar geometry may have changed
+            requestAnimationFrame(syncHighlightPadding);
+        }
+
+        function changeFontSize(delta) {
+            settings.fontSize = Math.min(24, Math.max(12, settings.fontSize + delta));
+            saveSettings();
+            applySettings();
+        }
+
+        function changeLineHeight(delta) {
+            settings.lineHeight = Math.min(2.2, Math.max(1.2,
+                Math.round((settings.lineHeight + delta) * 10) / 10));
+            saveSettings();
+            applySettings();
+        }
+
+        function cycleTabSize() {
+            const order = [2, 4, 8];
+            const idx = order.indexOf(settings.tabSize);
+            settings.tabSize = order[(idx + 1) % order.length];
+            saveSettings();
+            applySettings();
+            updateHighlight();
+        }
+
+        function changeLang(lang) {
+            const doc = currentDoc();
+            if (doc) doc.lang = lang;
+            updateHighlight();
+            updateStatus();
+        }
+
+        /* ---------- import ---------- */
+        const EXT_LANG = {
+            py: 'python', pyw: 'python',
+            cs: 'csharp',
+            cpp: 'cpp', cc: 'cpp', cxx: 'cpp', hpp: 'cpp', hxx: 'cpp', h: 'cpp', ino: 'cpp',
+            lua: 'lua',
+            html: 'html', htm: 'html', xhtml: 'html', vue: 'html', svg: 'html',
+            bat: 'bat', cmd: 'bat',
+            ps1: 'ps1', psm1: 'ps1', psd1: 'ps1',
+            sh: 'sh', bash: 'sh', zsh: 'sh', ksh: 'sh',
+            bas: 'basic', vbs: 'basic'
+        };
+
+        function importFile(ev) {
+            const file = ev.target.files && ev.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                const ext = (file.name.split('.').pop() || '').toLowerCase();
+                const doc = {
+                    id: uid(),
+                    title: file.name.replace(/\.[^.]+$/, '') || t('untitled'),
+                    content: String(reader.result || ''),
+                    lang: EXT_LANG[ext] || 'plain',
+                    updated: Date.now()
+                };
+                docs.unshift(doc);
+                renderDocList();
+                openDoc(doc.id, true);
+            };
+            reader.readAsText(file);
+            ev.target.value = '';
+        }
+
+        /* ---------- download ---------- */
+        function openDownloadDialog() {
+            const doc = currentDoc();
+            if (!doc) return;
+            document.getElementById('dlFileName').textContent = doc.title || t('untitled');
+            dlModal.style.display = 'flex';
+        }
+
+        function closeDownloadDialog() {
+            dlModal.style.display = 'none';
+            if (editor) editor.focus();
+        }
+
+        function safeFileName(name) {
+            const cleaned = String(name || '')
+                .replace(/[^\w\-. ]+/g, '_')
+                .replace(/\s+/g, ' ')
+                .trim();
+            return cleaned || 'skate';
+        }
+
+        function triggerDownload(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1500);
+        }
+
+        function downloadAs(fmt) {
+            const doc = currentDoc();
+            if (!doc) return;
+
+            const base = safeFileName(doc.title);
+            const content = doc.content || '';
+
+            if (fmt === 'txt') {
+                triggerDownload(
+                    new Blob([content], { type: 'text/plain;charset=utf-8' }),
+                    base + '.txt'
+                );
+            } else if (fmt === 'md') {
+                triggerDownload(
+                    new Blob([content], { type: 'text/markdown;charset=utf-8' }),
+                    base + '.md'
+                );
+            } else if (fmt === 'doc') {
+                const body = mdToHtml(content);
+                const html =
+                    '<html xmlns:o="urn:schemas-microsoft-com:office:office" ' +
+                    'xmlns:w="urn:schemas-microsoft-com:office:word" ' +
+                    'xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8">' +
+                    '<title>' + escapeHtml(doc.title || 'skate') + '</title>' +
+                    '<style>' +
+                    'body{font-family:Calibri,Arial,sans-serif;font-size:11pt;line-height:1.5;color:#000;}' +
+                    'h1,h2,h3,h4{font-family:Calibri,Arial,sans-serif;color:#000;}' +
+                    'pre{background:#f4f4f4;border:1px solid #ddd;padding:8px;font-family:Consolas,monospace;font-size:9.5pt;}' +
+                    'code{font-family:Consolas,monospace;}' +
+                    'blockquote{border-left:3px solid #ccc;margin-left:0;padding-left:10px;color:#555;font-style:italic;}' +
+                    '</style></head><body>' + body + '</body></html>';
+                triggerDownload(
+                    new Blob(['\ufeff' + html], { type: 'application/msword' }),
+                    base + '.doc'
+                );
+            }
+
+            lastExportTime = new Date().toLocaleTimeString();
+            setDirty(false);
+            closeDownloadDialog();
+        }
+
+        /* ---------- theme & language ---------- */
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('light')) {
+                html.classList.remove('light');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        function toggleLang() {
+            isGerman = !isGerman;
+            document.getElementById('lang-indicator').textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+
+            const deEls = document.querySelectorAll('[data-lang-de]');
+            const enEls = document.querySelectorAll('[data-lang-en]');
+
+            if (isGerman) {
+                deEls.forEach(el => el.style.display = '');
+                enEls.forEach(el => el.style.display = 'none');
+            } else {
+                deEls.forEach(el => el.style.display = 'none');
+                enEls.forEach(el => el.style.display = '');
+            }
+
+            refreshDynamicTexts();
+        }
+
+        function refreshDynamicTexts() {
+            updateStatus();
+            renderSaveState();
+            renderDocList();
+            updateFindCount();
+            renderPreview();
+            if (!docTitle.value) docTitle.placeholder = t('untitled');
+        }
+
+        /* ---------- events ---------- */
+        editor.addEventListener('input', () => {
+            const doc = currentDoc();
+            if (doc) {
+                doc.content = editor.value;
+                doc.updated = Date.now();
+            }
+            setDirty(true);
+            updateGutter();
+            updateStatus();
+            if (settings.preview) renderPreview();
+            scheduleHighlight();
+        });
+
+        editor.addEventListener('scroll', syncScroll);
+
+        editor.addEventListener('keyup', updateStatus);
+        editor.addEventListener('click', updateStatus);
+        editor.addEventListener('select', updateStatus);
+        document.addEventListener('selectionchange', () => {
+            if (document.activeElement === editor) updateStatus();
+        });
+
+        editor.addEventListener('keydown', (e) => {
+            const mod = e.ctrlKey || e.metaKey;
+
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const spaces = ' '.repeat(settings.tabSize);
+                replaceRange(spaces, editor.selectionStart, editor.selectionEnd);
+                return;
+            }
+
+            if (mod && !e.shiftKey && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                openDownloadDialog();
+                return;
+            }
+
+            if (mod && e.key.toLowerCase() === 'f') { e.preventDefault(); toggleFind(); return; }
+            if (mod && e.key.toLowerCase() === 'h') {
+                e.preventDefault();
+                if (findBar.style.display === 'none') toggleFind();
+                replaceInput.focus();
+                return;
+            }
+            if (mod && e.key.toLowerCase() === 'n') { e.preventDefault(); newDoc(); return; }
+            if (mod && e.key.toLowerCase() === 'b') { e.preventDefault(); wrapSelection('**', '**'); return; }
+            if (mod && e.key.toLowerCase() === 'i') { e.preventDefault(); wrapSelection('*', '*'); return; }
+
+            if (e.key === 'Escape' && findBar.style.display !== 'none') {
+                findBar.style.display = 'none';
+                editor.focus();
+            }
+        });
+
+        findInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { findBar.style.display = 'none'; editor.focus(); }
+        });
+        replaceInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { findBar.style.display = 'none'; editor.focus(); }
+        });
+
+        /* ---------- download dialog events ---------- */
+        dlModal.addEventListener('click', (e) => {
+            if (e.target === dlModal) closeDownloadDialog();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && dlModal.style.display !== 'none') {
+                closeDownloadDialog();
+            }
+        });
+
+        /* ---------- window events ---------- */
+        window.addEventListener('resize', () => {
+            syncHighlightPadding();
+            syncScroll();
+        });
+
+        window.addEventListener('beforeunload', (e) => {
+            if (!dirty) return;
+            e.preventDefault();
+            e.returnValue = '';
+            return '';
+        });
+
+        /* ---------- init ---------- */
+        function init() {
+            loadSettings();
+            initDocs();
+            applySettings();
+            renderDocList();
+            openDoc(activeId);
+            docTitle.placeholder = t('untitled');
+            updateFindCount();
+            renderSaveState();
+            requestAnimationFrame(() => {
+                syncHighlightPadding();
+                syncScroll();
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>

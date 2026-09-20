@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frequency Generator Cheatsheet (Sound / Audio)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            /* Dark Mode Defaults */
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #202122;
+            --border-color: #54595d;
+            --text-color: #ffffff;
+            --text-muted: #a8aeb3;
+            --link-color: #99c1f1;
+            --link-hover: #629deb;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --info-box: #2c2d30;
+            --table-alt: rgba(255,255,255,0.02);
+            --search-match: rgba(250, 204, 21, 0.3);
+            --search-text: #ffffff;
+
+            --content-max: 1600px;
+            --sidebar-w: 20rem;
+
+            --panel-border: #54595d;
+            --card-shadow:
+                0 0 22px 0 rgba(0, 0, 0, 0.55),
+                0 0 10px 0 rgba(0, 0, 0, 0.45),
+                0 4px 24px 0 rgba(0, 0, 0, 0.35);
+            --card-shadow-hover:
+                0 0 40px 0 rgba(0, 0, 0, 0.7),
+                0 0 18px 0 rgba(0, 0, 0, 0.55),
+                0 8px 36px 0 rgba(0, 0, 0, 0.45);
+        }
+
+        html.light {
+            --bg-color: #f4f6f9;
+            --panel-color: #ffffff;
+            --sidebar-color: #ffffff;
+            --border-color: #cbd5e1;
+            --text-color: #000000;
+            --text-muted: #1f2937;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --heading-color: #000000;
+            --code-bg: #f1f5f9;
+            --info-box: #e0f2fe;
+            --table-alt: rgba(0,0,0,0.015);
+            --search-match: rgba(250, 204, 21, 0.5);
+            --search-text: #000000;
+
+            --panel-border: #e2e8f0;
+            --card-shadow:
+                0 0 28px 0 rgba(0, 0, 0, 0.18),
+                0 0 12px 0 rgba(0, 0, 0, 0.12),
+                0 4px 24px 0 rgba(0, 0, 0, 0.10);
+            --card-shadow-hover:
+                0 0 48px 0 rgba(0, 0, 0, 0.28),
+                0 0 22px 0 rgba(0, 0, 0, 0.20),
+                0 8px 36px 0 rgba(0, 0, 0, 0.16);
+        }
+
+        html { font-size: 16px; }
+        @media (min-width: 1536px)  { html { font-size: 17px; } }
+        @media (min-width: 1800px)  { html { font-size: 18px; } }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.65;
+            transition: background-color 0.2s, color 0.2s;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Lora', serif;
+            color: var(--heading-color);
+            font-weight: 800 !important;
+            line-height: 1.15;
+            text-wrap: balance;
+        }
+        h1 { font-size: clamp(2.1rem, 3vw, 3.1rem) !important; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+        h2 {
+            font-size: clamp(1.6rem, 2.1vw, 2.15rem) !important;
+            padding-bottom: 0.4rem; margin-top: 0; margin-bottom: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        h3 { font-size: clamp(1.25rem, 1.5vw, 1.6rem) !important; margin-top: 1.25rem; margin-bottom: 0.7rem; }
+        h4 { font-size: clamp(1.1rem, 1.2vw, 1.35rem) !important; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+        p { margin-bottom: 1rem; max-width: 90ch; }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--text-color);
+        }
+
+        .wikitable {
+            width: 100%; border-collapse: collapse; margin: 1em 0;
+            background-color: var(--bg-color); font-size: 0.95em;
+            border: 1px solid var(--panel-border); border-radius: 0.5rem;
+            overflow: hidden; table-layout: auto;
+        }
+        .wikitable th, .wikitable td {
+            border: 1px solid var(--panel-border);
+            padding: 0.7em 0.95em; text-align: left; vertical-align: top;
+            overflow-wrap: break-word; word-break: normal;
+        }
+        .wikitable th {
+            background-color: var(--info-box); font-weight: 600;
+            color: var(--heading-color); font-size: 0.95em; letter-spacing: 0.01em;
+        }
+        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
+
+        .toc-link.active { font-weight: 600; color: var(--heading-color); position: relative; }
+        .toc-link.active::before {
+            content: ''; position: absolute; left: -1rem; top: 0; height: 100%;
+            width: 3px; background-color: var(--link-color);
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
+
+        .app-sidebar { width: var(--sidebar-w); max-height: 50vh; }
+        @media (min-width: 1024px) { .app-sidebar { max-height: 100vh; } }
+
+        .app-main {
+            flex: 1 1 0%; min-width: 0; width: 100%;
+            max-width: var(--content-max); padding: 1rem;
+        }
+        @media (min-width: 1024px) { .app-main { padding: 1.5rem; } }
+        @media (min-width: 1280px) { .app-main { padding: 2rem; } }
+        @media (min-width: 1600px) { .app-main { padding: 2.25rem 2.5rem; } }
+
+        .topic-panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow);
+            border-radius: 1rem;
+            padding: 1.5rem; margin: 2rem 0;
+            transition: box-shadow 0.3s ease;
+        }
+        @media (min-width: 1024px) { .topic-panel { padding: 2.25rem; } }
+        .topic-panel:hover { box-shadow: var(--card-shadow-hover); }
+        .topic-panel.mt-0 { margin-top: 0; }
+        .topic-panel.mb-0 { margin-bottom: 0; }
+        .topic-panel.mb-8 { margin-bottom: 2rem; }
+        .topic-panel.mb-20 { margin-bottom: 5rem; }
+
+        .subtopic-card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem; margin-bottom: 1.5rem;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .subtopic-card:last-child { margin-bottom: 0; }
+        .subtopic-card:hover { box-shadow: var(--card-shadow); transform: translateY(-2px); }
+        .subtopic-card > h3:first-child { margin-top: 0; }
+
+        .panel-intro { margin-bottom: 1.5rem; color: var(--text-color); }
+
+        [data-lang-de], [data-lang-en] { transition: opacity 0.15s ease-in-out; }
+
+        /* ===================================================== */
+        /* Frequency Generator specific styles                   */
+        /* ===================================================== */
+        .gen-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 290px;
+            gap: 16px;
+        }
+        @media (max-width: 950px) { .gen-grid { grid-template-columns: 1fr; } }
+
+        .viz-wrap {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--panel-border);
+            background: var(--code-bg);
+        }
+        #viz {
+            display: block;
+            width: 100%;
+            height: 360px;
+        }
+
+        .gen-side {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .play-btn {
+            width: 100%;
+            padding: 13px 10px;
+            border-radius: 10px;
+            background: var(--link-color);
+            color: var(--bg-color);
+            border: 1px solid var(--link-color);
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .15s;
+            letter-spacing: .3px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .play-btn:hover { filter: brightness(1.1); box-shadow: 0 0 0 3px rgba(128,128,128,.15); }
+        .play-btn.playing {
+            background: transparent;
+            color: var(--link-color);
+        }
+
+        .readout {
+            background: var(--code-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            text-align: center;
+        }
+        .readout .freq-big {
+            font-family: 'Fira Code', monospace;
+            font-size: 30px;
+            font-weight: 700;
+            color: var(--heading-color);
+            line-height: 1.1;
+        }
+        .readout .freq-big small {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .readout .note-name {
+            font-family: 'Fira Code', monospace;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--link-color);
+            margin-top: 2px;
+        }
+        .readout .freq-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 5px;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .wave-group-label {
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin: 2px 0 5px 0;
+        }
+        .wave-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .wave-btn {
+            padding: 8px 4px;
+            border-radius: 7px;
+            border: 1px solid var(--panel-border);
+            background: var(--code-bg);
+            color: var(--text-muted);
+            font-size: 10.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+            font-family: 'Inter', sans-serif;
+            line-height: 1.2;
+        }
+        .wave-btn:hover { border-color: var(--text-muted); color: var(--text-color); }
+        .wave-btn.active {
+            background: var(--link-color);
+            color: var(--bg-color);
+            border-color: var(--link-color);
+        }
+
+        .sliders {
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .slider-row {
+            display: grid;
+            grid-template-columns: 110px minmax(0, 1fr) 110px;
+            gap: 12px;
+            align-items: center;
+        }
+        @media (max-width: 640px) {
+            .slider-row { grid-template-columns: 1fr; gap: 6px; }
+        }
+        .slider-row label {
+            font-size: 11px;
+            letter-spacing: .8px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        input[type=range] {
+            width: 100%;
+            accent-color: var(--link-color);
+            height: 22px;
+            cursor: pointer;
+        }
+        input[type=range]:disabled { opacity: .35; cursor: not-allowed; }
+        .num-input {
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 5px 8px;
+            font-family: 'Fira Code', monospace;
+            font-size: 12.5px;
+            color: var(--text-color);
+            outline: none;
+            width: 100%;
+            transition: border-color .15s, box-shadow .15s;
+        }
+        .num-input:focus { border-color: var(--link-color); box-shadow: 0 0 0 2px rgba(61,118,255,.16); }
+        .num-input:disabled { opacity: .35; }
+
+        .presets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 8px;
+        }
+        .preset-btn {
+            padding: 4px 9px;
+            border-radius: 6px;
+            border: 1px solid var(--panel-border);
+            background: var(--code-bg);
+            color: var(--text-muted);
+            font-size: 10.5px;
+            font-family: 'Fira Code', monospace;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .preset-btn:hover { border-color: var(--link-color); color: var(--link-color); }
+
+        .audio-note {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        /* Inline chips */
+        .chip {
+            display: inline-block; width: 1em; height: 1em;
+            border-radius: 3px; border: 1px solid rgba(128,128,128,.5);
+            vertical-align: -0.15em; margin-right: 0.35em;
+        }
+        .wave-icon {
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 0.4em;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+        }
+
+        @media (max-width: 1024px) {
+            .infobox { float: none; width: 100%; margin: 1em 0; }
+        }
+    </style>
+</head>
+<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
+
+    <!-- ====================================================== -->
+    <!-- SIDEBAR                                                 -->
+    <!-- ====================================================== -->
+    <aside class="app-sidebar flex-shrink-0 bg-[var(--sidebar-color)] border-b lg:border-b-0 lg:border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
+
+        <!-- Controls -->
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
+                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Cheatsheet">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <!-- Branding -->
+        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+            <i class="fa-solid fa-wave-square text-3xl mb-3 text-[var(--text-color)] opacity-80"></i>
+            <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span data-lang-de>Frequenz&shy;generator<br>Referenz</span>
+                <span data-lang-en style="display:none;">Frequency<br>Cheatsheet</span>
+            </div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">Hz · dB · Wellenformen v1.0</div>
+        </div>
+
+        <!-- Search -->
+        <div class="mb-6 relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
+            </div>
+            <input type="text" id="wikiSearch" placeholder="Search..." class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-xl pl-10 pr-3 py-2.5 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-all shadow-sm" onkeyup="filterWiki()">
+        </div>
+
+        <!-- TOC -->
+        <nav class="text-sm space-y-1.5" id="toc-nav">
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span data-lang-de>Inhaltsverzeichnis</span>
+                <span data-lang-en style="display:none;">Table of Contents</span>
+            </div>
+
+            <ul class="space-y-1">
+                <li><a href="#generator" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span data-lang-de>0. Interaktiver Generator</span><span data-lang-en style="display:none;">0. Interactive Generator</span></a></li>
+
+                <li class="pt-2"><a href="#grundlagen" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span data-lang-de>1. Grundlagen des Schalls</span><span data-lang-en style="display:none;">1. Sound Basics</span></a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#was-ist-schall" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>1.1 Was ist Schall?</span><span data-lang-en style="display:none;">1.1 What is Sound?</span></a></li>
+                        <li><a href="#frequenz" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>1.2 Frequenz &amp; Tonhöhe</span><span data-lang-en style="display:none;">1.2 Frequency &amp; Pitch</span></a></li>
+                    </ul>
+                </li>
+
+                <li class="pt-2"><a href="#wellenformen" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span data-lang-de>2. Wellenformen</span><span data-lang-en style="display:none;">2. Waveforms</span></a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#grundformen" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>2.1 Sinus, Rechteck &amp; Co.</span><span data-lang-en style="display:none;">2.1 Sine, Square &amp; Co.</span></a></li>
+                        <li><a href="#harmonische" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>2.2 Harmonische &amp; Obertöne</span><span data-lang-en style="display:none;">2.2 Harmonics &amp; Overtones</span></a></li>
+                    </ul>
+                </li>
+
+                <li class="pt-2"><a href="#rauschen" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span data-lang-de>3. Rauschen</span><span data-lang-en style="display:none;">3. Noise</span></a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#rauschtypen" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>3.1 Weiß, Rosa, Braun &amp; Co.</span><span data-lang-en style="display:none;">3.1 White, Pink, Brown &amp; Co.</span></a></li>
+                    </ul>
+                </li>
+
+                <li class="pt-2"><a href="#pegel" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span data-lang-de>4. Pegel &amp; Lautstärke</span><span data-lang-en style="display:none;">4. Level &amp; Loudness</span></a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#dezibel" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>4.1 Dezibel</span><span data-lang-en style="display:none;">4.1 Decibel</span></a></li>
+                        <li><a href="#gehoerkurven" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>4.2 Gehörkurven</span><span data-lang-en style="display:none;">4.2 Equal-Loudness</span></a></li>
+                    </ul>
+                </li>
+
+                <li class="pt-2"><a href="#musik" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span data-lang-de>5. Musik &amp; Noten</span><span data-lang-en style="display:none;">5. Music &amp; Notes</span></a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#noten" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>5.1 Notennamen &amp; A4</span><span data-lang-en style="display:none;">5.1 Note Names &amp; A4</span></a></li>
+                        <li><a href="#intervalle" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>5.2 Intervalle &amp; Cent</span><span data-lang-en style="display:none;">5.2 Intervals &amp; Cents</span></a></li>
+                    </ul>
+                </li>
+
+                <li class="pt-2"><a href="#technik" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span data-lang-de>6. Technik &amp; Anwendung</span><span data-lang-en style="display:none;">6. Tech &amp; Application</span></a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#abtastrate" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>6.1 Abtastrate &amp; Nyquist</span><span data-lang-en style="display:none;">6.1 Sample Rate &amp; Nyquist</span></a></li>
+                        <li><a href="#anwendungen" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>6.2 Anwendungen</span><span data-lang-en style="display:none;">6.2 Applications</span></a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- ====================================================== -->
+    <!-- MAIN                                                    -->
+    <!-- ====================================================== -->
+    <main class="app-main" id="main-content">
+
+        <!-- ========================================== -->
+        <!-- Intro                                      -->
+        <!-- ========================================== -->
+        <div class="searchable-block topic-panel mt-0 mb-8">
+            <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0">
+                <span data-lang-de>Frequenz &amp; Klang</span>
+                <span data-lang-en style="display:none;">Frequency &amp; Sound</span>
+            </h1>
+            <p class="text-lg mb-3" data-lang-de>
+                Ein <strong>Frequenzgenerator</strong> erzeugt Schwingungen mit definierter Frequenz und Wellenform. Er ist das akustische Gegenstück zum Farbwähler: Statt Lichtwellen werden <strong>Druckwellen</strong> in der Luft beschrieben — über <strong>Frequenz</strong> (Hz), <strong>Amplitude</strong> (dB) und <strong>Wellenform</strong>.
+            </p>
+            <p class="text-lg mb-0" data-lang-en style="display:none;">
+                A <strong>frequency generator</strong> produces oscillations with a defined frequency and waveform. It is the acoustic counterpart of a color picker: instead of light waves, it describes <strong>pressure waves</strong> in air — via <strong>frequency</strong> (Hz), <strong>amplitude</strong> (dB), and <strong>waveform</strong>.
+            </p>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 0. Interactive Generator                    -->
+        <!-- ========================================== -->
+        <section id="generator" class="scroll-mt-10 searchable-block topic-panel mt-8">
+            <h2>
+                <span data-lang-de>0. Interaktiver Frequenzgenerator</span>
+                <span data-lang-en style="display:none;">0. Interactive Frequency Generator</span>
+            </h2>
+
+            <p class="panel-intro" data-lang-de>
+                Wähle eine Wellenform, stelle Frequenz und Lautstärke ein und drücke <strong>Play</strong>. Die Visualisierung zeigt oben die Wellenform (Zeitbereich) und unten das Frequenzspektrum (logarithmische Achse von 20 Hz bis 20 kHz).
+            </p>
+            <p class="panel-intro" data-lang-en style="display:none;">
+                Pick a waveform, set frequency and volume, then press <strong>Play</strong>. The visualization shows the waveform (time domain) on top and the frequency spectrum (log axis from 20 Hz to 20 kHz) below.
+            </p>
+
+            <div class="subtopic-card">
+                <div class="gen-grid">
+                    <!-- Left: visualization -->
+                    <div>
+                        <div class="viz-wrap">
+                            <canvas id="viz"></canvas>
+                        </div>
+                        <div class="audio-note">
+                            <span data-lang-de><i class="fa-solid fa-volume-high mr-1"></i> Bitte Lautstärke langsam erhöhen — hohe Töne können unangenehm laut sein.</span>
+                            <span data-lang-en style="display:none;"><i class="fa-solid fa-volume-high mr-1"></i> Increase volume slowly — high tones can be uncomfortably loud.</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: controls -->
+                    <div class="gen-side">
+                        <button id="playBtn" class="play-btn">
+                            <i class="fa-solid fa-play"></i>
+                            <span data-lang-de>Abspielen</span><span data-lang-en style="display:none;">Play</span>
+                        </button>
+
+                        <div class="readout">
+                            <div class="freq-big" id="freqBig">440 <small>Hz</small></div>
+                            <div class="note-name" id="noteName">A4</div>
+                            <div class="freq-sub" id="freqSub">λ 78 cm · T 2,27 ms</div>
+                        </div>
+
+                        <div>
+                            <div class="wave-group-label">
+                                <span data-lang-de>Töne</span><span data-lang-en style="display:none;">Tones</span>
+                            </div>
+                            <div class="wave-grid" id="toneGrid"></div>
+
+                            <div class="wave-group-label">
+                                <span data-lang-de>Rauschen</span><span data-lang-en style="display:none;">Noise</span>
+                            </div>
+                            <div class="wave-grid" id="noiseGrid"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sliders -->
+                <div class="sliders">
+                    <div class="slider-row">
+                        <label for="freqSlider">
+                            <span data-lang-de>Frequenz</span><span data-lang-en style="display:none;">Frequency</span>
+                        </label>
+                        <input type="range" id="freqSlider" min="0" max="1000" value="447" step="1">
+                        <input type="number" id="freqInput" class="num-input" min="20" max="20000" step="1" value="440">
+                    </div>
+
+                    <div class="slider-row">
+                        <label for="volSlider">
+                            <span data-lang-de>Lautstärke</span><span data-lang-en style="display:none;">Volume</span>
+                        </label>
+                        <input type="range" id="volSlider" min="0" max="100" value="30" step="1">
+                        <div class="num-input" id="volReadout" style="text-align:center">30 %</div>
+                    </div>
+
+                    <div class="presets">
+                        <span class="preset-btn" data-freq="20">20 Hz</span>
+                        <span class="preset-btn" data-freq="100">100 Hz</span>
+                        <span class="preset-btn" data-freq="440">440 Hz (A4)</span>
+                        <span class="preset-btn" data-freq="1000">1 kHz</span>
+                        <span class="preset-btn" data-freq="4000">4 kHz</span>
+                        <span class="preset-btn" data-freq="10000">10 kHz</span>
+                        <span class="preset-btn" data-freq="15000">15 kHz</span>
+                        <span class="preset-btn" data-freq="20000">20 kHz</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 1. Grundlagen des Schalls                   -->
+        <!-- ========================================== -->
+        <section id="grundlagen" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2>
+                <span data-lang-de>1. Grundlagen des Schalls</span>
+                <span data-lang-en style="display:none;">1. Sound Basics</span>
+            </h2>
+
+            <p class="panel-intro" data-lang-de>
+                Schall ist eine <em>mechanische Welle</em>: Eine Schwingung breitet sich als Druckänderung durch ein Medium aus. Ohne Medium — also im Vakuum — gibt es keinen Schall.
+            </p>
+            <p class="panel-intro" data-lang-en style="display:none;">
+                Sound is a <em>mechanical wave</em>: an oscillation propagating as a pressure change through a medium. Without a medium — i.e. in a vacuum — there is no sound.
+            </p>
+
+            <div class="subtopic-card">
+                <h3 id="was-ist-schall" class="scroll-mt-10">
+                    <span data-lang-de>1.1 Was ist Schall?</span>
+                    <span data-lang-en style="display:none;">1.1 What is Sound?</span>
+                </h3>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/3"><span data-lang-de>Begriff</span><span data-lang-en style="display:none;">Term</span></th>
+                        <th><span data-lang-de>Bedeutung</span><span data-lang-en style="display:none;">Meaning</span></th>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Druckwelle</span><span data-lang-en style="display:none;">Pressure Wave</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Schall verdichtet und verdünnt die Luft. Diese Druckschwankungen nimmt das Ohr als Ton wahr.</span><span data-lang-en style="display:none;">Sound compresses and rarefies air. The ear perceives these pressure fluctuations as sound.</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Schallgeschwindigkeit</span><span data-lang-en style="display:none;">Speed of Sound</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>In Luft bei 20 °C: <code>c ≈ 343 m/s</code>. In Wasser: ca. 1480 m/s, in Stahl: ca. 5900 m/s.</span><span data-lang-en style="display:none;">In air at 20 °C: <code>c ≈ 343 m/s</code>. In water: ~1480 m/s, in steel: ~5900 m/s.</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Wellenlänge λ</span><span data-lang-en style="display:none;">Wavelength λ</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Abstand zwischen zwei Wellenbergen: <code>λ = c / f</code>. Bei 440 Hz ≈ 78 cm, bei 20 Hz ≈ 17 m.</span><span data-lang-en style="display:none;">Distance between two wave crests: <code>λ = c / f</code>. At 440 Hz ≈ 78 cm, at 20 Hz ≈ 17 m.</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Periode T</span><span data-lang-en style="display:none;">Period T</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Dauer einer Schwingung: <code>T = 1 / f</code>. Bei 440 Hz ≈ 2,27 ms.</span><span data-lang-en style="display:none;">Duration of one cycle: <code>T = 1 / f</code>. At 440 Hz ≈ 2.27 ms.</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Amplitude</span><span data-lang-en style="display:none;">Amplitude</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Stärke der Druckschwankung. Bestimmt die Lautstärke, nicht die Tonhöhe.</span><span data-lang-en style="display:none;">Strength of the pressure change. Determines loudness, not pitch.</span></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="subtopic-card">
+                <h3 id="frequenz" class="scroll-mt-10">
+                    <span data-lang-de>1.2 Frequenz &amp; Tonhöhe</span>
+                    <span data-lang-en style="display:none;">1.2 Frequency &amp; Pitch</span>
+                </h3>
+                <p data-lang-de>Die <strong>Frequenz</strong> wird in Hertz (Hz) angegeben und beschreibt die Schwingungen pro Sekunde. Sie bestimmt die wahrgenommene <strong>Tonhöhe</strong>:</p>
+                <p data-lang-en style="display:none;">The <strong>frequency</strong> is given in hertz (Hz) and describes cycles per second. It determines the perceived <strong>pitch</strong>:</p>
+                <table class="wikitable">
+                    <tr>
+                        <th><span data-lang-de>Frequenz</span><span data-lang-en style="display:none;">Frequency</span></th>
+                        <th><span data-lang-de>Bezeichnung</span><span data-lang-en style="display:none;">Name</span></th>
+                        <th><span data-lang-de>Beispiel</span><span data-lang-en style="display:none;">Example</span></th>
+                    </tr>
+                    <tr><td><code>0 – 20 Hz</code></td><td><span data-lang-de>Infraschall</span><span data-lang-en style="display:none;">Infrasonic</span></td><td class="text-[var(--text-muted)]"><span data-lang-de>Erdbeben, Subwoofer-Grenze</span><span data-lang-en style="display:none;">Earthquakes, subwoofer limit</span></td></tr>
+                    <tr><td><code>20 Hz</code></td><td><span data-lang-de>Untere Hörgrenze</span><span data-lang-en style="display:none;">Lower hearing limit</span></td><td class="text-[var(--text-muted)]"><span data-lang-de>tiefster hörbarer Ton</span><span data-lang-en style="display:none;">lowest audible tone</span></td></tr>
+                    <tr><td><code>27,5 Hz</code></td><td>A0</td><td class="text-[var(--text-muted)]"><span data-lang-de>tiefste Klaviertaste</span><span data-lang-en style="display:none;">lowest piano key</span></td></tr>
+                    <tr><td><code>82,4 Hz</code></td><td>E2</td><td class="text-[var(--text-muted)]"><span data-lang-de>tiefste Gitarrensaite</span><span data-lang-en style="display:none;">lowest guitar string</span></td></tr>
+                    <tr><td><code>440 Hz</code></td><td>A4</td><td class="text-[var(--text-muted)]"><span data-lang-de>Kammerton, Stimmton</span><span data-lang-en style="display:none;">concert pitch</span></td></tr>
+                    <tr><td><code>1 kHz</code></td><td><span data-lang-de>Referenz</span><span data-lang-en style="display:none;">Reference</span></td><td class="text-[var(--text-muted)]"><span data-lang-de>Kalibrierton, Messton</span><span data-lang-en style="display:none;">calibration tone</span></td></tr>
+                    <tr><td><code>2 – 5 kHz</code></td><td><span data-lang-de>Max. Empfindlichkeit</span><span data-lang-en style="display:none;">Max. sensitivity</span></td><td class="text-[var(--text-muted)]"><span data-lang-de>Baby-Schrei, Alarmtöne</span><span data-lang-en style="display:none;">baby cry, alarms</span></td></tr>
+                    <tr><td><code>20 kHz</code></td><td><span data-lang-de>Obere Hörgrenze</span><span data-lang-en style="display:none;">Upper hearing limit</span></td><td class="text-[var(--text-muted)]"><span data-lang-de>junge Ohren</span><span data-lang-en style="display:none;">young ears</span></td></tr>
+                    <tr><td><code>&gt; 20 kHz</code></td><td><span data-lang-de>Ultraschall</span><span data-lang-en style="display:none;">Ultrasonic</span></td><td class="text-[var(--text-muted)]"><span data-lang-de>Fledermäuse, Medizintechnik</span><span data-lang-en style="display:none;">bats, medical imaging</span></td></tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 2. Wellenformen                             -->
+        <!-- ========================================== -->
+        <section id="wellenformen" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2>
+                <span data-lang-de>2. Wellenformen</span>
+                <span data-lang-en style="display:none;">2. Waveforms</span>
+            </h2>
+
+            <div class="subtopic-card">
+                <h3 id="grundformen" class="scroll-mt-10">
+                    <span data-lang-de>2.1 Sinus, Rechteck, Sägezahn, Dreieck</span>
+                    <span data-lang-en style="display:none;">2.1 Sine, Square, Sawtooth, Triangle</span>
+                </h3>
+                <p data-lang-de>Die Wellenform beschreibt den zeitlichen Verlauf der Schwingung. Sie bestimmt die <strong>Klangfarbe</strong> (Timbre) — also warum eine Flöte anders klingt als eine Geige, selbst bei gleicher Tonhöhe.</p>
+                <p data-lang-en style="display:none;">The waveform describes the shape of the oscillation over time. It determines the <strong>timbre</strong> — why a flute sounds different from a violin at the same pitch.</p>
+                <table class="wikitable">
+                    <tr>
+                        <th><span data-lang-de>Wellenform</span><span data-lang-en style="display:none;">Waveform</span></th>
+                        <th><span data-lang-de>Obertöne</span><span data-lang-en style="display:none;">Harmonics</span></th>
+                        <th><span data-lang-de>Klangcharakter</span><span data-lang-en style="display:none;">Character</span></th>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Sinus</span><span data-lang-en style="display:none;">Sine</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>keine</span><span data-lang-en style="display:none;">none</span></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>rein, weich, flötenartig — nur die Grundfrequenz</span><span data-lang-en style="display:none;">pure, soft, flute-like — fundamental only</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Dreieck</span><span data-lang-en style="display:none;">Triangle</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>ungerade, −12 dB/Okt</span><span data-lang-en style="display:none;">odd, −12 dB/oct</span></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>weich, leicht obertonreich, oktavierend</span><span data-lang-en style="display:none;">soft, slightly bright, flutey</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Sägezahn</span><span data-lang-en style="display:none;">Sawtooth</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>alle, −6 dB/Okt</span><span data-lang-en style="display:none;">all, −6 dB/oct</span></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>hell, streicherartig, sehr obertonreich</span><span data-lang-en style="display:none;">bright, string-like, rich</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Rechteck</span><span data-lang-en style="display:none;">Square</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>ungerade, −6 dB/Okt</span><span data-lang-en style="display:none;">odd, −6 dB/oct</span></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>hohl, klarinettig, retro (Chip-Tune)</span><span data-lang-en style="display:none;">hollow, clarinet-like, retro (chiptune)</span></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="subtopic-card">
+                <h3 id="harmonische" class="scroll-mt-10">
+                    <span data-lang-de>2.2 Harmonische &amp; Obertöne (Fourier)</span>
+                    <span data-lang-en style="display:none;">2.2 Harmonics &amp; Overtones (Fourier)</span>
+                </h3>
+                <p data-lang-de>Der französische Mathematiker <strong>Joseph Fourier</strong> zeigte: Jede periodische Wellenform lässt sich als Summe von Sinusschwingungen darstellen, deren Frequenzen ganzzahlige Vielfache der Grundfrequenz sind.</p>
+                <p data-lang-en style="display:none;">French mathematician <strong>Joseph Fourier</strong> showed: every periodic waveform can be expressed as a sum of sine waves whose frequencies are integer multiples of the fundamental.</p>
+                <table class="wikitable">
+                    <tr>
+                        <th><span data-lang-de>Begriff</span><span data-lang-en style="display:none;">Term</span></th>
+                        <th><span data-lang-de>Bedeutung</span><span data-lang-en style="display:none;">Meaning</span></th>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Grundfrequenz f₀</span><span data-lang-en style="display:none;">Fundamental f₀</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Die tiefste Teilfrequenz — bestimmt die wahrgenommene Tonhöhe.</span><span data-lang-en style="display:none;">The lowest partial — determines perceived pitch.</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Harmonische</span><span data-lang-en style="display:none;">Harmonics</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Vielfache: <code>2f₀, 3f₀, 4f₀, …</code> — bestimmen die Klangfarbe.</span><span data-lang-en style="display:none;">Multiples: <code>2f₀, 3f₀, 4f₀, …</code> — determine timbre.</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Gerade / ungerade</span><span data-lang-en style="display:none;">Even / odd</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Sägezahn enthält alle, Rechteck und Dreieck nur ungerade Harmonische.</span><span data-lang-en style="display:none;">Sawtooth contains all, square and triangle only odd harmonics.</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Amplitudenverlauf</span><span data-lang-en style="display:none;">Amplitude roll-off</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Sägezahn/Rechteck: <code>1/n</code> · Dreieck: <code>1/n²</code> · Sinus: nur n = 1</span><span data-lang-en style="display:none;">Saw/square: <code>1/n</code> · triangle: <code>1/n²</code> · sine: only n = 1</span></td>
+                    </tr>
+                </table>
+                <p class="mb-0" data-lang-de><strong>Praxis:</strong> Ein Tiefpass-Filter, der hohe Harmonische abschwächt, verwandelt einen harschen Sägezahn in einen weichen, flötenartigen Ton.</p>
+                <p class="mb-0" data-lang-en style="display:none;"><strong>Practice:</strong> a low-pass filter attenuating high harmonics turns a harsh sawtooth into a soft, flute-like tone.</p>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 3. Rauschen                                 -->
+        <!-- ========================================== -->
+        <section id="rauschen" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2>
+                <span data-lang-de>3. Rauschen</span>
+                <span data-lang-en style="display:none;">3. Noise</span>
+            </h2>
+
+            <div class="subtopic-card">
+                <h3 id="rauschtypen" class="scroll-mt-10">
+                    <span data-lang-de>3.1 Weiß, Rosa, Braun, Blau, Violett</span>
+                    <span data-lang-en style="display:none;">3.1 White, Pink, Brown, Blue, Violet</span>
+                </h3>
+                <p data-lang-de>Rauschen ist ein Zufallssignal ohne erkennbare Tonhöhe. Die <strong>spektrale Dichte</strong> beschreibt, wie sich die Energie über die Frequenzen verteilt — und bestimmt den Charakter.</p>
+                <p data-lang-en style="display:none;">Noise is a random signal without a perceivable pitch. The <strong>spectral density</strong> describes how energy is distributed across frequencies — and determines the character.</p>
+                <table class="wikitable">
+                    <tr>
+                        <th><span data-lang-de>Typ</span><span data-lang-en style="display:none;">Type</span></th>
+                        <th><span data-lang-de>Spektrale Dichte</span><span data-lang-en style="display:none;">Spectral Density</span></th>
+                        <th><span data-lang-de>Charakter</span><span data-lang-en style="display:none;">Character</span></th>
+                        <th><span data-lang-de>Anwendung</span><span data-lang-en style="display:none;">Use</span></th>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Weiß</span><span data-lang-en style="display:none;">White</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>konstant (0 dB/Okt)</span><span data-lang-en style="display:none;">flat (0 dB/oct)</span></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>hell, zischend — wie TV-Rauschen</span><span data-lang-en style="display:none;">bright, hissy — like TV static</span></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Hörtests, Dithering, Rauschsperren</span><span data-lang-en style="display:none;">hearing tests, dithering, noise gates</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Rosa</span><span data-lang-en style="display:none;">Pink</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>−3 dB/Okt</span><span data-lang-en style="display:none;">−3 dB/oct</span></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>ausgewogen, natürlich — wie Regen</span><span data-lang-en style="display:none;">balanced, natural — like rain</span></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Raumakustik, Audio-Referenz</span><span data-lang-en style="display:none;">room acoustics, audio reference</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Braun</span><span data-lang-en style="display:none;">Brown</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>−6 dB/Okt</span><span data-lang-en style="display:none;">−6 dB/oct</span></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>tief, rumpelig — wie Wasserfall</span><span data-lang-en style="display:none;">deep, rumbling — like a waterfall</span></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Schlafhilfe, Tinnitus-Linderung</span><span data-lang-en style="display:none;">sleep aid, tinnitus relief</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Blau</span><span data-lang-en style="display:none;">Blue</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>+3 dB/Okt</span><span data-lang-en style="display:none;">+3 dB/oct</span></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>hell, dünn, spitz</span><span data-lang-en style="display:none;">bright, thin, sharp</span></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Sound Design, Dithering</span><span data-lang-en style="display:none;">sound design, dithering</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Violett</span><span data-lang-en style="display:none;">Violet</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>+6 dB/Okt</span><span data-lang-en style="display:none;">+6 dB/oct</span></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>sehr hell, spitz — fast nur Höhen</span><span data-lang-en style="display:none;">very bright, piercing — mostly highs</span></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>spezielle Audio-Effekte</span><span data-lang-en style="display:none;">special audio effects</span></td>
+                    </tr>
+                </table>
+                <p class="mb-0" data-lang-de><strong>Merksatz:</strong> Je steiler die spektrale Dichte abfällt, desto tiefer und weicher klingt das Rauschen. Weiß ist die Referenz — alle anderen Typen sind gefilterte Varianten davon.</p>
+                <p class="mb-0" data-lang-en style="display:none;"><strong>Rule of thumb:</strong> the steeper the spectral density falls, the deeper and softer the noise sounds. White is the reference — all others are filtered variants.</p>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 4. Pegel & Lautstärke                       -->
+        <!-- ========================================== -->
+        <section id="pegel" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2>
+                <span data-lang-de>4. Pegel &amp; Lautstärke</span>
+                <span data-lang-en style="display:none;">4. Level &amp; Loudness</span>
+            </h2>
+
+            <div class="subtopic-card">
+                <h3 id="dezibel" class="scroll-mt-10">
+                    <span data-lang-de>4.1 Dezibel (dB)</span>
+                    <span data-lang-en style="display:none;">4.1 Decibel (dB)</span>
+                </h3>
+                <p data-lang-de>Schallpegel werden logarithmisch in <strong>Dezibel</strong> angegeben, weil das Ohr über einen enormen Bereich von ca. 10¹⁴ Leistung verfügt. Eine Verdopplung der Lautstärke entspricht ca. +10 dB.</p>
+                <p data-lang-en style="display:none;">Sound levels are expressed logarithmically in <strong>decibels</strong> because the ear covers an enormous range of about 10¹⁴ in power. Doubling loudness corresponds to about +10 dB.</p>
+                <table class="wikitable">
+                    <tr>
+                        <th><span data-lang-de>Pegel</span><span data-lang-en style="display:none;">Level</span></th>
+                        <th><span data-lang-de>Beispiel</span><span data-lang-en style="display:none;">Example</span></th>
+                    </tr>
+                    <tr><td><code>0 dB</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>Hörschwelle (kaum wahrnehmbar)</span><span data-lang-en style="display:none;">hearing threshold (barely audible)</span></td></tr>
+                    <tr><td><code>10 dB</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>Atmen, Blätterrauschen</span><span data-lang-en style="display:none;">breathing, rustling leaves</span></td></tr>
+                    <tr><td><code>30 dB</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>Flüstern</span><span data-lang-en style="display:none;">whispering</span></td></tr>
+                    <tr><td><code>50 dB</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>ruhige Wohnung</span><span data-lang-en style="display:none;">quiet apartment</span></td></tr>
+                    <tr><td><code>60 dB</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>normales Gespräch</span><span data-lang-en style="display:none;">normal conversation</span></td></tr>
+                    <tr><td><code>80 dB</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>Verkehr, Staubsauger</span><span data-lang-en style="display:none;">traffic, vacuum cleaner</span></td></tr>
+                    <tr><td><code>85 dB</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>Gehörschutz ab 8 h empfohlen</span><span data-lang-en style="display:none;">hearing protection recommended from 8 h</span></td></tr>
+                    <tr><td><code>100 dB</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>Diskothek, Konzert</span><span data-lang-en style="display:none;">nightclub, concert</span></td></tr>
+                    <tr><td><code>120 dB</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>Schmerzgrenze</span><span data-lang-en style="display:none;">pain threshold</span></td></tr>
+                    <tr><td><code>140 dB</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>Düsenjet — sofortiger Schaden</span><span data-lang-en style="display:none;">jet engine — immediate damage</span></td></tr>
+                </table>
+            </div>
+
+            <div class="subtopic-card">
+                <h3 id="gehoerkurven" class="scroll-mt-10">
+                    <span data-lang-de>4.2 Gehörkurven (Fletcher-Munson)</span>
+                    <span data-lang-en style="display:none;">4.2 Equal-Loudness Contours</span>
+                </h3>
+                <p data-lang-de>Das menschliche Gehör ist <strong>nicht linear</strong>: Töne gleicher Amplitude werden bei unterschiedlichen Frequenzen unterschiedlich laut wahrgenommen. Die <em>Fletcher-Munson-Kurven</em> (bzw. ISO 226) beschreiben diesen Effekt.</p>
+                <p data-lang-en style="display:none;">Human hearing is <strong>not linear</strong>: tones of equal amplitude are perceived as differently loud at different frequencies. The <em>Fletcher-Munson curves</em> (ISO 226) describe this effect.</p>
+                <ul class="list-disc pl-5 mt-2 space-y-1 text-[var(--text-muted)]">
+                    <li><span data-lang-de><strong>2 – 5 kHz</strong> werden am lautesten wahrgenommen (Resonanz des Gehörgangs).</span><span data-lang-en style="display:none;"><strong>2 – 5 kHz</strong> are perceived loudest (ear canal resonance).</span></li>
+                    <li><span data-lang-de><strong>Tiefe Töne</strong> unter 100 Hz müssen deutlich lauter sein, um gleich laut zu wirken.</span><span data-lang-en style="display:none;"><strong>Low tones</strong> below 100 Hz must be much louder to seem equally loud.</span></li>
+                    <li><span data-lang-de><strong>Loudness-Korrektur</strong> in HiFi-Anlagen hebt Bässe und Höhen bei geringer Lautstärke an.</span><span data-lang-en style="display:none;"><strong>Loudness compensation</strong> in hi-fi systems boosts bass and treble at low volumes.</span></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 5. Musik & Noten                            -->
+        <!-- ========================================== -->
+        <section id="musik" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2>
+                <span data-lang-de>5. Musik &amp; Noten</span>
+                <span data-lang-en style="display:none;">5. Music &amp; Notes</span>
+            </h2>
+
+            <div class="subtopic-card">
+                <h3 id="noten" class="scroll-mt-10">
+                    <span data-lang-de>5.1 Notennamen &amp; der Kammerton A4</span>
+                    <span data-lang-en style="display:none;">5.1 Note Names &amp; Concert Pitch A4</span>
+                </h3>
+                <p data-lang-de>Seit 1939 gilt international <strong>A4 = 440 Hz</strong> als Stimmton. Die Frequenz jeder anderen Note ergibt sich aus der <em>gleichstufigen Stimmung</em>:</p>
+                <p data-lang-en style="display:none;">Since 1939, <strong>A4 = 440 Hz</strong> has been the international tuning reference. Every other note's frequency follows from <em>equal temperament</em>:</p>
+                <div class="bg-[var(--panel-color)] p-4 border border-[var(--panel-border)] rounded mt-2 mb-3 text-center">
+                    <code class="text-base">f = 440 × 2<sup>(n−69)/12</sup> Hz</code>
+                    <div class="text-xs text-[var(--text-muted)] mt-1" data-lang-de>wobei <code>n</code> die MIDI-Notennummer ist (A4 = 69)</div>
+                    <div class="text-xs text-[var(--text-muted)] mt-1" data-lang-en style="display:none;">where <code>n</code> is the MIDI note number (A4 = 69)</div>
+                </div>
+                <table class="wikitable">
+                    <tr>
+                        <th><span data-lang-de>Note</span><span data-lang-en style="display:none;">Note</span></th>
+                        <th><span data-lang-de>Frequenz</span><span data-lang-en style="display:none;">Frequency</span></th>
+                        <th><span data-lang-de>Beschreibung</span><span data-lang-en style="display:none;">Description</span></th>
+                    </tr>
+                    <tr><td>A0</td><td><code>27,50 Hz</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>tiefste Klaviertaste</span><span data-lang-en style="display:none;">lowest piano key</span></td></tr>
+                    <tr><td>C1</td><td><code>32,70 Hz</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>tiefes C</span><span data-lang-en style="display:none;">low C</span></td></tr>
+                    <tr><td>C4</td><td><code>261,63 Hz</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>mittleres C</span><span data-lang-en style="display:none;">middle C</span></td></tr>
+                    <tr><td>A4</td><td><code>440,00 Hz</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>Kammerton, Referenz</span><span data-lang-en style="display:none;">concert pitch, reference</span></td></tr>
+                    <tr><td>C5</td><td><code>523,25 Hz</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>hohes C</span><span data-lang-en style="display:none;">high C</span></td></tr>
+                    <tr><td>A5</td><td><code>880,00 Hz</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>eine Oktave über A4</span><span data-lang-en style="display:none;">one octave above A4</span></td></tr>
+                    <tr><td>C8</td><td><code>4186,01 Hz</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>höchste Klaviertaste</span><span data-lang-en style="display:none;">highest piano key</span></td></tr>
+                </table>
+                <p class="mb-0" data-lang-de><strong>Deutsch vs. Englisch:</strong> Im deutschen Sprachraum heißt der Ton <em>H</em>, was im Englischen <em>B</em> ist. Das englische <em>B♭</em> entspricht dem deutschen <em>B</em>.</p>
+                <p class="mb-0" data-lang-en style="display:none;"><strong>German vs. English:</strong> In German-speaking countries the note <em>B</em> is called <em>H</em>, and <em>B♭</em> is called <em>B</em>.</p>
+            </div>
+
+            <div class="subtopic-card">
+                <h3 id="intervalle" class="scroll-mt-10">
+                    <span data-lang-de>5.2 Intervalle &amp; Cent</span>
+                    <span data-lang-en style="display:none;">5.2 Intervals &amp; Cents</span>
+                </h3>
+                <p data-lang-de>Ein <strong>Halbton</strong> entspricht dem Faktor <code>2<sup>1/12</sup> ≈ 1,0595</code>. Für feinere Abstufungen verwendet man <strong>Cent</strong>: 1 Halbton = 100 Cent.</p>
+                <p data-lang-en style="display:none;">A <strong>semitone</strong> equals the factor <code>2<sup>1/12</sup> ≈ 1.0595</code>. For finer resolution, <strong>cents</strong> are used: 1 semitone = 100 cents.</p>
+                <table class="wikitable">
+                    <tr>
+                        <th><span data-lang-de>Intervall</span><span data-lang-en style="display:none;">Interval</span></th>
+                        <th><span data-lang-de>Halbtöne</span><span data-lang-en style="display:none;">Semitones</span></th>
+                        <th><span data-lang-de>Frequenzverhältnis</span><span data-lang-en style="display:none;">Frequency Ratio</span></th>
+                    </tr>
+                    <tr><td><span data-lang-de>Kleine Sekunde</span><span data-lang-en style="display:none;">Minor second</span></td><td>1</td><td><code>1,0595</code></td></tr>
+                    <tr><td><span data-lang-de>Große Terz</span><span data-lang-en style="display:none;">Major third</span></td><td>4</td><td><code>1,2599</code></td></tr>
+                    <tr><td><span data-lang-de>Quinte</span><span data-lang-en style="display:none;">Perfect fifth</span></td><td>7</td><td><code>1,4983</code></td></tr>
+                    <tr><td><span data-lang-de>Oktave</span><span data-lang-en style="display:none;">Octave</span></td><td>12</td><td><code>2,0000</code></td></tr>
+                </table>
+                <p class="mb-0" data-lang-de><strong>Cent-Formel:</strong> <code>cents = 1200 × log₂(f₂ / f₁)</code>. 100 Cent = 1 Halbton, 1200 Cent = 1 Oktave.</p>
+                <p class="mb-0" data-lang-en style="display:none;"><strong>Cent formula:</strong> <code>cents = 1200 × log₂(f₂ / f₁)</code>. 100 cents = 1 semitone, 1200 cents = 1 octave.</p>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 6. Technik & Anwendung                      -->
+        <!-- ========================================== -->
+        <section id="technik" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
+            <h2>
+                <span data-lang-de>6. Technik &amp; Anwendung</span>
+                <span data-lang-en style="display:none;">6. Tech &amp; Application</span>
+            </h2>
+
+            <div class="subtopic-card">
+                <h3 id="abtastrate" class="scroll-mt-10">
+                    <span data-lang-de>6.1 Abtastrate &amp; Nyquist-Theorem</span>
+                    <span data-lang-en style="display:none;">6.1 Sample Rate &amp; Nyquist Theorem</span>
+                </h3>
+                <p data-lang-de>Digitale Audiosignale werden in regelmäßigen Abständen abgetastet. Das <strong>Nyquist-Theorem</strong> besagt: Um eine Frequenz <code>f</code> korrekt zu erfassen, muss die Abtastrate <code>fs</code> größer als <code>2f</code> sein. Sonst entsteht <em>Aliasing</em>.</p>
+                <p data-lang-en style="display:none;">Digital audio signals are sampled at regular intervals. The <strong>Nyquist theorem</strong> states: to correctly capture a frequency <code>f</code>, the sample rate <code>fs</code> must be greater than <code>2f</code>. Otherwise <em>aliasing</em> occurs.</p>
+                <table class="wikitable">
+                    <tr>
+                        <th><span data-lang-de>Abtastrate</span><span data-lang-en style="display:none;">Sample Rate</span></th>
+                        <th><span data-lang-de>Anwendung</span><span data-lang-en style="display:none;">Use</span></th>
+                        <th><span data-lang-de>Max. Frequenz (Nyquist)</span><span data-lang-en style="display:none;">Max Frequency (Nyquist)</span></th>
+                    </tr>
+                    <tr><td><code>8 kHz</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>Telefon</span><span data-lang-en style="display:none;">Telephone</span></td><td><code>4 kHz</code></td></tr>
+                    <tr><td><code>22,05 kHz</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>Ältere Multimedia</span><span data-lang-en style="display:none;">Legacy multimedia</span></td><td><code>11 kHz</code></td></tr>
+                    <tr><td><code>44,1 kHz</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>CD, MP3, Streaming</span><span data-lang-en style="display:none;">CD, MP3, streaming</span></td><td><code>22,05 kHz</code></td></tr>
+                    <tr><td><code>48 kHz</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>Video, Film, Broadcast</span><span data-lang-en style="display:none;">Video, film, broadcast</span></td><td><code>24 kHz</code></td></tr>
+                    <tr><td><code>96 kHz</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>High-Res Audio, Produktion</span><span data-lang-en style="display:none;">High-res audio, production</span></td><td><code>48 kHz</code></td></tr>
+                    <tr><td><code>192 kHz</code></td><td class="text-[var(--text-muted)]"><span data-lang-de>Studio-Mastering</span><span data-lang-en style="display:none;">Studio mastering</span></td><td><code>96 kHz</code></td></tr>
+                </table>
+            </div>
+
+            <div class="subtopic-card">
+                <h3 id="anwendungen" class="scroll-mt-10">
+                    <span data-lang-de>6.2 Anwendungen eines Frequenzgenerators</span>
+                    <span data-lang-en style="display:none;">6.2 Applications of a Frequency Generator</span>
+                </h3>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/3"><span data-lang-de>Anwendung</span><span data-lang-en style="display:none;">Application</span></th>
+                        <th><span data-lang-de>Beschreibung</span><span data-lang-en style="display:none;">Description</span></th>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Hörtest / Audiometrie</span><span data-lang-en style="display:none;">Hearing Test / Audiometry</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Bestimmung der Hörschwelle über den Frequenzbereich. Wichtig bei der Diagnose von Hörverlust.</span><span data-lang-en style="display:none;">Determining the hearing threshold across the frequency range. Important for diagnosing hearing loss.</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Tinnitus-Matching</span><span data-lang-en style="display:none;">Tinnitus Matching</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Der Tinnitus wird mit einem Generator auf gleiche Frequenz und Lautstärke eingestellt, um ihn zu charakterisieren.</span><span data-lang-en style="display:none;">The tinnitus tone is matched in frequency and loudness to characterize it.</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Lautsprecher-Einmessung</span><span data-lang-en style="display:none;">Speaker Calibration</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Sweeps und Sinustöne messen den Frequenzgang von Lautsprechern und Räumen.</span><span data-lang-en style="display:none;">Sweeps and sine tones measure the frequency response of speakers and rooms.</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Sound Design</span><span data-lang-en style="display:none;">Sound Design</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Synthese von Tönen und Effekten, Testen von Filtern und Oszillatoren.</span><span data-lang-en style="display:none;">Synthesizing tones and effects, testing filters and oscillators.</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Akustikmessung</span><span data-lang-en style="display:none;">Acoustic Measurement</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Bestimmung von Raummoden, Nachhallzeit und Resonanzen in Räumen.</span><span data-lang-en style="display:none;">Determining room modes, reverberation time, and resonances.</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong><span data-lang-de>Frequenzgang-Messung</span><span data-lang-en style="display:none;">Frequency Response</span></strong></td>
+                        <td class="text-[var(--text-muted)]"><span data-lang-de>Testen von Audio-Geräten (Kopfhörer, Verstärker, Mikrofone) über den gesamten Hörbereich.</span><span data-lang-en style="display:none;">Testing audio gear (headphones, amplifiers, microphones) across the audible range.</span></td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+    /* ====================================================== */
+    /* PART 1 — Frequency Generator logic                      */
+    /* ====================================================== */
+
+    const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
+
+    const FMIN = 20, FMAX = 20000;
+    const SPEED_OF_SOUND = 343; // m/s at 20 °C
+
+    /* slider <-> frequency (log scale) */
+    const sliderToFreq = v => FMIN * Math.pow(FMAX / FMIN, v / 1000);
+    const freqToSlider = f => 1000 * Math.log(f / FMIN) / Math.log(FMAX / FMIN);
+
+    /* state */
+    const state = {
+        freq: 440,
+        wave: 'sine',
+        vol: 30,
+        playing: false
+    };
+
+    /* ---------- note names ---------- */
+    const NOTE_NAMES_EN = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    const NOTE_NAMES_DE = ['C','C#','D','D#','E','F','F#','G','G#','A','B','H'];
+
+    function freqToNote(f) {
+        if (!isFinite(f) || f <= 0) return '–';
+        const n = 12 * Math.log2(f / 440) + 69;
+        const rounded = Math.round(n);
+        const names = isGerman ? NOTE_NAMES_DE : NOTE_NAMES_EN;
+        const idx = ((rounded % 12) + 12) % 12;
+        const name = names[idx];
+        const octave = Math.floor(rounded / 12) - 1;
+        const cents = Math.round((n - rounded) * 100);
+        let suffix = '';
+        if (cents !== 0) suffix = (cents > 0 ? '+' : '') + cents + '¢';
+        return name + octave + (suffix ? ' ' + suffix : '');
+    }
+
+    /* ---------- Web Audio engine ---------- */
+    let audioCtx = null;
+    let analyser = null;
+    let gainNode = null;
+    let source = null;
+    let freqArr = null;
+    let timeArr = null;
+
+    function initAudio() {
+        if (audioCtx) return true;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        audioCtx = new AC();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 4096;
+        analyser.smoothingTimeConstant = 0.72;
+        gainNode = audioCtx.createGain();
+        gainNode.gain.value = 0;
+        gainNode.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        freqArr = new Uint8Array(analyser.frequencyBinCount);
+        timeArr = new Uint8Array(analyser.fftSize);
+        return true;
+    }
+
+    /* ---------- noise buffer generation ---------- */
+    function createNoiseBuffer(ctx, type) {
+        const len = Math.floor(ctx.sampleRate * 2);
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+
+        if (type === 'white') {
+            for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+        } else if (type === 'pink') {
+            let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+            for (let i = 0; i < len; i++) {
+                const w = Math.random() * 2 - 1;
+                b0 = 0.99886*b0 + w*0.0555179;
+                b1 = 0.99332*b1 + w*0.0750759;
+                b2 = 0.96900*b2 + w*0.1538520;
+                b3 = 0.86650*b3 + w*0.3104856;
+                b4 = 0.55000*b4 + w*0.5329522;
+                b5 = -0.7616*b5 - w*0.0168980;
+                d[i] = (b0+b1+b2+b3+b4+b5+b6 + w*0.5362) * 0.11;
+                b6 = w * 0.115926;
+            }
+        } else if (type === 'brown') {
+            let last = 0;
+            for (let i = 0; i < len; i++) {
+                const w = Math.random() * 2 - 1;
+                last = (last + 0.02 * w) / 1.02;
+                d[i] = last * 3.5;
+            }
+        } else if (type === 'blue') {
+            let prev = 0;
+            for (let i = 0; i < len; i++) {
+                const w = Math.random() * 2 - 1;
+                d[i] = (w - prev) * 0.5;
+                prev = w;
+            }
+        } else if (type === 'violet') {
+            let prev = 0, prevD = 0;
+            for (let i = 0; i < len; i++) {
+                const w = Math.random() * 2 - 1;
+                const diff = w - prev;
+                d[i] = (diff - prevD) * 0.35;
+                prevD = diff;
+                prev = w;
+            }
+        }
+
+        /* soft fade at buffer boundaries to avoid clicks on loop */
+        const fade = 512;
+        for (let i = 0; i < fade; i++) {
+            const k = i / fade;
+            d[i] *= k;
+            d[len - 1 - i] *= k;
+        }
+        return buf;
+    }
+
+    const TONE_WAVES = ['sine','square','sawtooth','triangle'];
+    const NOISE_WAVES = ['white','pink','brown','blue','violet'];
+    const isNoise = t => NOISE_WAVES.indexOf(t) !== -1;
+
+    /* ---------- start / stop ---------- */
+    function startSound() {
+        if (!initAudio()) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        /* remove old source immediately */
+        if (source) {
+            try { source.stop(); } catch (e) {}
+            try { source.disconnect(); } catch (e) {}
+            source = null;
+        }
+
+        const t = audioCtx.currentTime;
+        gainNode.gain.cancelScheduledValues(t);
+        gainNode.gain.setValueAtTime(0, t);
+        gainNode.gain.linearRampToValueAtTime(gainFromSlider(state.vol), t + 0.06);
+
+        if (TONE_WAVES.indexOf(state.wave) !== -1) {
+            const osc = audioCtx.createOscillator();
+            osc.type = state.wave;
+            osc.frequency.value = state.freq;
+            osc.connect(gainNode);
+            osc.start();
+            source = osc;
+        } else {
+            const buf = createNoiseBuffer(audioCtx, state.wave);
+            const src = audioCtx.createBufferSource();
+            src.buffer = buf;
+            src.loop = true;
+            src.connect(gainNode);
+            src.start();
+            source = src;
+        }
+        state.playing = true;
+        updatePlayBtn();
+    }
+
+    function stopSound(instant) {
+        if (!source || !audioCtx) return;
+        const s = source;
+        source = null;
+        const t = audioCtx.currentTime;
+        gainNode.gain.cancelScheduledValues(t);
+        gainNode.gain.setValueAtTime(gainNode.gain.value, t);
+        gainNode.gain.linearRampToValueAtTime(0, t + (instant ? 0.01 : 0.09));
+        try { s.stop(t + (instant ? 0.02 : 0.12)); } catch (e) {
+            try { s.stop(); } catch (e2) {}
+        }
+        state.playing = false;
+        updatePlayBtn();
+    }
+
+    function togglePlay() {
+        if (state.playing) stopSound(false);
+        else startSound();
+    }
+
+    /* volume curve: perceptual */
+    function gainFromSlider(v) {
+        return Math.pow(v / 100, 2) * 0.7;
+    }
+
+    /* ---------- UI wiring ---------- */
+    const viz       = document.getElementById('viz');
+    const vctx      = viz.getContext('2d');
+    const playBtn   = document.getElementById('playBtn');
+    const freqSlider= document.getElementById('freqSlider');
+    const freqInput = document.getElementById('freqInput');
+    const volSlider = document.getElementById('volSlider');
+    const volReadout= document.getElementById('volReadout');
+    const freqBig   = document.getElementById('freqBig');
+    const noteName  = document.getElementById('noteName');
+    const freqSub   = document.getElementById('freqSub');
+    const toneGrid  = document.getElementById('toneGrid');
+    const noiseGrid = document.getElementById('noiseGrid');
+
+    let W = 0, H = 0;
+    let themeCols = {};
+
+    function refreshThemeCols() {
+        const s = getComputedStyle(document.documentElement);
+        themeCols = {
+            wave:  s.getPropertyValue('--link-color').trim()   || '#5c9bff',
+            text:  s.getPropertyValue('--text-muted').trim()   || '#888',
+            grid:  s.getPropertyValue('--border-color').trim() || '#444',
+            bg:    s.getPropertyValue('--bg-color').trim()     || '#111',
+            panel: s.getPropertyValue('--code-bg').trim()      || '#222',
+            head:  s.getPropertyValue('--heading-color').trim()|| '#fff'
+        };
+    }
+
+    function resizeViz() {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = viz.getBoundingClientRect();
+        W = Math.max(1, rect.width);
+        H = Math.max(1, rect.height);
+        viz.width  = Math.round(W * dpr);
+        viz.height = Math.round(H * dpr);
+        vctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    /* ---------- waveform / spectrum drawing ---------- */
+    /* deterministic pseudo-random for static noise shape */
+    const prand = i => {
+        const x = Math.sin(i * 12.9898) * 43758.5453;
+        return (x - Math.floor(x)) * 2 - 1;
+    };
+
+    function drawStaticWave(type, x0, y0, w, h) {
+        const mid = y0 + h / 2;
+        const amp = h / 2 - 4;
+        vctx.beginPath();
+        const cycles = 3;
+
+        if (type === 'sine') {
+            for (let x = 0; x <= w; x++) {
+                const v = Math.sin(2 * Math.PI * (x / w) * cycles);
+                const y = mid - v * amp;
+                x ? vctx.lineTo(x0 + x, y) : vctx.moveTo(x0 + x, y);
+            }
+        } else if (type === 'square') {
+            for (let x = 0; x <= w; x++) {
+                const ph = (x / w) * cycles;
+                const v = (ph % 1) < 0.5 ? 1 : -1;
+                const y = mid - v * amp;
+                x ? vctx.lineTo(x0 + x, y) : vctx.moveTo(x0 + x, y);
+            }
+        } else if (type === 'sawtooth') {
+            for (let x = 0; x <= w; x++) {
+                const ph = (x / w) * cycles;
+                const v = 2 * (ph % 1) - 1;
+                const y = mid - v * amp;
+                x ? vctx.lineTo(x0 + x, y) : vctx.moveTo(x0 + x, y);
+            }
+        } else if (type === 'triangle') {
+            for (let x = 0; x <= w; x++) {
+                const ph = (x / w) * cycles;
+                const v = 1 - 4 * Math.abs((ph % 1) - 0.5);
+                const y = mid - v * amp;
+                x ? vctx.lineTo(x0 + x, y) : vctx.moveTo(x0 + x, y);
+            }
+        } else {
+            /* noise: dense pseudo-random jagged line */
+            for (let x = 0; x <= w; x++) {
+                const v = prand(x) * 0.75;
+                const y = mid - v * amp;
+                x ? vctx.lineTo(x0 + x, y) : vctx.moveTo(x0 + x, y);
+            }
+        }
+        vctx.stroke();
+    }
+
+    function drawViz() {
+        const w = W, h = H;
+        const c = themeCols;
+        if (!w || !h) return;
+
+        vctx.clearRect(0, 0, w, h);
+
+        /* layout */
+        const waveH = Math.round(h * 0.30);
+        const padT  = 22;
+        const specY = waveH + padT + 6;
+        const specH = h - specY - 22;
+
+        /* ============ WAVEFORM (time domain) ============ */
+        vctx.save();
+        /* center line */
+        vctx.strokeStyle = c.grid;
+        vctx.globalAlpha = 0.6;
+        vctx.lineWidth = 1;
+        vctx.beginPath();
+        vctx.moveTo(0, padT + waveH / 2);
+        vctx.lineTo(w, padT + waveH / 2);
+        vctx.stroke();
+        vctx.globalAlpha = 1;
+
+        vctx.strokeStyle = c.wave;
+        vctx.lineWidth = 2;
+        vctx.lineJoin = 'round';
+
+        if (state.playing && analyser) {
+            analyser.getByteTimeDomainData(timeArr);
+            vctx.beginPath();
+            const n = timeArr.length;
+            for (let i = 0; i < n; i++) {
+                const x = (i / (n - 1)) * w;
+                const v = (timeArr[i] / 128) - 1;
+                const y = padT + waveH / 2 - v * (waveH / 2 - 3);
+                i ? vctx.lineTo(x, y) : vctx.moveTo(x, y);
+            }
+            vctx.stroke();
+        } else {
+            drawStaticWave(state.wave, 0, padT, w, waveH);
+        }
+
+        /* label */
+        vctx.font = '600 10px Inter, sans-serif';
+        vctx.fillStyle = c.text;
+        vctx.textAlign = 'left';
+        vctx.fillText(isGerman ? 'WELLENFORM (ZEITBEREICH)' : 'WAVEFORM (TIME DOMAIN)', 8, padT - 6);
+        vctx.restore();
+
+        /* ============ SPECTRUM (frequency domain) ============ */
+        const fToX = f => Math.log10(f / FMIN) / Math.log10(FMAX / FMIN) * w;
+
+        /* gridlines */
+        vctx.save();
+        vctx.strokeStyle = c.grid;
+        vctx.globalAlpha = 0.45;
+        vctx.lineWidth = 1;
+        vctx.font = '10px "Fira Code", monospace';
+        vctx.fillStyle = c.text;
+        vctx.textAlign = 'center';
+
+        const gridFreqs = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
+        for (const f of gridFreqs) {
+            const x = Math.round(fToX(f)) + 0.5;
+            if (x < 0 || x > w) continue;
+            vctx.beginPath();
+            vctx.moveTo(x, specY);
+            vctx.lineTo(x, specY + specH);
+            vctx.stroke();
+
+            const label = f >= 1000 ? (f / 1000) + 'k' : String(f);
+            vctx.fillText(label, x, h - 6);
+        }
+        vctx.globalAlpha = 1;
+
+        /* spectrum bars */
+        if (state.playing && analyser) {
+            analyser.getByteFrequencyData(freqArr);
+            const nyquist = audioCtx.sampleRate / 2;
+            const N = freqArr.length;
+
+            vctx.fillStyle = c.wave;
+            for (let x = 0; x < w; x++) {
+                const f1 = FMIN * Math.pow(FMAX / FMIN, x / w);
+                const f2 = FMIN * Math.pow(FMAX / FMIN, (x + 1) / w);
+                let b1 = Math.floor(f1 / nyquist * N);
+                let b2 = Math.ceil(f2 / nyquist * N);
+                if (b1 < 1) b1 = 1;
+                if (b2 > N - 1) b2 = N - 1;
+                if (b2 < b1) b2 = b1;
+
+                let peak = 0;
+                for (let b = b1; b <= b2; b++) {
+                    if (freqArr[b] > peak) peak = freqArr[b];
+                }
+                const barH = (peak / 255) * (specH - 4);
+                if (barH > 0.5) {
+                    vctx.fillRect(x, specY + specH - barH, 1.6, barH);
+                }
+            }
+        }
+
+        /* current frequency marker */
+        if (state.playing && !isNoise(state.wave)) {
+            const mx = fToX(state.freq);
+            vctx.strokeStyle = c.head;
+            vctx.globalAlpha = 0.55;
+            vctx.lineWidth = 1.5;
+            vctx.setLineDash([4, 4]);
+            vctx.beginPath();
+            vctx.moveTo(mx, specY);
+            vctx.lineTo(mx, specY + specH);
+            vctx.stroke();
+            vctx.setLineDash([]);
+            vctx.globalAlpha = 1;
+        }
+
+        /* spectrum label */
+        vctx.font = '600 10px Inter, sans-serif';
+        vctx.fillStyle = c.text;
+        vctx.textAlign = 'left';
+        vctx.fillText(isGerman ? 'FREQUENZSPEKTRUM (dB relativ)' : 'FREQUENCY SPECTRUM (relative dB)', 8, specY - 5);
+
+        vctx.restore();
+    }
+
+    /* ---------- animation loop ---------- */
+    function loop() {
+        drawViz();
+        requestAnimationFrame(loop);
+    }
+
+    /* ---------- readouts + controls ---------- */
+    function fmtFreqShort(f) {
+        if (f >= 1000) {
+            const k = f / 1000;
+            return (k >= 10 ? k.toFixed(1) : k.toFixed(2)) + ' kHz';
+        }
+        return (f < 100 ? f.toFixed(1) : f.toFixed(0)) + ' Hz';
+    }
+
+    function updateReadout() {
+        const f = state.freq;
+        freqBig.innerHTML = (f >= 1000
+            ? (f / 1000).toFixed(f >= 10000 ? 1 : 2) + ' <small>kHz</small>'
+            : f.toFixed(f < 100 ? 1 : 0) + ' <small>Hz</small>');
+
+        noteName.textContent = freqToNote(f);
+
+        const lambda = SPEED_OF_SOUND / f;
+        const period = 1000 / f;
+        const lamTxt = lambda >= 1
+            ? lambda.toFixed(2) + ' m'
+            : (lambda * 100).toFixed(1) + ' cm';
+        const perTxt = period >= 1
+            ? period.toFixed(2) + ' ms'
+            : (period * 1000).toFixed(1) + ' µs';
+
+        freqSub.textContent = 'λ ' + lamTxt + ' · T ' + perTxt;
+    }
+
+    function setFreq(f, fromInput) {
+        f = clamp(f, FMIN, FMAX);
+        state.freq = f;
+        if (!fromInput) freqInput.value = Math.round(f);
+        freqSlider.value = freqToSlider(f);
+        updateReadout();
+
+        if (state.playing && source && source.frequency) {
+            const t = audioCtx.currentTime;
+            source.frequency.cancelScheduledValues(t);
+            source.frequency.setTargetAtTime(f, t, 0.01);
+        }
+    }
+
+    function updatePlayBtn() {
+        const icon = playBtn.querySelector('i');
+        const deSpan = playBtn.querySelector('[data-lang-de]');
+        const enSpan = playBtn.querySelector('[data-lang-en]');
+        if (state.playing) {
+            playBtn.classList.add('playing');
+            icon.className = 'fa-solid fa-stop';
+            if (deSpan) deSpan.textContent = 'Stopp';
+            if (enSpan) enSpan.textContent = 'Stop';
+        } else {
+            playBtn.classList.remove('playing');
+            icon.className = 'fa-solid fa-play';
+            if (deSpan) deSpan.textContent = 'Abspielen';
+            if (enSpan) enSpan.textContent = 'Play';
+        }
+    }
+
+    function updateFreqControlsEnabled() {
+        const noise = isNoise(state.wave);
+        freqSlider.disabled = noise;
+        freqInput.disabled = noise;
+    }
+
+    /* ---------- wave buttons ---------- */
+    const WAVE_LABELS = {
+        sine:     { de: 'Sinus',       en: 'Sine' },
+        square:   { de: 'Rechteck',    en: 'Square' },
+        sawtooth: { de: 'Sägezahn',    en: 'Saw' },
+        triangle: { de: 'Dreieck',     en: 'Triangle' },
+        white:    { de: 'Weiß',        en: 'White' },
+        pink:     { de: 'Rosa',        en: 'Pink' },
+        brown:    { de: 'Braun',       en: 'Brown' },
+        blue:     { de: 'Blau',        en: 'Blue' },
+        violet:   { de: 'Violett',     en: 'Violet' }
+    };
+
+    function buildWaveButtons() {
+        toneGrid.innerHTML = '';
+        noiseGrid.innerHTML = '';
+        const build = (type, container) => {
+            const b = document.createElement('button');
+            b.className = 'wave-btn' + (state.wave === type ? ' active' : '');
+            b.dataset.wave = type;
+            b.innerHTML =
+                '<span data-lang-de>' + WAVE_LABELS[type].de + '</span>' +
+                '<span data-lang-en style="display:none;">' + WAVE_LABELS[type].en + '</span>';
+            b.addEventListener('click', () => setWave(type));
+            container.appendChild(b);
+        };
+        TONE_WAVES.forEach(t => build(t, toneGrid));
+        NOISE_WAVES.forEach(t => build(t, noiseGrid));
+        applyLangVisibility();
+    }
+
+    function setWave(type) {
+        state.wave = type;
+        document.querySelectorAll('.wave-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.wave === type);
+        });
+        updateFreqControlsEnabled();
+        if (state.playing) startSound();
+    }
+
+    /* ---------- language visibility helper ---------- */
+    function applyLangVisibility() {
+        const deEls = document.querySelectorAll('[data-lang-de]');
+        const enEls = document.querySelectorAll('[data-lang-en]');
+        if (isGerman) {
+            deEls.forEach(el => el.style.display = '');
+            enEls.forEach(el => el.style.display = 'none');
+        } else {
+            deEls.forEach(el => el.style.display = 'none');
+            enEls.forEach(el => el.style.display = '');
+        }
+    }
+
+    /* ---------- event listeners ---------- */
+    playBtn.addEventListener('click', togglePlay);
+
+    freqSlider.addEventListener('input', () => {
+        setFreq(sliderToFreq(parseFloat(freqSlider.value)));
+    });
+
+    freqInput.addEventListener('change', () => {
+        const v = parseFloat(freqInput.value);
+        if (isNaN(v)) { updateReadout(); freqInput.value = Math.round(state.freq); return; }
+        setFreq(v, true);
+    });
+    freqInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); freqInput.blur(); }
+    });
+
+    volSlider.addEventListener('input', () => {
+        state.vol = parseFloat(volSlider.value);
+        volReadout.textContent = state.vol + ' %';
+        if (state.playing && gainNode && audioCtx) {
+            const t = audioCtx.currentTime;
+            gainNode.gain.cancelScheduledValues(t);
+            gainNode.gain.setValueAtTime(gainNode.gain.value, t);
+            gainNode.gain.linearRampToValueAtTime(gainFromSlider(state.vol), t + 0.05);
+        }
+    });
+
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            setFreq(parseFloat(btn.dataset.freq));
+        });
+    });
+
+    window.addEventListener('resize', () => {
+        resizeViz();
+    });
+
+    /* ====================================================== */
+    /* PART 2 — Cheatsheet shell logic                         */
+    /* ====================================================== */
+
+    /* TOC scroll spy */
+    document.addEventListener('DOMContentLoaded', () => {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const id = entry.target.getAttribute('id');
+                const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+                if (entry.isIntersecting) {
+                    document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                    if (tocLink) tocLink.classList.add('active');
+                }
+            });
+        }, {
+            rootMargin: '-10% 0px -80% 0px',
+            threshold: [0, 0.1, 1]
+        });
+
+        document.querySelectorAll('section, h3[id]').forEach((section) => {
+            observer.observe(section);
+        });
+    });
+
+    /* Search */
+    function filterWiki() {
+        const input = document.getElementById('wikiSearch');
+        const filter = input.value.toLowerCase();
+        const blocks = document.querySelectorAll('.searchable-block');
+        const mainContent = document.getElementById('main-content');
+
+        removeHighlights(mainContent);
+
+        if (!filter) {
+            blocks.forEach(block => block.style.display = 'block');
+            return;
+        }
+
+        blocks.forEach(block => {
+            const text = block.innerText.toLowerCase();
+            if (text.includes(filter)) {
+                block.style.display = 'block';
+                highlightText(block, input.value);
+            } else {
+                block.style.display = 'none';
+            }
+        });
+    }
+
+    function highlightText(element, keyword) {
+        if (!keyword) return;
+        const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+        const nodesToReplace = [];
+
+        let node;
+        while (node = treeWalker.nextNode()) {
+            if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE') {
+                    nodesToReplace.push(node);
+                }
+            }
+        }
+
+        nodesToReplace.forEach(node => {
+            const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+            const fragment = document.createDocumentFragment();
+            let match;
+            let lastIndex = 0;
+            const text = node.nodeValue;
+
+            while ((match = regex.exec(text)) !== null) {
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                const span = document.createElement('span');
+                span.className = 'search-match font-semibold';
+                span.textContent = match[0];
+                fragment.appendChild(span);
+                lastIndex = regex.lastIndex;
+            }
+            fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+            node.parentNode.replaceChild(fragment, node);
+        });
+    }
+
+    function removeHighlights(element) {
+        const highlights = element.querySelectorAll('.search-match');
+        highlights.forEach(span => {
+            const parent = span.parentNode;
+            parent.replaceChild(document.createTextNode(span.textContent), span);
+            parent.normalize();
+        });
+    }
+
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    /* Theme */
+    function toggleTheme() {
+        const html = document.documentElement;
+        const icon = document.getElementById('theme-icon');
+        if (html.classList.contains('light')) {
+            html.classList.remove('light');
+            icon.className = 'fa-solid fa-sun';
+        } else {
+            html.classList.add('light');
+            icon.className = 'fa-solid fa-moon';
+        }
+        refreshThemeCols();
+    }
+
+    /* Language */
+    let isGerman = true;
+    function toggleLang() {
+        isGerman = !isGerman;
+        document.getElementById('lang-indicator').textContent = isGerman ? 'DE' : 'EN';
+        document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+        applyLangVisibility();
+        updateReadout();
+        updatePlayBtn();
+    }
+
+    /* Download */
+    function downloadHTML() {
+        removeHighlights(document.getElementById('main-content'));
+        const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+        const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'FrequencyGenerator_Cheatsheet.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    /* ====================================================== */
+    /* INIT                                                    */
+    /* ====================================================== */
+    refreshThemeCols();
+    buildWaveButtons();
+    resizeViz();
+    updateReadout();
+    updatePlayBtn();
+    updateFreqControlsEnabled();
+    setFreq(440, false);
+    loop();
+
+    /* re-resize once fonts are loaded / layout settles */
+    window.addEventListener('load', () => {
+        resizeViz();
+        refreshThemeCols();
+    });
+    setTimeout(() => { resizeViz(); refreshThemeCols(); }, 300);
+    </script>
+</body>
+</html>
