@@ -129,38 +129,6 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--tw-colors-hypr-surface1); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--tw-colors-hypr-accent); }
-        
-        .start-menu-scrollbar::-webkit-scrollbar { width: 4px; }
-
-        /* Taskbar horizontal scrollbar (thin, unobtrusive) */
-        .taskbar-scrollbar::-webkit-scrollbar { height: 3px; width: 3px; }
-        .taskbar-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .taskbar-scrollbar::-webkit-scrollbar-thumb { background: var(--tw-colors-hypr-surface1); border-radius: 3px; }
-        .taskbar-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--tw-colors-hypr-accent); }
-
-        /* Smooth appearance for taskbar items */
-        .taskbar-item {
-            transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
-        }
-        .taskbar-item:active {
-            transform: scale(0.96);
-        }
-
-        /* Small active-indicator dot below the active taskbar item */
-        .taskbar-item.is-active {
-            position: relative;
-        }
-        .taskbar-item.is-active::after {
-            content: '';
-            position: absolute;
-            bottom: -3px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 12px;
-            height: 2px;
-            background: var(--tw-colors-hypr-accent);
-            border-radius: 1px;
-        }
     </style>
 </head>
 
@@ -176,7 +144,7 @@
 
         <!-- Waybar (Top/Bottom Bar) -->
         <div id="waybar" class="absolute top-2 left-2 right-2 h-9 glass-effect rounded-full border border-hypr-surface1 flex items-center justify-between px-4 z-50 transition-all duration-300">
-            <div class="flex items-center gap-2 h-full flex-shrink-0">
+            <div class="flex items-center gap-2 h-full">
                 <button id="launcher-btn" class="text-hypr-accent hover:text-white mr-2 transition-transform hover:scale-110" onclick="toggleLauncher(event)" title="Start Menu">
                     <i class="fa-brands fa-linux text-lg"></i>
                 </button>
@@ -188,13 +156,11 @@
                 </div>
             </div>
 
-            <!-- Center: active window title + taskbar (taskbar only visible when auto-tiling is OFF) -->
-            <div class="flex-1 flex items-center justify-center gap-3 overflow-hidden min-w-0 px-4">
-                <div id="active-window-title" class="text-sm font-medium text-hypr-text truncate opacity-80 flex-shrink min-w-0">~</div>
-                <div id="taskbar" class="hidden items-center gap-1 overflow-x-auto taskbar-scrollbar flex-shrink-0 max-w-[65%] py-1"></div>
+            <div id="active-window-title" class="text-sm font-medium text-hypr-text truncate max-w-[30%] opacity-80">
+                ~
             </div>
 
-            <div class="flex items-center h-full gap-2 text-sm text-hypr-subtext flex-shrink-0">
+            <div class="flex items-center h-full gap-2 text-sm text-hypr-subtext">
                 <div id="date-display" class="font-medium text-hypr-text bg-hypr-surface0 px-3 py-0.5 rounded-full border border-hypr-surface1 cursor-pointer hover:border-hypr-accent transition-colors" onclick="toggleDateFormat()">
                     <span id="date"></span>
                 </div>
@@ -204,15 +170,15 @@
             </div>
         </div>
 
-        <!-- Start Menu Launcher -->
-        <div id="start-menu" class="hidden absolute w-[360px] h-[520px] bg-hypr-base glass-effect border-2 border-hypr-surface1 rounded-xl shadow-[0_10px_50px_rgba(0,0,0,0.9)] z-[60] flex-row overflow-hidden animate-menu-pop">
-            <div class="w-12 bg-hypr-surface0/60 border-r border-hypr-surface1 flex flex-col items-center py-3 justify-end gap-3 z-10">
-                <button onclick="event.stopPropagation(); openSettings(); toggleLauncher();" class="w-8 h-8 rounded-lg hover:bg-hypr-surface1 text-hypr-subtext hover:text-hypr-text flex items-center justify-center transition-colors group relative" title="Settings">
+        <!-- Start Menu Launcher (auto-height, grows/shrinks with entries) -->
+        <div id="start-menu" class="hidden absolute w-[360px] bg-hypr-base glass-effect border-2 border-hypr-surface1 rounded-xl shadow-[0_10px_50px_rgba(0,0,0,0.9)] z-[60] flex-row overflow-hidden animate-menu-pop">
+            <div class="w-12 shrink-0 bg-hypr-surface0/60 border-r border-hypr-surface1 flex flex-col items-center py-3 justify-end gap-3 z-10">
+                <button onclick="openSettings(); toggleLauncher();" class="w-8 h-8 rounded-lg hover:bg-hypr-surface1 text-hypr-subtext hover:text-hypr-text flex items-center justify-center transition-colors group relative" title="Settings">
                     <i class="fa-solid fa-gear group-hover:rotate-90 transition-transform duration-300"></i>
                 </button>
             </div>
             
-            <div class="flex-1 flex flex-col bg-hypr-base/40 relative">
+            <div class="flex-1 min-w-0 flex flex-col bg-hypr-base/40 relative">
                 <div class="p-4 pb-2">
                     <div class="relative">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-hypr-subtext text-sm"></i>
@@ -220,8 +186,8 @@
                     </div>
                 </div>
 
-                <div class="flex-1 overflow-hidden flex flex-col px-4 pb-4">
-                    <div class="overflow-y-auto flex-1 start-menu-scrollbar pr-2 flex flex-col gap-1" id="apps-container">
+                <div class="flex flex-col px-4 pb-4">
+                    <div class="flex flex-col gap-1" id="apps-container">
                         <div class="p-4 text-center text-hypr-subtext italic text-sm" id="no-apps-message">
                             Loading applications...
                         </div>
@@ -264,90 +230,6 @@
         function getScrW() { return window.innerWidth / window.hyprConfig.scale; }
         function getScrH() { return window.innerHeight / window.hyprConfig.scale; }
 
-        /* ============================================================
-           TASKBAR (visible only when auto-tiling is OFF)
-           ============================================================ */
-        window.renderTaskbar = function() {
-            const taskbar = document.getElementById('taskbar');
-            if (!taskbar) return;
-
-            // Only show the taskbar in "normal windows" mode
-            if (window.hyprConfig.autoTiling) {
-                taskbar.classList.add('hidden');
-                taskbar.classList.remove('flex');
-                return;
-            }
-
-            // Collect all open windows on the current workspace
-            const wsWindows = windowOrder.filter(id => 
-                windows[id] && windows[id].isOpen && windows[id].workspace === currentWorkspace
-            );
-
-            // If none, keep it hidden
-            if (wsWindows.length === 0) {
-                taskbar.classList.add('hidden');
-                taskbar.classList.remove('flex');
-                taskbar.innerHTML = '';
-                return;
-            }
-
-            // Show it and rebuild entries
-            taskbar.classList.remove('hidden');
-            taskbar.classList.add('flex');
-            taskbar.innerHTML = '';
-
-            wsWindows.forEach(id => {
-                const w = windows[id];
-                const isActive = (id === activeWindowId) && !w.isMinimized;
-                const isMinimized = !!w.isMinimized;
-
-                const btn = document.createElement('button');
-                const baseCls = 'taskbar-item flex items-center gap-1.5 h-6 px-2 rounded-md border text-[11px] font-medium flex-shrink-0 cursor-pointer';
-
-                let stateCls;
-                if (isActive) {
-                    stateCls = 'bg-hypr-accent text-black border-hypr-accent';
-                } else if (isMinimized) {
-                    stateCls = 'bg-hypr-surface0/30 text-hypr-subtext/60 border-hypr-surface1/60 hover:border-hypr-text hover:text-hypr-text';
-                } else {
-                    stateCls = 'bg-hypr-surface0 text-hypr-subtext border-hypr-surface1 hover:border-hypr-text hover:text-hypr-text';
-                }
-
-                btn.className = `${baseCls} ${stateCls}${isActive ? ' is-active' : ''}`;
-
-                const iconClass = w.isJs
-                    ? 'fa-brands fa-js text-yellow-400'
-                    : 'fa-brands fa-html5 text-orange-500';
-
-                const label = w.appName || w.title || 'App';
-                btn.innerHTML = `<i class="${iconClass} text-[10px]"></i><span class="truncate max-w-[110px]">${label}</span>`;
-                btn.title = isMinimized ? `${label} (minimized)` : label;
-
-                btn.onclick = (e) => {
-                    e.stopPropagation();
-                    if (w.isMinimized) {
-                        openWindow(id);
-                    } else if (id === activeWindowId) {
-                        // Already active — leave it focused
-                        bringToFront(id);
-                    } else {
-                        if (w.workspace !== currentWorkspace) switchWorkspace(w.workspace);
-                        bringToFront(id);
-                    }
-                };
-
-                // Middle-click closes (bonus, feels natural on taskbars)
-                btn.onauxclick = (e) => {
-                    if (e.button === 1) {
-                        e.preventDefault();
-                        closeApp(id);
-                    }
-                };
-
-                taskbar.appendChild(btn);
-            });
-        };
-
         // Click outside to close start menu or settings menu if it loses focus
         document.addEventListener('click', (e) => {
             const menu = document.getElementById('start-menu');
@@ -370,7 +252,6 @@
             if (windows[winId]) {
                 windows[winId].workspace = ws;
                 window.switchWorkspace(ws);
-                window.renderTaskbar();
             }
         };
 
@@ -442,15 +323,12 @@
                 }
             });
             window.tileWindows();
-            window.renderTaskbar();
         }
 
         window.updateHyprConfig = function(key, value) {
             if (key === "autoTiling") {
                 window.hyprConfig.autoTiling = value;
                 if (value) window.tileWindows();
-                // Toggling auto-tiling changes the taskbar visibility
-                window.renderTaskbar();
             } else if (key === "scale") {
                 window.hyprConfig.scale = parseFloat(value);
                 const root = document.getElementById("hypr-root");
@@ -470,15 +348,6 @@
                 } else {
                     wb.classList.remove('top-2');
                     wb.classList.add('bottom-2');
-                }
-                // Keep the position buttons in the settings window in sync
-                const topBtn = document.getElementById('btn-waybar-top');
-                const bottomBtn = document.getElementById('btn-waybar-bottom');
-                if (topBtn && bottomBtn) {
-                    const activeCls = 'p-2.5 rounded-lg border text-center font-medium transition-all bg-white text-black border-white';
-                    const inactiveCls = 'p-2.5 rounded-lg border text-center font-medium transition-all bg-hypr-surface0 text-hypr-subtext border-hypr-surface1 hover:border-hypr-text';
-                    topBtn.className = (value === 'top') ? activeCls : inactiveCls;
-                    bottomBtn.className = (value === 'bottom') ? activeCls : inactiveCls;
                 }
                 const launcher = document.getElementById('start-menu');
                 if (!launcher.classList.contains('hidden')) toggleLauncher();
@@ -650,7 +519,6 @@
             window.allApps = items;
             window.currentCategory = null;
             renderStartMenuView();
-            window.renderTaskbar();
         });
 
         function renderStartMenuView() {
@@ -658,7 +526,7 @@
             container.innerHTML = '';
             
             if (!window.allApps || window.allApps.length === 0) {
-                container.innerHTML = `<div class="p-6 text-center flex flex-col items-center justify-center text-hypr-subtext h-full gap-3"><span class="text-sm">No apps found</span></div>`;
+                container.innerHTML = `<div class="p-6 text-center flex flex-col items-center justify-center text-hypr-subtext gap-3"><span class="text-sm">No apps found</span></div>`;
                 return;
             }
             
@@ -787,8 +655,7 @@
 
                 windows[winId] = {
                     element: winDiv, isOpen: true, isMaximized: false, isSnapped: false, isFloating: false,
-                    appName: app.name, title: app.name, config: config, workspace: currentWorkspace,
-                    isJs: app.type === 'js'
+                    appName: app.name, title: app.name, config: config, workspace: currentWorkspace
                 };
                 
                 windowOrder.push(winId);
@@ -797,7 +664,6 @@
                 winDiv.addEventListener('mousedown', () => bringToFront(winId));
                 bringToFront(winId);
                 window.tileWindows();
-                window.renderTaskbar();
             } catch (err) {
                 console.error(err);
             }
@@ -818,10 +684,6 @@
             winDiv.style.width = "420px"; winDiv.style.height = "640px";
             winDiv.style.top = window.getTopOffset() + "px"; winDiv.style.left = GAP + "px";
             
-            const isTop = window.hyprConfig.waybarPosition === 'top';
-            const activeBtnCls = 'p-2.5 rounded-lg border text-center font-medium transition-all bg-white text-black border-white';
-            const inactiveBtnCls = 'p-2.5 rounded-lg border text-center font-medium transition-all bg-hypr-surface0 text-hypr-subtext border-hypr-surface1 hover:border-hypr-text';
-
             winDiv.innerHTML = `
                 <div class="window-header h-8 bg-hypr-surface0 flex justify-between items-center px-3 border-b border-hypr-surface1 select-none">
                     <span class="text-xs font-semibold tracking-wider text-hypr-subtext truncate flex items-center gap-2"><i class="fa-solid fa-gear"></i> sHyprland Settings</span>
@@ -858,10 +720,10 @@
                     <div class="flex flex-col gap-3">
                         <span class="text-xs font-bold uppercase tracking-wider text-hypr-subtext opacity-70">Topbar Position</span>
                         <div class="grid grid-cols-2 gap-2">
-                            <button id="btn-waybar-top" onclick="updateHyprConfig('waybarPosition', 'top')" class="${isTop ? activeBtnCls : inactiveBtnCls}">
+                            <button onclick="updateHyprConfig('waybarPosition', 'top')" class="p-2.5 rounded-lg border text-center font-medium transition-all ${window.hyprConfig.waybarPosition === 'top' ? 'bg-white text-black border-white' : 'bg-hypr-surface0 text-hypr-subtext border-hypr-surface1 hover:border-hypr-text'}">
                                 Top Bar
                             </button>
-                            <button id="btn-waybar-bottom" onclick="updateHyprConfig('waybarPosition', 'bottom')" class="${!isTop ? activeBtnCls : inactiveBtnCls}">
+                            <button onclick="updateHyprConfig('waybarPosition', 'bottom')" class="p-2.5 rounded-lg border text-center font-medium transition-all ${window.hyprConfig.waybarPosition === 'bottom' ? 'bg-white text-black border-white' : 'bg-hypr-surface0 text-hypr-subtext border-hypr-surface1 hover:border-hypr-text'}">
                                 Bottom Bar
                             </button>
                         </div>
@@ -911,12 +773,11 @@
                 </div>
             `;
             document.getElementById('windows-container').appendChild(winDiv);
-            windows[winId] = { element: winDiv, isOpen: true, isMaximized: false, isSnapped: false, isFloating: true, config: {maxizable: false}, workspace: currentWorkspace, isJs: false };
+            windows[winId] = { element: winDiv, isOpen: true, isMaximized: false, isSnapped: false, isFloating: true, config: {maxizable: false}, workspace: currentWorkspace };
             windowOrder.push(winId);
             makeDraggable(winDiv);
             winDiv.addEventListener("mousedown", () => bringToFront(winId));
             bringToFront(winId);
-            window.renderTaskbar();
         };
 
         window.toggleFloating = function(winId) {
@@ -924,7 +785,6 @@
             if (!w) return;
             w.isFloating = !w.isFloating;
             window.tileWindows();
-            window.renderTaskbar();
         }
 
         window.openWindow = function(winId) {
@@ -934,7 +794,6 @@
             w.element.classList.remove('minimized');
             bringToFront(winId);
             window.tileWindows();
-            window.renderTaskbar();
         }
 
         function closeApp(winId) {
@@ -947,7 +806,6 @@
             if(remaining.length > 0) bringToFront(remaining[remaining.length - 1]);
             else document.getElementById('active-window-title').textContent = '~';
             window.tileWindows();
-            window.renderTaskbar();
         }
 
         function bringToFront(winId) {
@@ -958,7 +816,6 @@
                 windows[winId].element.classList.add('active-window');
                 document.getElementById('active-window-title').textContent = windows[winId].title;
                 activeWindowId = winId;
-                window.renderTaskbar();
             }
         }
 
@@ -1147,7 +1004,6 @@
                         window.tileWindows();
                     }
                 }
-                window.renderTaskbar();
             }
         }
     </script>
