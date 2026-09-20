@@ -264,7 +264,7 @@
             if (!window.hyprConfig.autoTiling) return;
             
             const openWins = windowOrder
-                .filter(id => windows[id] && windows[id].isOpen && !windows[id].isMinimized && !windows[id].isFloating && windows[id].workspace === currentWorkspace)
+                .filter(id => windows[id] && windows[id].isOpen && !windows[id].isMinimized && windows[id].workspace === currentWorkspace)
                 .map(id => windows[id]);
 
             if (openWins.length === 0) return;
@@ -712,7 +712,6 @@
                                 <button class="win11-btn ws-move-btn" onclick="moveToWorkspace('${winId}', 4)" title="Move to WS 4">4</button>
                             </div>
                             <div class="w-[1px] h-3 bg-hypr-surface1 mx-0.5"></div>
-                            <button class="win11-btn" onclick="toggleFloating('${winId}')" title="Toggle Floating"><i class="fa-solid fa-clone text-[9px]"></i></button>
                             <button class="win11-btn" onclick="maximizeWindow('${winId}')" title="Maximize"><i class="fa-regular fa-square text-[9px]"></i></button>
                             <button class="win11-btn win11-close" onclick="closeApp('${winId}')" title="Close"><i class="fa-solid fa-xmark"></i></button>
                         </div>
@@ -737,7 +736,7 @@
                 }
 
                 windows[winId] = {
-                    element: winDiv, isOpen: true, isMaximized: false, isSnapped: false, isFloating: false,
+                    element: winDiv, isOpen: true, isMaximized: false, isSnapped: false,
                     appName: app.name, title: app.name, config: config, workspace: currentWorkspace
                 };
                 
@@ -837,19 +836,12 @@
                 </div>
             `;
             document.getElementById('windows-container').appendChild(winDiv);
-            windows[winId] = { element: winDiv, isOpen: true, isMaximized: false, isSnapped: false, isFloating: true, config: {maxizable: false}, workspace: currentWorkspace };
+            windows[winId] = { element: winDiv, isOpen: true, isMaximized: false, isSnapped: false, config: {maxizable: false}, workspace: currentWorkspace };
             windowOrder.push(winId);
             makeDraggable(winDiv);
             winDiv.addEventListener("mousedown", () => bringToFront(winId));
             bringToFront(winId);
         };
-
-        window.toggleFloating = function(winId) {
-            const w = windows[winId];
-            if (!w) return;
-            w.isFloating = !w.isFloating;
-            window.tileWindows();
-        }
 
         window.openWindow = function(winId) {
             const w = windows[winId];
@@ -911,7 +903,7 @@
                     w.preSnapWidth = el.offsetWidth; w.preSnapHeight = el.offsetHeight;
                     w.preSnapTop = el.offsetTop; w.preSnapLeft = el.offsetLeft;
                 }
-                w.isMaximized = true; w.isSnapped = false; w.isFloating = true;
+                w.isMaximized = true; w.isSnapped = false;
                 el.style.top = window.getTopOffset() + 'px';
                 el.style.left = GAP + 'px';
                 el.style.width = (getScrW() - GAP * 2) + 'px';
@@ -937,7 +929,6 @@
             
             let targetSwapId = null;
             let currentSnap = '';
-            let originalIsFloating = false;
 
             function dragMouseDown(e) {
                 if(e.target.closest('button')) return;
@@ -953,9 +944,6 @@
                     element.style.left = ((e.clientX / scale) - (w.preSnapWidth * ratio)) + 'px';
                     element.style.top = ((e.clientY / scale) - 15) + 'px';
                 }
-                
-                originalIsFloating = w ? w.isFloating : false;
-                if (w) w.isFloating = true; 
 
                 element.classList.add('dragging');
                 e.preventDefault();
@@ -987,10 +975,10 @@
                 currentSnap = '';
                 snapPreview.classList.add('hidden');
                 
-                if (window.hyprConfig.autoTiling && !originalIsFloating) {
+                if (window.hyprConfig.autoTiling) {
                     const mouseX = e.clientX;
                     const mouseY = e.clientY;
-                    const tiledIds = windowOrder.filter(id => id !== winId && windows[id] && !windows[id].isFloating && !windows[id].isMinimized && windows[id].workspace === currentWorkspace);
+                    const tiledIds = windowOrder.filter(id => id !== winId && windows[id] && !windows[id].isMinimized && windows[id].workspace === currentWorkspace);
                     
                     for (let id of tiledIds) {
                         const targetEl = windows[id].element;
@@ -1005,7 +993,7 @@
                             break;
                         }
                     }
-                } else if (!window.hyprConfig.autoTiling) {
+                } else {
                     const snapZone = 20;
                     let sLeft = e.clientX < snapZone;
                     let sRight = e.clientX > window.innerWidth - snapZone;
@@ -1045,8 +1033,7 @@
                 const w = windows[winId];
                 if (!w) return;
 
-                if (window.hyprConfig.autoTiling && !originalIsFloating) {
-                    w.isFloating = false;
+                if (window.hyprConfig.autoTiling) {
                     if (targetSwapId) {
                         const idx1 = windowOrder.indexOf(winId);
                         const idx2 = windowOrder.indexOf(targetSwapId);
@@ -1056,8 +1043,7 @@
                         }
                     }
                     window.tileWindows();
-                } else if (!window.hyprConfig.autoTiling && currentSnap) {
-                    w.isFloating = true; 
+                } else if (currentSnap) {
                     if (!w.isMaximized && !w.isSnapped) {
                         w.preSnapWidth = element.offsetWidth; w.preSnapHeight = element.offsetHeight;
                         w.preSnapTop = element.offsetTop; w.preSnapLeft = element.offsetLeft;
@@ -1073,11 +1059,6 @@
                         element.style.height = h + 'px';
                         element.style.width = halfW + 'px';
                         element.style.left = currentSnap === 'left' ? GAP + 'px' : (getScrW()/2 + GAP/2) + 'px';
-                    }
-                } else {
-                    w.isFloating = originalIsFloating;
-                    if (!w.isFloating && window.hyprConfig.autoTiling) {
-                        window.tileWindows();
                     }
                 }
             }
