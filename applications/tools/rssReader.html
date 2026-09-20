@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSS Reader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                screens: {
+                    'sm': '640px',
+                    'md': '768px',
+                    'lg': '1024px',
+                    'xl': '1280px',
+                    '2xl': '1536px',
+                    '3xl': '1920px',
+                    '4xl': '2400px',
+                },
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #1d1e1f;
+            --border-color: #3b3e40;
+            --text-color: #eaecf0;
+            --text-muted: #a8aeb3;
+            --link-color: #99c1f1;
+            --link-hover: #629deb;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --info-box: #2c2d30;
+
+            --c-play: #10b981;
+            --c-pause: #f59e0b;
+
+            --content-max: 2000px;
+            --sidebar-w: 18rem;
+
+            --panel-border: #54595d;
+            --card-shadow:
+                0 0 22px 0 rgba(0, 0, 0, 0.55),
+                0 0 10px 0 rgba(0, 0, 0, 0.45),
+                0 4px 24px 0 rgba(0, 0, 0, 0.35);
+            --card-shadow-hover:
+                0 0 40px 0 rgba(0, 0, 0, 0.7),
+                0 0 18px 0 rgba(0, 0, 0, 0.55),
+                0 8px 36px 0 rgba(0, 0, 0, 0.45);
+        }
+
+        html.light {
+            --bg-color: #f4f6f9;
+            --panel-color: #ffffff;
+            --sidebar-color: #f8fafc;
+            --border-color: #e2e8f0;
+            --text-color: #0f172a;
+            --text-muted: #475569;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --heading-color: #020617;
+            --code-bg: #f1f5f9;
+            --info-box: #e0f2fe;
+
+            --panel-border: #e2e8f0;
+            --card-shadow:
+                0 0 28px 0 rgba(0, 0, 0, 0.18),
+                0 0 12px 0 rgba(0, 0, 0, 0.12),
+                0 4px 24px 0 rgba(0, 0, 0, 0.10);
+            --card-shadow-hover:
+                0 0 48px 0 rgba(0, 0, 0, 0.28),
+                0 0 22px 0 rgba(0, 0, 0, 0.20),
+                0 8px 36px 0 rgba(0, 0, 0, 0.16);
+        }
+
+        html { font-size: 16px; }
+        @media (min-width: 1536px) { html { font-size: 17px; } }
+        @media (min-width: 1920px) { html { font-size: 18px; } }
+        @media (min-width: 2400px) { html { font-size: 20px; } }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            transition: background-color 0.2s, color 0.2s;
+            overflow-x: hidden;
+            padding-bottom: 100px;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 700 !important; line-height: 1.15; }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+        .app-sidebar {
+            width: var(--sidebar-w);
+            max-height: 50vh;
+            transition: box-shadow 0.3s ease, background-color 0.2s;
+            box-shadow: var(--card-shadow);
+        }
+        @media (min-width: 1024px) { .app-sidebar { max-height: 100vh; position: fixed; top: 0; left: 0; } }
+        @media (min-width: 1920px) { :root { --sidebar-w: 20rem; } }
+
+        .app-main {
+            min-width: 0;
+            width: 100%;
+            max-width: var(--content-max);
+            padding: 1rem;
+            margin-left: 0;
+        }
+        @media (min-width: 1024px) {
+            .app-main {
+                padding: 1.5rem 2rem;
+                margin-left: var(--sidebar-w);
+                width: calc(100% - var(--sidebar-w));
+                max-width: calc(var(--content-max) - var(--sidebar-w));
+            }
+        }
+
+        .feed-category-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.6rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .feed-category-btn:hover { color: var(--heading-color); background-color: var(--code-bg); }
+        .feed-category-btn.active {
+            background-color: var(--info-box);
+            color: var(--heading-color);
+            border-color: var(--panel-border);
+            box-shadow: var(--card-shadow);
+        }
+
+        .article-card {
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.15s ease;
+            box-shadow: var(--card-shadow);
+            min-width: 0;
+        }
+        .article-card:hover {
+            border-color: var(--link-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--card-shadow-hover);
+        }
+        .article-card.active {
+            border-color: var(--c-play);
+            background-color: var(--info-box);
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .article-meta { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+        .article-title { font-size: 0.95rem; font-weight: 700; color: var(--heading-color); line-height: 1.3; margin-top: 0.15rem; }
+        .article-summary { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        .feed-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            background-color: var(--code-bg);
+            color: var(--text-muted);
+            border: 1px solid var(--panel-border);
+        }
+
+        .tts-btn {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            border: 1px solid var(--panel-border);
+            background-color: var(--panel-color);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .tts-btn:hover { border-color: var(--link-color); color: var(--link-color); }
+        .tts-btn.speaking {
+            background-color: var(--c-play);
+            border-color: var(--c-play);
+            color: #fff;
+        }
+        .tts-btn.speaking i { animation: pulse 1s ease-in-out infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .player-dock {
+            position: fixed; bottom: 1rem; left: 1rem; right: 1rem; z-index: 50;
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow-hover);
+            border-radius: 1rem;
+            padding: 0.75rem 1.25rem;
+            display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+            backdrop-filter: blur(10px);
+            transition: box-shadow 0.3s ease;
+        }
+        @media (min-width: 1024px) {
+            .player-dock {
+                left: calc(var(--sidebar-w) + 1.5rem);
+                right: 1.5rem;
+                bottom: 1.5rem;
+                max-width: calc(var(--content-max) - var(--sidebar-w));
+            }
+        }
+
+        .btn-play {
+            width: 3rem; height: 3rem; border-radius: 50%;
+            background-color: var(--c-play); color: #fff; border: none;
+            display: flex; align-items: center; justify-content: center; font-size: 1.25rem;
+            cursor: pointer; transition: transform 0.1s, background-color 0.2s;
+            flex-shrink: 0;
+        }
+        .btn-play:hover { transform: scale(1.05); }
+        .btn-play:active { transform: scale(0.95); }
+        .btn-play.paused { background-color: var(--link-color); }
+
+        .volume-slider { -webkit-appearance: none; width: 100px; height: 4px; border-radius: 2px; background: var(--border-color); outline: none; }
+        .volume-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--text-color); cursor: pointer; }
+
+        .search-input {
+            width: 100%;
+            background-color: var(--bg-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            padding: 0.6rem 0.75rem 0.6rem 2.5rem;
+            font-size: 0.85rem;
+            color: var(--text-color);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+        .search-input:focus {
+            border-color: var(--link-color);
+            box-shadow: 0 0 0 3px rgba(153, 193, 241, 0.15);
+        }
+        .search-input::placeholder { color: var(--text-muted); }
+
+        .skeleton {
+            background: linear-gradient(90deg, var(--code-bg) 25%, var(--border-color) 50%, var(--code-bg) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 0.5rem;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .lang-en { display: none; }
+        body[data-active-lang="en"] .lang-de { display: none !important; }
+        body[data-active-lang="en"] .lang-en { display: block !important; }
+        body[data-active-lang="en"] span.lang-en, body[data-active-lang="en"] a.lang-en { display: inline !important; }
+        body[data-active-lang="de"] .lang-en { display: none !important; }
+        body[data-active-lang="de"] .lang-de { display: block !important; }
+        body[data-active-lang="de"] span.lang-de, body[data-active-lang="de"] a.lang-de { display: inline !important; }
+    </style>
+</head>
+<body data-active-lang="de">
+
+    <!-- ============================================================ -->
+    <!-- SIDEBAR                                                       -->
+    <!-- ============================================================ -->
+    <aside class="app-sidebar bg-[var(--sidebar-color)] border-b lg:border-b-0 lg:border-r border-[var(--border-color)] p-4 z-40 overflow-y-auto">
+
+        <!-- Controls -->
+        <div class="flex items-center justify-between gap-1 mb-5 bg-[var(--bg-color)] p-1.5 rounded-lg border border-[var(--panel-border)]">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--panel-color)] py-1 rounded text-xs font-semibold text-[var(--text-muted)] transition-colors" title="Toggle Language">
+                <i class="fa-solid fa-language"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--panel-color)] py-1 rounded text-xs font-semibold text-[var(--text-muted)] transition-colors" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--panel-color)] py-1 rounded text-xs font-semibold text-[var(--link-color)] transition-colors" title="Download">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <!-- Brand -->
+        <div class="mb-5">
+            <i class="fa-solid fa-rss text-2xl mb-2 text-[var(--link-color)]"></i>
+            <div class="font-serif text-xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span class="lang-de">RSS<br>Reader</span>
+                <span class="lang-en">RSS<br>Reader</span>
+            </div>
+            <div class="text-[0.65rem] uppercase tracking-widest text-[var(--text-muted)] mt-1 font-semibold">Feed Aggregator</div>
+        </div>
+
+        <!-- Search -->
+        <div class="mb-5 relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-xs"></i>
+            </div>
+            <input type="text" id="feed-search" placeholder="Feeds suchen..." class="search-input" oninput="filterFeeds()">
+        </div>
+
+        <!-- Category Navigation -->
+        <div class="mb-3">
+            <div class="text-[0.65rem] uppercase tracking-widest text-[var(--text-muted)] font-bold mb-2 px-1">
+                <span class="lang-de">Kategorien</span>
+                <span class="lang-en">Categories</span>
+            </div>
+            <div id="category-nav" class="space-y-1">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <!-- TTS Controls -->
+        <div class="mt-6 pt-4 border-t border-[var(--panel-border)]">
+            <div class="text-[0.65rem] uppercase tracking-widest text-[var(--text-muted)] font-bold mb-3 px-1">
+                <span class="lang-de">Text-to-Speech</span>
+                <span class="lang-en">Text-to-Speech</span>
+            </div>
+
+            <div class="space-y-3">
+                <!-- Voice Selection -->
+                <div>
+                    <label class="text-[0.7rem] text-[var(--text-muted)] font-medium block mb-1">
+                        <span class="lang-de">Stimme</span>
+                        <span class="lang-en">Voice</span>
+                    </label>
+                    <select id="voice-select" class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-lg px-3 py-2 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-colors">
+                        <!-- Dynamically populated -->
+                    </select>
+                </div>
+
+                <!-- Speed -->
+                <div>
+                    <label class="text-[0.7rem] text-[var(--text-muted)] font-medium block mb-1">
+                        <span class="lang-de">Geschwindigkeit</span>
+                        <span class="lang-en">Speed</span>
+                    </label>
+                    <input type="range" id="tts-rate" min="0.5" max="2" step="0.1" value="1" class="volume-slider w-full" oninput="updateTTSRate(this.value)">
+                </div>
+
+                <!-- Auto-read toggle -->
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="auto-read" class="w-4 h-4 accent-[var(--c-play)] rounded" onchange="toggleAutoRead(this.checked)">
+                    <span class="text-[0.75rem] text-[var(--text-muted)]">
+                        <span class="lang-de">Automatisch vorlesen</span>
+                        <span class="lang-en">Auto-read on open</span>
+                    </span>
+                </label>
+
+                <!-- TTS Status -->
+                <div id="tts-status" class="text-[0.7rem] text-[var(--text-muted)] italic min-h-[1.2rem]"></div>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- ============================================================ -->
+    <!-- MAIN CONTENT                                                  -->
+    <!-- ============================================================ -->
+    <main class="app-main">
+
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+                <h1 class="text-2xl lg:text-3xl !mb-0 !pb-0 border-none" id="view-title">
+                    <span class="lang-de">Nachrichten</span>
+                    <span class="lang-en">News</span>
+                </h1>
+                <p class="text-sm text-[var(--text-muted)] mt-1" id="view-subtitle">
+                    <span class="lang-de">Wähle eine Kategorie</span>
+                    <span class="lang-en">Select a category</span>
+                </p>
+            </div>
+            <button onclick="refreshFeeds()" class="inline-flex items-center gap-2 px-4 py-2 bg-[var(--panel-color)] border border-[var(--panel-border)] rounded-lg text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--heading-color)] hover:border-[var(--link-color)] transition-all shadow-sm">
+                <i class="fa-solid fa-rotate" id="refresh-icon"></i>
+                <span class="lang-de">Aktualisieren</span>
+                <span class="lang-en">Refresh</span>
+            </button>
+        </div>
+
+        <!-- Feed Info Bar -->
+        <div id="feed-info-bar" class="hidden mb-4 p-3 bg-[var(--info-box)] border border-[var(--panel-border)] rounded-lg text-sm text-[var(--text-muted)] flex items-center gap-2">
+            <i class="fa-solid fa-circle-info text-[var(--link-color)]"></i>
+            <span id="feed-info-text"></span>
+        </div>
+
+        <!-- Articles Grid -->
+        <div id="articles-grid" class="grid grid-cols-1 xl:grid-cols-2 gap-3">
+            <!-- Dynamically populated -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden text-center py-16">
+            <i class="fa-solid fa-inbox text-4xl text-[var(--text-muted)] mb-4 opacity-50"></i>
+            <p class="text-[var(--text-muted)]">
+                <span class="lang-de">Wähle eine Kategorie oder lade Feeds, um Artikel zu sehen.</span>
+                <span class="lang-en">Select a category or load feeds to see articles.</span>
+            </p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="hidden">
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                <div class="skeleton h-24"></div>
+                <div class="skeleton h-24"></div>
+                <div class="skeleton h-24"></div>
+                <div class="skeleton h-24"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ============================================================ -->
+    <!-- PLAYER DOCK (TTS Player)                                      -->
+    <!-- ============================================================ -->
+    <div class="player-dock">
+        <div class="flex items-center gap-3 flex-1 min-w-0">
+            <button id="btn-play-pause" class="btn-play paused" onclick="togglePlayPause()" disabled>
+                <i class="fa-solid fa-play ml-0.5" id="play-icon"></i>
+            </button>
+
+            <div class="min-w-0 flex-1">
+                <div class="text-[0.65rem] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-0.5 truncate" id="player-status">
+                    <span class="lang-de">Bereit</span><span class="lang-en">Ready</span>
+                </div>
+                <div class="text-sm font-bold text-[var(--heading-color)] truncate" id="player-title">
+                    <span class="lang-de">Kein Artikel ausgewählt</span><span class="lang-en">No article selected</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 flex-shrink-0">
+            <div id="visualizer" class="hidden sm:flex items-end gap-[2px] h-6 pb-1">
+                <div class="eq-bar" style="background-color: var(--c-play); width: 3px; border-radius: 1.5px; height: 8px; opacity: 0.2; transition: opacity 0.2s;"></div>
+                <div class="eq-bar" style="background-color: var(--c-play); width: 3px; border-radius: 1.5px; height: 8px; opacity: 0.2; transition: opacity 0.2s;"></div>
+                <div class="eq-bar" style="background-color: var(--c-play); width: 3px; border-radius: 1.5px; height: 8px; opacity: 0.2; transition: opacity 0.2s;"></div>
+                <div class="eq-bar" style="background-color: var(--c-play); width: 3px; border-radius: 1.5px; height: 8px; opacity: 0.2; transition: opacity 0.2s;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden audio element for TTS -->
+    <audio id="tts-audio" preload="none"></audio>
+
+    <script>
+        // ================================================================
+        // FEED DATABASE — Comprehensive German/English feeds, 2026
+        // ================================================================
+        const feedDatabase = [
+            // ============================================================
+            // 1. NACHRICHTEN / NEWS
+            // ============================================================
+            { category: 'news', name: 'Tagesschau (ARD)', url: 'https://www.tagesschau.de/xml/rss2', lang: 'de', icon: 'fa-newspaper', desc: 'Top-Nachrichten der ARD' },
+            { category: 'news', name: 'Spiegel Online', url: 'https://www.spiegel.de/schlagzeilen/tops/index.rss', lang: 'de', icon: 'fa-newspaper', desc: 'Aktuelle Schlagzeilen' },
+            { category: 'news', name: 'Zeit Online', url: 'http://newsfeed.zeit.de/index', lang: 'de', icon: 'fa-newspaper', desc: 'Nachrichten & Hintergründe' },
+            { category: 'news', name: 'FAZ', url: 'https://www.faz.net/rss/aktuell/', lang: 'de', icon: 'fa-newspaper', desc: 'FAZ Aktuell' },
+            { category: 'news', name: 'Süddeutsche Zeitung', url: 'https://rss.sueddeutsche.de/rss/Topthemen', lang: 'de', icon: 'fa-newspaper', desc: 'SZ Topthemen' },
+            { category: 'news', name: 'Welt', url: 'https://www.welt.de/feeds/topnews.rss', lang: 'de', icon: 'fa-newspaper', desc: 'Welt Top-News' },
+            { category: 'news', name: 'Deutsche Welle', url: 'https://rss.dw.com/rdf/rss-de-all', lang: 'de', icon: 'fa-globe', desc: 'DW Deutsche Nachrichten' },
+            { category: 'news', name: 'n-tv', url: 'https://www.n-tv.de/rss', lang: 'de', icon: 'fa-newspaper', desc: 'n-tv Nachrichten' },
+            { category: 'news', name: 'Heise Online', url: 'https://www.heise.de/rss/heise-top-atom.xml', lang: 'de', icon: 'fa-microchip', desc: 'IT & Technik News' },
+            { category: 'news', name: 'BBC News', url: 'https://feeds.bbci.co.uk/news/rss.xml', lang: 'en', icon: 'fa-globe', desc: 'BBC World News' },
+            { category: 'news', name: 'The Guardian', url: 'https://www.theguardian.com/rss', lang: 'en', icon: 'fa-newspaper', desc: 'Guardian World News' },
+            { category: 'news', name: 'NPR News', url: 'https://npr-ice.streamguys1.com/live.mp3', lang: 'en', icon: 'fa-microphone', desc: 'NPR News' },
+            { category: 'news', name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml', lang: 'en', icon: 'fa-globe', desc: 'Al Jazeera English' },
+
+            // ============================================================
+            // 2. TECHNOLOGIE / TECHNOLOGY
+            // ============================================================
+            { category: 'tech', name: 'TechCrunch', url: 'https://techcrunch.com/feed/', lang: 'en', icon: 'fa-rocket', desc: 'Startup & Tech News' },
+            { category: 'tech', name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml', lang: 'en', icon: 'fa-mobile-screen', desc: 'Tech & Culture' },
+            { category: 'tech', name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index', lang: 'en', icon: 'fa-flask', desc: 'Tech Science & Reviews' },
+            { category: 'tech', name: 'Wired', url: 'https://www.wired.com/feed/rss', lang: 'en', icon: 'fa-bolt', desc: 'Wired Magazine' },
+            { category: 'tech', name: 'Engadget', url: 'https://www.engadget.com/rss.xml', lang: 'en', icon: 'fa-gadget', desc: 'Consumer Tech' },
+            { category: 'tech', name: 'Hacker News', url: 'https://hnrss.org/best', lang: 'en', icon: 'fa-terminal', desc: 'HN Best Stories' },
+            { category: 'tech', name: 'Hugging Face Blog', url: 'https://huggingface.co/blog/feed.xml', lang: 'en', icon: 'fa-brain', desc: 'AI/ML Blog' },
+            { category: 'tech', name: 'Golem', url: 'https://rss.golem.de/rss.php?feed=ATOM1.0', lang: 'de', icon: 'fa-microchip', desc: 'IT-News auf Deutsch' },
+            { category: 'tech', name: 't3n', url: 'https://t3n.de/rss.xml', lang: 'de', icon: 'fa-chart-line', desc: 'Digital Business' },
+            { category: 'tech', name: 'Netzpolitik.org', url: 'https://netzpolitik.org/feed/', lang: 'de', icon: 'fa-shield-halved', desc: 'Netzpolitik & Datenschutz' },
+
+            // ============================================================
+            // 3. KI / AI
+            // ============================================================
+            { category: 'ai', name: 'OpenAI Blog', url: 'https://openai.com/news/rss.xml', lang: 'en', icon: 'fa-brain', desc: 'GPT & AI Updates' },
+            { category: 'ai', name: 'Google DeepMind', url: 'https://deepmind.google/blog/rss.xml', lang: 'en', icon: 'fa-flask', desc: 'DeepMind Research' },
+            { category: 'ai', name: 'Anthropic News', url: 'https://www.anthropic.com/rss.xml', lang: 'en', icon: 'fa-robot', desc: 'Claude & AI Safety' },
+            { category: 'ai', name: 'arXiv AI', url: 'https://rss.arxiv.org/rss/cs.AI', lang: 'en', icon: 'fa-file-lines', desc: 'AI Preprints' },
+            { category: 'ai', name: 'arXiv Machine Learning', url: 'https://rss.arxiv.org/rss/cs.LG', lang: 'en', icon: 'fa-chart-line', desc: 'ML Preprints' },
+            { category: 'ai', name: 'arXiv NLP', url: 'https://rss.arxiv.org/rss/cs.CL', lang: 'en', icon: 'fa-language', desc: 'NLP Research' },
+            { category: 'ai', name: 'Hacker News AI', url: 'https://hnrss.org/newest?q=AI', lang: 'en', icon: 'fa-terminal', desc: 'HN AI Discussions' },
+            { category: 'ai', name: 'Hacker News LLM', url: 'https://hnrss.org/newest?q=LLM', lang: 'en', icon: 'fa-terminal', desc: 'HN LLM Discussions' },
+
+            // ============================================================
+            // 4. WISSENSCHAFT / SCIENCE
+            // ============================================================
+            { category: 'science', name: 'ScienceDaily', url: 'https://www.sciencedaily.com/rss/all.xml', lang: 'en', icon: 'fa-flask', desc: 'Science News' },
+            { category: 'science', name: 'ScienceDaily Computers', url: 'https://www.sciencedaily.com/rss/computers_math.xml', lang: 'en', icon: 'fa-computer', desc: 'Computer Science' },
+            { category: 'science', name: 'ScienceDaily Health', url: 'https://www.sciencedaily.com/rss/health_medicine.xml', lang: 'en', icon: 'fa-heart-pulse', desc: 'Health & Medicine' },
+            { category: 'science', name: 'ScienceDaily Space', url: 'https://www.sciencedaily.com/rss/space_time.xml', lang: 'en', icon: 'fa-rocket', desc: 'Space & Time' },
+            { category: 'science', name: 'Physics World', url: 'https://physicsworld.com/feed', lang: 'en', icon: 'fa-atom', desc: 'Physics News' },
+            { category: 'science', name: 'Quanta Magazine', url: 'https://www.quantamagazine.org/feed/', lang: 'en', icon: 'fa-infinity', desc: 'Math & Physics' },
+
+            // ============================================================
+            // 5. WIRTSCHAFT / BUSINESS
+            // ============================================================
+            { category: 'business', name: 'Handelsblatt', url: 'https://www.handelsblatt.com/contentexport/feed/marktberichte', lang: 'de', icon: 'fa-chart-line', desc: 'Marktberichte' },
+            { category: 'business', name: 'Financial Times', url: 'https://www.ft.com/rss/home', lang: 'en', icon: 'fa-chart-line', desc: 'FT Home' },
+            { category: 'business', name: 'Wall Street Journal', url: 'https://feeds.a.dj.com/rss/RSSMarketsMain.xml', lang: 'en', icon: 'fa-chart-line', desc: 'WSJ Markets' },
+            { category: 'business', name: 'Reuters Business', url: 'https://feeds.reuters.com/reuters/businessNews', lang: 'en', icon: 'fa-briefcase', desc: 'Reuters Business' },
+
+            // ============================================================
+            // 6. KULTUR / CULTURE & FEUILLETON
+            // ============================================================
+            { category: 'culture', name: 'Der Standard Kultur', url: 'https://www.derstandard.at/rss/kultur', lang: 'de', icon: 'fa-palette', desc: 'Kultur aus Österreich' },
+            { category: 'culture', name: 'The New Yorker', url: 'https://www.newyorker.com/feed/everything', lang: 'en', icon: 'fa-feather', desc: 'Culture & Essays' },
+            { category: 'culture', name: 'The Atlantic', url: 'https://www.theatlantic.com/feed/all/', lang: 'en', icon: 'fa-book-open', desc: 'Ideas & Culture' },
+
+            // ============================================================
+            // 7. SPORT
+            // ============================================================
+            { category: 'sport', name: 'Kicker', url: 'https://www.kicker.de/news/rss', lang: 'de', icon: 'fa-futbol', desc: 'Fußball News' },
+            { category: 'sport', name: 'Sport1', url: 'https://www.sport1.de/rss', lang: 'de', icon: 'fa-medal', desc: 'Sport News' },
+            { category: 'sport', name: 'ESPN', url: 'https://www.espn.com/espn/rss/news', lang: 'en', icon: 'fa-basketball', desc: 'ESPN News' },
+            { category: 'sport', name: 'BBC Sport', url: 'https://feeds.bbci.co.uk/sport/rss.xml', lang: 'en', icon: 'fa-futbol', desc: 'BBC Sport' },
+
+            // ============================================================
+            // 8. LIFESTYLE & GESUNDHEIT / LIFESTYLE & HEALTH
+            // ============================================================
+            { category: 'lifestyle', name: 'Chip', url: 'https://www.chip.de/rss/chip_de_alles.xml', lang: 'de', icon: 'fa-lightbulb', desc: 'Ratgeber & Tests' },
+            { category: 'lifestyle', name: 'Lifehacker', url: 'https://lifehacker.com/rss', lang: 'en', icon: 'fa-lightbulb', desc: 'Life Hacks & Tips' },
+            { category: 'lifestyle', name: 'Healthline', url: 'https://www.healthline.com/rss/health-news', lang: 'en', icon: 'fa-heart-pulse', desc: 'Health News' },
+
+            // ============================================================
+            // 9. PODCASTS (als RSS)
+            // ============================================================
+            { category: 'podcast', name: 'CRE Podcast', url: 'https://feeds.simplecast.com/54nAGcIl', lang: 'de', icon: 'fa-podcast', desc: 'CRE Podcast' },
+            { category: 'podcast', name: 'Lage der Nation', url: 'https://feeds.lagedernation.org/lagedernation/lagedernation', lang: 'de', icon: 'fa-podcast', desc: 'Politik-Podcast' },
+            { category: 'podcast', name: 'The Daily', url: 'https://feeds.simplecast.com/54nAGcIl', lang: 'en', icon: 'fa-podcast', desc: 'NYT The Daily' },
+
+            // ============================================================
+            // 10. ENTWICKLER / DEVELOPER
+            // ============================================================
+            { category: 'dev', name: 'GitHub Blog', url: 'https://github.blog/feed/', lang: 'en', icon: 'fa-code-branch', desc: 'GitHub Updates' },
+            { category: 'dev', name: 'Stack Overflow Blog', url: 'https://stackoverflow.blog/feed/', lang: 'en', icon: 'fa-stack-overflow', desc: 'SO Blog' },
+            { category: 'dev', name: 'Smashing Magazine', url: 'https://www.smashingmagazine.com/feed/', lang: 'en', icon: 'fa-paint-brush', desc: 'Web Design & Dev' },
+            { category: 'dev', name: 'CSS-Tricks', url: 'https://css-tricks.com/feed/', lang: 'en', icon: 'fa-css3', desc: 'CSS & Frontend' },
+            { category: 'dev', name: 'Android Developers', url: 'https://android-developers.googleblog.com/feeds/posts/default', lang: 'en', icon: 'fa-android', desc: 'Android Dev Blog' },
+            { category: 'dev', name: 'Apple Developer News', url: 'https://developer.apple.com/news/rss/news.rss', lang: 'en', icon: 'fa-apple', desc: 'Apple Dev News' },
+
+            // ============================================================
+            // 11. SICHERHEIT / SECURITY
+            // ============================================================
+            { category: 'security', name: 'Dark Reading', url: 'https://www.darkreading.com/rss.xml', lang: 'en', icon: 'fa-shield-halved', desc: 'Security News' },
+            { category: 'security', name: 'Krebs on Security', url: 'https://krebsonsecurity.com/feed/', lang: 'en', icon: 'fa-lock', desc: 'Security Research' },
+            { category: 'security', name: 'Bleeping Computer', url: 'https://www.bleepingcomputer.com/feed/', lang: 'en', icon: 'fa-bug', desc: 'Security & Malware' },
+        ];
+
+        // ================================================================
+        // CONFIGURATION
+        // ================================================================
+        const CATEGORIES = {
+            news:      { de: 'Nachrichten',  en: 'News',         icon: 'fa-newspaper',       color: '#dc2626' },
+            tech:      { de: 'Technologie',  en: 'Technology',   icon: 'fa-microchip',       color: '#2563eb' },
+            ai:        { de: 'KI',           en: 'AI',           icon: 'fa-brain',           color: '#8b5cf6' },
+            science:   { de: 'Wissenschaft', en: 'Science',      icon: 'fa-flask',           color: '#06b6d4' },
+            business:  { de: 'Wirtschaft',   en: 'Business',     icon: 'fa-chart-line',      color: '#f59e0b' },
+            culture:   { de: 'Kultur',       en: 'Culture',      icon: 'fa-palette',         color: '#ec4899' },
+            sport:     { de: 'Sport',        en: 'Sport',        icon: 'fa-futbol',          color: '#10b981' },
+            lifestyle: { de: 'Lifestyle',    en: 'Lifestyle',    icon: 'fa-lightbulb',       color: '#f97316' },
+            podcast:   { de: 'Podcasts',     en: 'Podcasts',     icon: 'fa-podcast',         color: '#6366f1' },
+            dev:       { de: 'Entwickler',   en: 'Developer',    icon: 'fa-code-branch',     color: '#0ea5e9' },
+            security:  { de: 'Sicherheit',   en: 'Security',     icon: 'fa-shield-halved',   color: '#ef4444' }
+        };
+
+        // CORS proxy fallbacks
+        const CORS_PROXIES = [
+            'https://api.allorigins.win/raw?url=',
+            'https://corsproxy.io/?',
+            'https://api.codetabs.com/v1/proxy/?quest='
+        ];
+
+        // ================================================================
+        // STATE
+        // ================================================================
+        let isGerman = true;
+        let currentCategory = 'news';
+        let currentFeedIndex = null;
+        let articles = [];
+        let currentlySpeaking = null;
+        let ttsRate = 1.0;
+        let autoRead = false;
+        let voices = [];
+        let selectedVoiceURI = null;
+
+        // ================================================================
+        // DOM REFERENCES
+        // ================================================================
+        const audioEl = document.getElementById('tts-audio');
+        const gridEl = document.getElementById('articles-grid');
+        const emptyStateEl = document.getElementById('empty-state');
+        const loadingStateEl = document.getElementById('loading-state');
+        const viewTitleEl = document.getElementById('view-title');
+        const viewSubtitleEl = document.getElementById('view-subtitle');
+        const feedInfoBar = document.getElementById('feed-info-bar');
+        const feedInfoText = document.getElementById('feed-info-text');
+        const playerStatus = document.getElementById('player-status');
+        const playerTitle = document.getElementById('player-title');
+        const playPauseBtn = document.getElementById('btn-play-pause');
+        const playIcon = document.getElementById('play-icon');
+        const visualizer = document.getElementById('visualizer');
+        const ttsStatus = document.getElementById('tts-status');
+        const voiceSelect = document.getElementById('voice-select');
+        const refreshIcon = document.getElementById('refresh-icon');
+
+        // ================================================================
+        // INITIALIZATION
+        // ================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCategoryNav();
+            loadVoices();
+            setupSpeechListeners();
+            // Load default category
+            selectCategory('news');
+        });
+
+        // ================================================================
+        // CATEGORY NAVIGATION
+        // ================================================================
+        function renderCategoryNav() {
+            const nav = document.getElementById('category-nav');
+            nav.innerHTML = '';
+
+            Object.entries(CATEGORIES).forEach(([key, cat]) => {
+                const btn = document.createElement('div');
+                btn.className = `feed-category-btn ${key === currentCategory ? 'active' : ''}`;
+                btn.dataset.category = key;
+                btn.onclick = () => selectCategory(key);
+
+                const feedCount = feedDatabase.filter(f => f.category === key).length;
+                const name = isGerman ? cat.de : cat.en;
+
+                btn.innerHTML = `
+                    <i class="fa-solid ${cat.icon}" style="color: ${cat.color}; width: 1.1rem; text-align: center; font-size: 0.85rem;"></i>
+                    <span class="flex-1 truncate">${name}</span>
+                    <span class="text-[0.6rem] text-[var(--text-muted)] font-mono bg-[var(--code-bg)] px-1.5 py-0.5 rounded">${feedCount}</span>
+                `;
+                nav.appendChild(btn);
+            });
+        }
+
+        function selectCategory(category) {
+            currentCategory = category;
+            currentFeedIndex = null;
+            articles = [];
+            stopTTS();
+
+            // Update nav active state
+            document.querySelectorAll('.feed-category-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.category === category);
+            });
+
+            // Update title
+            const cat = CATEGORIES[category];
+            const name = isGerman ? cat.de : cat.en;
+            viewTitleEl.innerHTML = `<span class="lang-${isGerman ? 'de' : 'en'}">${name}</span>`;
+            viewSubtitleEl.innerHTML = `<span class="lang-${isGerman ? 'de' : 'en'}">${feedDatabase.filter(f => f.category === category).length} Feeds</span>`;
+
+            // Render feed selector
+            renderFeedSelector(category);
+            loadFeedsForCategory(category);
+        }
+
+        // ================================================================
+        // FEED SELECTOR (shows individual feeds in category)
+        // ================================================================
+        function renderFeedSelector(category) {
+            const feeds = feedDatabase.filter(f => f.category === category);
+            const grid = document.getElementById('articles-grid');
+            grid.innerHTML = '';
+
+            // Feed selector cards at top
+            const selectorDiv = document.createElement('div');
+            selectorDiv.className = 'col-span-full mb-4';
+            selectorDiv.innerHTML = `
+                <div class="flex flex-wrap gap-2">
+                    ${feeds.map((feed, idx) => `
+                        <button onclick="selectFeed(${idx})" class="feed-badge hover:border-[var(--link-color)] transition-colors cursor-pointer" data-feed-idx="${idx}">
+                            <i class="fa-solid ${feed.icon}"></i>
+                            ${feed.name}
+                            <span class="text-[0.55rem] opacity-60">${feed.lang.toUpperCase()}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            grid.appendChild(selectorDiv);
+        }
+
+        function selectFeed(idx) {
+            const feeds = feedDatabase.filter(f => f.category === currentCategory);
+            const feed = feeds[idx];
+            if (!feed) return;
+
+            currentFeedIndex = idx;
+            stopTTS();
+
+            // Update active badge
+            document.querySelectorAll('[data-feed-idx]').forEach(b => b.classList.remove('active'));
+            const badge = document.querySelector(`[data-feed-idx="${idx}"]`);
+            if (badge) badge.classList.add('active');
+
+            // Update info bar
+            feedInfoBar.classList.remove('hidden');
+            feedInfoText.innerHTML = `<strong>${feed.name}</strong> — ${feed.desc} <span class="font-mono text-[0.7rem] opacity-60">${feed.url}</span>`;
+
+            // Load articles
+            loadArticles(feed);
+        }
+
+        // ================================================================
+        // FEED LOADING
+        // ================================================================
+        async function loadFeedsForCategory(category) {
+            const feeds = feedDatabase.filter(f => f.category === category);
+            if (feeds.length === 0) return;
+
+            // Load first feed by default
+            selectFeed(0);
+        }
+
+        async function loadArticles(feed) {
+            showLoading(true);
+            gridEl.innerHTML = '';
+
+            try {
+                const xml = await fetchWithProxy(feed.url);
+                const parsed = parseRSS(xml);
+                articles = parsed;
+
+                renderArticles(parsed, feed);
+            } catch (err) {
+                console.error('Failed to load feed:', err);
+                gridEl.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <i class="fa-solid fa-triangle-exclamation text-3xl text-red-400 mb-3"></i>
+                        <p class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Feed konnte nicht geladen werden. CORS-Proxy-Problem möglich.</span>
+                            <span class="lang-en">Could not load feed. Possible CORS proxy issue.</span>
+                        </p>
+                        <p class="text-[0.7rem] text-[var(--text-muted)] mt-2 font-mono">${feed.url}</p>
+                        <button onclick="loadArticles(feedDatabase.find(f => f.url === '${feed.url}'))" class="mt-4 px-4 py-2 bg-[var(--panel-color)] border border-[var(--panel-border)] rounded-lg text-xs font-semibold hover:border-[var(--link-color)] transition-colors">
+                            <i class="fa-solid fa-rotate mr-1"></i> Retry
+                        </button>
+                    </div>
+                `;
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function fetchWithProxy(url) {
+            let lastError = null;
+            for (const proxy of CORS_PROXIES) {
+                try {
+                    const proxyUrl = proxy + encodeURIComponent(url);
+                    const response = await fetch(proxyUrl, {
+                        headers: { 'Accept': 'application/rss+xml, application/xml, text/xml, */*' }
+                    });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const text = await response.text();
+                    if (text && text.length > 100) return text;
+                } catch (e) {
+                    lastError = e;
+                    continue;
+                }
+            }
+            throw lastError || new Error('All proxies failed');
+        }
+
+        // ================================================================
+        // RSS PARSER
+        // ================================================================
+        function parseRSS(xmlText) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xmlText, 'text/xml');
+
+            // Check for parse errors
+            const parseError = doc.querySelector('parsererror');
+            if (parseError) throw new Error('XML parse error');
+
+            // Try RSS 2.0
+            const items = doc.querySelectorAll('item');
+            if (items.length > 0) {
+                return Array.from(items).slice(0, 30).map(item => ({
+                    title: getText(item, 'title'),
+                    link: getText(item, 'link'),
+                    description: getText(item, 'description'),
+                    pubDate: getText(item, 'pubDate') || getText(item, 'dc\\:date'),
+                    author: getText(item, 'author') || getText(item, 'dc\\:creator'),
+                }));
+            }
+
+            // Try Atom
+            const entries = doc.querySelectorAll('entry');
+            if (entries.length > 0) {
+                return Array.from(entries).slice(0, 30).map(entry => ({
+                    title: getText(entry, 'title'),
+                    link: getAtomLink(entry),
+                    description: getText(entry, 'summary') || getText(entry, 'content'),
+                    pubDate: getText(entry, 'updated') || getText(entry, 'published'),
+                    author: getText(entry, 'name') || getText(entry, 'author > name'),
+                }));
+            }
+
+            return [];
+        }
+
+        function getText(parent, selector) {
+            const el = parent.querySelector(selector);
+            return el ? el.textContent.trim() : '';
+        }
+
+        function getAtomLink(entry) {
+            const links = entry.querySelectorAll('link');
+            for (const link of links) {
+                if (link.getAttribute('rel') === 'alternate' || !link.getAttribute('rel')) {
+                    return link.getAttribute('href') || '';
+                }
+            }
+            return '';
+        }
+
+        // ================================================================
+        // ARTICLE RENDERING
+        // ================================================================
+        function renderArticles(articles, feed) {
+            gridEl.innerHTML = '';
+
+            // Feed selector header
+            const feeds = feedDatabase.filter(f => f.category === currentCategory);
+            const selectorDiv = document.createElement('div');
+            selectorDiv.className = 'col-span-full mb-4';
+            selectorDiv.innerHTML = `
+                <div class="flex flex-wrap gap-2">
+                    ${feeds.map((f, idx) => `
+                        <button onclick="selectFeed(${idx})" class="feed-badge hover:border-[var(--link-color)] transition-colors cursor-pointer ${idx === currentFeedIndex ? 'active' : ''}" data-feed-idx="${idx}">
+                            <i class="fa-solid ${f.icon}"></i>
+                            ${f.name}
+                            <span class="text-[0.55rem] opacity-60">${f.lang.toUpperCase()}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            gridEl.appendChild(selectorDiv);
+
+            if (articles.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'col-span-full text-center py-12';
+                empty.innerHTML = `
+                    <i class="fa-solid fa-inbox text-3xl text-[var(--text-muted)] mb-3 opacity-50"></i>
+                    <p class="text-[var(--text-muted)] text-sm">Keine Artikel gefunden.</p>
+                `;
+                gridEl.appendChild(empty);
+                return;
+            }
+
+            articles.forEach((article, idx) => {
+                const card = document.createElement('div');
+                card.className = 'article-card';
+                card.dataset.articleIdx = idx;
+                card.onclick = () => openArticle(idx);
+
+                const date = article.pubDate ? formatDate(article.pubDate) : '';
+                const summary = stripHTML(article.description).substring(0, 200);
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0 flex-1">
+                            <div class="article-meta">${date}</div>
+                            <div class="article-title">${escapeHTML(article.title)}</div>
+                            <div class="article-summary">${escapeHTML(summary)}</div>
+                        </div>
+                        <button class="tts-btn flex-shrink-0" onclick="event.stopPropagation(); speakArticle(${idx})" title="Vorlesen">
+                            <i class="fa-solid fa-volume-high"></i>
+                        </button>
+                    </div>
+                `;
+                gridEl.appendChild(card);
+            });
+        }
+
+        function openArticle(idx) {
+            const article = articles[idx];
+            if (!article) return;
+
+            // Highlight active card
+            document.querySelectorAll('.article-card').forEach(c => c.classList.remove('active'));
+            const card = document.querySelector(`[data-article-idx="${idx}"]`);
+            if (card) card.classList.add('active');
+
+            // Update player
+            playerTitle.textContent = article.title;
+            playerStatus.innerHTML = '<span class="lang-de">Bereit</span><span class="lang-en">Ready</span>';
+            playPauseBtn.disabled = false;
+
+            // Open link in new tab
+            if (article.link) {
+                window.open(article.link, '_blank');
+            }
+
+            // Auto-read if enabled
+            if (autoRead) {
+                speakArticle(idx);
+            }
+        }
+
+        // ================================================================
+        // TEXT-TO-SPEECH (Web Speech API with Zira voices)
+        // ================================================================
+        function loadVoices() {
+            if (!('speechSynthesis' in window)) {
+                ttsStatus.textContent = 'TTS nicht unterstützt';
+                return;
+            }
+
+            voices = speechSynthesis.getVoices();
+
+            // If voices aren't loaded yet, wait for the event
+            if (voices.length === 0) {
+                speechSynthesis.onvoiceschanged = () => {
+                    voices = speechSynthesis.getVoices();
+                    populateVoiceSelect();
+                };
+            } else {
+                populateVoiceSelect();
+            }
+        }
+
+        function populateVoiceSelect() {
+            voiceSelect.innerHTML = '';
+
+            // Filter for relevant voices: German and English, prefer Zira
+            const relevantVoices = voices.filter(v =>
+                v.lang.startsWith('de') || v.lang.startsWith('en')
+            );
+
+            // Sort: Zira first, then German, then English
+            relevantVoices.sort((a, b) => {
+                const aZira = a.name.toLowerCase().includes('zira') ? 1 : 0;
+                const bZira = b.name.toLowerCase().includes('zira') ? 1 : 0;
+                if (aZira !== bZira) return bZira - aZira;
+
+                const aDe = a.lang.startsWith('de') ? 1 : 0;
+                const bDe = b.lang.startsWith('de') ? 1 : 0;
+                if (aDe !== bDe) return bDe - aDe;
+
+                return a.name.localeCompare(b.name);
+            });
+
+            // Add default option
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = isGerman ? 'Standard (Zira)' : 'Default (Zira)';
+            voiceSelect.appendChild(defaultOpt);
+
+            relevantVoices.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.voiceURI;
+                const isZira = v.name.toLowerCase().includes('zira');
+                const langLabel = v.lang.startsWith('de') ? 'DE' : 'EN';
+                opt.textContent = `${v.name} (${langLabel})${isZira ? ' ★' : ''}`;
+                if (v.default && !selectedVoiceURI) {
+                    selectedVoiceURI = v.voiceURI;
+                    opt.selected = true;
+                }
+                voiceSelect.appendChild(opt);
+            });
+
+            // Try to auto-select Zira
+            if (!selectedVoiceURI) {
+                const ziraVoice = relevantVoices.find(v => v.name.toLowerCase().includes('zira'));
+                if (ziraVoice) {
+                    selectedVoiceURI = ziraVoice.voiceURI;
+                    voiceSelect.value = ziraVoice.voiceURI;
+                }
+            }
+
+            voiceSelect.onchange = () => {
+                selectedVoiceURI = voiceSelect.value;
+            };
+        }
+
+        function speakArticle(idx) {
+            const article = articles[idx];
+            if (!article) return;
+
+            // If already speaking this, toggle
+            if (currentlySpeaking === idx) {
+                stopTTS();
+                return;
+            }
+
+            stopTTS();
+
+            if (!('speechSynthesis' in window)) {
+                ttsStatus.textContent = 'TTS nicht unterstützt';
+                return;
+            }
+
+            const utterance = new SpeechSynthesisUtterance();
+
+            // Build text: title + summary
+            const textParts = [article.title];
+            if (article.description) {
+                const cleanDesc = stripHTML(article.description);
+                if (cleanDesc && cleanDesc !== article.title) {
+                    textParts.push(cleanDesc);
+                }
+            }
+            utterance.text = textParts.join('. ');
+
+            // Voice selection
+            if (selectedVoiceURI) {
+                const voice = voices.find(v => v.voiceURI === selectedVoiceURI);
+                if (voice) utterance.voice = voice;
+            }
+
+            // Language detection
+            const hasGerman = /[äöüßÄÖÜ]/.test(utterance.text) ||
+                /\b(der|die|das|und|ist|mit|von|den|dem|des|ein|eine|einer|eines|nicht|auch|sich|wird|sind|hat|haben|werden|kann|können|muss|müssen|soll|sollen|darf|dürfen)\b/i.test(utterance.text);
+
+            if (utterance.voice) {
+                // Use voice's language
+            } else {
+                utterance.lang = hasGerman ? 'de-DE' : 'en-US';
+            }
+
+            utterance.rate = ttsRate;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+
+            // Event handlers
+            utterance.onstart = () => {
+                currentlySpeaking = idx;
+                updateTTSState(true);
+                updateCardSpeakingState(idx, true);
+                ttsStatus.textContent = isGerman ? '🔊 Wird vorgelesen...' : '🔊 Speaking...';
+            };
+
+            utterance.onend = () => {
+                currentlySpeaking = null;
+                updateTTSState(false);
+                updateCardSpeakingState(idx, false);
+                ttsStatus.textContent = '';
+            };
+
+            utterance.onerror = (e) => {
+                console.error('TTS error:', e);
+                currentlySpeaking = null;
+                updateTTSState(false);
+                updateCardSpeakingState(idx, false);
+                ttsStatus.textContent = 'TTS Fehler';
+            };
+
+            speechSynthesis.cancel();
+            speechSynthesis.speak(utterance);
+        }
+
+        function stopTTS() {
+            if ('speechSynthesis' in window) {
+                speechSynthesis.cancel();
+            }
+            currentlySpeaking = null;
+            updateTTSState(false);
+            document.querySelectorAll('.article-card').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tts-btn').forEach(b => b.classList.remove('speaking'));
+            ttsStatus.textContent = '';
+        }
+
+        function updateTTSState(playing) {
+            if (playing) {
+                playPauseBtn.classList.remove('paused');
+                playIcon.className = 'fa-solid fa-pause';
+                visualizer.classList.add('is-playing');
+                visualizer.querySelectorAll('.eq-bar').forEach(bar => {
+                    bar.style.opacity = '1';
+                    bar.style.animation = 'equalizer 1s ease-in-out infinite';
+                });
+            } else {
+                playPauseBtn.classList.add('paused');
+                playIcon.className = 'fa-solid fa-play ml-0.5';
+                visualizer.classList.remove('is-playing');
+                visualizer.querySelectorAll('.eq-bar').forEach(bar => {
+                    bar.style.opacity = '0.2';
+                    bar.style.animation = 'none';
+                });
+            }
+        }
+
+        function updateCardSpeakingState(idx, speaking) {
+            const card = document.querySelector(`[data-article-idx="${idx}"]`);
+            if (!card) return;
+            const btn = card.querySelector('.tts-btn');
+            if (btn) btn.classList.toggle('speaking', speaking);
+            if (speaking) card.classList.add('active');
+            else card.classList.remove('active');
+        }
+
+        function updateTTSRate(val) {
+            ttsRate = parseFloat(val);
+        }
+
+        function toggleAutoRead(checked) {
+            autoRead = checked;
+        }
+
+        function togglePlayPause() {
+            if (currentlySpeaking !== null) {
+                stopTTS();
+            } else if (articles.length > 0) {
+                // Speak the first article or the last opened one
+                speakArticle(0);
+            }
+        }
+
+        // ================================================================
+        // UTILITY FUNCTIONS
+        // ================================================================
+        function stripHTML(html) {
+            if (!html) return '';
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || '';
+        }
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function formatDate(dateStr) {
+            try {
+                const date = new Date(dateStr);
+                if (isNaN(date.getTime())) return dateStr;
+                return date.toLocaleDateString(isGerman ? 'de-DE' : 'en-US', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch {
+                return dateStr;
+            }
+        }
+
+        function showLoading(show) {
+            loadingStateEl.classList.toggle('hidden', !show);
+            gridEl.classList.toggle('hidden', show);
+        }
+
+        function refreshFeeds() {
+            refreshIcon.classList.add('fa-spin');
+            if (currentFeedIndex !== null) {
+                const feeds = feedDatabase.filter(f => f.category === currentCategory);
+                const feed = feeds[currentFeedIndex];
+                if (feed) {
+                    loadArticles(feed).finally(() => {
+                        refreshIcon.classList.remove('fa-spin');
+                    });
+                }
+            } else {
+                selectCategory(currentCategory);
+                refreshIcon.classList.remove('fa-spin');
+            }
+        }
+
+        function filterFeeds() {
+            const query = document.getElementById('feed-search').value.toLowerCase();
+            const items = document.querySelectorAll('.feed-category-btn');
+            items.forEach(btn => {
+                const cat = btn.dataset.category;
+                const catName = (isGerman ? CATEGORIES[cat].de : CATEGORIES[cat].en).toLowerCase();
+                btn.style.display = catName.includes(query) ? '' : 'none';
+            });
+        }
+
+        // ================================================================
+        // SPEECH EVENT LISTENERS
+        // ================================================================
+        function setupSpeechListeners() {
+            // Ensure voices are loaded
+            if ('speechSynthesis' in window) {
+                speechSynthesis.getVoices();
+            }
+        }
+
+        // ================================================================
+        // THEME TOGGLE
+        // ================================================================
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('light')) {
+                html.classList.remove('light');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        // ================================================================
+        // LANGUAGE TOGGLE
+        // ================================================================
+        function toggleLang() {
+            isGerman = !isGerman;
+            const indicator = document.getElementById('lang-indicator');
+            indicator.textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+
+            // Re-render dynamic content
+            renderCategoryNav();
+            selectCategory(currentCategory);
+
+            // Update player text
+            if (currentlySpeaking !== null) {
+                playerStatus.innerHTML = '<span class="lang-de">Wird vorgelesen...</span><span class="lang-en">Speaking...</span>';
+            } else {
+                playerStatus.innerHTML = '<span class="lang-de">Bereit</span><span class="lang-en">Ready</span>';
+            }
+
+            // Update TTS status
+            if (ttsStatus.textContent.includes('Wird vorgelesen') || ttsStatus.textContent.includes('Speaking')) {
+                ttsStatus.textContent = isGerman ? '🔊 Wird vorgelesen...' : '🔊 Speaking...';
+            }
+        }
+
+        // ================================================================
+        // DOWNLOAD HTML
+        // ================================================================
+        function downloadHTML() {
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'RSS_Reader.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
