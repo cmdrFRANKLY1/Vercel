@@ -56,6 +56,10 @@
             --card-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.3), 0 0 4px 0 rgba(0, 0, 0, 0.2);
             --card-shadow-hover: 0 0 20px 0 rgba(0, 0, 0, 0.4), 0 0 8px 0 rgba(0, 0, 0, 0.3);
             --panel-border: #54595d;
+
+            /* Layout tuning for large (maximized 1080p) viewports */
+            --content-max: 1600px;
+            --sidebar-w: 20rem; /* 320px */
         }
 
         html.light {
@@ -80,23 +84,56 @@
             --panel-border: #e2e8f0;
         }
 
+        html { font-size: 16px; }
+
+        /* When the viewport is large (maximized window ~1900px wide),
+           scale the whole document up slightly so nothing looks tiny. */
+        @media (min-width: 1536px)  { html { font-size: 17px; } }
+        @media (min-width: 1800px)  { html { font-size: 18px; } }
+
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
             font-family: 'Inter', sans-serif;
-            line-height: 1.6;
+            line-height: 1.65;
             transition: background-color 0.2s, color 0.2s;
+            overflow-x: hidden;
         }
 
-        h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 800 !important; }
-        h1 { font-size: 3.5rem !important; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
-        h2 { font-size: 2.25rem !important; margin-bottom: 1rem; }
-        h3 { font-size: 1.85rem !important; margin-top: 1.5rem; margin-bottom: 0.75rem; }
-        h4 { font-size: 1.5rem !important; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+        /* ---------- Fluid, viewport-aware typography ---------- */
+        h1, h2, h3, h4 {
+            font-family: 'Lora', serif;
+            color: var(--heading-color);
+            font-weight: 800 !important;
+            line-height: 1.15;
+            text-wrap: balance;
+        }
+        h1 {
+            font-size: clamp(2.1rem, 3vw, 3.1rem) !important;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        h2 {
+            font-size: clamp(1.6rem, 2.1vw, 2.15rem) !important;
+            padding-bottom: 0.4rem;
+            margin-top: 0;
+            margin-bottom: 1.25rem;
+        }
+        h3 {
+            font-size: clamp(1.25rem, 1.5vw, 1.6rem) !important;
+            margin-top: 1.25rem;
+            margin-bottom: 0.7rem;
+        }
+        h4 {
+            font-size: clamp(1.1rem, 1.2vw, 1.35rem) !important;
+            margin-top: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
 
         a { color: var(--link-color); text-decoration: none; cursor: pointer; }
         a:hover { color: var(--link-hover); text-decoration: underline; }
-        p { margin-bottom: 1rem; }
+        p { margin-bottom: 1rem; max-width: 90ch; }
 
         code {
             background-color: var(--code-bg);
@@ -110,16 +147,19 @@
 
         .wikitable {
             width: 100%; border-collapse: collapse; margin: 1em 0;
-            background-color: var(--bg-color); font-size: 0.9em;
+            background-color: var(--bg-color); font-size: 0.95em;
             border-radius: 0.5rem;
             overflow: hidden;
             border: 1px solid var(--panel-border);
+            table-layout: auto;
         }
         .wikitable th, .wikitable td {
-            border: 1px solid var(--panel-border); padding: 0.75rem 1rem;
+            border: 1px solid var(--panel-border); padding: 0.7em 0.95em;
             text-align: left; vertical-align: top;
+            overflow-wrap: break-word;
+            word-break: normal;
         }
-        .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); }
+        .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); font-size: 0.95em; letter-spacing: 0.01em; }
         .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
 
         .toc-link.active { font-weight: 600; color: var(--link-color); position: relative; }
@@ -135,6 +175,26 @@
 
         .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
 
+        /* ---------- Layout helpers ---------- */
+        .app-sidebar {
+            width: var(--sidebar-w);
+            max-height: 50vh;
+        }
+        @media (min-width: 1024px) {
+            .app-sidebar { max-height: 100vh; }
+        }
+
+        .app-main {
+            flex: 1 1 0%;
+            min-width: 0;
+            width: 100%;
+            max-width: var(--content-max);
+            padding: 1rem;
+        }
+        @media (min-width: 1024px) { .app-main { padding: 1.5rem; } }
+        @media (min-width: 1280px) { .app-main { padding: 2rem; } }
+        @media (min-width: 1600px) { .app-main { padding: 2.25rem 2.5rem; } }
+
         /* Panel enclosing the whole topic */
         .topic-panel {
             background-color: var(--panel-color);
@@ -146,7 +206,7 @@
             transition: box-shadow 0.3s ease;
         }
         @media (min-width: 1024px) {
-            .topic-panel { padding: 2.5rem; }
+            .topic-panel { padding: 2.25rem; }
         }
         .topic-panel:hover {
             box-shadow: var(--card-shadow-hover);
@@ -194,7 +254,7 @@
 </head>
 <body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
 
-    <aside class="lg:w-80 flex-shrink-0 bg-[var(--sidebar-color)] border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative shadow-lg transition-colors">
+    <aside class="app-sidebar flex-shrink-0 bg-[var(--sidebar-color)] border-b lg:border-b-0 lg:border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative shadow-lg transition-colors">
         
         <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
             <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
@@ -276,7 +336,7 @@
         </nav>
     </aside>
 
-    <main class="flex-grow p-4 lg:p-12 max-w-5xl lg:ml-0" id="main-content">
+    <main class="app-main" id="main-content">
         
         <div class="searchable-block topic-panel mt-0 mb-8">
             <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0">
