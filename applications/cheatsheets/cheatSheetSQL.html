@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database & SQL Cheatsheet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- LaTeX Support via KaTeX (Retained for Relational Algebra compatibility) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #202122;
+            --border-color: #54595d;
+            --text-color: #eaecf0;
+            --text-muted: #a8aeb3;
+            --link-color: #a78bfa; /* Violet for SQL */
+            --link-hover: #c4b5fd;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --code-block-bg: #111213;
+            --info-box: #2c2d30;
+            --table-alt: rgba(255,255,255,0.02);
+            --search-match: rgba(167, 139, 250, 0.3);
+            --search-text: #ffffff;
+
+            /* Database Colors */
+            --c-table-a: #3b82f6; /* Blue */
+            --c-table-b: #f59e0b; /* Orange */
+            --c-intersect: #a78bfa; /* Violet */
+
+            /* Layout tuning */
+            --content-max: 1600px;
+            --sidebar-w: 20rem;
+
+            /* Shadows */
+            --panel-border: #54595d;
+            --card-shadow:
+                0 0 22px 0 rgba(0, 0, 0, 0.55),
+                0 0 10px 0 rgba(0, 0, 0, 0.45),
+                0 4px 24px 0 rgba(0, 0, 0, 0.35);
+            --card-shadow-hover:
+                0 0 40px 0 rgba(0, 0, 0, 0.7),
+                0 0 18px 0 rgba(0, 0, 0, 0.55),
+                0 8px 36px 0 rgba(0, 0, 0, 0.45);
+        }
+
+        html.light {
+            --bg-color: #f4f6f9;
+            --panel-color: #ffffff;
+            --sidebar-color: #ffffff;
+            --border-color: #cbd5e1;
+            --text-color: #0f172a;
+            --text-muted: #475569;
+            --link-color: #7c3aed; /* Violet for SQL */
+            --link-hover: #5b21b6;
+            --heading-color: #020617;
+            --code-bg: #e2e8f0;
+            --code-block-bg: #f8fafc;
+            --info-box: #f3e8ff;
+            --table-alt: rgba(0,0,0,0.015);
+            --search-match: rgba(124, 58, 237, 0.2);
+            --search-text: #000000;
+
+            --panel-border: #e2e8f0;
+            --card-shadow:
+                0 0 28px 0 rgba(0, 0, 0, 0.18),
+                0 0 12px 0 rgba(0, 0, 0, 0.12),
+                0 4px 24px 0 rgba(0, 0, 0, 0.10);
+            --card-shadow-hover:
+                0 0 48px 0 rgba(0, 0, 0, 0.28),
+                0 0 22px 0 rgba(0, 0, 0, 0.20),
+                0 8px 36px 0 rgba(0, 0, 0, 0.16);
+        }
+
+        html { font-size: 16px; }
+        @media (min-width: 1536px)  { html { font-size: 17px; } }
+        @media (min-width: 1800px)  { html { font-size: 18px; } }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.65;
+            transition: background-color 0.2s, color 0.2s;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Lora', serif;
+            color: var(--heading-color);
+            font-weight: 800 !important;
+            line-height: 1.15;
+            text-wrap: balance;
+        }
+        h1 { font-size: clamp(2.1rem, 3vw, 3.1rem) !important; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+        h2 { font-size: clamp(1.6rem, 2.1vw, 2.15rem) !important; padding-bottom: 0.4rem; margin-top: 0; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); }
+        h3 { font-size: clamp(1.25rem, 1.5vw, 1.6rem) !important; margin-top: 1.25rem; margin-bottom: 0.7rem; }
+        h4 { font-size: clamp(1.1rem, 1.2vw, 1.35rem) !important; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+        p { margin-bottom: 1rem; max-width: 90ch; }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--heading-color);
+        }
+
+        pre code {
+            display: block;
+            background-color: var(--code-block-bg);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--panel-border);
+            overflow-x: auto;
+            color: var(--text-color);
+            line-height: 1.5;
+            margin: 1rem 0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .sql-keyword { color: var(--link-color); font-weight: bold; }
+        .sql-string { color: #10b981; }
+        .sql-func { color: #3b82f6; }
+
+        /* Tables */
+        .wikitable {
+            width: 100%; border-collapse: collapse; margin: 1em 0;
+            background-color: var(--bg-color); font-size: 0.95em;
+            border: 1px solid var(--panel-border); border-radius: 0.5rem;
+            overflow: hidden; table-layout: auto;
+        }
+        .wikitable th, .wikitable td { border: 1px solid var(--panel-border); padding: 0.7em 0.95em; text-align: left; vertical-align: top; }
+        .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); }
+        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
+
+        .toc-link.active { font-weight: 600; color: var(--heading-color); position: relative; }
+        .toc-link.active::before { content: ''; position: absolute; left: -1rem; top: 0; height: 100%; width: 3px; background-color: var(--link-color); }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
+
+        .app-sidebar { width: var(--sidebar-w); max-height: 50vh; }
+        @media (min-width: 1024px) { .app-sidebar { max-height: 100vh; } }
+
+        .app-main { flex: 1 1 0%; min-width: 0; width: 100%; max-width: var(--content-max); padding: 1rem; }
+        @media (min-width: 1024px) { .app-main { padding: 1.5rem; } }
+        @media (min-width: 1280px) { .app-main { padding: 2rem; } }
+        @media (min-width: 1600px) { .app-main { padding: 2.25rem 2.5rem; } }
+
+        /* Cards */
+        .topic-panel { background-color: var(--panel-color); border: 1px solid var(--panel-border); box-shadow: var(--card-shadow); border-radius: 1rem; padding: 1.5rem; margin: 2rem 0; transition: box-shadow 0.3s ease; }
+        @media (min-width: 1024px) { .topic-panel { padding: 2.25rem; } }
+        .topic-panel:hover { box-shadow: var(--card-shadow-hover); }
+        .topic-panel.mt-0 { margin-top: 0; }
+        .topic-panel.mb-8 { margin-bottom: 2rem; }
+        .topic-panel.mb-20 { margin-bottom: 5rem; }
+
+        .subtopic-card { background-color: var(--bg-color); border: 1px solid var(--panel-border); border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem; transition: box-shadow 0.2s ease, transform 0.2s ease; }
+        .subtopic-card:last-child { margin-bottom: 0; }
+        .subtopic-card:hover { box-shadow: var(--card-shadow); transform: translateY(-2px); }
+        .subtopic-card > h3:first-child { margin-top: 0; }
+
+        .panel-intro { margin-bottom: 1.5rem; color: var(--text-color); }
+        .math-card { background-color: var(--panel-color); border: 1px solid var(--panel-border); border-radius: 0.5rem; padding: 1.25rem; margin: 1rem 0; }
+        
+        /* Buttons & Simulation Specifics */
+        .btn-primary { background-color: var(--link-color); color: #fff; transition: transform 0.1s, opacity 0.2s; border: none; }
+        html:not(.light) .btn-primary { color: #fff; }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(1px); }
+
+        .btn-secondary { background-color: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); transition: all 0.2s; }
+        .btn-secondary:hover { background-color: var(--info-box); border-color: var(--link-color); }
+        
+        #canvas-wrapper { position: relative; width: 100%; height: 100%; }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* Language Toggle Classes */
+        .lang-en { display: none; }
+        body[data-active-lang="en"] .lang-de { display: none !important; }
+        body[data-active-lang="en"] .lang-en { display: block !important; }
+        body[data-active-lang="en"] span.lang-en, body[data-active-lang="en"] a.lang-en { display: inline !important; }
+        body[data-active-lang="de"] .lang-en { display: none !important; }
+        body[data-active-lang="de"] .lang-de { display: block !important; }
+        body[data-active-lang="de"] span.lang-de, body[data-active-lang="de"] a.lang-de { display: inline !important; }
+        [data-lang-de], [data-lang-en] { transition: opacity 0.15s ease-in-out; }
+    </style>
+</head>
+<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
+
+    <aside class="app-sidebar flex-shrink-0 bg-[var(--sidebar-color)] border-b lg:border-b-0 lg:border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
+        
+        <!-- Controls -->
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
+                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Cheatsheet">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+            <i class="fa-solid fa-database text-3xl mb-3 text-[var(--text-color)] opacity-80"></i>
+            <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span class="lang-de">Datenbanken &<br>SQL</span>
+                <span class="lang-en">Databases &<br>SQL</span>
+            </div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v2.0 - Data Engineering</div>
+        </div>
+
+        <div class="mb-6 relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
+            </div>
+            <input type="text" id="wikiSearch" placeholder="Search..." class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-xl pl-10 pr-3 py-2.5 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-all shadow-sm" onkeyup="filterWiki()">
+        </div>
+
+        <nav class="text-sm space-y-1.5" id="toc-nav">
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span class="lang-de">Inhaltsverzeichnis</span>
+                <span class="lang-en">Table of Contents</span>
+            </div>
+            <ul class="space-y-1">
+                <li><a href="#simulation" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors mb-2">
+                    <i class="fa-solid fa-play-circle mr-1"></i>
+                    <span class="lang-de">Interaktive Joins</span><span class="lang-en">Interactive Joins</span>
+                </a></li>
+                <li><a href="#grundlagen" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">1. Grundlagen</span><span class="lang-en">1. Fundamentals</span>
+                </a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#rdbms" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors">
+                            <span class="lang-de">1.1 Das RDBMS</span><span class="lang-en">1.1 The RDBMS</span>
+                        </a></li>
+                        <li><a href="#schluessel" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors">
+                            <span class="lang-de">1.2 Primär- & Fremdschlüssel</span><span class="lang-en">1.2 Keys (PK & FK)</span>
+                        </a></li>
+                    </ul>
+                </li>
+                <li class="pt-2"><a href="#ddl" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">2. DDL (Struktur)</span><span class="lang-en">2. DDL (Structure)</span>
+                </a></li>
+                <li class="pt-2"><a href="#dml" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">3. DML (Manipulation)</span><span class="lang-en">3. DML (Manipulation)</span>
+                </a></li>
+                <li class="pt-2"><a href="#dql" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">4. DQL (Abfragen)</span><span class="lang-en">4. DQL (Querying)</span>
+                </a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="app-main" id="main-content">
+        <!-- Intro panel -->
+        <div class="searchable-block topic-panel mt-0 mb-8">
+            <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0">
+                <span class="lang-de">Datenbanken & SQL</span>
+                <span class="lang-en">Databases & SQL</span>
+            </h1>
+            <p class="text-lg mb-0">
+                <span class="lang-de"><strong>SQL (Structured Query Language)</strong> ist die Standard-Sprache zur Kommunikation mit relationalen Datenbanken. Sie ermöglicht es uns, Datenstrukturen zu definieren (DDL), Daten zu manipulieren (DML) und komplexe Abfragen zu stellen (DQL), um Erkenntnisse aus Rohdaten zu gewinnen.</span>
+                <span class="lang-en"><strong>SQL (Structured Query Language)</strong> is the standard language for communicating with relational databases. It allows us to define data structures (DDL), manipulate data (DML), and perform complex queries (DQL) to extract insights from raw data.</span>
+            </p>
+        </div>
+
+        <!-- INTERACTIVE SIMULATION -->
+        <section id="simulation" class="scroll-mt-10 searchable-block topic-panel mb-8 !p-0 overflow-hidden border-2 border-[var(--border-color)]">
+            <div class="p-5 border-b border-[var(--border-color)] bg-[var(--panel-color)]">
+                <h2 class="!mt-0 !mb-1 text-[var(--link-color)] border-none">
+                    <i class="fa-solid fa-object-group mr-2"></i>
+                    <span class="lang-de">Interaktiver Visualizer: SQL Joins</span>
+                    <span class="lang-en">Interactive Visualizer: SQL Joins</span>
+                </h2>
+                <p class="text-sm text-[var(--text-muted)] !mb-0">
+                    <span class="lang-de">Verstehe, wie verschiedene JOIN-Arten Daten aus zwei Tabellen zusammenführen.</span>
+                    <span class="lang-en">Understand how different types of JOINs merge data from two tables.</span>
+                </p>
+            </div>
+            
+            <div class="flex flex-col-reverse lg:flex-row h-[750px] lg:h-[550px] bg-[var(--bg-color)] relative w-full">
+                
+                <!-- Left: Explanation & Controls -->
+                <div class="w-full lg:w-[380px] flex-shrink-0 bg-[var(--panel-color)] border-t lg:border-t-0 lg:border-r border-[var(--border-color)] flex flex-col h-auto lg:h-full z-10 p-5 overflow-y-auto">
+                    
+                    <div class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">
+                        <span class="lang-de">Modus</span><span class="lang-en">Mode</span> 
+                        <span id="step-counter" class="text-[var(--heading-color)]">1</span> / 5
+                    </div>
+
+                    <h4 id="phase-title" class="text-xl text-[var(--link-color)] border-b border-[var(--border-color)] pb-2 mb-3 mt-0">
+                        <!-- Injected by JS -->
+                    </h4>
+
+                    <div id="phase-desc" class="text-sm text-[var(--text-color)] leading-relaxed flex-grow min-h-[90px]">
+                         <!-- Injected by JS -->
+                    </div>
+
+                    <!-- SQL Code Display -->
+                    <div class="mt-2 mb-4 border border-[var(--border-color)] rounded-md bg-[var(--code-block-bg)] p-3">
+                        <pre class="!m-0 !p-0 !bg-transparent !border-none !shadow-none text-xs"><code id="sql-display">
+                        </code></pre>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="flex gap-2 mt-auto pt-4 border-t border-[var(--border-color)]">
+                        <button onclick="prevPhase()" class="btn-secondary px-3 py-2 rounded-lg font-semibold text-sm flex-1">
+                            <i class="fa-solid fa-arrow-left mr-1"></i> <span class="lang-de">Zurück</span><span class="lang-en">Back</span>
+                        </button>
+                        <button onclick="nextPhase()" class="btn-primary px-3 py-2 rounded-lg font-semibold text-sm flex-1 shadow-sm">
+                            <span class="lang-de">Weiter</span><span class="lang-en">Next</span> <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: Canvas -->
+                <div id="canvas-wrapper" class="flex-grow relative h-full min-h-[300px]">
+                    <canvas id="simCanvas"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 1 -->
+        <section id="grundlagen" class="scroll-mt-10 searchable-block topic-panel mt-8">
+            <h2>
+                <span class="lang-de">1. Grundkonzepte</span>
+                <span class="lang-en">1. Core Concepts</span>
+            </h2>
+
+            <div class="subtopic-card">
+                <h3 id="rdbms" class="scroll-mt-10">
+                    <span class="lang-de">1.1 Relationale Datenbanken (RDBMS)</span>
+                    <span class="lang-en">1.1 Relational Databases (RDBMS)</span>
+                </h3>
+                <p>
+                    <span class="lang-de">Ein Relationales Datenbankmanagementsystem speichert Daten in Form von <strong>Tabellen</strong> (Relationen). Jede Tabelle besteht aus Spalten (Attribute) und Zeilen (Datensätze). Tabellen können über gemeinsame Felder miteinander verknüpft (relatiert) werden.</span>
+                    <span class="lang-en">A Relational Database Management System stores data in the form of <strong>tables</strong> (relations). Each table consists of columns (attributes) and rows (records). Tables can be linked (related) to each other using shared fields.</span>
+                </p>
+                <div class="flex gap-2 text-3xl text-[var(--text-muted)] mt-4">
+                    <i class="fa-solid fa-server"></i>
+                    <i class="fa-solid fa-arrow-right-arrow-left text-sm self-center"></i>
+                    <i class="fa-solid fa-table"></i>
+                </div>
+            </div>
+
+            <div class="subtopic-card">
+                <h3 id="schluessel" class="scroll-mt-10">
+                    <span class="lang-de">1.2 Primär- & Fremdschlüssel</span>
+                    <span class="lang-en">1.2 Primary & Foreign Keys</span>
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    <div class="math-card my-0">
+                        <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                            <i class="fa-solid fa-key text-[var(--c-table-a)] mr-2"></i>
+                            <span class="lang-de">Primärschlüssel (Primary Key)</span><span class="lang-en">Primary Key (PK)</span>
+                        </h4>
+                        <p class="text-sm text-[var(--text-muted)] mt-2 mb-0">
+                            <span class="lang-de">Ein eindeutiger Identifikator für jeden Datensatz in einer Tabelle. Darf niemals `NULL` sein und muss einzigartig (UNIQUE) sein. (z.B. `user_id`).</span>
+                            <span class="lang-en">A unique identifier for each record in a table. It must never be `NULL` and must be completely unique. (e.g., `user_id`).</span>
+                        </p>
+                    </div>
+                    <div class="math-card my-0">
+                        <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                            <i class="fa-solid fa-link text-[var(--c-table-b)] mr-2"></i>
+                            <span class="lang-de">Fremdschlüssel (Foreign Key)</span><span class="lang-en">Foreign Key (FK)</span>
+                        </h4>
+                        <p class="text-sm text-[var(--text-muted)] mt-2 mb-0">
+                            <span class="lang-de">Ein Feld in einer Tabelle, das auf den Primärschlüssel einer anderen Tabelle verweist, um eine Beziehung herzustellen (Referentielle Integrität).</span>
+                            <span class="lang-en">A field in a table that references the Primary Key of another table to establish a relationship (Referential Integrity).</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: DDL -->
+        <section id="ddl" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2>
+                <span class="lang-de">2. DDL (Data Definition Language)</span>
+                <span class="lang-en">2. DDL (Data Definition Language)</span>
+            </h2>
+            <p class="panel-intro">
+                <span class="lang-de">DDL-Befehle werden verwendet, um die <strong>Struktur</strong> der Datenbank zu definieren, zu ändern oder zu löschen.</span>
+                <span class="lang-en">DDL commands are used to define, alter, or drop the <strong>structure</strong> of the database.</span>
+            </p>
+            
+            <div class="subtopic-card">
+                <h3>CREATE TABLE</h3>
+                <p>
+                    <span class="lang-de">Erstellt eine neue Tabelle mit definierten Spalten und Datentypen.</span>
+                    <span class="lang-en">Creates a new table with defined columns and data types.</span>
+                </p>
+<pre><code><span class="sql-keyword">CREATE TABLE</span> users (
+    id <span class="sql-keyword">INT PRIMARY KEY AUTO_INCREMENT</span>,
+    username <span class="sql-keyword">VARCHAR</span>(50) <span class="sql-keyword">NOT NULL</span>,
+    email <span class="sql-keyword">VARCHAR</span>(100) <span class="sql-keyword">UNIQUE</span>,
+    created_at <span class="sql-keyword">TIMESTAMP DEFAULT</span> <span class="sql-func">CURRENT_TIMESTAMP</span>
+);</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 3: DML -->
+        <section id="dml" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2>
+                <span class="lang-de">3. DML (Data Manipulation Language)</span>
+                <span class="lang-en">3. DML (Data Manipulation Language)</span>
+            </h2>
+            <p class="panel-intro">
+                <span class="lang-de">DML-Befehle verwalten die eigentlichen <strong>Daten</strong> innerhalb der Tabellen (CRUD-Operationen außer Read).</span>
+                <span class="lang-en">DML commands manage the actual <strong>data</strong> within the tables (CRUD operations excluding Read).</span>
+            </p>
+            
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <div class="subtopic-card !mb-0">
+                    <h3>INSERT</h3>
+<pre><code><span class="sql-keyword">INSERT INTO</span> users (username, email)
+<span class="sql-keyword">VALUES</span> (<span class="sql-string">'Alice'</span>, <span class="sql-string">'alice@mail.com'</span>);</code></pre>
+                </div>
+                
+                <div class="subtopic-card !mb-0">
+                    <h3>UPDATE</h3>
+<pre><code><span class="sql-keyword">UPDATE</span> users 
+<span class="sql-keyword">SET</span> email = <span class="sql-string">'new@mail.com'</span> 
+<span class="sql-keyword">WHERE</span> id = 1;</code></pre>
+                </div>
+                
+                <div class="subtopic-card xl:col-span-2 !mb-0">
+                    <h3>DELETE</h3>
+                    <p class="text-xs text-[var(--text-muted)] mt-1 mb-2">
+                        <i class="fa-solid fa-triangle-exclamation text-yellow-500 mr-1"></i>
+                        <span class="lang-de">Vergiss niemals die WHERE-Klausel, sonst löschst du die gesamte Tabelle!</span>
+                        <span class="lang-en">Never forget the WHERE clause, or you will delete the entire table!</span>
+                    </p>
+<pre class="!mt-0"><code><span class="sql-keyword">DELETE FROM</span> users <span class="sql-keyword">WHERE</span> id = 1;</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: DQL -->
+        <section id="dql" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
+            <h2>
+                <span class="lang-de">4. DQL (Data Query Language)</span>
+                <span class="lang-en">4. DQL (Data Query Language)</span>
+            </h2>
+            <p class="panel-intro">
+                <span class="lang-de">DQL besteht hauptsächlich aus dem <code>SELECT</code>-Befehl. Er wird verwendet, um Daten abzufragen und zu filtern.</span>
+                <span class="lang-en">DQL primarily consists of the <code>SELECT</code> command. It is used to query and filter data.</span>
+            </p>
+
+            <div class="subtopic-card">
+                <h3 id="select-basics" class="scroll-mt-10">
+                    <span class="lang-de">4.1 Anatomie einer Abfrage</span>
+                    <span class="lang-en">4.1 Anatomy of a Query</span>
+                </h3>
+<pre><code><span class="sql-keyword">SELECT</span> column1, <span class="sql-func">COUNT</span>(column2)  <span class="text-[var(--text-muted)]">-- 1. Was wollen wir sehen? (Projektion)</span>
+<span class="sql-keyword">FROM</span> table_name               <span class="text-[var(--text-muted)]">-- 2. Woher kommen die Daten? (Relation)</span>
+<span class="sql-keyword">WHERE</span> condition               <span class="text-[var(--text-muted)]">-- 3. Filter für Zeilen</span>
+<span class="sql-keyword">GROUP BY</span> column1              <span class="text-[var(--text-muted)]">-- 4. Gruppierung für Aggregationen</span>
+<span class="sql-keyword">HAVING</span> <span class="sql-func">COUNT</span>(column2) > 5     <span class="text-[var(--text-muted)]">-- 5. Filter für gruppierte Daten</span>
+<span class="sql-keyword">ORDER BY</span> column1 <span class="sql-keyword">DESC</span>         <span class="text-[var(--text-muted)]">-- 6. Sortierung (ASC/DESC)</span>
+<span class="sql-keyword">LIMIT</span> 10;                     <span class="text-[var(--text-muted)]">-- 7. Begrenzung der Ausgabe</span></code></pre>
+            </div>
+
+            <div class="subtopic-card">
+                <h3 id="aggregations" class="scroll-mt-10">
+                    <span class="lang-de">4.2 Aggregatfunktionen</span>
+                    <span class="lang-en">4.2 Aggregate Functions</span>
+                </h3>
+                <table class="wikitable mt-4">
+                    <thead>
+                        <tr>
+                            <th><span class="lang-de">Funktion</span><span class="lang-en">Function</span></th>
+                            <th><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code><span class="sql-func">COUNT</span>()</code></td><td><span class="lang-de">Zählt die Anzahl der Zeilen.</span><span class="lang-en">Counts the number of rows.</span></td></tr>
+                        <tr><td><code><span class="sql-func">SUM</span>()</code></td><td><span class="lang-de">Berechnet die Summe einer numerischen Spalte.</span><span class="lang-en">Calculates the sum of a numeric column.</span></td></tr>
+                        <tr><td><code><span class="sql-func">AVG</span>()</code></td><td><span class="lang-de">Ermittelt den Durchschnittswert.</span><span class="lang-en">Finds the average value.</span></td></tr>
+                        <tr><td><code><span class="sql-func">MIN</span>() / <span class="sql-func">MAX</span>()</code></td><td><span class="lang-de">Gibt den kleinsten / größten Wert zurück.</span><span class="lang-en">Returns the minimum / maximum value.</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // --- GLOBAL VARIABLES & THEME STATE ---
+        let isGerman = true;
+
+        // Dynamic Canvas Colors tied to CSS variables
+        let C_BG, C_GRID, C_TEXT, C_PANEL;
+        let C_TABLE_A = "#3b82f6";
+        let C_TABLE_B = "#f59e0b";
+        let C_INTERSECT = "#a78bfa";
+
+        function updateDynamicColors() {
+            const style = getComputedStyle(document.body);
+            C_BG = style.getPropertyValue('--bg-color').trim() || "#181a1b";
+            C_GRID = style.getPropertyValue('--border-color').trim() || "#2c2d30";
+            C_TEXT = style.getPropertyValue('--text-color').trim() || "#eaecf0";
+            C_PANEL = style.getPropertyValue('--panel-color').trim() || "#202324";
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('light')) {
+                html.classList.remove('light');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon';
+            }
+            updateDynamicColors(); // Refresh canvas theme
+        }
+
+        function toggleLang() {
+            isGerman = !isGerman;
+            const indicator = document.getElementById('lang-indicator');
+            indicator.textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+        }
+
+        // --- ANIMATION / SIMULATION LOGIC ---
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('canvas-wrapper');
+
+        let width, height, centerX, centerY;
+        let lastTime = 0;
+        let currentPhaseIdx = 0;
+
+        // JOIN Phases setup
+        const phases = [
+            {
+                id: 'none',
+                title: '<span class="lang-de">0. Die Tabellen</span><span class="lang-en">0. The Tables</span>',
+                desc: '<span class="lang-de">Wir haben zwei Tabellen: <strong>Kunden (A)</strong> und <strong>Bestellungen (B)</strong>. Einige Kunden haben bestellt (Schnittmenge), andere nicht. Einige Bestellungen haben keinen Kunden mehr (Waisen).</span><span class="lang-en">We have two tables: <strong>Customers (A)</strong> and <strong>Orders (B)</strong>. Some customers ordered (intersection), some didn\'t. Some orders lack a customer (orphans).</span>',
+                sql: `<span class="text-[var(--text-muted)]">-- Wähle einen Join-Typ aus</span>`,
+                activeRegions: [] // 1=Left, 2=Intersect, 3=Right
+            },
+            {
+                id: 'inner',
+                title: '<span class="lang-de">1. INNER JOIN</span><span class="lang-en">1. INNER JOIN</span>',
+                desc: '<span class="lang-de">Gibt nur die Datensätze zurück, die <strong>in beiden Tabellen</strong> eine Übereinstimmung (Match) haben. Die Schnittmenge.</span><span class="lang-en">Returns only the records that have matching values <strong>in both tables</strong>. The intersection.</span>',
+                sql: `<span class="sql-keyword">SELECT</span> * <span class="sql-keyword">FROM</span> A\n<span class="sql-keyword">INNER JOIN</span> B <span class="sql-keyword">ON</span> A.id = B.a_id;`,
+                activeRegions: [2]
+            },
+            {
+                id: 'left',
+                title: '<span class="lang-de">2. LEFT JOIN</span><span class="lang-en">2. LEFT JOIN</span>',
+                desc: '<span class="lang-de">Gibt <strong>ALLE</strong> Datensätze aus der linken Tabelle (A) zurück, und die passenden aus der rechten (B). Fehlt ein Match rechts, wird dort <code>NULL</code> ausgegeben.</span><span class="lang-en">Returns <strong>ALL</strong> records from the left table (A), and the matched ones from the right (B). If no match, right side yields <code>NULL</code>.</span>',
+                sql: `<span class="sql-keyword">SELECT</span> * <span class="sql-keyword">FROM</span> A\n<span class="sql-keyword">LEFT JOIN</span> B <span class="sql-keyword">ON</span> A.id = B.a_id;`,
+                activeRegions: [1, 2]
+            },
+            {
+                id: 'right',
+                title: '<span class="lang-de">3. RIGHT JOIN</span><span class="lang-en">3. RIGHT JOIN</span>',
+                desc: '<span class="lang-de">Gibt <strong>ALLE</strong> Datensätze aus der rechten Tabelle (B) zurück, und die passenden aus der linken (A). Spiegelt den Left Join.</span><span class="lang-en">Returns <strong>ALL</strong> records from the right table (B), and the matched ones from the left (A). Mirrors the Left Join.</span>',
+                sql: `<span class="sql-keyword">SELECT</span> * <span class="sql-keyword">FROM</span> A\n<span class="sql-keyword">RIGHT JOIN</span> B <span class="sql-keyword">ON</span> A.id = B.a_id;`,
+                activeRegions: [2, 3]
+            },
+            {
+                id: 'full',
+                title: '<span class="lang-de">4. FULL OUTER JOIN</span><span class="lang-en">4. FULL OUTER JOIN</span>',
+                desc: '<span class="lang-de">Kombiniert Left und Right Join. Gibt <strong>ALLE</strong> Datensätze aus beiden Tabellen zurück. Fehlende Matches werden mit <code>NULL</code> aufgefüllt.</span><span class="lang-en">Combines Left and Right Join. Returns <strong>ALL</strong> records from both tables. Missing matches are filled with <code>NULL</code>.</span>',
+                sql: `<span class="sql-keyword">SELECT</span> * <span class="sql-keyword">FROM</span> A\n<span class="sql-keyword">FULL OUTER JOIN</span> B <span class="sql-keyword">ON</span> A.id = B.a_id;`,
+                activeRegions: [1, 2, 3]
+            }
+        ];
+
+        // Particle System for Rows
+        class RowParticle {
+            constructor(group) {
+                this.group = group; // 1: Left only, 2: Intersect, 3: Right only
+                this.x = 0; this.y = 0;
+                this.tx = 0; this.ty = 0;
+                this.homeX = 0; this.homeY = 0;
+                this.color = group === 1 ? C_TABLE_A : (group === 2 ? C_INTERSECT : C_TABLE_B);
+                
+                // Random drift animation inside Venn
+                this.driftAngle = Math.random() * Math.PI * 2;
+                this.driftSpeed = 0.5 + Math.random() * 1.5;
+                this.driftRad = 10 + Math.random() * 20;
+                
+                // Result placement
+                this.resIdx = 0; 
+            }
+            
+            update(dt, isActive) {
+                // Determine target
+                if (isActive) {
+                    // Move to result grid
+                    this.tx = resultGrid.x + (this.resIdx % resultGrid.cols) * resultGrid.cellW + resultGrid.cellW/2;
+                    this.ty = resultGrid.y + Math.floor(this.resIdx / resultGrid.cols) * resultGrid.cellH + resultGrid.cellH/2;
+                } else {
+                    // Move to home inside Venn diagram + drift
+                    this.driftAngle += this.driftSpeed * dt;
+                    this.tx = this.homeX + Math.cos(this.driftAngle) * this.driftRad;
+                    this.ty = this.homeY + Math.sin(this.driftAngle) * this.driftRad;
+                }
+                
+                // LERP
+                this.x += (this.tx - this.x) * 6 * dt;
+                this.y += (this.ty - this.y) * 6 * dt;
+            }
+
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 6, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.strokeStyle = C_BG;
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+        }
+
+        const particles = [];
+        const numPerGroup = 12; // 36 particles total
+        let venn = { cx1: 0, cx2: 0, cy: 0, r: 0 };
+        let resultGrid = { x: 0, y: 0, w: 0, h: 0, cols: 10, cellW: 0, cellH: 0 };
+
+        function initParticles() {
+            particles.length = 0;
+            for(let g=1; g<=3; g++) {
+                for(let i=0; i<numPerGroup; i++) {
+                    const p = new RowParticle(g);
+                    particles.push(p);
+                }
+            }
+        }
+
+        function resizeCanvas() {
+            if(!wrapper) return;
+            const rect = wrapper.getBoundingClientRect();
+            if(rect.width === 0) return;
+            width = canvas.width = rect.width;
+            height = canvas.height = rect.height;
+            centerX = width / 2; centerY = height / 2;
+
+            // Geometry setup
+            const isWide = width > height * 1.1;
+            venn.r = Math.min(width * 0.2, height * 0.25);
+            
+            if (isWide) {
+                venn.cy = height * 0.35;
+                venn.cx1 = centerX - venn.r * 0.6;
+                venn.cx2 = centerX + venn.r * 0.6;
+                
+                resultGrid.w = width * 0.8;
+                resultGrid.h = height * 0.3;
+                resultGrid.x = (width - resultGrid.w) / 2;
+                resultGrid.y = height * 0.65;
+            } else {
+                venn.cy = height * 0.3;
+                venn.cx1 = centerX - venn.r * 0.5;
+                venn.cx2 = centerX + venn.r * 0.5;
+                
+                resultGrid.w = width * 0.9;
+                resultGrid.h = height * 0.35;
+                resultGrid.x = (width - resultGrid.w) / 2;
+                resultGrid.y = height * 0.6;
+            }
+
+            // Assign Home positions for particles based on region
+            particles.forEach(p => {
+                if (p.group === 1) { // Left (Table A only)
+                    p.homeX = venn.cx1 - venn.r * 0.4;
+                    p.homeY = venn.cy;
+                } else if (p.group === 2) { // Intersect
+                    p.homeX = (venn.cx1 + venn.cx2) / 2;
+                    p.homeY = venn.cy;
+                } else if (p.group === 3) { // Right (Table B only)
+                    p.homeX = venn.cx2 + venn.r * 0.4;
+                    p.homeY = venn.cy;
+                }
+                if (p.x === 0) { p.x = p.homeX; p.y = p.homeY; }
+            });
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function updateSimDOM() {
+            const phase = phases[currentPhaseIdx];
+            document.getElementById('step-counter').innerText = currentPhaseIdx;
+            document.getElementById('phase-title').innerHTML = phase.title;
+            document.getElementById('phase-desc').innerHTML = phase.desc;
+            document.getElementById('sql-display').innerHTML = phase.sql;
+            
+            // Recalculate result grid indexing
+            let activeCount = 0;
+            particles.forEach(p => {
+                if (phase.activeRegions.includes(p.group)) {
+                    p.resIdx = activeCount++;
+                }
+            });
+            
+            // Calculate grid rows/cols based on active count
+            if (activeCount > 0) {
+                const aspect = resultGrid.w / resultGrid.h;
+                resultGrid.cols = Math.max(1, Math.ceil(Math.sqrt(activeCount * aspect)));
+                const rows = Math.ceil(activeCount / resultGrid.cols);
+                resultGrid.cellW = resultGrid.w / resultGrid.cols;
+                resultGrid.cellH = resultGrid.h / rows;
+            }
+        }
+
+        function nextPhase() { currentPhaseIdx = (currentPhaseIdx + 1) % phases.length; updateSimDOM(); }
+        function prevPhase() { currentPhaseIdx = (currentPhaseIdx - 1 + phases.length) % phases.length; updateSimDOM(); }
+
+        function drawVenn() {
+            const phase = phases[currentPhaseIdx];
+            
+            // Circle A
+            ctx.beginPath(); ctx.arc(venn.cx1, venn.cy, venn.r, 0, Math.PI * 2);
+            ctx.strokeStyle = phase.activeRegions.includes(1) ? C_TABLE_A : C_GRID;
+            ctx.lineWidth = phase.activeRegions.includes(1) ? 4 : 2;
+            ctx.stroke();
+            if (phase.activeRegions.includes(1)) {
+                ctx.fillStyle = C_TABLE_A + "22"; // Add alpha
+                ctx.fill();
+            }
+
+            // Circle B
+            ctx.beginPath(); ctx.arc(venn.cx2, venn.cy, venn.r, 0, Math.PI * 2);
+            ctx.strokeStyle = phase.activeRegions.includes(3) ? C_TABLE_B : C_GRID;
+            ctx.lineWidth = phase.activeRegions.includes(3) ? 4 : 2;
+            ctx.stroke();
+            if (phase.activeRegions.includes(3)) {
+                ctx.fillStyle = C_TABLE_B + "22";
+                ctx.fill();
+            }
+
+            // Intersect highlight manually via clip
+            if (phase.activeRegions.includes(2)) {
+                ctx.save();
+                ctx.beginPath(); ctx.arc(venn.cx1, venn.cy, venn.r, 0, Math.PI * 2); ctx.clip();
+                ctx.beginPath(); ctx.arc(venn.cx2, venn.cy, venn.r, 0, Math.PI * 2);
+                ctx.fillStyle = C_INTERSECT + "44";
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // Labels
+            ctx.fillStyle = C_TEXT; ctx.font = "bold 14px Inter"; ctx.textAlign = "center";
+            ctx.fillText(isGerman ? "Tabelle A" : "Table A", venn.cx1 - venn.r*0.6, venn.cy - venn.r - 10);
+            ctx.fillText(isGerman ? "Tabelle B" : "Table B", venn.cx2 + venn.r*0.6, venn.cy - venn.r - 10);
+        }
+
+        function drawResultBox() {
+            ctx.strokeStyle = C_GRID;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(resultGrid.x, resultGrid.y, resultGrid.w, resultGrid.h);
+            ctx.setLineDash([]);
+            
+            ctx.fillStyle = C_TEXT; ctx.font = "bold 12px Inter"; ctx.textAlign = "center";
+            ctx.fillText(isGerman ? "RESULT SET (Ergebnis)" : "RESULT SET", resultGrid.x + resultGrid.w/2, resultGrid.y - 10);
+        }
+
+        function animateLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+            lastTime = timestamp;
+
+            ctx.clearRect(0, 0, width, height);
+            
+            const phase = phases[currentPhaseIdx];
+
+            drawVenn();
+            drawResultBox();
+
+            // Update and draw particles
+            particles.forEach(p => {
+                const isActive = phase.activeRegions.includes(p.group);
+                p.update(dt, isActive);
+                p.draw(ctx);
+            });
+
+            requestAnimationFrame(animateLoop);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Scrollspy logic
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                        if(tocLink) tocLink.classList.add('active');
+                    }
+                });
+            }, { rootMargin: '-10% 0px -80% 0px', threshold: [0, 0.1, 1] });
+
+            document.querySelectorAll('section, h3[id], div[id="simulation"]').forEach((section) => {
+                observer.observe(section);
+            });
+
+            initParticles();
+            updateDynamicColors();
+            updateSimDOM();
+            setTimeout(() => {
+                resizeCanvas();
+                requestAnimationFrame(animateLoop);
+            }, 100); 
+        });
+
+        function filterWiki() {
+            const input = document.getElementById('wikiSearch');
+            const filter = input.value.toLowerCase();
+            const blocks = document.querySelectorAll('.searchable-block');
+            const mainContent = document.getElementById('main-content');
+
+            removeHighlights(mainContent);
+            if (!filter) { blocks.forEach(block => block.style.display = 'block'); return; }
+
+            blocks.forEach(block => {
+                const text = block.innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    block.style.display = 'block';
+                    highlightText(block, input.value);
+                } else {
+                    block.style.display = 'none';
+                }
+            });
+        }
+
+        function highlightText(element, keyword) {
+            if (!keyword) return;
+            const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+            let node;
+            while (node = treeWalker.nextNode()) {
+                if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                    if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE' && node.parentNode.tagName !== 'CODE' && !node.parentNode.classList.contains('katex')) {
+                        nodesToReplace.push(node);
+                    }
+                }
+            }
+            nodesToReplace.forEach(node => {
+                const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+                const fragment = document.createDocumentFragment();
+                let match; let lastIndex = 0; const text = node.nodeValue;
+                while ((match = regex.exec(text)) !== null) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    const span = document.createElement('span');
+                    span.className = 'search-match font-semibold';
+                    span.textContent = match[0];
+                    fragment.appendChild(span);
+                    lastIndex = regex.lastIndex;
+                }
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                node.parentNode.replaceChild(fragment, node);
+            });
+        }
+
+        function removeHighlights(element) {
+            const highlights = element.querySelectorAll('.search-match');
+            highlights.forEach(span => {
+                const parent = span.parentNode;
+                parent.replaceChild(document.createTextNode(span.textContent), span);
+                parent.normalize();
+            });
+        }
+
+        function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+        function downloadHTML() {
+            removeHighlights(document.getElementById('main-content'));
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'Database_SQL_Cheatsheet.html';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
