@@ -66,23 +66,29 @@
     body[data-active-lang="de"] .lang-en { display: none; }
     body[data-active-lang="en"] .lang-en { display: inline; }
     body[data-active-lang="en"] .lang-de { display: none; }
-    div.lang-de, div.lang-en, p.lang-de, p.lang-en, span.block-de, span.block-en { display: none; }
-    body[data-active-lang="de"] div.lang-de,
-    body[data-active-lang="de"] p.lang-de { display: block; }
-    body[data-active-lang="en"] div.lang-en,
-    body[data-active-lang="en"] p.lang-en { display: block; }
 
+    /* ============ FIXED-HEIGHT LAYOUT ============ */
     body {
       background-color: var(--bg-color);
       color: var(--text-color);
       font-family: 'Inter', sans-serif;
       line-height: 1.65;
       transition: background-color 0.2s, color 0.2s;
-      overflow-x: hidden;
-      min-height: 100vh;
+      /* Lock layout height on desktop so the preview cannot grow the page. */
+      height: 100vh;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       font-size: 0.95rem;
+    }
+
+    /* On mobile, let the page scroll again (columns stack). */
+    @media (max-width: 1023px) {
+      body {
+        height: auto;
+        min-height: 100vh;
+        overflow: auto;
+      }
     }
 
     h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 800 !important; }
@@ -96,8 +102,6 @@
 
     /* ============ HEADER ============ */
     .app-header {
-      position: sticky;
-      top: 0;
       z-index: 50;
       display: flex;
       align-items: center;
@@ -107,6 +111,7 @@
       border-bottom: 1px solid var(--border-color);
       box-shadow: var(--card-shadow);
       flex-wrap: wrap;
+      flex-shrink: 0;
     }
     .ctrl-btn {
       display: inline-flex;
@@ -163,14 +168,7 @@
       max-width: 2100px;
       width: 100%;
       margin: 0 auto;
-    }
-
-    .topic-panel {
-      background-color: var(--panel-color);
-      border: 1px solid var(--panel-border);
-      box-shadow: var(--card-shadow);
-      border-radius: 1rem;
-      transition: box-shadow 0.3s ease;
+      min-height: 0;
       overflow: hidden;
     }
 
@@ -180,9 +178,10 @@
       flex: 1;
       min-height: 0;
       align-items: stretch;
+      overflow: hidden;
     }
     @media (max-width: 1023px) {
-      .workspace { flex-direction: column; }
+      .workspace { flex-direction: column; overflow: visible; }
     }
 
     .editor-column {
@@ -196,9 +195,10 @@
       box-shadow: var(--card-shadow);
       overflow: hidden;
       flex-shrink: 0;
+      min-height: 0;
     }
     @media (max-width: 1023px) {
-      .editor-column { width: 100%; min-height: 420px; }
+      .editor-column { width: 100%; height: 520px; }
     }
 
     .panel-label {
@@ -223,7 +223,7 @@
       flex: 1;
       overflow: hidden;
       background: var(--code-bg);
-      min-height: 280px;
+      min-height: 120px;
     }
     .line-numbers {
       padding: 1rem 0.5rem 1rem 0;
@@ -261,15 +261,16 @@
     }
     #lyricsInput::placeholder { color: var(--text-muted); opacity: 0.65; }
 
+    /* ============ SUB BARS ============ */
     .sub-bar {
-      padding: 0.7rem 1.25rem;
+      padding: 0.65rem 1.25rem;
       background: var(--surface-elevated);
       font-size: 0.85rem;
       display: flex;
       align-items: flex-start;
-      gap: 0.85rem;
+      gap: 0.75rem;
       flex-wrap: wrap;
-      min-height: 2.75rem;
+      min-height: 2.65rem;
       flex-shrink: 0;
       border-top: 1px solid var(--border-color);
     }
@@ -284,7 +285,7 @@
       font-family: 'Inter', sans-serif;
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.45rem;
     }
     .suggestion-badge {
       background: var(--code-bg);
@@ -303,6 +304,10 @@
       border-color: var(--link-color);
       color: var(--link-color);
       background: var(--hover-bg);
+    }
+    .suggestion-badge.highlight {
+      border-color: var(--link-color);
+      color: var(--link-color);
     }
     .hint-badge {
       background: var(--code-bg);
@@ -330,6 +335,37 @@
     .status-dot.ready { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
 
+    .lang-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.75rem;
+      height: 1.15rem;
+      padding: 0 0.4rem;
+      border-radius: 0.3rem;
+      background: var(--code-bg);
+      border: 1px solid var(--panel-border);
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      font-family: 'Fira Code', monospace;
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+    }
+    .lang-badge.de {
+      color: #fbbf24;
+      border-color: #fbbf24;
+      background: rgba(251,191,36,0.08);
+    }
+    .lang-badge.en {
+      color: #60a5fa;
+      border-color: #60a5fa;
+      background: rgba(96,165,250,0.08);
+    }
+    html.light .lang-badge.de { color: #b45309; border-color: #b45309; background: rgba(180,83,9,0.06); }
+    html.light .lang-badge.en { color: #1d4ed8; border-color: #1d4ed8; background: rgba(29,78,216,0.06); }
+
+    /* ============ PREVIEW COLUMN ============ */
     .preview-column {
       flex: 1;
       min-width: 280px;
@@ -340,9 +376,16 @@
       border-radius: 1rem;
       box-shadow: var(--card-shadow);
       overflow: hidden;
+      min-height: 0;
     }
+    @media (max-width: 1023px) {
+      .preview-column { width: 100%; height: 780px; }
+    }
+
+    /* The preview output gets a bounded, scrollable height instead of growing the page. */
     #previewOutput {
       flex: 1;
+      min-height: 0;
       padding: 1rem 1.25rem;
       font-family: 'Fira Code', monospace;
       font-size: 1rem;
@@ -350,9 +393,9 @@
       white-space: pre-wrap;
       word-wrap: break-word;
       overflow-y: auto;
+      overflow-x: hidden;
       background: var(--code-bg);
       color: var(--text-color);
-      min-height: 240px;
     }
     .preview-word {
       cursor: pointer;
@@ -379,13 +422,14 @@
     /* ============ METRICS ============ */
     .metrics-panel {
       background: var(--panel-color);
-      height: 360px;
-      min-height: 220px;
+      height: 420px;
+      min-height: 200px;
       flex-shrink: 0;
       display: flex;
       flex-direction: column;
       border-top: 1px solid var(--border-color);
       position: relative;
+      min-height: 0;
     }
     .metrics-header {
       background: var(--code-bg);
@@ -428,8 +472,8 @@
       letter-spacing: 0.05em;
     }
     .btn-pill:hover { color: var(--text-color); background: var(--hover-bg); }
-    .btn-pill.active { background: var(--info-box, #2c2d30); color: var(--link-color); border-color: var(--link-color); }
-    html.light .btn-pill.active { background: #e0f2fe; }
+    .btn-pill.active { background: #e0f2fe; color: var(--link-color); border-color: var(--link-color); }
+    html:not(.light) .btn-pill.active { background: #2c2d30; }
 
     .color-picker-mini {
       display: flex;
@@ -455,7 +499,7 @@
 
     #timelinePlotContainer {
       background: var(--code-bg);
-      height: 70px;
+      height: 150px;
       border-bottom: 1px solid var(--border-color);
       position: relative;
       width: 100%;
@@ -466,16 +510,16 @@
     }
     #flowTimelineCanvas { width: 100%; height: 100%; display: block; }
     .timeline-legend {
-      position: absolute; top: 6px; left: 12px;
-      font-size: 0.7rem; font-weight: 600;
-      display: flex; gap: 0.9rem; flex-wrap: wrap;
+      position: absolute; top: 8px; left: 14px;
+      font-size: 0.75rem; font-weight: 600;
+      display: flex; gap: 1rem; flex-wrap: wrap;
       z-index: 10; font-family: 'Inter', sans-serif;
     }
     .timeline-legend label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
-    .timeline-legend input[type="checkbox"] { cursor: pointer; margin: 0; width: 13px; height: 13px; }
+    .timeline-legend input[type="checkbox"] { cursor: pointer; margin: 0; width: 14px; height: 14px; }
     .timeline-progress-label {
-      position: absolute; bottom: 4px; right: 12px;
-      font-size: 0.65rem; color: var(--text-muted);
+      position: absolute; bottom: 6px; right: 14px;
+      font-size: 0.7rem; color: var(--text-muted);
       text-transform: uppercase; font-weight: 600;
       font-family: 'Fira Code', monospace;
       letter-spacing: 0.04em;
@@ -488,6 +532,7 @@
       gap: 0.6rem;
       flex: 1;
       min-height: 0;
+      overflow: auto;
     }
     .grids-row {
       display: flex;
@@ -557,7 +602,6 @@
       border: none;
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
     }
-    html.light .rhythm-tile.rhymed { color: #fff; }
 
     .word-grid {
       display: grid;
@@ -670,7 +714,6 @@
     }
     .modal-header { font-family: 'Lora', serif; font-size: 1.2rem; font-weight: 700; color: var(--heading-color); }
     .modal-body { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; }
-    .modal-body strong { color: var(--text-color); }
     .modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.7rem; flex-wrap: wrap; }
     .btn-modal {
       padding: 0.6rem 1.2rem;
@@ -691,8 +734,6 @@
     .btn-modal-confirm:hover { filter: brightness(1.1); }
     .btn-modal-confirm-outline { background: transparent; color: var(--link-color); border: 1px solid var(--link-color); }
     .btn-modal-confirm-outline:hover { background: var(--hover-bg); }
-    .save-format-group { display: flex; gap: 0.6rem; flex-wrap: wrap; }
-    .save-format-group .btn-modal { flex: 1; min-width: 110px; text-align: center; }
 
     .color-picker-popup {
       position: fixed;
@@ -716,7 +757,7 @@
 </head>
 <body data-active-lang="en">
 
-  <!-- ========== HEADER: only lang / theme / download ========== -->
+  <!-- ========== HEADER ========== -->
   <header class="app-header">
     <button class="ctrl-btn" id="langBtn" title="Toggle Language">
       <i class="fa-solid fa-language"></i>
@@ -753,10 +794,27 @@
           <textarea id="lyricsInput" placeholder="Write lyrics here to begin analysis (English or German)..." aria-label="Lyrics Input Area" spellcheck="false"></textarea>
         </div>
 
+        <!-- Suggestions -->
+        <div class="sub-bar">
+          <span class="sub-bar-label">
+            <i class="fa-solid fa-lightbulb" style="font-size:0.8rem;color:var(--link-color);"></i>
+            <span class="lang-de">Vorschläge:</span><span class="lang-en">Suggestions:</span>
+            <span class="lang-badge" id="suggestionsLangBadge">—</span>
+          </span>
+          <div id="suggestionsList" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+            <span style="color:var(--text-muted);font-style:italic;">
+              <span class="lang-de">Kein Wort erkannt.</span>
+              <span class="lang-en">No word detected.</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Rhymes -->
         <div class="sub-bar">
           <span class="sub-bar-label">
             <span class="status-dot" id="apiDot"></span>
             <span class="lang-de">Reime:</span><span class="lang-en">Rhymes:</span>
+            <span class="lang-badge" id="rhymesLangBadge">—</span>
           </span>
           <div id="rhymesList" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
             <span style="color:var(--text-muted);font-style:italic;">
@@ -766,8 +824,13 @@
           </div>
         </div>
 
+        <!-- Definitions -->
         <div class="sub-bar">
-          <span class="sub-bar-label"><span class="lang-de">Definition:</span><span class="lang-en">Definition:</span></span>
+          <span class="sub-bar-label">
+            <i class="fa-solid fa-book" style="font-size:0.8rem;color:var(--link-color);"></i>
+            <span class="lang-de">Definition:</span><span class="lang-en">Definition:</span>
+            <span class="lang-badge" id="definitionsLangBadge">—</span>
+          </span>
           <div id="definitionsList" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;line-height:1.5;">
             <span style="color:var(--text-muted);font-style:italic;">
               <span class="lang-de">Kein Wort erkannt.</span>
@@ -776,6 +839,7 @@
           </div>
         </div>
 
+        <!-- Theory -->
         <div class="sub-bar">
           <span class="sub-bar-label"><span class="lang-de">Theorie:</span><span class="lang-en">Theory:</span></span>
           <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;">
@@ -925,14 +989,13 @@
 
   </main>
 
-  <!-- Modals -->
   <div class="custom-modal-backdrop" id="customModalBackdrop">
     <div class="custom-modal">
       <div class="modal-header"><span class="lang-de">Songtext exportieren</span><span class="lang-en">Export Lyrics</span></div>
       <div class="modal-body"><span class="lang-de">Wähle dein bevorzugtes Dateiformat:</span><span class="lang-en">Choose your preferred file format:</span></div>
-      <div class="save-format-group">
-        <button class="btn-modal btn-modal-confirm" id="saveMarkdownBtn">📄 Markdown</button>
-        <button class="btn-modal btn-modal-confirm-outline" id="saveTextBtn">📄 <span class="lang-de">Reiner Text</span><span class="lang-en">Plain Text</span></button>
+      <div class="save-format-group" style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+        <button class="btn-modal btn-modal-confirm" id="saveMarkdownBtn" style="flex:1;">📄 Markdown</button>
+        <button class="btn-modal btn-modal-confirm-outline" id="saveTextBtn" style="flex:1;">📄 <span class="lang-de">Reiner Text</span><span class="lang-en">Plain Text</span></button>
       </div>
       <div class="modal-actions">
         <button class="btn-modal btn-modal-cancel" id="btnModalCancel"><span class="lang-de">Abbrechen</span><span class="lang-en">Cancel</span></button>
@@ -952,8 +1015,12 @@
   const lineNumbers = document.getElementById('lineNumbers');
   const infoLines = document.getElementById('infoLines');
   const infoWords = document.getElementById('infoWords');
+  const suggestionsList = document.getElementById('suggestionsList');
   const rhymesList = document.getElementById('rhymesList');
   const definitionsList = document.getElementById('definitionsList');
+  const suggestionsLangBadge = document.getElementById('suggestionsLangBadge');
+  const rhymesLangBadge = document.getElementById('rhymesLangBadge');
+  const definitionsLangBadge = document.getElementById('definitionsLangBadge');
   const rhythmGrid = document.getElementById('visualRhythmGrid');
   const wordGrid = document.getElementById('visualWordGrid');
   const timelineCanvas = document.getElementById('flowTimelineCanvas');
@@ -1002,10 +1069,11 @@
   let activeSelectionTarget = null;
 
   const rhymeCache = new Map();
-  let rhymeGroups = {};       // cleanedWord -> groupId
-  let groupColors = {};       // groupId -> hex color
-  let groupSizes = {};        // groupId -> size
-  let groupMembers = {};      // groupId -> [words]
+  const suggestionCache = new Map();
+  let rhymeGroups = {};
+  let groupColors = {};
+  let groupSizes = {};
+  let groupMembers = {};
   let apiPending = 0;
 
   let lastWordsList = [];
@@ -1014,7 +1082,6 @@
 
   const PALETTE_PICKER = ['#FF2D55','#00FF66','#00D2FF','#FFCC00','#FF9500','#AF52DE','#FF3B30','#00E5FF','#E5A4F4','#FF5E3A','#007AFF','#CCFF00','#E0FE00','#B57CFF','#00FFC4'];
 
-  // Rhyme group color palettes — need many distinct colors
   const RHYME_PALETTE_DARK = [
     '#FF6B9D','#5EEAD4','#FBBF24','#A78BFA','#34D399','#F87171','#60A5FA',
     '#F472B6','#22D3EE','#A3E635','#FDBA74','#C084FC','#2DD4BF','#FB923C',
@@ -1027,29 +1094,38 @@
   ];
 
   /* ============================================================
-     LANGUAGE DETECTION (per-document AND per-word)
+     LANGUAGE DETECTION
      ============================================================ */
   const GERMAN_WORDS = new Set([
-    'der','die','das','und','ist','nicht','ein','eine','einen','einem','einer',
+    'der','die','das','und','ist','nicht','ein','eine','einen','einem','einer','eines',
     'mit','auf','für','von','den','dem','des','sich','auch','aber','oder','wenn',
-    'wie','bei','aus','nach','über','nur','noch','schon','kann','muss','soll',
+    'wie','bei','aus','nach','über','nur','noch','schon','kann','muss','soll','will',
     'wird','werden','hat','haben','wurde','wurden','dass','weil','durch','gegen',
-    'ohne','unter','zwischen','immer','wieder','hier','dort','dann','jetzt',
-    'ich','du','er','sie','es','wir','ihr','bin','bist','sind','war','waren',
-    'mich','dich','uns','euch','mein','dein','sein','unser','euer','was','wer',
-    'wo','wann','warum','doch','mal','sehr','mehr','schon','erst','ganz','gar',
-    'nun','eben','halt','wohl','etwas','nichts','alles','jeder','jede','jedes'
+    'ohne','unter','zwischen','immer','wieder','hier','dort','dann','jetzt','eben',
+    'ich','du','er','sie','es','wir','ihr','bin','bist','sind','war','waren','seid',
+    'mich','dich','uns','euch','mein','dein','sein','unser','euer','was','wer','wen','wem',
+    'wo','wann','warum','doch','mal','sehr','mehr','erst','ganz','gar','fast',
+    'nun','halt','wohl','etwas','nichts','alles','jeder','jede','jedes','jeden',
+    'dieser','diese','dieses','diesen','diesem','kein','keine','keinen','keinem',
+    'macht','machen','kommt','kommen','geht','gehen','sieht','sehen','sagt','sagen',
+    'weiß','wissen','können','müssen','wollen','sollen','darf','dürfen','mag','mögen',
+    'liebe','lieben','liebt','herz','seele','augen','himmel','erde','zeit','welt',
+    'leben','schmerz','freude','glück','traum','nacht','licht','feuer','wasser','sterne'
   ]);
 
   const ENGLISH_WORDS = new Set([
     'the','and','is','are','was','were','have','has','had','not','but','or','if',
-    'then','when','where','which','who','what','this','that','these','those',
-    'with','from','into','about','would','could','should','will','can','may',
-    'might','been','being','does','did','doing','for','you','your','we','they',
+    'then','when','where','which','who','what','why','how','this','that','these','those',
+    'with','from','into','about','would','could','should','will','can','may','might',
+    'been','being','does','did','doing','for','you','your','we','they','them',
     'their','there','here','some','any','all','each','every','both','few','more',
     'most','other','such','no','nor','only','own','same','than','too','very',
     'just','i','me','my','mine','he','him','his','she','her','it','its','us',
-    'our','ours','them','theirs','of','in','on','at','to','by','as','so','do'
+    'our','ours','theirs','of','in','on','at','to','by','as','so','do','done',
+    'am','be','make','makes','made','come','comes','came','go','goes','went',
+    'see','sees','saw','say','says','said','know','knows','knew','want','wants',
+    'wanted','love','loves','loved','heart','soul','eyes','sky','earth','time',
+    'world','life','pain','joy','happiness','dream','night','light','fire','water'
   ]);
 
   function detectDocumentLanguage(text) {
@@ -1070,18 +1146,21 @@
 
   function detectWordLanguage(word) {
     const lower = word.toLowerCase().replace(/[^a-zäöüß]/g, '');
-    if (!lower) return null;
-    // German-specific characters → definitively German
+    if (!lower || lower.length < 2) return null;
     if (/[äöüß]/.test(lower)) return 'de';
-    // Common function words → definitive
     if (GERMAN_WORDS.has(lower)) return 'de';
     if (ENGLISH_WORDS.has(lower)) return 'en';
-    // Common German-only endings
-    if (lower.length >= 5 && /(ung|keit|heit|schaft|lich|chen|lein)$/.test(lower)) return 'de';
-    // Common English-only endings
-    if (lower.length >= 4 && /(tion|sion|ness|ment|ful|less|ous|ive|able|ible)$/.test(lower)) return 'en';
-    // Fallback to document language
+    if (lower.length >= 5 && /(ung|keit|heit|schaft|lich|chen|lein|nis|sal|tum|bar|sam|haft|los|voll)$/.test(lower)) return 'de';
+    if (lower.length >= 5 && /(ieren|ierte|iert|ung|ungen|ten|test|tet|ste|sten)$/.test(lower)) return 'de';
+    if (lower.length >= 5 && /(tion|sion|ness|ment|ful|less|ous|ive|able|ible|ify|ise|ize|ology|graphy)$/.test(lower)) return 'en';
+    if (lower.length >= 4 && /(ing|ed|ly)$/.test(lower) && !/[äöüß]/.test(lower)) {
+      if (!/(ling|lich|ig)$/.test(lower)) return 'en';
+    }
     return null;
+  }
+
+  function effectiveWordLanguage(word) {
+    return detectWordLanguage(word) || docLanguage;
   }
 
   /* ============================================================
@@ -1104,13 +1183,12 @@
   }
 
   /* ============================================================
-     LOCAL RHYME KEY (instant, sync)
+     LOCAL RHYME KEY
      ============================================================ */
   function localRhymeKey(word, lang) {
     const clean = word.toLowerCase().replace(/[^a-zäöüß]/g, '');
     if (clean.length < 2) return null;
     const effectiveLang = lang || docLanguage;
-
     if (effectiveLang === 'de') {
       const vowels = 'aeiouyäöü';
       let lastVowelIdx = -1;
@@ -1121,7 +1199,6 @@
       return clean.slice(lastVowelIdx);
     } else {
       let w = clean;
-      // Silent trailing 'e'
       if (w.length > 2 && w.endsWith('e') && !'aeiouy'.includes(w[w.length - 2])) {
         w = w.slice(0, -1);
       }
@@ -1136,12 +1213,12 @@
   }
 
   /* ============================================================
-     GROUP BUILDING (local + API hybrid)
+     GROUP BUILDING
      ============================================================ */
   function buildLocalGroups(uniqueWords) {
     const groups = {};
     uniqueWords.forEach(w => {
-      const wordLang = detectWordLanguage(w) || docLanguage;
+      const wordLang = effectiveWordLanguage(w);
       const key = localRhymeKey(w, wordLang);
       if (!key) return;
       const composite = wordLang + ':' + key;
@@ -1160,7 +1237,6 @@
   }
 
   function buildEnhancedGroups(uniqueWords) {
-    // Union-find over unique words
     const parent = {};
     uniqueWords.forEach(w => parent[w] = w);
     function find(x) {
@@ -1171,11 +1247,9 @@
       const ra = find(a), rb = find(b);
       if (ra !== rb) parent[ra] = rb;
     }
-
-    // Union by local rhyme key
     const keyBuckets = {};
     uniqueWords.forEach(w => {
-      const wordLang = detectWordLanguage(w) || docLanguage;
+      const wordLang = effectiveWordLanguage(w);
       const key = localRhymeKey(w, wordLang);
       if (!key) return;
       const composite = wordLang + ':' + key;
@@ -1187,24 +1261,22 @@
         for (let i = 1; i < ws.length; i++) union(ws[0], ws[i]);
       }
     });
-
-    // Union by API results
     const wordSet = new Set(uniqueWords);
     uniqueWords.forEach(w => {
       const rhymes = rhymeCache.get(w) || [];
+      const wLang = effectiveWordLanguage(w);
       rhymes.forEach(r => {
-        if (wordSet.has(r)) union(w, r);
+        if (wordSet.has(r) && effectiveWordLanguage(r) === wLang) {
+          union(w, r);
+        }
       });
     });
-
-    // Collect final groups
     const rawGroups = {};
     uniqueWords.forEach(w => {
       const root = find(w);
       if (!rawGroups[root]) rawGroups[root] = [];
       rawGroups[root].push(w);
     });
-
     const result = {};
     let gid = 0;
     Object.values(rawGroups).forEach(ws => {
@@ -1221,13 +1293,9 @@
     groupColors = {};
     groupSizes = {};
     groupMembers = {};
-
     const isLight = document.documentElement.classList.contains('light');
     const palette = isLight ? RHYME_PALETTE_LIGHT : RHYME_PALETTE_DARK;
-
-    // Sort groups by size (largest first) so important groups get the first colors
     const sortedKeys = Object.keys(rawGroups).sort((a, b) => rawGroups[b].length - rawGroups[a].length);
-
     sortedKeys.forEach((key, i) => {
       const gid = 'G' + i;
       const words = rawGroups[key];
@@ -1278,14 +1346,47 @@
     await Promise.all(workers);
   }
 
+  async function fetchSuggestions(word, lang) {
+    const key = word.toLowerCase();
+    const cacheKey = lang + ':' + key;
+    if (suggestionCache.has(cacheKey)) return suggestionCache.get(cacheKey);
+    apiPending++;
+    updateApiDot();
+    try {
+      const [sugRes, mlRes] = await Promise.all([
+        fetch(`https://api.datamuse.com/sug?s=${encodeURIComponent(key)}&max=15`)
+          .then(r => r.ok ? r.json() : []).catch(() => []),
+        fetch(`https://api.datamuse.com/words?ml=${encodeURIComponent(key)}&max=15`)
+          .then(r => r.ok ? r.json() : []).catch(() => [])
+      ]);
+      const filterLang = (arr) => arr
+        .map(d => (d && d.word ? d.word.toLowerCase() : ''))
+        .filter(w => w && w !== key)
+        .filter(w => {
+          const dl = detectWordLanguage(w);
+          if (dl === null) return true;
+          return dl === lang;
+        });
+      const combined = [...new Set([...filterLang(sugRes), ...filterLang(mlRes)])].slice(0, 15);
+      suggestionCache.set(cacheKey, combined);
+      return combined;
+    } catch (e) {
+      suggestionCache.set(cacheKey, []);
+      return [];
+    } finally {
+      apiPending--;
+      updateApiDot();
+    }
+  }
+
   function updateApiDot() {
     if (!apiDot) return;
     if (apiPending > 0) {
       apiDot.className = 'status-dot loading';
-      apiDot.title = currentAppLang === 'de' ? 'Reim-API lädt…' : 'Rhyme API loading…';
+      apiDot.title = currentAppLang === 'de' ? 'API lädt…' : 'API loading…';
     } else {
       apiDot.className = 'status-dot ready';
-      apiDot.title = currentAppLang === 'de' ? 'Reim-API bereit' : 'Rhyme API ready';
+      apiDot.title = currentAppLang === 'de' ? 'API bereit' : 'API ready';
     }
   }
 
@@ -1311,6 +1412,17 @@
   function debounce(fn, ms) {
     let t;
     return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+  }
+
+  function setLangBadge(el, lang) {
+    if (!el) return;
+    if (!lang) {
+      el.textContent = '—';
+      el.className = 'lang-badge';
+      return;
+    }
+    el.textContent = lang === 'de' ? 'DE' : 'EN';
+    el.className = 'lang-badge ' + lang;
   }
 
   /* ============================================================
@@ -1345,7 +1457,7 @@
       lw.forEach(w => {
         wordsList.push(w);
         const wl = w.toLowerCase().replace(/[^a-zäöüß']/g, '');
-        const wordLang = detectWordLanguage(w) || docLanguage;
+        const wordLang = effectiveWordLanguage(w);
         const syl = getSyllableCount(w, wordLang);
         totalSyllables += syl;
         lineSyl += syl;
@@ -1362,7 +1474,6 @@
     infoLines.innerText = lines.length;
     infoWords.innerText = wordsList.length;
 
-    // Letter frequency
     const upper = text.toUpperCase();
     const freq = {};
     for (let ch of upper) {
@@ -1375,13 +1486,11 @@
       letterContainer.innerHTML = sortedLetters.map(ch => `<span style="color:var(--text-muted);font-weight:500;">${ch}:</span><span style="color:var(--text-color);font-weight:600;">${freq[ch]}</span>`).join(' <span style="color:var(--border-color);">|</span> ');
     }
 
-    // Avg vowels per line
     const validLines = lines.filter(l => l.trim().length > 0).length;
     const avgVowels = validLines > 0 ? totalSyllables / validLines : 0;
     avgSyllablesVal.innerText = avgVowels.toFixed(1);
     avgSyllablesBar.style.width = `${Math.min((avgVowels / 20) * 100, 100)}%`;
 
-    // Cadence variance
     let stdDev = 0;
     if (lineSyllableCounts.length > 0) {
       const mean = lineSyllableCounts.reduce((a, b) => a + b, 0) / lineSyllableCounts.length;
@@ -1390,18 +1499,15 @@
     }
     const cadence = lineSyllableCounts.length > 1 ? Math.max(0, 100 - (stdDev * 15)) : 100;
 
-    // Vocabulary diversity
     const uniqueClean = new Set(
       wordsList.map(w => w.toLowerCase().replace(/[^a-zäöüß']/g, '')).filter(w => w.length > 1)
     );
     const uniqueArr = [...uniqueClean];
     const lexDensity = wordsList.length > 0 ? (uniqueArr.length / wordsList.length) * 100 : 0;
 
-    // ---------- FAST PATH: local rhyme groups (instant) ----------
     const localGroups = buildLocalGroups(uniqueArr);
     applyGroups(localGroups);
 
-    // Render everything with local colors immediately
     renderPreview();
     renderVowelGrid(lineVowels, maxVowels);
     renderWordGrid(linesOfWords, maxWords);
@@ -1409,12 +1515,10 @@
     drawTimelinePlot();
     triggerContextLookups();
 
-    // ---------- SLOW PATH: API enhancement (async) ----------
     if (uniqueArr.length === 0) return;
     await fetchAllRhymesConcurrent(uniqueArr, 5);
     if (myGen !== analysisGeneration) return;
 
-    // Rebuild groups with API data and re-render
     const enhancedGroups = buildEnhancedGroups(uniqueArr);
     applyGroups(enhancedGroups);
     renderPreview();
@@ -1468,7 +1572,6 @@
           if (gid) {
             const color = groupColors[gid];
             const members = groupMembers[gid] || [];
-            // Find longest common suffix with any other member
             let maxSuffix = 0;
             members.forEach(other => {
               if (other !== wl) {
@@ -1494,7 +1597,7 @@
   }
 
   /* ============================================================
-     VOWEL GRID
+     VOWEL / WORD GRIDS
      ============================================================ */
   function renderVowelGrid(lineVowels, maxVowels) {
     rhythmGrid.innerHTML = '';
@@ -1531,9 +1634,6 @@
     });
   }
 
-  /* ============================================================
-     WORD GRID
-     ============================================================ */
   function renderWordGrid(linesOfWords, maxWords) {
     wordGrid.innerHTML = '';
     if (!maxWords || maxWords === 0) {
@@ -1581,10 +1681,12 @@
   input.addEventListener('scroll', () => { lineNumbers.scrollTop = input.scrollTop; });
 
   /* ============================================================
-     CONTEXT LOOKUPS
+     CONTEXT LOOKUPS — language-aware per word
      ============================================================ */
-  let lastLookupWord = '';
+  let lookupToken = 0;
+
   async function triggerContextLookups() {
+    const myToken = ++lookupToken;
     const val = input.value;
     let target = '';
     const sel = val.substring(input.selectionStart, input.selectionEnd).trim();
@@ -1594,56 +1696,113 @@
       const words = before.match(/[\wäöüß']+/gi);
       if (words && words.length) target = words[words.length - 1];
     }
+
     const noWordMsg = currentAppLang === 'de' ? 'Kein Wort erkannt.' : 'No word detected.';
+
     if (!target) {
+      suggestionsList.innerHTML = `<span style="color:var(--text-muted);font-style:italic;">${noWordMsg}</span>`;
       rhymesList.innerHTML = `<span style="color:var(--text-muted);font-style:italic;">${noWordMsg}</span>`;
       definitionsList.innerHTML = `<span style="color:var(--text-muted);font-style:italic;">${noWordMsg}</span>`;
+      setLangBadge(suggestionsLangBadge, null);
+      setLangBadge(rhymesLangBadge, null);
+      setLangBadge(definitionsLangBadge, null);
       return;
     }
+
     const clean = target.toLowerCase().replace(/[^a-zäöüß']/g, '');
     if (!clean) return;
-    lastLookupWord = clean;
 
-    rhymesList.innerHTML = `<span style="color:var(--text-muted);font-style:italic;">${currentAppLang === 'de' ? 'Lade Reime…' : 'Loading rhymes…'}</span>`;
-    const rhymes = await fetchRhymesFor(clean);
-    if (lastLookupWord !== clean) return;
-    if (rhymes.length > 0) {
-      const wordSet = new Set(lastWordsList.map(w => w.toLowerCase().replace(/[^a-zäöüß']/g, '')));
-      const inText = rhymes.filter(r => wordSet.has(r));
-      const others = rhymes.filter(r => !wordSet.has(r)).slice(0, 10);
-      let html = '';
-      if (inText.length) {
-        html += inText.slice(0, 6).map(w => `<span class="suggestion-badge" style="border-color:var(--link-color);color:var(--link-color);">${esc(w)}</span>`).join(' ');
-      }
-      if (others.length) {
-        if (html) html += ' <span style="color:var(--border-color);">|</span> ';
-        html += others.map(w => `<span class="suggestion-badge" data-word="${escAttr(w)}">${esc(w)}</span>`).join(' ');
-      }
-      rhymesList.innerHTML = html || `<span style="color:var(--text-muted);font-style:italic;">${currentAppLang === 'de' ? 'Keine Reime gefunden.' : 'No rhymes found.'}</span>`;
-    } else {
-      rhymesList.innerHTML = `<span style="color:var(--text-muted);font-style:italic;">${currentAppLang === 'de' ? 'Keine Reime gefunden.' : 'No rhymes found.'}</span>`;
-    }
+    const wordLang = effectiveWordLanguage(clean);
 
-    definitionsList.innerHTML = `<span style="color:var(--text-muted);font-style:italic;">${currentAppLang === 'de' ? 'Lade Definition…' : 'Loading definition…'}</span>`;
-    fetchDefinition(clean);
+    setLangBadge(suggestionsLangBadge, wordLang);
+    setLangBadge(rhymesLangBadge, wordLang);
+    setLangBadge(definitionsLangBadge, wordLang);
+
+    const loadingMsg = currentAppLang === 'de' ? 'Lade…' : 'Loading…';
+    suggestionsList.innerHTML = `<span style="color:var(--text-muted);font-style:italic;">${loadingMsg}</span>`;
+    rhymesList.innerHTML = `<span style="color:var(--text-muted);font-style:italic;">${loadingMsg}</span>`;
+    definitionsList.innerHTML = `<span style="color:var(--text-muted);font-style:italic;">${loadingMsg}</span>`;
+
+    const [suggestions, rhymes] = await Promise.all([
+      fetchSuggestions(clean, wordLang),
+      fetchRhymesFor(clean)
+    ]);
+    if (myToken !== lookupToken) return;
+
+    renderSuggestions(suggestions);
+    renderRhymes(rhymes, clean, wordLang);
+    fetchDefinition(clean, wordLang, myToken);
   }
 
-  async function fetchDefinition(word) {
-    // Auto-detect per word for lookup
-    const wordLang = detectWordLanguage(word) || docLanguage;
+  function renderSuggestions(suggestions) {
+    if (!suggestions || suggestions.length === 0) {
+      suggestionsList.innerHTML = `<span style="color:var(--text-muted);font-style:italic;">${currentAppLang === 'de' ? 'Keine Vorschläge.' : 'No suggestions.'}</span>`;
+      return;
+    }
+    const wordSet = new Set(lastWordsList.map(w => w.toLowerCase().replace(/[^a-zäöüß']/g, '')));
+    suggestionsList.innerHTML = suggestions.slice(0, 12).map(w => {
+      const cls = wordSet.has(w) ? 'suggestion-badge highlight' : 'suggestion-badge';
+      return `<span class="${cls}" data-word="${escAttr(w)}">${esc(w)}</span>`;
+    }).join(' ');
+  }
+
+  function renderRhymes(rhymes, sourceWord, lang) {
+    if (!rhymes || rhymes.length === 0) {
+      const key = localRhymeKey(sourceWord, lang);
+      const wordSet = new Set(lastWordsList.map(w => w.toLowerCase().replace(/[^a-zäöüß']/g, '')));
+      const localMatches = [...wordSet].filter(w => w !== sourceWord && localRhymeKey(w, lang) === key);
+      if (localMatches.length > 0) {
+        rhymesList.innerHTML = localMatches.slice(0, 12).map(w =>
+          `<span class="suggestion-badge highlight">${esc(w)}</span>`
+        ).join(' ');
+        return;
+      }
+      rhymesList.innerHTML = `<span style="color:var(--text-muted);font-style:italic;">${currentAppLang === 'de' ? 'Keine Reime gefunden.' : 'No rhymes found.'}</span>`;
+      return;
+    }
+
+    const wordSet = new Set(lastWordsList.map(w => w.toLowerCase().replace(/[^a-zäöüß']/g, '')));
+    const sameLang = rhymes.filter(r => {
+      const dl = detectWordLanguage(r);
+      if (dl === null) return true;
+      return dl === lang;
+    });
+    const inText = sameLang.filter(r => wordSet.has(r));
+    const others = sameLang.filter(r => !wordSet.has(r)).slice(0, 10);
+
+    let html = '';
+    if (inText.length) {
+      html += inText.slice(0, 6).map(w => `<span class="suggestion-badge highlight">${esc(w)}</span>`).join(' ');
+    }
+    if (others.length) {
+      if (html) html += ' <span style="color:var(--border-color);">|</span> ';
+      html += others.map(w => `<span class="suggestion-badge" data-word="${escAttr(w)}">${esc(w)}</span>`).join(' ');
+    }
+    if (!html) {
+      const key = localRhymeKey(sourceWord, lang);
+      const localMatches = [...wordSet].filter(w => w !== sourceWord && localRhymeKey(w, lang) === key);
+      if (localMatches.length > 0) {
+        html = localMatches.slice(0, 12).map(w => `<span class="suggestion-badge highlight">${esc(w)}</span>`).join(' ');
+      } else {
+        html = `<span style="color:var(--text-muted);font-style:italic;">${currentAppLang === 'de' ? 'Keine Reime gefunden.' : 'No rhymes found.'}</span>`;
+      }
+    }
+    rhymesList.innerHTML = html;
+  }
+
+  async function fetchDefinition(word, lang, myToken) {
+    const effectiveLang = lang || docLanguage;
+    let html = '';
     try {
-      if (wordLang === 'de') {
+      if (effectiveLang === 'de') {
         const res = await fetch(`https://www.dwds.de/api/wb/snippet/?q=${encodeURIComponent(word)}`);
         if (!res.ok) throw new Error();
         const data = await res.json();
         if (data && data.length > 0) {
           const entry = data[0];
-          let html = '';
           if (entry.pos) html += `<span style="color:var(--link-color);font-weight:700;font-size:0.72rem;text-transform:uppercase;">[${esc(entry.pos)}]</span> `;
           if (entry.snippet) html += `<span style="font-size:0.82rem;">${esc(entry.snippet)}</span>`;
           if (entry.url) html += ` <a href="${entry.url}" target="_blank" rel="noopener" style="font-size:0.78rem;">DWDS <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.6rem;"></i></a>`;
-          definitionsList.innerHTML = html || `<span style="color:var(--text-muted);font-style:italic;">${currentAppLang === 'de' ? 'Kein Eintrag.' : 'No entry.'}</span>`;
-          return;
         }
       } else {
         const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
@@ -1653,42 +1812,46 @@
           const entry = data[0];
           const meaning = entry.meanings && entry.meanings[0];
           const def = meaning && meaning.definitions && meaning.definitions[0];
-          let html = '';
           if (meaning && meaning.partOfSpeech) html += `<span style="color:var(--link-color);font-weight:700;font-size:0.72rem;text-transform:uppercase;">[${esc(meaning.partOfSpeech)}]</span> `;
           if (def && def.definition) html += `<span style="font-size:0.82rem;">${esc(def.definition)}</span>`;
-          definitionsList.innerHTML = html || `<span style="color:var(--text-muted);font-style:italic;">No definition found.</span>`;
-          return;
         }
       }
     } catch (e) { /* fall through */ }
 
-    const syl = getSyllableCount(word, wordLang);
-    const rhymes = rhymeCache.get(word) || [];
-    definitionsList.innerHTML = `<span style="color:var(--text-muted);font-size:0.78rem;">Vowels: <strong style="color:var(--text-color);">${syl}</strong> · Rhymes: <strong style="color:var(--text-color);">${rhymes.length}</strong></span>`;
+    if (myToken !== lookupToken) return;
+
+    if (!html) {
+      const syl = getSyllableCount(word, effectiveLang);
+      const rhymes = rhymeCache.get(word) || [];
+      html = `<span style="color:var(--text-muted);font-size:0.78rem;">Vowels: <strong style="color:var(--text-color);">${syl}</strong> · Rhymes: <strong style="color:var(--text-color);">${rhymes.length}</strong></span>`;
+    }
+    definitionsList.innerHTML = html;
   }
 
   /* ============================================================
      TIMELINE PLOT
      ============================================================ */
+  const TIMELINE_HEIGHT = 150;
+
   function updateTimelineSize() {
     const rect = timelinePlotContainer.getBoundingClientRect();
     if (rect.width === 0) return;
     const dpr = window.devicePixelRatio || 1;
     timelineCanvas.style.width = `${rect.width}px`;
-    timelineCanvas.style.height = `70px`;
+    timelineCanvas.style.height = `${TIMELINE_HEIGHT}px`;
     timelineCanvas.width = rect.width * dpr;
-    timelineCanvas.height = 70 * dpr;
+    timelineCanvas.height = TIMELINE_HEIGHT * dpr;
     const ctx = timelineCanvas.getContext('2d');
     ctx.scale(dpr, dpr);
     timelineCanvas._plotW = rect.width;
-    timelineCanvas._plotH = 70;
+    timelineCanvas._plotH = TIMELINE_HEIGHT;
   }
 
   function drawTimelinePlot() {
     updateTimelineSize();
     const ctx = timelineCanvas.getContext('2d');
     const width = timelineCanvas._plotW || 300;
-    const height = timelineCanvas._plotH || 70;
+    const height = timelineCanvas._plotH || TIMELINE_HEIGHT;
     ctx.clearRect(0, 0, width, height);
 
     const dynamicSubColor = getComputedStyle(document.body).getPropertyValue('--text-muted').trim();
@@ -1697,7 +1860,7 @@
     const wordsList = lastWordsList;
     if (!wordsList || wordsList.length < 2) {
       ctx.fillStyle = dynamicSubColor;
-      ctx.font = '12px "Fira Code", monospace';
+      ctx.font = '13px "Fira Code", monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(currentAppLang === 'de'
@@ -1706,14 +1869,13 @@
       return;
     }
 
-    const padX = 18, padY = 14;
+    const padX = 22, padY = 26;
     const plotW = width - padX * 2, plotH = height - padY * 2;
     const n = wordsList.length;
-    const xStep = plotW / (n - 1);
+    const xStep = plotW / Math.max(1, n - 1);
 
     const syllables = wordsList.map(w => {
-      const wl = w.toLowerCase().replace(/[^a-zäöüß']/g, '');
-      const wordLang = detectWordLanguage(w) || docLanguage;
+      const wordLang = effectiveWordLanguage(w);
       return getSyllableCount(w, wordLang);
     });
     const rhymes = wordsList.map(w => {
@@ -1775,11 +1937,11 @@
         i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
       }
       ctx.stroke();
-      if (n < 40) {
+      if (n < 60) {
         ctx.fillStyle = selectedSyllableColor;
         for (let i = 0; i < n; i++) {
           ctx.beginPath();
-          ctx.arc(padX + i * xStep, padY + plotH - (syllables[i] / maxSyl) * plotH, 3.5, 0, Math.PI * 2);
+          ctx.arc(padX + i * xStep, padY + plotH - (syllables[i] / maxSyl) * plotH, 3.8, 0, Math.PI * 2);
           ctx.fill();
         }
       }
@@ -1788,7 +1950,7 @@
     if (showWordsLineCheck && showWordsLineCheck.checked && wpl.length === n) {
       ctx.strokeStyle = selectedThirdColor;
       ctx.lineWidth = 2;
-      ctx.setLineDash([4, 4]);
+      ctx.setLineDash([5, 5]);
       ctx.beginPath();
       for (let i = 0; i < n; i++) {
         const x = padX + i * xStep, y = padY + plotH - (wpl[i] / maxWpl) * plotH;
@@ -1823,9 +1985,9 @@
       metricsPane.style.minHeight = '70px';
       rowResizer.style.display = 'none';
     } else {
-      metricsPane.style.minHeight = '220px';
+      metricsPane.style.minHeight = '200px';
       rowResizer.style.display = 'block';
-      if (metricsPane.style.height === '70px') metricsPane.style.height = '360px';
+      if (metricsPane.style.height === '70px') metricsPane.style.height = '420px';
     }
     redrawTimeline();
   }
@@ -1881,9 +2043,8 @@
   }
 
   /* ============================================================
-     MODAL — Export only (open via download menu on long-press is not used)
+     DOWNLOAD
      ============================================================ */
-  function closeSaveModal() { modalBackdrop.classList.remove('open'); }
   function downloadFile(content, filename, mime) {
     const blob = new Blob([content], { type: mime });
     const url = URL.createObjectURL(blob);
@@ -1899,8 +2060,6 @@
   function downloadHTML() {
     const val = input.value;
     input.defaultValue = val;
-
-    // Clear dynamic inline styles from language spans before serializing
     document.querySelectorAll('.lang-de, .lang-en').forEach(el => { el.style.display = ''; });
     colorPickerPopup.classList.remove('open');
     modalBackdrop.classList.remove('open');
@@ -1949,7 +2108,7 @@
     const onMove = (ev) => {
       const dy = ev.clientY - startY;
       const ph = previewPane.getBoundingClientRect().height;
-      const nh = Math.max(220, Math.min(ph - 100, startH - dy));
+      const nh = Math.max(200, Math.min(ph - 100, startH - dy));
       metricsPane.style.height = nh + 'px';
       redrawTimeline();
     };
@@ -1985,7 +2144,6 @@
       themeIcon.className = 'fa-solid fa-moon';
     }
     applyThemeColors();
-    // Reassign rhyme group colors for new palette (contrast-aware)
     if (Object.keys(groupSizes).length > 0) {
       const rawGroups = {};
       Object.keys(groupMembers).forEach(gid => {
@@ -2000,9 +2158,8 @@
   });
 
   document.getElementById('downloadBtn').addEventListener('click', downloadHTML);
-
-  document.getElementById('btnModalCancel').addEventListener('click', closeSaveModal);
-  modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) closeSaveModal(); });
+  document.getElementById('btnModalCancel').addEventListener('click', () => modalBackdrop.classList.remove('open'));
+  modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) modalBackdrop.classList.remove('open'); });
 
   document.getElementById('toggleTimelineBtn').addEventListener('click', () => { showTimeline = !showTimeline; updateMetricsLayoutState(); });
   document.getElementById('toggleGridsBtn').addEventListener('click', () => { showGrids = !showGrids; updateMetricsLayoutState(); });
