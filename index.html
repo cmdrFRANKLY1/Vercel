@@ -170,12 +170,20 @@
             </div>
         </div>
 
-        <!-- Start Menu Launcher (auto-height, grows/shrinks with entries) -->
-        <div id="start-menu" class="hidden absolute w-[360px] bg-hypr-base glass-effect border-2 border-hypr-surface1 rounded-xl shadow-[0_10px_50px_rgba(0,0,0,0.9)] z-[60] flex-row overflow-hidden animate-menu-pop">
-            <div class="w-12 shrink-0 bg-hypr-surface0/60 border-r border-hypr-surface1 flex flex-col items-center py-3 justify-end gap-3 z-10">
-                <button onclick="openSettings(); toggleLauncher();" class="w-8 h-8 rounded-lg hover:bg-hypr-surface1 text-hypr-subtext hover:text-hypr-text flex items-center justify-center transition-colors group relative" title="Settings">
-                    <i class="fa-solid fa-gear group-hover:rotate-90 transition-transform duration-300"></i>
-                </button>
+        <!-- Start Menu Overlay -->
+        <div id="start-menu-overlay" class="hidden absolute inset-0 w-full h-full z-[999998]" onclick="if(!document.getElementById('start-menu').classList.contains('hidden')) toggleLauncher()"></div>
+
+        <!-- Start Menu Launcher -->
+        <div id="start-menu" class="hidden absolute w-[360px] bg-hypr-base glass-effect border-2 border-hypr-surface1 rounded-xl shadow-[0_10px_50px_rgba(0,0,0,0.9)] z-[999999] flex-row overflow-hidden animate-menu-pop">
+            <div class="w-12 shrink-0 bg-hypr-surface0/60 border-r border-hypr-surface1 flex flex-col items-center py-3 justify-between z-10">
+                <div id="favorites-container" class="flex flex-col gap-3 w-full items-center pt-1">
+                    <!-- Favorites will be injected here -->
+                </div>
+                <div class="flex flex-col gap-3 w-full items-center pb-1">
+                    <button onclick="openSettings(); toggleLauncher();" class="w-8 h-8 rounded-lg hover:bg-hypr-surface1 text-hypr-subtext hover:text-hypr-text flex items-center justify-center transition-colors group relative" title="Settings">
+                        <i class="fa-solid fa-gear group-hover:rotate-90 transition-transform duration-300"></i>
+                    </button>
+                </div>
             </div>
             
             <div class="flex-1 min-w-0 flex flex-col bg-hypr-base/40 relative">
@@ -230,24 +238,23 @@
         function getScrW() { return window.innerWidth / window.hyprConfig.scale; }
         function getScrH() { return window.innerHeight / window.hyprConfig.scale; }
 
-        // Click outside to close start menu or settings menu if it loses focus
         document.addEventListener('click', (e) => {
             const menu = document.getElementById('start-menu');
             const btn = document.getElementById('launcher-btn');
+            const overlay = document.getElementById('start-menu-overlay');
             const path = e.composedPath();
             if (!menu.classList.contains('hidden') && !path.includes(menu) && !path.includes(btn)) {
                 menu.classList.remove('flex');
                 menu.classList.add('hidden');
+                if (overlay) overlay.classList.add('hidden');
             }
 
-            // Close settings menu when clicking outside of it
             const settingsWin = document.getElementById('window-settings');
             if (settingsWin && !path.includes(settingsWin)) {
                 closeApp('window-settings');
             }
         });
 
-        // Move a specific window to a target workspace
         window.moveToWorkspace = function(winId, ws) {
             if (windows[winId]) {
                 windows[winId].workspace = ws;
@@ -413,6 +420,7 @@
 
         window.toggleLauncher = function(e) {
             if(e) e.stopPropagation();
+            const overlay = document.getElementById('start-menu-overlay');
             if (launcher.classList.contains('hidden')) {
                 const isTop = window.hyprConfig.waybarPosition === 'top';
                 if (isTop) {
@@ -428,6 +436,7 @@
 
                 launcher.classList.remove('hidden');
                 launcher.classList.add('flex');
+                if (overlay) overlay.classList.remove('hidden');
                 
                 setTimeout(() => {
                     searchInput.focus();
@@ -438,6 +447,7 @@
             } else {
                 launcher.classList.remove('flex');
                 launcher.classList.add('hidden');
+                if (overlay) overlay.classList.add('hidden');
             }
         };
 
@@ -460,7 +470,7 @@
             }
         });
 
-        async function scanDirectory(basePath, defaultGroup = "Applications", maxDepth = 4) {
+        async function scanDirectory(basePath, defaultGroup = "", maxDepth = 4) {
             let apps = [];
             if (maxDepth === 0) return apps;
             try {
@@ -486,10 +496,18 @@
                     let isDir = href.endsWith('/') || link.innerText.trim().endsWith('/');
                     let isHtmlOrJs = relativePath.toLowerCase().endsWith('.html') || relativePath.toLowerCase().endsWith('.js');
                     if (isHtmlOrJs) {
-                        apps.push({ path: relativePath, name: formatAppName(fileName), type: fileName.split('.').pop().toLowerCase(), group: defaultGroup });
+                        apps.push({ 
+                            path: relativePath, 
+                            name: formatAppName(fileName), 
+                            type: fileName.split('.').pop().toLowerCase(), 
+                            group: defaultGroup,
+                            info: '',
+                            favorite: false
+                        });
                     } else if (isDir || (!fileName.includes('.') && maxDepth > 1)) {
                         const groupName = fileName.charAt(0).toUpperCase() + fileName.slice(1);
-                        const subApps = await scanDirectory(relativePath, groupName, maxDepth - 1);
+                        const subGroup = defaultGroup ? `${defaultGroup}/${groupName}` : groupName;
+                        const subApps = await scanDirectory(relativePath, subGroup, maxDepth - 1);
                         apps.push(...subApps);
                     }
                 }
@@ -498,7 +516,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
-            let items = await scanDirectory('applications/', 'Applications');
+            let items = await scanDirectory('applications/', '');
             if (items.length === 0) {
                 try {
                     const fallbackRes = await fetch('registry.json');
@@ -507,10 +525,18 @@
                         items = regData.map(app => {
                             let cleanPath = (app.file || app.path || '').replace(/\\/g, '/');
                             if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
+                            
+                            // Treat 'Applications' as the root namespace for backwards compatibility
+                            let group = app.category || app.group || '';
+                            if (group === 'Applications') group = '';
+
                             return {
-                                path: cleanPath, name: app.name || formatAppName(cleanPath.split('/').pop()),
+                                path: cleanPath, 
+                                name: app.name || formatAppName(cleanPath.split('/').pop()),
                                 type: cleanPath ? cleanPath.split('.').pop().toLowerCase() : 'html',
-                                group: app.category || app.group || 'Applications'
+                                group: group,
+                                info: app.info || '',
+                                favorite: app.favorite === 'yes' || app.favorite === true
                             };
                         });
                     }
@@ -519,20 +545,51 @@
             window.allApps = items;
             window.currentCategory = null;
             renderStartMenuView();
+            renderFavorites();
         });
+
+        function renderFavorites() {
+            const container = document.getElementById('favorites-container');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const favorites = window.allApps.filter(app => app.favorite);
+            
+            favorites.forEach(app => {
+                const btn = document.createElement('button');
+                btn.className = 'w-8 h-8 rounded-lg hover:bg-hypr-surface1 text-hypr-subtext hover:text-hypr-text flex items-center justify-center transition-colors group relative';
+                btn.title = app.name;
+                
+                let iconClass = app.type === 'js' ? 'fa-brands fa-js text-yellow-400' : 'fa-brands fa-html5 text-orange-500';
+                
+                btn.innerHTML = `<i class="${iconClass} text-lg group-hover:scale-110 transition-transform duration-300"></i>`;
+                btn.onclick = () => { launchApp(app); toggleLauncher(); };
+                
+                container.appendChild(btn);
+            });
+        }
 
         function renderStartMenuView() {
             const container = document.getElementById('apps-container');
             container.innerHTML = '';
             
-            if (!window.allApps || window.allApps.length === 0) {
+            // Filter out favorites from the main application view
+            const displayApps = window.allApps.filter(app => !app.favorite);
+            
+            if (!displayApps || displayApps.length === 0) {
                 container.innerHTML = `<div class="p-6 text-center flex flex-col items-center justify-center text-hypr-subtext gap-3"><span class="text-sm">No apps found</span></div>`;
                 return;
             }
             
             const query = document.getElementById('start-search').value.toLowerCase().trim();
             if (query) {
-                const results = window.allApps.filter(app => app.name.toLowerCase().includes(query) || app.path.toLowerCase().includes(query) || app.group.toLowerCase().includes(query));
+                const results = displayApps.filter(app => 
+                    app.name.toLowerCase().includes(query) || 
+                    app.path.toLowerCase().includes(query) || 
+                    (app.group && app.group.toLowerCase().includes(query)) ||
+                    (app.info && app.info.toLowerCase().includes(query))
+                );
+                
                 if (results.length === 0) container.innerHTML = '<div class="p-4 text-center text-hypr-subtext italic text-sm mt-4">No matches found</div>';
                 else {
                     const unique = []; results.forEach(app => { if (!unique.find(r => r.path === app.path)) unique.push(app); });
@@ -541,48 +598,76 @@
                 return;
             }
             
-            if (window.currentCategory) {
+            const currentPath = window.currentCategory || "";
+
+            // Render Back Button if inside a subcategory
+            if (currentPath !== "") {
                 const backBtn = document.createElement('button');
                 backBtn.className = 'flex items-center gap-2 p-2 mb-2 rounded-lg hover:bg-hypr-surface1 text-left text-hypr-subtext hover:text-hypr-text transition-colors w-full text-sm font-medium border border-hypr-surface1 bg-hypr-surface0/30';
-                backBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i> ' + window.currentCategory;
-                backBtn.onclick = () => { window.currentCategory = null; renderStartMenuView(); };
+                
+                const parentPath = currentPath.includes('/') ? currentPath.substring(0, currentPath.lastIndexOf('/')) : "";
+                const displayCategory = currentPath.split('/').pop();
+                
+                backBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i> ' + displayCategory;
+                backBtn.onclick = () => { window.currentCategory = parentPath; renderStartMenuView(); };
                 container.appendChild(backBtn);
-                const uniqueApps = [];
-                window.allApps.filter(app => app.group === window.currentCategory).forEach(app => { if (!uniqueApps.find(u => u.path === app.path)) uniqueApps.push(app); });
-                uniqueApps.forEach(app => container.appendChild(createAppButton(app)));
-            } else {
-                const groups = {};
-                const rootApps = [];
-                
-                window.allApps.forEach(app => {
-                    if (app.group === 'Applications' || !app.group) {
-                        if (!rootApps.find(a => a.path === app.path)) rootApps.push(app);
-                    } else {
-                        if (!groups[app.group]) groups[app.group] = [];
-                        if (!groups[app.group].find(a => a.path === app.path)) groups[app.group].push(app);
-                    }
-                });
-                
-                Object.keys(groups).sort().forEach(groupName => {
-                    if (groups[groupName].length === 0) return;
-                    const btn = document.createElement('button');
-                    btn.className = 'flex items-center gap-3 p-2 rounded-lg hover:bg-hypr-surface1 text-left border border-transparent outline-none focus:border-hypr-accent focus:bg-hypr-surface1 transition-colors group w-full mb-1';
-                    btn.innerHTML = `<div class="w-8 h-8 rounded-md bg-hypr-surface0 border border-hypr-surface1 flex items-center justify-center text-sm shadow-sm group-hover:scale-105 transition-transform"><i class="fa-solid fa-folder text-yellow-500"></i></div><div class="flex flex-col overflow-hidden"><span class="font-medium text-sm text-hypr-text truncate w-full">${groupName}</span></div>`;
-                    btn.onclick = () => { window.currentCategory = groupName; renderStartMenuView(); };
-                    container.appendChild(btn);
-                });
-                
-                rootApps.sort((a, b) => a.name.localeCompare(b.name)).forEach(app => {
-                    container.appendChild(createAppButton(app));
-                });
             }
+
+            const folders = new Set();
+            const directApps = [];
+
+            // Classify apps into the current level
+            displayApps.forEach(app => {
+                // Ensure legacy standard "Applications" points to root to avoid redundancy
+                let appGroup = app.group === 'Applications' ? '' : (app.group || '');
+
+                if (appGroup === currentPath) {
+                    directApps.push(app);
+                } else if (appGroup.startsWith(currentPath ? currentPath + "/" : "")) {
+                    const prefix = currentPath ? currentPath + "/" : "";
+                    const remaining = appGroup.substring(prefix.length);
+                    const nextLevel = remaining.split('/')[0];
+                    if (nextLevel) {
+                        folders.add(prefix + nextLevel);
+                    }
+                }
+            });
+
+            // Render Sub-Folders
+            Array.from(folders).sort().forEach(folderPath => {
+                const folderName = folderPath.split('/').pop();
+                const btn = document.createElement('button');
+                btn.className = 'flex items-center gap-3 p-2 rounded-lg hover:bg-hypr-surface1 text-left border border-transparent outline-none focus:border-hypr-accent focus:bg-hypr-surface1 transition-colors group w-full mb-1';
+                btn.innerHTML = `<div class="w-8 h-8 rounded-md bg-hypr-surface0 border border-hypr-surface1 flex items-center justify-center text-sm shadow-sm group-hover:scale-105 transition-transform"><i class="fa-solid fa-folder text-yellow-500"></i></div><div class="flex flex-col overflow-hidden"><span class="font-medium text-sm text-hypr-text truncate w-full">${folderName}</span></div>`;
+                btn.onclick = () => { window.currentCategory = folderPath; renderStartMenuView(); };
+                container.appendChild(btn);
+            });
+
+            // Render Apps within current folder
+            const uniqueApps = [];
+            directApps.forEach(app => { if (!uniqueApps.find(u => u.path === app.path)) uniqueApps.push(app); });
+            
+            uniqueApps.sort((a, b) => a.name.localeCompare(b.name)).forEach(app => {
+                container.appendChild(createAppButton(app));
+            });
         }
 
         function createAppButton(app) {
             const btn = document.createElement('button');
             btn.className = 'app-btn flex items-center gap-3 p-2 rounded-lg hover:bg-hypr-surface1 text-left border border-transparent outline-none focus:border-hypr-accent focus:bg-hypr-surface1 transition-colors group w-full mb-1';
+            
             let iconClass = app.type === 'js' ? 'fa-brands fa-js text-yellow-400' : 'fa-brands fa-html5 text-orange-500';
-            btn.innerHTML = `<div class="w-8 h-8 rounded-md bg-hypr-surface0 border border-hypr-surface1 flex items-center justify-center text-sm shadow-sm group-hover:scale-105 transition-transform"><i class="${iconClass}"></i></div><div class="flex flex-col overflow-hidden"><span class="font-medium text-sm text-hypr-text truncate w-full">${app.name}</span><span class="text-[9px] text-hypr-subtext opacity-70 truncate w-full">${app.path}</span></div>`;
+            const secondaryText = app.info ? app.info : app.path;
+            
+            btn.innerHTML = `
+                <div class="w-8 h-8 rounded-md bg-hypr-surface0 border border-hypr-surface1 flex items-center justify-center text-sm shadow-sm group-hover:scale-105 transition-transform">
+                    <i class="${iconClass}"></i>
+                </div>
+                <div class="flex flex-col overflow-hidden">
+                    <span class="font-medium text-sm text-hypr-text truncate w-full">${app.name}</span>
+                    <span class="text-[10px] text-hypr-subtext opacity-80 truncate w-full" title="${secondaryText}">${secondaryText}</span>
+                </div>`;
+                
             btn.onclick = () => { launchApp(app); toggleLauncher(); };
             return btn;
         }
@@ -700,7 +785,6 @@
                     </div>
                 </div>
                 <div class="flex-1 bg-hypr-base p-5 overflow-y-auto custom-scrollbar flex flex-col gap-6 text-sm">
-                    <!-- Section: Layout & Tiling -->
                     <div class="flex flex-col gap-3">
                         <span class="text-xs font-bold uppercase tracking-wider text-hypr-subtext opacity-70">Window Management</span>
                         <label class="flex items-center gap-3 cursor-pointer">
@@ -716,7 +800,6 @@
                         </div>
                     </div>
 
-                    <!-- Section: Topbar Position -->
                     <div class="flex flex-col gap-3">
                         <span class="text-xs font-bold uppercase tracking-wider text-hypr-subtext opacity-70">Topbar Position</span>
                         <div class="grid grid-cols-2 gap-2">
@@ -729,7 +812,6 @@
                         </div>
                     </div>
 
-                    <!-- Section: Appearance & Geometry -->
                     <div class="flex flex-col gap-3">
                         <span class="text-xs font-bold uppercase tracking-wider text-hypr-subtext opacity-70">General Appearance</span>
                         <div class="flex flex-col gap-1.5">
@@ -748,7 +830,6 @@
                         </div>
                     </div>
 
-                    <!-- Section: Colors & Wallpaper -->
                     <div class="flex flex-col gap-3">
                         <span class="text-xs font-bold uppercase tracking-wider text-hypr-subtext opacity-70">Color Palette & Wallpaper</span>
                         <div class="grid grid-cols-2 gap-3">

@@ -168,6 +168,45 @@
             box-shadow: var(--card-shadow);
         }
 
+        /* Native color input styling — cross-browser unification */
+        input[type="color"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            width: 44px;
+            height: 26px;
+            cursor: pointer;
+            padding: 0;
+            background: transparent;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        input[type="color"]:hover {
+            border-color: var(--link-color);
+            box-shadow: 0 0 8px 0 rgba(0, 0, 0, 0.2);
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 2px;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 4px;
+        }
+        input[type="color"]::-moz-color-swatch {
+            border: none;
+            border-radius: 4px;
+        }
+
+        /* Small pulsing ON badge for custom color mode */
+        #custom-badge {
+            animation: badgePulse 1.8s ease-in-out infinite;
+        }
+        @keyframes badgePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.65; }
+        }
+
         /* Global Language Switcher Support */
         [data-lang-de], [data-lang-en] { transition: opacity 0.15s ease-in-out; }
     </style>
@@ -257,10 +296,44 @@
                 </select>
             </div>
 
+            <!-- Custom Colors -->
+            <div>
+                <div class="font-bold text-[var(--heading-color)] mb-2 uppercase tracking-wider text-xs flex items-center justify-between">
+                    <span>
+                        <span data-lang-de>3. Eigene Farben</span><span data-lang-en style="display:none;">3. Custom Colors</span>
+                    </span>
+                    <span id="custom-badge" class="hidden text-[9px] bg-[var(--link-color)] text-[var(--bg-color)] px-1.5 py-0.5 rounded font-mono tracking-wider">ON</span>
+                </div>
+                <div class="control-panel p-3 space-y-2.5">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs text-[var(--text-muted)] font-medium">
+                            <span data-lang-de>Primär</span><span data-lang-en style="display:none;">Primary</span>
+                        </span>
+                        <input type="color" id="colorPrimary" value="#3B4232" title="Primary Color">
+                    </div>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs text-[var(--text-muted)] font-medium">
+                            <span data-lang-de>Sekundär</span><span data-lang-en style="display:none;">Secondary</span>
+                        </span>
+                        <input type="color" id="colorSecondary" value="#8B9467" title="Secondary Color">
+                    </div>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs text-[var(--text-muted)] font-medium">
+                            <span data-lang-de>Kontur</span><span data-lang-en style="display:none;">Border</span>
+                        </span>
+                        <input type="color" id="colorBorder" value="#000000" title="Border / Outline Color">
+                    </div>
+                    <div class="text-[10px] text-[var(--text-muted)] italic pt-1 border-t border-[var(--border-color)]/40 leading-snug">
+                        <span data-lang-de>Eine Farbauswahl überschreibt die Palette. Um zur Palette zurückzukehren, diese oben neu wählen.</span>
+                        <span data-lang-en style="display:none;">Picking a color overrides the palette. To return, re-select a palette above.</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Options -->
             <div>
                 <div class="font-bold text-[var(--heading-color)] mb-2 uppercase tracking-wider text-xs">
-                    <span data-lang-de>3. Optionen</span><span data-lang-en style="display:none;">3. Options</span>
+                    <span data-lang-de>4. Optionen</span><span data-lang-en style="display:none;">4. Options</span>
                 </div>
                 <label class="control-panel flex items-center gap-3 cursor-pointer group p-3 rounded">
                     <!-- Custom Checkbox -->
@@ -362,6 +435,12 @@
         
         let currentSeedTracker = seedValue;
         let activePalette = [];
+
+        // Custom color state
+        let useCustomColors = false;
+        let customPrimary = '#3B4232';
+        let customSecondary = '#8B9467';
+        let customBorder = '#000000';
         
         const infoStyle = document.getElementById('info-style');
         const infoSeed = document.getElementById('info-seed');
@@ -400,6 +479,40 @@
             dark: [['#1E2229', '#3D4654', '#5D6B80', '#101317', '#8894A6'], ['#222B36', '#3B4B5E', '#5D7491', '#141A21', '#859AB5'], ['#1E2226', '#2C3539', '#44535C', '#5F7380', '#0F1113'], ['#0D1117', '#1A232E', '#2B394A', '#536E8C'], ['#111827', '#1F2937', '#374151']],
             warm: [['#E0B876', '#BA7A3A', '#201812'], ['#2C2621', '#5B3322', '#8F4321', '#C26331', '#1A1513', '#4A2A18'], ['#C19A6B', '#966F33', '#6F4E37', '#4A3219']]
         };
+
+        // ---------- Color helpers for custom mode ----------
+        function hexToRgb(hex) {
+            const h = hex.replace('#', '');
+            return {
+                r: parseInt(h.substring(0, 2), 16),
+                g: parseInt(h.substring(2, 4), 16),
+                b: parseInt(h.substring(4, 6), 16)
+            };
+        }
+        function rgbToHex(r, g, b) {
+            const toHex = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+            return '#' + toHex(r) + toHex(g) + toHex(b);
+        }
+        function mixColors(hex1, hex2, ratio) {
+            const c1 = hexToRgb(hex1);
+            const c2 = hexToRgb(hex2);
+            return rgbToHex(
+                c1.r * (1 - ratio) + c2.r * ratio,
+                c1.g * (1 - ratio) + c2.g * ratio,
+                c1.b * (1 - ratio) + c2.b * ratio
+            );
+        }
+        function buildCustomPalette(primary, secondary) {
+            // Expand a two-color input into a 5-slot palette so every generator
+            // (which expects 2–5 entries) has enough variety.
+            return [
+                primary,
+                secondary,
+                mixColors(primary, secondary, 0.33),
+                mixColors(primary, secondary, 0.66),
+                mixColors(primary, '#000000', 0.35)
+            ];
+        }
 
         function random() {
             const x = Math.sin(currentSeedTracker++) * 10000;
@@ -456,7 +569,7 @@
         function strokeCheck(tCtx) {
             if (enableOutline && strokeWidthVal > 0) {
                 tCtx.lineWidth = strokeWidthVal;
-                tCtx.strokeStyle = 'rgba(0,0,0,0.85)';
+                tCtx.strokeStyle = useCustomColors ? customBorder : 'rgba(0,0,0,0.85)';
                 tCtx.stroke();
             }
         }
@@ -585,7 +698,7 @@
                         tCtx.beginPath();
                         tCtx.rect(c * blockSize, r * blockSize, blockSize, blockSize);
                         tCtx.lineWidth = 1;
-                        tCtx.strokeStyle = 'rgba(0,0,0,0.1)';
+                        tCtx.strokeStyle = useCustomColors ? customBorder : 'rgba(0,0,0,0.1)';
                         tCtx.stroke();
                     }
                 }
@@ -746,7 +859,7 @@
                 tCtx.beginPath();
                 tCtx.arc(cx, cy, r, 0, Math.PI*2);
                 tCtx.fill();
-                tCtx.strokeStyle = activePalette[2] || '#201812';
+                tCtx.strokeStyle = useCustomColors ? customBorder : (activePalette[2] || '#201812');
                 tCtx.lineWidth = r * 0.35;
                 tCtx.beginPath();
                 tCtx.arc(cx, cy, r*1.05, 0, Math.PI*1.2);
@@ -778,7 +891,7 @@
         }
 
         function generateEmojis(tCtx, w, h) {
-            tCtx.fillStyle = '#111827';
+            tCtx.fillStyle = useCustomColors ? customPrimary : '#111827';
             tCtx.fillRect(0, 0, w, h);
             const emojis = ['🪖', '🌿', '💥', '🚁', '🎖️', '🔥', '⚙️', '💎', '🚀', '⭐', '💀', '👾'];
             for(let i=0; i<80; i++) {
@@ -914,7 +1027,7 @@
                     tCtx.fillRect(x, y, weaveSize, weaveSize);
                     if (enableOutline && strokeWidthVal > 0) {
                         tCtx.lineWidth = strokeWidthVal;
-                        tCtx.strokeStyle = pal[3];
+                        tCtx.strokeStyle = useCustomColors ? customBorder : pal[3];
                         tCtx.beginPath();
                         if (isVertical) {
                             for(let i=3; i<weaveSize; i+=5) { tCtx.moveTo(x + i, y); tCtx.lineTo(x + i, y + weaveSize); }
@@ -989,7 +1102,9 @@
             currentSeedTracker = seedValue;
             const paletteSelection = document.getElementById('paletteSelect').value;
             
-            if (paletteSelection === 'random') {
+            if (useCustomColors) {
+                activePalette = buildCustomPalette(customPrimary, customSecondary);
+            } else if (paletteSelection === 'random') {
                 if (random() > 0.5) {
                     const randomPaletteGroup = stylePalettes[randomChoice(styleKeys)];
                     activePalette = randomChoice(randomPaletteGroup);
@@ -1059,7 +1174,7 @@
                 // Safe UI Updates
                 if (infoStyle) infoStyle.textContent = activeStyle.toUpperCase();
                 if (infoSeed) infoSeed.textContent = seedValue;
-                if (infoColors) infoColors.textContent = activePalette.length;
+                if (infoColors) infoColors.textContent = useCustomColors ? 'Custom' : activePalette.length;
                 
                 canvas.style.opacity = '1';
             }, 50);
@@ -1077,14 +1192,57 @@
             renderScene(activeStyle, false);
         }
 
+        // ---------- Custom color mode toggle + wiring ----------
+        function setCustomColorMode(active) {
+            useCustomColors = active;
+            const badge = document.getElementById('custom-badge');
+            if (badge) {
+                if (active) badge.classList.remove('hidden');
+                else badge.classList.add('hidden');
+            }
+        }
+
         document.getElementById('generateBtn').addEventListener('click', triggerGeneration);
         document.getElementById('outlineToggle').addEventListener('change', updateCurrent);
-        document.getElementById('paletteSelect').addEventListener('change', updateCurrent);
+
+        // Palette change → leave custom mode
+        document.getElementById('paletteSelect').addEventListener('change', () => {
+            setCustomColorMode(false);
+            updateCurrent();
+        });
+
+        // Style change → preserve current color mode
         document.getElementById('styleSelect').addEventListener('change', (e) => {
             if (e.target.value !== 'random') {
                 renderScene(e.target.value, false);
             }
         });
+
+        // Color pickers → enter custom mode
+        const colorPrimaryEl = document.getElementById('colorPrimary');
+        const colorSecondaryEl = document.getElementById('colorSecondary');
+        const colorBorderEl = document.getElementById('colorBorder');
+
+        colorPrimaryEl.addEventListener('input', (e) => {
+            customPrimary = e.target.value;
+            setCustomColorMode(true);
+            updateCurrent();
+        });
+        colorSecondaryEl.addEventListener('input', (e) => {
+            customSecondary = e.target.value;
+            setCustomColorMode(true);
+            updateCurrent();
+        });
+        colorBorderEl.addEventListener('input', (e) => {
+            customBorder = e.target.value;
+            setCustomColorMode(true);
+            updateCurrent();
+        });
+
+        // Initialize color inputs from defaults (keeps them in sync with state)
+        colorPrimaryEl.value = customPrimary;
+        colorSecondaryEl.value = customSecondary;
+        colorBorderEl.value = customBorder;
         
         document.querySelectorAll('.dl-opt').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -1160,6 +1318,11 @@
                 paletteSelect.options[4].text = isGerman ? 'Dunkelmodus' : 'Dark Mode';
                 paletteSelect.options[5].text = isGerman ? 'Warm / Rost' : 'Warm / Rust';
             }
+
+            // Update color picker titles
+            if (colorPrimaryEl) colorPrimaryEl.title = isGerman ? 'Primärfarbe' : 'Primary Color';
+            if (colorSecondaryEl) colorSecondaryEl.title = isGerman ? 'Sekundärfarbe' : 'Secondary Color';
+            if (colorBorderEl) colorBorderEl.title = isGerman ? 'Konturfarbe' : 'Border / Outline Color';
         }
         
         // Initial setup for standard UI text
