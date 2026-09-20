@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPV Setup Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root {
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #202122;
+            --border-color: #54595d;
+            --text-color: #eaecf0;
+            --text-muted: #a8aeb3;
+            --link-color: #99c1f1;
+            --link-hover: #629deb;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --info-box: #2c2d30;
+            --table-alt: rgba(255,255,255,0.02);
+            --search-match: rgba(250, 204, 21, 0.3);
+            --search-text: #ffffff;
+            /* Omni-directional encasing shadow */
+            --card-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.3), 0 0 4px 0 rgba(0, 0, 0, 0.2);
+            --card-shadow-hover: 0 0 20px 0 rgba(0, 0, 0, 0.4), 0 0 8px 0 rgba(0, 0, 0, 0.3);
+            --panel-border: #54595d;
+        }
+
+        html.light {
+            --bg-color: #f4f6f9;
+            --panel-color: #ffffff;
+            --sidebar-color: #ffffff;
+            --border-color: #cbd5e1;
+            --text-color: #000000;      
+            --text-muted: #000000;      
+            --heading-color: #000000;   
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --code-bg: #f1f5f9;
+            --info-box: #e0f2fe;
+            --table-alt: rgba(0,0,0,0.015);
+            --search-match: rgba(250, 204, 21, 0.5);
+            --search-text: #000000;
+            /* Omni-directional encasing shadow for light mode */
+            --card-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.1), 0 0 6px 0 rgba(0, 0, 0, 0.05);
+            --card-shadow-hover: 0 0 25px 0 rgba(0, 0, 0, 0.15), 0 0 12px 0 rgba(0, 0, 0, 0.08);
+            --panel-border: #e2e8f0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            transition: background-color 0.2s, color 0.2s;
+            /* Prevents horizontal overflow inside iframes (e.g. when maximized in index.html) */
+            overflow-x: hidden;
+        }
+
+        /* Responsive heading sizes so large h1/h2 don't dominate narrow iframes
+           and don't look disproportionate when the window is maximized. */
+        h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 800 !important; }
+        h1 { font-size: clamp(1.75rem, 4vw, 3.5rem) !important; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        h2 { font-size: clamp(1.4rem, 3vw, 2.25rem) !important; margin-bottom: 1rem; }
+        h3 { font-size: clamp(1.2rem, 2.5vw, 1.85rem) !important; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        h4 { font-size: clamp(1.05rem, 2vw, 1.5rem) !important; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+        p { margin-bottom: 1rem; }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--text-color);
+        }
+
+        code a { color: var(--link-color); font-weight: 500; }
+        code a:hover { color: var(--link-hover); }
+
+        .wikitable {
+            width: 100%; border-collapse: collapse; margin: 1em 0;
+            background-color: var(--bg-color); font-size: 0.9em;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid var(--panel-border);
+        }
+        .wikitable th, .wikitable td {
+            border: 1px solid var(--panel-border); padding: 0.75rem 1rem;
+            text-align: left; vertical-align: top;
+        }
+        .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); }
+        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
+
+        .toc-link.active { font-weight: 600; color: var(--link-color); position: relative; }
+        .toc-link.active::before {
+            content: ''; position: absolute; left: -1rem; top: 0; height: 100%;
+            width: 3px; background-color: var(--link-color);
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
+
+        /* Panel enclosing the whole topic — unified with OSI/Bash cheatsheets */
+        .topic-panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            transition: box-shadow 0.3s ease;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        @media (min-width: 1024px) {
+            .topic-panel { padding: 2.5rem; }
+        }
+        .topic-panel:hover {
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        /* Subtopic items inside the panel — unified with OSI/Bash cheatsheets */
+        .subtopic-card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+            overflow-x: auto;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        .subtopic-card:last-child { margin-bottom: 0; }
+        .subtopic-card:hover { box-shadow: var(--card-shadow); transform: translateY(-2px); }
+
+        /* Code Block Copy Features */
+        .code-container {
+            position: relative;
+            max-width: 100%;
+        }
+        
+        .code-content {
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            padding-right: 2.5rem; /* Ensures text doesn't overlap the copy button */
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 0.4rem;
+            right: 0.4rem;
+            opacity: 0;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            background: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            z-index: 10;
+        }
+        
+        .code-container:hover .copy-btn { opacity: 1; }
+        .copy-btn:hover { color: var(--link-color); border-color: var(--link-color); background: var(--bg-color); }
+        @media (hover: none) { .copy-btn { opacity: 1; } }
+
+        .lang-en { display: none; }
+        body[data-active-lang="en"] .lang-de { display: none !important; }
+        body[data-active-lang="en"] .lang-en { display: block !important; }
+        body[data-active-lang="en"] span.lang-en, body[data-active-lang="en"] a.lang-en { display: inline !important; }
+        body[data-active-lang="de"] .lang-en { display: none !important; }
+        body[data-active-lang="de"] .lang-de { display: block !important; }
+        body[data-active-lang="de"] span.lang-de, body[data-active-lang="de"] a.lang-de { display: inline !important; }
+        
+        /* Specific coloring for warnings */
+        .warning-text { color: #ef4444; font-weight: 600; }
+        html.light .warning-text { color: #dc2626; }
+    </style>
+</head>
+
+<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
+
+    <aside class="lg:w-80 flex-shrink-0 bg-[var(--sidebar-color)] border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative shadow-lg transition-colors">
+        
+        <!-- Controls: Language, Theme, Download -->
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
+                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Guide">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+            <i class="fa-solid fa-play text-3xl mb-3 text-[var(--text-color)] opacity-80"></i>
+            <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span class="lang-de">MPV<br>Guide</span>
+                <span class="lang-en">MPV<br>Guide</span>
+            </div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v1.0 - Media Player</div>
+        </div>
+
+        <div class="mb-6 relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
+            </div>
+            <input type="text" id="wikiSearch" placeholder="Search..." class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-xl pl-10 pr-3 py-2.5 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-all shadow-sm" onkeyup="filterWiki()">
+        </div>
+
+        <nav class="text-sm space-y-1.5" id="toc-nav">
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span class="lang-de">Inhaltsverzeichnis</span>
+                <span class="lang-en">Table of Contents</span>
+            </div>
+            
+            <ul class="space-y-1">
+                <li><a href="#uebersicht" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">1. Einführung & Installation</span><span class="lang-en">1. Intro & Installation</span>
+                </a></li>
+                <li class="pt-2"><a href="#config" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">2. Grundlagen & Konfiguration</span><span class="lang-en">2. Basics & Configuration</span>
+                </a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#public" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors">
+                            <span class="lang-de">Tastenkürzel</span><span class="lang-en">Keybindings</span>
+                        </a></li>
+                        <li><a href="#private" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors">
+                            <span class="lang-de">mpv.conf & Profile</span><span class="lang-en">mpv.conf & Profiles</span>
+                        </a></li>
+                    </ul>
+                </li>
+                <li class="pt-2"><a href="#shares" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">3. Hardware-Beschleunigung</span><span class="lang-en">3. Hardware Acceleration</span>
+                </a></li>
+                <li class="pt-2"><a href="#users" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">4. Skripte & Erweiterungen</span><span class="lang-en">4. Scripts & Extensions</span>
+                </a></li>
+                <li class="pt-2"><a href="#clients" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">5. Frontends & IPC</span><span class="lang-en">5. Frontends & IPC</span>
+                </a></li>
+                <li class="pt-2"><a href="#wartung" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">6. Wartung & Fehlersuche</span><span class="lang-en">6. Maintenance & Troubleshooting</span>
+                </a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="flex-grow w-full min-w-0 p-4 lg:p-12" id="main-content">
+        
+        <div class="searchable-block topic-panel mt-0 mb-8">
+            <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0">
+                <span class="lang-de">MPV Setup & Referenz</span>
+                <span class="lang-en">MPV Setup & Reference</span>
+            </h1>
+            <p class="text-lg mb-0 text-[var(--text-color)]">
+                <span class="lang-de"><strong>MPV</strong> ist ein freier, quelloffener Mediaplayer, der auf <em>MPlayer</em> und <em>mplayer2</em> basiert. Er zeichnet sich durch hohe Wiedergabequalität, umfangreiche Hardware-Beschleunigung, Skriptfähigkeit und eine nahezu vollständig über Konfigurationsdateien steuerbare Oberfläche aus. Dieser Guide behandelt Installation, Konfiguration, Keybindings, Shader, Skripte und Frontends.</span>
+                <span class="lang-en"><strong>MPV</strong> is a free, open-source media player based on <em>MPlayer</em> and <em>mplayer2</em>. It stands out for its high playback quality, extensive hardware acceleration, scriptability, and an interface that is almost entirely controllable through configuration files. This guide covers installation, configuration, keybindings, shaders, scripts, and frontends.</span>
+            </p>
+        </div>
+
+        <section id="uebersicht" class="scroll-mt-10 searchable-block topic-panel mt-8">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">1. Einführung & Installation</span>
+                <span class="lang-en">1. Intro & Installation</span>
+            </h2>
+            
+            <p class="mb-6 text-[var(--text-color)]">
+                <span class="lang-de">MPV ist in den offiziellen Repositories nahezu aller Distributionen verfügbar. Für die aktuellste Version empfiehlt sich zusätzlich das offizielle <code>mpv-build</code>-Repository oder ein Flatpak.</span>
+                <span class="lang-en">MPV is available in the official repositories of almost all distributions. For the latest version, the official <code>mpv-build</code> repository or a Flatpak is recommended.</span>
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="subtopic-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                        <span class="lang-de">Installation (Debian/Ubuntu)</span>
+                        <span class="lang-en">Installation (Debian/Ubuntu)</span>
+                    </h4>
+                    <div class="code-container bg-[var(--code-bg)] rounded-lg border border-[var(--border-color)] font-mono text-sm mt-3">
+                        <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                        <div class="code-content p-3">sudo apt update
+sudo apt install mpv yt-dlp</div>
+                    </div>
+                    <p class="text-xs text-[var(--text-muted)] mt-2">
+                        <span class="lang-de"><code>yt-dlp</code> ist optional und ermöglicht das direkte Abspielen von Streaming-URLs.</span>
+                        <span class="lang-en"><code>yt-dlp</code> is optional and enables direct playback of streaming URLs.</span>
+                    </p>
+                </div>
+                <div class="subtopic-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                        <span class="lang-de">Installation (Arch Linux)</span>
+                        <span class="lang-en">Installation (Arch Linux)</span>
+                    </h4>
+                    <div class="code-container bg-[var(--code-bg)] rounded-lg border border-[var(--border-color)] font-mono text-sm mt-3">
+                        <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                        <div class="code-content p-3">sudo pacman -S mpv yt-dlp
+
+# Alternative aus dem AUR (aktueller):
+paru -S mpv-git</div>
+                    </div>
+                    <p class="text-xs text-[var(--text-muted)] mt-2">
+                        <span class="lang-de">Das <code>mpv-git</code>-Paket enthält die neuesten Entwickler-Features, kann aber instabiler sein.</span>
+                        <span class="lang-en">The <code>mpv-git</code> package contains the latest developer features but may be less stable.</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="subtopic-card mt-6">
+                <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                    <span class="lang-de">Version prüfen & unterstützte Features</span>
+                    <span class="lang-en">Check version & supported features</span>
+                </h4>
+                <p class="text-[var(--text-color)] text-sm my-3">
+                    <span class="lang-de">Mit <code>--version</code> sehen Sie die einkompilierten Features (Hardware-Decoder, Ausgabe-Backends). Achten Sie auf <code>VAAPI</code>, <code>VDPAU</code> bzw. <code>cuda</code>, je nach GPU.</span>
+                    <span class="lang-en">With <code>--version</code> you can see the compiled-in features (hardware decoders, output backends). Look for <code>VAAPI</code>, <code>VDPAU</code>, or <code>cuda</code>, depending on your GPU.</span>
+                </p>
+                <div class="code-container bg-[var(--code-bg)] rounded-lg border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-3">mpv --version
+mpv --list-options | grep hwdec</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="config" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">2. Grundlagen & Konfiguration</span>
+                <span class="lang-en">2. Basics & Configuration</span>
+            </h2>
+
+            <div class="subtopic-card scroll-mt-10">
+                <p class="text-[var(--text-color)] text-sm mb-4">
+                    <span class="lang-de">MPV liest seine Konfiguration aus <code>~/.config/mpv/</code> (Linux/macOS) bzw. <code>%APPDATA%\mpv\</code> (Windows). Die wichtigsten Dateien sind <code>mpv.conf</code> (Optionen), <code>input.conf</code> (Tastenkürzel) und der <code>scripts/</code>-Ordner.</span>
+                    <span class="lang-en">MPV reads its configuration from <code>~/.config/mpv/</code> (Linux/macOS) or <code>%APPDATA%\mpv\</code> (Windows). The most important files are <code>mpv.conf</code> (options), <code>input.conf</code> (keybindings), and the <code>scripts/</code> folder.</span>
+                </p>
+
+                <h4 class="text-sm font-bold mb-1"><span class="lang-de">Konfigurationsverzeichnis anlegen:</span><span class="lang-en">Create configuration directory:</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded-lg border border-[var(--border-color)] font-mono text-sm mb-4">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-3">mkdir -p ~/.config/mpv/scripts
+mkdir -p ~/.config/mpv/shaders
+touch ~/.config/mpv/mpv.conf
+touch ~/.config/mpv/input.conf</div>
+                </div>
+
+                <h4 class="text-sm font-bold mb-1"><span class="lang-de">Grundlegende Wiedergabe:</span><span class="lang-en">Basic playback:</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-3">mpv video.mkv
+mpv --fullscreen film.mp4
+mpv --sub-file=subs.srt video.mkv
+mpv https://example.com/stream.m3u8</div>
+                </div>
+            </div>
+
+            <div id="public" class="subtopic-card scroll-mt-10">
+                <div class="flex items-center justify-between border-b border-[var(--border-color)] pb-2 mb-3">
+                    <h3 class="mt-0 mb-0"><span class="lang-de">Wichtige Tastenkürzel</span><span class="lang-en">Essential Keybindings</span></h3>
+                    <i class="fa-solid fa-keyboard text-[var(--link-color)]"></i>
+                </div>
+                <p class="text-[var(--text-color)] text-sm mb-4">
+                    <span class="lang-de">Diese Standardbelegungen sind in jeder Installation verfügbar und bilden die Grundlage für eigene Anpassungen in <code>input.conf</code>.</span>
+                    <span class="lang-en">These default bindings are available in every installation and form the basis for custom adjustments in <code>input.conf</code>.</span>
+                </p>
+                <table class="wikitable">
+                    <thead>
+                        <tr>
+                            <th><span class="lang-de">Taste</span><span class="lang-en">Key</span></th>
+                            <th><span class="lang-de">Funktion</span><span class="lang-en">Action</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>Space</code></td><td><span class="lang-de">Pause / Wiedergabe</span><span class="lang-en">Pause / Play</span></td></tr>
+                        <tr><td><code>← / →</code></td><td><span class="lang-de">5 Sekunden zurückspulen / vorspulen</span><span class="lang-en">Seek 5 seconds backward / forward</span></td></tr>
+                        <tr><td><code>↑ / ↓</code></td><td><span class="lang-de">60 Sekunden zurückspulen / vorspulen</span><span class="lang-en">Seek 60 seconds backward / forward</span></td></tr>
+                        <tr><td><code>f</code></td><td><span class="lang-de">Vollbild umschalten</span><span class="lang-en">Toggle fullscreen</span></td></tr>
+                        <tr><td><code>9 / 0</code></td><td><span class="lang-de">Lautstärke verringern / erhöhen</span><span class="lang-en">Decrease / increase volume</span></td></tr>
+                        <tr><td><code>m</code></td><td><span class="lang-de">Stummschalten</span><span class="lang-en">Mute</span></td></tr>
+                        <tr><td><code>j</code></td><td><span class="lang-de">Untertitel wechseln</span><span class="lang-en">Cycle subtitles</span></td></tr>
+                        <tr><td><code>#</code></td><td><span class="lang-de">Audiospur wechseln</span><span class="lang-en">Cycle audio track</span></td></tr>
+                        <tr><td><code>o</code></td><td><span class="lang-de">OSD-Anzeige umschalten</span><span class="lang-en">Toggle OSD</span></td></tr>
+                        <tr><td><code>i</code></td><td><span class="lang-de">Statistik-Overlay anzeigen</span><span class="lang-en">Show statistics overlay</span></td></tr>
+                        <tr><td><code>s</code></td><td><span class="lang-de">Screenshot speichern</span><span class="lang-en">Take screenshot</span></td></tr>
+                        <tr><td><code>q</code></td><td><span class="lang-de">Beenden</span><span class="lang-en">Quit</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="private" class="subtopic-card scroll-mt-10">
+                <div class="flex items-center justify-between border-b border-[var(--border-color)] pb-2 mb-3">
+                    <h3 class="mt-0 mb-0"><span class="lang-de">mpv.conf & Profile</span><span class="lang-en">mpv.conf & Profiles</span></h3>
+                    <i class="fa-solid fa-gear text-[var(--link-color)]"></i>
+                </div>
+                
+                <h4 class="text-sm font-bold mb-1"><span class="lang-de">Empfohlene Grundeinstellungen:</span><span class="lang-en">Recommended base settings:</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-4">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-2"># ~/.config/mpv/mpv.conf
+
+# Ausgabe-Backend (modern, beste Qualität)
+vo=gpu-next
+gpu-api=vulkan
+
+# Hardware-Dekodierung
+hwdec=auto-safe
+
+# Untertitel
+sub-auto=fuzzy
+sub-file-paths=subs:sub:subtitles
+slang=de,en
+
+# Audio
+audio-file-auto=fuzzy
+alang=de,en
+
+# Zwischenspeicher für Netzwerkstreams (in MiB)
+cache=yes
+demuxer-max-bytes=500M
+demuxer-readahead-secs=20
+
+# Wiedergabe-Verhalten
+keep-open=yes
+save-position-on-quit=yes
+watch-later-options=start,volume,mute
+
+# Oberfläche
+osd-bar=yes
+osd-duration=2000
+volume-max=150</div>
+                </div>
+
+                <h4 class="text-sm font-bold mb-1"><span class="lang-de">Profile definieren:</span><span class="lang-en">Define profiles:</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-2"># Profil für Anime mit Untertiteln
+[anime]
+profile-desc="Anime"
+sub-ass-override=force
+sub-font="Noto Sans"
+sub-font-size=42
+sub-border-size=2.5
+sub-shadow-offset=1
+
+# Profil für hochwertige Wiedergabe
+[high-quality]
+profile-desc="Hohe Qualität"
+scale=ewa_lanczossharp
+cscale=ewa_lanczossharp
+dscale=mitchell
+video-sync=display-resample
+interpolation=yes
+tscale=oversample
+
+# Profil automatisch laden, wenn Dateiname "anime" enthält
+[anime-auto]
+profile-desc="Auto Anime"
+profile=anime
+profile-cond=filename:find("anime") ~= nil</div>
+                </div>
+                <p class="text-xs text-[var(--text-muted)] mt-2">
+                    <span class="lang-de">Profile lassen sich manuell mit <code>--profile=anime</code> aufrufen oder per <code>profile-cond</code> automatisch aktivieren.</span>
+                    <span class="lang-en">Profiles can be invoked manually with <code>--profile=anime</code> or activated automatically via <code>profile-cond</code>.</span>
+                </p>
+            </div>
+        </section>
+
+        <section id="shares" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">3. Hardware-Beschleunigung</span>
+                <span class="lang-en">3. Hardware Acceleration</span>
+            </h2>
+
+            <div class="subtopic-card scroll-mt-10">
+                <p class="text-[var(--text-color)] text-sm mb-4">
+                    <span class="lang-de">MPV unterstützt eine Vielzahl von Hardware-Decodern. Die richtige Wahl hängt von Ihrer GPU ab. Prüfen Sie zuerst mit <code>vainfo</code> (Intel/AMD) bzw. <code>nvidia-smi</code>, welche Codecs unterstützt werden.</span>
+                    <span class="lang-en">MPV supports a wide range of hardware decoders. The right choice depends on your GPU. First check with <code>vainfo</code> (Intel/AMD) or <code>nvidia-smi</code> which codecs are supported.</span>
+                </p>
+
+                <table class="wikitable mb-4">
+                    <thead>
+                        <tr>
+                            <th><span class="lang-de">GPU-Hersteller</span><span class="lang-en">GPU Vendor</span></th>
+                            <th><span class="lang-de">hwdec-Wert</span><span class="lang-en">hwdec value</span></th>
+                            <th><span class="lang-de">Bemerkung</span><span class="lang-en">Note</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Intel (iGPU)</td>
+                            <td><code>vaapi</code></td>
+                            <td><span class="lang-de">Zuverlässig, breite Codec-Unterstützung</span><span class="lang-en">Reliable, broad codec support</span></td>
+                        </tr>
+                        <tr>
+                            <td>AMD (Mesa)</td>
+                            <td><code>vaapi</code></td>
+                            <td><span class="lang-de">Sehr gute Unterstützung ab GCN 1.2</span><span class="lang-en">Very good support from GCN 1.2 onwards</span></td>
+                        </tr>
+                        <tr>
+                            <td>NVIDIA</td>
+                            <td><code>nvdec</code></td>
+                            <td><span class="lang-de">Benötigt proprietären Treiber</span><span class="lang-en">Requires proprietary driver</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="lang-de">Automatisch</span><span class="lang-en">Automatic</span></td>
+                            <td><code>auto-safe</code></td>
+                            <td><span class="lang-de">Empfohlen für Einsteiger</span><span class="lang-en">Recommended for beginners</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4 class="text-sm font-bold mb-1"><span class="lang-de">Beispielkonfiguration Intel / AMD:</span><span class="lang-en">Example config Intel / AMD:</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-4">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-2"># ~/.config/mpv/mpv.conf
+vo=gpu-next
+gpu-api=vulkan
+hwdec=vaapi
+hwdec-extra-frames=16
+
+# Für ältere GPUs oder X11 ohne Vulkan:
+# vo=gpu
+# gpu-api=opengl
+# gpu-context=x11egl</div>
+                </div>
+
+                <h4 class="text-sm font-bold mb-1"><span class="lang-de">Beispielkonfiguration NVIDIA:</span><span class="lang-en">Example config NVIDIA:</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-2"># ~/.config/mpv/mpv.conf
+vo=gpu-next
+gpu-api=vulkan
+hwdec=nvdec
+hwdec-extra-frames=8
+
+# Für CUDA-basierte Dekodierung:
+# hwdec=cuda</div>
+                </div>
+                <p class="text-xs text-red-500 mt-2 font-semibold">
+                    <span class="lang-de">Bei Problemen (Bildfehler, grüne Streifen) hilft oft <code>--hwdec=no</code> zur Diagnose. Alternativ <code>--vo=null</code> zum reinen Benchmark.</span>
+                    <span class="lang-en">If issues occur (artifacts, green stripes), <code>--hwdec=no</code> often helps for diagnosis. Alternatively <code>--vo=null</code> for pure benchmarking.</span>
+                </p>
+            </div>
+        </section>
+
+        <section id="users" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">4. Skripte & Erweiterungen</span>
+                <span class="lang-en">4. Scripts & Extensions</span>
+            </h2>
+
+            <div class="subtopic-card scroll-mt-10 border-l-4 border-l-[#eab308]">
+                <p class="text-[var(--text-color)] text-sm mb-4">
+                    <span class="lang-de">MPV kann über Lua- und JavaScript-Skripte erweitert werden. Skripte werden einfach in <code>~/.config/mpv/scripts/</code> abgelegt und beim nächsten Start automatisch geladen.</span>
+                    <span class="lang-en">MPV can be extended via Lua and JavaScript scripts. Scripts are simply placed in <code>~/.config/mpv/scripts/</code> and loaded automatically on next start.</span>
+                </p>
+                
+                <h4 class="text-sm font-bold mb-1"><span class="lang-de">Beliebte Skripte installieren:</span><span class="lang-en">Install popular scripts:</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-4">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-2">cd ~/.config/mpv/scripts
+
+# Autoload: lädt nächste Datei im Ordner automatisch
+curl -LO https://raw.githubusercontent.com/mpv-player/mpv/master/TOOLS/lua/autoload.lua
+
+# Thumbnail-Suche (Vorschau beim Spulen)
+curl -LO https://raw.githubusercontent.com/thec0d3r/mpv-thumbnail-script/master/thumbnails.lua
+
+# ModernX: moderne OSD-Oberfläche
+git clone https://github.com/cyl0/ModernX.git
+cp ModernX/modernx.lua .
+
+# mpvacious: Anki-Karten aus Untertiteln erstellen
+git clone https://github.com/Ajatt-Tools/mpvacious.git
+cp -r mpvacious ~/.config/mpv/scripts/</div>
+                </div>
+
+                <h4 class="text-sm font-bold mb-1"><span class="lang-de">yt-dlp-Integration aktivieren:</span><span class="lang-en">Enable yt-dlp integration:</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-2"># ~/.config/mpv/mpv.conf
+ytdl=yes
+ytdl-format=bestvideo+bestaudio/best
+script-opts=ytdl_hook-ytdl_path=yt-dlp
+
+# Beispiel: YouTube-Video direkt abspielen
+# mpv https://www.youtube.com/watch?v=XXXXXXXXXXX</div>
+                </div>
+                <p class="text-xs text-[var(--text-muted)] mt-2">
+                    <span class="lang-de">Für den besten Effekt sollte <code>yt-dlp</code> regelmäßig aktualisiert werden (<code>yt-dlp -U</code>), da sich Streaming-Dienste ständig ändern.</span>
+                    <span class="lang-en">For best results, <code>yt-dlp</code> should be updated regularly (<code>yt-dlp -U</code>), since streaming services change constantly.</span>
+                </p>
+            </div>
+            
+            <div class="subtopic-card bg-[var(--bg-color)] shadow-sm mt-4">
+                 <h4 class="text-sm font-bold mb-1 text-[var(--heading-color)]"><span class="lang-de">Shader für bessere Bildqualität</span><span class="lang-en">Shaders for better image quality</span></h4>
+                <p class="text-[var(--text-color)] text-xs mb-2">
+                    <span class="lang-de">MPV kann Videos mit hochwertigen Skalierungsalgorithmen (z. B. <em>Anime4K</em>, <em>FSRCNNX</em>) in Echtzeit verbessern. Shader werden in <code>~/.config/mpv/shaders/</code> abgelegt und in <code>mpv.conf</code> geladen.</span>
+                    <span class="lang-en">MPV can enhance videos in real time with high-quality scaling algorithms (e.g., <em>Anime4K</em>, <em>FSRCNNX</em>). Shaders are placed in <code>~/.config/mpv/shaders/</code> and loaded in <code>mpv.conf</code>.</span>
+                </p>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-2">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-2"># Anime4K installieren
+git clone https://github.com/bloc97/Anime4K.git /tmp/Anime4K
+cp /tmp/Anime4K/glsl/Anime4K_Clamp_Highlights.glsl ~/.config/mpv/shaders/
+cp /tmp/Anime4K/glsl/Anime4K_Restore_CNN_VL.glsl ~/.config/mpv/shaders/
+cp /tmp/Anime4K/glsl/Anime4K_Upscale_CNN_x2_VL.glsl ~/.config/mpv/shaders/
+cp /tmp/Anime4K/glsl/Anime4K_AutoDownscalePre_x2.glsl ~/.config/mpv/shaders/
+cp /tmp/Anime4K/glsl/Anime4K_AutoDownscalePre_x4.glsl ~/.config/mpv/shaders/
+cp /tmp/Anime4K/glsl/Anime4K_Upscale_CNN_x2_M.glsl ~/.config/mpv/shaders/</div>
+                </div>
+                
+                <h4 class="text-sm font-bold mt-4 mb-1 text-[var(--heading-color)]"><span class="lang-de">Shader in mpv.conf aktivieren</span><span class="lang-en">Enable shaders in mpv.conf</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-2"># ~/.config/mpv/mpv.conf (Anime4K Modus A - empfohlen)
+glsl-shaders-append="~~/shaders/Anime4K_Clamp_Highlights.glsl"
+glsl-shaders-append="~~/shaders/Anime4K_Restore_CNN_VL.glsl"
+glsl-shaders-append="~~/shaders/Anime4K_Upscale_CNN_x2_VL.glsl"
+glsl-shaders-append="~~/shaders/Anime4K_AutoDownscalePre_x2.glsl"
+glsl-shaders-append="~~/shaders/Anime4K_AutoDownscalePre_x4.glsl"
+glsl-shaders-append="~~/shaders/Anime4K_Upscale_CNN_x2_M.glsl"</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="clients" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">5. Frontends & IPC</span>
+                <span class="lang-en">5. Frontends & IPC</span>
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="subtopic-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2 flex items-center">
+                        <i class="fa-solid fa-desktop mr-2 text-blue-500"></i> <span class="lang-de">Grafische Frontends</span><span class="lang-en">Graphical Frontends</span>
+                    </h4>
+                    <p class="text-sm text-[var(--text-muted)] mt-2">
+                        <span class="lang-de">MPV ist primär ein CLI-Player. Wer eine Maus-Oberfläche bevorzugt, kann auf eines dieser Frontends zurückgreifen — sie nutzen MPV im Hintergrund als Wiedergabe-Engine.</span>
+                        <span class="lang-en">MPV is primarily a CLI player. Those who prefer a mouse-driven interface can use one of these frontends — they use MPV as the underlying playback engine.</span>
+                    </p>
+                    <ul class="text-sm text-[var(--text-color)] mt-3 space-y-1 list-disc pl-5">
+                        <li><strong>Celluloid</strong> — GTK-Frontend,<span class="lang-de"> Standard bei vielen Distros</span><span class="lang-en"> default on many distros</span></li>
+                        <li><strong>SMPlayer</strong> — Qt-basiert,<span class="lang-de"> sehr funktionsreich</span><span class="lang-en"> very feature-rich</span></li>
+                        <li><strong>mpv.net</strong> — <span class="lang-de">Windows-Frontend</span><span class="lang-en">Windows frontend</span></li>
+                        <li><strong>IINA</strong> — <span class="lang-de">macOS, native Optik</span><span class="lang-en">macOS, native look</span></li>
+                    </ul>
+                </div>
+                
+                <div class="subtopic-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2 flex items-center">
+                        <i class="fa-solid fa-plug mr-2 text-yellow-500"></i> <span class="lang-de">IPC-Socket & Automatisierung</span><span class="lang-en">IPC Socket & Automation</span>
+                    </h4>
+                    <p class="text-sm text-[var(--text-muted)] mt-2">
+                        <span class="lang-de">Über einen Unix-Socket kann MPV von externen Programmen (Skripte, Steuerungs-Apps) ferngesteuert werden — nützlich für Home-Theater-Setups oder automatisches Streaming.</span>
+                        <span class="lang-en">Via a Unix socket, MPV can be controlled remotely by external programs (scripts, control apps) — useful for home theater setups or automated streaming.</span>
+                    </p>
+                    <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mt-3">
+                        <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                        <div class="code-content p-2">mpv --input-ipc-server=/tmp/mpvsocket video.mkv
+
+# Befehl an MPV senden
+echo '{ "command": ["toggle", "pause"] }' | \
+    socat - /tmp/mpvsocket</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="subtopic-card mt-6">
+                <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                    <span class="lang-de">MPV als Standard-Player setzen</span>
+                    <span class="lang-en">Set MPV as default player</span>
+                </h4>
+                <p class="text-[var(--text-color)] text-sm my-3">
+                    <span class="lang-de">Unter Linux lässt sich MPV als Standard für die gängigen Video- und Audio-MIME-Typen registrieren. Bei Desktop-Umgebungen kann auch einfach das Standardprogramm in den Systemeinstellungen geändert werden.</span>
+                    <span class="lang-en">On Linux, MPV can be registered as the default for common video and audio MIME types. In desktop environments, the default program can also simply be changed in system settings.</span>
+                </p>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-3"># Standard-MIME-Typen auf mpv.desktop setzen
+xdg-mime default mpv.desktop video/mp4
+xdg-mime default mpv.desktop video/x-matroska
+xdg-mime default mpv.desktop video/webm
+xdg-mime default mpv.desktop audio/mpeg
+xdg-mime default mpv.desktop audio/flac</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="wartung" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-4">
+                <span class="lang-de">6. Wartung & Fehlersuche</span>
+                <span class="lang-en">6. Maintenance & Troubleshooting</span>
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="subtopic-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2 flex items-center">
+                        <i class="fa-solid fa-arrows-rotate mr-2 text-blue-500"></i> <span class="lang-de">Updates einspielen</span><span class="lang-en">Applying updates</span>
+                    </h4>
+                    <p class="text-sm text-[var(--text-muted)] mt-2">
+                        <span class="lang-de">MPV wird über die Paketverwaltung aktualisiert. Bei <code>yt-dlp</code> empfiehlt sich das eingebaute Update, um Streaming-Probleme zu vermeiden.</span>
+                        <span class="lang-en">MPV is updated via the package manager. For <code>yt-dlp</code>, the built-in update is recommended to avoid streaming issues.</span>
+                    </p>
+                    <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mt-3">
+                        <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                        <div class="code-content p-2">sudo apt update && sudo apt upgrade mpv
+
+# yt-dlp aktualisieren
+sudo yt-dlp -U
+# oder (empfohlen):
+pipx upgrade yt-dlp</div>
+                    </div>
+                </div>
+                
+                <div class="subtopic-card my-0">
+                    <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2 flex items-center">
+                        <i class="fa-solid fa-bug mr-2 text-yellow-500"></i> <span class="lang-de">Logs & Diagnose</span><span class="lang-en">Logs & Diagnostics</span>
+                    </h4>
+                    <p class="text-sm text-[var(--text-muted)] mt-2">
+                        <span class="lang-de">Bei Wiedergabeproblemen zeigt <code>-v</code> detaillierte Logs. Für tiefgehende Fehlersuche kann das Log-Level schrittweise bis <code>-v -v -v</code> erhöht werden.</span>
+                        <span class="lang-en">For playback issues, <code>-v</code> shows detailed logs. For deeper debugging, the log level can be increased up to <code>-v -v -v</code>.</span>
+                    </p>
+                    <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mt-3">
+                        <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                        <div class="code-content p-2">mpv -v video.mkv 2>&1 | tee mpv.log
+mpv --msg-level=all=v video.mkv
+
+# Nur Codec-Informationen anzeigen
+mpv --no-video --vo=null --frames=1 video.mkv</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="subtopic-card mt-6">
+                <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                    <span class="lang-de">Häufige Probleme & Lösungen</span>
+                    <span class="lang-en">Common Issues & Solutions</span>
+                </h4>
+                <table class="wikitable">
+                    <thead>
+                        <tr>
+                            <th><span class="lang-de">Symptom</span><span class="lang-en">Symptom</span></th>
+                            <th><span class="lang-de">Ursache / Lösung</span><span class="lang-en">Cause / Solution</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="lang-de">Schwarzer Bildschirm, Ton läuft</span><span class="lang-en">Black screen, audio works</span></td>
+                            <td><code>--vo=gpu-next</code> <span class="lang-de">auf</span><span class="lang-en">to</span> <code>--vo=gpu</code> <span class="lang-de">ändern</span><span class="lang-en">change</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="lang-de">Ruckeln bei 4K</span><span class="lang-en">Stuttering at 4K</span></td>
+                            <td><code>hwdec=auto-safe</code> <span class="lang-de">prüfen, ggf. auf</span><span class="lang-en">check, if needed use</span> <code>vaapi</code>/<code>nvdec</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="lang-de">Untertitel werden nicht geladen</span><span class="lang-en">Subtitles not loading</span></td>
+                            <td><code>sub-auto=fuzzy</code> <span class="lang-de">und</span><span class="lang-en">and</span> <code>sub-file-paths</code> <span class="lang-de">setzen</span><span class="lang-en">set</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="lang-de">YouTube-URLs öffnen nicht</span><span class="lang-en">YouTube URLs won't open</span></td>
+                            <td><code>yt-dlp</code> <span class="lang-de">aktualisieren</span><span class="lang-en">update</span> (<code>yt-dlp -U</code>)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="lang-de">Ton asynchron</span><span class="lang-en">Audio out of sync</span></td>
+                            <td><span class="lang-de">Tasten</span><span class="lang-en">keys</span> <code>[</code>/<code>]</code> <span class="lang-de">zum Justieren</span><span class="lang-en">to adjust</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="lang-de">Kein Ton bei DTS/TrueHD</span><span class="lang-en">No audio with DTS/TrueHD</span></td>
+                            <td><code>audio-spdif=ac3,dts,eac3,truehd</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="subtopic-card mt-6">
+                <h4 class="mt-0 text-[var(--heading-color)] border-b border-[var(--border-color)] pb-2">
+                    <span class="lang-de">Konfiguration sichern</span>
+                    <span class="lang-en">Backup configuration</span>
+                </h4>
+                <p class="text-[var(--text-color)] text-sm my-3">
+                    <span class="lang-de">Die gesamte MPV-Konfiguration inklusive Skripten und Shadern passt in ein kleines Archiv. So lässt sie sich einfach auf einen neuen Rechner übertragen.</span>
+                    <span class="lang-en">The entire MPV configuration, including scripts and shaders, fits in a small archive. This makes it easy to transfer to a new machine.</span>
+                </p>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-4">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-3"># Backup erstellen
+tar -czf mpv-config-$(date +%F).tar.gz -C ~/.config mpv
+
+# Wiederherstellen
+tar -xzf mpv-config-2024-01-01.tar.gz -C ~/.config</div>
+                </div>
+
+                <h4 class="text-sm font-bold mb-1"><span class="lang-de">Konfiguration automatisch synchronisieren (Git):</span><span class="lang-en">Synchronize configuration automatically (Git):</span></h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-2">cd ~/.config/mpv
+git init
+git add .
+git commit -m "Initial MPV config"
+git remote add origin git@github.com:user/mpv-config.git
+git push -u origin main</div>
+                </div>
+                <p class="text-xs text-[var(--text-muted)] mt-2">
+                    <span class="lang-de">Mit <code>.gitignore</code> können Sie Caches, Watch-Later-Dateien und Logs ausschließen: <code>watch_later/</code>, <code>*.log</code>.</span>
+                    <span class="lang-en">With <code>.gitignore</code> you can exclude caches, watch-later files, and logs: <code>watch_later/</code>, <code>*.log</code>.</span>
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+                    
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                        if(tocLink) tocLink.classList.add('active');
+                    }
+                });
+            }, {
+                rootMargin: '-10% 0px -80% 0px',
+                threshold: [0, 0.1, 1]
+            });
+
+            document.querySelectorAll('section, h3[id], div[id^="defaults"], div[id^="enable"], div[id^="public"], div[id^="private"], div[id^="delete"], div[id^="limit"]').forEach((section) => {
+                observer.observe(section);
+            });
+        });
+
+        function filterWiki() {
+            const input = document.getElementById('wikiSearch');
+            const filter = input.value.toLowerCase();
+            const blocks = document.querySelectorAll('.searchable-block');
+            const mainContent = document.getElementById('main-content');
+
+            removeHighlights(mainContent);
+
+            if (!filter) {
+                blocks.forEach(block => block.style.display = 'block');
+                return;
+            }
+
+            blocks.forEach(block => {
+                const text = block.innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    block.style.display = 'block';
+                    highlightText(block, input.value);
+                } else {
+                    block.style.display = 'none';
+                }
+            });
+        }
+
+        function highlightText(element, keyword) {
+            if (!keyword) return;
+            const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+
+            let node;
+            while (node = treeWalker.nextNode()) {
+                if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                    if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE' && !node.parentNode.classList.contains('katex')) {
+                        nodesToReplace.push(node);
+                    }
+                }
+            }
+
+            nodesToReplace.forEach(n => {
+                const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+                const fragment = document.createDocumentFragment();
+                let match;
+                let lastIndex = 0;
+                const text = n.nodeValue;
+
+                while ((match = regex.exec(text)) !== null) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    const span = document.createElement('span');
+                    span.className = 'search-match font-semibold';
+                    span.textContent = match[0];
+                    fragment.appendChild(span);
+                    lastIndex = regex.lastIndex;
+                }
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                n.parentNode.replaceChild(fragment, n);
+            });
+        }
+
+        function removeHighlights(element) {
+            const highlights = element.querySelectorAll('.search-match');
+            highlights.forEach(span => {
+                const parent = span.parentNode;
+                parent.replaceChild(document.createTextNode(span.textContent), span);
+                parent.normalize();
+            });
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('light')) {
+                html.classList.remove('light');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        let isGerman = true;
+        function toggleLang() {
+            isGerman = !isGerman;
+            const indicator = document.getElementById('lang-indicator');
+            indicator.textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+        }
+
+        function copyCode(btn) {
+            const container = btn.closest('.code-container');
+            const codeContent = container.querySelector('.code-content').innerText;
+            
+            // Using execCommand to ensure clipboard works reliably in iframe environments
+            const textarea = document.createElement('textarea');
+            textarea.value = codeContent;
+            textarea.style.position = 'fixed'; // fixed prevents screen from scrolling to bottom
+            textarea.style.left = '-9999px';
+            textarea.style.top = '0';
+            document.body.appendChild(textarea);
+            
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+                // Give visual feedback
+                const icon = btn.querySelector('i');
+                icon.className = 'fa-solid fa-check text-green-500';
+                setTimeout(() => {
+                    icon.className = 'fa-regular fa-copy';
+                }, 2000);
+            } catch (err) {
+                console.error('Copy failed', err);
+            }
+            
+            document.body.removeChild(textarea);
+        }
+
+        function downloadHTML() {
+            removeHighlights(document.getElementById('main-content'));
+            
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'MPV_Setup_Guide.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
