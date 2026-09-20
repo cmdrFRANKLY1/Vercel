@@ -125,6 +125,19 @@
             color: #ffffff !important;
         }
 
+        @keyframes rgb-cycle {
+            0% { color: hsl(0, 100%, 70%); }
+            20% { color: hsl(72, 100%, 70%); }
+            40% { color: hsl(144, 100%, 70%); }
+            60% { color: hsl(216, 100%, 70%); }
+            80% { color: hsl(288, 100%, 70%); }
+            100% { color: hsl(360, 100%, 70%); }
+        }
+        
+        .animate-rgb {
+            animation: rgb-cycle 6s linear infinite;
+        }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--tw-colors-hypr-surface1); border-radius: 3px; }
@@ -140,12 +153,14 @@
 
         <!-- Windows Container -->
         <div id="windows-container" class="absolute top-0 left-0 w-full h-full pointer-events-none z-10 overflow-hidden">
+            <!-- Settings Overlay (Shares stacking context with windows) -->
+            <div id="settings-overlay" class="hidden absolute inset-0 w-full h-full pointer-events-auto" onmousedown="closeApp('window-settings')"></div>
         </div>
 
         <!-- Waybar (Top/Bottom Bar) -->
         <div id="waybar" class="absolute top-2 left-2 right-2 h-9 glass-effect rounded-full border border-hypr-surface1 flex items-center justify-between px-4 z-50 transition-all duration-300">
             <div class="flex items-center gap-2 h-full">
-                <button id="launcher-btn" class="text-hypr-accent hover:text-white mr-2 transition-transform hover:scale-110" onclick="toggleLauncher(event)" title="Start Menu">
+                <button id="launcher-btn" class="mr-2 transition-transform hover:scale-110 animate-rgb" onclick="toggleLauncher(event)" title="Start Menu">
                     <i class="fa-brands fa-linux text-lg"></i>
                 </button>
                 <div class="flex gap-1 items-center" id="workspace-container">
@@ -170,11 +185,11 @@
             </div>
         </div>
 
-        <!-- Start Menu Overlay -->
-        <div id="start-menu-overlay" class="hidden absolute inset-0 w-full h-full z-[999998]" onclick="if(!document.getElementById('start-menu').classList.contains('hidden')) toggleLauncher()"></div>
+        <!-- Menu Overlays -->
+        <div id="start-menu-overlay" class="hidden absolute inset-0 w-full h-full z-[55]" onmousedown="toggleLauncher()"></div>
 
-        <!-- Start Menu Launcher -->
-        <div id="start-menu" class="hidden absolute w-[360px] bg-hypr-base glass-effect border-2 border-hypr-surface1 rounded-xl shadow-[0_10px_50px_rgba(0,0,0,0.9)] z-[999999] flex-row overflow-hidden animate-menu-pop">
+        <!-- Start Menu Launcher (auto-height, grows/shrinks with entries) -->
+        <div id="start-menu" class="hidden absolute w-[360px] bg-hypr-base glass-effect border-2 border-hypr-surface1 rounded-xl shadow-[0_10px_50px_rgba(0,0,0,0.9)] z-[60] flex-row overflow-hidden animate-menu-pop">
             <div class="w-12 shrink-0 bg-hypr-surface0/60 border-r border-hypr-surface1 flex flex-col items-center py-3 justify-between z-10">
                 <div id="favorites-container" class="flex flex-col gap-3 w-full items-center pt-1">
                     <!-- Favorites will be injected here -->
@@ -237,23 +252,6 @@
 
         function getScrW() { return window.innerWidth / window.hyprConfig.scale; }
         function getScrH() { return window.innerHeight / window.hyprConfig.scale; }
-
-        document.addEventListener('click', (e) => {
-            const menu = document.getElementById('start-menu');
-            const btn = document.getElementById('launcher-btn');
-            const overlay = document.getElementById('start-menu-overlay');
-            const path = e.composedPath();
-            if (!menu.classList.contains('hidden') && !path.includes(menu) && !path.includes(btn)) {
-                menu.classList.remove('flex');
-                menu.classList.add('hidden');
-                if (overlay) overlay.classList.add('hidden');
-            }
-
-            const settingsWin = document.getElementById('window-settings');
-            if (settingsWin && !path.includes(settingsWin)) {
-                closeApp('window-settings');
-            }
-        });
 
         window.moveToWorkspace = function(winId, ws) {
             if (windows[winId]) {
@@ -451,7 +449,7 @@
             }
         };
 
-        searchInput.addEventListener('input', () => renderStartMenuView());
+        if (searchInput) searchInput.addEventListener('input', () => renderStartMenuView());
 
         function formatAppName(name) {
             if (!name) return '';
@@ -571,6 +569,7 @@
 
         function renderStartMenuView() {
             const container = document.getElementById('apps-container');
+            if (!container) return;
             container.innerHTML = '';
             
             // Filter out favorites from the main application view
@@ -581,7 +580,7 @@
                 return;
             }
             
-            const query = document.getElementById('start-search').value.toLowerCase().trim();
+            const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
             if (query) {
                 const results = displayApps.filter(app => 
                     app.name.toLowerCase().includes(query) || 
@@ -618,7 +617,6 @@
 
             // Classify apps into the current level
             displayApps.forEach(app => {
-                // Ensure legacy standard "Applications" points to root to avoid redundancy
                 let appGroup = app.group === 'Applications' ? '' : (app.group || '');
 
                 if (appGroup === currentPath) {
@@ -772,25 +770,10 @@
             winDiv.innerHTML = `
                 <div class="window-header h-8 bg-hypr-surface0 flex justify-between items-center px-3 border-b border-hypr-surface1 select-none">
                     <span class="text-xs font-semibold tracking-wider text-hypr-subtext truncate flex items-center gap-2"><i class="fa-solid fa-gear"></i> sHyprland Settings</span>
-                    <div class="flex items-center gap-1">
-                        <div class="flex items-center gap-0">
-                            <button class="win11-btn ws-move-btn" onclick="moveToWorkspace('${winId}', 1)" title="Move to WS 1">1</button>
-                            <button class="win11-btn ws-move-btn" onclick="moveToWorkspace('${winId}', 2)" title="Move to WS 2">2</button>
-                            <button class="win11-btn ws-move-btn" onclick="moveToWorkspace('${winId}', 3)" title="Move to WS 3">3</button>
-                            <button class="win11-btn ws-move-btn" onclick="moveToWorkspace('${winId}', 4)" title="Move to WS 4">4</button>
-                        </div>
-                        <div class="w-[1px] h-3 bg-hypr-surface1 mx-0.5"></div>
-                        <button class="win11-btn" onclick="toggleFloating('${winId}')" title="Toggle Floating"><i class="fa-solid fa-clone text-[9px]"></i></button>
-                        <button class="win11-btn win11-close" onclick="closeApp('${winId}')" title="Close"><i class="fa-solid fa-xmark"></i></button>
-                    </div>
                 </div>
                 <div class="flex-1 bg-hypr-base p-5 overflow-y-auto custom-scrollbar flex flex-col gap-6 text-sm">
                     <div class="flex flex-col gap-3">
                         <span class="text-xs font-bold uppercase tracking-wider text-hypr-subtext opacity-70">Window Management</span>
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" class="accent-white w-4 h-4" ${window.hyprConfig.autoTiling ? 'checked' : ''} onchange="updateHyprConfig('autoTiling', this.checked)">
-                            <span class="text-hypr-text font-medium">Enable Master/Stack Auto-Tiling</span>
-                        </label>
                         <div class="flex flex-col gap-1.5">
                             <div class="flex justify-between text-xs text-hypr-subtext">
                                 <span>Window Gap Spacing</span>
@@ -878,6 +861,10 @@
         }
 
         function closeApp(winId) {
+            if (winId === 'window-settings') {
+                const overlay = document.getElementById('settings-overlay');
+                if (overlay) overlay.classList.add('hidden');
+            }
             if (windows[winId]) { 
                 windows[winId].element.remove(); 
                 delete windows[winId]; 
@@ -897,6 +884,14 @@
                 windows[winId].element.classList.add('active-window');
                 document.getElementById('active-window-title').textContent = windows[winId].title;
                 activeWindowId = winId;
+                
+                if (winId === 'window-settings') {
+                    const overlay = document.getElementById('settings-overlay');
+                    if (overlay) {
+                        overlay.classList.remove('hidden');
+                        overlay.style.zIndex = currentZIndex - 1;
+                    }
+                }
             }
         }
 
