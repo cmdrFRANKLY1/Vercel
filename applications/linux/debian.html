@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debian GNU/Linux Reference</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            /* Dark Mode Defaults */
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #202122;
+            --border-color: #54595d;
+            --text-color: #eaecf0;
+            --text-muted: #a8aeb3;
+            --link-color: #99c1f1;
+            --link-hover: #629deb;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --info-box: #2c2d30;
+            --table-alt: rgba(255,255,255,0.02);
+            --search-match: rgba(250, 204, 21, 0.3);
+            --search-text: #ffffff;
+
+            /* Omni-directional encasing shadows */
+            --card-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.3), 0 0 4px 0 rgba(0, 0, 0, 0.2);
+            --card-shadow-hover: 0 0 20px 0 rgba(0, 0, 0, 0.4), 0 0 8px 0 rgba(0, 0, 0, 0.3);
+            --panel-border: #54595d;
+        }
+
+        html.light {
+            /* Light Mode Overrides */
+            --bg-color: #f4f6f9;
+            --panel-color: #ffffff;
+            --sidebar-color: #ffffff;
+            --border-color: #cbd5e1;
+            --text-color: #000000;
+            --text-muted: #000000;
+            --heading-color: #000000;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --code-bg: #f1f5f9;
+            --info-box: #e0f2fe;
+            --table-alt: rgba(0,0,0,0.015);
+            --search-match: rgba(250, 204, 21, 0.5);
+            --search-text: #000000;
+
+            /* Omni-directional encasing shadow for light mode */
+            --card-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.1), 0 0 6px 0 rgba(0, 0, 0, 0.05);
+            --card-shadow-hover: 0 0 25px 0 rgba(0, 0, 0, 0.15), 0 0 12px 0 rgba(0, 0, 0, 0.08);
+            --panel-border: #e2e8f0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            transition: background-color 0.2s, color 0.2s;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 800 !important; }
+        h1 { font-size: clamp(1.75rem, 4vw, 3.5rem) !important; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        h2 { font-size: clamp(1.4rem, 3vw, 2.25rem) !important; margin-bottom: 1rem; }
+        h3 { font-size: clamp(1.2rem, 2.5vw, 1.85rem) !important; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        h4 { font-size: clamp(1.05rem, 2vw, 1.5rem) !important; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+        p { margin-bottom: 1rem; }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--text-color);
+        }
+
+        /* Wiki-style Tables */
+        .wikitable {
+            width: 100%; border-collapse: collapse; margin: 1em 0;
+            background-color: var(--bg-color); font-size: 0.9em;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid var(--panel-border);
+        }
+        .wikitable th, .wikitable td {
+            border: 1px solid var(--panel-border); padding: 0.75rem 1rem;
+            text-align: left; vertical-align: top;
+        }
+        .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); }
+        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
+
+        /* TOC Styles */
+        .toc-link.active { font-weight: 600; color: var(--link-color); position: relative; }
+        .toc-link.active::before {
+            content: ''; position: absolute; left: -1rem; top: 0; height: 100%;
+            width: 3px; background-color: var(--link-color);
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
+
+        /* Panels */
+        .topic-panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            transition: box-shadow 0.3s ease;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        @media (min-width: 1024px) {
+            .topic-panel { padding: 2.5rem; }
+        }
+        .topic-panel:hover {
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .subtopic-card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+            overflow-x: auto;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        .subtopic-card:last-child { margin-bottom: 0; }
+        .subtopic-card:hover { box-shadow: var(--card-shadow); transform: translateY(-2px); }
+
+        /* Code Block Copy Features */
+        .code-container {
+            position: relative;
+            max-width: 100%;
+        }
+
+        .code-content {
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            padding-right: 2.5rem;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.4rem;
+            right: 0.4rem;
+            opacity: 0;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            background: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            z-index: 10;
+        }
+
+        .code-container:hover .copy-btn { opacity: 1; }
+        .copy-btn:hover { color: var(--link-color); border-color: var(--link-color); background: var(--bg-color); }
+        @media (hover: none) { .copy-btn { opacity: 1; } }
+
+        /* Debian accent */
+        .debian-badge {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            background: var(--info-box); border: 1px solid var(--panel-border);
+            border-radius: 9999px; padding: 0.15rem 0.6rem;
+            font-size: 0.7rem; font-weight: 600; color: var(--link-color);
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+
+        /* Global Language Switcher */
+        .lang-en { display: none; }
+        body[data-active-lang="en"] .lang-de { display: none !important; }
+        body[data-active-lang="en"] .lang-en { display: block !important; }
+        body[data-active-lang="en"] span.lang-en, body[data-active-lang="en"] a.lang-en { display: inline !important; }
+        body[data-active-lang="de"] .lang-en { display: none !important; }
+        body[data-active-lang="de"] .lang-de { display: block !important; }
+        body[data-active-lang="de"] span.lang-de, body[data-active-lang="de"] a.lang-de { display: inline !important; }
+    </style>
+</head>
+
+<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
+
+    <aside class="lg:w-80 flex-shrink-0 bg-[var(--sidebar-color)] border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative shadow-lg transition-colors">
+
+        <!-- Controls: Language, Theme, Download -->
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
+                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Guide">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+            <i class="fa-brands fa-debian text-4xl mb-3" style="color:#d70a53;"></i>
+            <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span class="lang-de">Debian<br>Referenz</span>
+                <span class="lang-en">Debian<br>Reference</span>
+            </div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v1.0 - Bookworm / Trixie</div>
+        </div>
+
+        <div class="mb-6 relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
+            </div>
+            <input type="text" id="wikiSearch" placeholder="Search command..." class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-xl pl-10 pr-3 py-2.5 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-all shadow-sm" onkeyup="filterWiki()">
+        </div>
+
+        <nav class="text-sm space-y-1.5" id="toc-nav">
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span class="lang-de">Kategorien</span>
+                <span class="lang-en">Categories</span>
+            </div>
+            <ul class="space-y-1">
+                <li><a href="#intro" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">1. Einführung & System</span><span class="lang-en">1. Intro & System</span>
+                </a></li>
+                <li><a href="#apt" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">2. APT Paketverwaltung</span><span class="lang-en">2. APT Package Management</span>
+                </a></li>
+                <li><a href="#dpkg" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">3. dpkg & Pakete</span><span class="lang-en">3. dpkg & Packages</span>
+                </a></li>
+                <li><a href="#sources" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">4. Quellen & Repositories</span><span class="lang-en">4. Sources & Repositories</span>
+                </a></li>
+                <li><a href="#systemd" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">5. systemd & Dienste</span><span class="lang-en">5. systemd & Services</span>
+                </a></li>
+                <li><a href="#network" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">6. Netzwerk (Debian-spezifisch)</span><span class="lang-en">6. Networking (Debian-specific)</span>
+                </a></li>
+                <li><a href="#users" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">7. Benutzer & Rechte</span><span class="lang-en">7. Users & Permissions</span>
+                </a></li>
+                <li><a href="#troubleshoot" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">8. Fehlerbehebung</span><span class="lang-en">8. Troubleshooting</span>
+                </a></li>
+                <li><a href="#resources" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">9. Offizielle Quellen</span><span class="lang-en">9. Official Resources</span>
+                </a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="flex-grow w-full min-w-0 p-4 lg:p-12" id="main-content">
+
+        <div class="searchable-block topic-panel mt-0 mb-8">
+            <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0">
+                <span class="lang-de">Debian GNU/Linux Referenz</span>
+                <span class="lang-en">Debian GNU/Linux Reference</span>
+            </h1>
+            <p class="text-lg mb-4 text-[var(--text-color)]">
+                <span class="lang-de"><strong>Debian</strong> ist eine der ältesten und stabilsten Linux-Distributionen. Es zeichnet sich durch ein strenges Community-Regelwerk (Debian Social Contract, DFSG) und das fortschrittliche Paketverwaltungssystem <strong>APT</strong> aus. Diese Referenz konzentriert sich auf Debian-spezifische Werkzeuge, Konfigurationsdateien und Best Practices. <strong>Klicken Sie auf ein Code-Snippet, um es in die Zwischenablage zu kopieren.</strong></span>
+                <span class="lang-en"><strong>Debian</strong> is one of the oldest and most stable Linux distributions. It is characterized by a strict community framework (Debian Social Contract, DFSG) and the advanced package management system <strong>APT</strong>. This reference focuses on Debian-specific tools, configuration files, and best practices. <strong>Click any code snippet to copy it to your clipboard.</strong></span>
+            </p>
+            <div class="flex flex-wrap gap-2">
+                <span class="debian-badge"><i class="fa-solid fa-book"></i> <a href="https://www.debian.org/doc/manuals/debian-reference/" target="_blank" class="text-[var(--link-color)] no-underline">Debian Reference</a></span>
+                <span class="debian-badge"><i class="fa-solid fa-graduation-cap"></i> <a href="https://debian-handbook.info/" target="_blank" class="text-[var(--link-color)] no-underline">Administrator's Handbook</a></span>
+                <span class="debian-badge"><i class="fa-solid fa-code"></i> <a href="https://manpages.debian.org/" target="_blank" class="text-[var(--link-color)] no-underline">manpages.debian.org</a></span>
+                <span class="debian-badge"><i class="fa-solid fa-wiki"></i> <a href="https://wiki.debian.org/" target="_blank" class="text-[var(--link-color)] no-underline">Debian Wiki</a></span>
+            </div>
+        </div>
+
+        <!-- 1. Einführung & System -->
+        <section id="intro" class="scroll-mt-10 searchable-block topic-panel mt-8">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">1. Einführung & Systeminformationen</span>
+                <span class="lang-en">1. Introduction & System Information</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">lsb_release</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die Debian-Version und den Codenamen an.</span>
+                            <span class="lang-en">Shows the Debian version and codename.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>lsb_release -a</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">cat /etc/debian_version</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Gibt die exakte Debian-Versionsnummer aus (z.B. "12.5").</span>
+                            <span class="lang-en">Outputs the exact Debian version number (e.g., "12.5").</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>cat /etc/debian_version</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">cat /etc/os-release</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt standardisierte Betriebssystem-Informationen im Key-Value-Format.</span>
+                            <span class="lang-en">Shows standardized OS information in key-value format.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>cat /etc/os-release</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dpkg --print-architecture</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die Systemarchitektur an (z.B. amd64, arm64).</span>
+                            <span class="lang-en">Shows the system architecture (e.g., amd64, arm64).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>dpkg --print-architecture</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+                <p class="text-xs text-[var(--text-muted)] mt-3">
+                    <span class="lang-de">Offizielle Referenz: <a href="https://www.debian.org/releases/" target="_blank">Debian Releases</a></span>
+                    <span class="lang-en">Official reference: <a href="https://www.debian.org/releases/" target="_blank">Debian Releases</a></span>
+                </p>
+            </div>
+        </section>
+
+        <!-- 2. APT Paketverwaltung -->
+        <section id="apt" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">2. APT Paketverwaltung</span>
+                <span class="lang-en">2. APT Package Management</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de"><strong>APT (Advanced Package Tool)</strong> ist die hochrangige Schnittstelle zur Paketverwaltung unter Debian. Sie löst Abhängigkeiten automatisch auf und lädt Pakete aus den konfigurierten Quellen herunter. Siehe <a href="https://manpages.debian.org/unstable/apt/apt.8.en.html" target="_blank">apt(8) manpage</a>.</span>
+                    <span class="lang-en"><strong>APT (Advanced Package Tool)</strong> is the high-level interface for package management on Debian. It automatically resolves dependencies and downloads packages from the configured sources. See <a href="https://manpages.debian.org/unstable/apt/apt.8.en.html" target="_blank">apt(8) manpage</a>.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">apt update</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Aktualisiert die Paketlisten aus den konfigurierten Quellen.</span>
+                            <span class="lang-en">Updates the package lists from the configured sources.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo apt update</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">apt upgrade</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Installiert verfügbare Updates, ohne Pakete zu entfernen.</span>
+                            <span class="lang-en">Installs available upgrades without removing packages.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo apt upgrade</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">apt full-upgrade</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Führt ein vollständiges Upgrade durch, entfernt bei Bedarf auch Pakete.</span>
+                            <span class="lang-en">Performs a full upgrade, removing packages if necessary.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo apt full-upgrade</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">apt install</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Installiert ein oder mehrere Pakete inklusive Abhängigkeiten.</span>
+                            <span class="lang-en">Installs one or more packages including dependencies.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo apt install nginx curl git</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">apt remove</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Entfernt Pakete, behält aber Konfigurationsdateien.</span>
+                            <span class="lang-en">Removes packages but keeps configuration files.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo apt remove nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">apt purge</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Entfernt Pakete <em>inklusive</em> ihrer Konfigurationsdateien.</span>
+                            <span class="lang-en">Removes packages <em>including</em> their configuration files.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo apt purge nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">apt autoremove</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Entfernt automatisch installierte Pakete, die nicht mehr benötigt werden.</span>
+                            <span class="lang-en">Removes automatically installed packages that are no longer needed.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo apt autoremove --purge</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">apt search</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Sucht nach Paketen in den verfügbaren Quellen.</span>
+                            <span class="lang-en">Searches for packages in the available sources.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>apt search nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">apt show</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt detaillierte Informationen zu einem Paket an.</span>
+                            <span class="lang-en">Shows detailed information about a package.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>apt show nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">apt list --installed</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet alle installierten Pakete auf.</span>
+                            <span class="lang-en">Lists all installed packages.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>apt list --installed | grep nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 3. dpkg & Pakete -->
+        <section id="dpkg" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">3. dpkg & Low-Level-Paketverwaltung</span>
+                <span class="lang-en">3. dpkg & Low-Level Package Management</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de"><strong>dpkg</strong> ist das Low-Level-Werkzeug zur Installation und Verwaltung von <code>.deb</code>-Paketen. Es wird von APT im Hintergrund aufgerufen. Siehe <a href="https://manpages.debian.org/testing/dpkg/dpkg.1.en.html" target="_blank">dpkg(1) manpage</a>.</span>
+                    <span class="lang-en"><strong>dpkg</strong> is the low-level tool for installing and managing <code>.deb</code> packages. It is called by APT in the background. See <a href="https://manpages.debian.org/testing/dpkg/dpkg.1.en.html" target="_blank">dpkg(1) manpage</a>.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dpkg -i</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Installiert ein lokal vorliegendes <code>.deb</code>-Paket.</span>
+                            <span class="lang-en">Installs a locally available <code>.deb</code> package.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo dpkg -i package.deb</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dpkg -l</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet installierte Pakete mit Versionsnummern auf.</span>
+                            <span class="lang-en">Lists installed packages with version numbers.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>dpkg -l | grep nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dpkg -L</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet alle Dateien auf, die zu einem installierten Paket gehören.</span>
+                            <span class="lang-en">Lists all files belonging to an installed package.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>dpkg -L nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dpkg -S</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Findet heraus, zu welchem Paket eine bestimmte Datei gehört.</span>
+                            <span class="lang-en">Finds out which package a specific file belongs to.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>dpkg -S /usr/sbin/nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dpkg --get-selections</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Exportiert die Paketauswahl in eine Datei (für Backups/Cloning).</span>
+                            <span class="lang-en">Exports the package selection to a file (for backups/cloning).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>dpkg --get-selections > packages.txt</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dpkg --set-selections</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Importiert eine Paketauswahl aus einer Datei.</span>
+                            <span class="lang-en">Imports a package selection from a file.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo dpkg --set-selections < packages.txt</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dpkg -V</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Prüft die Integrität installierter Pakete (MD5-Summen).</span>
+                            <span class="lang-en">Verifies the integrity of installed packages (MD5 sums).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>dpkg -V</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 4. Quellen & Repositories -->
+        <section id="sources" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">4. Quellen & Repositories</span>
+                <span class="lang-en">4. Sources & Repositories</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de">Die Datei <code>/etc/apt/sources.list</code> (und Dateien unter <code>/etc/apt/sources.list.d/</code>) definieren, woher APT Pakete bezieht. Siehe <a href="https://manpages.debian.org/unstable/apt/sources.list.5.en.html" target="_blank">sources.list(5)</a>.</span>
+                    <span class="lang-en">The file <code>/etc/apt/sources.list</code> (and files under <code>/etc/apt/sources.list.d/</code>) define where APT fetches packages from. See <a href="https://manpages.debian.org/unstable/apt/sources.list.5.en.html" target="_blank">sources.list(5)</a>.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">cat /etc/apt/sources.list</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die aktiven Paketquellen an.</span>
+                            <span class="lang-en">Shows the active package sources.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>cat /etc/apt/sources.list</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">apt edit-sources</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Öffnet die Quellenliste in einem Editor (prüft Syntax).</span>
+                            <span class="lang-en">Opens the sources list in an editor (validates syntax).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo apt edit-sources</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">apt-cache policy</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die Priorität und Verfügbarkeit von Paketquellen.</span>
+                            <span class="lang-en">Shows the priority and availability of package sources.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>apt-cache policy nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+
+                <h4 class="text-sm font-bold mt-6 mb-2 text-[var(--heading-color)]">
+                    <span class="lang-de">Beispiel: Debian Bookworm sources.list (Ein-Zeilen-Stil)</span>
+                    <span class="lang-en">Example: Debian Bookworm sources.list (one-line style)</span>
+                </h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-4">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-3">deb http://deb.debian.org/debian bookworm main non-free-firmware contrib non-free
+deb http://security.debian.org/debian-security bookworm-security main non-free-firmware contrib non-free</div>
+                </div>
+
+                <h4 class="text-sm font-bold mb-2 text-[var(--heading-color)]">
+                    <span class="lang-de">Beispiel: Debian Trixie sources.list (deb822-Stil, modern)</span>
+                    <span class="lang-en">Example: Debian Trixie sources.list (deb822 style, modern)</span>
+                </h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-3">Types: deb
+URIs: http://deb.debian.org/debian
+Suites: trixie
+Components: main contrib non-free-firmware non-free
+
+Types: deb
+URIs: http://security.debian.org/debian-security
+Suites: trixie-security
+Components: main contrib non-free-firmware non-free</div>
+                </div>
+                <p class="text-xs text-[var(--text-muted)] mt-3">
+                    <span class="lang-de">Offizielle Referenz: <a href="https://wiki.debian.org/SourcesList" target="_blank">Debian Wiki - SourcesList</a></span>
+                    <span class="lang-en">Official reference: <a href="https://wiki.debian.org/SourcesList" target="_blank">Debian Wiki - SourcesList</a></span>
+                </p>
+            </div>
+        </section>
+
+        <!-- 5. systemd & Dienste -->
+        <section id="systemd" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">5. systemd & Dienstverwaltung</span>
+                <span class="lang-en">5. systemd & Service Management</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de">Debian verwendet <strong>systemd</strong> als Init-System und Dienstmanager. Siehe <a href="https://manpages.debian.org/trixie/systemd/systemctl.1.en.html" target="_blank">systemctl(1) manpage</a>.</span>
+                    <span class="lang-en">Debian uses <strong>systemd</strong> as its init system and service manager. See <a href="https://manpages.debian.org/trixie/systemd/systemctl.1.en.html" target="_blank">systemctl(1) manpage</a>.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl start</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Startet einen Dienst sofort.</span>
+                            <span class="lang-en">Starts a service immediately.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl start nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl enable --now</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Aktiviert einen Dienst beim Booten und startet ihn sofort.</span>
+                            <span class="lang-en">Enables a service at boot and starts it immediately.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl enable --now nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl status</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt den aktuellen Status eines Dienstes an.</span>
+                            <span class="lang-en">Shows the current status of a service.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>systemctl status nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl restart</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Startet einen Dienst neu (stop + start).</span>
+                            <span class="lang-en">Restarts a service (stop + start).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl restart nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl disable</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Deaktiviert den automatischen Start beim Booten.</span>
+                            <span class="lang-en">Disables automatic startup at boot.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl disable nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">journalctl -u</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die Logs eines bestimmten Dienstes an.</span>
+                            <span class="lang-en">Shows the logs of a specific service.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>journalctl -u nginx -n 50 --no-pager</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl list-units --failed</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet alle fehlgeschlagenen Dienste auf.</span>
+                            <span class="lang-en">Lists all failed services.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>systemctl list-units --failed</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 6. Netzwerk (Debian-spezifisch) -->
+        <section id="network" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">6. Netzwerk (Debian-spezifisch)</span>
+                <span class="lang-en">6. Networking (Debian-specific)</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de">Debian verwendet je nach Version und Installation entweder <code>ifupdown</code> (<code>/etc/network/interfaces</code>) oder <strong>NetworkManager</strong> (<code>nmcli</code>). Seit Debian 12 ist NetworkManager der Standard für Desktop-Installationen.</span>
+                    <span class="lang-en">Depending on version and installation, Debian uses either <code>ifupdown</code> (<code>/etc/network/interfaces</code>) or <strong>NetworkManager</strong> (<code>nmcli</code>). Since Debian 12, NetworkManager is the default for desktop installations.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">ip a</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt alle Netzwerkinterfaces und IP-Adressen an.</span>
+                            <span class="lang-en">Shows all network interfaces and IP addresses.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>ip a</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">nmcli device status</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt den Status aller Netzwerkgeräte (NetworkManager).</span>
+                            <span class="lang-en">Shows the status of all network devices (NetworkManager).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>nmcli device status</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">nmcli connection show</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet alle gespeicherten Netzwerkverbindungen auf.</span>
+                            <span class="lang-en">Lists all saved network connections.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>nmcli connection show</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">cat /etc/network/interfaces</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die klassische Debian-Netzwerkkonfiguration (ifupdown).</span>
+                            <span class="lang-en">Shows the classic Debian network configuration (ifupdown).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>cat /etc/network/interfaces</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">ifup / ifdown</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Aktiviert/deaktiviert ein Interface gemäß <code>/etc/network/interfaces</code>.</span>
+                            <span class="lang-en">Brings an interface up/down according to <code>/etc/network/interfaces</code>.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo ifdown eth0 && sudo ifup eth0</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+                <p class="text-xs text-[var(--text-muted)] mt-3">
+                    <span class="lang-de">Offizielle Referenz: <a href="https://wiki.debian.org/NetworkConfiguration" target="_blank">Debian Wiki - NetworkConfiguration</a></span>
+                    <span class="lang-en">Official reference: <a href="https://wiki.debian.org/NetworkConfiguration" target="_blank">Debian Wiki - NetworkConfiguration</a></span>
+                </p>
+            </div>
+        </section>
+
+        <!-- 7. Benutzer & Rechte -->
+        <section id="users" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">7. Benutzer & Rechte</span>
+                <span class="lang-en">7. Users & Permissions</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">adduser</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Debian-Empfehlung zum Anlegen neuer Benutzer (interaktiv).</span>
+                            <span class="lang-en">Debian-recommended way to create new users (interactive).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo adduser john</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">usermod -aG</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Fügt einen Benutzer zu einer zusätzlichen Gruppe hinzu (z.B. sudo).</span>
+                            <span class="lang-en">Adds a user to an additional group (e.g., sudo).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo usermod -aG sudo john</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">deluser</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Löscht einen Benutzer (Debian-spezifisches Wrapper-Skript).</span>
+                            <span class="lang-en">Deletes a user (Debian-specific wrapper script).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo deluser --remove-home john</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">passwd</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Ändert das Passwort eines Benutzers.</span>
+                            <span class="lang-en">Changes a user's password.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo passwd john</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">visudo</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Editiert die <code>/etc/sudoers</code>-Datei sicher (Syntaxprüfung).</span>
+                            <span class="lang-en">Edits the <code>/etc/sudoers</code> file safely (syntax check).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo visudo</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">chmod</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Ändert Datei-/Verzeichnisberechtigungen (symbolisch oder oktal).</span>
+                            <span class="lang-en">Changes file/directory permissions (symbolic or octal).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>chmod 755 /var/www/html</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">chown</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Ändert Eigentümer und/oder Gruppe einer Datei.</span>
+                            <span class="lang-en">Changes the owner and/or group of a file.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>chown www-data:www-data /var/www/html</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 8. Fehlerbehebung -->
+        <section id="troubleshoot" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">8. Fehlerbehebung</span>
+                <span class="lang-en">8. Troubleshooting</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Situation</span><span class="lang-en">Situation</span></th>
+                        <th class="w-1/3"><span class="lang-de">Lösung</span><span class="lang-en">Solution</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Gebrochene Paketabhängigkeiten</span>
+                            <span class="lang-en">Broken package dependencies</span>
+                        </td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Repariert unvollständige Installationen und Abhängigkeiten.</span>
+                            <span class="lang-en">Fixes incomplete installations and dependencies.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo apt --fix-broken install</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Installierte Pakete neu konfigurieren</span>
+                            <span class="lang-en">Reconfigure installed packages</span>
+                        </td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Konfiguriert alle entpackten, aber nicht konfigurierten Pakete neu.</span>
+                            <span class="lang-en">Reconfigures all unpacked but unconfigured packages.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo dpkg --configure -a</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">APT-Cache leeren</span>
+                            <span class="lang-en">Clear APT cache</span>
+                        </td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Entfernt heruntergeladene <code>.deb</code>-Dateien aus dem Cache.</span>
+                            <span class="lang-en">Removes downloaded <code>.deb</code> files from the cache.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo apt clean</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Paket auf "hold" setzen</span>
+                            <span class="lang-en">Put a package on hold</span>
+                        </td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Verhindert, dass ein Paket bei Updates aktualisiert wird.</span>
+                            <span class="lang-en">Prevents a package from being upgraded during updates.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo apt-mark hold nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Hold aufheben</span>
+                            <span class="lang-en">Remove hold</span>
+                        </td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Hebt die Blockierung eines Pakets wieder auf.</span>
+                            <span class="lang-en">Removes the hold from a package.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo apt-mark unhold nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 9. Offizielle Quellen -->
+        <section id="resources" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">9. Offizielle Debian-Quellen</span>
+                <span class="lang-en">9. Official Debian Resources</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <ul class="space-y-3 text-sm">
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-book text-[var(--link-color)] mt-1"></i>
+                        <div>
+                            <a href="https://www.debian.org/doc/manuals/debian-reference/" target="_blank" class="font-semibold">Debian Reference</a>
+                            <p class="text-[var(--text-muted)] text-xs mt-0.5">
+                                <span class="lang-de">Umfassendes Nachschlagewerk für Debian-Systemadministration (Osamu Aoki).</span>
+                                <span class="lang-en">Comprehensive reference for Debian system administration (Osamu Aoki).</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-graduation-cap text-[var(--link-color)] mt-1"></i>
+                        <div>
+                            <a href="https://debian-handbook.info/" target="_blank" class="font-semibold">The Debian Administrator's Handbook</a>
+                            <p class="text-[var(--text-muted)] text-xs mt-0.5">
+                                <span class="lang-de">Von Raphaël Hertzog und Roland Mas. Der umfassende Leitfaden für Debian-Administratoren.</span>
+                                <span class="lang-en">By Raphaël Hertzog and Roland Mas. The comprehensive guide for Debian administrators.</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-code text-[var(--link-color)] mt-1"></i>
+                        <div>
+                            <a href="https://manpages.debian.org/" target="_blank" class="font-semibold">manpages.debian.org</a>
+                            <p class="text-[var(--text-muted)] text-xs mt-0.5">
+                                <span class="lang-de">Offizielle Manpages für alle Debian-Pakete, durchsuchbar und versioniert.</span>
+                                <span class="lang-en">Official manpages for all Debian packages, searchable and versioned.</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-wiki text-[var(--link-color)] mt-1"></i>
+                        <div>
+                            <a href="https://wiki.debian.org/" target="_blank" class="font-semibold">Debian Wiki</a>
+                            <p class="text-[var(--text-muted)] text-xs mt-0.5">
+                                <span class="lang-de">Community-gepflegte Anleitungen, How-Tos und Troubleshooting.</span>
+                                <span class="lang-en">Community-maintained guides, how-tos, and troubleshooting.</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-bug text-[var(--link-color)] mt-1"></i>
+                        <div>
+                            <a href="https://www.debian.org/Bugs/" target="_blank" class="font-semibold">Debian Bug Tracker</a>
+                            <p class="text-[var(--text-muted)] text-xs mt-0.5">
+                                <span class="lang-de">Offizielles Bug-Meldesystem für Debian-Pakete.</span>
+                                <span class="lang-en">Official bug reporting system for Debian packages.</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-shield-halved text-[var(--link-color)] mt-1"></i>
+                        <div>
+                            <a href="https://www.debian.org/security/" target="_blank" class="font-semibold">Debian Security Information</a>
+                            <p class="text-[var(--text-muted)] text-xs mt-0.5">
+                                <span class="lang-de">Sicherheitsankündigungen und -informationen für Debian.</span>
+                                <span class="lang-en">Security announcements and information for Debian.</span>
+                            </p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                        if(tocLink) tocLink.classList.add('active');
+                    }
+                });
+            }, {
+                rootMargin: '-10% 0px -80% 0px',
+                threshold: [0, 0.1, 1]
+            });
+
+            document.querySelectorAll('section').forEach((section) => {
+                observer.observe(section);
+            });
+        });
+
+        function filterWiki() {
+            const input = document.getElementById('wikiSearch');
+            const filter = input.value.toLowerCase();
+            const blocks = document.querySelectorAll('.searchable-block');
+            const mainContent = document.getElementById('main-content');
+
+            removeHighlights(mainContent);
+
+            if (!filter) {
+                blocks.forEach(block => block.style.display = 'block');
+                return;
+            }
+
+            blocks.forEach(block => {
+                const text = block.innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    block.style.display = 'block';
+                    highlightText(block, input.value);
+                } else {
+                    block.style.display = 'none';
+                }
+            });
+        }
+
+        function highlightText(element, keyword) {
+            if (!keyword) return;
+            const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+
+            let node;
+            while (node = treeWalker.nextNode()) {
+                if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                    if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE') {
+                        nodesToReplace.push(node);
+                    }
+                }
+            }
+
+            nodesToReplace.forEach(node => {
+                const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+                const fragment = document.createDocumentFragment();
+                let match;
+                let lastIndex = 0;
+                const text = node.nodeValue;
+
+                while ((match = regex.exec(text)) !== null) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    const span = document.createElement('span');
+                    span.className = 'search-match font-semibold';
+                    span.textContent = match[0];
+                    fragment.appendChild(span);
+                    lastIndex = regex.lastIndex;
+                }
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                node.parentNode.replaceChild(fragment, node);
+            });
+        }
+
+        function removeHighlights(element) {
+            const highlights = element.querySelectorAll('.search-match');
+            highlights.forEach(span => {
+                const parent = span.parentNode;
+                parent.replaceChild(document.createTextNode(span.textContent), span);
+                parent.normalize();
+            });
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('light')) {
+                html.classList.remove('light');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        let isGerman = true;
+        function toggleLang() {
+            isGerman = !isGerman;
+            const indicator = document.getElementById('lang-indicator');
+            indicator.textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+        }
+
+        function copyCmd(element) {
+            const span = element.querySelector('span');
+            const icon = element.querySelector('i');
+
+            if (!span) return;
+            const textToCopy = span.innerText;
+
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            textarea.style.top = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                document.execCommand('copy');
+                if (icon) {
+                    icon.className = 'fa-solid fa-check text-green-500';
+                    setTimeout(() => {
+                        icon.className = 'fa-regular fa-copy';
+                    }, 1500);
+                }
+            } catch (err) {
+                console.error('Copy failed', err);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function copyCode(btn) {
+            const container = btn.closest('.code-container');
+            const codeContent = container.querySelector('.code-content').innerText;
+
+            const textarea = document.createElement('textarea');
+            textarea.value = codeContent;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            textarea.style.top = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                document.execCommand('copy');
+                const icon = btn.querySelector('i');
+                icon.className = 'fa-solid fa-check text-green-500';
+                setTimeout(() => {
+                    icon.className = 'fa-regular fa-copy';
+                }, 2000);
+            } catch (err) {
+                console.error('Copy failed', err);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function downloadHTML() {
+            removeHighlights(document.getElementById('main-content'));
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Debian_Reference.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

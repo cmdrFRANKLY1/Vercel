@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Hat Enterprise Linux Reference</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            /* Dark Mode Defaults */
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #202122;
+            --border-color: #54595d;
+            --text-color: #eaecf0;
+            --text-muted: #a8aeb3;
+            --link-color: #99c1f1;
+            --link-hover: #629deb;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --info-box: #2c2d30;
+            --table-alt: rgba(255,255,255,0.02);
+            --search-match: rgba(250, 204, 21, 0.3);
+            --search-text: #ffffff;
+
+            /* Omni-directional encasing shadows */
+            --card-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.3), 0 0 4px 0 rgba(0, 0, 0, 0.2);
+            --card-shadow-hover: 0 0 20px 0 rgba(0, 0, 0, 0.4), 0 0 8px 0 rgba(0, 0, 0, 0.3);
+            --panel-border: #54595d;
+        }
+
+        html.light {
+            /* Light Mode Overrides */
+            --bg-color: #f4f6f9;
+            --panel-color: #ffffff;
+            --sidebar-color: #ffffff;
+            --border-color: #cbd5e1;
+            --text-color: #000000;
+            --text-muted: #000000;
+            --heading-color: #000000;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --code-bg: #f1f5f9;
+            --info-box: #e0f2fe;
+            --table-alt: rgba(0,0,0,0.015);
+            --search-match: rgba(250, 204, 21, 0.5);
+            --search-text: #000000;
+
+            /* Omni-directional encasing shadow for light mode */
+            --card-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.1), 0 0 6px 0 rgba(0, 0, 0, 0.05);
+            --card-shadow-hover: 0 0 25px 0 rgba(0, 0, 0, 0.15), 0 0 12px 0 rgba(0, 0, 0, 0.08);
+            --panel-border: #e2e8f0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            transition: background-color 0.2s, color 0.2s;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 800 !important; }
+        h1 { font-size: clamp(1.75rem, 4vw, 3.5rem) !important; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        h2 { font-size: clamp(1.4rem, 3vw, 2.25rem) !important; margin-bottom: 1rem; }
+        h3 { font-size: clamp(1.2rem, 2.5vw, 1.85rem) !important; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        h4 { font-size: clamp(1.05rem, 2vw, 1.5rem) !important; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+        p { margin-bottom: 1rem; }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--text-color);
+        }
+
+        /* Wiki-style Tables */
+        .wikitable {
+            width: 100%; border-collapse: collapse; margin: 1em 0;
+            background-color: var(--bg-color); font-size: 0.9em;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid var(--panel-border);
+        }
+        .wikitable th, .wikitable td {
+            border: 1px solid var(--panel-border); padding: 0.75rem 1rem;
+            text-align: left; vertical-align: top;
+        }
+        .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); }
+        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
+
+        /* TOC Styles */
+        .toc-link.active { font-weight: 600; color: var(--link-color); position: relative; }
+        .toc-link.active::before {
+            content: ''; position: absolute; left: -1rem; top: 0; height: 100%;
+            width: 3px; background-color: var(--link-color);
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
+
+        /* Panels */
+        .topic-panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            transition: box-shadow 0.3s ease;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        @media (min-width: 1024px) {
+            .topic-panel { padding: 2.5rem; }
+        }
+        .topic-panel:hover {
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .subtopic-card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+            overflow-x: auto;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        .subtopic-card:last-child { margin-bottom: 0; }
+        .subtopic-card:hover { box-shadow: var(--card-shadow); transform: translateY(-2px); }
+
+        /* Code Block Copy Features */
+        .code-container {
+            position: relative;
+            max-width: 100%;
+        }
+
+        .code-content {
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            padding-right: 2.5rem;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.4rem;
+            right: 0.4rem;
+            opacity: 0;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            background: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            z-index: 10;
+        }
+
+        .code-container:hover .copy-btn { opacity: 1; }
+        .copy-btn:hover { color: var(--link-color); border-color: var(--link-color); background: var(--bg-color); }
+        @media (hover: none) { .copy-btn { opacity: 1; } }
+
+        /* Red Hat accent badge */
+        .rhel-badge {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            background: var(--info-box); border: 1px solid var(--panel-border);
+            border-radius: 9999px; padding: 0.15rem 0.6rem;
+            font-size: 0.7rem; font-weight: 600; color: var(--link-color);
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+
+        /* Global Language Switcher */
+        .lang-en { display: none; }
+        body[data-active-lang="en"] .lang-de { display: none !important; }
+        body[data-active-lang="en"] .lang-en { display: block !important; }
+        body[data-active-lang="en"] span.lang-en, body[data-active-lang="en"] a.lang-en { display: inline !important; }
+        body[data-active-lang="de"] .lang-en { display: none !important; }
+        body[data-active-lang="de"] .lang-de { display: block !important; }
+        body[data-active-lang="de"] span.lang-de, body[data-active-lang="de"] a.lang-de { display: inline !important; }
+    </style>
+</head>
+
+<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
+
+    <aside class="lg:w-80 flex-shrink-0 bg-[var(--sidebar-color)] border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative shadow-lg transition-colors">
+
+        <!-- Controls: Language, Theme, Download -->
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
+                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Guide">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+            <i class="fa-brands fa-redhat text-4xl mb-3" style="color:#ee0000;"></i>
+            <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span class="lang-de">Red Hat<br>Referenz</span>
+                <span class="lang-en">Red Hat<br>Reference</span>
+            </div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v1.0 - RHEL 8 / 9</div>
+        </div>
+
+        <div class="mb-6 relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
+            </div>
+            <input type="text" id="wikiSearch" placeholder="Search command..." class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-xl pl-10 pr-3 py-2.5 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-all shadow-sm" onkeyup="filterWiki()">
+        </div>
+
+        <nav class="text-sm space-y-1.5" id="toc-nav">
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span class="lang-de">Kategorien</span>
+                <span class="lang-en">Categories</span>
+            </div>
+            <ul class="space-y-1">
+                <li><a href="#intro" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">1. Einführung & System</span><span class="lang-en">1. Intro & System</span>
+                </a></li>
+                <li><a href="#subscription" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">2. Subscription-Manager</span><span class="lang-en">2. Subscription Manager</span>
+                </a></li>
+                <li><a href="#dnf" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">3. DNF Paketverwaltung</span><span class="lang-en">3. DNF Package Management</span>
+                </a></li>
+                <li><a href="#rpm" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">4. RPM & Low-Level</span><span class="lang-en">4. RPM & Low-Level</span>
+                </a></li>
+                <li><a href="#selinux" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">5. SELinux</span><span class="lang-en">5. SELinux</span>
+                </a></li>
+                <li><a href="#firewalld" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">6. firewalld</span><span class="lang-en">6. firewalld</span>
+                </a></li>
+                <li><a href="#cockpit" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">7. Cockpit Web Console</span><span class="lang-en">7. Cockpit Web Console</span>
+                </a></li>
+                <li><a href="#systemd" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">8. systemd & Dienste</span><span class="lang-en">8. systemd & Services</span>
+                </a></li>
+                <li><a href="#maintenance" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">9. Systemwartung</span><span class="lang-en">9. System Maintenance</span>
+                </a></li>
+                <li><a href="#resources" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">10. Offizielle Quellen</span><span class="lang-en">10. Official Resources</span>
+                </a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="flex-grow w-full min-w-0 p-4 lg:p-12" id="main-content">
+
+        <div class="searchable-block topic-panel mt-0 mb-8">
+            <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0">
+                <span class="lang-de">Red Hat Enterprise Linux Referenz</span>
+                <span class="lang-en">Red Hat Enterprise Linux Reference</span>
+            </h1>
+            <p class="text-lg mb-4 text-[var(--text-color)]">
+                <span class="lang-de"><strong>Red Hat Enterprise Linux (RHEL)</strong> ist eine kommerzielle Open-Source-Linux-Distribution, die von Red Hat für Unternehmen entwickelt wurde. Sie zeichnet sich durch langfristigen Support (10 Jahre pro Major-Version), zertifizierte Hardware/Software und enterprise-grade Sicherheitsfunktionen wie SELinux aus. Diese Referenz konzentriert sich auf die wichtigsten Werkzeuge für Systemadministratoren: <strong>Subscription-Manager</strong>, <strong>DNF</strong>, <strong>SELinux</strong>, <strong>firewalld</strong> und die <strong>Cockpit-Webkonsole</strong>. <strong>Klicken Sie auf ein Code-Snippet, um es in die Zwischenablage zu kopieren.</strong></span>
+                <span class="lang-en"><strong>Red Hat Enterprise Linux (RHEL)</strong> is a commercial open-source Linux distribution developed by Red Hat for enterprises. It features long-term support (10 years per major version), certified hardware/software, and enterprise-grade security features like SELinux. This reference focuses on the essential tools for system administrators: <strong>Subscription Manager</strong>, <strong>DNF</strong>, <strong>SELinux</strong>, <strong>firewalld</strong>, and the <strong>Cockpit web console</strong>. <strong>Click any code snippet to copy it to your clipboard.</strong></span>
+            </p>
+            <div class="flex flex-wrap gap-2">
+                <span class="rhel-badge"><i class="fa-solid fa-book"></i> <a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/" target="_blank" class="text-[var(--link-color)] no-underline">RHEL Docs</a></span>
+                <span class="rhel-badge"><i class="fa-solid fa-graduation-cap"></i> <a href="https://www.redhat.com/en/services/training-and-certification" target="_blank" class="text-[var(--link-color)] no-underline">Red Hat Training</a></span>
+                <span class="rhel-badge"><i class="fa-solid fa-code"></i> <a href="https://man7.org/linux/man-pages/" target="_blank" class="text-[var(--link-color)] no-underline">Man Pages</a></span>
+                <span class="rhel-badge"><i class="fa-solid fa-life-ring"></i> <a href="https://access.redhat.com/support" target="_blank" class="text-[var(--link-color)] no-underline">Red Hat Support</a></span>
+            </div>
+        </div>
+
+        <!-- 1. Einführung & System -->
+        <section id="intro" class="scroll-mt-10 searchable-block topic-panel mt-8">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">1. Einführung & Systeminformationen</span>
+                <span class="lang-en">1. Introduction & System Information</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">cat /etc/redhat-release</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die genaue RHEL-Version an (z.B. "Red Hat Enterprise Linux release 9.3").</span>
+                            <span class="lang-en">Shows the exact RHEL version (e.g., "Red Hat Enterprise Linux release 9.3").</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>cat /etc/redhat-release</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">cat /etc/os-release</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt standardisierte Betriebssystem-Informationen im Key-Value-Format.</span>
+                            <span class="lang-en">Shows standardized OS information in key-value format.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>cat /etc/os-release</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">hostnamectl</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt oder setzt den System-Hostnamen und zugehörige Metadaten.</span>
+                            <span class="lang-en">Shows or sets the system hostname and related metadata.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>hostnamectl set-hostname rhel-server01</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">uname -r</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die Kernel-Version an (RHEL verwendet oft Red Hat-spezifische Kernel).</span>
+                            <span class="lang-en">Shows the kernel version (RHEL often uses Red Hat-specific kernels).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>uname -r</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+                <p class="text-xs text-[var(--text-muted)] mt-3">
+                    <span class="lang-de">Offizielle Referenz: <a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9" target="_blank">RHEL 9 Documentation</a></span>
+                    <span class="lang-en">Official reference: <a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9" target="_blank">RHEL 9 Documentation</a></span>
+                </p>
+            </div>
+        </section>
+
+        <!-- 2. Subscription-Manager -->
+        <section id="subscription" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">2. Subscription-Manager</span>
+                <span class="lang-en">2. Subscription Manager</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de">Im Gegensatz zu Community-Distributionen benötigt RHEL ein gültiges <strong>Abonnement</strong>, um Pakete von Red Hats CDN zu beziehen. Das <code>subscription-manager</code>-Tool verwaltet Registrierung, Subscriptions und Repositories. Mit <strong>Simple Content Access (SCA)</strong> (Standard seit RHEL 9) entfällt das manuelle Anhängen von Subscriptions. Siehe <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_and_managing_subscriptions/" target="_blank">Configuring and Managing Subscriptions</a>.</span>
+                    <span class="lang-en">Unlike community distributions, RHEL requires a valid <strong>subscription</strong> to pull packages from Red Hat's CDN. The <code>subscription-manager</code> tool manages registration, subscriptions, and repositories. With <strong>Simple Content Access (SCA)</strong> (default since RHEL 9), manually attaching subscriptions is no longer necessary. See <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_and_managing_subscriptions/" target="_blank">Configuring and Managing Subscriptions</a>.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">subscription-manager register</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Registriert das System bei Red Hat mit Benutzername/Passwort.</span>
+                            <span class="lang-en">Registers the system with Red Hat using username/password.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo subscription-manager register --username=user --password=pass</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">subscription-manager register (Org/Key)</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Registriert das System mit Organisations-ID und Activation Key (für automatisierte Deployments).</span>
+                            <span class="lang-en">Registers the system using Organization ID and Activation Key (for automated deployments).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo subscription-manager register --org=1234567 --activationkey=my-key</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">subscription-manager status</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt den aktuellen Subscription-Status und ob Simple Content Access aktiv ist.</span>
+                            <span class="lang-en">Shows current subscription status and whether Simple Content Access is enabled.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo subscription-manager status</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">subscription-manager repos --list</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet alle für das System verfügbaren Repositories auf.</span>
+                            <span class="lang-en">Lists all repositories available to the system.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo subscription-manager repos --list</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">subscription-manager repos --enable</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Aktiviert ein bestimmtes Repository (z.B. CodeReady Builder).</span>
+                            <span class="lang-en">Enables a specific repository (e.g., CodeReady Builder).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo subscription-manager repos --enable=rhel-9-for-x86_64-codeready-builder-rpms</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">subscription-manager unregister</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Meldet das System ab und entfernt alle Subscriptions.</span>
+                            <span class="lang-en">Unregisters the system and removes all subscriptions.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo subscription-manager unregister</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">subscription-manager clean</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Löscht alle Subscription-Daten und Repo-Konfigurationen (für Re-Registrierung).</span>
+                            <span class="lang-en">Removes all subscription data and repo configurations (for re-registration).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo subscription-manager clean</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+                <p class="text-xs text-[var(--text-muted)] mt-3">
+                    <span class="lang-de">Offizielle Referenz: <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_and_managing_subscriptions/" target="_blank">Red Hat - Subscription Management</a></span>
+                    <span class="lang-en">Official reference: <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_and_managing_subscriptions/" target="_blank">Red Hat - Subscription Management</a></span>
+                </p>
+            </div>
+        </section>
+
+        <!-- 3. DNF Paketverwaltung -->
+        <section id="dnf" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">3. DNF Paketverwaltung</span>
+                <span class="lang-en">3. DNF Package Management</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de"><strong>DNF (Dandified YUM)</strong> ist der Standard-Paketmanager in RHEL 8 und 9. Er löste YUM ab und bietet bessere Performance sowie eine modernere API. <code>yum</code> ist in RHEL 8/9 ein Alias für <code>dnf</code>. Siehe <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/managing_software_with_the_dnf_tool/" target="_blank">Managing Software with the DNF Tool</a>.</span>
+                    <span class="lang-en"><strong>DNF (Dandified YUM)</strong> is the default package manager in RHEL 8 and 9. It replaced YUM and offers better performance and a more modern API. <code>yum</code> is an alias for <code>dnf</code> in RHEL 8/9. See <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/managing_software_with_the_dnf_tool/" target="_blank">Managing Software with the DNF Tool</a>.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dnf search</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Sucht nach Paketen anhand eines Begriffs oder Regex.</span>
+                            <span class="lang-en">Searches for packages by term or regex.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>dnf search nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dnf info</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt detaillierte Informationen zu einem Paket an.</span>
+                            <span class="lang-en">Shows detailed information about a package.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>dnf info nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dnf install</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Installiert ein oder mehrere Pakete inklusive Abhängigkeiten.</span>
+                            <span class="lang-en">Installs one or more packages including dependencies.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo dnf install nginx curl git</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dnf remove</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Entfernt ein Paket und alle nicht mehr benötigten Abhängigkeiten.</span>
+                            <span class="lang-en">Removes a package and all unneeded dependencies.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo dnf remove nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dnf update / upgrade</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Aktualisiert alle installierten Pakete auf die neueste Version.</span>
+                            <span class="lang-en">Updates all installed packages to the latest version.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo dnf update</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dnf list --installed</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet alle installierten Pakete auf.</span>
+                            <span class="lang-en">Lists all installed packages.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>dnf list --installed | grep nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dnf repolist</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet alle aktivierten Repositories auf.</span>
+                            <span class="lang-en">Lists all enabled repositories.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>dnf repolist</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dnf group install</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Installiert eine Paketgruppe (z.B. "Development Tools").</span>
+                            <span class="lang-en">Installs a package group (e.g., "Development Tools").</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo dnf group install "Development Tools"</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dnf history</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die DNF-Transaktionshistorie an (nützlich für Rollbacks).</span>
+                            <span class="lang-en">Shows the DNF transaction history (useful for rollbacks).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>dnf history</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dnf module list</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet verfügbare Module und Streams auf (RHEL 8+ AppStream).</span>
+                            <span class="lang-en">Lists available modules and streams (RHEL 8+ AppStream).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>dnf module list nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 4. RPM & Low-Level -->
+        <section id="rpm" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">4. RPM & Low-Level-Paketverwaltung</span>
+                <span class="lang-en">4. RPM & Low-Level Package Management</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de"><strong>RPM (RPM Package Manager)</strong> ist das Low-Level-Werkzeug zur Installation und Verwaltung von <code>.rpm</code>-Paketen. Es wird von DNF im Hintergrund aufgerufen. Siehe <a href="https://rpm.org/documentation.html" target="_blank">RPM Documentation</a>.</span>
+                    <span class="lang-en"><strong>RPM (RPM Package Manager)</strong> is the low-level tool for installing and managing <code>.rpm</code> packages. It is called by DNF in the background. See <a href="https://rpm.org/documentation.html" target="_blank">RPM Documentation</a>.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">rpm -i / -U</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Installiert (<code>-i</code>) oder aktualisiert (<code>-U</code>) ein lokales <code>.rpm</code>-Paket.</span>
+                            <span class="lang-en">Installs (<code>-i</code>) or upgrades (<code>-U</code>) a local <code>.rpm</code> package.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo rpm -Uvh package.rpm</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">rpm -qa</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet alle installierten RPM-Pakete auf.</span>
+                            <span class="lang-en">Lists all installed RPM packages.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>rpm -qa | grep nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">rpm -qi</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt detaillierte Informationen zu einem installierten Paket an.</span>
+                            <span class="lang-en">Shows detailed information about an installed package.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>rpm -qi nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">rpm -ql</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet alle Dateien auf, die zu einem installierten Paket gehören.</span>
+                            <span class="lang-en">Lists all files belonging to an installed package.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>rpm -ql nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">rpm -qf</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Findet heraus, zu welchem Paket eine bestimmte Datei gehört.</span>
+                            <span class="lang-en">Finds out which package a specific file belongs to.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>rpm -qf /usr/sbin/nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">rpm -V</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Überprüft die Integrität eines installierten Pakets (Dateigröße, Rechte, MD5).</span>
+                            <span class="lang-en">Verifies the integrity of an installed package (file size, permissions, MD5).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>rpm -V nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">rpm -e</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Entfernt ein installiertes RPM-Paket (ohne Abhängigkeitsprüfung).</span>
+                            <span class="lang-en">Removes an installed RPM package (without dependency check).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo rpm -e nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 5. SELinux -->
+        <section id="selinux" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">5. SELinux (Security-Enhanced Linux)</span>
+                <span class="lang-en">5. SELinux (Security-Enhanced Linux)</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de"><strong>SELinux</strong> ist ein obligatorisches Zugriffskontrollsystem (MAC), das in RHEL standardmäßig aktiviert ist. Es erzwingt Sicherheitsrichtlinien auf Basis von Typen, Rollen und Booleans – selbst wenn ein Prozess als root läuft, kann SELinux ihn einschränken. Siehe <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/using_selinux/" target="_blank">Using SELinux</a>.</span>
+                    <span class="lang-en"><strong>SELinux</strong> is a mandatory access control (MAC) system enabled by default in RHEL. It enforces security policies based on types, roles, and booleans – even if a process runs as root, SELinux can restrict it. See <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/using_selinux/" target="_blank">Using SELinux</a>.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">getenforce</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt den aktuellen SELinux-Modus an (Enforcing, Permissive, Disabled).</span>
+                            <span class="lang-en">Shows the current SELinux mode (Enforcing, Permissive, Disabled).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>getenforce</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">sestatus</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt detaillierten SELinux-Status (Policy, Modus, geladene Module).</span>
+                            <span class="lang-en">Shows detailed SELinux status (policy, mode, loaded modules).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sestatus</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">setenforce</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Wechselt temporär zwischen Enforcing (1) und Permissive (0).</span>
+                            <span class="lang-en">Temporarily switches between Enforcing (1) and Permissive (0).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo setenforce 0</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">getsebool -a</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet alle SELinux-Booleans mit ihrem aktuellen Status auf.</span>
+                            <span class="lang-en">Lists all SELinux booleans with their current status.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>getsebool -a | grep httpd</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">setsebool -P</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Setzt einen SELinux-Boolean dauerhaft (<code>-P</code> = persistent).</span>
+                            <span class="lang-en">Sets an SELinux boolean permanently (<code>-P</code> = persistent).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo setsebool -P httpd_can_network_connect on</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">ls -Z</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt den SELinux-Kontext von Dateien und Verzeichnissen an.</span>
+                            <span class="lang-en">Shows the SELinux context of files and directories.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>ls -Z /var/www/html/</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">restorecon -Rv</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Stellt SELinux-Standardkontexte für Dateien wieder her (rekursiv).</span>
+                            <span class="lang-en">Restores default SELinux contexts for files (recursive).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo restorecon -Rv /var/www/html/</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">semanage port -a</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Fügt einen Port zu einem SELinux-Typ hinzu (z.B. HTTP auf Port 8080).</span>
+                            <span class="lang-en">Adds a port to an SELinux type (e.g., HTTP on port 8080).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo semanage port -a -t http_port_t -p tcp 8080</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">ausearch -m avc</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Sucht nach SELinux-Denials (AVC-Meldungen) im Audit-Log.</span>
+                            <span class="lang-en">Searches for SELinux denials (AVC messages) in the audit log.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo ausearch -m avc -ts recent</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">sealert</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">SELinux-Troubleshooter (GUI) zur Analyse von AVC-Meldungen und Vorschlägen.</span>
+                            <span class="lang-en">SELinux troubleshooter (GUI) for analyzing AVC messages and suggestions.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo sealert -a /var/log/audit/audit.log</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+                <p class="text-xs text-[var(--text-muted)] mt-3">
+                    <span class="lang-de">Offizielle Referenz: <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/using_selinux/" target="_blank">Red Hat - Using SELinux</a></span>
+                    <span class="lang-en">Official reference: <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/using_selinux/" target="_blank">Red Hat - Using SELinux</a></span>
+                </p>
+            </div>
+        </section>
+
+        <!-- 6. firewalld -->
+        <section id="firewalld" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">6. firewalld</span>
+                <span class="lang-en">6. firewalld</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de"><strong>firewalld</strong> ist die Standard-Firewall-Verwaltung in RHEL. Im Gegensatz zu iptables arbeitet es mit <strong>Zonen</strong> – jede Zone definiert eine Vertrauensstufe für Netzwerkverbindungen. Die Konfiguration erfolgt über <code>firewall-cmd</code>. Siehe <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/" target="_blank">Configuring Firewalls and Packet Filters</a>.</span>
+                    <span class="lang-en"><strong>firewalld</strong> is the default firewall management tool in RHEL. Unlike iptables, it uses <strong>zones</strong> – each zone defines a trust level for network connections. Configuration is done via <code>firewall-cmd</code>. See <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/" target="_blank">Configuring Firewalls and Packet Filters</a>.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">firewall-cmd --state</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Prüft, ob firewalld läuft.</span>
+                            <span class="lang-en">Checks whether firewalld is running.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>firewall-cmd --state</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">firewall-cmd --get-default-zone</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die Standard-Zone an (in RHEL: <code>public</code>).</span>
+                            <span class="lang-en">Shows the default zone (in RHEL: <code>public</code>).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>firewall-cmd --get-default-zone</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">firewall-cmd --list-all</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die vollständige Konfiguration der aktiven Zone an.</span>
+                            <span class="lang-en">Shows the complete configuration of the active zone.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo firewall-cmd --list-all</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">firewall-cmd --add-service</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Erlaubt einen vordefinierten Dienst dauerhaft (<code>--permanent</code>).</span>
+                            <span class="lang-en">Allows a predefined service permanently (<code>--permanent</code>).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo firewall-cmd --permanent --add-service=http</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">firewall-cmd --add-port</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Erlaubt einen bestimmten Port (z.B. 8080/tcp) dauerhaft.</span>
+                            <span class="lang-en">Allows a specific port (e.g., 8080/tcp) permanently.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo firewall-cmd --permanent --add-port=8080/tcp</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">firewall-cmd --reload</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Lädt die Firewall-Regeln neu, ohne bestehende Verbindungen zu unterbrechen.</span>
+                            <span class="lang-en">Reloads firewall rules without interrupting existing connections.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo firewall-cmd --reload</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">firewall-cmd --change-interface</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Weist ein Interface einer anderen Zone zu (dauerhaft).</span>
+                            <span class="lang-en">Assigns an interface to a different zone (permanent).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo firewall-cmd --zone=trusted --change-interface=eth0 --permanent</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">firewall-cmd --remove-service</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Entfernt einen Dienst aus der Firewall-Konfiguration.</span>
+                            <span class="lang-en">Removes a service from the firewall configuration.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo firewall-cmd --permanent --remove-service=http</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 7. Cockpit Web Console -->
+        <section id="cockpit" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">7. Cockpit Web Console</span>
+                <span class="lang-en">7. Cockpit Web Console</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de"><strong>Cockpit</strong> ist eine webbasierte Verwaltungsoberfläche für Linux-Server, die von Red Hat entwickelt wurde und in RHEL enthalten ist. Sie ermöglicht Systemüberwachung, Dienstverwaltung, Storage-Management, Log-Viewer, Netzwerkkonfiguration und sogar ein Browser-Terminal – alles über Port 9090. Siehe <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/managing_systems_using_the_rhel_9_web_console/" target="_blank">Managing Systems Using the RHEL Web Console</a>.</span>
+                    <span class="lang-en"><strong>Cockpit</strong> is a web-based management interface for Linux servers, developed by Red Hat and included in RHEL. It enables system monitoring, service management, storage management, log viewer, network configuration, and even a browser terminal – all via port 9090. See <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/managing_systems_using_the_rhel_9_web_console/" target="_blank">Managing Systems Using the RHEL Web Console</a>.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dnf install cockpit</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Installiert Cockpit und optionale Module (Storage, PackageKit).</span>
+                            <span class="lang-en">Installs Cockpit and optional modules (Storage, PackageKit).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo dnf install -y cockpit cockpit-storaged cockpit-packagekit</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl enable --now cockpit.socket</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Aktiviert den Cockpit-Socket (startet bei Bedarf auf Port 9090).</span>
+                            <span class="lang-en">Enables the Cockpit socket (starts on demand on port 9090).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl enable --now cockpit.socket</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">firewall-cmd --add-service=cockpit</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Öffnet den Cockpit-Port (9090) in der Firewall.</span>
+                            <span class="lang-en">Opens the Cockpit port (9090) in the firewall.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo firewall-cmd --permanent --add-service=cockpit && sudo firewall-cmd --reload</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">ss -tlnp | grep 9090</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Prüft, ob Cockpit auf Port 9090 lauscht.</span>
+                            <span class="lang-en">Checks whether Cockpit is listening on port 9090.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>ss -tlnp | grep 9090</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl status cockpit.socket</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt den Status des Cockpit-Sockets an.</span>
+                            <span class="lang-en">Shows the status of the Cockpit socket.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>systemctl status cockpit.socket</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+                <p class="text-xs text-[var(--text-muted)] mt-3">
+                    <span class="lang-de">Zugriff: <code>https://&lt;server-ip&gt;:9090</code> (selbstsigniertes Zertifikat standardmäßig).</span>
+                    <span class="lang-en">Access: <code>https://&lt;server-ip&gt;:9090</code> (self-signed certificate by default).</span>
+                </p>
+            </div>
+        </section>
+
+        <!-- 8. systemd & Dienste -->
+        <section id="systemd" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">8. systemd & Dienstverwaltung</span>
+                <span class="lang-en">8. systemd & Service Management</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de">RHEL verwendet <strong>systemd</strong> als Init-System und Dienstmanager. Alle Dienste werden als <em>Units</em> verwaltet (Service, Socket, Target, Timer, Mount, Path). Siehe <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_basic_system_settings/managing-systemd-services" target="_blank">Managing systemd Services</a>.</span>
+                    <span class="lang-en">RHEL uses <strong>systemd</strong> as its init system and service manager. All services are managed as <em>units</em> (Service, Socket, Target, Timer, Mount, Path). See <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_basic_system_settings/managing-systemd-services" target="_blank">Managing systemd Services</a>.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl start</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Startet einen Dienst sofort.</span>
+                            <span class="lang-en">Starts a service immediately.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl start httpd</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl enable --now</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Aktiviert einen Dienst beim Booten und startet ihn sofort.</span>
+                            <span class="lang-en">Enables a service at boot and starts it immediately.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl enable --now httpd</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl status</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt den aktuellen Status eines Dienstes an.</span>
+                            <span class="lang-en">Shows the current status of a service.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>systemctl status httpd</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl restart</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Startet einen Dienst neu (stop + start).</span>
+                            <span class="lang-en">Restarts a service (stop + start).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl restart httpd</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl reload</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Lädt die Konfiguration neu, ohne den Dienst zu unterbrechen (SIGHUP).</span>
+                            <span class="lang-en">Reloads configuration without interrupting the service (SIGHUP).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl reload httpd</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl mask</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Blockiert einen Dienst vollständig (verhindert sogar manuellen Start).</span>
+                            <span class="lang-en">Blocks a service completely (prevents even manual start).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl mask firewalld</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl --failed</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet alle fehlgeschlagenen Units auf.</span>
+                            <span class="lang-en">Lists all failed units.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>systemctl --failed</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">journalctl -u</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die Logs eines bestimmten Dienstes an.</span>
+                            <span class="lang-en">Shows the logs of a specific service.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>journalctl -u httpd -n 50 --no-pager</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl edit</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Erstellt einen Drop-in-Override für eine Unit (empfohlene Methode).</span>
+                            <span class="lang-en">Creates a drop-in override for a unit (recommended method).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl edit httpd</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 9. Systemwartung -->
+        <section id="maintenance" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">9. Systemwartung</span>
+                <span class="lang-en">9. System Maintenance</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de">Regelmäßige Wartung hält ein RHEL-System sicher und stabil. Dazu gehören Paket-Cache-Bereinigung, Log-Rotation, Subscription-Überprüfung und die Kontrolle von SELinux-Meldungen. Siehe <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/managing_software_with_the_dnf_tool/" target="_blank">Managing Software with DNF</a>.</span>
+                    <span class="lang-en">Regular maintenance keeps a RHEL system secure and stable. This includes package cache cleaning, log rotation, subscription checks, and monitoring SELinux messages. See <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/managing_software_with_the_dnf_tool/" target="_blank">Managing Software with DNF</a>.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dnf clean all</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Entfernt alle zwischengespeicherten Pakete und Metadaten aus dem DNF-Cache.</span>
+                            <span class="lang-en">Removes all cached packages and metadata from the DNF cache.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo dnf clean all</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dnf autoremove</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Entfernt nicht mehr benötigte Abhängigkeiten automatisch.</span>
+                            <span class="lang-en">Automatically removes unneeded dependencies.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo dnf autoremove</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">journalctl --vacuum-time</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Bereinigt alte systemd-Journal-Logs (z.B. älter als 2 Wochen).</span>
+                            <span class="lang-en">Cleans old systemd journal logs (e.g., older than 2 weeks).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo journalctl --vacuum-time=2weeks</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dnf check-update</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Prüft, ob Updates verfügbar sind, ohne sie zu installieren.</span>
+                            <span class="lang-en">Checks if updates are available without installing them.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo dnf check-update</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">subscription-manager status</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Überprüft regelmäßig den Subscription-Status des Systems.</span>
+                            <span class="lang-en">Regularly checks the system's subscription status.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo subscription-manager status</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">rpm -Va</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Überprüft die Integrität aller installierten Pakete (Dateigröße, Rechte, MD5).</span>
+                            <span class="lang-en">Verifies the integrity of all installed packages (file size, permissions, MD5).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>rpm -Va</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dnf history rollback</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Macht eine DNF-Transaktion rückgängig (Rollback).</span>
+                            <span class="lang-en">Reverts a DNF transaction (rollback).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo dnf history rollback 5</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 10. Offizielle Quellen -->
+        <section id="resources" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">10. Offizielle Red Hat-Quellen</span>
+                <span class="lang-en">10. Official Red Hat Resources</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <ul class="space-y-3 text-sm">
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-book text-[var(--link-color)] mt-1"></i>
+                        <div>
+                            <a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/" target="_blank" class="font-semibold">Red Hat Enterprise Linux Documentation</a>
+                            <p class="text-[var(--text-muted)] text-xs mt-0.5">
+                                <span class="lang-de">Die offizielle Produktdokumentation für alle RHEL-Versionen – umfassend, versioniert und durchsuchbar.</span>
+                                <span class="lang-en">The official product documentation for all RHEL versions – comprehensive, versioned, and searchable.</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-graduation-cap text-[var(--link-color)] mt-1"></i>
+                        <div>
+                            <a href="https://www.redhat.com/en/services/training-and-certification" target="_blank" class="font-semibold">Red Hat Training & Certification</a>
+                            <p class="text-[var(--text-muted)] text-xs mt-0.5">
+                                <span class="lang-de">Offizielle Schulungen und Zertifizierungen (RHCSA, RHCE, etc.).</span>
+                                <span class="lang-en">Official training and certifications (RHCSA, RHCE, etc.).</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-life-ring text-[var(--link-color)] mt-1"></i>
+                        <div>
+                            <a href="https://access.redhat.com/support" target="_blank" class="font-semibold">Red Hat Customer Portal Support</a>
+                            <p class="text-[var(--text-muted)] text-xs mt-0.5">
+                                <span class="lang-de">Offizieller Support, Knowledgebase und Ticket-System für Subscription-Kunden.</span>
+                                <span class="lang-en">Official support, knowledge base, and ticket system for subscription customers.</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-bug text-[var(--link-color)] mt-1"></i>
+                        <div>
+                            <a href="https://bugzilla.redhat.com/" target="_blank" class="font-semibold">Red Hat Bugzilla</a>
+                            <p class="text-[var(--text-muted)] text-xs mt-0.5">
+                                <span class="lang-de">Offizielles Bug-Tracking-System für Red Hat Produkte.</span>
+                                <span class="lang-en">Official bug tracking system for Red Hat products.</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-code text-[var(--link-color)] mt-1"></i>
+                        <div>
+                            <a href="https://access.redhat.com/downloads" target="_blank" class="font-semibold">Red Hat Downloads</a>
+                            <p class="text-[var(--text-muted)] text-xs mt-0.5">
+                                <span class="lang-de">Offizielle ISO-Images und Pakete für subscription-berechtigte Kunden.</span>
+                                <span class="lang-en">Official ISO images and packages for subscription-entitled customers.</span>
+                            </p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                        if(tocLink) tocLink.classList.add('active');
+                    }
+                });
+            }, {
+                rootMargin: '-10% 0px -80% 0px',
+                threshold: [0, 0.1, 1]
+            });
+
+            document.querySelectorAll('section').forEach((section) => {
+                observer.observe(section);
+            });
+        });
+
+        function filterWiki() {
+            const input = document.getElementById('wikiSearch');
+            const filter = input.value.toLowerCase();
+            const blocks = document.querySelectorAll('.searchable-block');
+            const mainContent = document.getElementById('main-content');
+
+            removeHighlights(mainContent);
+
+            if (!filter) {
+                blocks.forEach(block => block.style.display = 'block');
+                return;
+            }
+
+            blocks.forEach(block => {
+                const text = block.innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    block.style.display = 'block';
+                    highlightText(block, input.value);
+                } else {
+                    block.style.display = 'none';
+                }
+            });
+        }
+
+        function highlightText(element, keyword) {
+            if (!keyword) return;
+            const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+
+            let node;
+            while (node = treeWalker.nextNode()) {
+                if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                    if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE') {
+                        nodesToReplace.push(node);
+                    }
+                }
+            }
+
+            nodesToReplace.forEach(node => {
+                const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+                const fragment = document.createDocumentFragment();
+                let match;
+                let lastIndex = 0;
+                const text = node.nodeValue;
+
+                while ((match = regex.exec(text)) !== null) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    const span = document.createElement('span');
+                    span.className = 'search-match font-semibold';
+                    span.textContent = match[0];
+                    fragment.appendChild(span);
+                    lastIndex = regex.lastIndex;
+                }
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                node.parentNode.replaceChild(fragment, node);
+            });
+        }
+
+        function removeHighlights(element) {
+            const highlights = element.querySelectorAll('.search-match');
+            highlights.forEach(span => {
+                const parent = span.parentNode;
+                parent.replaceChild(document.createTextNode(span.textContent), span);
+                parent.normalize();
+            });
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('light')) {
+                html.classList.remove('light');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        let isGerman = true;
+        function toggleLang() {
+            isGerman = !isGerman;
+            const indicator = document.getElementById('lang-indicator');
+            indicator.textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+        }
+
+        function copyCmd(element) {
+            const span = element.querySelector('span');
+            const icon = element.querySelector('i');
+
+            if (!span) return;
+            const textToCopy = span.innerText;
+
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            textarea.style.top = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                document.execCommand('copy');
+                if (icon) {
+                    icon.className = 'fa-solid fa-check text-green-500';
+                    setTimeout(() => {
+                        icon.className = 'fa-regular fa-copy';
+                    }, 1500);
+                }
+            } catch (err) {
+                console.error('Copy failed', err);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function copyCode(btn) {
+            const container = btn.closest('.code-container');
+            const codeContent = container.querySelector('.code-content').innerText;
+
+            const textarea = document.createElement('textarea');
+            textarea.value = codeContent;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            textarea.style.top = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                document.execCommand('copy');
+                const icon = btn.querySelector('i');
+                icon.className = 'fa-solid fa-check text-green-500';
+                setTimeout(() => {
+                    icon.className = 'fa-regular fa-copy';
+                }, 2000);
+            } catch (err) {
+                console.error('Copy failed', err);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function downloadHTML() {
+            removeHighlights(document.getElementById('main-content'));
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Red_Hat_Reference.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

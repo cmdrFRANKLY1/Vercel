@@ -37,6 +37,11 @@
             --heading-color: #ffffff;
             --code-bg: #27292a;
             --info-box: #2c2d30;
+
+            /* Omni-directional encasing shadows (unified with cheatsheets) */
+            --card-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.3), 0 0 4px 0 rgba(0, 0, 0, 0.2);
+            --card-shadow-hover: 0 0 20px 0 rgba(0, 0, 0, 0.4), 0 0 8px 0 rgba(0, 0, 0, 0.3);
+            --panel-border: #54595d;
         }
 
         html.light {
@@ -52,6 +57,11 @@
             --heading-color: #000000;
             --code-bg: #eaecf0;
             --info-box: #eaf3ff;
+
+            /* Omni-directional encasing shadow for light mode */
+            --card-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.1), 0 0 6px 0 rgba(0, 0, 0, 0.05);
+            --card-shadow-hover: 0 0 25px 0 rgba(0, 0, 0, 0.15), 0 0 12px 0 rgba(0, 0, 0, 0.08);
+            --panel-border: #e2e8f0;
         }
 
         body {
@@ -60,10 +70,16 @@
             font-family: 'Inter', sans-serif;
             line-height: 1.6;
             transition: background-color 0.2s, color 0.2s;
+            overflow-x: hidden;
         }
 
+        /* Responsive heading sizes so large h1/h2 don't dominate narrow iframes
+           and don't look disproportionate when the window is maximized. */
         h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 800 !important; }
-        h1 { font-size: 3.5rem !important; margin-bottom: 1.5rem; }
+        h1 { font-size: clamp(1.75rem, 4vw, 3.5rem) !important; margin-bottom: 1.5rem; }
+        h2 { font-size: clamp(1.4rem, 3vw, 2.25rem) !important; margin-bottom: 1rem; }
+        h3 { font-size: clamp(1.2rem, 2.5vw, 1.85rem) !important; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        h4 { font-size: clamp(1.05rem, 2vw, 1.5rem) !important; margin-top: 1.25rem; margin-bottom: 0.5rem; }
 
         a { color: var(--link-color); text-decoration: none; cursor: pointer; }
         a:hover { color: var(--link-hover); text-decoration: underline; }
@@ -85,6 +101,73 @@
         ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
+        /* Panel — unified with cheatsheets/guides */
+        .topic-panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: box-shadow 0.3s ease;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        @media (min-width: 1024px) {
+            .topic-panel { padding: 2.5rem; }
+        }
+        .topic-panel:hover {
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        /* Subtopic card — unified with cheatsheets/guides */
+        .subtopic-card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        .subtopic-card:last-child { margin-bottom: 0; }
+        .subtopic-card:hover { box-shadow: var(--card-shadow); transform: translateY(-2px); }
+
+        /* Control panel inside the sidebar — matches subtopic card styling */
+        .control-panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            box-shadow: var(--card-shadow);
+            transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+        }
+        .control-panel:hover {
+            box-shadow: var(--card-shadow-hover);
+            transform: translateY(-1px);
+        }
+
+        /* Canvas viewport panel — the "main" topic panel */
+        .canvas-viewport {
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 1rem;
+            box-shadow: var(--card-shadow);
+            transition: box-shadow 0.3s ease;
+            overflow: hidden;
+        }
+        .canvas-viewport:hover {
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        /* Action buttons get a subtle shadow treatment */
+        .btn-action {
+            box-shadow: 0 0 8px 0 rgba(0, 0, 0, 0.2);
+            transition: box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+        }
+        .btn-action:hover {
+            box-shadow: var(--card-shadow);
+        }
+
         /* Global Language Switcher Support */
         [data-lang-de], [data-lang-en] { transition: opacity 0.15s ease-in-out; }
     </style>
@@ -92,10 +175,10 @@
 <body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)] select-none" data-active-lang="de">
 
     <!-- SIDEBAR -->
-    <aside class="lg:w-72 flex-shrink-0 bg-[var(--sidebar-color)] border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
+    <aside class="lg:w-72 flex-shrink-0 bg-[var(--sidebar-color)] border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative shadow-lg transition-colors">
         
         <!-- Controls: Language, Theme, Download HTML -->
-        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded border border-[var(--border-color)]">
+        <div class="control-panel flex items-center justify-between gap-2 mb-6 p-2">
             <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--bg-color)] py-1 rounded text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent hover:border-[var(--border-color)]" title="Toggle Language">
                 <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
             </button>
@@ -126,7 +209,7 @@
                 <div class="font-bold text-[var(--heading-color)] mb-2 uppercase tracking-wider text-xs">
                     <span data-lang-de>1. Muster (Style)</span><span data-lang-en style="display:none;">1. Pattern Style</span>
                 </div>
-                <select id="styleSelect" class="w-full bg-[var(--bg-color)] border border-[var(--border-color)] text-[var(--text-color)] text-sm rounded px-3 py-2.5 outline-none focus:border-[var(--link-color)] transition-colors cursor-pointer shadow-inner">
+                <select id="styleSelect" class="control-panel w-full bg-[var(--bg-color)] text-[var(--text-color)] text-sm rounded px-3 py-2.5 outline-none focus:border-[var(--link-color)] transition-colors cursor-pointer">
                     <option value="random">🎲 Surprise Me (Random)</option>
                     <optgroup label="Camouflage">
                         <option value="wwi">WWI Dazzle</option>
@@ -164,7 +247,7 @@
                 <div class="font-bold text-[var(--heading-color)] mb-2 uppercase tracking-wider text-xs">
                     <span data-lang-de>2. Farbpalette</span><span data-lang-en style="display:none;">2. Color Palette</span>
                 </div>
-                <select id="paletteSelect" class="w-full bg-[var(--bg-color)] border border-[var(--border-color)] text-[var(--text-color)] text-sm rounded px-3 py-2.5 outline-none focus:border-[var(--link-color)] transition-colors cursor-pointer shadow-inner">
+                <select id="paletteSelect" class="control-panel w-full bg-[var(--bg-color)] text-[var(--text-color)] text-sm rounded px-3 py-2.5 outline-none focus:border-[var(--link-color)] transition-colors cursor-pointer">
                     <option value="random">🎨 Random Palette</option>
                     <option value="monochrome">Grayscale</option>
                     <option value="nature">Nature / Camo</option>
@@ -179,7 +262,7 @@
                 <div class="font-bold text-[var(--heading-color)] mb-2 uppercase tracking-wider text-xs">
                     <span data-lang-de>3. Optionen</span><span data-lang-en style="display:none;">3. Options</span>
                 </div>
-                <label class="flex items-center gap-3 cursor-pointer group bg-[var(--panel-color)] p-3 rounded border border-[var(--border-color)] hover:border-[var(--link-color)] transition-colors shadow-sm">
+                <label class="control-panel flex items-center gap-3 cursor-pointer group p-3 rounded">
                     <!-- Custom Checkbox -->
                     <input type="checkbox" id="outlineToggle" class="peer sr-only" checked>
                     <div class="w-5 h-5 rounded bg-[var(--code-bg)] border border-[var(--border-color)] peer-checked:bg-[var(--link-color)] peer-checked:border-[var(--link-color)] flex items-center justify-center transition-colors">
@@ -193,7 +276,7 @@
 
             <!-- Generate Button -->
             <div class="pt-4 border-t border-[var(--border-color)]">
-                <button id="generateBtn" class="w-full bg-[var(--info-box)] text-[var(--link-color)] border border-[var(--border-color)] hover:border-[var(--link-color)] hover:bg-[var(--bg-color)] px-4 py-3 rounded font-bold transition-all active:scale-95 flex items-center justify-center gap-2 shadow-sm">
+                <button id="generateBtn" class="btn-action w-full bg-[var(--info-box)] text-[var(--link-color)] border border-[var(--border-color)] hover:border-[var(--link-color)] hover:bg-[var(--bg-color)] px-4 py-3 rounded font-bold transition-all active:scale-95 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-dice"></i> 
                     <span data-lang-de>Neu Generieren</span><span data-lang-en style="display:none;">Generate New</span>
                 </button>
@@ -202,7 +285,7 @@
     </aside>
 
     <!-- MAIN CONTENT -->
-    <main class="flex-grow p-6 lg:p-12 max-w-6xl lg:ml-0 flex flex-col" id="main-content">
+    <main class="flex-grow w-full min-w-0 p-6 lg:p-12 flex flex-col" id="main-content">
         
         <!-- Header -->
         <div class="searchable-block mb-6">
@@ -217,10 +300,10 @@
         </div>
 
         <!-- Canvas Container -->
-        <div class="bg-[var(--panel-color)] border border-[var(--border-color)] rounded shadow-sm flex flex-col w-full relative mb-8 flex-grow" style="min-h: 500px;">
+        <div class="canvas-viewport flex flex-col w-full relative mb-8 flex-grow" style="min-height: 500px;">
             
             <!-- Internal Toolbar (Info & Download) -->
-            <div class="h-14 border-b border-[var(--border-color)] bg-[var(--info-box)] flex items-center justify-between px-4 shrink-0 rounded-t">
+            <div class="h-14 border-b border-[var(--border-color)] bg-[var(--info-box)] flex items-center justify-between px-4 shrink-0 rounded-t-[1rem]">
                 
                 <!-- Texture Info Display -->
                 <div class="text-xs font-mono text-[var(--text-muted)] flex gap-4">
@@ -231,7 +314,7 @@
                 
                 <!-- Download Resolution Options -->
                 <div class="relative group" id="downloadContainer">
-                    <button id="downloadBtn" class="text-sm bg-[var(--bg-color)] border border-[var(--border-color)] hover:border-[var(--link-color)] text-[var(--text-color)] px-4 py-2 rounded transition-colors flex items-center gap-2 cursor-pointer shadow-sm font-medium">
+                    <button id="downloadBtn" class="btn-action text-sm bg-[var(--bg-color)] border border-[var(--border-color)] hover:border-[var(--link-color)] text-[var(--text-color)] px-4 py-2 rounded transition-colors flex items-center gap-2 cursor-pointer font-medium">
                         <i class="fa-solid fa-image text-[var(--link-color)]"></i> 
                         <span id="dl-btn-text">
                             <span data-lang-de>Bild Speichern</span><span data-lang-en style="display:none;">Save Image</span>
@@ -251,7 +334,7 @@
             </div>
 
             <!-- Render Area -->
-            <div class="flex-1 relative checkered-bg flex items-center justify-center p-4 overflow-hidden rounded-b">
+            <div class="flex-1 relative checkered-bg flex items-center justify-center p-4 overflow-hidden rounded-b-[1rem]">
                 <canvas id="previewCanvas" class="max-w-full max-h-full object-contain shadow-md transition-opacity duration-300 border border-[var(--border-color)] bg-[var(--bg-color)]"></canvas>
             </div>
         </div>
@@ -373,7 +456,7 @@
         function strokeCheck(tCtx) {
             if (enableOutline && strokeWidthVal > 0) {
                 tCtx.lineWidth = strokeWidthVal;
-                tCtx.strokeStyle = 'rgba(0,0,0,0.85)'; // Enforce dark explicit color for proper outline contrast
+                tCtx.strokeStyle = 'rgba(0,0,0,0.85)';
                 tCtx.stroke();
             }
         }
@@ -392,7 +475,6 @@
                 const currentWidth = random() > 0.9 ? stripeWidth * 1.5 : stripeWidth;
                 tCtx.fillRect(-diag / 2, y, diag, currentWidth);
                 
-                // Add outlines for individual stripes if enabled
                 if (enableOutline) {
                     tCtx.beginPath();
                     tCtx.rect(-diag / 2, y, diag, currentWidth);

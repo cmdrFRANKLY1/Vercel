@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arch Linux Reference</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            /* Dark Mode Defaults */
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #202122;
+            --border-color: #54595d;
+            --text-color: #eaecf0;
+            --text-muted: #a8aeb3;
+            --link-color: #99c1f1;
+            --link-hover: #629deb;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --info-box: #2c2d30;
+            --table-alt: rgba(255,255,255,0.02);
+            --search-match: rgba(250, 204, 21, 0.3);
+            --search-text: #ffffff;
+
+            /* Omni-directional encasing shadows */
+            --card-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.3), 0 0 4px 0 rgba(0, 0, 0, 0.2);
+            --card-shadow-hover: 0 0 20px 0 rgba(0, 0, 0, 0.4), 0 0 8px 0 rgba(0, 0, 0, 0.3);
+            --panel-border: #54595d;
+        }
+
+        html.light {
+            /* Light Mode Overrides */
+            --bg-color: #f4f6f9;
+            --panel-color: #ffffff;
+            --sidebar-color: #ffffff;
+            --border-color: #cbd5e1;
+            --text-color: #000000;
+            --text-muted: #000000;
+            --heading-color: #000000;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --code-bg: #f1f5f9;
+            --info-box: #e0f2fe;
+            --table-alt: rgba(0,0,0,0.015);
+            --search-match: rgba(250, 204, 21, 0.5);
+            --search-text: #000000;
+
+            /* Omni-directional encasing shadow for light mode */
+            --card-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.1), 0 0 6px 0 rgba(0, 0, 0, 0.05);
+            --card-shadow-hover: 0 0 25px 0 rgba(0, 0, 0, 0.15), 0 0 12px 0 rgba(0, 0, 0, 0.08);
+            --panel-border: #e2e8f0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            transition: background-color 0.2s, color 0.2s;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 800 !important; }
+        h1 { font-size: clamp(1.75rem, 4vw, 3.5rem) !important; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        h2 { font-size: clamp(1.4rem, 3vw, 2.25rem) !important; margin-bottom: 1rem; }
+        h3 { font-size: clamp(1.2rem, 2.5vw, 1.85rem) !important; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        h4 { font-size: clamp(1.05rem, 2vw, 1.5rem) !important; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+        p { margin-bottom: 1rem; }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--text-color);
+        }
+
+        /* Wiki-style Tables */
+        .wikitable {
+            width: 100%; border-collapse: collapse; margin: 1em 0;
+            background-color: var(--bg-color); font-size: 0.9em;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid var(--panel-border);
+        }
+        .wikitable th, .wikitable td {
+            border: 1px solid var(--panel-border); padding: 0.75rem 1rem;
+            text-align: left; vertical-align: top;
+        }
+        .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); }
+        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
+
+        /* TOC Styles */
+        .toc-link.active { font-weight: 600; color: var(--link-color); position: relative; }
+        .toc-link.active::before {
+            content: ''; position: absolute; left: -1rem; top: 0; height: 100%;
+            width: 3px; background-color: var(--link-color);
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
+
+        /* Panels */
+        .topic-panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            transition: box-shadow 0.3s ease;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        @media (min-width: 1024px) {
+            .topic-panel { padding: 2.5rem; }
+        }
+        .topic-panel:hover {
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .subtopic-card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+            overflow-x: auto;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        .subtopic-card:last-child { margin-bottom: 0; }
+        .subtopic-card:hover { box-shadow: var(--card-shadow); transform: translateY(-2px); }
+
+        /* Code Block Copy Features */
+        .code-container {
+            position: relative;
+            max-width: 100%;
+        }
+
+        .code-content {
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            padding-right: 2.5rem;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.4rem;
+            right: 0.4rem;
+            opacity: 0;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            background: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            z-index: 10;
+        }
+
+        .code-container:hover .copy-btn { opacity: 1; }
+        .copy-btn:hover { color: var(--link-color); border-color: var(--link-color); background: var(--bg-color); }
+        @media (hover: none) { .copy-btn { opacity: 1; } }
+
+        /* Arch accent badge */
+        .arch-badge {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            background: var(--info-box); border: 1px solid var(--panel-border);
+            border-radius: 9999px; padding: 0.15rem 0.6rem;
+            font-size: 0.7rem; font-weight: 600; color: var(--link-color);
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+
+        /* Global Language Switcher */
+        .lang-en { display: none; }
+        body[data-active-lang="en"] .lang-de { display: none !important; }
+        body[data-active-lang="en"] .lang-en { display: block !important; }
+        body[data-active-lang="en"] span.lang-en, body[data-active-lang="en"] a.lang-en { display: inline !important; }
+        body[data-active-lang="de"] .lang-en { display: none !important; }
+        body[data-active-lang="de"] .lang-de { display: block !important; }
+        body[data-active-lang="de"] span.lang-de, body[data-active-lang="de"] a.lang-de { display: inline !important; }
+    </style>
+</head>
+
+<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
+
+    <aside class="lg:w-80 flex-shrink-0 bg-[var(--sidebar-color)] border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative shadow-lg transition-colors">
+
+        <!-- Controls: Language, Theme, Download -->
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
+                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Guide">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+            <i class="fa-solid fa-hat-wizard text-4xl mb-3" style="color:#1793d1;"></i>
+            <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span class="lang-de">Arch Linux<br>Referenz</span>
+                <span class="lang-en">Arch Linux<br>Reference</span>
+            </div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v1.0 - Rolling Release</div>
+        </div>
+
+        <div class="mb-6 relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
+            </div>
+            <input type="text" id="wikiSearch" placeholder="Search command..." class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-xl pl-10 pr-3 py-2.5 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-all shadow-sm" onkeyup="filterWiki()">
+        </div>
+
+        <nav class="text-sm space-y-1.5" id="toc-nav">
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span class="lang-de">Kategorien</span>
+                <span class="lang-en">Categories</span>
+            </div>
+            <ul class="space-y-1">
+                <li><a href="#intro" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">1. Einführung & Philosophie</span><span class="lang-en">1. Intro & Philosophy</span>
+                </a></li>
+                <li><a href="#pacman" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">2. Pacman Paketverwaltung</span><span class="lang-en">2. Pacman Package Management</span>
+                </a></li>
+                <li><a href="#aur" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">3. AUR & AUR-Helfer</span><span class="lang-en">3. AUR & AUR Helpers</span>
+                </a></li>
+                <li><a href="#mirrors" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">4. Mirrors & Reflector</span><span class="lang-en">4. Mirrors & Reflector</span>
+                </a></li>
+                <li><a href="#systemd" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">5. systemd & Dienste</span><span class="lang-en">5. systemd & Services</span>
+                </a></li>
+                <li><a href="#network" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">6. Netzwerk</span><span class="lang-en">6. Networking</span>
+                </a></li>
+                <li><a href="#users" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">7. Benutzer & Rechte</span><span class="lang-en">7. Users & Permissions</span>
+                </a></li>
+                <li><a href="#maintenance" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">8. Systemwartung</span><span class="lang-en">8. System Maintenance</span>
+                </a></li>
+                <li><a href="#troubleshoot" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">9. Fehlerbehebung</span><span class="lang-en">9. Troubleshooting</span>
+                </a></li>
+                <li><a href="#resources" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">10. Offizielle Quellen</span><span class="lang-en">10. Official Resources</span>
+                </a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="flex-grow w-full min-w-0 p-4 lg:p-12" id="main-content">
+
+        <div class="searchable-block topic-panel mt-0 mb-8">
+            <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0">
+                <span class="lang-de">Arch Linux Referenz</span>
+                <span class="lang-en">Arch Linux Reference</span>
+            </h1>
+            <p class="text-lg mb-4 text-[var(--text-color)]">
+                <span class="lang-de"><strong>Arch Linux</strong> ist eine unabhängig entwickelte, x86-64-basierte GNU/Linux-Distribution, die dem <strong>Rolling-Release-Modell</strong> folgt und stets die aktuellsten stabilen Softwareversionen bereitstellt. Sie richtet sich an erfahrene GNU/Linux-Nutzer mit einer <em>Do-it-yourself</em>-Einstellung, die bereit sind, die Dokumentation zu lesen und Probleme selbst zu lösen. <strong>Klicken Sie auf ein Code-Snippet, um es in die Zwischenablage zu kopieren.</strong></span>
+                <span class="lang-en"><strong>Arch Linux</strong> is an independently developed, x86-64 general-purpose GNU/Linux distribution that follows a <strong>rolling-release model</strong>, always providing the latest stable versions of most software. It is targeted at proficient GNU/Linux users with a do-it-yourself attitude who are willing to read the documentation and solve their own problems. <strong>Click any code snippet to copy it to your clipboard.</strong></span>
+            </p>
+            <div class="flex flex-wrap gap-2">
+                <span class="arch-badge"><i class="fa-solid fa-book"></i> <a href="https://wiki.archlinux.org/title/Arch_Linux" target="_blank" class="text-[var(--link-color)] no-underline">Arch Wiki</a></span>
+                <span class="arch-badge"><i class="fa-solid fa-graduation-cap"></i> <a href="https://wiki.archlinux.org/title/Installation_guide" target="_blank" class="text-[var(--link-color)] no-underline">Installation Guide</a></span>
+                <span class="arch-badge"><i class="fa-solid fa-code"></i> <a href="https://man.archlinux.org/" target="_blank" class="text-[var(--link-color)] no-underline">man.archlinux.org</a></span>
+                <span class="arch-badge"><i class="fa-solid fa-cube"></i> <a href="https://aur.archlinux.org/" target="_blank" class="text-[var(--link-color)] no-underline">AUR</a></span>
+            </div>
+        </div>
+
+        <!-- 1. Einführung & Philosophie -->
+        <section id="intro" class="scroll-mt-10 searchable-block topic-panel mt-8">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">1. Einführung & Philosophie</span>
+                <span class="lang-en">1. Introduction & Philosophy</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de">Die <strong>Arch Way</strong> basiert auf fünf Prinzipien: <em>Simplicity</em> (Einfachheit ohne unnötige Zusätze), <em>Modernity</em> (aktuelle Software), <em>Pragmatism</em> (pragmatische Entscheidungen), <em>User centrality</em> (Nutzer im Mittelpunkt) und <em>Versatility</em> (Vielseitigkeit). Arch liefert Software so nah wie möglich am Original (<em>upstream</em>) und überlässt die Konfiguration dem Nutzer.</span>
+                    <span class="lang-en">The <strong>Arch Way</strong> is based on five principles: <em>Simplicity</em> (without unnecessary additions), <em>Modernity</em> (latest software), <em>Pragmatism</em> (pragmatic decisions), <em>User centrality</em> (user in focus), and <em>Versatility</em>. Arch ships software as close as possible to upstream and leaves configuration to the user.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">cat /etc/os-release</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt standardisierte Betriebssystem-Informationen (Name, Version, IDs).</span>
+                            <span class="lang-en">Shows standardized OS information (name, version, IDs).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>cat /etc/os-release</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">uname -a</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt detaillierte Kernel- und Systeminformationen an.</span>
+                            <span class="lang-en">Shows detailed kernel and system information.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>uname -a</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">hostnamectl</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt oder setzt den System-Hostnamen und zugehörige Metadaten.</span>
+                            <span class="lang-en">Shows or sets the system hostname and related metadata.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>hostnamectl</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">localectl</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt oder setzt Locale- und Tastaturlayout-Einstellungen.</span>
+                            <span class="lang-en">Shows or sets locale and keyboard layout settings.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>localectl status</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">timedatectl</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt oder setzt Datum, Uhrzeit und Zeitzone des Systems.</span>
+                            <span class="lang-en">Shows or sets system date, time, and timezone.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>timedatectl set-timezone Europe/Berlin</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+                <p class="text-xs text-[var(--text-muted)] mt-3">
+                    <span class="lang-de">Offizielle Referenz: <a href="https://wiki.archlinux.org/title/Arch_Linux" target="_blank">Arch Wiki - Arch Linux</a></span>
+                    <span class="lang-en">Official reference: <a href="https://wiki.archlinux.org/title/Arch_Linux" target="_blank">Arch Wiki - Arch Linux</a></span>
+                </p>
+            </div>
+        </section>
+
+        <!-- 2. Pacman Paketverwaltung -->
+        <section id="pacman" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">2. Pacman Paketverwaltung</span>
+                <span class="lang-en">2. Pacman Package Management</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de"><strong>Pacman</strong> ist der Paketmanager von Arch Linux. Er kombiniert ein einfaches Binärformat mit einem benutzerfreundlichen Build-System. Seit Version 3.0.0 ist pacman das Frontend für <a href="https://pacman.archlinux.page/libalpm.3.html" target="_blank">libalpm</a>. Siehe <a href="https://pacman.archlinux.page/pacman.8.html" target="_blank">pacman(8) manpage</a>.</span>
+                    <span class="lang-en"><strong>Pacman</strong> is Arch Linux's package manager. It combines a simple binary package format with an easy-to-use build system. Since version 3.0.0, pacman has been the front-end for <a href="https://pacman.archlinux.page/libalpm.3.html" target="_blank">libalpm</a>. See <a href="https://pacman.archlinux.page/pacman.8.html" target="_blank">pacman(8) manpage</a>.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">pacman -Syu</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Aktualisiert die Paketdatenbank und führt ein vollständiges System-Upgrade durch.</span>
+                            <span class="lang-en">Refreshes the package database and performs a full system upgrade.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo pacman -Syu</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">pacman -S</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Installiert ein oder mehrere Pakete inklusive Abhängigkeiten.</span>
+                            <span class="lang-en">Installs one or more packages including dependencies.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo pacman -S nginx curl git</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">pacman -R</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Entfernt ein Paket, behält aber Konfigurationsdateien (.pacsave).</span>
+                            <span class="lang-en">Removes a package but keeps configuration files (.pacsave).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo pacman -R nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">pacman -Rns</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Entfernt Paket inkl. Konfigurationsdateien und nicht mehr benötigter Abhängigkeiten.</span>
+                            <span class="lang-en">Removes package including config files and unneeded dependencies.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo pacman -Rns nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">pacman -Ss</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Sucht nach Paketen in den Repositories anhand eines Suchbegriffs oder Regex.</span>
+                            <span class="lang-en">Searches for packages in the repositories by keyword or regex.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>pacman -Ss nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">pacman -Si</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt detaillierte Informationen zu einem Paket aus den Repositories.</span>
+                            <span class="lang-en">Shows detailed information about a package from the repositories.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>pacman -Si nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">pacman -Qs</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Sucht nach bereits installierten Paketen (query search).</span>
+                            <span class="lang-en">Searches among already installed packages (query search).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>pacman -Qs nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">pacman -Qdt</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet verwaiste Pakete auf (nicht mehr benötigte Abhängigkeiten).</span>
+                            <span class="lang-en">Lists orphaned packages (no longer needed dependencies).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>pacman -Qdt</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">pacman -Ql</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet alle Dateien auf, die zu einem installierten Paket gehören.</span>
+                            <span class="lang-en">Lists all files belonging to an installed package.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>pacman -Ql nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">pacman -Qo</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Findet heraus, zu welchem Paket eine bestimmte Datei gehört.</span>
+                            <span class="lang-en">Finds out which package a specific file belongs to.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>pacman -Qo /usr/bin/nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">pacman -Sc</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Entfernt alte Paketversionen aus dem Paket-Cache.</span>
+                            <span class="lang-en">Removes old package versions from the package cache.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo pacman -Sc</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">pacman -Qm</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet alle manuell installierten Pakete auf (nicht aus offiziellen Repos).</span>
+                            <span class="lang-en">Lists all manually installed packages (not from official repos).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>pacman -Qm</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 3. AUR & AUR-Helfer -->
+        <section id="aur" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">3. AUR & AUR-Helfer</span>
+                <span class="lang-en">3. AUR & AUR Helpers</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de">Das <strong>Arch User Repository (AUR)</strong> ist ein community-getriebenes Repository für Arch-basierte Distributionen. Es enthält PKGBUILD-Skripte, die von Nutzern beigesteuert werden. Da AUR-Pakete aus Quellcode gebaut werden, ist ein AUR-Helfer wie <strong>yay</strong> oder <strong>paru</strong> empfehlenswert. Siehe <a href="https://wiki.archlinux.org/title/Arch_User_Repository" target="_blank">Arch Wiki - AUR</a>.</span>
+                    <span class="lang-en">The <strong>Arch User Repository (AUR)</strong> is a community-driven repository for Arch-based distributions. It contains PKGBUILD scripts contributed by users. Since AUR packages are built from source, an AUR helper like <strong>yay</strong> or <strong>paru</strong> is recommended. See <a href="https://wiki.archlinux.org/title/Arch_User_Repository" target="_blank">Arch Wiki - AUR</a>.</span>
+                </p>
+
+                <h4 class="text-sm font-bold mt-4 mb-2 text-[var(--heading-color)]">
+                    <span class="lang-de">AUR-Helfer installieren (yay):</span>
+                    <span class="lang-en">Installing an AUR helper (yay):</span>
+                </h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm mb-4">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-3">sudo pacman -S --needed git base-devel
+git clone https://aur.archlinux.org/yay.git
+cd yay
+makepkg -si</div>
+                </div>
+
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">yay -Syu</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Aktualisiert sowohl offizielle Repos als auch AUR-Pakete.</span>
+                            <span class="lang-en">Updates both official repos and AUR packages.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>yay -Syu</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">yay -S</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Installiert ein Paket aus den offiziellen Repos oder dem AUR.</span>
+                            <span class="lang-en">Installs a package from official repos or the AUR.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>yay -S google-chrome</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">yay -Ss</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Durchsucht sowohl offizielle Repos als auch das AUR.</span>
+                            <span class="lang-en">Searches both official repos and the AUR.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>yay -Ss spotify</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">yay -Qm</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet alle AUR-Pakete auf, die manuell installiert wurden.</span>
+                            <span class="lang-en">Lists all AUR packages that were manually installed.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>yay -Qm</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">yay -Yc</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Bereinigt nicht mehr benötigte AUR-Abhängigkeiten.</span>
+                            <span class="lang-en">Cleans up unneeded AUR dependencies.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>yay -Yc</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">makepkg -si</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Baut ein Paket aus einem PKGBUILD und installiert es inkl. Abhängigkeiten.</span>
+                            <span class="lang-en">Builds a package from a PKGBUILD and installs it including dependencies.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>makepkg -si</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">makepkg -sc</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Baut ein Paket, installiert Abhängigkeiten und räumt den Quellordner auf.</span>
+                            <span class="lang-en">Builds a package, installs dependencies, and cleans up the source directory.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>makepkg -sc</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+                <p class="text-xs text-[var(--text-muted)] mt-3">
+                    <span class="lang-de">Offizielle Referenz: <a href="https://wiki.archlinux.org/title/Arch_User_Repository" target="_blank">Arch Wiki - AUR</a></span>
+                    <span class="lang-en">Official reference: <a href="https://wiki.archlinux.org/title/Arch_User_Repository" target="_blank">Arch Wiki - AUR</a></span>
+                </p>
+            </div>
+        </section>
+
+        <!-- 4. Mirrors & Reflector -->
+        <section id="mirrors" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">4. Mirrors & Reflector</span>
+                <span class="lang-en">4. Mirrors & Reflector</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de"><strong>Reflector</strong> ist ein Python-Skript, das die neueste Mirror-Liste von der Arch Linux Mirror Status Seite abruft, die aktuellsten Mirrors filtert, nach Geschwindigkeit sortiert und die Datei <code>/etc/pacman.d/mirrorlist</code> überschreibt. Dies beschleunigt jede Paketinstallation erheblich. Siehe <a href="https://wiki.archlinux.org/title/Reflector" target="_blank">Arch Wiki - Reflector</a>.</span>
+                    <span class="lang-en"><strong>Reflector</strong> is a Python script that retrieves the latest mirror list from the Arch Linux Mirror Status page, filters the most up-to-date mirrors, sorts them by speed, and overwrites the <code>/etc/pacman.d/mirrorlist</code> file. This significantly speeds up every package installation. See <a href="https://wiki.archlinux.org/title/Reflector" target="_blank">Arch Wiki - Reflector</a>.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">reflector</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Ruft die schnellsten Mirrors ab und speichert sie in der Mirrorlist.</span>
+                            <span class="lang-en">Fetches the fastest mirrors and saves them to the mirrorlist.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo reflector --sort rate --save /etc/pacman.d/mirrorlist</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">reflector (gefiltert)</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Filtert Mirrors nach Land, Protokoll und Aktualität.</span>
+                            <span class="lang-en">Filters mirrors by country, protocol, and freshness.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo reflector --country Germany --protocol https --latest 10 --sort rate --save /etc/pacman.d/mirrorlist</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl enable reflector</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Richtet einen wöchentlichen Timer ein, der die Mirrorlist automatisch aktualisiert.</span>
+                            <span class="lang-en">Sets up a weekly timer that automatically updates the mirrorlist.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl enable --now reflector.timer</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">cat mirrorlist</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die aktuelle Mirrorlist an, um die Reihenfolge zu prüfen.</span>
+                            <span class="lang-en">Shows the current mirrorlist to check the order.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>cat /etc/pacman.d/mirrorlist</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 5. systemd & Dienste -->
+        <section id="systemd" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">5. systemd & Dienstverwaltung</span>
+                <span class="lang-en">5. systemd & Service Management</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de">Arch Linux verwendet <strong>systemd</strong> als Init-System und Dienstmanager. Die Interaktion erfolgt über <code>systemctl</code>. Siehe <a href="https://wiki.archlinux.org/title/Systemd" target="_blank">Arch Wiki - systemd</a>.</span>
+                    <span class="lang-en">Arch Linux uses <strong>systemd</strong> as its init system and service manager. Interaction is done via <code>systemctl</code>. See <a href="https://wiki.archlinux.org/title/Systemd" target="_blank">Arch Wiki - systemd</a>.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl start</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Startet einen Dienst sofort.</span>
+                            <span class="lang-en">Starts a service immediately.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl start nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl enable --now</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Aktiviert einen Dienst beim Booten und startet ihn sofort.</span>
+                            <span class="lang-en">Enables a service at boot and starts it immediately.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl enable --now nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl status</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt den aktuellen Status eines Dienstes an.</span>
+                            <span class="lang-en">Shows the current status of a service.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>systemctl status nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl restart</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Startet einen Dienst neu (stop + start).</span>
+                            <span class="lang-en">Restarts a service (stop + start).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl restart nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl disable</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Deaktiviert den automatischen Start beim Booten.</span>
+                            <span class="lang-en">Disables automatic startup at boot.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl disable nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">journalctl -u</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die Logs eines bestimmten Dienstes an.</span>
+                            <span class="lang-en">Shows the logs of a specific service.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>journalctl -u nginx -n 50 --no-pager</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl list-units --failed</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet alle fehlgeschlagenen Dienste auf.</span>
+                            <span class="lang-en">Lists all failed services.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>systemctl --failed</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 6. Netzwerk -->
+        <section id="network" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">6. Netzwerk</span>
+                <span class="lang-en">6. Networking</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de">Arch Linux bietet mehrere Optionen zur Netzwerkkonfiguration: <strong>systemd-networkd</strong> (integriert), <strong>NetworkManager</strong> (<code>nmcli</code>) oder <strong>netctl</strong>. systemd-networkd ist die Standardwahl für einfache Setups. Siehe <a href="https://wiki.archlinux.org/title/Network_configuration" target="_blank">Arch Wiki - Network configuration</a>.</span>
+                    <span class="lang-en">Arch Linux offers several options for network configuration: <strong>systemd-networkd</strong> (integrated), <strong>NetworkManager</strong> (<code>nmcli</code>), or <strong>netctl</strong>. systemd-networkd is the default choice for simple setups. See <a href="https://wiki.archlinux.org/title/Network_configuration" target="_blank">Arch Wiki - Network configuration</a>.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">ip a</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt alle Netzwerkinterfaces und IP-Adressen an.</span>
+                            <span class="lang-en">Shows all network interfaces and IP addresses.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>ip a</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">networkctl status</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt den Status von systemd-networkd und allen Interfaces an.</span>
+                            <span class="lang-en">Shows the status of systemd-networkd and all interfaces.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>networkctl status</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl enable systemd-networkd</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Aktiviert den systemd-networkd-Dienst beim Booten.</span>
+                            <span class="lang-en">Enables the systemd-networkd service at boot.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl enable --now systemd-networkd</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">nmcli device status</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt den Status aller Netzwerkgeräte (NetworkManager).</span>
+                            <span class="lang-en">Shows the status of all network devices (NetworkManager).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>nmcli device status</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">nmcli connection show</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet alle gespeicherten Netzwerkverbindungen auf.</span>
+                            <span class="lang-en">Lists all saved network connections.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>nmcli connection show</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">netctl</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Verwaltet Netzwerkprofile (netctl start/stop/enable).</span>
+                            <span class="lang-en">Manages network profiles (netctl start/stop/enable).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo netctl start ethernet</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+
+                <h4 class="text-sm font-bold mt-6 mb-2 text-[var(--heading-color)]">
+                    <span class="lang-de">Beispiel: systemd-networkd Konfiguration (/etc/systemd/network/20-wired.network)</span>
+                    <span class="lang-en">Example: systemd-networkd configuration (/etc/systemd/network/20-wired.network)</span>
+                </h4>
+                <div class="code-container bg-[var(--code-bg)] rounded border border-[var(--border-color)] font-mono text-sm">
+                    <button onclick="copyCode(this)" class="copy-btn" title="Copy code"><i class="fa-regular fa-copy"></i></button>
+                    <div class="code-content p-3">[Match]
+Name=en*
+
+[Network]
+DHCP=yes</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. Benutzer & Rechte -->
+        <section id="users" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">7. Benutzer & Rechte</span>
+                <span class="lang-en">7. Users & Permissions</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">useradd</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Erstellt einen neuen Benutzer. Bei Arch wird oft <code>useradd -m</code> verwendet.</span>
+                            <span class="lang-en">Creates a new user. On Arch, <code>useradd -m</code> is often used.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo useradd -m -G wheel -s /bin/bash john</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">passwd</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Setzt oder ändert das Passwort eines Benutzers.</span>
+                            <span class="lang-en">Sets or changes a user's password.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo passwd john</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">usermod -aG</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Fügt einen Benutzer zu einer zusätzlichen Gruppe hinzu (z.B. wheel für sudo).</span>
+                            <span class="lang-en">Adds a user to an additional group (e.g., wheel for sudo).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo usermod -aG wheel john</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">userdel</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Löscht einen Benutzer und optional sein Home-Verzeichnis.</span>
+                            <span class="lang-en">Deletes a user and optionally their home directory.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo userdel -r john</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">visudo</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Editiert die <code>/etc/sudoers</code>-Datei sicher (Syntaxprüfung).</span>
+                            <span class="lang-en">Edits the <code>/etc/sudoers</code> file safely (syntax check).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo visudo</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">chmod</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Ändert Datei-/Verzeichnisberechtigungen (symbolisch oder oktal).</span>
+                            <span class="lang-en">Changes file/directory permissions (symbolic or octal).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>chmod 755 /var/www/html</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">chown</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Ändert Eigentümer und/oder Gruppe einer Datei.</span>
+                            <span class="lang-en">Changes the owner and/or group of a file.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>chown -R www-data:www-data /srv/http</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 8. Systemwartung -->
+        <section id="maintenance" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">8. Systemwartung</span>
+                <span class="lang-en">8. System Maintenance</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <p class="text-sm text-[var(--text-muted)] mb-4">
+                    <span class="lang-de">Arch ist ein <strong>Rolling-Release-System</strong> mit schneller Paketentwicklung. Regelmäßige Systemwartung ist unerlässlich, um ein stabiles System zu erhalten. Siehe <a href="https://wiki.archlinux.org/title/System_maintenance" target="_blank">Arch Wiki - System maintenance</a>.</span>
+                    <span class="lang-en">Arch is a <strong>rolling-release system</strong> with rapid package turnover. Regular system maintenance is essential to keep a stable system. See <a href="https://wiki.archlinux.org/title/System_maintenance" target="_blank">Arch Wiki - System maintenance</a>.</span>
+                </p>
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">pacman -Qdtq | pacman -Rns -</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Entfernt alle verwaisten Pakete (nicht mehr benötigte Abhängigkeiten) auf einmal.</span>
+                            <span class="lang-en">Removes all orphaned packages (no longer needed dependencies) at once.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo pacman -Qdtq | sudo pacman -Rns -</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">pacman -Qkk</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Überprüft die Integrität aller installierten Pakete (Dateirechte, Prüfsummen).</span>
+                            <span class="lang-en">Verifies the integrity of all installed packages (file permissions, checksums).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo pacman -Qkk</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">pacman -Sc</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Bereinigt den Paket-Cache (entfernt alte Paketversionen).</span>
+                            <span class="lang-en">Cleans the package cache (removes old package versions).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo pacman -Sc</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">paccache -r</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Behält nur die letzten 3 Versionen jedes Pakets im Cache (aus pacman-contrib).</span>
+                            <span class="lang-en">Keeps only the last 3 versions of each package in the cache (from pacman-contrib).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo paccache -r</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">journalctl --vacuum-time</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Bereinigt alte systemd-Journal-Logs (z.B. älter als 2 Wochen).</span>
+                            <span class="lang-en">Cleans old systemd journal logs (e.g., older than 2 weeks).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo journalctl --vacuum-time=2weeks</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">mkinitcpio -P</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Baut alle Initramfs-Images neu (nach Kernel-Updates oder Moduländerungen).</span>
+                            <span class="lang-en">Rebuilds all initramfs images (after kernel updates or module changes).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo mkinitcpio -P</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">mkinitcpio -g</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Erstellt ein Test-Initramfs, ohne die funktionierenden Images zu überschreiben.</span>
+                            <span class="lang-en">Creates a test initramfs without overwriting the working images.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo mkinitcpio -g /boot/initramfs-test.img</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 9. Fehlerbehebung -->
+        <section id="troubleshoot" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">9. Fehlerbehebung</span>
+                <span class="lang-en">9. Troubleshooting</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Situation</span><span class="lang-en">Situation</span></th>
+                        <th class="w-1/3"><span class="lang-de">Lösung</span><span class="lang-en">Solution</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Gebrochene Abhängigkeiten</span>
+                            <span class="lang-en">Broken dependencies</span>
+                        </td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Überprüft und repariert die Paketdatenbank (benötigt ggf. <code>archlinux-keyring</code>).</span>
+                            <span class="lang-en">Checks and repairs the package database (may require <code>archlinux-keyring</code>).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo pacman -S archlinux-keyring && sudo pacman -Syu</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Paketdatenbank entsperren</span>
+                            <span class="lang-en">Unlock package database</span>
+                        </td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Entfernt die Lock-Datei, falls pacman abgestürzt ist.</span>
+                            <span class="lang-en">Removes the lock file if pacman crashed.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo rm /var/lib/pacman/db.lck</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Schlüsselaktualisierung nötig</span>
+                            <span class="lang-en">Key refresh needed</span>
+                        </td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Aktualisiert die GPG-Schlüssel im Schlüsselbund.</span>
+                            <span class="lang-en">Refreshes the GPG keys in the keyring.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo pacman-key --refresh-keys</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Schlüsselbund neu initialisieren</span>
+                            <span class="lang-en">Reinitialize keyring</span>
+                        </td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Setzt den Schlüsselbund zurück und lädt die Arch-Schlüssel neu.</span>
+                            <span class="lang-en">Resets the keyring and reloads the Arch keys.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo pacman-key --init && sudo pacman-key --populate archlinux</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">In ein anderes System chrooten</span>
+                            <span class="lang-en">Chroot into another system</span>
+                        </td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Wechselt in eine andere Arch-Installation (z.B. zur Reparatur).</span>
+                            <span class="lang-en">Switches into another Arch installation (e.g., for repair).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo arch-chroot /mnt</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Paket-Cache bereinigen</span>
+                            <span class="lang-en">Clean package cache</span>
+                        </td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Entfernt alle Pakete aus dem Cache (pacman -Scc).</span>
+                            <span class="lang-en">Removes all packages from the cache (pacman -Scc).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo pacman -Scc</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 10. Offizielle Quellen -->
+        <section id="resources" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">10. Offizielle Arch-Quellen</span>
+                <span class="lang-en">10. Official Arch Resources</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <ul class="space-y-3 text-sm">
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-book text-[var(--link-color)] mt-1"></i>
+                        <div>
+                            <a href="https://wiki.archlinux.org/" target="_blank" class="font-semibold">Arch Wiki</a>
+                            <p class="text-[var(--text-muted)] text-xs mt-0.5">
+                                <span class="lang-de">Die umfassendste und am besten gepflegte Dokumentation für Arch Linux – und eine der besten Linux-Wikis überhaupt.</span>
+                                <span class="lang-en">The most comprehensive and well-maintained documentation for Arch Linux – and one of the best Linux wikis overall.</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-graduation-cap text-[var(--link-color)] mt-1"></i>
+                        <div>
+                            <a href="https://wiki.archlinux.org/title/Installation_guide" target="_blank" class="font-semibold">Installation Guide</a>
+                            <p class="text-[var(--text-muted)] text-xs mt-0.5">
+                                <span class="lang-de">Die offizielle Schritt-für-Schritt-Anleitung zur Installation von Arch Linux.</span>
+                                <span class="lang-en">The official step-by-step guide for installing Arch Linux.</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-code text-[var(--link-color)] mt-1"></i>
+                        <div>
+                            <a href="https://man.archlinux.org/" target="_blank" class="font-semibold">man.archlinux.org</a>
+                            <p class="text-[var(--text-muted)] text-xs mt-0.5">
+                                <span class="lang-de">Offizielle Manpages für alle Arch-Pakete, durchsuchbar und versioniert.</span>
+                                <span class="lang-en">Official manpages for all Arch packages, searchable and versioned.</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-cube text-[var(--link-color)] mt-1"></i>
+                        <div>
+                            <a href="https://aur.archlinux.org/" target="_blank" class="font-semibold">Arch User Repository (AUR)</a>
+                            <p class="text-[var(--text-muted)] text-xs mt-0.5">
+                                <span class="lang-de">Community-getriebenes Repository für Arch-Pakete, die nicht in den offiziellen Repos sind.</span>
+                                <span class="lang-en">Community-driven repository for Arch packages not in the official repos.</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-bug text-[var(--link-color)] mt-1"></i>
+                        <div>
+                            <a href="https://gitlab.archlinux.org/groups/archlinux/packaging/-/issues" target="_blank" class="font-semibold">Arch Linux Bug Tracker</a>
+                            <p class="text-[var(--text-muted)] text-xs mt-0.5">
+                                <span class="lang-de">Offizielles Bug-Meldesystem für Arch-Pakete auf GitLab.</span>
+                                <span class="lang-en">Official bug reporting system for Arch packages on GitLab.</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-shield-halved text-[var(--link-color)] mt-1"></i>
+                        <div>
+                            <a href="https://archlinux.org/news/" target="_blank" class="font-semibold">Arch Linux News</a>
+                            <p class="text-[var(--text-muted)] text-xs mt-0.5">
+                                <span class="lang-de">Offizielle Ankündigungen und wichtige Hinweise vor System-Updates – <strong>immer lesen!</strong></span>
+                                <span class="lang-en">Official announcements and important notices before system updates – <strong>always read!</strong></span>
+                            </p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                        if(tocLink) tocLink.classList.add('active');
+                    }
+                });
+            }, {
+                rootMargin: '-10% 0px -80% 0px',
+                threshold: [0, 0.1, 1]
+            });
+
+            document.querySelectorAll('section').forEach((section) => {
+                observer.observe(section);
+            });
+        });
+
+        function filterWiki() {
+            const input = document.getElementById('wikiSearch');
+            const filter = input.value.toLowerCase();
+            const blocks = document.querySelectorAll('.searchable-block');
+            const mainContent = document.getElementById('main-content');
+
+            removeHighlights(mainContent);
+
+            if (!filter) {
+                blocks.forEach(block => block.style.display = 'block');
+                return;
+            }
+
+            blocks.forEach(block => {
+                const text = block.innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    block.style.display = 'block';
+                    highlightText(block, input.value);
+                } else {
+                    block.style.display = 'none';
+                }
+            });
+        }
+
+        function highlightText(element, keyword) {
+            if (!keyword) return;
+            const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+
+            let node;
+            while (node = treeWalker.nextNode()) {
+                if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                    if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE') {
+                        nodesToReplace.push(node);
+                    }
+                }
+            }
+
+            nodesToReplace.forEach(node => {
+                const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+                const fragment = document.createDocumentFragment();
+                let match;
+                let lastIndex = 0;
+                const text = node.nodeValue;
+
+                while ((match = regex.exec(text)) !== null) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    const span = document.createElement('span');
+                    span.className = 'search-match font-semibold';
+                    span.textContent = match[0];
+                    fragment.appendChild(span);
+                    lastIndex = regex.lastIndex;
+                }
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                node.parentNode.replaceChild(fragment, node);
+            });
+        }
+
+        function removeHighlights(element) {
+            const highlights = element.querySelectorAll('.search-match');
+            highlights.forEach(span => {
+                const parent = span.parentNode;
+                parent.replaceChild(document.createTextNode(span.textContent), span);
+                parent.normalize();
+            });
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('light')) {
+                html.classList.remove('light');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        let isGerman = true;
+        function toggleLang() {
+            isGerman = !isGerman;
+            const indicator = document.getElementById('lang-indicator');
+            indicator.textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+        }
+
+        function copyCmd(element) {
+            const span = element.querySelector('span');
+            const icon = element.querySelector('i');
+
+            if (!span) return;
+            const textToCopy = span.innerText;
+
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            textarea.style.top = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                document.execCommand('copy');
+                if (icon) {
+                    icon.className = 'fa-solid fa-check text-green-500';
+                    setTimeout(() => {
+                        icon.className = 'fa-regular fa-copy';
+                    }, 1500);
+                }
+            } catch (err) {
+                console.error('Copy failed', err);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function copyCode(btn) {
+            const container = btn.closest('.code-container');
+            const codeContent = container.querySelector('.code-content').innerText;
+
+            const textarea = document.createElement('textarea');
+            textarea.value = codeContent;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            textarea.style.top = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                document.execCommand('copy');
+                const icon = btn.querySelector('i');
+                icon.className = 'fa-solid fa-check text-green-500';
+                setTimeout(() => {
+                    icon.className = 'fa-regular fa-copy';
+                }, 2000);
+            } catch (err) {
+                console.error('Copy failed', err);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function downloadHTML() {
+            removeHighlights(document.getElementById('main-content'));
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Arch_Linux_Reference.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

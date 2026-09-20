@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GNU/Linux Command Reference</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            /* Dark Mode Defaults */
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #202122;
+            --border-color: #54595d;
+            --text-color: #eaecf0;
+            --text-muted: #a8aeb3;
+            --link-color: #99c1f1;
+            --link-hover: #629deb;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --info-box: #2c2d30;
+            --table-alt: rgba(255,255,255,0.02);
+            --search-match: rgba(250, 204, 21, 0.3);
+            --search-text: #ffffff;
+
+            /* Omni-directional encasing shadows */
+            --card-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.3), 0 0 4px 0 rgba(0, 0, 0, 0.2);
+            --card-shadow-hover: 0 0 20px 0 rgba(0, 0, 0, 0.4), 0 0 8px 0 rgba(0, 0, 0, 0.3);
+            --panel-border: #54595d;
+        }
+
+        html.light {
+            /* Light Mode Overrides */
+            --bg-color: #f4f6f9;
+            --panel-color: #ffffff;
+            --sidebar-color: #ffffff;
+            --border-color: #cbd5e1;
+            --text-color: #000000;
+            --text-muted: #000000;
+            --heading-color: #000000;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --code-bg: #f1f5f9;
+            --info-box: #e0f2fe;
+            --table-alt: rgba(0,0,0,0.015);
+            --search-match: rgba(250, 204, 21, 0.5);
+            --search-text: #000000;
+
+            /* Omni-directional encasing shadow for light mode */
+            --card-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.1), 0 0 6px 0 rgba(0, 0, 0, 0.05);
+            --card-shadow-hover: 0 0 25px 0 rgba(0, 0, 0, 0.15), 0 0 12px 0 rgba(0, 0, 0, 0.08);
+            --panel-border: #e2e8f0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            transition: background-color 0.2s, color 0.2s;
+            overflow-x: hidden;
+        }
+
+        /* Responsive heading sizes */
+        h1, h2, h3, h4 { font-family: 'Lora', serif; color: var(--heading-color); font-weight: 800 !important; }
+        h1 { font-size: clamp(1.75rem, 4vw, 3.5rem) !important; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        h2 { font-size: clamp(1.4rem, 3vw, 2.25rem) !important; margin-bottom: 1rem; }
+        h3 { font-size: clamp(1.2rem, 2.5vw, 1.85rem) !important; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        h4 { font-size: clamp(1.05rem, 2vw, 1.5rem) !important; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+        p { margin-bottom: 1rem; }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--text-color);
+        }
+
+        /* Wiki-style Tables */
+        .wikitable {
+            width: 100%; border-collapse: collapse; margin: 1em 0;
+            background-color: var(--bg-color); font-size: 0.9em;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid var(--panel-border);
+        }
+        .wikitable th, .wikitable td {
+            border: 1px solid var(--panel-border); padding: 0.75rem 1rem;
+            text-align: left; vertical-align: top;
+        }
+        .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); }
+        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
+
+        /* TOC Styles */
+        .toc-link.active { font-weight: 600; color: var(--link-color); position: relative; }
+        .toc-link.active::before {
+            content: ''; position: absolute; left: -1rem; top: 0; height: 100%;
+            width: 3px; background-color: var(--link-color);
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
+
+        /* Panels */
+        .topic-panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            transition: box-shadow 0.3s ease;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        @media (min-width: 1024px) {
+            .topic-panel { padding: 2.5rem; }
+        }
+        .topic-panel:hover {
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .subtopic-card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+            overflow-x: auto;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        .subtopic-card:last-child { margin-bottom: 0; }
+        .subtopic-card:hover { box-shadow: var(--card-shadow); transform: translateY(-2px); }
+
+        /* Code Block Copy Features */
+        .code-container {
+            position: relative;
+            max-width: 100%;
+        }
+
+        .code-content {
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            padding-right: 2.5rem;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.4rem;
+            right: 0.4rem;
+            opacity: 0;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            background: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            z-index: 10;
+        }
+
+        .code-container:hover .copy-btn { opacity: 1; }
+        .copy-btn:hover { color: var(--link-color); border-color: var(--link-color); background: var(--bg-color); }
+        @media (hover: none) { .copy-btn { opacity: 1; } }
+
+        /* Global Language Switcher */
+        .lang-en { display: none; }
+        body[data-active-lang="en"] .lang-de { display: none !important; }
+        body[data-active-lang="en"] .lang-en { display: block !important; }
+        body[data-active-lang="en"] span.lang-en, body[data-active-lang="en"] a.lang-en { display: inline !important; }
+        body[data-active-lang="de"] .lang-en { display: none !important; }
+        body[data-active-lang="de"] .lang-de { display: block !important; }
+        body[data-active-lang="de"] span.lang-de, body[data-active-lang="de"] a.lang-de { display: inline !important; }
+    </style>
+</head>
+
+<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
+
+    <aside class="lg:w-80 flex-shrink-0 bg-[var(--sidebar-color)] border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative shadow-lg transition-colors">
+
+        <!-- Controls: Language, Theme, Download -->
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
+                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Guide">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+            <i class="fa-brands fa-linux text-4xl mb-3 text-[var(--text-color)] opacity-80"></i>
+            <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span class="lang-de">GNU/Linux<br>Befehlsreferenz</span>
+                <span class="lang-en">GNU/Linux<br>Command Reference</span>
+            </div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v2.0 - Coreutils & Shell</div>
+        </div>
+
+        <div class="mb-6 relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
+            </div>
+            <input type="text" id="wikiSearch" placeholder="Search command..." class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-xl pl-10 pr-3 py-2.5 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-all shadow-sm" onkeyup="filterWiki()">
+        </div>
+
+        <nav class="text-sm space-y-1.5" id="toc-nav">
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span class="lang-de">Kategorien</span>
+                <span class="lang-en">Categories</span>
+            </div>
+            <ul class="space-y-1">
+                <li><a href="#file-nav" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">1. Dateien & Navigation</span><span class="lang-en">1. Files & Navigation</span>
+                </a></li>
+                <li><a href="#file-content" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">2. Dateiinhalt ansehen</span><span class="lang-en">2. Viewing File Content</span>
+                </a></li>
+                <li><a href="#text-process" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">3. Textverarbeitung</span><span class="lang-en">3. Text Processing</span>
+                </a></li>
+                <li><a href="#permissions" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">4. Berechtigungen</span><span class="lang-en">4. Permissions & Ownership</span>
+                </a></li>
+                <li><a href="#process" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">5. Prozessverwaltung</span><span class="lang-en">5. Process Management</span>
+                </a></li>
+                <li><a href="#network" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">6. Netzwerk</span><span class="lang-en">6. Networking</span>
+                </a></li>
+                <li><a href="#archives" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">7. Archive & Kompression</span><span class="lang-en">7. Archiving & Compression</span>
+                </a></li>
+                <li><a href="#system-info" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">8. Systeminformationen</span><span class="lang-en">8. System Information</span>
+                </a></li>
+                <li><a href="#shell" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">9. Shell & Umgebung</span><span class="lang-en">9. Shell & Environment</span>
+                </a></li>
+                <li><a href="#misc" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">10. Sonstiges</span><span class="lang-en">10. Miscellaneous</span>
+                </a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="flex-grow w-full min-w-0 p-4 lg:p-12" id="main-content">
+
+        <div class="searchable-block topic-panel mt-0 mb-8">
+            <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0">
+                <span class="lang-de">Das Ultimative GNU/Linux Nachschlagewerk</span>
+                <span class="lang-en">The Ultimate GNU/Linux Reference</span>
+            </h1>
+            <p class="text-lg mb-0 text-[var(--text-color)]">
+                <span class="lang-de">Eine umfassende Referenz der wichtigsten Standardbefehle eines GNU/Linux-Systems. <strong>Klicken Sie auf ein Code-Snippet, um es in die Zwischenablage zu kopieren.</strong></span>
+                <span class="lang-en">A comprehensive reference of the essential standard commands on a GNU/Linux system. <strong>Click any code snippet to copy it to your clipboard.</strong></span>
+            </p>
+        </div>
+
+        <!-- 1. Dateien & Navigation -->
+        <section id="file-nav" class="scroll-mt-10 searchable-block topic-panel mt-8">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">1. Dateien, Ordner & Navigation</span>
+                <span class="lang-en">1. Files, Directories & Navigation</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">ls</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet den Inhalt eines Verzeichnisses auf.</span>
+                            <span class="lang-en">Lists the contents of a directory.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>ls -lah /var/log/</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">cd</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Wechselt das aktuelle Arbeitsverzeichnis.</span>
+                            <span class="lang-en">Changes the current working directory.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>cd /etc/nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">pwd</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Gibt den vollständigen Pfad des aktuellen Verzeichnisses aus.</span>
+                            <span class="lang-en">Prints the full path of the current directory.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>pwd</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">mkdir</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Erstellt ein neues Verzeichnis. Mit <code>-p</code> auch verschachtelt.</span>
+                            <span class="lang-en">Creates a new directory. With <code>-p</code> also nested.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>mkdir -p project/src/bin</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">rmdir</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Löscht ein leeres Verzeichnis.</span>
+                            <span class="lang-en">Removes an empty directory.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>rmdir old_dir</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">cp</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Kopiert Dateien oder Verzeichnisse (<code>-r</code>).</span>
+                            <span class="lang-en">Copies files or directories (<code>-r</code>).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>cp -r src/ backup/</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">mv</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Verschiebt oder benennt Dateien/Verzeichnisse um.</span>
+                            <span class="lang-en">Moves or renames files/directories.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>mv file.txt /tmp/</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">rm</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Löscht Dateien oder Verzeichnisse (<code>-r</code>).</span>
+                            <span class="lang-en">Removes files or directories (<code>-r</code>).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>rm -rf old_build/</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">touch</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Erstellt eine leere Datei oder aktualisiert den Zeitstempel.</span>
+                            <span class="lang-en">Creates an empty file or updates the timestamp.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>touch index.html</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">ln</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Erstellt Hard- oder Symbolic-Links (<code>-s</code>).</span>
+                            <span class="lang-en">Creates hard or symbolic links (<code>-s</code>).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>ln -s /opt/app/current /usr/local/bin/app</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">find</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Sucht nach Dateien und Verzeichnissen nach Kriterien.</span>
+                            <span class="lang-en">Searches for files and directories by criteria.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>find /var -type f -name "*.log"</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">which</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt den Pfad zu einer ausführbaren Datei an.</span>
+                            <span class="lang-en">Shows the path to an executable.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>which python3</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">tree</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die Verzeichnisstruktur als Baum an (oft optional).</span>
+                            <span class="lang-en">Displays directory structure as a tree (often optional).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>tree -L 2 /etc/nginx/</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 2. Dateiinhalt ansehen -->
+        <section id="file-content" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">2. Dateiinhalt ansehen</span>
+                <span class="lang-en">2. Viewing File Content</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">cat</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Gibt den gesamten Inhalt einer Datei aus.</span>
+                            <span class="lang-en">Prints the entire content of a file.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>cat /etc/hostname</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">less</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt Dateiinhalte seitenweise an (interaktiv).</span>
+                            <span class="lang-en">Views file content page by page (interactive).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>less /var/log/syslog</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">head</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die ersten N Zeilen einer Datei an.</span>
+                            <span class="lang-en">Displays the first N lines of a file.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>head -n 20 /etc/passwd</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">tail</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die letzten N Zeilen einer Datei an. Mit <code>-f</code> live verfolgen.</span>
+                            <span class="lang-en">Displays the last N lines of a file. With <code>-f</code> follow live.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>tail -f /var/log/nginx/access.log</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">wc</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zählt Zeilen, Wörter und Bytes einer Datei.</span>
+                            <span class="lang-en">Counts lines, words, and bytes in a file.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>wc -l /etc/services</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">file</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Bestimmt den Dateityp (Text, Binary, Image etc.).</span>
+                            <span class="lang-en">Determines the file type (text, binary, image, etc.).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>file archive.tar.gz</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">stat</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt detaillierte Metadaten einer Datei (Inode, Rechte, Zeitstempel).</span>
+                            <span class="lang-en">Shows detailed file metadata (inode, permissions, timestamps).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>stat /etc/shadow</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 3. Textverarbeitung -->
+        <section id="text-process" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">3. Textverarbeitung</span>
+                <span class="lang-en">3. Text Processing</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">grep</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Sucht nach Textmustern in Dateien oder Streams.</span>
+                            <span class="lang-en">Searches for text patterns in files or streams.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>grep -r "error" /var/log/</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">sed</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Stream-Editor für Suchen & Ersetzen in Dateien/Streams.</span>
+                            <span class="lang-en">Stream editor for find & replace in files/streams.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sed -i 's/old/new/g' config.txt</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">awk</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Mächtiges Tool zur Feld-/Spaltenverarbeitung.</span>
+                            <span class="lang-en">Powerful tool for field/column processing.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>awk '{print $1, $3}' data.txt</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">sort</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Sortiert Zeilen alphabetisch oder numerisch.</span>
+                            <span class="lang-en">Sorts lines alphabetically or numerically.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sort -n numbers.txt</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">uniq</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Filtert doppelte aufeinanderfolgende Zeilen.</span>
+                            <span class="lang-en">Filters duplicate adjacent lines.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sort names.txt | uniq -c</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">cut</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Schneidet Felder (Spalten) aus Zeilen heraus.</span>
+                            <span class="lang-en">Extracts fields (columns) from lines.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>cut -d: -f1 /etc/passwd</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">diff</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Vergleicht zwei Dateien Zeile für Zeile.</span>
+                            <span class="lang-en">Compares two files line by line.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>diff file1.conf file2.conf</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">tee</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Leitet Ausgabe gleichzeitig in Datei und auf stdout.</span>
+                            <span class="lang-en">Redirects output to both a file and stdout.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>ls -la | tee listing.txt</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">tr</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Übersetzt oder löscht Zeichen in einem Stream.</span>
+                            <span class="lang-en">Translates or deletes characters in a stream.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>echo "HELLO" | tr 'A-Z' 'a-z'</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">xargs</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Erstellt Argumentlisten aus stdin für andere Befehle.</span>
+                            <span class="lang-en">Builds argument lists from stdin for other commands.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>find . -name "*.tmp" | xargs rm</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 4. Berechtigungen -->
+        <section id="permissions" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">4. Berechtigungen & Besitz</span>
+                <span class="lang-en">4. Permissions & Ownership</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">chmod</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Ändert die Datei-/Verzeichnisberechtigungen (symbolisch oder oktal).</span>
+                            <span class="lang-en">Changes file/directory permissions (symbolic or octal).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>chmod 755 script.sh</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">chown</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Ändert den Eigentümer und/oder die Gruppe einer Datei.</span>
+                            <span class="lang-en">Changes the owner and/or group of a file.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>chown www-data:www-data /var/www/</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">chgrp</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Ändert nur die Gruppenzugehörigkeit einer Datei.</span>
+                            <span class="lang-en">Changes only the group ownership of a file.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>chgrp developers project/</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">umask</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt oder setzt die Standard-Dateimaske für neue Dateien.</span>
+                            <span class="lang-en">Shows or sets the default file creation mask.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>umask 022</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">sudo</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Führt einen Befehl mit Root-Rechten aus.</span>
+                            <span class="lang-en">Executes a command with root privileges.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl restart nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">su</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Wechselt zu einem anderen Benutzer (Standard: root).</span>
+                            <span class="lang-en">Switches to another user (default: root).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>su - deploy</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 5. Prozessverwaltung -->
+        <section id="process" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">5. Prozessverwaltung</span>
+                <span class="lang-en">5. Process Management</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">ps</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet laufende Prozesse auf.</span>
+                            <span class="lang-en">Lists running processes.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>ps aux | grep nginx</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">top</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Echtzeit-Prozessüberwachung mit CPU/RAM-Nutzung.</span>
+                            <span class="lang-en">Real-time process monitoring with CPU/RAM usage.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>top</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">kill</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Sendet ein Signal an einen Prozess (PID).</span>
+                            <span class="lang-en">Sends a signal to a process (PID).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>kill -9 1234</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">killall</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Sendet ein Signal an alle Prozesse eines Namens.</span>
+                            <span class="lang-en">Sends a signal to all processes by name.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>killall python3</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">nice</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Startet einen Prozess mit angepasster Priorität.</span>
+                            <span class="lang-en">Starts a process with adjusted priority.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>nice -n 10 rsync -avz /data /backup</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">renice</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Ändert die Priorität eines laufenden Prozesses.</span>
+                            <span class="lang-en">Changes the priority of a running process.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>renice -n 5 -p 1234</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">systemctl</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Verwaltet systemd-Dienste (Start/Stop/Restart).</span>
+                            <span class="lang-en">Manages systemd services (start/stop/restart).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sudo systemctl restart sshd</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">journalctl</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Liest Systemd-Logs (journal).</span>
+                            <span class="lang-en">Reads systemd journal logs.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>journalctl -u nginx -n 50</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 6. Netzwerk -->
+        <section id="network" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">6. Netzwerk</span>
+                <span class="lang-en">6. Networking</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">ip</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt/konfiguriert Netzwerkinterfaces, Routen und Adressen.</span>
+                            <span class="lang-en">Shows/configures network interfaces, routes, and addresses.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>ip addr show</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">ping</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Testet die Erreichbarkeit eines Hosts via ICMP.</span>
+                            <span class="lang-en">Tests host reachability via ICMP.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>ping -c 4 8.8.8.8</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">ss</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet Socket-Statistiken auf (netstat-Ersatz).</span>
+                            <span class="lang-en">Lists socket statistics (netstat replacement).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>ss -tulpn</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">curl</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Überträgt Daten von/zu Servern (HTTP, FTP etc.).</span>
+                            <span class="lang-en">Transfers data to/from servers (HTTP, FTP, etc.).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>curl -I https://example.com</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">wget</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Lädt Dateien aus dem Internet herunter.</span>
+                            <span class="lang-en">Downloads files from the internet.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>wget https://example.com/file.tar.gz</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">ssh</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Stellt eine verschlüsselte Remote-Shell-Verbindung her.</span>
+                            <span class="lang-en">Establishes a secure remote shell connection.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>ssh user@192.168.1.10</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">scp</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Kopiert Dateien sicher über SSH zwischen Hosts.</span>
+                            <span class="lang-en">Securely copies files over SSH between hosts.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>scp file.tar.gz user@server:/tmp/</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dig</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Fragt DNS-Informationen für einen Hostnamen ab.</span>
+                            <span class="lang-en">Queries DNS information for a hostname.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>dig +short google.com</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 7. Archive & Kompression -->
+        <section id="archives" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">7. Archive & Kompression</span>
+                <span class="lang-en">7. Archiving & Compression</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">tar</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Erstellt oder entpackt Archivdateien (oft mit gzip/bzip2 kombiniert).</span>
+                            <span class="lang-en">Creates or extracts archive files (often combined with gzip/bzip2).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>tar -czvf backup.tar.gz /home/user/</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">gzip</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Komprimiert einzelne Dateien mit gzip.</span>
+                            <span class="lang-en">Compresses individual files with gzip.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>gzip large_file.log</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">gunzip</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Dekomprimiert .gz-Dateien.</span>
+                            <span class="lang-en">Decompresses .gz files.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>gunzip large_file.log.gz</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">zip</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Erstellt ZIP-Archive (portabel, auch unter Windows lesbar).</span>
+                            <span class="lang-en">Creates ZIP archives (portable, also readable on Windows).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>zip -r project.zip project/</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">unzip</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Entpackt ZIP-Archive.</span>
+                            <span class="lang-en">Extracts ZIP archives.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>unzip project.zip -d /tmp/</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 8. Systeminformationen -->
+        <section id="system-info" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">8. Systeminformationen</span>
+                <span class="lang-en">8. System Information</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">uname</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt Systeminformationen (Kernel, Architektur etc.).</span>
+                            <span class="lang-en">Shows system information (kernel, architecture, etc.).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>uname -a</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">hostname</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt oder setzt den Hostnamen des Systems.</span>
+                            <span class="lang-en">Shows or sets the system hostname.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>hostname</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">df</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt den belegten und freien Speicherplatz von Dateisystemen.</span>
+                            <span class="lang-en">Shows used and free disk space on filesystems.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>df -h</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">du</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die Größe von Dateien und Verzeichnissen an.</span>
+                            <span class="lang-en">Shows the size of files and directories.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>du -sh /var/log/</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">free</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt den Speicherverbrauch (RAM und Swap) an.</span>
+                            <span class="lang-en">Shows memory usage (RAM and swap).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>free -h</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">uptime</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die Systemlaufzeit und Auslastung an.</span>
+                            <span class="lang-en">Shows system uptime and load average.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>uptime</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">lsblk</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Listet Blockgeräte (Festplatten, Partitionen) auf.</span>
+                            <span class="lang-en">Lists block devices (disks, partitions).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>lsblk -f</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">dmesg</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt Kernel-Meldungen (Boot, Hardware, Treiber).</span>
+                            <span class="lang-en">Shows kernel messages (boot, hardware, drivers).</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>dmesg | tail -20</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 9. Shell & Umgebung -->
+        <section id="shell" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">9. Shell & Umgebung</span>
+                <span class="lang-en">9. Shell & Environment</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">echo</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Gibt Text oder Variablenwerte auf stdout aus.</span>
+                            <span class="lang-en">Prints text or variable values to stdout.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>echo "Hello, $USER"</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">export</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Setzt eine Umgebungsvariable für die aktuelle Shell.</span>
+                            <span class="lang-en">Sets an environment variable for the current shell.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>export PATH="$PATH:/opt/bin"</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">env</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt alle Umgebungsvariablen an.</span>
+                            <span class="lang-en">Displays all environment variables.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>env | grep HOME</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">alias</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Erstellt eine Abkürzung für einen Befehl.</span>
+                            <span class="lang-en">Creates a shortcut for a command.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>alias ll='ls -alF'</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">history</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die Befehlshistorie der aktuellen Shell an.</span>
+                            <span class="lang-en">Shows the command history of the current shell.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>history | grep ssh</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">man</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt die Handbuchseite (man page) eines Befehls an.</span>
+                            <span class="lang-en">Displays the manual page of a command.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>man chmod</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">exit</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Beendet die aktuelle Shell-Sitzung.</span>
+                            <span class="lang-en">Exits the current shell session.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>exit</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- 10. Sonstiges -->
+        <section id="misc" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
+            <h2 class="mt-0 border-b border-[var(--border-color)] pb-3 mb-6">
+                <span class="lang-de">10. Sonstiges</span>
+                <span class="lang-en">10. Miscellaneous</span>
+            </h2>
+            <div class="subtopic-card my-0">
+                <table class="wikitable">
+                    <tr>
+                        <th class="w-1/4"><span class="lang-de">Befehl</span><span class="lang-en">Command</span></th>
+                        <th class="w-1/3"><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th>
+                        <th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">date</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt oder setzt Datum und Uhrzeit.</span>
+                            <span class="lang-en">Shows or sets date and time.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>date +"%Y-%m-%d %H:%M"</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">cal</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Zeigt einen Kalender im Terminal an.</span>
+                            <span class="lang-en">Displays a calendar in the terminal.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>cal 2026</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">sleep</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Pausiert die Ausführung für eine angegebene Zeit.</span>
+                            <span class="lang-en">Pauses execution for a specified time.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>sleep 5 && echo "Done"</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">watch</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Führt einen Befehl periodisch aus und zeigt die Ausgabe.</span>
+                            <span class="lang-en">Runs a command periodically and shows the output.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>watch -n 2 'df -h'</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">bc</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Beliebiger Präzisions-Taschenrechner auf der Kommandozeile.</span>
+                            <span class="lang-en">Arbitrary precision command-line calculator.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>echo "scale=2; 10/3" | bc</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">seq</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Erzeugt eine Zahlenfolge von Start bis Ende.</span>
+                            <span class="lang-en">Generates a sequence of numbers from start to end.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>seq 1 5</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code class="cmd-name">shred</code></td>
+                        <td class="text-[var(--text-muted)] text-sm">
+                            <span class="lang-de">Überschreibt eine Datei sicher, um sie unwiederbringlich zu löschen.</span>
+                            <span class="lang-en">Securely overwrites a file to make it unrecoverable.</span>
+                        </td>
+                        <td>
+                            <div class="cmd-copy" onclick="copyCmd(this)"><span>shred -uvz secret.key</span><i class="fa-regular fa-copy"></i></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                        if(tocLink) tocLink.classList.add('active');
+                    }
+                });
+            }, {
+                rootMargin: '-10% 0px -80% 0px',
+                threshold: [0, 0.1, 1]
+            });
+
+            document.querySelectorAll('section').forEach((section) => {
+                observer.observe(section);
+            });
+        });
+
+        function filterWiki() {
+            const input = document.getElementById('wikiSearch');
+            const filter = input.value.toLowerCase();
+            const blocks = document.querySelectorAll('.searchable-block');
+            const mainContent = document.getElementById('main-content');
+
+            removeHighlights(mainContent);
+
+            if (!filter) {
+                blocks.forEach(block => block.style.display = 'block');
+                return;
+            }
+
+            blocks.forEach(block => {
+                const text = block.innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    block.style.display = 'block';
+                    highlightText(block, input.value);
+                } else {
+                    block.style.display = 'none';
+                }
+            });
+        }
+
+        function highlightText(element, keyword) {
+            if (!keyword) return;
+            const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+
+            let node;
+            while (node = treeWalker.nextNode()) {
+                if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                    if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE') {
+                        nodesToReplace.push(node);
+                    }
+                }
+            }
+
+            nodesToReplace.forEach(node => {
+                const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+                const fragment = document.createDocumentFragment();
+                let match;
+                let lastIndex = 0;
+                const text = node.nodeValue;
+
+                while ((match = regex.exec(text)) !== null) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    const span = document.createElement('span');
+                    span.className = 'search-match font-semibold';
+                    span.textContent = match[0];
+                    fragment.appendChild(span);
+                    lastIndex = regex.lastIndex;
+                }
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                node.parentNode.replaceChild(fragment, node);
+            });
+        }
+
+        function removeHighlights(element) {
+            const highlights = element.querySelectorAll('.search-match');
+            highlights.forEach(span => {
+                const parent = span.parentNode;
+                parent.replaceChild(document.createTextNode(span.textContent), span);
+                parent.normalize();
+            });
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('light')) {
+                html.classList.remove('light');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        let isGerman = true;
+        function toggleLang() {
+            isGerman = !isGerman;
+            const indicator = document.getElementById('lang-indicator');
+            indicator.textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+        }
+
+        function copyCmd(element) {
+            const span = element.querySelector('span');
+            const icon = element.querySelector('i');
+
+            if (!span) return;
+            const textToCopy = span.innerText;
+
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            textarea.style.top = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                document.execCommand('copy');
+                if (icon) {
+                    icon.className = 'fa-solid fa-check text-green-500';
+                    setTimeout(() => {
+                        icon.className = 'fa-regular fa-copy';
+                    }, 1500);
+                }
+            } catch (err) {
+                console.error('Copy failed', err);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function downloadHTML() {
+            removeHighlights(document.getElementById('main-content'));
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'GNU_Linux_Command_Reference.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
