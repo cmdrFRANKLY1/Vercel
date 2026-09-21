@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datenschutz Live-API (DSGVO / BDSG)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)', panel: 'var(--panel-color)', border: 'var(--border-color)',
+                            text: 'var(--text-color)', textMuted: 'var(--text-muted)', link: 'var(--link-color)',
+                            heading: 'var(--heading-color)', codeBg: 'var(--code-bg)', infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'], serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --bg-color: #121212; --panel-color: #1e1e1e; --sidebar-color: #181818;
+            --border-color: #333333; --text-color: #e0e0e0; --text-muted: #9e9e9e;
+            --link-color: #b0b0b0; --link-hover: #ffffff; --heading-color: #ffffff;
+            --code-bg: #2a2a2a; --info-box: #252525; --table-alt: rgba(255,255,255,0.02);
+            --search-match: rgba(255, 255, 255, 0.2); --search-text: #ffffff;
+            --shadow-color: rgba(0, 0, 0, 0.45); --shadow-color-strong: rgba(0, 0, 0, 0.7);
+            --input-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            --input-shadow-focus: 0 0 0 3px rgba(255,255,255,0.06), 0 2px 6px rgba(0,0,0,0.4);
+            --control-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            --sidebar-shadow: 0 4px 12px rgba(0,0,0,0.35);
+            --content-max: 1600px; --sidebar-w: 20rem; --sidebar-rail-w: 3.5rem;
+            --panel-border: #333333;
+            --card-shadow: 0 0 22px 0 var(--shadow-color), 0 0 10px 0 var(--shadow-color), 0 4px 24px 0 var(--shadow-color);
+            --card-shadow-hover: 0 0 40px 0 var(--shadow-color-strong), 0 0 18px 0 var(--shadow-color-strong), 0 8px 36px 0 var(--shadow-color-strong);
+        }
+        html.light {
+            --bg-color: #f8fafc; --panel-color: #ffffff; --sidebar-color: #f1f5f9;
+            --border-color: #cbd5e1; --text-color: #000000; --text-muted: #000000;
+            --link-color: #000000; --link-hover: #000000; --heading-color: #000000;
+            --code-bg: #e2e8f0; --info-box: #e2e8f0; --table-alt: rgba(0,0,0,0.03);
+            --search-match: rgba(37, 99, 235, 0.2); --search-text: #000000;
+            --shadow-color: rgba(15, 23, 42, 0.08); --shadow-color-strong: rgba(15, 23, 42, 0.16);
+            --input-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+            --input-shadow-focus: 0 0 0 3px rgba(37, 99, 235, 0.15), 0 2px 6px rgba(15, 23, 42, 0.1);
+            --control-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+            --sidebar-shadow: 4px 0 15px rgba(15, 23, 42, 0.05);
+            --panel-border: #cbd5e1;
+            --card-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+            --card-shadow-hover: 0 10px 25px -3px rgba(15, 23, 42, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.06);
+        }
+        html.light .app-sidebar, html.light .app-sidebar span, html.light .app-sidebar a, html.light .app-sidebar i, html.light .app-sidebar div {
+            color: #000000 !important;
+        }
+        html { font-size: 15px; }
+        @media (min-width: 1536px) { html { font-size: 16px; } }
+        @media (min-width: 1800px) { html { font-size: 17px; } }
+        body {
+            background-color: var(--bg-color); color: var(--text-color);
+            font-family: 'Inter', sans-serif; line-height: 1.5; overflow-x: hidden;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        body.load-modal-open { overflow: hidden; }
+        body.load-modal-open .app-sidebar, body.load-modal-open .app-main { display: none !important; }
+        h1, h2, h3, h4 {
+            font-family: 'Lora', serif; color: var(--heading-color);
+            font-weight: 700 !important; line-height: 1.15; text-wrap: balance;
+            overflow-wrap: anywhere; word-break: break-word;
+        }
+        h1 { font-size: clamp(1.8rem, 2.5vw, 2.6rem) !important; padding-bottom: 0.3rem; margin-bottom: 0.75rem; }
+        h2 { font-size: clamp(1.35rem, 1.8vw, 1.8rem) !important; margin-top: 0; margin-bottom: 0.85rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; }
+        h3 { font-size: clamp(1.1rem, 1.3vw, 1.35rem) !important; margin-top: 0.85rem; margin-bottom: 0.4rem; }
+        h4 { font-size: clamp(1rem, 1.1vw, 1.15rem) !important; margin-top: 0.85rem; margin-bottom: 0.3rem; }
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+        p { margin-bottom: 0.75rem; max-width: 90ch; }
+        code { background-color: var(--code-bg); padding: 0.15rem 0.4rem; border-radius: 0.25rem; border: 1px solid var(--border-color); font-family: 'Fira Code', monospace; font-size: 0.82em; color: var(--text-color); }
+        .wikitable { width: 100%; border-collapse: collapse; margin: 0.75rem 0; background-color: var(--bg-color); font-size: 0.9em; border: 1px solid var(--panel-border); border-radius: 0.4rem; overflow: hidden; table-layout: auto; box-shadow: var(--control-shadow); }
+        .wikitable th, .wikitable td { border: 1px solid var(--panel-border); padding: 0.5rem 0.75rem; text-align: left; vertical-align: top; overflow-wrap: break-word; word-break: normal; }
+        .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); font-size: 0.9em; letter-spacing: 0.01em; }
+        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
+        .toc-link.active { font-weight: 600; color: var(--heading-color); position: relative; }
+        .toc-link.active::before { content: ''; position: absolute; left: -0.75rem; top: 0; height: 100%; width: 3px; background-color: var(--link-color); }
+        .toc-icon { font-size: 0.8em; opacity: 0.75; width: 1em; text-align: center; flex-shrink: 0; }
+        .toc-subicon { font-size: 0.35rem; opacity: 0.55; width: 0.6em; text-align: center; flex-shrink: 0; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
+        .ctrl-btn { flex: 1; padding: 0.3rem 0; border-radius: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s ease; }
+        .ctrl-btn:hover { background: var(--code-bg); color: var(--link-color); }
+        .quick-dial-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.4rem; padding: 1.25rem 0.5rem; background-color: var(--bg-color); border: 1px solid var(--panel-border); border-radius: 0.5rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 600; box-shadow: var(--control-shadow); transition: all 0.15s ease-in-out; cursor: pointer; text-decoration: none !important; }
+        .quick-dial-btn:hover { background-color: var(--code-bg); color: var(--link-color); border-color: var(--link-color); box-shadow: var(--card-shadow); transform: translateY(-2px); }
+        .quick-dial-btn i { font-size: 1.35rem; margin-bottom: 0.2rem; }
+        .app-sidebar { width: var(--sidebar-w); min-width: 15rem; max-width: 45vw; resize: horizontal; height: 100vh; position: sticky; top: 0; flex-shrink: 0; overflow-y: auto; overflow-x: hidden; border-right: 1px solid var(--border-color); background-color: var(--sidebar-color); padding: 0.85rem; z-index: 40; display: flex; flex-direction: column; }
+        .sidebar-search-icon-btn { display: none; }
+        @media (min-width: 1024px) {
+            .app-sidebar.sidebar-collapsed { width: var(--sidebar-rail-w) !important; min-width: var(--sidebar-rail-w) !important; padding: 0.4rem; resize: none !important; }
+            .app-sidebar.sidebar-collapsed .sidebar-controls { flex-direction: column; gap: 0.2rem; padding: 0.2rem; margin-bottom: 0.4rem; background-color: var(--panel-color); border: 1px solid var(--panel-border); box-shadow: var(--card-shadow); border-radius: 0.5rem; }
+            .app-sidebar.sidebar-collapsed .sidebar-controls .ctrl-divider { display: none; }
+            .app-sidebar.sidebar-collapsed .sidebar-controls .ctrl-btn { width: 100%; flex: 0 0 auto; padding: 0.4rem 0; }
+            .app-sidebar.sidebar-collapsed .sidebar-controls .ctrl-btn span { display: none; }
+            .app-sidebar.sidebar-collapsed .sidebar-header-panel { background-color: var(--panel-color); border: 1px solid var(--panel-border); box-shadow: var(--card-shadow); border-radius: 0.5rem; padding: 0.35rem 0.2rem; margin-bottom: 0.4rem; text-align: center; }
+            .app-sidebar.sidebar-collapsed .sidebar-header-panel .header-logo-row { justify-content: center; }
+            .app-sidebar.sidebar-collapsed .sidebar-header-panel .header-title-text,
+            .app-sidebar.sidebar-collapsed .sidebar-header-panel .header-subtitle-text,
+            .app-sidebar.sidebar-collapsed .sidebar-header-panel .header-version-text { display: none !important; }
+            .app-sidebar.sidebar-collapsed .sidebar-header-panel .header-icon { font-size: 0.95rem; margin: 0; }
+            .app-sidebar.sidebar-collapsed .sidebar-search-area { margin-bottom: 0.4rem; }
+            .app-sidebar.sidebar-collapsed .sidebar-search-wrap { display: none; }
+            .app-sidebar.sidebar-collapsed .sidebar-search-icon-btn { display: flex; }
+            .app-sidebar.sidebar-collapsed #toc-container-panel,
+            .app-sidebar.sidebar-collapsed #illustration-panel { background-color: var(--panel-color); border: 1px solid var(--panel-border); box-shadow: var(--card-shadow); border-radius: 0.5rem; padding: 0.35rem 0.2rem; margin-top: 0.4rem; }
+            .app-sidebar.sidebar-collapsed #toc-nav > .toc-heading,
+            .app-sidebar.sidebar-collapsed #illustration-panel > .panel-heading { display: none; }
+            .app-sidebar.sidebar-collapsed #toc-nav ul,
+            .app-sidebar.sidebar-collapsed #illustration-panel ul { padding: 0 !important; margin: 0 !important; border: none !important; display: flex; flex-direction: column; align-items: center; gap: 0.15rem; width: 100%; }
+            .app-sidebar.sidebar-collapsed #toc-nav li,
+            .app-sidebar.sidebar-collapsed #illustration-panel li { padding: 0 !important; margin: 0 !important; width: 100%; display: block; }
+            .app-sidebar.sidebar-collapsed #toc-nav .toc-link,
+            .app-sidebar.sidebar-collapsed #illustration-panel a { justify-content: center; padding: 0.3rem 0; border-radius: 0.4rem; width: 100%; gap: 0; }
+            .app-sidebar.sidebar-collapsed #toc-nav ul ul { gap: 0 !important; margin-top: 0.05rem !important; }
+            .app-sidebar.sidebar-collapsed #toc-nav ul ul .toc-link { padding: 0.08rem 0; }
+            .app-sidebar.sidebar-collapsed #toc-nav .toc-link [data-lang-de],
+            .app-sidebar.sidebar-collapsed #toc-nav .toc-link [data-lang-en],
+            .app-sidebar.sidebar-collapsed #illustration-panel a [data-lang-de],
+            .app-sidebar.sidebar-collapsed #illustration-panel a [data-lang-en] { display: none !important; }
+            .app-sidebar.sidebar-collapsed #toc-nav .toc-icon,
+            .app-sidebar.sidebar-collapsed #illustration-panel .toc-icon { font-size: 0.85rem; width: auto; margin: 0; }
+            .app-sidebar.sidebar-collapsed #toc-nav .toc-subicon { font-size: 0.32rem; width: auto; margin: 0; }
+            .app-sidebar.sidebar-collapsed #toc-nav .toc-link.active::before { display: none; }
+            .app-sidebar.sidebar-collapsed .sidebar-bottom-panel { padding: 0.2rem; border-radius: 0.5rem; }
+            .app-sidebar.sidebar-collapsed .sidebar-bottom-panel .ctrl-btn { width: 100%; flex: 0 0 auto; padding: 0.4rem 0; }
+        }
+        .sidebar-header-panel, #toc-container-panel, #illustration-panel { background-color: var(--panel-color); border: 1px solid var(--panel-border); box-shadow: var(--card-shadow); border-radius: 0.6rem; padding: 0.75rem; }
+        .sidebar-controls, .sidebar-bottom-panel { background-color: var(--panel-color); border: 1px solid var(--panel-border); box-shadow: var(--card-shadow); border-radius: 0.6rem; padding: 0.375rem; }
+        #wikiSearch { background-color: var(--panel-color); border: 1px solid var(--panel-border); box-shadow: var(--card-shadow); border-radius: 0.6rem; }
+        #wikiSearch:focus { box-shadow: var(--card-shadow-hover); border-color: var(--link-color); }
+        .app-main { flex: 1 1 0%; min-width: 0; width: 100%; max-width: var(--content-max); padding: 0.85rem; }
+        @media (min-width: 1024px) { .app-main { padding: 1.25rem 1.5rem; } }
+        .topic-panel { background-color: var(--panel-color); border: 1px solid var(--panel-border); box-shadow: var(--card-shadow); border-radius: 0.75rem; padding: 1rem 1.25rem; margin: 1.25rem 0; overflow-wrap: anywhere; word-break: break-word; }
+        @media (min-width: 1024px) { .topic-panel { padding: 1.5rem 1.75rem; } }
+        .subtopic-card { background-color: var(--bg-color); border: 1px solid var(--panel-border); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; box-shadow: var(--control-shadow); overflow-wrap: anywhere; word-break: break-word; }
+        .subtopic-card:last-child { margin-bottom: 0; }
+        .subtopic-card > h3:first-child { margin-top: 0; }
+        .panel-intro { margin-bottom: 1rem; color: var(--text-color); }
+        .fetch-status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.7rem; font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 0.4rem; margin-bottom: 0.5rem; border: 1px solid var(--border-color); }
+        .fetch-status.loading { background: var(--code-bg); color: var(--text-muted); }
+        .fetch-status.success { background: rgba(37, 99, 235, 0.08); color: var(--link-color); border-color: var(--link-color); }
+        .fetch-status.error { background: rgba(220, 38, 38, 0.08); color: #dc2626; border-color: #dc2626; }
+        .fetch-status i { font-size: 0.75rem; }
+        .fetch-status .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--border-color); border-top-color: var(--link-color); border-radius: 50%; animation: loadspin 0.6s linear infinite; }
+        @keyframes loadspin { to { transform: rotate(360deg); } }
+        #loadModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 900; align-items: center; justify-content: center; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+        #loadModal.open { display: flex; }
+        .load-dialog { background: var(--panel-color); border: 1px solid var(--panel-border); box-shadow: var(--card-shadow-hover); border-radius: 0.85rem; width: 92%; max-width: 480px; padding: 1.5rem 1.5rem 1.25rem 1.5rem; color: var(--text-color); }
+        .load-dialog h3 { font-size: 1.15rem !important; margin: 0 0 0.4rem 0; color: var(--heading-color) !important; font-family: 'Lora', serif; }
+        .load-dialog .load-sub { font-size: 0.75rem; color: var(--text-muted); margin: 0 0 1rem 0; line-height: 1.5; }
+        .load-task-list { list-style: none; margin: 0 0 1.25rem 0; padding: 0.75rem; background: var(--bg-color); border: 1px solid var(--panel-border); border-radius: 0.5rem; display: flex; flex-direction: column; gap: 0.55rem; }
+        .load-task-item { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.78rem; line-height: 1.4; color: var(--text-color); }
+        .load-task-item .task-icon { flex: 0 0 16px; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px; }
+        .load-task-item .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--border-color); border-top-color: var(--link-color); border-radius: 50%; animation: loadspin 0.7s linear infinite; }
+        .load-task-item[data-state="success"] .task-icon { color: #16a34a; }
+        .load-task-item[data-state="error"] .task-icon { color: #dc2626; }
+        .load-task-item .task-label { flex: 1; }
+        .load-actions { display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.85rem; border-top: 1px solid var(--border-color); }
+        #loadContinueBtn { appearance: none; border: 1px solid var(--link-color); background: var(--link-color); color: var(--panel-color); padding: 0.55rem 1.4rem; border-radius: 0.5rem; font-size: 0.85rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: all 0.15s ease; }
+        #loadContinueBtn:hover:not(:disabled) { filter: brightness(1.1); box-shadow: var(--card-shadow); }
+        #loadContinueBtn:disabled { opacity: 0.35; cursor: not-allowed; filter: grayscale(1); background: var(--text-muted); border-color: var(--text-muted); color: var(--panel-color); }
+        .load-summary { font-size: 0.72rem; color: var(--text-muted); margin: 0 0 0.75rem 0; min-height: 1em; text-align: right; }
+        .load-summary.all-ok { color: #16a34a; font-weight: 600; }
+        .load-summary.has-errors { color: #dc2626; font-weight: 600; }
+        .proxy-badge { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.6rem; padding: 0.1rem 0.4rem; border-radius: 0.25rem; background: var(--code-bg); color: var(--text-muted); border: 1px solid var(--border-color); }
+        .proxy-badge.ok { color: #16a34a; border-color: #16a34a; }
+        .proxy-badge.fail { color: #dc2626; border-color: #dc2626; }
+    </style>
+</head>
+<body class="flex flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)] load-modal-open" data-active-lang="de">
+
+    <aside id="appSidebar" class="app-sidebar">
+        <div class="sidebar-controls flex items-center justify-between gap-1.5 mb-3 relative">
+            <button id="sidebarToggleBtn" type="button" onclick="toggleSidebar()" class="ctrl-btn" aria-controls="sidebarContent" aria-expanded="true" data-title-de="Sidebar ein-/ausklappen" data-title-en="Toggle sidebar">
+                <i id="sidebarToggleIcon" class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div class="ctrl-divider w-px h-3.5 bg-[var(--border-color)]"></div>
+            <button id="themeToggleBtn" type="button" class="ctrl-btn" data-title-de="Hell/Dunkel umschalten" data-title-en="Toggle Light/Dark">
+                <i id="themeToggleIcon" class="fa-solid fa-sun"></i>
+            </button>
+            <div id="downloadDivider" class="ctrl-divider w-px h-3.5 bg-[var(--border-color)]"></div>
+            <button id="downloadBtn" type="button" onclick="downloadHTML()" class="ctrl-btn" style="color: var(--link-color);" data-title-de="Download HowTo" data-title-en="Download HowTo">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <div id="sidebarContent">
+            <div class="sidebar-header-panel mb-3">
+                <div class="flex items-center gap-2 header-logo-row">
+                    <i class="fa-solid fa-shield-halved text-xl text-[var(--text-color)] opacity-80 header-icon"></i>
+                    <div class="font-serif text-xl tracking-tight text-[var(--heading-color)] leading-tight header-title-text">
+                        <span data-lang-de>Datenschutz</span>
+                        <span data-lang-en style="display:none;">Data Protection</span>
+                    </div>
+                </div>
+                <div class="font-serif text-xs text-[var(--text-muted)] mt-0.5 header-subtitle-text">
+                    <span data-lang-de>Live-API Referenz</span>
+                    <span data-lang-en style="display:none;">Live API Reference</span>
+                </div>
+                <div class="text-[10px] text-[var(--text-muted)] mt-0.5 font-mono header-version-text">v4.0 · Live API</div>
+            </div>
+
+            <div class="sidebar-search-area mb-3">
+                <div class="sidebar-search-wrap relative">
+                    <input type="text" id="wikiSearch" placeholder="Search..." class="w-full px-3 py-1.5 text-xs text-[var(--text-color)] focus:outline-none" onkeyup="filterWiki(this.value)">
+                </div>
+                <button type="button" class="sidebar-search-icon-btn w-full bg-[var(--panel-color)] border border-[var(--panel-border)] rounded shadow-[var(--control-shadow)] py-2 items-center justify-center text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)]" onclick="expandSearch(event)" data-title-de="Suche öffnen" data-title-en="Open search">
+                    <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                </button>
+            </div>
+
+            <div id="toc-container-panel">
+                <nav class="text-xs space-y-1" id="toc-nav">
+                    <div class="toc-heading font-bold text-[var(--heading-color)] mb-1.5 uppercase tracking-wider text-[10px]">
+                        <span data-lang-de>Inhaltsverzeichnis</span>
+                        <span data-lang-en style="display:none;">Table of Contents</span>
+                    </div>
+                    <ul class="space-y-0.5" id="toc-list"></ul>
+                </nav>
+            </div>
+
+            <div id="illustration-panel" class="mt-3">
+                <div class="panel-heading font-bold text-[var(--heading-color)] mb-1.5 uppercase tracking-wider text-[10px]">
+                    <span data-lang-de>Status</span>
+                    <span data-lang-en style="display:none;">Status</span>
+                </div>
+                <ul class="space-y-0.5 text-xs" id="status-list">
+                    <li class="flex items-center gap-1.5 py-1 px-1.5 rounded text-[var(--text-muted)]">
+                        <i class="fa-solid fa-circle toc-subicon"></i>
+                        <span id="status-dsgvo">DSGVO: –</span>
+                    </li>
+                    <li class="flex items-center gap-1.5 py-1 px-1.5 rounded text-[var(--text-muted)]">
+                        <i class="fa-solid fa-circle toc-subicon"></i>
+                        <span id="status-bdsg">BDSG: –</span>
+                    </li>
+                    <li class="flex items-center gap-1.5 py-1 px-1.5 rounded text-[var(--text-muted)]">
+                        <i class="fa-solid fa-circle toc-subicon"></i>
+                        <span id="status-ttdsg">TTDSG: –</span>
+                    </li>
+                    <li class="flex items-center gap-1.5 py-1 px-1.5 rounded text-[var(--text-muted)]">
+                        <i class="fa-solid fa-circle toc-subicon"></i>
+                        <span id="status-tkg">TKG: –</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="mt-auto flex flex-col gap-2 pt-3">
+            <div class="sidebar-bottom-panel flex items-center justify-center">
+                <button type="button" onclick="openImpressumModal()" class="ctrl-btn w-full" data-title-de="Impressum & Info" data-title-en="Imprint & Info">
+                    <i class="fa-solid fa-circle-question"></i>
+                </button>
+            </div>
+            <div class="sidebar-bottom-panel flex items-center justify-center">
+                <button type="button" onclick="toggleFullscreen()" class="ctrl-btn w-full" data-title-de="Vollbild umschalten" data-title-en="Toggle fullscreen">
+                    <i id="fullscreenIcon" class="fa-solid fa-expand"></i>
+                </button>
+            </div>
+            <div class="sidebar-bottom-panel flex items-center justify-center">
+                <button type="button" onclick="reloadAll()" class="ctrl-btn w-full" data-title-de="Daten neu laden" data-title-en="Reload data">
+                    <i class="fa-solid fa-rotate"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <div id="loadModal" class="open" role="dialog" aria-modal="true" aria-labelledby="loadModalTitle">
+        <div class="load-dialog">
+            <h3 id="loadModalTitle">
+                <span data-lang-de>Aktuelle Rechtsdaten werden geladen</span>
+                <span data-lang-en style="display:none;">Loading current legal data</span>
+            </h3>
+            <p class="load-sub">
+                <span data-lang-de>Die Seite ruft aktuelle Datenschutz-Gesetze aus öffentlichen Rechtsquellen ab. Dies kann einen Moment dauern.</span>
+                <span data-lang-en style="display:none;">The page is fetching current data protection laws from public legal sources. This may take a moment.</span>
+            </p>
+            <ul class="load-task-list" id="loadTaskList"></ul>
+            <p class="load-summary" id="loadSummary"></p>
+            <div class="load-actions">
+                <button type="button" id="loadContinueBtn" disabled>
+                    <span data-lang-de>Weiter</span>
+                    <span data-lang-en style="display:none;">Continue</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="impressumModal" role="dialog" aria-modal="true" aria-labelledby="impressumTitle" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 500; align-items: center; justify-content: center;">
+        <div class="settings-dialog" style="background: var(--panel-color); border: 1px solid var(--panel-border); box-shadow: var(--card-shadow-hover); border-radius: 0.75rem; width: 90%; max-width: 400px; padding: 1.25rem;">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-[var(--border-color)]">
+                <h3 id="impressumTitle" class="text-sm font-bold m-0 text-[var(--heading-color)]">
+                    <span data-lang-de>Impressum & Info</span>
+                    <span data-lang-en style="display:none;">Imprint & Info</span>
+                </h3>
+                <button type="button" onclick="closeImpressumModal()" class="ctrl-btn !flex-none px-2 py-1 text-xs"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-3 text-xs text-[var(--text-muted)] leading-relaxed">
+                <p class="font-bold text-[var(--text-color)] text-sm mb-1">Datenschutz Live-API 2026</p>
+                <p>
+                    <span data-lang-de>Diese Seite lädt alle Gesetzestexte live aus offiziellen Quellen: EUR-Lex (DSGVO) und gesetze-im-internet.de (BDSG, TTDSG, TKG). Es wird kein API-Schlüssel benötigt.</span>
+                    <span data-lang-en style="display:none;">This page loads all legal texts live from official sources: EUR-Lex (GDPR) and gesetze-im-internet.de (BDSG, TTDSG, TKG). No API key required.</span>
+                </p>
+                <p class="mt-4 pt-4 border-t border-[var(--border-color)]">
+                    <span data-lang-de>Version 4.0 · Reine Live-API</span>
+                    <span data-lang-en style="display:none;">Version 4.0 · Pure Live API</span><br>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <main class="app-main" id="main-content">
+        <div class="searchable-block topic-panel mt-0 mb-6">
+            <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0">
+                <span data-lang-de>Datenschutz & DSGVO</span>
+                <span data-lang-en style="display:none;">Data Protection & GDPR</span>
+            </h1>
+            <p class="text-sm mb-0" data-lang-de>Alle Inhalte werden <strong>live</strong> aus offiziellen Rechtsquellen geladen. Keine statischen Daten. <span id="live-status" class="text-[var(--link-color)] font-semibold"></span></p>
+            <p class="text-sm mb-0" data-lang-en style="display:none;">All content is loaded <strong>live</strong> from official legal sources. No static data. <span id="live-status-en" class="text-[var(--link-color)] font-semibold"></span></p>
+        </div>
+
+        <div class="searchable-block topic-panel mt-6 mb-6" id="quickDialPanel" style="display:none;">
+            <h2 class="mb-4 text-[1.1rem]">
+                <span data-lang-de>Schnellzugriff</span>
+                <span data-lang-en style="display:none;">Quick Links</span>
+            </h2>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="quickDialGrid"></div>
+        </div>
+
+        <div id="dynamicSections"></div>
+
+        <footer class="mt-4 pt-4 pb-2 text-center text-[var(--text-muted)] text-xs border-t border-[var(--panel-border)] w-full">
+            Datenschutz Live-API 2026 · <span id="lastUpdated" style="display:none;">Lade...</span>
+        </footer>
+    </main>
+
+    <div id="floatingSearch" class="fixed hidden z-50 bg-[var(--panel-color)] border border-[var(--panel-border)] rounded-[0.5rem] shadow-[var(--sidebar-shadow)] p-1.5 w-64" style="transition: opacity 0.1s ease;">
+        <div class="relative flex items-center">
+            <i class="fa-solid fa-magnifying-glass absolute left-2.5 text-[var(--text-muted)] text-xs"></i>
+            <input type="text" id="floatingWikiSearch" placeholder="Search..." class="w-full pl-7 pr-3 py-1.5 text-xs text-[var(--text-color)] bg-[var(--bg-color)] border border-[var(--border-color)] rounded-[0.35rem] focus:outline-none focus:border-[var(--link-color)] shadow-[var(--input-shadow)]" onkeyup="filterWiki(this.value)">
+        </div>
+    </div>
+
+    <script>
+        /* ============================================================ */
+        /* CONFIGURATION                                                */
+        /* ============================================================ */
+        const LAW_CONFIGS = [
+            {
+                code: 'dsgvo',
+                title: { de: 'DSGVO – Datenschutz-Grundverordnung', en: 'GDPR – General Data Protection Regulation' },
+                icon: 'fa-scale-balanced',
+                source: 'eurlex',
+                celex: '32016R0679',
+                sections: [
+                    { id: 'dsgvo-grundlagen', title: { de: '1. DSGVO Grundlagen & Grundsätze', en: '1. GDPR Principles' }, icon: 'fa-list-check', articles: ['5', '6'] },
+                    { id: 'dsgvo-rechte', title: { de: '2. DSGVO Betroffenenrechte', en: '2. GDPR Data Subject Rights' }, icon: 'fa-user-shield', articles: ['15', '16', '17', '20', '21'] },
+                    { id: 'dsgvo-pflichten', title: { de: '3. DSGVO Pflichten & Rollen', en: '3. GDPR Duties & Roles' }, icon: 'fa-clipboard-check', articles: ['28', '32', '33', '35'] }
+                ]
+            },
+            {
+                code: 'bdsg_2018',
+                title: { de: 'BDSG – Bundesdatenschutzgesetz', en: 'BDSG – Federal Data Protection Act' },
+                icon: 'fa-gavel',
+                source: 'gii',
+                sections: [
+                    { id: 'bdsg-beschaeftigte', title: { de: '4. BDSG – Beschäftigtenschutz', en: '4. BDSG – Employee Privacy' }, icon: 'fa-users', norms: ['par:26'] },
+                    { id: 'bdsg-sanktionen', title: { de: '5. BDSG – Sanktionen & Aufsicht', en: '5. BDSG – Sanctions & Supervision' }, icon: 'fa-triangle-exclamation', norms: ['par:38', 'par:42', 'par:43'] }
+                ]
+            },
+            {
+                code: 'tdddg',
+                title: { de: 'TDDDG – Telemedien-Datenschutz', en: 'TDDDG – Telemedia Privacy' },
+                icon: 'fa-cookie',
+                source: 'gii',
+                sections: [
+                    { id: 'ttdsg-cookies', title: { de: '6. TDDDG – Cookies & Telemedien', en: '6. TDDDG – Cookies & Telemedia' }, icon: 'fa-cookie', norms: ['par:1', 'par:25'] }
+                ]
+            },
+            {
+                code: 'tkg_2021',
+                title: { de: 'TKG – Telekommunikationsgesetz', en: 'TKG – Telecommunications Act' },
+                icon: 'fa-tower-broadcast',
+                source: 'gii',
+                sections: [
+                    { id: 'tkg-schutz', title: { de: '7. TKG – Fernmeldegeheimnis', en: '7. TKG – Telecommunications Privacy' }, icon: 'fa-phone', norms: ['par:3', 'par:91'] }
+                ]
+            }
+        ];
+
+        const GII_BASE = 'https://www.gesetze-im-internet.de';
+        const EURLEX_BASE = 'https://eur-lex.europa.eu/legal-content/DE/TXT/HTML/';
+
+        /* ============================================================ */
+        /* PROXY CHAIN - ROBUST FALLBACK                                */
+        /* ============================================================ */
+        const PROXIES = [
+            { name: 'direct', fn: (url) => url, binarySafe: true },
+            { name: 'allorigins-raw', fn: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, binarySafe: true },
+            { name: 'codetabs', fn: (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`, binarySafe: false },
+            { name: 'corsproxy-io', fn: (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`, binarySafe: false },
+            { name: 'thingproxy', fn: (url) => `https://thingproxy.freeboard.io/fetch/${url}`, binarySafe: true }
+        ];
+
+        let proxyStats = {};
+        PROXIES.forEach(p => proxyStats[p.name] = { ok: 0, fail: 0 });
+
+        async function fetchWithProxyChain(targetUrl, expectBinary = false) {
+            let lastError = null;
+            const errors = [];
+
+            for (const proxy of PROXIES) {
+                if (expectBinary && !proxy.binarySafe) continue; // Skip non-binary-safe for ZIP
+                try {
+                    const proxyUrl = proxy.fn(targetUrl);
+                    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(15000) });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const buf = await res.arrayBuffer();
+
+                    if (expectBinary) {
+                        const view = new Uint8Array(buf);
+                        if (view.length < 4 || view[0] !== 0x50 || view[1] !== 0x4B) {
+                            throw new Error('Non-ZIP response (possibly HTML error page)');
+                        }
+                    } else {
+                        // For text, check it's not an error page
+                        const text = new TextDecoder().decode(buf.slice(0, 500));
+                        if (text.trim().startsWith('<!DOCTYPE') && text.toLowerCase().includes('error')) {
+                            throw new Error('Proxy returned error page');
+                        }
+                    }
+
+                    proxyStats[proxy.name].ok++;
+                    console.log(`[Proxy] ${proxy.name} OK for ${targetUrl.substring(0, 60)}...`);
+                    return { data: buf, proxy: proxy.name };
+                } catch (e) {
+                    proxyStats[proxy.name].fail++;
+                    errors.push(`${proxy.name}: ${e.message}`);
+                    lastError = e;
+                    console.warn(`[Proxy] ${proxy.name} failed:`, e.message);
+                }
+            }
+            throw new Error(`All proxies failed. Errors: ${errors.join('; ')}`);
+        }
+
+        /* ============================================================ */
+        /* FETCH & PARSE EUR-LEX (DSGVO)                                */
+        /* ============================================================ */
+        async function fetchDsgvo() {
+            const url = `${EURLEX_BASE}?uri=CELEX:${LAW_CONFIGS[0].celex}`;
+            const { data } = await fetchWithProxyChain(url, false);
+            const html = new TextDecoder().decode(data);
+            return parseEurLexHtml(html);
+        }
+
+        function parseEurLexHtml(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const articles = {};
+
+            // EUR-Lex HTML structure: articles are in divs with id like "art_5"
+            const articleDivs = doc.querySelectorAll('[id^="art_"]');
+            articleDivs.forEach(div => {
+                const id = div.id; // e.g. "art_5"
+                const numMatch = id.match(/art_(\d+)/);
+                if (!numMatch) return;
+                const artNum = numMatch[1];
+
+                // Extract title (usually in a preceding heading or within the div)
+                let title = '';
+                const titleEl = div.querySelector('.eli-title, .title, h2, h3');
+                if (titleEl) title = titleEl.textContent.trim();
+
+                // Extract text paragraphs
+                const paragraphs = [];
+                const pEls = div.querySelectorAll('p, .eli-subdivision p');
+                pEls.forEach(p => {
+                    const text = p.textContent.trim();
+                    if (text && text.length > 10) paragraphs.push(text);
+                });
+
+                if (paragraphs.length > 0) {
+                    articles[`art:${artNum}`] = {
+                        heading: `Art. ${artNum} ${title}`.trim(),
+                        text: paragraphs.join('\n\n'),
+                        enbez: `Art. ${artNum}`,
+                        titel: title
+                    };
+                }
+            });
+
+            // Fallback: try to find articles by text patterns
+            if (Object.keys(articles).length === 0) {
+                const bodyText = doc.body ? doc.body.textContent : html;
+                const artRegex = /Artikel\s+(\d+)\s+([^\n]+)\n([\s\S]*?)(?=Artikel\s+\d+|$)/g;
+                let match;
+                while ((match = artRegex.exec(bodyText)) !== null) {
+                    const artNum = match[1];
+                    const title = match[2].trim();
+                    const text = match[3].trim();
+                    if (text.length > 20) {
+                        articles[`art:${artNum}`] = {
+                            heading: `Art. ${artNum} ${title}`,
+                            text: text.replace(/\s+/g, ' ').trim(),
+                            enbez: `Art. ${artNum}`,
+                            titel: title
+                        };
+                    }
+                }
+            }
+
+            if (Object.keys(articles).length === 0) {
+                throw new Error('Could not parse any articles from EUR-Lex HTML');
+            }
+
+            return articles;
+        }
+
+        /* ============================================================ */
+        /* FETCH & PARSE GESETZE-IM-INTERNET.DE (XML)                   */
+        /* ============================================================ */
+        async function fetchGiiLaw(code) {
+            const urlsToTry = [];
+            if (code === 'tdddg') {
+                urlsToTry.push(`${GII_BASE}/tdddg/xml.zip`);
+                urlsToTry.push(`${GII_BASE}/ttdsg/xml.zip`); // old name fallback
+            } else {
+                urlsToTry.push(`${GII_BASE}/${code}/xml.zip`);
+            }
+
+            let lastError = null;
+            for (const zipUrl of urlsToTry) {
+                try {
+                    const { data } = await fetchWithProxyChain(zipUrl, true);
+                    const zip = await JSZip.loadAsync(data);
+                    const xmlFileName = Object.keys(zip.files).find(n => n.endsWith('.xml'));
+                    if (!xmlFileName) throw new Error('No XML file in ZIP');
+                    const xmlText = await zip.files[xmlFileName].async('string');
+                    return parseGiiXml(xmlText);
+                } catch (e) {
+                    lastError = e;
+                    console.warn(`GII fetch failed for ${zipUrl}:`, e.message);
+                }
+            }
+            throw lastError || new Error(`All GII URLs failed for ${code}`);
+        }
+
+        function parseGiiXml(xmlText) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xmlText, 'text/xml');
+            const norms = {};
+
+            doc.querySelectorAll('norm').forEach(norm => {
+                const meta = norm.querySelector('metadaten');
+                if (!meta) return;
+                const enbez = meta.querySelector('enbez')?.textContent?.trim() || '';
+                const titel = meta.querySelector('titel')?.textContent?.trim() || '';
+                if (!enbez || enbez.includes('Abs')) return;
+
+                let normId = '';
+                const artMatch = enbez.match(/^Art\.?\s*(\d+[a-z]?)/i);
+                const parMatch = enbez.match(/^§\s*(\d+[a-z]?)/);
+                if (artMatch) normId = `art:${artMatch[1]}`;
+                else if (parMatch) normId = `par:${parMatch[1]}`;
+                else return;
+
+                const textEl = norm.querySelector('textdaten');
+                let fullText = '';
+                if (textEl) {
+                    const paragraphs = textEl.querySelectorAll('P');
+                    if (paragraphs.length > 0) {
+                        fullText = Array.from(paragraphs).map(p => p.textContent.trim()).filter(t => t).join('\n\n');
+                    } else {
+                        fullText = textEl.textContent.trim();
+                    }
+                }
+                fullText = fullText.replace(/\s+/g, ' ').replace(/\n\s*\n/g, '\n\n').trim();
+
+                if (!norms[normId]) {
+                    norms[normId] = { heading: `${enbez} ${titel}`.trim(), text: fullText, enbez, titel };
+                }
+            });
+
+            return norms;
+        }
+
+        /* ============================================================ */
+        /* LOAD MODAL                                                   */
+        /* ============================================================ */
+        const LoadModal = {
+            pending: 0, errors: 0, successes: 0,
+            init() {
+                const modal = document.getElementById('loadModal');
+                if (modal) modal.classList.add('open');
+                document.body.classList.add('load-modal-open');
+                const btn = document.getElementById('loadContinueBtn');
+                if (btn) { btn.disabled = true; btn.onclick = () => this.close(); }
+            },
+            buildTaskList() {
+                const list = document.getElementById('loadTaskList');
+                if (!list) return;
+                list.innerHTML = '';
+                this.pending = LAW_CONFIGS.length;
+                LAW_CONFIGS.forEach(law => {
+                    const li = document.createElement('li');
+                    li.className = 'load-task-item';
+                    li.dataset.task = law.code;
+                    li.dataset.state = 'loading';
+                    li.innerHTML = `
+                        <span class="task-icon"><span class="spinner"></span></span>
+                        <span class="task-label">
+                            <span data-lang-de>${law.title.de} wird geladen…</span>
+                            <span data-lang-en style="display:none;">${law.title.en} is loading…</span>
+                        </span>
+                    `;
+                    list.appendChild(li);
+                });
+            },
+            reset() {
+                this.errors = 0; this.successes = 0;
+                this.buildTaskList();
+                const sum = document.getElementById('loadSummary');
+                if (sum) { sum.textContent = ''; sum.className = 'load-summary'; }
+                const btn = document.getElementById('loadContinueBtn');
+                if (btn) btn.disabled = true;
+            },
+            finishTaskSuccess(taskKey, msgDe, msgEn) {
+                this.successes++; this.pending--;
+                this._setTask(taskKey, 'success', msgDe, msgEn);
+                this._updateSummary(); this._maybeEnable();
+            },
+            finishTaskError(taskKey, msgDe, msgEn) {
+                this.errors++; this.pending--;
+                this._setTask(taskKey, 'error', msgDe, msgEn);
+                this._updateSummary(); this._maybeEnable();
+            },
+            _setTask(taskKey, state, msgDe, msgEn) {
+                const item = document.querySelector(`.load-task-item[data-task="${taskKey}"]`);
+                if (!item) return;
+                item.dataset.state = state;
+                const iconWrap = item.querySelector('.task-icon');
+                if (iconWrap) {
+                    if (state === 'loading') iconWrap.innerHTML = '<span class="spinner"></span>';
+                    else if (state === 'success') iconWrap.innerHTML = '<i class="fa-solid fa-check"></i>';
+                    else if (state === 'error') iconWrap.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                }
+                if (msgDe != null) { const de = item.querySelector('.task-label [data-lang-de]'); if (de) de.textContent = msgDe; }
+                if (msgEn != null) { const en = item.querySelector('.task-label [data-lang-en]'); if (en) en.textContent = msgEn; }
+            },
+            _updateSummary() {
+                const sum = document.getElementById('loadSummary');
+                if (!sum) return;
+                if (this.pending > 0) { sum.textContent = ''; sum.className = 'load-summary'; return; }
+                if (this.errors === 0) {
+                    sum.className = 'load-summary all-ok';
+                    sum.innerHTML = isGerman ? '✓ Alle Live-Daten erfolgreich geladen' : '✓ All live data loaded successfully';
+                } else {
+                    sum.className = 'load-summary has-errors';
+                    sum.innerHTML = isGerman
+                        ? `⚠ ${this.errors} von ${this.successes + this.errors} Abrufen fehlgeschlagen`
+                        : `⚠ ${this.errors} of ${this.successes + this.errors} fetch(es) failed`;
+                }
+            },
+            _maybeEnable() { if (this.pending > 0) return; const btn = document.getElementById('loadContinueBtn'); if (btn) btn.disabled = false; },
+            close() {
+                const modal = document.getElementById('loadModal');
+                if (modal) modal.classList.remove('open');
+                document.body.classList.remove('load-modal-open');
+                applyLang();
+            }
+        };
+
+        /* ============================================================ */
+        /* MAIN DATA LOADING                                            */
+        /* ============================================================ */
+        let allNorms = {};
+
+        async function fetchAllLegalData() {
+            LoadModal.buildTaskList();
+            allNorms = {};
+
+            await Promise.allSettled(
+                LAW_CONFIGS.map(async (law) => {
+                    try {
+                        let norms;
+                        if (law.source === 'eurlex') {
+                            norms = await fetchDsgvo();
+                        } else {
+                            norms = await fetchGiiLaw(law.code);
+                        }
+                        allNorms[law.code] = norms;
+                        LoadModal.finishTaskSuccess(
+                            law.code,
+                            `${law.title.de} geladen (${Object.keys(norms).length} Normen)`,
+                            `${law.title.en} loaded (${Object.keys(norms).length} norms)`
+                        );
+                        updateStatus(law.code, 'ok', Object.keys(norms).length);
+                    } catch (err) {
+                        console.warn(`Failed to fetch ${law.code}:`, err);
+                        allNorms[law.code] = {};
+                        LoadModal.finishTaskError(
+                            law.code,
+                            `${law.title.de} – Fehler: ${err.message.substring(0, 50)}`,
+                            `${law.title.en} – Error: ${err.message.substring(0, 50)}`
+                        );
+                        updateStatus(law.code, 'fail');
+                    }
+                })
+            );
+
+            buildTocAndSections(allNorms);
+            buildQuickDial(allNorms);
+            applyLang();
+            updateLastUpdated(LoadModal.errors > 0);
+            updateProxyBadges();
+        }
+
+        function updateStatus(code, status, count = 0) {
+            const el = document.getElementById(`status-${code}`);
+            if (!el) return;
+            if (status === 'ok') {
+                el.textContent = `✓ ${count} Normen`;
+                el.style.color = '#16a34a';
+            } else {
+                el.textContent = '✗ Fehler';
+                el.style.color = '#dc2626';
+            }
+        }
+
+        function updateProxyBadges() {
+            // Could display proxy stats in a badge, but we keep it simple
+            console.log('Proxy stats:', JSON.stringify(proxyStats));
+        }
+
+        /* ============================================================ */
+        /* RENDERING                                                    */
+        /* ============================================================ */
+        function buildTocAndSections(normsData) {
+            const tocList = document.getElementById('toc-list');
+            const sectionsContainer = document.getElementById('dynamicSections');
+            if (!tocList || !sectionsContainer) return;
+            tocList.innerHTML = '';
+            sectionsContainer.innerHTML = '';
+            let sectionIndex = 0;
+
+            LAW_CONFIGS.forEach(law => {
+                const lawNorms = normsData[law.code];
+                if (!lawNorms || Object.keys(lawNorms).length === 0) return;
+
+                law.sections.forEach(section => {
+                    sectionIndex++;
+                    const sectionId = section.id;
+                    const availableNorms = section.norms.filter(n => lawNorms[n]);
+                    if (availableNorms.length === 0) return;
+
+                    // TOC
+                    const li = document.createElement('li');
+                    li.className = sectionIndex > 1 ? 'pt-1' : '';
+                    const tocLink = document.createElement('a');
+                    tocLink.href = `#${sectionId}`;
+                    tocLink.className = 'toc-link flex items-center gap-1.5 py-1 px-1.5 rounded text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium';
+                    tocLink.innerHTML = `
+                        <i class="fa-solid ${section.icon} toc-icon"></i>
+                        <span data-lang-de>${section.title.de}</span>
+                        <span data-lang-en style="display:none;">${section.title.en}</span>
+                    `;
+                    li.appendChild(tocLink);
+
+                    const subUl = document.createElement('ul');
+                    subUl.className = 'pl-3 space-y-0.5 border-l border-[var(--border-color)] ml-2 mt-0.5';
+                    availableNorms.forEach(normId => {
+                        const norm = lawNorms[normId];
+                        const subLi = document.createElement('li');
+                        const subLink = document.createElement('a');
+                        subLink.href = `#${sectionId}-${normId.replace(/[:/]/g, '-')}`;
+                        subLink.className = 'toc-link flex items-center gap-1.5 py-0.5 px-1 rounded text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)]';
+                        subLink.innerHTML = `
+                            <i class="fa-solid fa-circle toc-subicon"></i>
+                            <span>${norm.heading}</span>
+                        `;
+                        subLi.appendChild(subLink);
+                        subUl.appendChild(subLi);
+                    });
+                    li.appendChild(subUl);
+                    tocList.appendChild(li);
+
+                    // Section panel
+                    const sectionEl = document.createElement('section');
+                    sectionEl.id = sectionId;
+                    sectionEl.className = 'scroll-mt-6 searchable-block topic-panel mt-6';
+
+                    const h2 = document.createElement('h2');
+                    h2.innerHTML = `
+                        <span data-lang-de>${section.title.de}</span>
+                        <span data-lang-en style="display:none;">${section.title.en}</span>
+                    `;
+                    sectionEl.appendChild(h2);
+
+                    availableNorms.forEach(normId => {
+                        const norm = lawNorms[normId];
+                        const card = document.createElement('div');
+                        card.className = 'subtopic-card';
+                        card.id = `${sectionId}-${normId.replace(/[:/]/g, '-')}`;
+
+                        const h3 = document.createElement('h3');
+                        h3.className = 'scroll-mt-6 text-sm font-semibold';
+                        h3.textContent = norm.heading;
+                        card.appendChild(h3);
+
+                        const body = document.createElement('div');
+                        body.className = 'text-xs text-[var(--text-muted)] leading-relaxed';
+                        body.innerHTML = renderNormBody(norm.text);
+                        card.appendChild(body);
+
+                        sectionEl.appendChild(card);
+                    });
+
+                    sectionsContainer.appendChild(sectionEl);
+                });
+            });
+        }
+
+        function renderNormBody(text) {
+            if (!text) return '<em>Kein Text verfügbar / No text available</em>';
+            const raw = text.replace(/\s+/g, ' ').trim();
+            const parts = raw.split(/(?=\(\d+\)\s)/g).filter(p => p.trim().length > 0);
+            if (parts.length >= 2) {
+                return parts.map(part => {
+                    const m = part.match(/^\((\d+)\)\s*(.*)$/s);
+                    const num = m ? m[1] : '';
+                    const body = m ? m[2].trim() : part.trim();
+                    return `<p class="mb-2"><strong>(${escapeHtml(num)})</strong> ${escapeHtml(body)}</p>`;
+                }).join('');
+            }
+            return `<p class="mb-2">${escapeHtml(raw)}</p>`;
+        }
+
+        function buildQuickDial(normsData) {
+            const panel = document.getElementById('quickDialPanel');
+            const grid = document.getElementById('quickDialGrid');
+            if (!panel || !grid) return;
+            grid.innerHTML = '';
+            const allSections = [];
+
+            LAW_CONFIGS.forEach(law => {
+                const lawNorms = normsData[law.code];
+                if (!lawNorms || Object.keys(lawNorms).length === 0) return;
+                law.sections.forEach(section => {
+                    const availableNorms = section.norms.filter(n => lawNorms[n]);
+                    if (availableNorms.length > 0) allSections.push(section);
+                });
+            });
+
+            if (allSections.length === 0) { panel.style.display = 'none'; return; }
+            panel.style.display = '';
+
+            allSections.slice(0, 4).forEach(section => {
+                const a = document.createElement('a');
+                a.href = `#${section.id}`;
+                a.className = 'quick-dial-btn';
+                a.innerHTML = `
+                    <i class="fa-solid ${section.icon}"></i>
+                    <span data-lang-de>${section.title.de}</span>
+                    <span data-lang-en style="display:none;">${section.title.en}</span>
+                `;
+                grid.appendChild(a);
+            });
+        }
+
+        /* ============================================================ */
+        /* UTILITIES                                                    */
+        /* ============================================================ */
+        function escapeHtml(str) {
+            if (str == null) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function updateLastUpdated(hasErrors) {
+            const el = document.getElementById('lastUpdated');
+            if (el) {
+                if (hasErrors) { el.style.display = 'none'; }
+                else {
+                    el.style.display = '';
+                    const now = new Date();
+                    el.textContent = 'Aktualisiert am: ' + now.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                }
+            }
+        }
+
+        /* ============================================================ */
+        /* LANGUAGE                                                     */
+        /* ============================================================ */
+        let isGerman = true;
+        function applyLang() {
+            document.querySelectorAll('[data-lang-de]').forEach(el => el.style.display = isGerman ? '' : 'none');
+            document.querySelectorAll('[data-lang-en]').forEach(el => el.style.display = isGerman ? 'none' : '');
+            document.querySelectorAll('[data-title-de]').forEach(el => { el.title = isGerman ? el.getAttribute('data-title-de') : el.getAttribute('data-title-en'); });
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+        }
+
+        /* ============================================================ */
+        /* THEME TOGGLE                                                 */
+        /* ============================================================ */
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isLight = html.classList.toggle('light');
+            html.classList.toggle('theme-dark', !isLight);
+            html.style.colorScheme = isLight ? 'light' : 'dark';
+            const icon = document.getElementById('themeToggleIcon');
+            if (icon) icon.className = isLight ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+        }
+
+        /* ============================================================ */
+        /* SEARCH                                                       */
+        /* ============================================================ */
+        function filterWiki(val) {
+            if (typeof val !== 'string') { const mainInput = document.getElementById('wikiSearch'); val = mainInput ? mainInput.value : ''; }
+            const mainInput = document.getElementById('wikiSearch');
+            const floatInput = document.getElementById('floatingWikiSearch');
+            if (mainInput && mainInput.value !== val) mainInput.value = val;
+            if (floatInput && floatInput.value !== val) floatInput.value = val;
+
+            const filter = val.toLowerCase();
+            const blocks = document.querySelectorAll('.searchable-block');
+            const mainContent = document.getElementById('main-content');
+            removeHighlights(mainContent);
+
+            if (!filter) { blocks.forEach(b => b.style.display = ''); return; }
+            blocks.forEach(block => {
+                const text = block.innerText.toLowerCase();
+                if (text.includes(filter)) { block.style.display = ''; highlightText(block, val); }
+                else { block.style.display = 'none'; }
+            });
+        }
+
+        function highlightText(element, keyword) {
+            if (!keyword) return;
+            const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+            let node;
+            while (node = treeWalker.nextNode()) {
+                if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                    if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE') {
+                        nodesToReplace.push(node);
+                    }
+                }
+            }
+            nodesToReplace.forEach(node => {
+                const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+                const fragment = document.createDocumentFragment();
+                let match, lastIndex = 0;
+                const text = node.nodeValue;
+                while ((match = regex.exec(text)) !== null) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    const span = document.createElement('span');
+                    span.className = 'search-match font-semibold';
+                    span.textContent = match[0];
+                    fragment.appendChild(span);
+                    lastIndex = regex.lastIndex;
+                }
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                node.parentNode.replaceChild(fragment, node);
+            });
+        }
+
+        function removeHighlights(element) {
+            element.querySelectorAll('.search-match').forEach(span => {
+                const parent = span.parentNode;
+                parent.replaceChild(document.createTextNode(span.textContent), span);
+                parent.normalize();
+            });
+        }
+
+        function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+        /* ============================================================ */
+        /* SIDEBAR TOGGLE                                               */
+        /* ============================================================ */
+        let sidebarCollapsed = false;
+        function toggleSidebar() {
+            sidebarCollapsed = !sidebarCollapsed;
+            const aside = document.getElementById('appSidebar');
+            const icon = document.getElementById('sidebarToggleIcon');
+            if (aside) aside.classList.toggle('sidebar-collapsed', sidebarCollapsed);
+            if (icon) icon.className = sidebarCollapsed ? 'fa-solid fa-arrow-right' : 'fa-solid fa-arrow-left';
+            const floatSearch = document.getElementById('floatingSearch');
+            if (floatSearch && !sidebarCollapsed) floatSearch.classList.add('hidden');
+        }
+
+        function expandSearch(e) {
+            if (sidebarCollapsed) {
+                const floater = document.getElementById('floatingSearch');
+                const btn = e ? e.currentTarget : document.querySelector('.sidebar-search-icon-btn');
+                if (btn && floater) {
+                    const rect = btn.getBoundingClientRect();
+                    floater.style.top = rect.top + 'px';
+                    floater.style.left = (rect.right + 12) + 'px';
+                    floater.classList.remove('hidden');
+                    setTimeout(() => { const floatInput = document.getElementById('floatingWikiSearch'); if (floatInput) floatInput.focus(); }, 50);
+                }
+                if (e) e.stopPropagation();
+            }
+        }
+
+        /* ============================================================ */
+        /* MODALS                                                       */
+        /* ============================================================ */
+        function openImpressumModal() { const m = document.getElementById('impressumModal'); if (m) m.style.display = 'flex'; }
+        function closeImpressumModal() { const m = document.getElementById('impressumModal'); if (m) m.style.display = 'none'; }
+
+        /* ============================================================ */
+        /* FULLSCREEN                                                   */
+        /* ============================================================ */
+        function toggleFullscreen() {
+            const icon = document.getElementById('fullscreenIcon');
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.error(err));
+                if (icon) icon.className = "fa-solid fa-compress";
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+                if (icon) icon.className = "fa-solid fa-expand";
+            }
+        }
+        document.addEventListener('fullscreenchange', () => {
+            const icon = document.getElementById('fullscreenIcon');
+            if (icon) icon.className = document.fullscreenElement ? "fa-solid fa-compress" : "fa-solid fa-expand";
+        });
+
+        /* ============================================================ */
+        /* DOWNLOAD                                                     */
+        /* ============================================================ */
+        function downloadHTML() {
+            removeHighlights(document.getElementById('main-content'));
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Datenschutz_Live_API.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        /* ============================================================ */
+        /* RELOAD                                                       */
+        /* ============================================================ */
+        function reloadAll() {
+            LoadModal.reset();
+            LoadModal.init();
+            setTimeout(() => { fetchAllLegalData(); }, 80);
+        }
+
+        /* ============================================================ */
+        /* INIT                                                         */
+        /* ============================================================ */
+        document.addEventListener('DOMContentLoaded', () => {
+            // Theme button
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (themeBtn) themeBtn.addEventListener('click', (e) => { e.preventDefault(); toggleTheme(); });
+
+            // Close modals on outside click
+            document.addEventListener('click', (e) => {
+                const impressumModal = document.getElementById('impressumModal');
+                if (impressumModal && impressumModal.style.display === 'flex' && e.target === impressumModal) closeImpressumModal();
+                const floatSearch = document.getElementById('floatingSearch');
+                const searchBtn = document.querySelector('.sidebar-search-icon-btn');
+                if (floatSearch && !floatSearch.classList.contains('hidden')) {
+                    if (!floatSearch.contains(e.target) && (!searchBtn || !searchBtn.contains(e.target))) floatSearch.classList.add('hidden');
+                }
+            });
+
+            // Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeImpressumModal();
+                    const floatSearch = document.getElementById('floatingSearch');
+                    if (floatSearch && !floatSearch.classList.contains('hidden')) floatSearch.classList.add('hidden');
+                }
+            });
+
+            applyLang();
+
+            // Intersection observer for TOC active state
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                        if (tocLink) tocLink.classList.add('active');
+                    }
+                });
+            }, { rootMargin: '-10% 0px -70% 0px', threshold: [0, 0.1, 1] });
+
+            // Observe after content is built
+            window.observeSections = () => {
+                document.querySelectorAll('section, h3[id]').forEach((section) => { observer.observe(section); });
+            };
+
+            // Start loading
+            LoadModal.init();
+            fetchAllLegalData().then(() => { if (window.observeSections) window.observeSections(); });
+        });
+    </script>
+</body>
+</html>
