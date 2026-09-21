@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Frequency Generator Cheatsheet (Sound / Audio)</title>
+    <title>What is Sound? (Frequency / dB / Waveforms)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -37,62 +37,44 @@
     </script>
 
     <style>
+        /* Fallback Palette - Values overwritten dynamically by JS Color API */
         :root {
-            /* Dark Mode Defaults */
             --bg-color: #181a1b;
             --panel-color: #202324;
             --sidebar-color: #202122;
             --border-color: #54595d;
-            --text-color: #ffffff;
+            --panel-border: #54595d;
+            --text-color: #eaecf0;
             --text-muted: #a8aeb3;
+            --heading-color: #ffffff;
+            --subtitle-color: #e6e9ed;
             --link-color: #99c1f1;
             --link-hover: #629deb;
-            --heading-color: #ffffff;
             --code-bg: #27292a;
             --info-box: #2c2d30;
-            --table-alt: rgba(255,255,255,0.02);
-            --search-match: rgba(250, 204, 21, 0.3);
+
+            --shadow-color: rgba(0, 0, 0, 0.45);
+            --shadow-color-strong: rgba(0, 0, 0, 0.7);
+            --table-alt: rgba(255, 255, 255, 0.02);
+            --search-match: rgba(250, 204, 21, 0.35);
             --search-text: #ffffff;
+
+            --card-shadow:
+                0 0 22px 0 var(--shadow-color),
+                0 0 10px 0 var(--shadow-color),
+                0 4px 24px 0 var(--shadow-color);
+            --card-shadow-hover:
+                0 0 40px 0 var(--shadow-color-strong),
+                0 0 18px 0 var(--shadow-color-strong),
+                0 8px 36px 0 var(--shadow-color-strong);
+
+            --tok-kw: #c678dd;
+            --tok-str: #98c379;
+            --tok-num: #d19a66;
+            --tok-com: #7f848e;
 
             --content-max: 1600px;
             --sidebar-w: 20rem;
-
-            --panel-border: #54595d;
-            --card-shadow:
-                0 0 22px 0 rgba(0, 0, 0, 0.55),
-                0 0 10px 0 rgba(0, 0, 0, 0.45),
-                0 4px 24px 0 rgba(0, 0, 0, 0.35);
-            --card-shadow-hover:
-                0 0 40px 0 rgba(0, 0, 0, 0.7),
-                0 0 18px 0 rgba(0, 0, 0, 0.55),
-                0 8px 36px 0 rgba(0, 0, 0, 0.45);
-        }
-
-        html.light {
-            --bg-color: #f4f6f9;
-            --panel-color: #ffffff;
-            --sidebar-color: #ffffff;
-            --border-color: #cbd5e1;
-            --text-color: #000000;
-            --text-muted: #1f2937;
-            --link-color: #2563eb;
-            --link-hover: #1d4ed8;
-            --heading-color: #000000;
-            --code-bg: #f1f5f9;
-            --info-box: #e0f2fe;
-            --table-alt: rgba(0,0,0,0.015);
-            --search-match: rgba(250, 204, 21, 0.5);
-            --search-text: #000000;
-
-            --panel-border: #e2e8f0;
-            --card-shadow:
-                0 0 28px 0 rgba(0, 0, 0, 0.18),
-                0 0 12px 0 rgba(0, 0, 0, 0.12),
-                0 4px 24px 0 rgba(0, 0, 0, 0.10);
-            --card-shadow-hover:
-                0 0 48px 0 rgba(0, 0, 0, 0.28),
-                0 0 22px 0 rgba(0, 0, 0, 0.20),
-                0 8px 36px 0 rgba(0, 0, 0, 0.16);
         }
 
         html { font-size: 16px; }
@@ -168,6 +150,7 @@
 
         .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
 
+        /* Panels & Layout */
         .app-sidebar { width: var(--sidebar-w); max-height: 50vh; }
         @media (min-width: 1024px) { .app-sidebar { max-height: 100vh; } }
 
@@ -206,6 +189,44 @@
         .subtopic-card > h3:first-child { margin-top: 0; }
 
         .panel-intro { margin-bottom: 1.5rem; color: var(--text-color); }
+
+        /* ---------- Sidebar control buttons ---------- */
+        .ctrl-btn {
+            flex: 1; padding: 0.375rem 0; border-radius: 0.5rem;
+            font-size: 0.875rem; font-weight: 600; color: var(--text-muted);
+            border: 1px solid transparent; transition: background-color .15s, color .15s;
+            cursor: pointer;
+        }
+        .ctrl-btn:hover { background: var(--code-bg); color: var(--link-color); }
+
+        /* ---------- Theme context menu ---------- */
+        #themeContextMenu {
+            display: none; position: absolute; left: 0; right: 0; top: calc(100% + 0.35rem);
+            max-height: 24rem; overflow-y: auto; background: var(--panel-color);
+            border: 1px solid var(--panel-border); border-radius: 0.75rem;
+            box-shadow: 0 12px 36px var(--shadow-color-strong), 0 4px 12px var(--shadow-color);
+            z-index: 200;
+        }
+        #themeContextMenu.open { display: block; }
+        .theme-menu-header {
+            padding: 0.5rem 0.75rem; font-size: 0.62rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color); background: var(--info-box);
+            position: sticky; top: 0; z-index: 1;
+        }
+        .theme-menu-item {
+            display: flex; align-items: center; gap: 0.55rem; width: 100%;
+            padding: 0.5rem 0.75rem; font-size: 0.8rem; color: var(--text-color);
+            text-align: left; border: none; background: transparent; cursor: pointer;
+            transition: background .12s, color .12s; border-left: 3px solid transparent;
+        }
+        .theme-menu-item:hover { background: var(--code-bg); color: var(--link-color); }
+        .theme-menu-item.active { font-weight: 700; color: var(--link-color); background: var(--info-box); border-left-color: var(--link-color); }
+        .theme-menu-item .scheme-swatches { display: inline-flex; gap: 2px; flex-shrink: 0; }
+        .theme-menu-item .scheme-swatches span { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--border-color); }
+        .theme-menu-item .scheme-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .theme-menu-item .scheme-check { font-size: 0.65rem; color: var(--link-color); opacity: 0; }
+        .theme-menu-item.active .scheme-check { opacity: 1; }
 
         [data-lang-de], [data-lang-en] { transition: opacity 0.15s ease-in-out; }
 
@@ -401,14 +422,6 @@
             border-radius: 3px; border: 1px solid rgba(128,128,128,.5);
             vertical-align: -0.15em; margin-right: 0.35em;
         }
-        .wave-icon {
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 0.4em;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 1.8;
-        }
 
         @media (max-width: 1024px) {
             .infobox { float: none; width: 100%; margin: 1em 0; }
@@ -423,28 +436,29 @@
     <aside class="app-sidebar flex-shrink-0 bg-[var(--sidebar-color)] border-b lg:border-b-0 lg:border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
 
         <!-- Controls -->
-        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
-            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm relative">
+            <button onclick="toggleLang()" class="ctrl-btn" title="Sprache wechseln / Toggle language">
                 <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
             </button>
             <div class="w-px h-4 bg-[var(--border-color)]"></div>
-            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
-                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            <button id="themeToggleBtn" class="ctrl-btn" title="Linksklick: Hell/Dunkel · Rechtsklick: alle Farbschemata">
+                <i id="themeToggleIcon" class="fa-solid fa-sun"></i>
             </button>
-            <div class="w-px h-4 bg-[var(--border-color)]"></div>
-            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Cheatsheet">
+            <div id="downloadDivider" class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button id="downloadBtn" onclick="downloadHTML()" class="ctrl-btn" style="color: var(--link-color);" title="Download Cheatsheet">
                 <i class="fa-solid fa-download"></i>
             </button>
+            <div id="themeContextMenu" role="menu" aria-label="Farbschemata"></div>
         </div>
 
         <!-- Branding -->
         <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
             <i class="fa-solid fa-wave-square text-3xl mb-3 text-[var(--text-color)] opacity-80"></i>
             <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
-                <span data-lang-de>Frequenz&shy;generator<br>Referenz</span>
-                <span data-lang-en style="display:none;">Frequency<br>Cheatsheet</span>
+                <span data-lang-de>Was ist Schall?</span>
+                <span data-lang-en style="display:none;">What is Sound?</span>
             </div>
-            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">Hz · dB · Wellenformen v1.0</div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">Hz · dB · Wellenformen v1.1</div>
         </div>
 
         <!-- Search -->
@@ -463,9 +477,6 @@
             </div>
 
             <ul class="space-y-1">
-                <li><a href="#generator" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
-                    <span data-lang-de>0. Interaktiver Generator</span><span data-lang-en style="display:none;">0. Interactive Generator</span></a></li>
-
                 <li class="pt-2"><a href="#grundlagen" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
                     <span data-lang-de>1. Grundlagen des Schalls</span><span data-lang-en style="display:none;">1. Sound Basics</span></a>
                     <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
@@ -512,6 +523,9 @@
                         <li><a href="#anwendungen" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>6.2 Anwendungen</span><span data-lang-en style="display:none;">6.2 Applications</span></a></li>
                     </ul>
                 </li>
+
+                <li class="pt-2"><a href="#generator" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span data-lang-de>7. Interaktiver Generator</span><span data-lang-en style="display:none;">7. Interactive Generator</span></a></li>
             </ul>
         </nav>
     </aside>
@@ -526,8 +540,8 @@
         <!-- ========================================== -->
         <div class="searchable-block topic-panel mt-0 mb-8">
             <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0">
-                <span data-lang-de>Frequenz &amp; Klang</span>
-                <span data-lang-en style="display:none;">Frequency &amp; Sound</span>
+                <span data-lang-de>Was ist Schall?</span>
+                <span data-lang-en style="display:none;">What is Sound?</span>
             </h1>
             <p class="text-lg mb-3" data-lang-de>
                 Ein <strong>Frequenzgenerator</strong> erzeugt Schwingungen mit definierter Frequenz und Wellenform. Er ist das akustische Gegenstück zum Farbwähler: Statt Lichtwellen werden <strong>Druckwellen</strong> in der Luft beschrieben — über <strong>Frequenz</strong> (Hz), <strong>Amplitude</strong> (dB) und <strong>Wellenform</strong>.
@@ -538,97 +552,9 @@
         </div>
 
         <!-- ========================================== -->
-        <!-- 0. Interactive Generator                    -->
-        <!-- ========================================== -->
-        <section id="generator" class="scroll-mt-10 searchable-block topic-panel mt-8">
-            <h2>
-                <span data-lang-de>0. Interaktiver Frequenzgenerator</span>
-                <span data-lang-en style="display:none;">0. Interactive Frequency Generator</span>
-            </h2>
-
-            <p class="panel-intro" data-lang-de>
-                Wähle eine Wellenform, stelle Frequenz und Lautstärke ein und drücke <strong>Play</strong>. Die Visualisierung zeigt oben die Wellenform (Zeitbereich) und unten das Frequenzspektrum (logarithmische Achse von 20 Hz bis 20 kHz).
-            </p>
-            <p class="panel-intro" data-lang-en style="display:none;">
-                Pick a waveform, set frequency and volume, then press <strong>Play</strong>. The visualization shows the waveform (time domain) on top and the frequency spectrum (log axis from 20 Hz to 20 kHz) below.
-            </p>
-
-            <div class="subtopic-card">
-                <div class="gen-grid">
-                    <!-- Left: visualization -->
-                    <div>
-                        <div class="viz-wrap">
-                            <canvas id="viz"></canvas>
-                        </div>
-                        <div class="audio-note">
-                            <span data-lang-de><i class="fa-solid fa-volume-high mr-1"></i> Bitte Lautstärke langsam erhöhen — hohe Töne können unangenehm laut sein.</span>
-                            <span data-lang-en style="display:none;"><i class="fa-solid fa-volume-high mr-1"></i> Increase volume slowly — high tones can be uncomfortably loud.</span>
-                        </div>
-                    </div>
-
-                    <!-- Right: controls -->
-                    <div class="gen-side">
-                        <button id="playBtn" class="play-btn">
-                            <i class="fa-solid fa-play"></i>
-                            <span data-lang-de>Abspielen</span><span data-lang-en style="display:none;">Play</span>
-                        </button>
-
-                        <div class="readout">
-                            <div class="freq-big" id="freqBig">440 <small>Hz</small></div>
-                            <div class="note-name" id="noteName">A4</div>
-                            <div class="freq-sub" id="freqSub">λ 78 cm · T 2,27 ms</div>
-                        </div>
-
-                        <div>
-                            <div class="wave-group-label">
-                                <span data-lang-de>Töne</span><span data-lang-en style="display:none;">Tones</span>
-                            </div>
-                            <div class="wave-grid" id="toneGrid"></div>
-
-                            <div class="wave-group-label">
-                                <span data-lang-de>Rauschen</span><span data-lang-en style="display:none;">Noise</span>
-                            </div>
-                            <div class="wave-grid" id="noiseGrid"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sliders -->
-                <div class="sliders">
-                    <div class="slider-row">
-                        <label for="freqSlider">
-                            <span data-lang-de>Frequenz</span><span data-lang-en style="display:none;">Frequency</span>
-                        </label>
-                        <input type="range" id="freqSlider" min="0" max="1000" value="447" step="1">
-                        <input type="number" id="freqInput" class="num-input" min="20" max="20000" step="1" value="440">
-                    </div>
-
-                    <div class="slider-row">
-                        <label for="volSlider">
-                            <span data-lang-de>Lautstärke</span><span data-lang-en style="display:none;">Volume</span>
-                        </label>
-                        <input type="range" id="volSlider" min="0" max="100" value="30" step="1">
-                        <div class="num-input" id="volReadout" style="text-align:center">30 %</div>
-                    </div>
-
-                    <div class="presets">
-                        <span class="preset-btn" data-freq="20">20 Hz</span>
-                        <span class="preset-btn" data-freq="100">100 Hz</span>
-                        <span class="preset-btn" data-freq="440">440 Hz (A4)</span>
-                        <span class="preset-btn" data-freq="1000">1 kHz</span>
-                        <span class="preset-btn" data-freq="4000">4 kHz</span>
-                        <span class="preset-btn" data-freq="10000">10 kHz</span>
-                        <span class="preset-btn" data-freq="15000">15 kHz</span>
-                        <span class="preset-btn" data-freq="20000">20 kHz</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ========================================== -->
         <!-- 1. Grundlagen des Schalls                   -->
         <!-- ========================================== -->
-        <section id="grundlagen" class="scroll-mt-10 searchable-block topic-panel mt-12">
+        <section id="grundlagen" class="scroll-mt-10 searchable-block topic-panel mt-8">
             <h2>
                 <span data-lang-de>1. Grundlagen des Schalls</span>
                 <span data-lang-en style="display:none;">1. Sound Basics</span>
@@ -952,7 +878,7 @@
         <!-- ========================================== -->
         <!-- 6. Technik & Anwendung                      -->
         <!-- ========================================== -->
-        <section id="technik" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
+        <section id="technik" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-8">
             <h2>
                 <span data-lang-de>6. Technik &amp; Anwendung</span>
                 <span data-lang-en style="display:none;">6. Tech &amp; Application</span>
@@ -1018,11 +944,370 @@
             </div>
         </section>
 
+        <!-- ========================================== -->
+        <!-- 7. Interactive Generator                    -->
+        <!-- ========================================== -->
+        <section id="generator" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
+            <h2>
+                <span data-lang-de>7. Interaktiver Frequenzgenerator</span>
+                <span data-lang-en style="display:none;">7. Interactive Frequency Generator</span>
+            </h2>
+
+            <p class="panel-intro" data-lang-de>
+                Wähle eine Wellenform, stelle Frequenz und Lautstärke ein und drücke <strong>Play</strong>. Die Visualisierung zeigt oben die Wellenform (Zeitbereich) und unten das Frequenzspektrum (logarithmische Achse von 20 Hz bis 20 kHz).
+            </p>
+            <p class="panel-intro" data-lang-en style="display:none;">
+                Pick a waveform, set frequency and volume, then press <strong>Play</strong>. The visualization shows the waveform (time domain) on top and the frequency spectrum (log axis from 20 Hz to 20 kHz) below.
+            </p>
+
+            <div class="subtopic-card">
+                <div class="gen-grid">
+                    <!-- Left: visualization -->
+                    <div>
+                        <div class="viz-wrap">
+                            <canvas id="viz"></canvas>
+                        </div>
+                        <div class="audio-note">
+                            <span data-lang-de><i class="fa-solid fa-volume-high mr-1"></i> Bitte Lautstärke langsam erhöhen — hohe Töne können unangenehm laut sein.</span>
+                            <span data-lang-en style="display:none;"><i class="fa-solid fa-volume-high mr-1"></i> Increase volume slowly — high tones can be uncomfortably loud.</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: controls -->
+                    <div class="gen-side">
+                        <button id="playBtn" class="play-btn">
+                            <i class="fa-solid fa-play"></i>
+                            <span data-lang-de>Abspielen</span><span data-lang-en style="display:none;">Play</span>
+                        </button>
+
+                        <div class="readout">
+                            <div class="freq-big" id="freqBig">440 <small>Hz</small></div>
+                            <div class="note-name" id="noteName">A4</div>
+                            <div class="freq-sub" id="freqSub">λ 78 cm · T 2,27 ms</div>
+                        </div>
+
+                        <div>
+                            <div class="wave-group-label">
+                                <span data-lang-de>Töne</span><span data-lang-en style="display:none;">Tones</span>
+                            </div>
+                            <div class="wave-grid" id="toneGrid"></div>
+
+                            <div class="wave-group-label">
+                                <span data-lang-de>Rauschen</span><span data-lang-en style="display:none;">Noise</span>
+                            </div>
+                            <div class="wave-grid" id="noiseGrid"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sliders -->
+                <div class="sliders">
+                    <div class="slider-row">
+                        <label for="freqSlider">
+                            <span data-lang-de>Frequenz</span><span data-lang-en style="display:none;">Frequency</span>
+                        </label>
+                        <input type="range" id="freqSlider" min="0" max="1000" value="447" step="1">
+                        <input type="number" id="freqInput" class="num-input" min="20" max="20000" step="1" value="440">
+                    </div>
+
+                    <div class="slider-row">
+                        <label for="volSlider">
+                            <span data-lang-de>Lautstärke</span><span data-lang-en style="display:none;">Volume</span>
+                        </label>
+                        <input type="range" id="volSlider" min="0" max="100" value="30" step="1">
+                        <div class="num-input" id="volReadout" style="text-align:center">30 %</div>
+                    </div>
+
+                    <div class="presets">
+                        <span class="preset-btn" data-freq="20">20 Hz</span>
+                        <span class="preset-btn" data-freq="100">100 Hz</span>
+                        <span class="preset-btn" data-freq="440">440 Hz (A4)</span>
+                        <span class="preset-btn" data-freq="1000">1 kHz</span>
+                        <span class="preset-btn" data-freq="4000">4 kHz</span>
+                        <span class="preset-btn" data-freq="10000">10 kHz</span>
+                        <span class="preset-btn" data-freq="15000">15 kHz</span>
+                        <span class="preset-btn" data-freq="20000">20 kHz</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <script>
     /* ====================================================== */
-    /* PART 1 — Frequency Generator logic                      */
+    /* PART 1 — Color System & UI logic                       */
+    /* ====================================================== */
+
+    const FALLBACK_COLOR_CONFIG = {
+        version: '1.0',
+        defaultScheme: 'dark',
+        storageKey: 'whatIsSound.scheme',
+        base: {
+            'shadow-color': 'rgba(0, 0, 0, 0.45)',
+            'shadow-color-strong': 'rgba(0, 0, 0, 0.7)',
+            'card-shadow': '0 0 22px 0 var(--shadow-color), 0 0 10px 0 var(--shadow-color), 0 4px 24px 0 var(--shadow-color)',
+            'card-shadow-hover': '0 0 40px 0 var(--shadow-color-strong), 0 0 18px 0 var(--shadow-color-strong), 0 8px 36px 0 var(--shadow-color-strong)',
+            'table-alt': 'rgba(255, 255, 255, 0.02)',
+            'search-match': 'rgba(250, 204, 21, 0.35)',
+            'search-text': '#ffffff'
+        },
+        schemes: [
+            {
+                id: 'dark', name: { de: 'Dunkel (Standard)', en: 'Dark (default)' }, dark: true,
+                colors: {
+                    'bg-color': '#181a1b', 'panel-color': '#202324', 'sidebar-color': '#202122',
+                    'border-color': '#54595d', 'panel-border': '#54595d',
+                    'text-color': '#eaecf0', 'text-muted': '#a8aeb3',
+                    'heading-color': '#ffffff', 'subtitle-color': '#e6e9ed',
+                    'link-color': '#99c1f1', 'link-hover': '#629deb',
+                    'code-bg': '#27292a', 'info-box': '#2c2d30',
+                    'tok-kw': '#c678dd', 'tok-str': '#98c379', 'tok-num': '#d19a66', 'tok-com': '#7f848e',
+                    'accent-blue': '#3b82f6', 'accent-green': '#10b981', 'accent-amber': '#f59e0b',
+                    'accent-violet': '#8b5cf6', 'accent-teal': '#14b8a6', 'accent-red': '#ef4444', 'accent-gray': '#6b7280'
+                }
+            },
+            {
+                id: 'light', name: { de: 'Hell', en: 'Light' }, dark: false,
+                colors: {
+                    'bg-color': '#f4f6f9', 'panel-color': '#ffffff', 'sidebar-color': '#ffffff',
+                    'border-color': '#cbd5e1', 'panel-border': '#e2e8f0',
+                    'text-color': '#000000', 'text-muted': '#4b5563',
+                    'heading-color': '#000000', 'subtitle-color': '#111827',
+                    'link-color': '#2563eb', 'link-hover': '#1d4ed8',
+                    'code-bg': '#f1f5f9', 'info-box': '#e0f2fe',
+                    'shadow-color': 'rgba(0, 0, 0, 0.16)', 'shadow-color-strong': 'rgba(0, 0, 0, 0.28)',
+                    'table-alt': 'rgba(0, 0, 0, 0.015)',
+                    'search-match': 'rgba(250, 204, 21, 0.5)', 'search-text': '#000000',
+                    'tok-kw': '#a626a4', 'tok-str': '#3f8f3d', 'tok-num': '#986801', 'tok-com': '#9aa0a6',
+                    'accent-blue': '#2563eb', 'accent-green': '#059669', 'accent-amber': '#d97706',
+                    'accent-violet': '#7c3aed', 'accent-teal': '#0d9488', 'accent-red': '#dc2626', 'accent-gray': '#6b7280'
+                }
+            }
+        ]
+    };
+
+    const COLORS_JSON_PATH = 'settings/colors.json';
+
+    let colorConfig = FALLBACK_COLOR_CONFIG;
+    let activeSchemeId = null;
+    let lastDarkSchemeId = 'dark';
+    let lastLightSchemeId = 'light';
+
+    function getSchemeById(id) {
+        return (colorConfig.schemes || []).find(s => s.id === id) || null;
+    }
+
+    function resolveSchemeColors(scheme) {
+        return Object.assign({}, colorConfig.base || {}, scheme.colors || {});
+    }
+
+    async function initColorSchemes() {
+        try {
+            const res = await fetch(COLORS_JSON_PATH, { cache: 'no-cache' });
+            if (res.ok) {
+                const data = await res.json();
+                if (data && Array.isArray(data.schemes)) {
+                    colorConfig = data;
+                }
+            }
+        } catch (err) {
+            console.info('[colors] Using built-in palette due to fetch error on ' + COLORS_JSON_PATH);
+        }
+
+        const stored = readStoredScheme();
+        const preferred = colorConfig.defaultScheme || colorConfig.schemes[0].id;
+        const initial = (stored && getSchemeById(stored)) ? stored
+                        : (getSchemeById(preferred) ? preferred : colorConfig.schemes[0].id);
+
+        const initScheme = getSchemeById(initial);
+        if (initScheme) {
+            if (initScheme.dark) lastDarkSchemeId = initScheme.id;
+            else                 lastLightSchemeId = initScheme.id;
+        }
+
+        applyColorScheme(initial);
+    }
+
+    function applyColorScheme(id) {
+        const scheme = getSchemeById(id) || colorConfig.schemes[0];
+        if (!scheme) return;
+
+        const root = document.documentElement;
+        const colors = resolveSchemeColors(scheme);
+
+        Object.keys(colors).forEach(key => {
+            if (colors[key] === null || colors[key] === undefined) return;
+            root.style.setProperty('--' + key, String(colors[key]));
+        });
+
+        root.style.colorScheme = scheme.dark ? 'dark' : 'light';
+        root.classList.toggle('light', !scheme.dark);
+        root.classList.toggle('theme-dark', !!scheme.dark);
+        root.setAttribute('data-color-scheme', scheme.id);
+
+        if (scheme.dark) lastDarkSchemeId = scheme.id;
+        else             lastLightSchemeId = scheme.id;
+
+        activeSchemeId = scheme.id;
+        storeScheme(scheme.id);
+
+        const icon = document.getElementById('themeToggleIcon');
+        if (icon) icon.className = scheme.dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+
+        /* Critical: update audio visualization colors after theme switch */
+        refreshThemeCols();
+    }
+
+    function toggleDarkLight() {
+        hideThemeMenu();
+        const current = getSchemeById(activeSchemeId);
+        if (!current) return;
+        if (current.dark) {
+            const target = getSchemeById(lastLightSchemeId) ? lastLightSchemeId
+                            : (colorConfig.schemes.find(s => !s.dark) || {}).id;
+            if (target) applyColorScheme(target);
+        } else {
+            const target = getSchemeById(lastDarkSchemeId) ? lastDarkSchemeId
+                            : (colorConfig.schemes.find(s => s.dark) || {}).id;
+            if (target) applyColorScheme(target);
+        }
+    }
+
+    function buildThemeMenuItems() {
+        const menu = document.getElementById('themeContextMenu');
+        if (!menu) return;
+        menu.innerHTML = '';
+
+        const header = document.createElement('div');
+        header.className = 'theme-menu-header';
+        header.textContent = isGerman
+            ? 'Farbschema wählen (' + colorConfig.schemes.length + ')'
+            : 'Choose colour scheme (' + colorConfig.schemes.length + ')';
+        menu.appendChild(header);
+
+        const schemes = colorConfig.schemes || [];
+        const langTag = isGerman ? 'de' : 'en';
+        const PREVIEW_KEYS = ['bg-color', 'panel-color', 'code-bg', 'link-color', 'accent-green', 'accent-amber'];
+
+        schemes.forEach(s => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'theme-menu-item' + (s.id === activeSchemeId ? ' active' : '');
+
+            const swWrap = document.createElement('span');
+            swWrap.className = 'scheme-swatches';
+            const colors = resolveSchemeColors(s);
+            PREVIEW_KEYS.forEach(k => {
+                const dot = document.createElement('span');
+                dot.style.background = colors[k] || 'transparent';
+                swWrap.appendChild(dot);
+            });
+            btn.appendChild(swWrap);
+
+            const nameEl = document.createElement('span');
+            nameEl.className = 'scheme-name';
+            const name = s.name || {};
+            nameEl.textContent = (typeof name === 'string' ? name : (name[langTag] || name.de || name.en || s.id));
+            btn.appendChild(nameEl);
+
+            const check = document.createElement('i');
+            check.className = 'fa-solid fa-check scheme-check';
+            btn.appendChild(check);
+
+            btn.addEventListener('click', () => {
+                applyColorScheme(s.id);
+                hideThemeMenu();
+            });
+
+            menu.appendChild(btn);
+        });
+    }
+
+    function showThemeMenu(e) {
+        if (e) e.preventDefault();
+        const menu = document.getElementById('themeContextMenu');
+        if (!menu) return;
+        buildThemeMenuItems();
+        menu.classList.add('open');
+    }
+
+    function hideThemeMenu() {
+        const menu = document.getElementById('themeContextMenu');
+        if (menu) menu.classList.remove('open');
+    }
+
+    function updateDownloadVisibility() {
+        const isLocal = (location.protocol === 'file:');
+        const btn = document.getElementById('downloadBtn');
+        const divider = document.getElementById('downloadDivider');
+        if (btn)     btn.style.display = isLocal ? 'none' : '';
+        if (divider) divider.style.display = isLocal ? 'none' : '';
+    }
+
+    function storageKey() {
+        return (colorConfig && colorConfig.storageKey) || 'whatIsSound.scheme';
+    }
+    function storeScheme(id) {
+        try { localStorage.setItem(storageKey(), id); } catch (_) {}
+    }
+    function readStoredScheme() {
+        try { return localStorage.getItem(storageKey()); } catch (_) { return null; }
+    }
+
+    let isGerman = true;
+
+    function applyLangVisibility() {
+        document.querySelectorAll('[data-lang-de]').forEach(el => {
+            el.style.display = isGerman ? '' : 'none';
+        });
+        document.querySelectorAll('[data-lang-en]').forEach(el => {
+            el.style.display = isGerman ? 'none' : '';
+        });
+        const ind = document.getElementById('lang-indicator');
+        if (ind) ind.textContent = isGerman ? 'DE' : 'EN';
+        document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+
+        const menu = document.getElementById('themeContextMenu');
+        if (menu && menu.classList.contains('open')) {
+            buildThemeMenuItems();
+        }
+    }
+
+    function toggleLang() {
+        isGerman = !isGerman;
+        applyLangVisibility();
+        updateReadout();
+        updatePlayBtn();
+    }
+
+    function downloadHTML() {
+        removeHighlights(document.getElementById('main-content'));
+
+        // Persist current input values to keep sliders / wave selection
+        document.querySelectorAll('input').forEach(inp => {
+            if (inp.type === 'checkbox' || inp.type === 'radio') {
+                if (inp.checked) inp.setAttribute('checked', 'checked');
+                else inp.removeAttribute('checked');
+            } else {
+                inp.setAttribute('value', inp.value);
+            }
+        });
+
+        const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+        const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'What_is_Sound.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    /* ====================================================== */
+    /* PART 2 — Frequency Generator logic                      */
     /* ====================================================== */
 
     const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
@@ -1537,82 +1822,7 @@
         if (state.playing) startSound();
     }
 
-    /* ---------- language visibility helper ---------- */
-    function applyLangVisibility() {
-        const deEls = document.querySelectorAll('[data-lang-de]');
-        const enEls = document.querySelectorAll('[data-lang-en]');
-        if (isGerman) {
-            deEls.forEach(el => el.style.display = '');
-            enEls.forEach(el => el.style.display = 'none');
-        } else {
-            deEls.forEach(el => el.style.display = 'none');
-            enEls.forEach(el => el.style.display = '');
-        }
-    }
-
-    /* ---------- event listeners ---------- */
-    playBtn.addEventListener('click', togglePlay);
-
-    freqSlider.addEventListener('input', () => {
-        setFreq(sliderToFreq(parseFloat(freqSlider.value)));
-    });
-
-    freqInput.addEventListener('change', () => {
-        const v = parseFloat(freqInput.value);
-        if (isNaN(v)) { updateReadout(); freqInput.value = Math.round(state.freq); return; }
-        setFreq(v, true);
-    });
-    freqInput.addEventListener('keydown', e => {
-        if (e.key === 'Enter') { e.preventDefault(); freqInput.blur(); }
-    });
-
-    volSlider.addEventListener('input', () => {
-        state.vol = parseFloat(volSlider.value);
-        volReadout.textContent = state.vol + ' %';
-        if (state.playing && gainNode && audioCtx) {
-            const t = audioCtx.currentTime;
-            gainNode.gain.cancelScheduledValues(t);
-            gainNode.gain.setValueAtTime(gainNode.gain.value, t);
-            gainNode.gain.linearRampToValueAtTime(gainFromSlider(state.vol), t + 0.05);
-        }
-    });
-
-    document.querySelectorAll('.preset-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            setFreq(parseFloat(btn.dataset.freq));
-        });
-    });
-
-    window.addEventListener('resize', () => {
-        resizeViz();
-    });
-
-    /* ====================================================== */
-    /* PART 2 — Cheatsheet shell logic                         */
-    /* ====================================================== */
-
-    /* TOC scroll spy */
-    document.addEventListener('DOMContentLoaded', () => {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                const id = entry.target.getAttribute('id');
-                const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
-                if (entry.isIntersecting) {
-                    document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
-                    if (tocLink) tocLink.classList.add('active');
-                }
-            });
-        }, {
-            rootMargin: '-10% 0px -80% 0px',
-            threshold: [0, 0.1, 1]
-        });
-
-        document.querySelectorAll('section, h3[id]').forEach((section) => {
-            observer.observe(section);
-        });
-    });
-
-    /* Search */
+    /* ---------- Search ---------- */
     function filterWiki() {
         const input = document.getElementById('wikiSearch');
         const filter = input.value.toLowerCase();
@@ -1684,64 +1894,111 @@
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
-    /* Theme */
-    function toggleTheme() {
-        const html = document.documentElement;
-        const icon = document.getElementById('theme-icon');
-        if (html.classList.contains('light')) {
-            html.classList.remove('light');
-            icon.className = 'fa-solid fa-sun';
-        } else {
-            html.classList.add('light');
-            icon.className = 'fa-solid fa-moon';
-        }
-        refreshThemeCols();
-    }
+    /* ---------- Event listeners for Generator ---------- */
+    playBtn.addEventListener('click', togglePlay);
 
-    /* Language */
-    let isGerman = true;
-    function toggleLang() {
-        isGerman = !isGerman;
-        document.getElementById('lang-indicator').textContent = isGerman ? 'DE' : 'EN';
-        document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+    freqSlider.addEventListener('input', () => {
+        setFreq(sliderToFreq(parseFloat(freqSlider.value)));
+    });
+
+    freqInput.addEventListener('change', () => {
+        const v = parseFloat(freqInput.value);
+        if (isNaN(v)) { updateReadout(); freqInput.value = Math.round(state.freq); return; }
+        setFreq(v, true);
+    });
+    freqInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); freqInput.blur(); }
+    });
+
+    volSlider.addEventListener('input', () => {
+        state.vol = parseFloat(volSlider.value);
+        volReadout.textContent = state.vol + ' %';
+        if (state.playing && gainNode && audioCtx) {
+            const t = audioCtx.currentTime;
+            gainNode.gain.cancelScheduledValues(t);
+            gainNode.gain.setValueAtTime(gainNode.gain.value, t);
+            gainNode.gain.linearRampToValueAtTime(gainFromSlider(state.vol), t + 0.05);
+        }
+    });
+
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            setFreq(parseFloat(btn.dataset.freq));
+        });
+    });
+
+    window.addEventListener('resize', () => {
+        resizeViz();
+    });
+
+    /* ====================================================== */
+    /* PART 3 — Bootstrapping                                 */
+    /* ====================================================== */
+    document.addEventListener('DOMContentLoaded', () => {
+        initColorSchemes();
         applyLangVisibility();
+        updateDownloadVisibility();
+
+        // TOC Observer
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const id = entry.target.getAttribute('id');
+                const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+                if (entry.isIntersecting) {
+                    document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                    if (tocLink) tocLink.classList.add('active');
+                }
+            });
+        }, {
+            rootMargin: '-10% 0px -80% 0px',
+            threshold: [0, 0.1, 1]
+        });
+
+        document.querySelectorAll('section, h3[id]').forEach((section) => {
+            observer.observe(section);
+        });
+
+        // Theme Button Context Menu
+        const themeBtn = document.getElementById('themeToggleBtn');
+        if (themeBtn) {
+            themeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleDarkLight();
+            });
+            themeBtn.addEventListener('contextmenu', (e) => {
+                showThemeMenu(e);
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('themeContextMenu');
+            if (!menu || !menu.classList.contains('open')) return;
+            const btn = document.getElementById('themeToggleBtn');
+            if (menu.contains(e.target)) return;
+            if (btn && btn.contains(e.target)) return;
+            hideThemeMenu();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') hideThemeMenu();
+        });
+
+        // Generator init
+        buildWaveButtons();
+        resizeViz();
         updateReadout();
         updatePlayBtn();
-    }
+        updateFreqControlsEnabled();
+        setFreq(440, false);
+        loop();
 
-    /* Download */
-    function downloadHTML() {
-        removeHighlights(document.getElementById('main-content'));
-        const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-        const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'FrequencyGenerator_Cheatsheet.html';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
-
-    /* ====================================================== */
-    /* INIT                                                    */
-    /* ====================================================== */
-    refreshThemeCols();
-    buildWaveButtons();
-    resizeViz();
-    updateReadout();
-    updatePlayBtn();
-    updateFreqControlsEnabled();
-    setFreq(440, false);
-    loop();
-
-    /* re-resize once fonts are loaded / layout settles */
-    window.addEventListener('load', () => {
-        resizeViz();
-        refreshThemeCols();
+        /* re-resize once fonts are loaded / layout settles */
+        window.addEventListener('load', () => {
+            resizeViz();
+            refreshThemeCols();
+        });
+        setTimeout(() => { resizeViz(); refreshThemeCols(); }, 300);
     });
-    setTimeout(() => { resizeViz(); refreshThemeCols(); }, 300);
     </script>
 </body>
 </html>

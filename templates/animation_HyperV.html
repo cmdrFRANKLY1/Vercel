@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wie Hyper-V aufgebaut ist</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg-color: #121212;
+        --panel-color: #1e1e1e;
+        --border-color: #333333;
+        --text-color: #e0e0e0;
+        --text-muted: #b0b0b0;
+        --link-color: #b0b0b0;
+        --heading-color: #ffffff;
+        --code-bg: #2a2a2a;
+        --shadow-color: rgba(0,0,0,.45);
+        --card-shadow: 0 0 22px 0 var(--shadow-color), 0 0 10px 0 var(--shadow-color), 0 4px 24px 0 var(--shadow-color);
+    }
+    * { box-sizing: border-box; }
+    html { font-size: 17px; }
+    body {
+        margin: 0; background: var(--bg-color); color: var(--text-color);
+        font-family: 'Inter', sans-serif; overflow: hidden;
+        display: flex; justify-content: center; align-items: center; min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    .viz-shell {
+        position: relative;
+        width: 100%; max-width: 1600px; height: 90vh; min-height: 520px;
+        margin: 1.25rem;
+        background: var(--panel-color);
+        border: 1px solid var(--border-color);
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+    }
+
+    .canvas-wrap {
+        position: absolute; inset: 0;
+        background: var(--bg-color);
+    }
+    canvas { display: block; width: 100%; height: 100%; }
+
+    .title-tag {
+        position: absolute;
+        top: 1.1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: .55rem 1.1rem .6rem 1.1rem;
+        background: rgba(20,20,20,0.78);
+        border: 1px solid var(--border-color);
+        border-radius: .7rem;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 25;
+        pointer-events: none;
+        text-align: center;
+        box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+        white-space: nowrap;
+    }
+    .title-tag .t1 {
+        display: block;
+        font-size: .88rem; font-weight: 800; color: var(--heading-color);
+        letter-spacing: .01em; line-height: 1.2;
+    }
+    .title-tag .t2 {
+        display: block;
+        font-size: .58rem; font-weight: 600; letter-spacing: .18em;
+        text-transform: uppercase; color: var(--text-muted); margin-top: .25rem;
+    }
+
+    .loading-bar-container {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        height: 5px; background: rgba(255,255,255,0.08); z-index: 40;
+        overflow: hidden;
+    }
+    .loading-bar-fill {
+        height: 100%; width: 0%; background: var(--link-color);
+        transition: width 0.1s linear;
+    }
+
+    @media (max-width: 600px) {
+        .title-tag { top: .7rem; padding: .45rem .8rem .5rem .8rem; }
+        .title-tag .t1 { font-size: .72rem; }
+        .title-tag .t2 { font-size: .50rem; }
+    }
+</style>
+</head>
+<body>
+
+<section class="viz-shell">
+    <div class="canvas-wrap" id="netCanvas-wrapper">
+        <canvas id="netCanvas"></canvas>
+
+        <div class="title-tag">
+            <span class="t1">Wie Hyper-V aufgebaut ist</span>
+            <span class="t2">In 7 Schichten – von unten nach oben</span>
+        </div>
+    </div>
+    <div class="loading-bar-container">
+        <div class="loading-bar-fill" id="loadingBarFill"></div>
+    </div>
+</section>
+
+<script>
+/* ================================================================
+   DIE 7 SCHICHTEN VON HYPER-V
+   (unten = Hardware, oben = Anwendungen in den VMs)
+   ================================================================ */
+const STEPS = [
+    { title: 'Hardware',        sub: 'CPU mit VT-x, RAM, Netzwerk',   color: '#e0685a', icon: 'chip' },
+    { title: 'Hypervisor',      sub: 'Teilt die Hardware auf',        color: '#f0a35e', icon: 'hypervisor' },
+    { title: 'Root-Partition',  sub: 'Das Host-Windows',              color: '#e0c078', icon: 'house' },
+    { title: 'VMBus',           sub: 'Datenkanal zu den VMs',         color: '#5fd39a', icon: 'bus' },
+    { title: 'VSPs & VSCs',     sub: 'Dienste für die VMs',           color: '#5b8def', icon: 'vsp' },
+    { title: 'Child-Partitionen', sub: 'Die virtuellen Maschinen',    color: '#c58af9', icon: 'vms' },
+    { title: 'Anwendungen',     sub: 'Programme in den VMs',          color: '#f08ab0', icon: 'apps' },
+];
+
+/* ================================================================
+   ZEITPLAN
+   ================================================================ */
+const CYCLE         = 13.5;
+const APPEAR_START  = 0.3;
+const APPEAR_STEP   = 0.60;
+const APPEAR_DUR    = 0.50;
+const FADE_START    = 10.5;
+const FADE_END      = 12.0;
+
+/* ================================================================
+   HILFSFUNKTIONEN
+   ================================================================ */
+function hexA(hex, a) {
+    const h = hex.replace('#', '');
+    const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
+function easeOutCubic(t) {
+    return 1 - Math.pow(1 - t, 3);
+}
+function roundRect(c, x, y, w, h, r) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+}
+
+/* ================================================================
+   IKONEN
+   ================================================================ */
+
+/* --- Hardware: CPU-Chip mit Pins --- */
+function drawChip(ctx, x, y, r) {
+    const s = r * 0.76;
+    ctx.strokeRect(x - s, y - s, s * 2, s * 2);
+    const pins = 3;
+    for (let i = 0; i < pins; i++) {
+        const off = -s + (i + 0.5) * (s * 2 / pins);
+        ctx.beginPath(); ctx.moveTo(x + off, y - s); ctx.lineTo(x + off, y - s - r * 0.16); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x + off, y + s); ctx.lineTo(x + off, y + s + r * 0.16); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x - s, y + off); ctx.lineTo(x - s - r * 0.16, y + off); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x + s, y + off); ctx.lineTo(x + s + r * 0.16, y + off); ctx.stroke();
+    }
+    ctx.strokeRect(x - s * 0.40, y - s * 0.40, s * 0.80, s * 0.80);
+}
+
+/* --- Hypervisor: dünne Schicht mit Pfeilen (teilt auf) --- */
+function drawHypervisor(ctx, x, y, r) {
+    const s = r * 0.82;
+    /* die dünne Hypervisor-Schicht */
+    ctx.fillRect(x - s, y - r * 0.10, s * 2, r * 0.20);
+    /* Pfeil nach oben (links) */
+    ctx.beginPath();
+    ctx.moveTo(x - s * 0.50, y - r * 0.32);
+    ctx.lineTo(x - s * 0.50, y - r * 0.78);
+    ctx.moveTo(x - s * 0.68, y - r * 0.58);
+    ctx.lineTo(x - s * 0.50, y - r * 0.78);
+    ctx.lineTo(x - s * 0.32, y - r * 0.58);
+    ctx.stroke();
+    /* Pfeil nach unten (rechts) */
+    ctx.beginPath();
+    ctx.moveTo(x + s * 0.50, y + r * 0.32);
+    ctx.lineTo(x + s * 0.50, y + r * 0.78);
+    ctx.moveTo(x + s * 0.32, y + r * 0.58);
+    ctx.lineTo(x + s * 0.50, y + r * 0.78);
+    ctx.lineTo(x + s * 0.68, y + r * 0.58);
+    ctx.stroke();
+}
+
+/* --- Root-Partition: Haus (Host) --- */
+function drawHouse(ctx, x, y, r) {
+    const s = r * 0.70;
+    /* Dach */
+    ctx.beginPath();
+    ctx.moveTo(x - s, y - s * 0.05);
+    ctx.lineTo(x, y - s * 0.95);
+    ctx.lineTo(x + s, y - s * 0.05);
+    ctx.stroke();
+    /* Körper */
+    ctx.strokeRect(x - s * 0.70, y - s * 0.05, s * 1.40, s * 0.95);
+    /* Tür */
+    ctx.strokeRect(x - s * 0.18, y + s * 0.35, s * 0.36, s * 0.55);
+    /* Fenster */
+    ctx.fillRect(x + s * 0.20, y + s * 0.15, s * 0.24, s * 0.24);
+}
+
+/* --- VMBus: Datenbus mit Knoten --- */
+function drawBus(ctx, x, y, r) {
+    const s = r * 0.84;
+    /* Hauptstrang */
+    ctx.strokeRect(x - s, y - r * 0.15, s * 2, r * 0.30);
+    /* Knotenpunkte */
+    const pos = [-0.60, -0.20, 0.20, 0.60];
+    pos.forEach(k => {
+        ctx.beginPath();
+        ctx.arc(x + k * s, y, r * 0.10, 0, Math.PI * 2);
+        ctx.fill();
+    });
+}
+
+/* --- VSPs & VSCs: zwei verbundene Blöcke --- */
+function drawVsp(ctx, x, y, r) {
+    const s = r * 0.50;
+    /* linke Box (VSP) */
+    ctx.strokeRect(x - s * 1.75, y - s * 0.75, s * 1.30, s * 1.50);
+    /* rechte Box (VSC) */
+    ctx.strokeRect(x + s * 0.45, y - s * 0.75, s * 1.30, s * 1.50);
+    /* Verbindungslinie */
+    ctx.beginPath();
+    ctx.moveTo(x - s * 0.45, y);
+    ctx.lineTo(x + s * 0.45, y);
+    ctx.stroke();
+    /* Pfeilspitze rechts */
+    ctx.beginPath();
+    ctx.moveTo(x + s * 0.20, y - s * 0.22);
+    ctx.lineTo(x + s * 0.45, y);
+    ctx.lineTo(x + s * 0.20, y + s * 0.22);
+    ctx.stroke();
+}
+
+/* --- Child-Partitionen: mehrere VMs (übereinander) --- */
+function drawVms(ctx, x, y, r) {
+    const s = r * 0.58;
+    /* hintere VM */
+    ctx.strokeRect(x - s * 1.50, y - s * 1.00, s * 1.70, s * 1.30);
+    /* vordere VM */
+    ctx.strokeRect(x - s * 0.40, y - s * 0.30, s * 1.70, s * 1.30);
+    /* kleine Punkte in der vorderen VM */
+    ctx.beginPath();
+    ctx.arc(x + s * 0.10, y + s * 0.45, r * 0.075, 0, Math.PI * 2);
+    ctx.arc(x + s * 0.70, y + s * 0.45, r * 0.075, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+/* --- Anwendungen: 3x3-Raster --- */
+function drawApps(ctx, x, y, r) {
+    const s = r * 0.74;
+    const n = 3;
+    const gap = s * 0.22;
+    const cell = (s * 2 - gap * (n - 1)) / n;
+    for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+            const cx = x - s + i * (cell + gap);
+            const cy = y - s + j * (cell + gap);
+            ctx.strokeRect(cx, cy, cell, cell);
+        }
+    }
+}
+
+function drawIcon(name, ctx, x, y, r) {
+    switch (name) {
+        case 'chip':       drawChip(ctx, x, y, r); break;
+        case 'hypervisor': drawHypervisor(ctx, x, y, r); break;
+        case 'house':      drawHouse(ctx, x, y, r); break;
+        case 'bus':        drawBus(ctx, x, y, r); break;
+        case 'vsp':        drawVsp(ctx, x, y, r); break;
+        case 'vms':        drawVms(ctx, x, y, r); break;
+        case 'apps':       drawApps(ctx, x, y, r); break;
+    }
+}
+
+/* ================================================================
+   LAYOUT  (Blöcke, gestapelt von unten nach oben)
+   ================================================================ */
+const layout = { blocks: [], blockH: 0, blockW: 0 };
+
+function computeLayout() {
+    const n = STEPS.length;
+    const gap = 8;
+    const padTop = 92;
+    const padBot = 50;
+
+    const availH = canvasHeight - padTop - padBot;
+    const blockH = Math.max(30, Math.min(84, (availH - gap * (n - 1)) / n));
+    const totalH = n * blockH + (n - 1) * gap;
+
+    const blockW = Math.min(canvasWidth - 80, 680);
+    const blockX = (canvasWidth - blockW) / 2;
+    const startY = padTop + Math.max(0, (availH - totalH) / 2);
+
+    const blocks = [];
+    for (let i = 0; i < n; i++) {
+        /* i = 0 → Hardware (unten), i = n-1 → Anwendungen (oben) */
+        const y = startY + (n - 1 - i) * (blockH + gap);
+        blocks.push({ x: blockX, y, w: blockW, h: blockH });
+    }
+    layout.blocks = blocks;
+    layout.blockH = blockH;
+    layout.blockW = blockW;
+}
+
+/* ================================================================
+   CANVAS
+   ================================================================ */
+let canvas, ctx, wrapper;
+let canvasWidth = 0, canvasHeight = 0;
+
+function drawBackground() {
+    const cx = canvasWidth / 2, cy = canvasHeight / 2;
+    const R = Math.max(canvasWidth, canvasHeight) * 0.75;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+    grad.addColorStop(0, 'rgba(38,35,30,0.55)');
+    grad.addColorStop(0.55, 'rgba(24,22,20,0.25)');
+    grad.addColorStop(1, 'rgba(18,18,18,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+}
+
+function globalFade(t) {
+    if (t < FADE_START) return 1;
+    if (t > FADE_END) return 0;
+    return 1 - (t - FADE_START) / (FADE_END - FADE_START);
+}
+
+function drawBlock(i, t) {
+    const nd = STEPS[i];
+    const b = layout.blocks[i];
+    const T = APPEAR_START + i * APPEAR_STEP;
+    const local = Math.max(0, Math.min(1, (t - T) / APPEAR_DUR));
+    if (local <= 0) return;
+
+    const gA = globalFade(t);
+    if (gA <= 0) return;
+
+    const eased = easeOutCubic(local);
+    const alpha = eased * gA;
+    const slideX = (1 - eased) * -40;
+    const glow = Math.max(0, 1 - local * 2.5);
+
+    const x = b.x + slideX;
+    const y = b.y;
+    const w = b.w;
+    const h = b.h;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    /* Hintergrund */
+    if (glow > 0) {
+        ctx.shadowColor = nd.color;
+        ctx.shadowBlur = 26 * glow;
+    }
+    roundRect(ctx, x, y, w, h, 8);
+    ctx.fillStyle = '#1a1816';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    /* Linker Farbstreifen */
+    ctx.save();
+    roundRect(ctx, x, y, w, h, 8);
+    ctx.clip();
+    ctx.fillStyle = nd.color;
+    ctx.fillRect(x, y, 5, h);
+    ctx.restore();
+
+    /* Rahmen */
+    roundRect(ctx, x, y, w, h, 8);
+    ctx.strokeStyle = hexA(nd.color, 0.70);
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    /* Nummern-Badge */
+    const badgeSize = Math.max(20, Math.min(30, h * 0.55));
+    const badgeX = x + 16;
+    const badgeY = y + (h - badgeSize) / 2;
+    roundRect(ctx, badgeX, badgeY, badgeSize, badgeSize, 6);
+    ctx.fillStyle = nd.color;
+    ctx.fill();
+    ctx.fillStyle = '#0e0e0e';
+    ctx.font = `800 ${Math.round(badgeSize * 0.52)}px Inter, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(i + 1), badgeX + badgeSize / 2, badgeY + badgeSize / 2 + 1);
+
+    /* Icon */
+    const iconSize = Math.max(22, Math.min(44, h * 0.70));
+    const iconX = badgeX + badgeSize + 18;
+    const iconY = y + h / 2;
+    ctx.strokeStyle = nd.color;
+    ctx.fillStyle = nd.color;
+    ctx.lineWidth = Math.max(1.4, iconSize * 0.075);
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    drawIcon(nd.icon, ctx, iconX, iconY, iconSize * 0.5);
+
+    /* Texte */
+    const textX = iconX + iconSize * 0.55 + 18;
+    const titleSize = Math.max(12, Math.min(17, h * 0.29));
+    const subSize   = Math.max(9.5, Math.min(13, h * 0.22));
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    ctx.font = `700 ${titleSize}px Inter, sans-serif`;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(nd.title, textX, y + h * 0.38);
+
+    ctx.font = `600 ${subSize}px Inter, sans-serif`;
+    ctx.fillStyle = nd.color;
+    ctx.fillText(nd.sub, textX, y + h * 0.68);
+
+    ctx.restore();
+}
+
+function drawFrame(t) {
+    if (!ctx || !canvasWidth || !canvasHeight) return;
+
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    drawBackground();
+
+    for (let i = 0; i < STEPS.length; i++) {
+        drawBlock(i, t);
+    }
+}
+
+/* ================================================================
+   ANIMATION
+   ================================================================ */
+let cycleTime = 0;
+let lastTs = 0;
+
+function loop(ts) {
+    if (!lastTs) lastTs = ts;
+    const dt = Math.min(0.1, (ts - lastTs) / 1000);
+    lastTs = ts;
+
+    cycleTime += dt;
+    if (cycleTime >= CYCLE) cycleTime -= CYCLE;
+
+    const fill = document.getElementById('loadingBarFill');
+    if (fill) fill.style.width = ((cycleTime / CYCLE) * 100) + '%';
+
+    drawFrame(cycleTime);
+    requestAnimationFrame(loop);
+}
+
+/* ================================================================
+   RESIZE & INIT
+   ================================================================ */
+function resizeCanvas() {
+    if (!wrapper || !canvas) return;
+    const rect = wrapper.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = Math.round(rect.width  * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    canvas.style.width  = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    canvasWidth = rect.width;
+    canvasHeight = rect.height;
+    computeLayout();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    canvas  = document.getElementById('netCanvas');
+    wrapper = document.getElementById('netCanvas-wrapper');
+    ctx = canvas.getContext('2d');
+
+    if (window.ResizeObserver) {
+        new ResizeObserver(() => resizeCanvas()).observe(wrapper);
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    requestAnimationFrame(() => {
+        resizeCanvas();
+        requestAnimationFrame(loop);
+    });
+});
+</script>
+</body>
+</html>

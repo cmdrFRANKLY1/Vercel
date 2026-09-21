@@ -37,6 +37,8 @@
       --card-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.3), 0 0 4px 0 rgba(0, 0, 0, 0.2);
       --panel-border: #54595d;
       --surface-elevated: #2a2d2e;
+      --shadow-color: rgba(0, 0, 0, 0.3);
+      --shadow-color-strong: rgba(0, 0, 0, 0.4);
     }
 
     html.light {
@@ -53,6 +55,8 @@
       --card-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.1), 0 0 6px 0 rgba(0, 0, 0, 0.05);
       --panel-border: #e2e8f0;
       --surface-elevated: #f8fafc;
+      --shadow-color: rgba(0, 0, 0, 0.1);
+      --shadow-color-strong: rgba(0, 0, 0, 0.15);
     }
 
     * { box-sizing: border-box; }
@@ -157,6 +161,66 @@
     @media (max-width: 640px) {
       .app-title { border-left: none; padding-left: 0; margin-left: 0; font-size: 1.05rem; }
     }
+
+    /* ============ THEME SCHEME PICKER ============ */
+    .theme-btn-wrap { position: relative; display: inline-flex; }
+    #themeContextMenu {
+      display: none;
+      position: absolute;
+      left: 0;
+      top: calc(100% + .35rem);
+      min-width: 15rem;
+      max-height: 24rem;
+      overflow-y: auto;
+      background: var(--panel-color);
+      border: 1px solid var(--panel-border);
+      border-radius: .75rem;
+      box-shadow: 0 12px 36px var(--shadow-color-strong), 0 4px 12px var(--shadow-color);
+      z-index: 200;
+    }
+    #themeContextMenu.open { display: block; }
+    .theme-menu-header {
+      padding: .5rem .75rem;
+      font-size: .62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
+      background: var(--surface-elevated);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      font-family: 'Inter', sans-serif;
+    }
+    .theme-menu-item {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      width: 100%;
+      padding: .5rem .75rem;
+      font-size: .8rem;
+      color: var(--text-color);
+      text-align: left;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      transition: background .12s, color .12s;
+      border-left: 3px solid transparent;
+      font-family: 'Inter', sans-serif;
+    }
+    .theme-menu-item:hover { background: var(--hover-bg); color: var(--link-color); }
+    .theme-menu-item.active {
+      font-weight: 700;
+      color: var(--link-color);
+      background: var(--surface-elevated);
+      border-left-color: var(--link-color);
+    }
+    .theme-menu-item .scheme-swatches { display: inline-flex; gap: 2px; flex-shrink: 0; }
+    .theme-menu-item .scheme-swatches span { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--border-color); }
+    .theme-menu-item .scheme-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .theme-menu-item .scheme-check { font-size: .65rem; color: var(--link-color); opacity: 0; }
+    .theme-menu-item.active .scheme-check { opacity: 1; }
 
     /* ============ MAIN ============ */
     .app-main {
@@ -763,9 +827,12 @@
       <i class="fa-solid fa-language"></i>
       <span id="lang-indicator">EN</span>
     </button>
-    <button class="ctrl-btn icon-only" id="themeBtn" title="Toggle Theme">
-      <i id="theme-icon" class="fa-solid fa-sun"></i>
-    </button>
+    <div class="theme-btn-wrap">
+      <button class="ctrl-btn icon-only" id="themeBtn" title="Left-click: Dark/Light · Right-click: all colour schemes">
+        <i id="theme-icon" class="fa-solid fa-sun"></i>
+      </button>
+      <div id="themeContextMenu" role="menu" aria-label="Colour schemes"></div>
+    </div>
     <button class="ctrl-btn" id="downloadBtn" title="Download HTML">
       <i class="fa-solid fa-download"></i>
       <span class="lang-de">Download</span>
@@ -1006,6 +1073,336 @@
 <script>
 (function(){
   "use strict";
+
+  /* ============================================================
+     COLOUR SCHEMES
+     Loaded from settings/colors.json when available, otherwise the
+     built-in 15-scheme fallback below is used.
+     ============================================================ */
+  const FALLBACK_COLOR_CONFIG = {
+    version: '1.0',
+    defaultScheme: 'dark',
+    storageKey: 'lyricsEditor.scheme',
+    base: {
+      'shadow-color': 'rgba(0, 0, 0, 0.3)',
+      'shadow-color-strong': 'rgba(0, 0, 0, 0.4)',
+      'error-color': '#ff7b72',
+      'ok-color': '#7ee787'
+    },
+    schemes: [
+      {
+        id: 'dark', name: { de: 'Dunkel (Standard)', en: 'Dark (default)' }, dark: true,
+        colors: {
+          'bg-color':'#181a1b','panel-color':'#202324','border-color':'#54595d','panel-border':'#54595d',
+          'text-color':'#f0f2f5','text-muted':'#b8bec5','link-color':'#99c1f1','link-hover':'#629deb',
+          'heading-color':'#ffffff','code-bg':'#27292a','hover-bg':'#2c2d30','surface-elevated':'#2a2d2e',
+          'card-shadow':'0 0 12px 0 rgba(0, 0, 0, 0.3), 0 0 4px 0 rgba(0, 0, 0, 0.2)',
+          'accent-blue':'#3b82f6','accent-green':'#10b981','accent-amber':'#f59e0b',
+          'accent-violet':'#8b5cf6','accent-teal':'#14b8a6','accent-red':'#ef4444','accent-gray':'#6b7280'
+        }
+      },
+      {
+        id: 'light', name: { de: 'Hell', en: 'Light' }, dark: false,
+        colors: {
+          'bg-color':'#f4f6f9','panel-color':'#ffffff','border-color':'#cbd5e1','panel-border':'#e2e8f0',
+          'text-color':'#0f172a','text-muted':'#334155','link-color':'#2563eb','link-hover':'#1d4ed8',
+          'heading-color':'#000000','code-bg':'#f1f5f9','hover-bg':'#e2e8f0','surface-elevated':'#f8fafc',
+          'shadow-color':'rgba(0,0,0,0.1)','shadow-color-strong':'rgba(0,0,0,0.15)',
+          'card-shadow':'0 0 15px 0 rgba(0,0,0,0.1), 0 0 6px 0 rgba(0,0,0,0.05)',
+          'accent-blue':'#2563eb','accent-green':'#059669','accent-amber':'#d97706',
+          'accent-violet':'#7c3aed','accent-teal':'#0d9488','accent-red':'#dc2626','accent-gray':'#6b7280'
+        }
+      },
+      {
+        id: 'solarized-dark', name: { de: 'Solarized Dunkel', en: 'Solarized Dark' }, dark: true,
+        colors: {
+          'bg-color':'#002b36','panel-color':'#073642','border-color':'#586e75','panel-border':'#586e75',
+          'text-color':'#93a1a1','text-muted':'#839496','link-color':'#268bd2','link-hover':'#2aa198',
+          'heading-color':'#fdf6e3','code-bg':'#073642','hover-bg':'#0a4b5c','surface-elevated':'#0a4b5c',
+          'accent-blue':'#268bd2','accent-green':'#859900','accent-amber':'#b58900',
+          'accent-violet':'#6c71c4','accent-teal':'#2aa198','accent-red':'#dc322f','accent-gray':'#586e75'
+        }
+      },
+      {
+        id: 'solarized-light', name: { de: 'Solarized Hell', en: 'Solarized Light' }, dark: false,
+        colors: {
+          'bg-color':'#fdf6e3','panel-color':'#eee8d5','border-color':'#93a1a1','panel-border':'#d5cdb6',
+          'text-color':'#073642','text-muted':'#586e75','link-color':'#268bd2','link-hover':'#1e6fa3',
+          'heading-color':'#002b36','code-bg':'#f5efdc','hover-bg':'#e8dfc9','surface-elevated':'#eee8d5',
+          'shadow-color':'rgba(0,0,0,0.12)','shadow-color-strong':'rgba(0,0,0,0.22)',
+          'card-shadow':'0 0 15px 0 rgba(0,0,0,0.1), 0 0 6px 0 rgba(0,0,0,0.05)',
+          'accent-blue':'#268bd2','accent-green':'#859900','accent-amber':'#b58900',
+          'accent-violet':'#6c71c4','accent-teal':'#2aa198','accent-red':'#dc322f','accent-gray':'#839496'
+        }
+      },
+      {
+        id: 'dracula', name: { de: 'Dracula', en: 'Dracula' }, dark: true,
+        colors: {
+          'bg-color':'#282a36','panel-color':'#343746','border-color':'#44475a','panel-border':'#44475a',
+          'text-color':'#f8f8f2','text-muted':'#bdc1d4','link-color':'#8be9fd','link-hover':'#bd93f9',
+          'heading-color':'#ffffff','code-bg':'#21222c','hover-bg':'#2a2c3a','surface-elevated':'#2a2c3a',
+          'accent-blue':'#8be9fd','accent-green':'#50fa7b','accent-amber':'#f1fa8c',
+          'accent-violet':'#bd93f9','accent-teal':'#8be9fd','accent-red':'#ff5555','accent-gray':'#6272a4'
+        }
+      },
+      {
+        id: 'nord', name: { de: 'Nord', en: 'Nord' }, dark: true,
+        colors: {
+          'bg-color':'#2e3440','panel-color':'#3b4252','border-color':'#4c566a','panel-border':'#4c566a',
+          'text-color':'#d8dee9','text-muted':'#a5adbb','link-color':'#88c0d0','link-hover':'#8fbcbb',
+          'heading-color':'#eceff4','code-bg':'#292e39','hover-bg':'#333a47','surface-elevated':'#333a47',
+          'accent-blue':'#5e81ac','accent-green':'#a3be8c','accent-amber':'#ebcb8b',
+          'accent-violet':'#b48ead','accent-teal':'#8fbcbb','accent-red':'#bf616a','accent-gray':'#4c566a'
+        }
+      },
+      {
+        id: 'gruvbox-dark', name: { de: 'Gruvbox Dunkel', en: 'Gruvbox Dark' }, dark: true,
+        colors: {
+          'bg-color':'#282828','panel-color':'#3c3836','border-color':'#504945','panel-border':'#504945',
+          'text-color':'#ebdbb2','text-muted':'#a89984','link-color':'#83a598','link-hover':'#8ec07c',
+          'heading-color':'#fbf1c7','code-bg':'#1d2021','hover-bg':'#2a2d2e','surface-elevated':'#2a2d2e',
+          'accent-blue':'#83a598','accent-green':'#b8bb26','accent-amber':'#fabd2f',
+          'accent-violet':'#d3869b','accent-teal':'#8ec07c','accent-red':'#fb4934','accent-gray':'#928374'
+        }
+      },
+      {
+        id: 'gruvbox-light', name: { de: 'Gruvbox Hell', en: 'Gruvbox Light' }, dark: false,
+        colors: {
+          'bg-color':'#fbf1c7','panel-color':'#f2e5bc','border-color':'#d5c4a1','panel-border':'#d5c4a1',
+          'text-color':'#3c3836','text-muted':'#7c6f64','link-color':'#076678','link-hover':'#427b58',
+          'heading-color':'#282828','code-bg':'#ebdbb2','hover-bg':'#e0d3a8','surface-elevated':'#f2e5bc',
+          'shadow-color':'rgba(60,56,54,0.18)','shadow-color-strong':'rgba(60,56,54,0.3)',
+          'card-shadow':'0 0 15px 0 rgba(60,56,54,0.15), 0 0 6px 0 rgba(60,56,54,0.08)',
+          'accent-blue':'#076678','accent-green':'#79740e','accent-amber':'#b57614',
+          'accent-violet':'#8f3f71','accent-teal':'#427b58','accent-red':'#9d0006','accent-gray':'#7c6f64'
+        }
+      },
+      {
+        id: 'monokai', name: { de: 'Monokai', en: 'Monokai' }, dark: true,
+        colors: {
+          'bg-color':'#272822','panel-color':'#2f302a','border-color':'#49483e','panel-border':'#49483e',
+          'text-color':'#f8f8f2','text-muted':'#a6a28c','link-color':'#66d9ef','link-hover':'#a6e22e',
+          'heading-color':'#f8f8f2','code-bg':'#1e1f1c','hover-bg':'#2a2b26','surface-elevated':'#2a2b26',
+          'accent-blue':'#66d9ef','accent-green':'#a6e22e','accent-amber':'#e6db74',
+          'accent-violet':'#ae81ff','accent-teal':'#66d9ef','accent-red':'#f92672','accent-gray':'#75715e'
+        }
+      },
+      {
+        id: 'tokyo-night', name: { de: 'Tokyo Night', en: 'Tokyo Night' }, dark: true,
+        colors: {
+          'bg-color':'#1a1b26','panel-color':'#1f2335','border-color':'#292e42','panel-border':'#292e42',
+          'text-color':'#c0caf5','text-muted':'#9aa5ce','link-color':'#7aa2f7','link-hover':'#7dcfff',
+          'heading-color':'#ffffff','code-bg':'#16161e','hover-bg':'#1f2335','surface-elevated':'#1f2335',
+          'accent-blue':'#7aa2f7','accent-green':'#9ece6a','accent-amber':'#e0af68',
+          'accent-violet':'#bb9af7','accent-teal':'#7dcfff','accent-red':'#f7768e','accent-gray':'#565f89'
+        }
+      },
+      {
+        id: 'catppuccin-mocha', name: { de: 'Catppuccin Mocha', en: 'Catppuccin Mocha' }, dark: true,
+        colors: {
+          'bg-color':'#1e1e2e','panel-color':'#313244','border-color':'#45475a','panel-border':'#45475a',
+          'text-color':'#cdd6f4','text-muted':'#a6adc8','link-color':'#89b4fa','link-hover':'#74c7ec',
+          'heading-color':'#f5e0dc','code-bg':'#181825','hover-bg':'#1e1e2e','surface-elevated':'#1e1e2e',
+          'accent-blue':'#89b4fa','accent-green':'#a6e3a1','accent-amber':'#f9e2af',
+          'accent-violet':'#cba6f7','accent-teal':'#94e2d5','accent-red':'#f38ba8','accent-gray':'#6c7086'
+        }
+      },
+      {
+        id: 'catppuccin-latte', name: { de: 'Catppuccin Latte', en: 'Catppuccin Latte' }, dark: false,
+        colors: {
+          'bg-color':'#eff1f5','panel-color':'#ffffff','border-color':'#ccd0da','panel-border':'#dce0e8',
+          'text-color':'#4c4f69','text-muted':'#6c6f85','link-color':'#1e66f5','link-hover':'#7287fd',
+          'heading-color':'#1e1e2e','code-bg':'#e6e9ef','hover-bg':'#dce0e8','surface-elevated':'#eff1f5',
+          'shadow-color':'rgba(76,79,105,0.15)','shadow-color-strong':'rgba(76,79,105,0.28)',
+          'card-shadow':'0 0 15px 0 rgba(76,79,105,0.12), 0 0 6px 0 rgba(76,79,105,0.06)',
+          'accent-blue':'#1e66f5','accent-green':'#40a02b','accent-amber':'#df8e1d',
+          'accent-violet':'#8839ef','accent-teal':'#179299','accent-red':'#d20f39','accent-gray':'#8c8fa1'
+        }
+      },
+      {
+        id: 'one-light', name: { de: 'One Light', en: 'One Light' }, dark: false,
+        colors: {
+          'bg-color':'#fafafa','panel-color':'#ffffff','border-color':'#d4d4d5','panel-border':'#e5e5e6',
+          'text-color':'#383a42','text-muted':'#696c77','link-color':'#4078f2','link-hover':'#2a5cd6',
+          'heading-color':'#1c1d21','code-bg':'#f0f0f1','hover-bg':'#e5e5e6','surface-elevated':'#fafafa',
+          'shadow-color':'rgba(56,58,66,0.12)','shadow-color-strong':'rgba(56,58,66,0.22)',
+          'card-shadow':'0 0 15px 0 rgba(56,58,66,0.08), 0 0 6px 0 rgba(56,58,66,0.05)',
+          'accent-blue':'#4078f2','accent-green':'#50a14f','accent-amber':'#c18401',
+          'accent-violet':'#a626a4','accent-teal':'#0184bc','accent-red':'#e45649','accent-gray':'#a0a1a7'
+        }
+      },
+      {
+        id: 'high-contrast', name: { de: 'Hoher Kontrast', en: 'High Contrast' }, dark: true,
+        colors: {
+          'bg-color':'#000000','panel-color':'#0a0a0a','border-color':'#ffffff','panel-border':'#ffffff',
+          'text-color':'#ffffff','text-muted':'#e0e0e0','link-color':'#ffff00','link-hover':'#ffcc00',
+          'heading-color':'#ffff00','code-bg':'#1a1a1a','hover-bg':'#333333','surface-elevated':'#1a1a1a',
+          'shadow-color':'rgba(255,255,255,0.25)','shadow-color-strong':'rgba(255,255,255,0.45)',
+          'card-shadow':'0 0 12px 0 rgba(255,255,255,0.18), 0 0 4px 0 rgba(255,255,255,0.12)',
+          'accent-blue':'#00bfff','accent-green':'#00ff00','accent-amber':'#ffff00',
+          'accent-violet':'#ff00ff','accent-teal':'#00ffff','accent-red':'#ff3030','accent-gray':'#c0c0c0'
+        }
+      },
+      {
+        id: 'sepia', name: { de: 'Sepia', en: 'Sepia' }, dark: false,
+        colors: {
+          'bg-color':'#f4ecd8','panel-color':'#fbf5e6','border-color':'#d6c8a8','panel-border':'#e0d3b3',
+          'text-color':'#5b4636','text-muted':'#7c6650','link-color':'#8b5a2b','link-hover':'#6b4420',
+          'heading-color':'#3b2c1e','code-bg':'#efe6ce','hover-bg':'#e8dcc0','surface-elevated':'#fbf5e6',
+          'shadow-color':'rgba(91,70,54,0.18)','shadow-color-strong':'rgba(91,70,54,0.32)',
+          'card-shadow':'0 0 15px 0 rgba(91,70,54,0.12), 0 0 6px 0 rgba(91,70,54,0.06)',
+          'accent-blue':'#4682b4','accent-green':'#6b8e23','accent-amber':'#b8860b',
+          'accent-violet':'#8b5a8b','accent-teal':'#5f9ea0','accent-red':'#a52a2a','accent-gray':'#8b7355'
+        }
+      }
+    ]
+  };
+
+  const COLORS_JSON_PATH = 'settings/colors.json';
+  let colorConfig = FALLBACK_COLOR_CONFIG;
+  let activeSchemeId = null;
+  let colorsLoadedFromFile = false;
+  let lastDarkSchemeId  = 'dark';
+  let lastLightSchemeId = 'light';
+
+  function getSchemeById(id) { return (colorConfig.schemes || []).find(s => s.id === id) || null; }
+  function resolveSchemeColors(scheme) { return Object.assign({}, colorConfig.base || {}, scheme.colors || {}); }
+
+  async function initColorSchemes() {
+    try {
+      const res = await fetch(COLORS_JSON_PATH, { cache: 'no-cache' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (!data || !Array.isArray(data.schemes) || data.schemes.length === 0) throw new Error('colors.json has no "schemes" array');
+      colorConfig = data;
+      colorsLoadedFromFile = true;
+      console.info('[colors] Loaded ' + data.schemes.length + ' schemes from ' + COLORS_JSON_PATH);
+    } catch (err) {
+      console.info('[colors] Using built-in palette (' + colorConfig.schemes.length + ' schemes). To load external colours, serve the folder over HTTP so ' + COLORS_JSON_PATH + ' can be fetched.');
+    }
+    const stored = readStoredScheme();
+    const preferred = colorConfig.defaultScheme || colorConfig.schemes[0].id;
+    const initial = (stored && getSchemeById(stored)) ? stored
+                  : (getSchemeById(preferred) ? preferred : colorConfig.schemes[0].id);
+    const initScheme = getSchemeById(initial);
+    if (initScheme) {
+      if (initScheme.dark) lastDarkSchemeId = initScheme.id;
+      else                 lastLightSchemeId = initScheme.id;
+    }
+    applyColorScheme(initial);
+  }
+
+  function applyColorScheme(id) {
+    const scheme = getSchemeById(id) || colorConfig.schemes[0];
+    if (!scheme) return;
+    const root = document.documentElement;
+    const colors = resolveSchemeColors(scheme);
+    Object.keys(colors).forEach(key => {
+      if (colors[key] === null || colors[key] === undefined) return;
+      root.style.setProperty('--' + key, String(colors[key]));
+    });
+    root.classList.toggle('light', !scheme.dark);
+    root.classList.toggle('theme-dark', !!scheme.dark);
+    root.style.colorScheme = scheme.dark ? 'dark' : 'light';
+    root.setAttribute('data-color-scheme', scheme.id);
+    if (scheme.dark) lastDarkSchemeId = scheme.id;
+    else             lastLightSchemeId = scheme.id;
+    activeSchemeId = scheme.id;
+    storeScheme(scheme.id);
+    updateThemeToggleIcon(scheme.dark);
+
+    // The lyrics editor's chart-colour defaults depend on theme (dark vs light).
+    // Re-apply them so the timeline / swatches look right for the new scheme.
+    if (typeof applyThemeColors === 'function') applyThemeColors();
+    if (typeof Object !== 'undefined' && typeof renderPreview === 'function') {
+      try {
+        if (typeof lastLineData !== 'undefined' && lastLineData && lastLineData.lineVowels) {
+          renderPreview();
+          renderVowelGrid(lastLineData.lineVowels, lastLineData.maxVowels);
+          renderWordGrid(lastLineData.linesOfWords, lastLineData.maxWords);
+          drawTimelinePlot();
+        }
+      } catch (e) { /* analyser not ready yet — ignore */ }
+    }
+  }
+
+  function updateThemeToggleIcon(isDark) {
+    const icon = document.getElementById('theme-icon');
+    if (!icon) return;
+    icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+  }
+
+  function toggleDarkLight() {
+    hideThemeMenu();
+    const current = getSchemeById(activeSchemeId);
+    if (!current) return;
+    if (current.dark) {
+      const target = getSchemeById(lastLightSchemeId) ? lastLightSchemeId
+                   : (colorConfig.schemes.find(s => !s.dark) || {}).id;
+      if (target) applyColorScheme(target);
+    } else {
+      const target = getSchemeById(lastDarkSchemeId) ? lastDarkSchemeId
+                   : (colorConfig.schemes.find(s => s.dark) || {}).id;
+      if (target) applyColorScheme(target);
+    }
+  }
+
+  function buildThemeMenuItems() {
+    const menu = document.getElementById('themeContextMenu');
+    if (!menu) return;
+    menu.innerHTML = '';
+    const header = document.createElement('div');
+    header.className = 'theme-menu-header';
+    header.textContent = (currentAppLang === 'de')
+      ? 'Farbschema wählen (' + colorConfig.schemes.length + ')'
+      : 'Choose colour scheme (' + colorConfig.schemes.length + ')';
+    menu.appendChild(header);
+    const schemes = colorConfig.schemes || [];
+    const langTag = currentAppLang || 'en';
+    const PREVIEW_KEYS = ['bg-color', 'panel-color', 'code-bg', 'link-color', 'accent-green', 'accent-amber'];
+    schemes.forEach(s => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'theme-menu-item' + (s.id === activeSchemeId ? ' active' : '');
+      btn.setAttribute('role', 'menuitem');
+      const swWrap = document.createElement('span');
+      swWrap.className = 'scheme-swatches';
+      const colors = resolveSchemeColors(s);
+      PREVIEW_KEYS.forEach(k => {
+        const dot = document.createElement('span');
+        dot.style.background = colors[k] || 'transparent';
+        swWrap.appendChild(dot);
+      });
+      btn.appendChild(swWrap);
+      const nameEl = document.createElement('span');
+      nameEl.className = 'scheme-name';
+      const name = s.name || {};
+      nameEl.textContent = (typeof name === 'string' ? name : (name[langTag] || name.de || name.en || s.id));
+      btn.appendChild(nameEl);
+      const check = document.createElement('i');
+      check.className = 'fa-solid fa-check scheme-check';
+      btn.appendChild(check);
+      btn.addEventListener('click', () => { applyColorScheme(s.id); hideThemeMenu(); });
+      menu.appendChild(btn);
+    });
+  }
+
+  function showThemeMenu(e) {
+    if (e) e.preventDefault();
+    const menu = document.getElementById('themeContextMenu');
+    if (!menu) return;
+    buildThemeMenuItems();
+    menu.classList.add('open');
+  }
+
+  function hideThemeMenu() {
+    const menu = document.getElementById('themeContextMenu');
+    if (menu) menu.classList.remove('open');
+  }
+
+  function storageKey() { return (colorConfig && colorConfig.storageKey) || 'lyricsEditor.scheme'; }
+  function storeScheme(id) { try { localStorage.setItem(storageKey(), id); } catch (_) {} }
+  function readStoredScheme() { try { return localStorage.getItem(storageKey()); } catch (_) { return null; } }
 
   /* ============================================================
      DOM REFS
@@ -2057,9 +2454,19 @@
     URL.revokeObjectURL(url);
   }
 
+  function updateDownloadVisibility() {
+    const isLocal = (location.protocol === 'file:');
+    const btn = document.getElementById('downloadBtn');
+    if (btn) btn.style.display = isLocal ? 'none' : '';
+  }
+
   function downloadHTML() {
+    // Persist current state into the DOM before serialising.
     const val = input.value;
     input.defaultValue = val;
+    input.textContent = val;
+
+    // Reset transient UI state.
     document.querySelectorAll('.lang-de, .lang-en').forEach(el => { el.style.display = ''; });
     colorPickerPopup.classList.remove('open');
     modalBackdrop.classList.remove('open');
@@ -2075,6 +2482,7 @@
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
+    // Restore runtime state.
     input.value = val;
   }
 
@@ -2132,30 +2540,25 @@
       ? 'Schreibe hier Songtexte zur Analyse (Englisch oder Deutsch)...'
       : 'Write lyrics here to begin analysis (English or German)...';
     triggerContextLookups();
+
+    // Rebuild theme menu if open (translated labels).
+    const menu = document.getElementById('themeContextMenu');
+    if (menu && menu.classList.contains('open')) buildThemeMenuItems();
   });
 
-  document.getElementById('themeBtn').addEventListener('click', () => {
-    const html = document.documentElement;
-    if (html.classList.contains('light')) {
-      html.classList.remove('light');
-      themeIcon.className = 'fa-solid fa-sun';
-    } else {
-      html.classList.add('light');
-      themeIcon.className = 'fa-solid fa-moon';
-    }
-    applyThemeColors();
-    if (Object.keys(groupSizes).length > 0) {
-      const rawGroups = {};
-      Object.keys(groupMembers).forEach(gid => {
-        rawGroups[gid] = groupMembers[gid];
-      });
-      applyGroups(rawGroups);
-      renderPreview();
-      renderVowelGrid(lastLineData.lineVowels, lastLineData.maxVowels);
-      renderWordGrid(lastLineData.linesOfWords, lastLineData.maxWords);
-    }
-    redrawTimeline();
+  // Theme button: left-click toggles dark/light, right-click opens the scheme picker.
+  const themeBtn = document.getElementById('themeBtn');
+  themeBtn.addEventListener('click', (e) => { e.preventDefault(); toggleDarkLight(); });
+  themeBtn.addEventListener('contextmenu', (e) => { showThemeMenu(e); });
+
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('themeContextMenu');
+    if (!menu || !menu.classList.contains('open')) return;
+    if (menu.contains(e.target)) return;
+    if (themeBtn.contains(e.target)) return;
+    hideThemeMenu();
   });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideThemeMenu(); });
 
   document.getElementById('downloadBtn').addEventListener('click', downloadHTML);
   document.getElementById('btnModalCancel').addEventListener('click', () => modalBackdrop.classList.remove('open'));
@@ -2244,10 +2647,14 @@
   updateLineNumbers();
   updateMetricsLayoutState();
   updateApiDot();
+  updateDownloadVisibility();
 
   runFullAnalysis(++analysisGeneration);
 
   window.addEventListener('resize', redrawTimeline);
+
+  // Load external colour schemes (settings/colors.json) with built-in fallback.
+  initColorSchemes();
 
 })();
 </script>

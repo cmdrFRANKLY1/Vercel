@@ -71,14 +71,16 @@
 
             /* Panel borders & strengthened omni-directional encasing shadow */
             --panel-border: #383c42;
+            --shadow-color: rgba(0, 0, 0, 0.55);
+            --shadow-color-strong: rgba(0, 0, 0, 0.7);
             --card-shadow:
-                0 0 22px 0 rgba(0, 0, 0, 0.55),
-                0 0 10px 0 rgba(0, 0, 0, 0.45),
-                0 4px 24px 0 rgba(0, 0, 0, 0.35);
+                0 0 22px 0 var(--shadow-color),
+                0 0 10px 0 var(--shadow-color),
+                0 4px 24px 0 var(--shadow-color);
             --card-shadow-hover:
-                0 0 40px 0 rgba(0, 0, 0, 0.7),
-                0 0 18px 0 rgba(0, 0, 0, 0.55),
-                0 8px 36px 0 rgba(0, 0, 0, 0.45);
+                0 0 40px 0 var(--shadow-color-strong),
+                0 0 18px 0 var(--shadow-color-strong),
+                0 8px 36px 0 var(--shadow-color-strong);
         }
 
         html.light {
@@ -109,14 +111,8 @@
 
             /* Stronger encasing shadow for light mode as well */
             --panel-border: #e2e8f0;
-            --card-shadow:
-                0 0 28px 0 rgba(0, 0, 0, 0.18),
-                0 0 12px 0 rgba(0, 0, 0, 0.12),
-                0 4px 24px 0 rgba(0, 0, 0, 0.10);
-            --card-shadow-hover:
-                0 0 48px 0 rgba(0, 0, 0, 0.28),
-                0 0 22px 0 rgba(0, 0, 0, 0.20),
-                0 8px 36px 0 rgba(0, 0, 0, 0.16);
+            --shadow-color: rgba(0, 0, 0, 0.18);
+            --shadow-color-strong: rgba(0, 0, 0, 0.28);
         }
 
         html { font-size: 16px; }
@@ -373,24 +369,102 @@
 
         .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
         [data-lang-de], [data-lang-en] { transition: opacity 0.15s ease-in-out; }
+
+        /* ---------- Sidebar control buttons ---------- */
+        .ctrl-btn {
+            flex: 1;
+            padding: .375rem 0;
+            border-radius: .5rem;
+            font-size: .875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            transition: background-color .15s, color .15s;
+            cursor: pointer;
+            background: transparent;
+        }
+        .ctrl-btn:hover { background: var(--code-bg); color: var(--link-color); }
+
+        /* ---------- Theme context menu ---------- */
+        #themeContextMenu {
+            display: none;
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + .35rem);
+            max-height: 24rem;
+            overflow-y: auto;
+            background: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            border-radius: .75rem;
+            box-shadow: 0 12px 36px var(--shadow-color-strong), 0 4px 12px var(--shadow-color);
+            z-index: 200;
+        }
+        #themeContextMenu.open { display: block; }
+        .theme-menu-header {
+            padding: .5rem .75rem;
+            font-size: .62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+            background: var(--info-box);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .theme-menu-item {
+            display: flex;
+            align-items: center;
+            gap: .55rem;
+            width: 100%;
+            padding: .5rem .75rem;
+            font-size: .8rem;
+            color: var(--text-color);
+            text-align: left;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: background .12s, color .12s;
+            border-left: 3px solid transparent;
+        }
+        .theme-menu-item:hover { background: var(--code-bg); color: var(--link-color); }
+        .theme-menu-item.active {
+            font-weight: 700;
+            color: var(--link-color);
+            background: var(--info-box);
+            border-left-color: var(--link-color);
+        }
+        .theme-menu-item .scheme-swatches { display: inline-flex; gap: 2px; flex-shrink: 0; }
+        .theme-menu-item .scheme-swatches span {
+            width: 9px; height: 9px; border-radius: 50%;
+            border: 1px solid var(--border-color);
+        }
+        .theme-menu-item .scheme-name {
+            flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .theme-menu-item .scheme-check { font-size: .65rem; color: var(--link-color); opacity: 0; }
+        .theme-menu-item.active .scheme-check { opacity: 1; }
     </style>
 </head>
 <body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
 
     <aside class="app-sidebar flex-shrink-0 bg-[var(--sidebar-color)] border-b lg:border-b-0 lg:border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
 
-        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
-            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm relative">
+            <button onclick="toggleLang()" class="ctrl-btn" title="Sprache wechseln / Toggle language">
                 <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
             </button>
             <div class="w-px h-4 bg-[var(--border-color)]"></div>
-            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
-                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            <button id="themeToggleBtn" class="ctrl-btn" title="Linksklick: Hell/Dunkel · Rechtsklick: alle Farbschemata">
+                <i id="themeToggleIcon" class="fa-solid fa-sun"></i>
             </button>
-            <div class="w-px h-4 bg-[var(--border-color)]"></div>
-            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Cheatsheet">
+            <div id="downloadDivider" class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button id="downloadBtn" onclick="downloadHTML()" class="ctrl-btn" style="color:var(--link-color)" title="Download Cheatsheet">
                 <i class="fa-solid fa-download"></i>
             </button>
+            <div id="themeContextMenu" role="menu" aria-label="Farbschemata"></div>
         </div>
 
         <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
@@ -973,6 +1047,469 @@
     </main>
 
     <script>
+        /* ==================================================================
+           GLOBAL STATE
+           ================================================================== */
+        let isGerman = true;
+
+        /* ==================================================================
+           LANGUAGE
+           ================================================================== */
+        function toggleLang() {
+            isGerman = !isGerman;
+            document.getElementById('lang-indicator').textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+            const deEls = document.querySelectorAll('[data-lang-de]');
+            const enEls = document.querySelectorAll('[data-lang-en]');
+            if (isGerman) {
+                deEls.forEach(el => el.style.display = '');
+                enEls.forEach(el => el.style.display = 'none');
+            } else {
+                deEls.forEach(el => el.style.display = 'none');
+                enEls.forEach(el => el.style.display = '');
+            }
+            // Refresh open theme menu so scheme names use the correct language
+            const menu = document.getElementById('themeContextMenu');
+            if (menu && menu.classList.contains('open')) buildThemeMenuItems();
+        }
+
+        /* ==================================================================
+           SEARCH / DOWNLOAD
+           ================================================================== */
+        function filterWiki() {
+            const input = document.getElementById('wikiSearch');
+            const filter = input.value.toLowerCase();
+            const pages = document.querySelectorAll('.topic-page');
+            const mainContent = document.getElementById('main-content');
+            removeHighlights(mainContent);
+
+            if (!filter) return;
+
+            pages.forEach(page => {
+                const text = page.innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    highlightText(page, input.value);
+                }
+            });
+        }
+
+        function highlightText(element, keyword) {
+            if (!keyword) return;
+            const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+
+            let node;
+            while (node = treeWalker.nextNode()) {
+                if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                    if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE') {
+                        nodesToReplace.push(node);
+                    }
+                }
+            }
+
+            nodesToReplace.forEach(node => {
+                const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+                const fragment = document.createDocumentFragment();
+                let match;
+                let lastIndex = 0;
+                const text = node.nodeValue;
+
+                while ((match = regex.exec(text)) !== null) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    const span = document.createElement('span');
+                    span.className = 'search-match font-semibold';
+                    span.textContent = match[0];
+                    fragment.appendChild(span);
+                    lastIndex = regex.lastIndex;
+                }
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                node.parentNode.replaceChild(fragment, node);
+            });
+        }
+
+        function removeHighlights(element) {
+            element.querySelectorAll('.search-match').forEach(span => {
+                const parent = span.parentNode;
+                parent.replaceChild(document.createTextNode(span.textContent), span);
+                parent.normalize();
+            });
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function downloadHTML() {
+            removeHighlights(document.getElementById('main-content'));
+            const blob = new Blob(["<!DOCTYPE html>\n" + document.documentElement.outerHTML], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'DIN4_Language_Cheat_Sheet.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function updateDownloadVisibility() {
+            const isLocal = (location.protocol === 'file:');
+            const btn = document.getElementById('downloadBtn');
+            const divider = document.getElementById('downloadDivider');
+            if (btn)     btn.style.display = isLocal ? 'none' : '';
+            if (divider) divider.style.display = isLocal ? 'none' : '';
+        }
+
+        /* ==================================================================
+           COLOUR SCHEMES  (settings/colors.json + built-in fallback)
+           ================================================================== */
+        const FALLBACK_COLOR_CONFIG = {
+            version: '1.0',
+            defaultScheme: 'dark',
+            storageKey: 'cheatSheetGrammatik.scheme',
+            base: {
+                'shadow-color': 'rgba(0, 0, 0, 0.55)',
+                'shadow-color-strong': 'rgba(0, 0, 0, 0.7)',
+                'card-shadow': '0 0 22px 0 var(--shadow-color), 0 0 10px 0 var(--shadow-color), 0 4px 24px 0 var(--shadow-color)',
+                'card-shadow-hover': '0 0 40px 0 var(--shadow-color-strong), 0 0 18px 0 var(--shadow-color-strong), 0 8px 36px 0 var(--shadow-color-strong)',
+                'search-match': 'rgba(250, 204, 21, 0.3)',
+                'search-text': '#ffffff',
+                'panel-border': '#383c42'
+            },
+            schemes: [
+                {
+                    id: 'dark', name: { de: 'Dunkel (Standard)', en: 'Dark (default)' }, dark: true,
+                    colors: {
+                        'bg-color':'#121415','panel-color':'#1c1f21','sidebar-color':'#17191b','border-color':'#383c42',
+                        'text-color':'#eaecf0','text-muted':'#9ba1a6','link-color':'#799dcb','link-hover':'#9bbaf2',
+                        'heading-color':'#ffffff','code-bg':'#27292a','info-box':'#23272c',
+                        'paper-bg':'#18191b','grid-line':'rgba(255,255,255,0.08)',
+                        'pen-color':'#60a5fa','pen-secondary':'#f472b6','carry-color':'#f87171',
+                        'col-subject':'#38bdf8','col-verb':'#f87171','col-object':'#4ade80','col-adverb':'#facc15','col-prep':'#a855f7',
+                        'panel-border':'#383c42'
+                    }
+                },
+                {
+                    id: 'light', name: { de: 'Hell', en: 'Light' }, dark: false,
+                    colors: {
+                        'bg-color':'#f1f3f5','panel-color':'#ffffff','sidebar-color':'#ffffff','border-color':'#cbd5e1',
+                        'text-color':'#1e293b','text-muted':'#64748b','link-color':'#2563eb','link-hover':'#1d4ed8',
+                        'heading-color':'#0f172a','code-bg':'#f8fafc','info-box':'#eff6ff',
+                        'paper-bg':'#ffffff','grid-line':'rgba(15,23,42,0.22)',
+                        'pen-color':'#1d4ed8','pen-secondary':'#be185d','carry-color':'#b91c1c',
+                        'col-subject':'#0284c7','col-verb':'#dc2626','col-object':'#16a34a','col-adverb':'#ca8a04','col-prep':'#7e22ce',
+                        'panel-border':'#e2e8f0',
+                        'shadow-color':'rgba(0,0,0,0.18)','shadow-color-strong':'rgba(0,0,0,0.28)',
+                        'search-match':'rgba(250,204,21,0.5)','search-text':'#000000'
+                    }
+                },
+                {
+                    id: 'solarized-dark', name: { de: 'Solarized Dunkel', en: 'Solarized Dark' }, dark: true,
+                    colors: {
+                        'bg-color':'#002b36','panel-color':'#073642','sidebar-color':'#073642','border-color':'#586e75',
+                        'text-color':'#93a1a1','text-muted':'#839496','link-color':'#268bd2','link-hover':'#2aa198',
+                        'heading-color':'#fdf6e3','code-bg':'#073642','info-box':'#0a4b5c',
+                        'paper-bg':'#00252e','grid-line':'rgba(147,161,161,0.12)',
+                        'pen-color':'#2aa198','pen-secondary':'#d33682','carry-color':'#dc322f',
+                        'col-subject':'#268bd2','col-verb':'#dc322f','col-object':'#859900','col-adverb':'#b58900','col-prep':'#6c71c4',
+                        'panel-border':'#586e75'
+                    }
+                },
+                {
+                    id: 'solarized-light', name: { de: 'Solarized Hell', en: 'Solarized Light' }, dark: false,
+                    colors: {
+                        'bg-color':'#fdf6e3','panel-color':'#eee8d5','sidebar-color':'#eee8d5','border-color':'#93a1a1',
+                        'text-color':'#073642','text-muted':'#586e75','link-color':'#268bd2','link-hover':'#1e6fa3',
+                        'heading-color':'#002b36','code-bg':'#f5efdc','info-box':'#e8dfc9',
+                        'paper-bg':'#fdf6e3','grid-line':'rgba(7,54,66,0.18)',
+                        'pen-color':'#268bd2','pen-secondary':'#d33682','carry-color':'#dc322f',
+                        'col-subject':'#268bd2','col-verb':'#dc322f','col-object':'#859900','col-adverb':'#b58900','col-prep':'#6c71c4',
+                        'panel-border':'#93a1a1',
+                        'shadow-color':'rgba(0,0,0,0.12)','shadow-color-strong':'rgba(0,0,0,0.22)',
+                        'search-match':'rgba(181,137,0,0.35)','search-text':'#002b36'
+                    }
+                },
+                {
+                    id: 'dracula', name: { de: 'Dracula', en: 'Dracula' }, dark: true,
+                    colors: {
+                        'bg-color':'#282a36','panel-color':'#343746','sidebar-color':'#21222c','border-color':'#44475a',
+                        'text-color':'#f8f8f2','text-muted':'#bdc1d4','link-color':'#8be9fd','link-hover':'#bd93f9',
+                        'heading-color':'#ffffff','code-bg':'#21222c','info-box':'#44475a',
+                        'paper-bg':'#21222c','grid-line':'rgba(248,248,242,0.08)',
+                        'pen-color':'#8be9fd','pen-secondary':'#ff79c6','carry-color':'#ff5555',
+                        'col-subject':'#8be9fd','col-verb':'#ff5555','col-object':'#50fa7b','col-adverb':'#f1fa8c','col-prep':'#bd93f9',
+                        'panel-border':'#44475a'
+                    }
+                },
+                {
+                    id: 'nord', name: { de: 'Nord', en: 'Nord' }, dark: true,
+                    colors: {
+                        'bg-color':'#2e3440','panel-color':'#3b4252','sidebar-color':'#2e3440','border-color':'#4c566a',
+                        'text-color':'#d8dee9','text-muted':'#a5adbb','link-color':'#88c0d0','link-hover':'#8fbcbb',
+                        'heading-color':'#eceff4','code-bg':'#292e39','info-box':'#434c5e',
+                        'paper-bg':'#2e3440','grid-line':'rgba(216,222,233,0.10)',
+                        'pen-color':'#88c0d0','pen-secondary':'#b48ead','carry-color':'#bf616a',
+                        'col-subject':'#88c0d0','col-verb':'#bf616a','col-object':'#a3be8c','col-adverb':'#ebcb8b','col-prep':'#b48ead',
+                        'panel-border':'#4c566a'
+                    }
+                },
+                {
+                    id: 'gruvbox-dark', name: { de: 'Gruvbox Dunkel', en: 'Gruvbox Dark' }, dark: true,
+                    colors: {
+                        'bg-color':'#282828','panel-color':'#3c3836','sidebar-color':'#1d2021','border-color':'#504945',
+                        'text-color':'#ebdbb2','text-muted':'#a89984','link-color':'#83a598','link-hover':'#8ec07c',
+                        'heading-color':'#fbf1c7','code-bg':'#1d2021','info-box':'#3c3836',
+                        'paper-bg':'#1d2021','grid-line':'rgba(235,219,178,0.08)',
+                        'pen-color':'#83a598','pen-secondary':'#d3869b','carry-color':'#fb4934',
+                        'col-subject':'#83a598','col-verb':'#fb4934','col-object':'#b8bb26','col-adverb':'#fabd2f','col-prep':'#d3869b',
+                        'panel-border':'#504945'
+                    }
+                },
+                {
+                    id: 'gruvbox-light', name: { de: 'Gruvbox Hell', en: 'Gruvbox Light' }, dark: false,
+                    colors: {
+                        'bg-color':'#fbf1c7','panel-color':'#f2e5bc','sidebar-color':'#f2e5bc','border-color':'#d5c4a1',
+                        'text-color':'#3c3836','text-muted':'#7c6f64','link-color':'#076678','link-hover':'#427b58',
+                        'heading-color':'#282828','code-bg':'#ebdbb2','info-box':'#e0d3a8',
+                        'paper-bg':'#fbf1c7','grid-line':'rgba(60,56,54,0.20)',
+                        'pen-color':'#076678','pen-secondary':'#8f3f71','carry-color':'#9d0006',
+                        'col-subject':'#076678','col-verb':'#9d0006','col-object':'#79740e','col-adverb':'#b57614','col-prep':'#8f3f71',
+                        'panel-border':'#d5c4a1',
+                        'shadow-color':'rgba(60,56,54,0.18)','shadow-color-strong':'rgba(60,56,54,0.30)',
+                        'search-match':'rgba(181,118,20,0.35)','search-text':'#282828'
+                    }
+                },
+                {
+                    id: 'monokai', name: { de: 'Monokai', en: 'Monokai' }, dark: true,
+                    colors: {
+                        'bg-color':'#272822','panel-color':'#2f302a','sidebar-color':'#1e1f1c','border-color':'#49483e',
+                        'text-color':'#f8f8f2','text-muted':'#a6a28c','link-color':'#66d9ef','link-hover':'#a6e22e',
+                        'heading-color':'#f8f8f2','code-bg':'#1e1f1c','info-box':'#3e3d32',
+                        'paper-bg':'#1e1f1c','grid-line':'rgba(248,248,242,0.08)',
+                        'pen-color':'#66d9ef','pen-secondary':'#f92672','carry-color':'#f92672',
+                        'col-subject':'#66d9ef','col-verb':'#f92672','col-object':'#a6e22e','col-adverb':'#e6db74','col-prep':'#ae81ff',
+                        'panel-border':'#49483e'
+                    }
+                },
+                {
+                    id: 'tokyo-night', name: { de: 'Tokyo Night', en: 'Tokyo Night' }, dark: true,
+                    colors: {
+                        'bg-color':'#1a1b26','panel-color':'#1f2335','sidebar-color':'#16161e','border-color':'#292e42',
+                        'text-color':'#c0caf5','text-muted':'#9aa5ce','link-color':'#7aa2f7','link-hover':'#7dcfff',
+                        'heading-color':'#ffffff','code-bg':'#16161e','info-box':'#292e42',
+                        'paper-bg':'#16161e','grid-line':'rgba(192,202,245,0.08)',
+                        'pen-color':'#7aa2f7','pen-secondary':'#bb9af7','carry-color':'#f7768e',
+                        'col-subject':'#7dcfff','col-verb':'#f7768e','col-object':'#9ece6a','col-adverb':'#e0af68','col-prep':'#bb9af7',
+                        'panel-border':'#292e42'
+                    }
+                },
+                {
+                    id: 'catppuccin-mocha', name: { de: 'Catppuccin Mocha', en: 'Catppuccin Mocha' }, dark: true,
+                    colors: {
+                        'bg-color':'#1e1e2e','panel-color':'#313244','sidebar-color':'#181825','border-color':'#45475a',
+                        'text-color':'#cdd6f4','text-muted':'#a6adc8','link-color':'#89b4fa','link-hover':'#74c7ec',
+                        'heading-color':'#f5e0dc','code-bg':'#181825','info-box':'#313244',
+                        'paper-bg':'#181825','grid-line':'rgba(205,214,244,0.08)',
+                        'pen-color':'#89b4fa','pen-secondary':'#f5c2e7','carry-color':'#f38ba8',
+                        'col-subject':'#89dceb','col-verb':'#f38ba8','col-object':'#a6e3a1','col-adverb':'#f9e2af','col-prep':'#cba6f7',
+                        'panel-border':'#45475a'
+                    }
+                },
+                {
+                    id: 'catppuccin-latte', name: { de: 'Catppuccin Latte', en: 'Catppuccin Latte' }, dark: false,
+                    colors: {
+                        'bg-color':'#eff1f5','panel-color':'#ffffff','sidebar-color':'#e6e9ef','border-color':'#ccd0da',
+                        'text-color':'#4c4f69','text-muted':'#6c6f85','link-color':'#1e66f5','link-hover':'#7287fd',
+                        'heading-color':'#1e1e2e','code-bg':'#e6e9ef','info-box':'#dce0e8',
+                        'paper-bg':'#ffffff','grid-line':'rgba(76,79,105,0.18)',
+                        'pen-color':'#1e66f5','pen-secondary':'#ea76cb','carry-color':'#d20f39',
+                        'col-subject':'#04a5e5','col-verb':'#d20f39','col-object':'#40a02b','col-adverb':'#df8e1d','col-prep':'#8839ef',
+                        'panel-border':'#ccd0da',
+                        'shadow-color':'rgba(76,79,105,0.15)','shadow-color-strong':'rgba(76,79,105,0.28)',
+                        'search-match':'rgba(223,142,29,0.35)','search-text':'#1e1e2e'
+                    }
+                },
+                {
+                    id: 'one-light', name: { de: 'One Light', en: 'One Light' }, dark: false,
+                    colors: {
+                        'bg-color':'#fafafa','panel-color':'#ffffff','sidebar-color':'#f0f0f1','border-color':'#d4d4d5',
+                        'text-color':'#383a42','text-muted':'#696c77','link-color':'#4078f2','link-hover':'#2a5cd6',
+                        'heading-color':'#1c1d21','code-bg':'#f0f0f1','info-box':'#e5e5e6',
+                        'paper-bg':'#ffffff','grid-line':'rgba(56,58,66,0.18)',
+                        'pen-color':'#4078f2','pen-secondary':'#a626a4','carry-color':'#e45649',
+                        'col-subject':'#4078f2','col-verb':'#e45649','col-object':'#50a14f','col-adverb':'#c18401','col-prep':'#a626a4',
+                        'panel-border':'#d4d4d5',
+                        'shadow-color':'rgba(56,58,66,0.12)','shadow-color-strong':'rgba(56,58,66,0.22)',
+                        'search-match':'rgba(193,132,1,0.35)','search-text':'#1c1d21'
+                    }
+                },
+                {
+                    id: 'high-contrast', name: { de: 'Hoher Kontrast', en: 'High Contrast' }, dark: true,
+                    colors: {
+                        'bg-color':'#000000','panel-color':'#0a0a0a','sidebar-color':'#000000','border-color':'#ffffff',
+                        'text-color':'#ffffff','text-muted':'#e0e0e0','link-color':'#ffff00','link-hover':'#ffcc00',
+                        'heading-color':'#ffff00','code-bg':'#1a1a1a','info-box':'#1a1a1a',
+                        'paper-bg':'#0a0a0a','grid-line':'rgba(255,255,255,0.15)',
+                        'pen-color':'#00ffff','pen-secondary':'#ff00ff','carry-color':'#ff3030',
+                        'col-subject':'#00ffff','col-verb':'#ff3030','col-object':'#00ff00','col-adverb':'#ffff00','col-prep':'#ff00ff',
+                        'panel-border':'#ffffff',
+                        'shadow-color':'rgba(255,255,255,0.25)','shadow-color-strong':'rgba(255,255,255,0.45)',
+                        'search-match':'rgba(255,255,0,0.6)','search-text':'#000000'
+                    }
+                },
+                {
+                    id: 'sepia', name: { de: 'Sepia', en: 'Sepia' }, dark: false,
+                    colors: {
+                        'bg-color':'#f4ecd8','panel-color':'#fbf5e6','sidebar-color':'#efe6ce','border-color':'#d6c8a8',
+                        'text-color':'#5b4636','text-muted':'#7c6650','link-color':'#8b5a2b','link-hover':'#6b4420',
+                        'heading-color':'#3b2c1e','code-bg':'#efe6ce','info-box':'#e8dcc0',
+                        'paper-bg':'#fbf5e6','grid-line':'rgba(91,70,54,0.20)',
+                        'pen-color':'#8b5a2b','pen-secondary':'#8b5a8b','carry-color':'#a52a2a',
+                        'col-subject':'#4682b4','col-verb':'#a52a2a','col-object':'#6b8e23','col-adverb':'#b8860b','col-prep':'#8b5a8b',
+                        'panel-border':'#d6c8a8',
+                        'shadow-color':'rgba(91,70,54,0.18)','shadow-color-strong':'rgba(91,70,54,0.32)',
+                        'search-match':'rgba(139,90,43,0.35)','search-text':'#3b2c1e'
+                    }
+                }
+            ]
+        };
+
+        const COLORS_JSON_PATH = 'settings/colors.json';
+        let colorConfig = FALLBACK_COLOR_CONFIG;
+        let activeSchemeId = null;
+        let colorsLoadedFromFile = false;
+        let lastDarkSchemeId  = 'dark';
+        let lastLightSchemeId = 'light';
+
+        function getSchemeById(id) { return (colorConfig.schemes || []).find(s => s.id === id) || null; }
+        function resolveSchemeColors(scheme) { return Object.assign({}, colorConfig.base || {}, scheme.colors || {}); }
+
+        async function initColorSchemes() {
+            try {
+                const res = await fetch(COLORS_JSON_PATH, { cache: 'no-cache' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                if (!data || !Array.isArray(data.schemes) || data.schemes.length === 0) throw new Error('colors.json has no "schemes" array');
+                colorConfig = data;
+                colorsLoadedFromFile = true;
+                console.info('[colors] Loaded ' + data.schemes.length + ' schemes from ' + COLORS_JSON_PATH);
+            } catch (err) {
+                console.info('[colors] Using built-in palette (' + colorConfig.schemes.length + ' schemes). To load external colours, serve the folder over HTTP so ' + COLORS_JSON_PATH + ' can be fetched.');
+            }
+            const stored = readStoredScheme();
+            const preferred = colorConfig.defaultScheme || colorConfig.schemes[0].id;
+            const initial = (stored && getSchemeById(stored)) ? stored
+                          : (getSchemeById(preferred) ? preferred : colorConfig.schemes[0].id);
+            const initScheme = getSchemeById(initial);
+            if (initScheme) {
+                if (initScheme.dark) lastDarkSchemeId = initScheme.id;
+                else                 lastLightSchemeId = initScheme.id;
+            }
+            applyColorScheme(initial);
+        }
+
+        function applyColorScheme(id) {
+            const scheme = getSchemeById(id) || colorConfig.schemes[0];
+            if (!scheme) return;
+            const root = document.documentElement;
+            const colors = resolveSchemeColors(scheme);
+            Object.keys(colors).forEach(key => {
+                if (colors[key] === null || colors[key] === undefined) return;
+                root.style.setProperty('--' + key, String(colors[key]));
+            });
+            /* Keep the "light" class for legacy CSS selectors */
+            root.classList.toggle('light', !scheme.dark);
+            root.classList.toggle('theme-dark', !!scheme.dark);
+            root.style.colorScheme = scheme.dark ? 'dark' : 'light';
+            root.setAttribute('data-color-scheme', scheme.id);
+            if (scheme.dark) lastDarkSchemeId = scheme.id;
+            else             lastLightSchemeId = scheme.id;
+            activeSchemeId = scheme.id;
+            storeScheme(scheme.id);
+            updateThemeToggleIcon(scheme.dark);
+        }
+
+        function updateThemeToggleIcon(isDark) {
+            const icon = document.getElementById('themeToggleIcon');
+            if (!icon) return;
+            icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        }
+
+        function toggleDarkLight() {
+            hideThemeMenu();
+            const current = getSchemeById(activeSchemeId);
+            if (!current) return;
+            if (current.dark) {
+                const target = getSchemeById(lastLightSchemeId) ? lastLightSchemeId
+                             : (colorConfig.schemes.find(s => !s.dark) || {}).id;
+                if (target) applyColorScheme(target);
+            } else {
+                const target = getSchemeById(lastDarkSchemeId) ? lastDarkSchemeId
+                             : (colorConfig.schemes.find(s => s.dark) || {}).id;
+                if (target) applyColorScheme(target);
+            }
+        }
+
+        function buildThemeMenuItems() {
+            const menu = document.getElementById('themeContextMenu');
+            if (!menu) return;
+            menu.innerHTML = '';
+            const header = document.createElement('div');
+            header.className = 'theme-menu-header';
+            header.textContent = isGerman
+                ? 'Farbschema wählen (' + colorConfig.schemes.length + ')'
+                : 'Choose colour scheme (' + colorConfig.schemes.length + ')';
+            menu.appendChild(header);
+            const schemes = colorConfig.schemes || [];
+            const langTag = isGerman ? 'de' : 'en';
+            const PREVIEW_KEYS = ['bg-color', 'panel-color', 'code-bg', 'link-color', 'col-adverb', 'col-object'];
+            schemes.forEach(s => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'theme-menu-item' + (s.id === activeSchemeId ? ' active' : '');
+                btn.setAttribute('role', 'menuitem');
+                const swWrap = document.createElement('span');
+                swWrap.className = 'scheme-swatches';
+                const colors = resolveSchemeColors(s);
+                PREVIEW_KEYS.forEach(k => {
+                    const dot = document.createElement('span');
+                    dot.style.background = colors[k] || 'transparent';
+                    swWrap.appendChild(dot);
+                });
+                btn.appendChild(swWrap);
+                const nameEl = document.createElement('span');
+                nameEl.className = 'scheme-name';
+                const name = s.name || {};
+                nameEl.textContent = (typeof name === 'string' ? name : (name[langTag] || name.de || name.en || s.id));
+                btn.appendChild(nameEl);
+                const check = document.createElement('i');
+                check.className = 'fa-solid fa-check scheme-check';
+                btn.appendChild(check);
+                btn.addEventListener('click', () => { applyColorScheme(s.id); hideThemeMenu(); });
+                menu.appendChild(btn);
+            });
+        }
+
+        function showThemeMenu(e) {
+            if (e) e.preventDefault();
+            const menu = document.getElementById('themeContextMenu');
+            if (!menu) return;
+            buildThemeMenuItems();
+            menu.classList.add('open');
+        }
+
+        function hideThemeMenu() {
+            const menu = document.getElementById('themeContextMenu');
+            if (menu) menu.classList.remove('open');
+        }
+
+        function storageKey() { return (colorConfig && colorConfig.storageKey) || 'cheatSheetGrammatik.scheme'; }
+        function storeScheme(id) { try { localStorage.setItem(storageKey(), id); } catch (_) {} }
+        function readStoredScheme() { try { return localStorage.getItem(storageKey()); } catch (_) { return null; } }
+
+        /* ==================================================================
+           ANIMATIONS
+           ================================================================== */
         class ContinuousSheetAnimator {
             constructor(lineIds, highlightMap = {}, highlightMapSec = {}, onStep = null) {
                 this.lineIds = lineIds;
@@ -1258,6 +1795,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            /* --- Hover highlighting on POS classes (once animation finished) --- */
             const posMappings = {
                 'subject': '.pos-subject',
                 'verb': '.pos-verb',
@@ -1279,112 +1817,31 @@
                 });
             });
 
+            /* --- Download button visibility (hide when opened locally) --- */
+            updateDownloadVisibility();
+
+            /* --- Theme toggle button (left-click: dark/light, right-click: menu) --- */
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (themeBtn) {
+                themeBtn.addEventListener('click', (e) => { e.preventDefault(); toggleDarkLight(); });
+                themeBtn.addEventListener('contextmenu', (e) => { showThemeMenu(e); });
+            }
+            document.addEventListener('click', (e) => {
+                const menu = document.getElementById('themeContextMenu');
+                if (!menu || !menu.classList.contains('open')) return;
+                const btn = document.getElementById('themeToggleBtn');
+                if (menu.contains(e.target)) return;
+                if (btn && btn.contains(e.target)) return;
+                hideThemeMenu();
+            });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideThemeMenu(); });
+
+            /* --- Boot colour scheme (settings/colors.json or fallback) --- */
+            initColorSchemes();
+
+            /* --- Start first animation --- */
             if (currentAnim) currentAnim.play();
         });
-
-        function filterWiki() {
-            const input = document.getElementById('wikiSearch');
-            const filter = input.value.toLowerCase();
-            const pages = document.querySelectorAll('.topic-page');
-            const mainContent = document.getElementById('main-content');
-            removeHighlights(mainContent);
-
-            if (!filter) return;
-
-            pages.forEach(page => {
-                const text = page.innerText.toLowerCase();
-                if (text.includes(filter)) {
-                    highlightText(page, input.value);
-                }
-            });
-        }
-
-        function highlightText(element, keyword) {
-            if (!keyword) return;
-            const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
-            const nodesToReplace = [];
-
-            let node;
-            while (node = treeWalker.nextNode()) {
-                if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
-                    if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE') {
-                        nodesToReplace.push(node);
-                    }
-                }
-            }
-
-            nodesToReplace.forEach(node => {
-                const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
-                const fragment = document.createDocumentFragment();
-                let match;
-                let lastIndex = 0;
-                const text = node.nodeValue;
-
-                while ((match = regex.exec(text)) !== null) {
-                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
-                    const span = document.createElement('span');
-                    span.className = 'search-match font-semibold';
-                    span.textContent = match[0];
-                    fragment.appendChild(span);
-                    lastIndex = regex.lastIndex;
-                }
-                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
-                node.parentNode.replaceChild(fragment, node);
-            });
-        }
-
-        function removeHighlights(element) {
-            element.querySelectorAll('.search-match').forEach(span => {
-                const parent = span.parentNode;
-                parent.replaceChild(document.createTextNode(span.textContent), span);
-                parent.normalize();
-            });
-        }
-
-        function escapeRegExp(string) {
-            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        }
-
-        function toggleTheme() {
-            const html = document.documentElement;
-            const icon = document.getElementById('theme-icon');
-            if (html.classList.contains('light')) {
-                html.classList.remove('light');
-                icon.className = 'fa-solid fa-sun';
-            } else {
-                html.classList.add('light');
-                icon.className = 'fa-solid fa-moon';
-            }
-        }
-
-        let isGerman = true;
-        function toggleLang() {
-            isGerman = !isGerman;
-            document.getElementById('lang-indicator').textContent = isGerman ? 'DE' : 'EN';
-            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
-            const deEls = document.querySelectorAll('[data-lang-de]');
-            const enEls = document.querySelectorAll('[data-lang-en]');
-            if (isGerman) {
-                deEls.forEach(el => el.style.display = '');
-                enEls.forEach(el => el.style.display = 'none');
-            } else {
-                deEls.forEach(el => el.style.display = 'none');
-                enEls.forEach(el => el.style.display = '');
-            }
-        }
-
-        function downloadHTML() {
-            removeHighlights(document.getElementById('main-content'));
-            const blob = new Blob(["<!DOCTYPE html>\n" + document.documentElement.outerHTML], { type: 'text/html;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'DIN4_Language_Cheat_Sheet.html';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
     </script>
 </body>
 </html>

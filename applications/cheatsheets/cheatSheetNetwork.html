@@ -1,1049 +1,1745 @@
 <!DOCTYPE html>
 <html lang="de" class="scroll-smooth">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Network Cheatsheet</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Netzwerke Cheatsheet – IT Systemintegration</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>
+tailwind.config = {
+  theme: { extend: {
+    colors: { wiki: { bg:'var(--bg-color)', panel:'var(--panel-color)', border:'var(--border-color)', text:'var(--text-color)', textMuted:'var(--text-muted)', link:'var(--link-color)', linkHover:'var(--link-hover)', heading:'var(--heading-color)', codeBg:'var(--code-bg)', infoBox:'var(--info-box)' } },
+    fontFamily: { sans:['Inter','sans-serif'], serif:['Lora','serif'], mono:['Fira Code','Consolas','monospace'] }
+  }}
+}
+</script>
+<style>
+/* ============================================================
+   FALLBACK PALETTE (dark)
+   Real values from colors.json or built-in 15-scheme fallback.
+   ============================================================ */
+:root {
+  --bg-color:#0d1117; --panel-color:#161b22; --sidebar-color:#0d1117; --border-color:#30363d;
+  --text-color:#c9d1d9; --text-muted:#8b949e; --link-color:#22d3ee; --link-hover:#67e8f9;
+  --heading-color:#f0f6fc; --subtitle-color:#c9d1d9;
+  --code-bg:#1c2128; --code-block-bg:#0d1117; --info-box:#1c2433;
+  --table-alt:rgba(255,255,255,0.02); --search-match:rgba(34,211,238,0.3); --search-text:#ffffff;
+  --c-phase-1:#3b82f6; --c-phase-2:#a78bfa; --c-phase-3:#f59e0b; --c-phase-4:#10b981; --c-phase-5:#ef4444;
+  --accent-blue:#3b82f6; --accent-green:#10b981; --accent-amber:#f59e0b;
+  --accent-violet:#8b5cf6; --accent-teal:#14b8a6; --accent-red:#ef4444; --accent-gray:#6b7280;
+  --content-max:1600px; --sidebar-w:20rem; --panel-border:#30363d;
+  --shadow-color:rgba(0,0,0,0.45); --shadow-color-strong:rgba(0,0,0,0.7);
+  --card-shadow:0 0 22px 0 var(--shadow-color),0 0 10px 0 var(--shadow-color),0 4px 24px 0 var(--shadow-color);
+  --card-shadow-hover:0 0 40px 0 var(--shadow-color-strong),0 0 18px 0 var(--shadow-color-strong),0 8px 36px 0 var(--shadow-color-strong);
+}
+html{font-size:16px}@media(min-width:1536px){html{font-size:17px}}@media(min-width:1800px){html{font-size:18px}}
+body{background:var(--bg-color);color:var(--text-color);font-family:'Inter',sans-serif;line-height:1.65;transition:background-color .2s,color .2s;overflow-x:hidden}
+h1,h2,h3,h4{font-family:'Lora',serif;color:var(--heading-color);font-weight:800!important;line-height:1.15;text-wrap:balance}
+h3,h4{color:var(--subtitle-color,var(--heading-color))}
+h1{font-size:clamp(2.1rem,3vw,3.1rem)!important;padding-bottom:.5rem;margin-bottom:1rem}
+h2{font-size:clamp(1.6rem,2.1vw,2.15rem)!important;padding-bottom:.4rem;margin-top:0;margin-bottom:1.25rem;border-bottom:1px solid var(--border-color)}
+h3{font-size:clamp(1.25rem,1.5vw,1.6rem)!important;margin-top:1.25rem;margin-bottom:.7rem}
+h4{font-size:clamp(1.1rem,1.2vw,1.35rem)!important;margin-top:1.25rem;margin-bottom:.5rem}
+a{color:var(--link-color);text-decoration:none;cursor:pointer}
+a:hover{color:var(--link-hover);text-decoration:underline}
+p{margin-bottom:1rem;max-width:90ch}
+code{background:var(--code-bg);padding:.15rem .4rem;border-radius:.25rem;border:1px solid var(--border-color);font-family:'Fira Code',monospace;font-size:.85em;color:var(--heading-color)}
+pre code{display:block;background:var(--code-block-bg);padding:1rem;border-radius:.5rem;border:1px solid var(--panel-border);overflow-x:auto;color:var(--text-color);line-height:1.5;margin:1rem 0;box-shadow:inset 0 2px 4px rgba(0,0,0,.1)}
+.wikitable{width:100%;border-collapse:collapse;margin:1em 0;background:var(--bg-color);font-size:.95em;border:1px solid var(--panel-border);border-radius:.5rem;overflow:hidden;table-layout:auto}
+.wikitable th,.wikitable td{border:1px solid var(--panel-border);padding:.7em .95em;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:normal}
+.wikitable th{background:var(--info-box);font-weight:600;color:var(--heading-color)}
+.wikitable tr:nth-child(even){background:var(--table-alt)}
+.infobox{float:right;width:320px;margin:0.5em 0 1em 1.5em;background-color:var(--bg-color);border:1px solid var(--panel-border);border-radius:0.5rem;padding:0.5em;font-size:0.85em}
+.infobox th{background-color:var(--info-box);text-align:left;padding:0.4em 0.6em;width:35%;color:var(--heading-color)}
+.infobox td{padding:0.4em 0.6em}
+.infobox-title{text-align:center;font-size:1.1em;font-weight:bold;background-color:var(--info-box);padding:0.6em;margin-bottom:0.5em;border-bottom:1px solid var(--panel-border);color:var(--heading-color);border-top-left-radius:0.4rem;border-top-right-radius:0.4rem}
+@media(max-width:1024px){.infobox{float:none;width:100%;margin:1em 0}}
+.toc-link.active{font-weight:600;color:var(--heading-color);position:relative}
+.toc-link.active::before{content:'';position:absolute;left:-1rem;top:0;height:100%;width:3px;background:var(--link-color)}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg-color)}
+::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-muted)}
+.search-match{background:var(--search-match);border-radius:2px;padding:0 2px;color:var(--search-text)!important}
+.app-sidebar{width:var(--sidebar-w);max-height:50vh}
+@media(min-width:1024px){.app-sidebar{max-height:100vh}}
+.app-main{flex:1 1 0%;min-width:0;width:100%;max-width:var(--content-max);padding:1rem}
+@media(min-width:1024px){.app-main{padding:1.5rem}}
+@media(min-width:1280px){.app-main{padding:2rem}}
+@media(min-width:1600px){.app-main{padding:2.25rem 2.5rem}}
+.topic-panel{background:var(--panel-color);border:1px solid var(--panel-border);box-shadow:var(--card-shadow);border-radius:1rem;padding:1.5rem;margin:2rem 0;transition:box-shadow .3s ease}
+@media(min-width:1024px){.topic-panel{padding:2.25rem}}
+.topic-panel:hover{box-shadow:var(--card-shadow-hover)}
+.topic-panel.mt-0{margin-top:0}
+.topic-panel.mb-8{margin-bottom:2rem}
+.topic-panel.mb-20{margin-bottom:5rem}
+.subtopic-card{background:var(--bg-color);border:1px solid var(--panel-border);border-radius:.75rem;padding:1.5rem;margin-bottom:1.5rem;transition:box-shadow .2s ease,transform .2s ease}
+.subtopic-card:last-child{margin-bottom:0}
+.subtopic-card:hover{box-shadow:var(--card-shadow);transform:translateY(-2px)}
+.subtopic-card>h3:first-child{margin-top:0}
+.panel-intro{margin-bottom:1.5rem}
+.math-card{background:var(--panel-color);border:1px solid var(--panel-border);border-radius:.5rem;padding:1.25rem;margin:1rem 0;height:100%}
+.btn-primary{background:var(--link-color);color:#fff;transition:transform .1s,opacity .2s;border:none}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-primary:active{transform:translateY(1px)}
+.btn-secondary{background:var(--bg-color);border:1px solid var(--border-color);color:var(--text-color);transition:all .2s}
+.btn-secondary:hover{background:var(--info-box);border-color:var(--link-color)}
+#netCanvas-wrapper{position:relative;width:100%;height:100%}
+canvas{display:block;width:100%;height:100%}
+/* GLOBAL LANG TOGGLE */
+.lang-en{display:none}
+body[data-active-lang="en"] .lang-de{display:none!important}
+body[data-active-lang="en"] .lang-en{display:block!important}
+body[data-active-lang="en"] span.lang-en,body[data-active-lang="en"] a.lang-en,body[data-active-lang="en"] div.lang-en,body[data-active-lang="en"] li.lang-en,body[data-active-lang="en"] td.lang-en,body[data-active-lang="en"] th.lang-en,body[data-active-lang="en"] h1.lang-en,body[data-active-lang="en"] h2.lang-en,body[data-active-lang="en"] h3.lang-en,body[data-active-lang="en"] h4.lang-en,body[data-active-lang="en"] strong.lang-en,body[data-active-lang="en"] p.lang-en{display:inline!important}
+body[data-active-lang="en"] div.lang-en,body[data-active-lang="en"] li.lang-en,body[data-active-lang="en"] td.lang-en,body[data-active-lang="en"] h1.lang-en,body[data-active-lang="en"] h2.lang-en,body[data-active-lang="en"] h3.lang-en,body[data-active-lang="en"] h4.lang-en,body[data-active-lang="en"] p.lang-en{display:block!important}
+body[data-active-lang="en"] td.lang-en,body[data-active-lang="en"] th.lang-en{display:table-cell!important}
+body[data-active-lang="en"] li.lang-en{display:list-item!important}
+body[data-active-lang="de"] .lang-en{display:none!important}
+body[data-active-lang="de"] .lang-de{display:block!important}
+body[data-active-lang="de"] span.lang-de,body[data-active-lang="de"] a.lang-de,body[data-active-lang="de"] div.lang-de,body[data-active-lang="de"] li.lang-de,body[data-active-lang="de"] td.lang-de,body[data-active-lang="de"] th.lang-de,body[data-active-lang="de"] h1.lang-de,body[data-active-lang="de"] h2.lang-de,body[data-active-lang="de"] h3.lang-de,body[data-active-lang="de"] h4.lang-de,body[data-active-lang="de"] strong.lang-de,body[data-active-lang="de"] p.lang-de{display:inline!important}
+body[data-active-lang="de"] div.lang-de,body[data-active-lang="de"] li.lang-de,body[data-active-lang="de"] td.lang-de,body[data-active-lang="de"] h1.lang-de,body[data-active-lang="de"] h2.lang-de,body[data-active-lang="de"] h3.lang-de,body[data-active-lang="de"] h4.lang-de,body[data-active-lang="de"] p.lang-de{display:block!important}
+body[data-active-lang="de"] td.lang-de,body[data-active-lang="de"] th.lang-de{display:table-cell!important}
+body[data-active-lang="de"] li.lang-de{display:list-item!important}
+.ds-chip{display:inline-flex;align-items:center;justify-content:center;min-width:2.5rem;height:1.75rem;padding:0 .5rem;border-radius:.5rem;background:var(--info-box);color:var(--heading-color);font-weight:700;font-size:.75rem;font-family:'Fira Code',monospace;border:1px solid var(--panel-border)}
+.toc-example.active{background:var(--info-box);color:var(--heading-color)!important;font-weight:700}
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        wiki: {
-                            bg: 'var(--bg-color)',
-                            panel: 'var(--panel-color)',
-                            border: 'var(--border-color)',
-                            text: 'var(--text-color)',
-                            textMuted: 'var(--text-muted)',
-                            link: 'var(--link-color)',
-                            linkHover: 'var(--link-hover)',
-                            heading: 'var(--heading-color)',
-                            codeBg: 'var(--code-bg)',
-                            infoBox: 'var(--info-box)',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        serif: ['Lora', 'serif'],
-                        mono: ['Fira Code', 'Consolas', 'monospace'],
-                    }
-                }
-            }
-        }
-    </script>
+/* ---------- Sidebar control buttons ---------- */
+.ctrl-btn{flex:1;padding:.375rem 0;border-radius:.5rem;font-size:.875rem;font-weight:600;color:var(--text-muted);border:1px solid transparent;transition:background-color .15s,color .15s;cursor:pointer}
+.ctrl-btn:hover{background:var(--code-bg);color:var(--link-color)}
 
-    <style>
-        :root {
-            /* Dark Mode Defaults */
-            --bg-color: #181a1b;
-            --panel-color: #202324;
-            --sidebar-color: #202122;
-            --border-color: #54595d;
-            --text-color: #eaecf0;
-            --text-muted: #a8aeb3;
-            --link-color: #99c1f1;
-            --link-hover: #629deb;
-            --heading-color: #ffffff;
-            --code-bg: #27292a;
-            --info-box: #2c2d30;
-            --table-alt: rgba(255,255,255,0.02);
-            --search-match: rgba(250, 204, 21, 0.3);
-            --search-text: #ffffff;
-
-            /* Layout tuning for large (maximized 1080p) viewports */
-            --content-max: 1600px;
-            --sidebar-w: 20rem; /* 320px */
-
-            /* Panel borders & strengthened omni-directional encasing shadow */
-            --panel-border: #54595d;
-            --card-shadow:
-                0 0 22px 0 rgba(0, 0, 0, 0.55),
-                0 0 10px 0 rgba(0, 0, 0, 0.45),
-                0 4px 24px 0 rgba(0, 0, 0, 0.35);
-            --card-shadow-hover:
-                0 0 40px 0 rgba(0, 0, 0, 0.7),
-                0 0 18px 0 rgba(0, 0, 0, 0.55),
-                0 8px 36px 0 rgba(0, 0, 0, 0.45);
-        }
-
-        html.light {
-            /* Light Mode Overrides */
-            --bg-color: #f4f6f9;
-            --panel-color: #ffffff;
-            --sidebar-color: #ffffff;
-            --border-color: #cbd5e1;
-            --text-color: #000000;
-            --text-muted: #1f2937;
-            --link-color: #2563eb;
-            --link-hover: #1d4ed8;
-            --heading-color: #000000;
-            --code-bg: #f1f5f9;
-            --info-box: #e0f2fe;
-            --table-alt: rgba(0,0,0,0.015);
-            --search-match: rgba(250, 204, 21, 0.5);
-            --search-text: #000000;
-
-            /* Stronger encasing shadow for light mode as well */
-            --panel-border: #e2e8f0;
-            --card-shadow:
-                0 0 28px 0 rgba(0, 0, 0, 0.18),
-                0 0 12px 0 rgba(0, 0, 0, 0.12),
-                0 4px 24px 0 rgba(0, 0, 0, 0.10);
-            --card-shadow-hover:
-                0 0 48px 0 rgba(0, 0, 0, 0.28),
-                0 0 22px 0 rgba(0, 0, 0, 0.20),
-                0 8px 36px 0 rgba(0, 0, 0, 0.16);
-        }
-
-        html { font-size: 16px; }
-
-        /* When the iframe viewport is large (maximized window ~1900px wide),
-           scale the whole document up slightly so nothing looks tiny. */
-        @media (min-width: 1536px)  { html { font-size: 17px; } }
-        @media (min-width: 1800px)  { html { font-size: 18px; } }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: 'Inter', sans-serif;
-            line-height: 1.65;
-            transition: background-color 0.2s, color 0.2s;
-            overflow-x: hidden;
-        }
-
-        /* ---------- Fluid, viewport-aware typography ---------- */
-        h1, h2, h3, h4 {
-            font-family: 'Lora', serif;
-            color: var(--heading-color);
-            font-weight: 800 !important;
-            line-height: 1.15;
-            text-wrap: balance;
-        }
-        h1 {
-            font-size: clamp(2.1rem, 3vw, 3.1rem) !important;
-            padding-bottom: 0.5rem;
-            margin-bottom: 1rem;
-        }
-        h2 {
-            font-size: clamp(1.6rem, 2.1vw, 2.15rem) !important;
-            padding-bottom: 0.4rem;
-            margin-top: 0;
-            margin-bottom: 1.25rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-        h3 {
-            font-size: clamp(1.25rem, 1.5vw, 1.6rem) !important;
-            margin-top: 1.25rem;
-            margin-bottom: 0.7rem;
-        }
-        h4 {
-            font-size: clamp(1.1rem, 1.2vw, 1.35rem) !important;
-            margin-top: 1.25rem;
-            margin-bottom: 0.5rem;
-        }
-
-        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
-        a:hover { color: var(--link-hover); text-decoration: underline; }
-        p { margin-bottom: 1rem; max-width: 90ch; }
-
-        code {
-            background-color: var(--code-bg);
-            padding: 0.15rem 0.4rem;
-            border-radius: 0.25rem;
-            border: 1px solid var(--border-color);
-            font-family: 'Fira Code', monospace;
-            font-size: 0.85em;
-            color: var(--text-color);
-        }
-
-        /* ---------- Wiki-style Tables ---------- */
-        .wikitable {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1em 0;
-            background-color: var(--bg-color);
-            font-size: 0.95em;
-            border: 1px solid var(--panel-border);
-            border-radius: 0.5rem;
-            overflow: hidden;
-            table-layout: auto;
-        }
-        .wikitable th, .wikitable td {
-            border: 1px solid var(--panel-border);
-            padding: 0.7em 0.95em;
-            text-align: left;
-            vertical-align: top;
-            overflow-wrap: break-word;
-            word-break: normal;
-        }
-        .wikitable th {
-            background-color: var(--info-box);
-            font-weight: 600;
-            color: var(--heading-color);
-            font-size: 0.95em;
-            letter-spacing: 0.01em;
-        }
-        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
-
-        /* ---------- Wiki-style Infobox ---------- */
-        .infobox {
-            float: right;
-            width: 320px;
-            margin: 0.5em 0 1em 1.5em;
-            background-color: var(--bg-color);
-            border: 1px solid var(--panel-border);
-            border-radius: 0.5rem;
-            padding: 0.5em;
-            font-size: 0.85em;
-        }
-        .infobox th { background-color: var(--info-box); text-align: left; padding: 0.4em 0.6em; width: 35%; color: var(--heading-color); }
-        .infobox td { padding: 0.4em 0.6em; }
-        .infobox-title {
-            text-align: center; font-size: 1.1em; font-weight: bold;
-            background-color: var(--info-box); padding: 0.6em; margin-bottom: 0.5em;
-            border-bottom: 1px solid var(--panel-border); color: var(--heading-color);
-            border-top-left-radius: 0.4rem; border-top-right-radius: 0.4rem;
-        }
-
-        /* ---------- TOC Styles ---------- */
-        .toc-link.active { font-weight: 600; color: var(--heading-color); position: relative; }
-        .toc-link.active::before {
-            content: ''; position: absolute; left: -1rem; top: 0; height: 100%;
-            width: 3px; background-color: var(--link-color);
-        }
-
-        /* Sidebar scrollbar */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg-color); }
-        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-
-        .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
-
-        /* ---------- Layout helpers ---------- */
-        .app-sidebar {
-            width: var(--sidebar-w);
-            max-height: 50vh;
-        }
-        @media (min-width: 1024px) {
-            .app-sidebar { max-height: 100vh; }
-        }
-
-        .app-main {
-            flex: 1 1 0%;
-            min-width: 0;
-            width: 100%;
-            max-width: var(--content-max);
-            padding: 1rem;
-        }
-        @media (min-width: 1024px) { .app-main { padding: 1.5rem; } }
-        @media (min-width: 1280px) { .app-main { padding: 2rem; } }
-        @media (min-width: 1600px) { .app-main { padding: 2.25rem 2.5rem; } }
-
-        /* ---------- Topic Panel (outer container) ---------- */
-        .topic-panel {
-            background-color: var(--panel-color);
-            border: 1px solid var(--panel-border);
-            box-shadow: var(--card-shadow);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            margin: 2rem 0;
-            transition: box-shadow 0.3s ease;
-        }
-        @media (min-width: 1024px) {
-            .topic-panel { padding: 2.25rem; }
-        }
-        .topic-panel:hover {
-            box-shadow: var(--card-shadow-hover);
-        }
-        .topic-panel.mt-0 { margin-top: 0; }
-        .topic-panel.mb-8 { margin-bottom: 2rem; }
-        .topic-panel.mb-20 { margin-bottom: 5rem; }
-
-        /* ---------- Subtopic Card (inner block) ---------- */
-        .subtopic-card {
-            background-color: var(--bg-color);
-            border: 1px solid var(--panel-border);
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            transition: box-shadow 0.2s ease, transform 0.2s ease;
-        }
-        .subtopic-card:last-child {
-            margin-bottom: 0;
-        }
-        .subtopic-card:hover {
-            box-shadow: var(--card-shadow);
-            transform: translateY(-2px);
-        }
-        .subtopic-card > h3:first-child { margin-top: 0; }
-
-        /* Non-card intro paragraph inside a panel */
-        .panel-intro {
-            margin-bottom: 1.5rem;
-            color: var(--text-color);
-        }
-
-        @media (max-width: 1024px) {
-            .infobox { float: none; width: 100%; margin: 1em 0; }
-        }
-
-        /* Global Language Switcher Support */
-        [data-lang-de], [data-lang-en] { transition: opacity 0.15s ease-in-out; }
-    </style>
+/* ---------- Theme context menu ---------- */
+#themeContextMenu{display:none;position:absolute;left:0;right:0;top:calc(100% + .35rem);max-height:24rem;overflow-y:auto;background:var(--panel-color);border:1px solid var(--panel-border);border-radius:.75rem;box-shadow:0 12px 36px var(--shadow-color-strong),0 4px 12px var(--shadow-color);z-index:200}
+#themeContextMenu.open{display:block}
+.theme-menu-header{padding:.5rem .75rem;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);border-bottom:1px solid var(--border-color);background:var(--info-box);position:sticky;top:0;z-index:1}
+.theme-menu-item{display:flex;align-items:center;gap:.55rem;width:100%;padding:.5rem .75rem;font-size:.8rem;color:var(--text-color);text-align:left;border:none;background:transparent;cursor:pointer;transition:background .12s,color .12s;border-left:3px solid transparent}
+.theme-menu-item:hover{background:var(--code-bg);color:var(--link-color)}
+.theme-menu-item.active{font-weight:700;color:var(--link-color);background:var(--info-box);border-left-color:var(--link-color)}
+.theme-menu-item .scheme-swatches{display:inline-flex;gap:2px;flex-shrink:0}
+.theme-menu-item .scheme-swatches span{width:9px;height:9px;border-radius:50%;border:1px solid var(--border-color)}
+.theme-menu-item .scheme-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.theme-menu-item .scheme-check{font-size:.65rem;color:var(--link-color);opacity:0}
+.theme-menu-item.active .scheme-check{opacity:1}
+</style>
 </head>
-<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
+<body class="flex flex-col lg:flex-row min-h-screen" data-active-lang="de">
 
-    <aside class="app-sidebar flex-shrink-0 bg-[var(--sidebar-color)] border-b lg:border-b-0 lg:border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
+<!-- ============ SIDEBAR ============ -->
+<aside class="app-sidebar flex-shrink-0 bg-[var(--sidebar-color)] border-b lg:border-b-0 lg:border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
+  <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm relative">
+    <button onclick="toggleLang()" class="ctrl-btn" title="Sprache wechseln / Toggle language"><i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span></button>
+    <div class="w-px h-4 bg-[var(--border-color)]"></div>
+    <button id="themeToggleBtn" class="ctrl-btn" title="Linksklick: Hell/Dunkel · Rechtsklick: alle Farbschemata"><i id="themeToggleIcon" class="fa-solid fa-sun"></i></button>
+    <div id="downloadDivider" class="w-px h-4 bg-[var(--border-color)]"></div>
+    <button id="downloadBtn" onclick="downloadHTML()" class="ctrl-btn" style="color:var(--link-color)" title="Download HTML"><i class="fa-solid fa-download"></i></button>
+    <div id="themeContextMenu" role="menu" aria-label="Farbschemata"></div>
+  </div>
 
-        <!-- Controls: Language, Theme, Download -->
-        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
-            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
-                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
-            </button>
-            <div class="w-px h-4 bg-[var(--border-color)]"></div>
-            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
-                <i id="theme-icon" class="fa-solid fa-sun"></i>
-            </button>
-            <div class="w-px h-4 bg-[var(--border-color)]"></div>
-            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Cheatsheet">
-                <i class="fa-solid fa-download"></i>
-            </button>
+  <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+    <i class="fa-solid fa-network-wired text-3xl mb-3 opacity-80" style="color:var(--link-color)"></i>
+    <div class="font-serif text-2xl tracking-tight leading-tight"><span class="lang-de">Netzwerk-<br>Referenz</span><span class="lang-en">Network<br>Cheatsheet</span></div>
+    <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v4.1 – IT Systemintegration</div>
+  </div>
+
+  <div class="mb-6 relative">
+    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none"><i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i></div>
+    <input type="text" id="wikiSearch" placeholder="Search..." class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-xl pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:border-[var(--link-color)] transition-all shadow-sm" onkeyup="filterWiki()">
+  </div>
+
+  <nav class="text-sm space-y-1.5" id="toc-nav">
+    <!-- Concepts first -->
+    <div class="font-bold mb-3 uppercase tracking-wider text-xs"><span class="lang-de">Konzepte & Protokolle</span><span class="lang-en">Concepts & Protocols</span></div>
+    <ul class="space-y-1">
+      <li><a href="#devices" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)]"><i class="fa-solid fa-microchip mr-2"></i><span class="lang-de">Geräte</span><span class="lang-en">Devices</span></a></li>
+      <li><a href="#types" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)]"><i class="fa-solid fa-sitemap mr-2"></i><span class="lang-de">Netzwerk-Typen</span><span class="lang-en">Network Types</span></a></li>
+      <li><a href="#topologies" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)]"><i class="fa-solid fa-diagram-project mr-2"></i><span class="lang-de">Topologien</span><span class="lang-en">Topologies</span></a></li>
+      <li class="pt-2">
+        <a href="#layer4" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors"><i class="fa-solid fa-truck-fast mr-2"></i><span class="lang-de">Transport (TCP/UDP)</span><span class="lang-en">Transport (TCP/UDP)</span></a>
+        <ul class="pl-7 space-y-1 border-l border-[var(--border-color)] ml-3 mt-1">
+            <li><a href="#handshake" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span class="lang-de">TCP Handshake</span><span class="lang-en">TCP Handshake</span></a></li>
+        </ul>
+      </li>
+      <li class="pt-1">
+        <a href="#layer7" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors"><i class="fa-solid fa-layer-group mr-2"></i><span class="lang-de">Anwendungen (L7)</span><span class="lang-en">Applications (L7)</span></a>
+        <ul class="pl-7 space-y-1 border-l border-[var(--border-color)] ml-3 mt-1">
+            <li><a href="#app-web" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span class="lang-de">Web & File</span><span class="lang-en">Web & File</span></a></li>
+            <li><a href="#app-mail" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span class="lang-de">Mail</span><span class="lang-en">Mail</span></a></li>
+            <li><a href="#app-infra" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span class="lang-de">Infrastruktur</span><span class="lang-en">Infrastructure</span></a></li>
+        </ul>
+      </li>
+      <li class="pt-1">
+        <a href="#ipv4" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors"><i class="fa-solid fa-network-wired mr-2"></i><span class="lang-de">IPv4 & Subnetting</span><span class="lang-en">IPv4 & Subnetting</span></a>
+        <ul class="pl-7 space-y-1 border-l border-[var(--border-color)] ml-3 mt-1">
+            <li><a href="#ipv4-classes" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span class="lang-de">Netzklassen</span><span class="lang-en">Network Classes</span></a></li>
+            <li><a href="#ipv4-magic" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span class="lang-de">Magic Number</span><span class="lang-en">Magic Number</span></a></li>
+        </ul>
+      </li>
+      <li class="pt-1">
+        <a href="#ipv6" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors"><i class="fa-solid fa-globe mr-2"></i><span class="lang-de">IPv6</span><span class="lang-en">IPv6</span></a>
+      </li>
+      <li class="pt-1">
+        <a href="#commands" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors"><i class="fa-solid fa-terminal mr-2"></i><span class="lang-de">CLI Befehle</span><span class="lang-en">CLI Commands</span></a>
+      </li>
+      <li class="pt-1">
+        <a href="#security" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors"><i class="fa-solid fa-shield-halved mr-2"></i><span class="lang-de">Sicherheit</span><span class="lang-en">Security</span></a>
+      </li>
+      <li class="pt-1">
+        <a href="#pruefung" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors"><i class="fa-solid fa-graduation-cap mr-2"></i><span class="lang-de">Prüfungsrelevanz</span><span class="lang-en">Exam Relevance</span></a>
+      </li>
+    </ul>
+
+    <!-- Network examples moved to the BOTTOM -->
+    <div class="font-bold mt-6 mb-3 uppercase tracking-wider text-xs"><span class="lang-de">Netzwerk-Beispiele</span><span class="lang-en">Network Examples</span></div>
+    <ul class="space-y-1">
+      <li><a href="#visualizer" class="toc-example block py-1.5 px-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--code-bg)] hover:text-[var(--link-color)] transition-colors" data-idx="0"><i class="fa-solid fa-house mr-2"></i><span class="lang-de">1. Heimnetzwerk</span><span class="lang-en">1. Home Network</span></a></li>
+      <li><a href="#visualizer" class="toc-example block py-1.5 px-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--code-bg)] hover:text-[var(--link-color)] transition-colors" data-idx="1"><i class="fa-solid fa-briefcase mr-2"></i><span class="lang-de">2. Kleines Büro (SOHO)</span><span class="lang-en">2. Small Office (SOHO)</span></a></li>
+      <li><a href="#visualizer" class="toc-example block py-1.5 px-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--code-bg)] hover:text-[var(--link-color)] transition-colors" data-idx="2"><i class="fa-solid fa-shield-halved mr-2"></i><span class="lang-de">3. DMZ (Back-to-Back)</span><span class="lang-en">3. DMZ (Back-to-Back)</span></a></li>
+      <li><a href="#visualizer" class="toc-example block py-1.5 px-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--code-bg)] hover:text-[var(--link-color)] transition-colors" data-idx="3"><i class="fa-solid fa-layer-group mr-2"></i><span class="lang-de">4. VLAN-Segmentierung</span><span class="lang-en">4. VLAN Segmentation</span></a></li>
+      <li><a href="#visualizer" class="toc-example block py-1.5 px-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--code-bg)] hover:text-[var(--link-color)] transition-colors" data-idx="4"><i class="fa-solid fa-globe mr-2"></i><span class="lang-de">5. WAN & VPN-Filialen</span><span class="lang-en">5. WAN & VPN Branches</span></a></li>
+      <li><a href="#visualizer" class="toc-example block py-1.5 px-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--code-bg)] hover:text-[var(--link-color)] transition-colors" data-idx="5"><i class="fa-solid fa-server mr-2"></i><span class="lang-de">6. Rechenzentrum (3-Tier)</span><span class="lang-en">6. Data Center (3-Tier)</span></a></li>
+      <li><a href="#visualizer" class="toc-example block py-1.5 px-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--code-bg)] hover:text-[var(--link-color)] transition-colors" data-idx="6"><i class="fa-solid fa-wifi mr-2"></i><span class="lang-de">7. WLAN mit Mesh</span><span class="lang-en">7. WLAN with Mesh</span></a></li>
+      <li><a href="#visualizer" class="toc-example block py-1.5 px-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--code-bg)] hover:text-[var(--link-color)] transition-colors" data-idx="7"><i class="fa-solid fa-cloud mr-2"></i><span class="lang-de">8. Cloud-Hybrid</span><span class="lang-en">8. Cloud-Hybrid</span></a></li>
+    </ul>
+  </nav>
+</aside>
+
+<main class="app-main" id="main-content">
+
+<!-- ============ INTRO ============ -->
+<div class="searchable-block topic-panel mt-0 mb-8">
+  <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0"><span class="lang-de">Netzwerk-Referenz</span><span class="lang-en">Network Cheatsheet</span></h1>
+  <p class="text-lg mb-0 lang-de">Ein <strong><a href="https://de.wikipedia.org/wiki/Netzwerkprotokoll" target="_blank">Netzwerkprotokoll</a></strong> ist ein exaktes Regelwerk, das bestimmt, wie Computer innerhalb eines Netzwerks miteinander kommunizieren. Diese Referenz dient als umfassendes Kompendium für angehende Fachinformatiker (FISI) und Systemadministratoren. Blättere unten durch interaktive Architekturen und nutze die Referenz für <a href="https://de.wikipedia.org/wiki/OSI-Modell" target="_blank">OSI-Modell</a>, Adressierung (<a href="https://de.wikipedia.org/wiki/IPv4" target="_blank">IPv4</a>/<a href="https://de.wikipedia.org/wiki/IPv6" target="_blank">IPv6</a>), Anwendungsprotokolle und Sicherheitskonzepte.</p>
+  <p class="text-lg mb-0 lang-en">A <strong><a href="https://en.wikipedia.org/wiki/Communication_protocol" target="_blank">Network Protocol</a></strong> is an exact set of rules that determines how computers communicate with each other within a network. This reference serves as a comprehensive compendium for IT professionals and system administrators. Cycle through interactive architectures below and use the reference sections for the <a href="https://en.wikipedia.org/wiki/OSI_model" target="_blank">OSI model</a>, addressing (<a href="https://en.wikipedia.org/wiki/IPv4" target="_blank">IPv4</a>/<a href="https://en.wikipedia.org/wiki/IPv6" target="_blank">IPv6</a>), application protocols, and security concepts.</p>
+</div>
+
+<!-- ============ CH: DEVICES ============ -->
+<section id="devices" class="scroll-mt-10 searchable-block topic-panel mt-12">
+  <h2><i class="fa-solid fa-microchip mr-2 text-[var(--link-color)]"></i><span class="lang-de">Netzwerk-Geräte</span><span class="lang-en">Network Devices</span></h2>
+  <p class="panel-intro"><span class="lang-de">Die wichtigsten Geräte in Netzwerken – OSI-Schicht, Funktion und Einsatz.</span><span class="lang-en">The most important devices in networks – OSI layer, function, and use case.</span></p>
+
+  <div class="subtopic-card">
+    <table class="wikitable">
+      <thead><tr><th><span class="lang-de">Gerät</span><span class="lang-en">Device</span></th><th>OSI</th><th><span class="lang-de">Funktion</span><span class="lang-en">Function</span></th><th><span class="lang-de">Einsatz</span><span class="lang-en">Use Case</span></th></tr></thead>
+      <tbody>
+        <tr><td><strong><span class="lang-de">Hub</span><span class="lang-en">Hub</span></strong></td><td>1</td><td><span class="lang-de">Verteilt Daten an alle Ports (Broadcast)</span><span class="lang-en">Forwards data to all ports (broadcast)</span></td><td><span class="lang-de">Veraltet, nur zu Lernzwecken</span><span class="lang-en">Obsolete, only for learning</span></td></tr>
+        <tr><td><strong><span class="lang-de">Switch</span><span class="lang-en">Switch</span></strong></td><td>2</td><td><span class="lang-de">Leitet Frames anhand MAC-Adresse an den richtigen Port</span><span class="lang-en">Forwards frames to correct port based on MAC address</span></td><td><span class="lang-de">Standard im LAN</span><span class="lang-en">Standard in LAN</span></td></tr>
+        <tr><td><strong><span class="lang-de">Router</span><span class="lang-en">Router</span></strong></td><td>3</td><td><span class="lang-de">Verbindet Netzwerke, routet anhand IP-Adresse</span><span class="lang-en">Connects networks, routes based on IP address</span></td><td><span class="lang-de">Internet, zwischen Subnetzen</span><span class="lang-en">Internet, between subnets</span></td></tr>
+        <tr><td><strong><span class="lang-de">Firewall</span><span class="lang-en">Firewall</span></strong></td><td>3/4/7</td><td><span class="lang-de">Filtert Datenverkehr nach Regeln</span><span class="lang-en">Filters traffic based on rules</span></td><td><span class="lang-de">Sicherheit, DMZ, Perimeter</span><span class="lang-en">Security, DMZ, perimeter</span></td></tr>
+        <tr><td><strong><span class="lang-de">Access Point</span><span class="lang-en">Access Point</span></strong></td><td>2</td><td><span class="lang-de">Verbindet WLAN-Geräte mit dem LAN</span><span class="lang-en">Connects wireless devices to the LAN</span></td><td><span class="lang-de">WLAN-Ausleuchtung</span><span class="lang-en">WLAN coverage</span></td></tr>
+        <tr><td><strong><span class="lang-de">Modem</span><span class="lang-en">Modem</span></strong></td><td>1</td><td><span class="lang-de">Wandelt ISP-Signal (DSL/Kabel) in Ethernet</span><span class="lang-en">Converts ISP signal (DSL/cable) to Ethernet</span></td><td><span class="lang-de">Internet-Anschluss</span><span class="lang-en">Internet connection</span></td></tr>
+        <tr><td><strong><span class="lang-de">Gateway</span><span class="lang-en">Gateway</span></strong></td><td>7</td><td><span class="lang-de">Übersetzt zwischen unterschiedlichen Protokollen</span><span class="lang-en">Translates between different protocols</span></td><td><span class="lang-de">Zwischen verschiedenen Netzen</span><span class="lang-en">Between different networks</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ CH: TYPES ============ -->
+<section id="types" class="scroll-mt-10 searchable-block topic-panel mt-12">
+  <h2><i class="fa-solid fa-sitemap mr-2 text-[var(--link-color)]"></i><span class="lang-de">Netzwerk-Typen</span><span class="lang-en">Network Types</span></h2>
+  <div class="subtopic-card">
+    <table class="wikitable">
+      <thead><tr><th><span class="lang-de">Typ</span><span class="lang-en">Type</span></th><th><span class="lang-de">Ausdehnung</span><span class="lang-en">Range</span></th><th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th></tr></thead>
+      <tbody>
+        <tr><td><strong>PAN</strong></td><td><span class="lang-de">~10 m, persönlich</span><span class="lang-en">~10 m, personal</span></td><td><span class="lang-de">Bluetooth-Kopfhörer, Smartwatch</span><span class="lang-en">Bluetooth headphones, smartwatch</span></td></tr>
+        <tr><td><strong>LAN</strong></td><td><span class="lang-de">Gebäude, ~100 m pro Segment</span><span class="lang-en">Building, ~100 m per segment</span></td><td><span class="lang-de">Büro-Netzwerk, Heimnetzwerk</span><span class="lang-en">Office network, home network</span></td></tr>
+        <tr><td><strong>WLAN</strong></td><td><span class="lang-de">Wie LAN, aber drahtlos</span><span class="lang-en">Like LAN, but wireless</span></td><td>Wi-Fi 6, 802.11ax</td></tr>
+        <tr><td><strong>MAN</strong></td><td><span class="lang-de">Stadt, 5–50 km</span><span class="lang-en">City, 5–50 km</span></td><td><span class="lang-de">Stadtwerke-Netz, Campus</span><span class="lang-en">Municipal network, campus</span></td></tr>
+        <tr><td><strong>WAN</strong></td><td><span class="lang-de">Land, Kontinent, weltweit</span><span class="lang-en">Country, continent, worldwide</span></td><td><span class="lang-de">Internet, Firmen-Standorte</span><span class="lang-en">Internet, corporate sites</span></td></tr>
+        <tr><td><strong>VLAN</strong></td><td><span class="lang-de">Logische Trennung in einem LAN</span><span class="lang-en">Logical separation within a LAN</span></td><td><span class="lang-de">Abteilungsnetze, Gäste-WLAN</span><span class="lang-en">Department networks, guest WiFi</span></td></tr>
+        <tr><td><strong>VPN</strong></td><td><span class="lang-de">Verschlüsselter Tunnel über WAN</span><span class="lang-en">Encrypted tunnel over WAN</span></td><td><span class="lang-de">Home-Office-Zugriff, Site-to-Site</span><span class="lang-en">Home office access, site-to-site</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ CH: TOPOLOGIES ============ -->
+<section id="topologies" class="scroll-mt-10 searchable-block topic-panel mt-12">
+  <h2><i class="fa-solid fa-diagram-project mr-2 text-[var(--link-color)]"></i><span class="lang-de">Netzwerk-Topologien</span><span class="lang-en">Network Topologies</span></h2>
+  <div class="subtopic-card">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+      <div class="math-card my-0 border-l-4" style="border-left-color:var(--c-phase-1)">
+        <h4 class="mt-0" style="color:var(--c-phase-1)"><i class="fa-solid fa-star mr-2"></i>Star (Stern)</h4>
+        <p class="text-sm text-[var(--text-muted)] mt-2 mb-0"><span class="lang-de">Alle Geräte hängen an einem zentralen Switch. Standard im modernen LAN. Ausfall eines Geräts betrifft nur dieses. Zentraler Punkt ist Single Point of Failure.</span><span class="lang-en">All devices connect to a central switch. Standard in modern LANs. Failure of one device affects only it. The central point is a single point of failure.</span></p>
+      </div>
+      <div class="math-card my-0 border-l-4" style="border-left-color:var(--c-phase-2)">
+        <h4 class="mt-0" style="color:var(--c-phase-2)"><i class="fa-solid fa-circle-nodes mr-2"></i>Mesh (Vermascht)</h4>
+        <p class="text-sm text-[var(--text-muted)] mt-2 mb-0"><span class="lang-de">Jedes Gerät ist mit mehreren anderen verbunden. Sehr ausfallsicher, aber teuer und komplex. Einsatz: WLAN-Mesh, kritische Backbones.</span><span class="lang-en">Every device connects to multiple others. Very fault-tolerant but expensive and complex. Used in WLAN mesh, critical backbones.</span></p>
+      </div>
+      <div class="math-card my-0 border-l-4" style="border-left-color:var(--c-phase-3)">
+        <h4 class="mt-0" style="color:var(--c-phase-3)"><i class="fa-solid fa-grip-lines mr-2"></i>Bus</h4>
+        <p class="text-sm text-[var(--text-muted)] mt-2 mb-0"><span class="lang-de">Alle Geräte hängen an einer gemeinsamen Leitung. Ein Kabelbruch legt das ganze Netz lahm. Historisch (10BASE2), heute nur zu Lernzwecken.</span><span class="lang-en">All devices connect to a shared cable. A single cable break takes down the whole network. Historic (10BASE2), only for learning today.</span></p>
+      </div>
+      <div class="math-card my-0 border-l-4" style="border-left-color:var(--c-phase-4)">
+        <h4 class="mt-0 text-emerald-500"><i class="fa-solid fa-ring mr-2"></i>Ring</h4>
+        <p class="text-sm text-[var(--text-muted)] mt-2 mb-0"><span class="lang-de">Geräte sind im Kreis verbunden. Daten laufen in eine Richtung. Ausfall eines Geräts unterbricht den Ring – außer bei Dual-Ring (FDDI).</span><span class="lang-en">Devices connect in a circle. Data flows in one direction. Failure of one device breaks the ring – unless dual-ring (FDDI).</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CH: LAYER 4 ============ -->
+<section id="layer4" class="scroll-mt-10 searchable-block topic-panel mt-12">
+    <h2><i class="fa-solid fa-truck-fast mr-2 text-[var(--link-color)]"></i><span class="lang-de">1. Transportschicht (TCP & UDP)</span><span class="lang-en">1. Transport Layer (TCP & UDP)</span></h2>
+    <p class="panel-intro lang-de">Auf der Transportschicht des <a href="https://de.wikipedia.org/wiki/OSI-Modell" target="_blank">OSI-Modells</a> (Schicht 4) entscheiden zwei primäre Protokolle über die Art der Datenübertragung: das zuverlässige <strong><a href="https://de.wikipedia.org/wiki/Transmission_Control_Protocol" target="_blank">Transmission Control Protocol (TCP)</a></strong> und das verbindungslose <strong><a href="https://de.wikipedia.org/wiki/User_Datagram_Protocol" target="_blank">User Datagram Protocol (UDP)</a></strong>.</p>
+    <p class="panel-intro lang-en">At the Transport Layer of the <a href="https://en.wikipedia.org/wiki/OSI_model" target="_blank">OSI model</a> (Layer 4), two primary protocols determine how data is transmitted: the reliable <strong><a href="https://en.wikipedia.org/wiki/Transmission_Control_Protocol" target="_blank">Transmission Control Protocol (TCP)</a></strong> and the connectionless <strong><a href="https://en.wikipedia.org/wiki/User_Datagram_Protocol" target="_blank">User Datagram Protocol (UDP)</a></strong>.</p>
+
+    <div class="subtopic-card">
+        <table class="wikitable" style="margin-top: 0;">
+            <tr>
+                <th class="w-1/3"><span class="lang-de">Merkmal</span><span class="lang-en">Feature</span></th>
+                <th>TCP (Transmission Control Protocol)</th>
+                <th>UDP (User Datagram Protocol)</th>
+            </tr>
+            <tr>
+                <td><strong><span class="lang-de">Verbindungsart</span><span class="lang-en">Connection Type</span></strong></td>
+                <td class="text-[var(--text-muted)]"><span class="lang-de">Verbindungsorientiert (3-Way Handshake)</span><span class="lang-en">Connection-oriented (3-Way Handshake)</span></td>
+                <td class="text-[var(--text-muted)]"><span class="lang-de">Verbindungslos (Fire & Forget)</span><span class="lang-en">Connectionless (Fire & Forget)</span></td>
+            </tr>
+            <tr>
+                <td><strong><span class="lang-de">Zuverlässigkeit</span><span class="lang-en">Reliability</span></strong></td>
+                <td class="text-[var(--text-muted)]"><span class="lang-de">Garantiert. Verlorene Pakete werden neu angefordert.</span><span class="lang-en">Guaranteed. Lost packets are retransmitted.</span></td>
+                <td class="text-[var(--text-muted)]"><span class="lang-de">Keine Garantie. Verluste werden ignoriert.</span><span class="lang-en">No guarantee. Packet loss is ignored.</span></td>
+            </tr>
+            <tr>
+                <td><strong><span class="lang-de">Reihenfolge</span><span class="lang-en">Ordering</span></strong></td>
+                <td class="text-[var(--text-muted)]"><span class="lang-de">Geordnet (durch Sequence Numbers)</span><span class="lang-en">Ordered (via Sequence Numbers)</span></td>
+                <td class="text-[var(--text-muted)]"><span class="lang-de">Ungeordnet (Anwendung muss sortieren)</span><span class="lang-en">Unordered (application must handle)</span></td>
+            </tr>
+            <tr>
+                <td><strong><span class="lang-de">Header-Größe</span><span class="lang-en">Header Size</span></strong></td>
+                <td class="text-[var(--text-muted)]"><span class="lang-de">Min. 20 Bytes (hoher Overhead)</span><span class="lang-en">Min. 20 Bytes (high overhead)</span></td>
+                <td class="text-[var(--text-muted)]"><span class="lang-de">Exakt 8 Bytes (sehr schnell)</span><span class="lang-en">Exactly 8 Bytes (very fast)</span></td>
+            </tr>
+            <tr>
+                <td><strong><span class="lang-de">Einsatzzwecke</span><span class="lang-en">Use Cases</span></strong></td>
+                <td class="text-[var(--text-muted)]">HTTP/S, SSH, FTP, E-Mail (SMTP/IMAP)</td>
+                <td class="text-[var(--text-muted)]">DNS, DHCP, VoIP, Gaming, Live-Streaming</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="subtopic-card">
+        <h3 id="handshake" class="scroll-mt-10"><span class="lang-de">1.1 TCP 3-Way Handshake & Teardown</span><span class="lang-en">1.1 TCP 3-Way Handshake & Teardown</span></h3>
+        <div class="infobox">
+            <div class="infobox-title">TCP Header <span class="lang-de">(Auszug)</span><span class="lang-en">(Excerpt)</span></div>
+            <table style="width: 100%;">
+                <tr><th>Source Port</th><td>16 Bit</td></tr>
+                <tr><th>Dest Port</th><td>16 Bit</td></tr>
+                <tr><th>Seq Number</th><td>32 Bit</td></tr>
+                <tr><th>Ack Number</th><td>32 Bit</td></tr>
+                <tr><th>Flags</th><td>SYN, ACK, FIN, RST...</td></tr>
+                <tr><th>Window Size</th><td>16 Bit (Flow Control)</td></tr>
+            </table>
         </div>
+        <p class="lang-de">Um die garantierte Zustellung zu gewährleisten, baut TCP vor der eigentlichen Datenübertragung eine logische Verbindung auf:</p>
+        <p class="lang-en">To guarantee delivery, TCP establishes a logical connection before any actual data transmission:</p>
+        <ol class="list-decimal list-inside space-y-2 mb-4 p-4 border border-[var(--panel-border)] rounded bg-[var(--panel-color)] text-[var(--text-muted)]">
+            <li><strong>SYN:</strong> <span class="lang-de">Der Client initiiert die Verbindung und sendet eine zufällige Sequenznummer (z.B. Seq=100) an den Server.</span><span class="lang-en">The client initiates the connection and sends a random sequence number (e.g., Seq=100) to the server.</span></li>
+            <li><strong>SYN-ACK:</strong> <span class="lang-de">Der Server bestätigt den Erhalt (Ack=101) und sendet seine eigene Start-Sequenznummer (z.B. Seq=300).</span><span class="lang-en">The server acknowledges receipt (Ack=101) and sends its own starting sequence number (e.g., Seq=300).</span></li>
+            <li><strong>ACK:</strong> <span class="lang-de">Der Client bestätigt die Sequenznummer des Servers (Ack=301). Die Verbindung ist nun ESTABLISHED.</span><span class="lang-en">The client acknowledges the server's sequence number (Ack=301). The connection is now ESTABLISHED.</span></li>
+        </ol>
+        <p class="mb-0 lang-de">Der Verbindungsabbau (Teardown) erfolgt über vier Schritte: Client sendet <strong>FIN</strong> &rarr; Server bestätigt mit <strong>ACK</strong> &rarr; Server sendet eigenes <strong>FIN</strong> &rarr; Client bestätigt mit <strong>ACK</strong>.</p>
+        <p class="mb-0 lang-en">Connection termination (Teardown) requires four steps: Client sends <strong>FIN</strong> &rarr; Server acknowledges with <strong>ACK</strong> &rarr; Server sends its own <strong>FIN</strong> &rarr; Client acknowledges with <strong>ACK</strong>.</p>
+    </div>
+</section>
 
-        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
-            <i class="fa-solid fa-globe text-3xl mb-3 text-[var(--text-color)] opacity-80"></i>
-            <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
-                <span data-lang-de>Netzwerk-<br>Referenz</span>
-                <span data-lang-en style="display:none;">Network<br>Cheatsheet</span>
-            </div>
-            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v3.0 - Dual Lang</div>
+<!-- ============ CH: LAYER 7 ============ -->
+<section id="layer7" class="scroll-mt-10 searchable-block topic-panel mt-12">
+    <h2><i class="fa-solid fa-layer-group mr-2 text-[var(--link-color)]"></i><span class="lang-de">2. Anwendungsprotokolle (Layer 7)</span><span class="lang-en">2. Application Protocols (Layer 7)</span></h2>
+    <p class="panel-intro lang-de">Anwendungsprotokolle nutzen die darunterliegende Transportschicht, um dem Benutzer oder dem System spezifische Dienste bereitzustellen.</p>
+    <p class="panel-intro lang-en">Application protocols utilize the underlying transport layer to provide specific services to the user or the system.</p>
+
+    <div class="subtopic-card">
+        <h3 id="app-web" class="scroll-mt-10"><span class="lang-de">2.1 Web & Dateifreigabe (HTTP, FTP, SMB)</span><span class="lang-en">2.1 Web & File Sharing (HTTP, FTP, SMB)</span></h3>
+        <table class="wikitable">
+            <tr><th class="w-24">Protocol</th><th class="w-32">Port / Transport</th><th><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th></tr>
+            <tr>
+                <td><strong><a href="https://en.wikipedia.org/wiki/HTTP" target="_blank">HTTP/S</a></strong></td>
+                <td>80 / 443 (TCP)</td>
+                <td class="text-[var(--text-muted)]">
+                    <span class="lang-de"><strong>Hypertext Transfer Protocol (Secure).</strong> Das Fundament des WWW. HTTPS sichert die TCP-Verbindung zusätzlich durch SSL/TLS ab.</span>
+                    <span class="lang-en"><strong>Hypertext Transfer Protocol (Secure).</strong> The foundation of the WWW. HTTPS secures the TCP connection using SSL/TLS.</span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong><a href="https://en.wikipedia.org/wiki/File_Transfer_Protocol" target="_blank">FTP</a></strong></td>
+                <td>20, 21 (TCP)</td>
+                <td class="text-[var(--text-muted)]">
+                    <span class="lang-de"><strong>File Transfer Protocol.</strong> Nutzt Port 21 (Control) und Port 20 (Data). Sendet Passwörter im Klartext. Heute primär SFTP (über SSH).</span>
+                    <span class="lang-en"><strong>File Transfer Protocol.</strong> Uses Port 21 (Control) and Port 20 (Data). Sends passwords in plaintext. Today SFTP (via SSH) is preferred.</span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong><a href="https://en.wikipedia.org/wiki/Server_Message_Block" target="_blank">SMB / CIFS</a></strong></td>
+                <td>139, 445 (TCP)</td>
+                <td class="text-[var(--text-muted)]">
+                    <span class="lang-de"><strong>Server Message Block.</strong> Standard für Datei- und Druckerfreigaben in Netzwerken (Windows / Samba). Port 445 arbeitet nativ über TCP.</span>
+                    <span class="lang-en"><strong>Server Message Block.</strong> Standard for file and printer sharing in networks (Windows / Samba). Port 445 works natively over TCP.</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="subtopic-card">
+        <h3 id="app-mail" class="scroll-mt-10"><span class="lang-de">2.2 E-Mail-Protokolle (SMTP, IMAP, POP3)</span><span class="lang-en">2.2 Mail Protocols (SMTP, IMAP, POP3)</span></h3>
+        <table class="wikitable">
+            <tr><th class="w-24">Protocol</th><th class="w-32">Port / Transport</th><th><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th></tr>
+            <tr>
+                <td><strong><a href="https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol" target="_blank">SMTP</a></strong></td>
+                <td>25, 587 (TCP)</td>
+                <td class="text-[var(--text-muted)]">
+                    <span class="lang-de">Dient ausschließlich dem <em>Versand</em> von Mails. Port 587 erzwingt Verschlüsselung (STARTTLS).</span>
+                    <span class="lang-en">Used exclusively for <em>sending</em> emails. Port 587 enforces encryption (STARTTLS).</span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong><a href="https://en.wikipedia.org/wiki/Internet_Message_Access_Protocol" target="_blank">IMAP</a></strong></td>
+                <td>143, 993 (TCP)</td>
+                <td class="text-[var(--text-muted)]">
+                    <span class="lang-de">Zum <em>Abruf</em> von Mails. Hält den Status auf dem Server, ideal für mehrere Endgeräte. 993 ist verschlüsselt (IMAPS).</span>
+                    <span class="lang-en">Used for <em>retrieving</em> emails. Keeps state on the server, ideal for multiple devices. 993 is encrypted (IMAPS).</span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong><a href="https://en.wikipedia.org/wiki/Post_Office_Protocol" target="_blank">POP3</a></strong></td>
+                <td>110, 995 (TCP)</td>
+                <td class="text-[var(--text-muted)]">
+                    <span class="lang-de">Lädt Mails herunter und löscht sie dort standardmäßig (Download & Delete).</span>
+                    <span class="lang-en">Downloads emails and deletes them from the server by default (Download & Delete).</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="subtopic-card">
+        <h3 id="app-infra" class="scroll-mt-10"><span class="lang-de">2.3 Infrastruktur (DHCP, DNS, ARP)</span><span class="lang-en">2.3 Infrastructure (DHCP, DNS, ARP)</span></h3>
+        <table class="wikitable">
+            <tr><th class="w-24">Protocol</th><th class="w-32">Port / Layer</th><th><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th></tr>
+            <tr>
+                <td><strong><a href="https://en.wikipedia.org/wiki/Dynamic_Host_Configuration_Protocol" target="_blank">DHCP</a></strong></td>
+                <td>67, 68 (UDP)</td>
+                <td class="text-[var(--text-muted)]">
+                    <span class="lang-de">Weist IP-Konfigurationen dynamisch zu. Folgt dem <strong>DORA</strong> Prinzip: Discover, Offer, Request, Ack.</span>
+                    <span class="lang-en">Assigns IP configurations dynamically. Follows the <strong>DORA</strong> principle: Discover, Offer, Request, Ack.</span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong><a href="https://en.wikipedia.org/wiki/Domain_Name_System" target="_blank">DNS</a></strong></td>
+                <td>53 (UDP/TCP)</td>
+                <td class="text-[var(--text-muted)]">
+                    <span class="lang-de">Übersetzt Namen (google.com) in IPs. Nutzt UDP für Standardabfragen, TCP für Zonentransfers.</span>
+                    <span class="lang-en">Translates names (google.com) into IPs. Uses UDP for standard queries, TCP for zone transfers.</span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong><a href="https://en.wikipedia.org/wiki/Address_Resolution_Protocol" target="_blank">ARP</a></strong></td>
+                <td>Layer 2 / 3</td>
+                <td class="text-[var(--text-muted)]">
+                    <span class="lang-de">Löst eine IP in eine MAC-Adresse im lokalen Netz auf. (In IPv6 abgelöst durch NDP).</span>
+                    <span class="lang-en">Resolves an IP into a MAC address on the local network. (Replaced by NDP in IPv6).</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+</section>
+
+<!-- ============ CH: IPV4 ============ -->
+<section id="ipv4" class="scroll-mt-10 searchable-block topic-panel mt-12">
+    <h2><i class="fa-solid fa-network-wired mr-2 text-[var(--link-color)]"></i><span class="lang-de">3. IPv4 & Subnetting</span><span class="lang-en">3. IPv4 & Subnetting</span></h2>
+    <p class="panel-intro lang-de"><a href="https://de.wikipedia.org/wiki/IPv4" target="_blank">IPv4</a>-Adressen sind 32 Bit lang (4 Oktette, z.B. <code>192.168.1.100</code>). Da der Adressraum erschöpft ist, werden Netze durch <a href="https://de.wikipedia.org/wiki/Subnetting" target="_blank">Subnetting</a> in kleinere Segmente unterteilt.</p>
+    <p class="panel-intro lang-en"><a href="https://en.wikipedia.org/wiki/IPv4" target="_blank">IPv4</a> addresses are 32 bits long (4 octets, e.g., <code>192.168.1.100</code>). Because the address space is exhausted, networks are divided into smaller segments using <a href="https://en.wikipedia.org/wiki/Subnetwork" target="_blank">Subnetting</a>.</p>
+
+    <div class="subtopic-card">
+        <h3 id="ipv4-classes" class="scroll-mt-10"><span class="lang-de">3.1 Netzklassen & RFC 1918</span><span class="lang-en">3.1 Network Classes & RFC 1918</span></h3>
+        <p class="lang-de text-[var(--text-muted)] text-sm mb-3">Das klassische <em>Classful Routing</em> wurde durch <a href="https://de.wikipedia.org/wiki/Classless_Inter-Domain_Routing" target="_blank">CIDR</a> abgelöst, ist aber weiterhin prüfungsrelevant. Private IP-Bereiche (RFC 1918) werden im Internet nicht geroutet und benötigen <a href="https://de.wikipedia.org/wiki/Network_Address_Translation" target="_blank">NAT</a>.</p>
+        <p class="lang-en text-[var(--text-muted)] text-sm mb-3">Classic <em>Classful Routing</em> has been replaced by <a href="https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing" target="_blank">CIDR</a>, but remains relevant for exams. Private IP ranges (RFC 1918) are not routed on the public internet and require <a href="https://en.wikipedia.org/wiki/Network_address_translation" target="_blank">NAT</a>.</p>
+
+        <table class="wikitable">
+            <tr><th><span class="lang-de">Klasse</span><span class="lang-en">Class</span></th><th>1. Octet</th><th>CIDR Mask</th><th><span class="lang-de">Privater Bereich</span><span class="lang-en">Private Range</span> (RFC 1918)</th></tr>
+            <tr><td>A</td><td>1 - 126</td><td>/8 (255.0.0.0)</td><td><code>10.0.0.0</code> – <code>10.255.255.255</code></td></tr>
+            <tr><td>B</td><td>128 - 191</td><td>/16 (255.255.0.0)</td><td><code>172.16.0.0</code> – <code>172.31.255.255</code></td></tr>
+            <tr><td>C</td><td>192 - 223</td><td>/24 (255.255.255.0)</td><td><code>192.168.0.0</code> – <code>192.168.255.255</code></td></tr>
+        </table>
+    </div>
+
+    <div class="subtopic-card">
+        <h3 id="ipv4-magic" class="scroll-mt-10"><span class="lang-de">3.2 Subnetting: Magic Number Methode</span><span class="lang-en">3.2 Subnetting: Magic Number Method</span></h3>
+        <div class="bg-[var(--panel-color)] border border-[var(--panel-border)] p-5 rounded space-y-3">
+            <p><strong><span class="lang-de">Beispiel:</span><span class="lang-en">Example:</span></strong> <code>192.168.10.100 /26</code> (Mask: 255.255.255.192).</p>
+            <ol class="list-decimal list-inside space-y-2 text-sm text-[var(--text-muted)] lang-de">
+                <li><strong>Interessantes Oktett:</strong> Das erste Oktett der Maske, das nicht 255 oder 0 ist (hier: 192).</li>
+                <li><strong>Magic Number (Blockgröße):</strong> <code>256 - 192 = 64</code>. Das Netz springt in 64er-Blöcken.</li>
+                <li><strong>Netzwerkadresse:</strong> Welches Vielfache von 64 passt in die IP 100? Es ist die 64. &rarr; <code>192.168.10.64</code>.</li>
+                <li><strong>Broadcast-Adresse:</strong> Nächster Block (64+64=128) minus 1 &rarr; <code>192.168.10.127</code>.</li>
+                <li><strong>Nutzbare Hosts:</strong> Von <code>.65</code> bis <code>.126</code> (Anzahl: 2^(32-26) - 2 = 62 Hosts).</li>
+            </ol>
+            <ol class="list-decimal list-inside space-y-2 text-sm text-[var(--text-muted)] lang-en">
+                <li><strong>Interesting Octet:</strong> The first octet of the mask that is not 255 or 0 (here: 192).</li>
+                <li><strong>Magic Number (Block size):</strong> <code>256 - 192 = 64</code>. Subnets increment in blocks of 64.</li>
+                <li><strong>Network Address:</strong> Which multiple of 64 fits into the IP 100? It's 64. &rarr; <code>192.168.10.64</code>.</li>
+                <li><strong>Broadcast Address:</strong> Next block (64+64=128) minus 1 &rarr; <code>192.168.10.127</code>.</li>
+                <li><strong>Usable Hosts:</strong> From <code>.65</code> to <code>.126</code> (Total: 2^(32-26) - 2 = 62 Hosts).</li>
+            </ol>
         </div>
+    </div>
+</section>
 
-        <div class="mb-6 relative">
-            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
+<!-- ============ CH: IPV6 ============ -->
+<section id="ipv6" class="scroll-mt-10 searchable-block topic-panel mt-12">
+    <h2><i class="fa-solid fa-globe mr-2 text-[var(--link-color)]"></i><span class="lang-de">4. IPv6</span><span class="lang-en">4. IPv6</span></h2>
+    <p class="panel-intro lang-de"><a href="https://de.wikipedia.org/wiki/IPv6" target="_blank">IPv6</a> verwendet 128 Bit lange Adressen (8 Blöcke in Hexadezimal). Es gibt keinen Broadcast mehr (ersetzt durch Multicast) und NAT ist obsolet.</p>
+    <p class="panel-intro lang-en"><a href="https://en.wikipedia.org/wiki/IPv6" target="_blank">IPv6</a> uses 128-bit addresses (8 hexadecimal blocks). Broadcasts are removed (replaced by Multicast) and NAT is obsolete.</p>
+
+    <div class="subtopic-card">
+        <h3 id="ipv6-rules" class="scroll-mt-10"><span class="lang-de">4.1 Verkürzungsregeln</span><span class="lang-en">4.1 Abbreviation Rules</span></h3>
+        <ul class="list-disc list-inside bg-[var(--panel-color)] p-4 border border-[var(--panel-border)] rounded text-sm text-[var(--text-muted)] lang-de">
+            <li><strong>Führende Nullen:</strong> Dürfen innerhalb eines Hextets entfallen (<code>0db8</code> &rarr; <code>db8</code>).</li>
+            <li><strong>Nullenkompression:</strong> Ein <em>einziger</em> Block aus reinen Null-Hextets darf durch <code>::</code> ersetzt werden. Darf strikt nur <strong>einmal</strong> geschehen!</li>
+        </ul>
+        <ul class="list-disc list-inside bg-[var(--panel-color)] p-4 border border-[var(--panel-border)] rounded text-sm text-[var(--text-muted)] lang-en">
+            <li><strong>Leading Zeros:</strong> Can be omitted within a block (<code>0db8</code> &rarr; <code>db8</code>).</li>
+            <li><strong>Zero Compression:</strong> A <em>single</em> contiguous block of all-zero blocks can be replaced by <code>::</code>. This can strictly only happen <strong>once</strong> per address!</li>
+        </ul>
+    </div>
+
+    <div class="subtopic-card">
+        <h3 id="ipv6-types" class="scroll-mt-10"><span class="lang-de">4.2 Wichtige Adresstypen</span><span class="lang-en">4.2 Address Types</span></h3>
+        <table class="wikitable">
+            <tr><th><span class="lang-de">Typ</span><span class="lang-en">Type</span></th><th>Prefix</th><th><span class="lang-de">Bedeutung</span><span class="lang-en">Meaning</span></th></tr>
+            <tr>
+                <td><strong>Global Unicast</strong></td><td><code>2000::/3</code></td>
+                <td class="text-[var(--text-muted)]">
+                    <span class="lang-de">Weltweit eindeutig und routbar (öffentliche IP).</span>
+                    <span class="lang-en">Globally unique and routable (public IP).</span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Link-Local</strong></td><td><code>fe80::/10</code></td>
+                <td class="text-[var(--text-muted)]">
+                    <span class="lang-de">Nur im lokalen Subnetz gültig. Essenziell für NDP. Ähnlich APIPA.</span>
+                    <span class="lang-en">Valid only on the local link. Essential for NDP. Similar to APIPA.</span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Unique Local (ULA)</strong></td><td><code>fc00::/7</code></td>
+                <td class="text-[var(--text-muted)]">
+                    <span class="lang-de">Entspricht privaten IPv4-Netzen (RFC 1918).</span>
+                    <span class="lang-en">Equivalent to private IPv4 networks (RFC 1918).</span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Multicast</strong></td><td><code>ff00::/8</code></td>
+                <td class="text-[var(--text-muted)]">
+                    <span class="lang-de">Adressiert eine definierte Gruppe. Ersetzt Broadcast.</span>
+                    <span class="lang-en">Addresses a specific group of nodes. Replaces Broadcast.</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+</section>
+
+<!-- ============ CH: CLI ============ -->
+<section id="commands" class="scroll-mt-10 searchable-block topic-panel mt-12">
+    <h2><i class="fa-solid fa-terminal mr-2 text-[var(--link-color)]"></i><span class="lang-de">5. CLI Befehle</span><span class="lang-en">5. CLI Commands</span></h2>
+    <div class="subtopic-card">
+        <table class="wikitable">
+            <tr><th class="w-1/4"><span class="lang-de">Zweck</span><span class="lang-en">Purpose</span></th><th class="w-1/3">Windows (CMD/PS)</th><th>Linux (Bash)</th></tr>
+            <tr>
+                <td><strong>IP Info</strong></td>
+                <td><code>ipconfig /all</code></td>
+                <td><code>ip a</code> / <code>ifconfig</code></td>
+            </tr>
+            <tr>
+                <td><strong><span class="lang-de">Verbindungstest</span><span class="lang-en">Connectivity</span></strong></td>
+                <td><code>ping 8.8.8.8 -t</code></td>
+                <td><code>ping -c 4 8.8.8.8</code></td>
+            </tr>
+            <tr>
+                <td><strong>Trace Route</strong></td>
+                <td><code>tracert google.com</code></td>
+                <td><code>traceroute google.com</code></td>
+            </tr>
+            <tr>
+                <td><strong>DNS Query</strong></td>
+                <td><code>nslookup heise.de</code></td>
+                <td><code>dig heise.de</code> / <code>host</code></td>
+            </tr>
+            <tr>
+                <td><strong>Routing Table</strong></td>
+                <td><code>route print</code></td>
+                <td><code>ip route</code></td>
+            </tr>
+            <tr>
+                <td><strong>ARP Cache</strong></td>
+                <td><code>arp -a</code></td>
+                <td><code>ip neigh</code></td>
+            </tr>
+            <tr>
+                <td><strong>Active Ports</strong></td>
+                <td><code>netstat -ano</code></td>
+                <td><code>ss -tulpn</code></td>
+            </tr>
+        </table>
+    </div>
+</section>
+
+<!-- ============ CH: SECURITY ============ -->
+<section id="security" class="scroll-mt-10 searchable-block topic-panel mt-12">
+    <h2><i class="fa-solid fa-shield-halved mr-2 text-[var(--link-color)]"></i><span class="lang-de">6. Netzwerksicherheit</span><span class="lang-en">6. Network Security</span></h2>
+
+    <div class="subtopic-card">
+        <h3 id="sec-cia" class="scroll-mt-10"><span class="lang-de">6.1 CIA Triade</span><span class="lang-en">6.1 CIA Triad</span></h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div class="bg-[var(--panel-color)] p-4 border border-[var(--panel-border)] rounded">
+                <h4 class="mt-0 text-[var(--link-color)]">Confidentiality</h4>
+                <p class="text-[var(--text-muted)] mb-0 lang-de">Nur autorisierte Personen dürfen Daten lesen. Realisiert durch <strong>Verschlüsselung</strong>.</p>
+                <p class="text-[var(--text-muted)] mb-0 lang-en">Only authorized entities can read data. Realized via <strong>Encryption</strong>.</p>
             </div>
-            <input type="text" id="wikiSearch" placeholder="Search..." class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-xl pl-10 pr-3 py-2.5 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-all shadow-sm" onkeyup="filterWiki()">
+            <div class="bg-[var(--panel-color)] p-4 border border-[var(--panel-border)] rounded">
+                <h4 class="mt-0 text-[var(--link-color)]">Integrity</h4>
+                <p class="text-[var(--text-muted)] mb-0 lang-de">Daten dürfen nicht unbemerkt verändert werden. Realisiert durch <strong>Hash-Werte</strong> (SHA-256).</p>
+                <p class="text-[var(--text-muted)] mb-0 lang-en">Data cannot be altered unnoticed. Realized via <strong>Hash values</strong> (SHA-256).</p>
+            </div>
+            <div class="bg-[var(--panel-color)] p-4 border border-[var(--panel-border)] rounded">
+                <h4 class="mt-0 text-[var(--link-color)]">Availability</h4>
+                <p class="text-[var(--text-muted)] mb-0 lang-de">Systeme müssen erreichbar sein. Geschützt durch Redundanz (<a href="https://de.wikipedia.org/wiki/RAID" target="_blank">RAID</a>, Cluster).</p>
+                <p class="text-[var(--text-muted)] mb-0 lang-en">Systems must be accessible. Protected via redundancy (<a href="https://en.wikipedia.org/wiki/RAID" target="_blank">RAID</a>, Clusters).</p>
+            </div>
         </div>
+    </div>
 
-        <nav class="text-sm space-y-1.5" id="toc-nav">
-            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
-                <span data-lang-de>Inhaltsverzeichnis</span>
-                <span data-lang-en style="display:none;">Table of Contents</span>
-            </div>
+    <div class="subtopic-card">
+        <h3 id="sec-proto" class="scroll-mt-10"><span class="lang-de">6.2 VPN, TLS, Firewalls</span><span class="lang-en">6.2 VPN, TLS, Firewalls</span></h3>
+        <table class="wikitable">
+            <tr><th class="w-1/4">Concept</th><th><span class="lang-de">Beschreibung</span><span class="lang-en">Description</span></th></tr>
+            <tr>
+                <td><strong><a href="https://en.wikipedia.org/wiki/Transport_Layer_Security" target="_blank">SSL / TLS</a></strong></td>
+                <td class="text-[var(--text-muted)]">
+                    <span class="lang-de">Transport Layer Security. Legt einen verschlüsselten Tunnel über TCP (z.B. HTTPS).</span>
+                    <span class="lang-en">Transport Layer Security. Creates an encrypted tunnel over TCP (e.g., HTTPS).</span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong><a href="https://en.wikipedia.org/wiki/IPsec" target="_blank">IPsec</a> (VPN)</strong></td>
+                <td class="text-[var(--text-muted)]">
+                    <span class="lang-de">Sichert Layer 3. Nutzt IKE auf Port 500 UDP.</span>
+                    <span class="lang-en">Secures Layer 3. Uses IKE on Port 500 UDP.</span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong><a href="https://en.wikipedia.org/wiki/Stateful_firewall" target="_blank">Stateful Firewall</a></strong></td>
+                <td class="text-[var(--text-muted)]">
+                    <span class="lang-de">Überwacht den <em>Zustand</em> von Verbindungen, lässt Antworten auf interne Anfragen automatisch durch.</span>
+                    <span class="lang-en">Monitors the <em>state</em> of connections, automatically allowing responses to internal requests.</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+</section>
 
-            <ul class="space-y-1">
-                <li><a href="#layer4" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors"><span data-lang-de>1. Transport (TCP/UDP)</span><span data-lang-en style="display:none;">1. Transport (TCP/UDP)</span></a>
-                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
-                        <li><a href="#handshake" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>1.1 Handshake</span><span data-lang-en style="display:none;">1.1 Handshake</span></a></li>
-                    </ul>
-                </li>
-                <li class="pt-2"><a href="#layer7" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
-                    <span data-lang-de>2. Anwendungen (Layer 7)</span><span data-lang-en style="display:none;">2. Applications (Layer 7)</span>
-                </a>
-                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
-                        <li><a href="#app-web" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>2.1 Web & File</span><span data-lang-en style="display:none;">2.1 Web & File</span></a></li>
-                        <li><a href="#app-mail" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>2.2 Mail</span><span data-lang-en style="display:none;">2.2 Mail</span></a></li>
-                        <li><a href="#app-infra" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>2.3 Infra</span><span data-lang-en style="display:none;">2.3 Infra</span></a></li>
-                        <li><a href="#app-remote" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>2.4 Remote</span><span data-lang-en style="display:none;">2.4 Remote</span></a></li>
-                    </ul>
-                </li>
-                <li class="pt-2"><a href="#ipv4" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors"><span data-lang-de>3. IPv4 & Subnetting</span><span data-lang-en style="display:none;">3. IPv4 & Subnetting</span></a>
-                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
-                        <li><a href="#ipv4-classes" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>3.1 Netzklassen</span><span data-lang-en style="display:none;">3.1 Network Classes</span></a></li>
-                        <li><a href="#ipv4-magic" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>3.2 Magic Number</span><span data-lang-en style="display:none;">3.2 Magic Number</span></a></li>
-                    </ul>
-                </li>
-                <li class="pt-2"><a href="#ipv6" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors"><span data-lang-de>4. IPv6</span><span data-lang-en style="display:none;">4. IPv6</span></a>
-                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
-                        <li><a href="#ipv6-rules" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>4.1 Regeln</span><span data-lang-en style="display:none;">4.1 Rules</span></a></li>
-                        <li><a href="#ipv6-types" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>4.2 Adresstypen</span><span data-lang-en style="display:none;">4.2 Address Types</span></a></li>
-                    </ul>
-                </li>
-                <li class="pt-2"><a href="#commands" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors"><span data-lang-de>5. CLI Befehle</span><span data-lang-en style="display:none;">5. CLI Commands</span></a>
-                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
-                        <li><a href="#cmd-basics" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>5.1 Grundlagen & IP</span><span data-lang-en style="display:none;">5.1 Basics & IP</span></a></li>
-                        <li><a href="#cmd-routing" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>5.2 Routing & DNS</span><span data-lang-en style="display:none;">5.2 Routing & DNS</span></a></li>
-                        <li><a href="#cmd-analyse" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>5.3 Analyse & Ports</span><span data-lang-en style="display:none;">5.3 Analysis & Ports</span></a></li>
-                    </ul>
-                </li>
-                <li class="pt-2"><a href="#security" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
-                    <span data-lang-de>6. Sicherheit</span><span data-lang-en style="display:none;">6. Security</span>
-                </a>
-                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
-                        <li><a href="#sec-cia" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>6.1 CIA Triade</span><span data-lang-en style="display:none;">6.1 CIA Triad</span></a></li>
-                        <li><a href="#sec-proto" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>6.2 VPN, TLS, Firewalls</span><span data-lang-en style="display:none;">6.2 VPN, TLS, Firewalls</span></a></li>
-                    </ul>
-                </li>
-            </ul>
-        </nav>
-    </aside>
+<!-- ============ CH: PRÜFUNG ============ -->
+<section id="pruefung" class="scroll-mt-10 searchable-block topic-panel mt-12">
+  <h2><i class="fa-solid fa-graduation-cap mr-2 text-[var(--link-color)]"></i><span class="lang-de">Prüfungsrelevanz (IHK IT Systemintegration)</span><span class="lang-en">Exam Relevance (IHK IT System Integration)</span></h2>
 
-    <main class="app-main" id="main-content">
+  <div class="subtopic-card">
+    <h3><span class="lang-de">Typische Prüfungsaufgaben</span><span class="lang-en">Typical Exam Tasks</span></h3>
+    <table class="wikitable">
+      <thead><tr><th><span class="lang-de">Aufgabentyp</span><span class="lang-en">Task Type</span></th><th><span class="lang-de">Häufigkeit</span><span class="lang-en">Frequency</span></th><th><span class="lang-de">Beispiel</span><span class="lang-en">Example</span></th></tr></thead>
+      <tbody>
+        <tr><td><span class="lang-de">Netzwerk-Geräte zuordnen</span><span class="lang-en">Assign network devices</span></td><td class="text-center">⭐⭐⭐⭐⭐</td><td><span class="lang-de">"Ordnen Sie Router, Switch und Hub den OSI-Schichten zu."</span><span class="lang-en">"Assign router, switch, and hub to OSI layers."</span></td></tr>
+        <tr><td><span class="lang-de">DMZ erklären</span><span class="lang-en">Explain DMZ</span></td><td class="text-center">⭐⭐⭐⭐⭐</td><td><span class="lang-de">"Erklären Sie den Aufbau einer DMZ."</span><span class="lang-en">"Explain the structure of a DMZ."</span></td></tr>
+        <tr><td><span class="lang-de">VLAN-Konzept erläutern</span><span class="lang-en">Explain VLAN concept</span></td><td class="text-center">⭐⭐⭐⭐</td><td><span class="lang-de">"Was ist ein VLAN und welche Vorteile bietet es?"</span><span class="lang-en">"What is a VLAN and what advantages does it offer?"</span></td></tr>
+        <tr><td><span class="lang-de">Subnetting berechnen</span><span class="lang-en">Calculate subnetting</span></td><td class="text-center">⭐⭐⭐⭐</td><td><span class="lang-de">"Teilen Sie 192.168.1.0/24 in 4 Subnetze."</span><span class="lang-en">"Split 192.168.1.0/24 into 4 subnets."</span></td></tr>
+        <tr><td><span class="lang-de">Topologien vergleichen</span><span class="lang-en">Compare topologies</span></td><td class="text-center">⭐⭐⭐</td><td><span class="lang-de">"Vergleichen Sie Stern- und Mesh-Topologie."</span><span class="lang-en">"Compare star and mesh topology."</span></td></tr>
+        <tr><td><span class="lang-de">VPN erklären</span><span class="lang-en">Explain VPN</span></td><td class="text-center">⭐⭐⭐</td><td><span class="lang-de">"Wie funktioniert ein Site-to-Site-VPN?"</span><span class="lang-en">"How does a site-to-site VPN work?"</span></td></tr>
+      </tbody>
+    </table>
+  </div>
 
-        <!-- ========================================== -->
-        <!-- Intro panel                                -->
-        <!-- ========================================== -->
-        <div class="searchable-block topic-panel mt-0 mb-8">
-            <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0"><span data-lang-de>Netzwerk-Referenz</span><span data-lang-en style="display:none;">Network Cheatsheet</span></h1>
-            <p class="text-lg mb-0" data-lang-de>Ein <strong><a href="https://de.wikipedia.org/wiki/Netzwerkprotokoll" target="_blank">Netzwerkprotokoll</a></strong> ist ein exaktes Regelwerk, das bestimmt, wie Computer innerhalb eines Netzwerks miteinander kommunizieren. Diese Referenz dient als umfassendes Kompendium für angehende Fachinformatiker (FISI) und Systemadministratoren und umfasst die Themenbereiche <a href="https://de.wikipedia.org/wiki/OSI-Modell" target="_blank">OSI-Modell</a>, Adressierung (<a href="https://de.wikipedia.org/wiki/IPv4" target="_blank">IPv4</a>/<a href="https://de.wikipedia.org/wiki/IPv6" target="_blank">IPv6</a>), Transport (<a href="https://de.wikipedia.org/wiki/Transmission_Control_Protocol" target="_blank">TCP</a>/<a href="https://de.wikipedia.org/wiki/User_Datagram_Protocol" target="_blank">UDP</a>), Anwendungsprotokolle (Samba, SSH, etc.), Diagnose-Werkzeuge sowie Sicherheitskonzepte.</p>
+  <div class="subtopic-card">
+    <h3><span class="lang-de">Lerncheckliste</span><span class="lang-en">Study Checklist</span></h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <h4 class="mt-0 text-[var(--link-color)]"><span class="lang-de">Geräte & Schichten</span><span class="lang-en">Devices & Layers</span></h4>
+        <ul class="text-sm text-[var(--text-muted)] space-y-1.5 list-disc pl-4">
+          <li><span class="lang-de">Router, Switch, Hub unterscheiden</span><span class="lang-en">Distinguish router, switch, hub</span></li>
+          <li><span class="lang-de">Firewall-Typen nennen</span><span class="lang-en">Name firewall types</span></li>
+          <li><span class="lang-de">Access Point vs. Repeater</span><span class="lang-en">Access point vs. repeater</span></li>
+          <li><span class="lang-de">Geräte den OSI-Schichten zuordnen</span><span class="lang-en">Assign devices to OSI layers</span></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="mt-0 text-[var(--link-color)]"><span class="lang-de">Architekturen</span><span class="lang-en">Architectures</span></h4>
+        <ul class="text-sm text-[var(--text-muted)] space-y-1.5 list-disc pl-4">
+          <li><span class="lang-de">DMZ und Back-to-Back-Firewall</span><span class="lang-en">DMZ and back-to-back firewall</span></li>
+          <li><span class="lang-de">VLAN-Segmentierung</span><span class="lang-en">VLAN segmentation</span></li>
+          <li><span class="lang-de">WAN / VPN-Szenarien</span><span class="lang-en">WAN / VPN scenarios</span></li>
+          <li><span class="lang-de">3-Tier im Rechenzentrum</span><span class="lang-en">3-tier in data center</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
 
-            <p class="text-lg mb-0" data-lang-en style="display:none;">A <strong><a href="https://en.wikipedia.org/wiki/Communication_protocol" target="_blank">Network Protocol</a></strong> is an exact set of rules that determines how computers communicate with each other within a network. This reference serves as a comprehensive compendium for IT professionals and system administrators, covering the <a href="https://en.wikipedia.org/wiki/OSI_model" target="_blank">OSI model</a>, addressing (<a href="https://en.wikipedia.org/wiki/IPv4" target="_blank">IPv4</a>/<a href="https://en.wikipedia.org/wiki/IPv6" target="_blank">IPv6</a>), transport protocols (<a href="https://en.wikipedia.org/wiki/Transmission_Control_Protocol" target="_blank">TCP</a>/<a href="https://en.wikipedia.org/wiki/User_Datagram_Protocol" target="_blank">UDP</a>), application protocols (Samba, SSH, etc.), diagnostic tools, and security concepts.</p>
-        </div>
+<!-- ============ VISUALIZER (moved to the BOTTOM) ============ -->
+<section id="visualizer" class="scroll-mt-10 searchable-block topic-panel mb-20 !p-0 overflow-hidden border-2 border-[var(--border-color)]">
+  <div class="flex flex-col-reverse lg:flex-row h-[700px] lg:h-[620px] bg-[var(--bg-color)] relative w-full">
+    <div class="w-full lg:w-[360px] flex-shrink-0 bg-[var(--panel-color)] border-t lg:border-t-0 lg:border-r border-[var(--border-color)] flex flex-col h-auto lg:h-full z-10 p-5 overflow-y-auto">
+      <div class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2"><span class="lang-de">Beispiel</span><span class="lang-en">Example</span> <span id="setup-counter" class="text-[var(--heading-color)]">1</span> / 8</div>
+      <h4 id="setup-title" class="text-xl text-[var(--link-color)] border-b border-[var(--border-color)] pb-2 mb-3 mt-0"></h4>
+      <div id="setup-desc" class="text-sm leading-relaxed flex-grow min-h-[80px]"></div>
+      <div class="mt-2 mb-4 border border-[var(--border-color)] rounded-md bg-[var(--code-block-bg)] p-3"><pre class="!m-0 !p-0 !bg-transparent !border-none !shadow-none text-[11px] leading-snug"><code id="setup-code"></code></pre></div>
+      <div class="flex gap-2 mt-auto pt-4 border-t border-[var(--border-color)]">
+        <button onclick="prevPhase()" class="btn-secondary px-3 py-2 rounded-lg font-semibold text-sm flex-1"><i class="fa-solid fa-arrow-left mr-1"></i><span class="lang-de">Zurück</span><span class="lang-en">Back</span></button>
+        <button onclick="nextPhase()" class="btn-primary px-3 py-2 rounded-lg font-semibold text-sm flex-1 shadow-sm"><span class="lang-de">Weiter</span><span class="lang-en">Next</span> <i class="fa-solid fa-arrow-right ml-1"></i></button>
+      </div>
+      <p class="text-[10px] text-[var(--text-muted)] mt-3 mb-0 text-center"><i class="fa-solid fa-keyboard mr-1"></i><span class="lang-de">← → Pfeiltasten zur Navigation</span><span class="lang-en">← → arrow keys to navigate</span></p>
+    </div>
+    <div id="netCanvas-wrapper" class="flex-grow relative h-full min-h-[400px]"><canvas id="netCanvas"></canvas></div>
+  </div>
+</section>
 
-        <!-- ========================================== -->
-        <!-- 1. Transport Layer                         -->
-        <!-- ========================================== -->
-        <section id="layer4" class="scroll-mt-10 searchable-block topic-panel mt-8">
-            <h2>
-                <span data-lang-de>1. Transportschicht (TCP & UDP)</span>
-                <span data-lang-en style="display:none;">1. Transport Layer (TCP & UDP)</span>
-            </h2>
+</main>
 
-            <p class="panel-intro" data-lang-de>Auf der Transportschicht des <a href="https://de.wikipedia.org/wiki/OSI-Modell" target="_blank">OSI-Modells</a> (Schicht 4) entscheiden zwei primäre Protokolle über die Art der Datenübertragung: das zuverlässige <strong><a href="https://de.wikipedia.org/wiki/Transmission_Control_Protocol" target="_blank">Transmission Control Protocol (TCP)</a></strong> und das verbindungslose <strong><a href="https://de.wikipedia.org/wiki/User_Datagram_Protocol" target="_blank">User Datagram Protocol (UDP)</a></strong>.</p>
+<script>
+/* ==================================================================
+   GLOBAL STATE
+   ================================================================== */
+let isGerman = true;
+let currentSetupIdx = 0;
+let C_BG, C_GRID, C_TEXT, C_PANEL;
 
-            <p class="panel-intro" data-lang-en style="display:none;">At the Transport Layer of the <a href="https://en.wikipedia.org/wiki/OSI_model" target="_blank">OSI model</a> (Layer 4), two primary protocols determine how data is transmitted: the reliable <strong><a href="https://en.wikipedia.org/wiki/Transmission_Control_Protocol" target="_blank">Transmission Control Protocol (TCP)</a></strong> and the connectionless <strong><a href="https://en.wikipedia.org/wiki/User_Datagram_Protocol" target="_blank">User Datagram Protocol (UDP)</a></strong>.</p>
+function t(de, en) { return isGerman ? de : en; }
 
-            <div class="subtopic-card">
-                <table class="wikitable" style="margin-top: 0;">
-                    <tr>
-                        <th class="w-1/3"><span data-lang-de>Merkmal</span><span data-lang-en style="display:none;">Feature</span></th>
-                        <th>TCP (Transmission Control Protocol)</th>
-                        <th>UDP (User Datagram Protocol)</th>
-                    </tr>
-                    <tr>
-                        <td><strong><span data-lang-de>Verbindungsart</span><span data-lang-en style="display:none;">Connection Type</span></strong></td>
-                        <td class="text-[var(--text-muted)]"><span data-lang-de>Verbindungsorientiert (3-Way Handshake)</span><span data-lang-en style="display:none;">Connection-oriented (3-Way Handshake)</span></td>
-                        <td class="text-[var(--text-muted)]"><span data-lang-de>Verbindungslos (Fire & Forget)</span><span data-lang-en style="display:none;">Connectionless (Fire & Forget)</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong><span data-lang-de>Zuverlässigkeit</span><span data-lang-en style="display:none;">Reliability</span></strong></td>
-                        <td class="text-[var(--text-muted)]"><span data-lang-de>Garantiert. Verlorene Pakete werden neu angefordert.</span><span data-lang-en style="display:none;">Guaranteed. Lost packets are retransmitted.</span></td>
-                        <td class="text-[var(--text-muted)]"><span data-lang-de>Keine Garantie. Verluste werden ignoriert.</span><span data-lang-en style="display:none;">No guarantee. Packet loss is ignored.</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong><span data-lang-de>Reihenfolge</span><span data-lang-en style="display:none;">Ordering</span></strong></td>
-                        <td class="text-[var(--text-muted)]"><span data-lang-de>Geordnet (durch Sequence Numbers)</span><span data-lang-en style="display:none;">Ordered (via Sequence Numbers)</span></td>
-                        <td class="text-[var(--text-muted)]"><span data-lang-de>Ungeordnet (Anwendung muss sortieren)</span><span data-lang-en style="display:none;">Unordered (application must handle)</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong><span data-lang-de>Header-Größe</span><span data-lang-en style="display:none;">Header Size</span></strong></td>
-                        <td class="text-[var(--text-muted)]"><span data-lang-de>Min. 20 Bytes (hoher Overhead)</span><span data-lang-en style="display:none;">Min. 20 Bytes (high overhead)</span></td>
-                        <td class="text-[var(--text-muted)]"><span data-lang-de>Exakt 8 Bytes (sehr schnell)</span><span data-lang-en style="display:none;">Exactly 8 Bytes (very fast)</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong><span data-lang-de>Einsatzzwecke</span><span data-lang-en style="display:none;">Use Cases</span></strong></td>
-                        <td class="text-[var(--text-muted)]">HTTP/S, SSH, FTP, E-Mail (SMTP/IMAP)</td>
-                        <td class="text-[var(--text-muted)]">DNS, DHCP, VoIP, Gaming, Live-Streaming</td>
-                    </tr>
-                </table>
-            </div>
+/* ==================================================================
+   NODE STYLES
+   ================================================================== */
+const NODE_STYLE = {
+  cloud:    { color:'#3b82f6', icon:'🌐' },
+  router:   { color:'#f59e0b', icon:'📡' },
+  firewall: { color:'#ef4444', icon:'🔥' },
+  switch:   { color:'#a78bfa', icon:'🔀' },
+  server:   { color:'#10b981', icon:'🖥️' },
+  client:   { color:'#22d3ee', icon:'💻' },
+  laptop:   { color:'#22d3ee', icon:'💻' },
+  phone:    { color:'#22d3ee', icon:'📱' },
+  printer:  { color:'#94a3b8', icon:'🖨️' },
+  tv:       { color:'#94a3b8', icon:'📺' },
+  ap:       { color:'#a78bfa', icon:'📶' },
+  nas:      { color:'#10b981', icon:'💾' },
+  web:      { color:'#10b981', icon:'🌍' },
+  mail:     { color:'#10b981', icon:'✉️' },
+  vpn:      { color:'#a78bfa', icon:'🔒' },
+  db:       { color:'#10b981', icon:'🗄️' },
+  file:     { color:'#10b981', icon:'📁' },
+  iot:      { color:'#a78bfa', icon:'🔌' },
+  building: { color:'#3b82f6', icon:'🏢' },
+  vm:       { color:'#10b981', icon:'☁️' },
+  controller: { color:'#a78bfa', icon:'🎛️' },
+  core:     { color:'#a78bfa', icon:'🔷' },
+  dist:     { color:'#a78bfa', icon:'🔶' },
+  modem:    { color:'#f59e0b', icon:'📶' }
+};
 
-            <div class="subtopic-card">
-                <h3 id="handshake" class="scroll-mt-10">
-                    <span data-lang-de>1.1 TCP 3-Way Handshake & Teardown</span>
-                    <span data-lang-en style="display:none;">1.1 TCP 3-Way Handshake & Teardown</span>
-                </h3>
+/* ==================================================================
+   NETWORK SETUPS
+   ================================================================== */
+const setups = [
+  {
+    id:'home',
+    title: { de:'1. Heimnetzwerk', en:'1. Home Network' },
+    desc:  { de:'Ein zentraler Router verbindet alle Geräte mit dem Internet. Der Router fungiert gleichzeitig als Modem, Switch, WLAN-Access-Point und DHCP-Server. Alle Geräte befinden sich in einem gemeinsamen Netz (üblicherweise 192.168.1.0/24).',
+             en:'A central router connects all devices to the internet. The router also acts as modem, switch, WLAN access point, and DHCP server. All devices are in a shared network (typically 192.168.1.0/24).' },
+    code:  'Internet (ISP)\n    │\n[Router/Modem]\n    ├─── PC (wired)\n    ├┈┈ Laptop (WLAN)\n    ├┈┈ Smartphone (WLAN)\n    ├┈┈ Smart-TV (WLAN)\n    └─── Printer (wired)',
+    zones: [],
+    nodes: [
+      { id:'inet',  x:0.50, y:0.10, type:'cloud',    label:{de:'Internet',en:'Internet'} },
+      { id:'rtr',   x:0.50, y:0.32, type:'router',   label:{de:'Router',en:'Router'} },
+      { id:'pc',    x:0.12, y:0.72, type:'client',   label:{de:'PC',en:'PC'} },
+      { id:'lap',   x:0.34, y:0.72, type:'laptop',   label:{de:'Laptop',en:'Laptop'} },
+      { id:'ph',    x:0.53, y:0.72, type:'phone',    label:{de:'Handy',en:'Phone'} },
+      { id:'tv',    x:0.72, y:0.72, type:'tv',       label:{de:'Smart-TV',en:'Smart TV'} },
+      { id:'prt',   x:0.90, y:0.72, type:'printer',  label:{de:'Drucker',en:'Printer'} }
+    ],
+    links: [
+      { from:'inet', to:'rtr', type:'wired' },
+      { from:'rtr',  to:'pc',  type:'wired' },
+      { from:'rtr',  to:'lap', type:'wireless' },
+      { from:'rtr',  to:'ph',  type:'wireless' },
+      { from:'rtr',  to:'tv',  type:'wireless' },
+      { from:'rtr',  to:'prt', type:'wired' }
+    ],
+    packets: [
+      { from:'pc',  to:'inet', color:'#10b981', speed:0.35, offset:0.0,  label:{de:'HTTP',en:'HTTP'} },
+      { from:'lap', to:'inet', color:'#22d3ee', speed:0.40, offset:0.30, label:{de:'HTTPS',en:'HTTPS'} },
+      { from:'inet',to:'tv',   color:'#a78bfa', speed:0.30, offset:0.55, label:{de:'Stream',en:'Stream'} },
+      { from:'ph',  to:'inet', color:'#f59e0b', speed:0.35, offset:0.80, label:{de:'App',en:'App'} }
+    ]
+  },
+  {
+    id:'soho',
+    title: { de:'2. Kleines Büro (SOHO)', en:'2. Small Office (SOHO)' },
+    desc:  { de:'Ein Firewall-Router trennt das interne LAN vom Internet. Ein zentraler Switch verteilt das Netz an Server, NAS und Arbeitsplätze. Ein separater Access Point für Gäste-WLAN ist direkt am Router angebunden und vom internen Netz isoliert.',
+             en:'A firewall-router separates the internal LAN from the internet. A central switch distributes the network to servers, NAS, and workstations. A separate guest-WLAN access point is connected directly to the router and isolated from the internal network.' },
+    code:  'Internet\n   │\n[Firewall/Router]───[AP Gäste]\n   │\n[Switch]\n ├─ Server  ├─ NAS\n ├─ PC 1    └─ PC 2',
+    zones: [
+      { x:0.05, y:0.55, w:0.90, h:0.35, color:'#10b981', label:{de:'Internes LAN',en:'Internal LAN'} },
+      { x:0.78, y:0.28, w:0.18, h:0.20, color:'#f59e0b', label:{de:'Gäste',en:'Guests'} }
+    ],
+    nodes: [
+      { id:'inet',  x:0.50, y:0.08, type:'cloud',    label:{de:'Internet',en:'Internet'} },
+      { id:'fw',    x:0.50, y:0.22, type:'firewall', label:{de:'Firewall',en:'Firewall'} },
+      { id:'sw',    x:0.50, y:0.42, type:'switch',   label:{de:'Switch',en:'Switch'} },
+      { id:'ap',    x:0.87, y:0.38, type:'ap',       label:{de:'AP Gäste',en:'AP Guests'} },
+      { id:'srv',   x:0.12, y:0.72, type:'server',   label:{de:'Server',en:'Server'} },
+      { id:'nas',   x:0.32, y:0.72, type:'nas',      label:{de:'NAS',en:'NAS'} },
+      { id:'pc1',   x:0.52, y:0.72, type:'client',   label:{de:'PC 1',en:'PC 1'} },
+      { id:'pc2',   x:0.72, y:0.72, type:'client',   label:{de:'PC 2',en:'PC 2'} }
+    ],
+    links: [
+      { from:'inet', to:'fw',   type:'wired' },
+      { from:'fw',   to:'sw',   type:'wired' },
+      { from:'fw',   to:'ap',   type:'wired' },
+      { from:'sw',   to:'srv',  type:'wired' },
+      { from:'sw',   to:'nas',  type:'wired' },
+      { from:'sw',   to:'pc1',  type:'wired' },
+      { from:'sw',   to:'pc2',  type:'wired' }
+    ],
+    packets: [
+      { from:'pc1', to:'srv',  color:'#10b981', speed:0.40, offset:0.0,  label:{de:'SMB',en:'SMB'} },
+      { from:'pc2', to:'inet', color:'#22d3ee', speed:0.30, offset:0.25, label:{de:'HTTPS',en:'HTTPS'} },
+      { from:'inet',to:'ap',   color:'#f59e0b', speed:0.35, offset:0.55, label:{de:'HTTP',en:'HTTP'} },
+      { from:'srv', to:'nas',  color:'#a78bfa', speed:0.45, offset:0.75, label:{de:'Backup',en:'Backup'} }
+    ]
+  },
+  {
+    id:'dmz',
+    title: { de:'3. DMZ (Back-to-Back Firewall)', en:'3. DMZ (Back-to-Back Firewall)' },
+    desc:  { de:'Eine demilitarisierte Zone zwischen zwei Firewalls. Öffentlich erreichbare Dienste (Web, Mail) stehen in der DMZ – kompromittierte Systeme können so nicht direkt auf das LAN zugreifen. Das LAN enthält Datenbanken und Clients und ist durch die zweite Firewall geschützt.',
+             en:'A demilitarized zone between two firewalls. Publicly reachable services (web, mail) reside in the DMZ – compromised systems cannot directly access the LAN. The LAN contains databases and clients, protected by the second firewall.' },
+    code:  'Internet\n   │\n [FW 1]\n   │\n ┌─ DMZ ─┐\n │ Web Mail │\n └────────┘\n   │\n [FW 2]\n   │\n ┌─ LAN ─┐\n │ DB Files Clients │\n └────────┘',
+    zones: [
+      { x:0.10, y:0.32, w:0.80, h:0.22, color:'#f59e0b', label:{de:'DMZ (semi-trusted)',en:'DMZ (semi-trusted)'} },
+      { x:0.08, y:0.68, w:0.84, h:0.22, color:'#10b981', label:{de:'Internes LAN (trusted)',en:'Internal LAN (trusted)'} }
+    ],
+    nodes: [
+      { id:'inet',  x:0.50, y:0.06, type:'cloud',    label:{de:'Internet',en:'Internet'} },
+      { id:'fw1',   x:0.50, y:0.20, type:'firewall', label:{de:'FW 1',en:'FW 1'} },
+      { id:'web',   x:0.30, y:0.43, type:'web',      label:{de:'Webserver',en:'Webserver'} },
+      { id:'mail',  x:0.70, y:0.43, type:'mail',     label:{de:'Mail-GW',en:'Mail GW'} },
+      { id:'fw2',   x:0.50, y:0.60, type:'firewall', label:{de:'FW 2',en:'FW 2'} },
+      { id:'db',    x:0.20, y:0.80, type:'db',       label:{de:'DB-Server',en:'DB Server'} },
+      { id:'file',  x:0.50, y:0.80, type:'file',     label:{de:'Fileserver',en:'Fileserver'} },
+      { id:'cl',    x:0.80, y:0.80, type:'client',   label:{de:'Client',en:'Client'} }
+    ],
+    links: [
+      { from:'inet', to:'fw1',  type:'wired' },
+      { from:'fw1',  to:'web',  type:'wired' },
+      { from:'fw1',  to:'mail', type:'wired' },
+      { from:'fw2',  to:'db',   type:'wired' },
+      { from:'fw2',  to:'file', type:'wired' },
+      { from:'fw2',  to:'cl',   type:'wired' }
+    ],
+    packets: [
+      { from:'inet',to:'web',  color:'#22d3ee', speed:0.35, offset:0.0,  label:{de:'HTTPS',en:'HTTPS'} },
+      { from:'web', to:'db',   color:'#10b981', speed:0.30, offset:0.30, label:{de:'SQL',en:'SQL'} },
+      { from:'mail',to:'inet', color:'#f59e0b', speed:0.35, offset:0.55, label:{de:'SMTP',en:'SMTP'} },
+      { from:'cl',  to:'inet', color:'#a78bfa', speed:0.30, offset:0.80, label:{de:'HTTPS',en:'HTTPS'} }
+    ]
+  },
+  {
+    id:'vlan',
+    title: { de:'4. VLAN-Segmentierung', en:'4. VLAN Segmentation' },
+    desc:  { de:'Ein Managed Switch teilt das physische Netz in logische VLANs auf. Jedes VLAN ist ein eigenes Broadcast-Domain-Segment. Der Router verbindet die VLANs (Router-on-a-Stick). Typische VLANs: Management, Users, Guests, IoT.',
+             en:'A managed switch partitions the physical network into logical VLANs. Each VLAN is its own broadcast domain segment. The router connects VLANs (router-on-a-stick). Typical VLANs: Management, Users, Guests, IoT.' },
+    code:  'Internet\n   │\n[Router]\n   │ trunk\n[Managed Switch]\n VLAN 10 (Admin)   VLAN 20 (User)\n VLAN 30 (Gäste)   VLAN 40 (IoT)',
+    zones: [
+      { x:0.04, y:0.52, w:0.22, h:0.42, color:'#3b82f6', label:{de:'VLAN 10 Management',en:'VLAN 10 Management'} },
+      { x:0.27, y:0.52, w:0.22, h:0.42, color:'#10b981', label:{de:'VLAN 20 Users',en:'VLAN 20 Users'} },
+      { x:0.50, y:0.52, w:0.22, h:0.42, color:'#f59e0b', label:{de:'VLAN 30 Gäste',en:'VLAN 30 Guests'} },
+      { x:0.73, y:0.52, w:0.22, h:0.42, color:'#a78bfa', label:{de:'VLAN 40 IoT',en:'VLAN 40 IoT'} }
+    ],
+    nodes: [
+      { id:'inet',  x:0.50, y:0.10, type:'cloud',   label:{de:'Internet',en:'Internet'} },
+      { id:'rtr',   x:0.50, y:0.26, type:'router',  label:{de:'Router',en:'Router'} },
+      { id:'sw',    x:0.50, y:0.42, type:'switch',  label:{de:'Managed Switch',en:'Managed Switch'} },
+      { id:'adm',   x:0.15, y:0.75, type:'client',  label:{de:'Admin',en:'Admin'} },
+      { id:'u1',    x:0.38, y:0.75, type:'client',  label:{de:'PC 1',en:'PC 1'} },
+      { id:'gst',   x:0.61, y:0.75, type:'phone',   label:{de:'Gast',en:'Guest'} },
+      { id:'iot',   x:0.84, y:0.75, type:'iot',     label:{de:'IoT-Sensor',en:'IoT Sensor'} }
+    ],
+    links: [
+      { from:'inet', to:'rtr', type:'wired' },
+      { from:'rtr',  to:'sw',  type:'wired' },
+      { from:'sw',   to:'adm', type:'wired' },
+      { from:'sw',   to:'u1',  type:'wired' },
+      { from:'sw',   to:'gst', type:'wired' },
+      { from:'sw',   to:'iot', type:'wired' }
+    ],
+    packets: [
+      { from:'adm', to:'rtr', color:'#3b82f6', speed:0.35, offset:0.0,  label:{de:'SSH',en:'SSH'} },
+      { from:'u1',  to:'rtr', color:'#10b981', speed:0.35, offset:0.35, label:{de:'HTTP',en:'HTTP'} },
+      { from:'gst', to:'rtr', color:'#f59e0b', speed:0.35, offset:0.60, label:{de:'HTTPS',en:'HTTPS'} },
+      { from:'iot', to:'rtr', color:'#a78bfa', speed:0.35, offset:0.85, label:{de:'MQTT',en:'MQTT'} }
+    ]
+  },
+  {
+    id:'wan',
+    title: { de:'5. WAN mit VPN-Filialen', en:'5. WAN with VPN Branches' },
+    desc:  { de:'Mehrere Standorte sind über Site-to-Site-VPN-Tunnel mit dem Internet verbunden. Der Datenverkehr zwischen den Standorten ist verschlüsselt (IPsec). Jede Filiale hat ein eigenes lokales Netz, das über einen Router an den VPN-Tunnel angebunden ist.',
+             en:'Multiple sites are connected to the internet via site-to-site VPN tunnels. Traffic between sites is encrypted (IPsec). Each branch has its own local network, connected to the VPN tunnel through a router.' },
+    code:  '   HQ              B1              B2\n   │               │               │\n[Router]───VPN───[Router]───VPN───[Router]\n   │               │               │\n[LAN]           [LAN]           [LAN]',
+    zones: [],
+    nodes: [
+      { id:'inet', x:0.50, y:0.12, type:'cloud',  label:{de:'Internet',en:'Internet'} },
+      { id:'r_hq', x:0.14, y:0.42, type:'router', label:{de:'Router HQ',en:'Router HQ'} },
+      { id:'r_b1', x:0.50, y:0.42, type:'router', label:{de:'Router B1',en:'Router B1'} },
+      { id:'r_b2', x:0.86, y:0.42, type:'router', label:{de:'Router B2',en:'Router B2'} },
+      { id:'hq',   x:0.14, y:0.72, type:'building', label:{de:'Zentrale',en:'HQ'} },
+      { id:'b1',   x:0.50, y:0.72, type:'building', label:{de:'Filiale 1',en:'Branch 1'} },
+      { id:'b2',   x:0.86, y:0.72, type:'building', label:{de:'Filiale 2',en:'Branch 2'} }
+    ],
+    links: [
+      { from:'r_hq', to:'inet', type:'vpn' },
+      { from:'r_b1', to:'inet', type:'vpn' },
+      { from:'r_b2', to:'inet', type:'vpn' },
+      { from:'r_hq', to:'hq',   type:'wired' },
+      { from:'r_b1', to:'b1',   type:'wired' },
+      { from:'r_b2', to:'b2',   type:'wired' }
+    ],
+    packets: [
+      { from:'hq', to:'r_hq', color:'#10b981', speed:0.4, offset:0.0,  label:{de:'LAN',en:'LAN'} },
+      { from:'r_hq', to:'inet', color:'#a78bfa', speed:0.3, offset:0.3, label:{de:'VPN',en:'VPN'} },
+      { from:'inet', to:'r_b1', color:'#a78bfa', speed:0.3, offset:0.55, label:{de:'VPN',en:'VPN'} },
+      { from:'r_b1', to:'b1', color:'#10b981', speed:0.4, offset:0.75, label:{de:'LAN',en:'LAN'} }
+    ]
+  },
+  {
+    id:'datacenter',
+    title: { de:'6. Rechenzentrum (3-Tier)', en:'6. Data Center (3-Tier)' },
+    desc:  { de:'Klassische 3-Tier-Architektur: Core-Switch als Backbone, Distribution-Switches für Aggregation, Access-Switches für Server und Clients. Redundante Pfade und VLANs erhöhen die Verfügbarkeit.',
+             en:'Classic 3-tier architecture: core switch as backbone, distribution switches for aggregation, access switches for servers and clients. Redundant paths and VLANs increase availability.' },
+    code:  'Internet\n   │\n[Core Switch]\n  ╱       ╲\n[Dist 1]   [Dist 2]\n  │           │\n[Server]   [Client]',
+    zones: [
+      { x:0.05, y:0.60, w:0.42, h:0.35, color:'#10b981', label:{de:'Server-Zone (VLAN 10)',en:'Server zone (VLAN 10)'} },
+      { x:0.53, y:0.60, w:0.42, h:0.35, color:'#22d3ee', label:{de:'Client-Zone (VLAN 20)',en:'Client zone (VLAN 20)'} }
+    ],
+    nodes: [
+      { id:'inet', x:0.50, y:0.08, type:'cloud',  label:{de:'Internet',en:'Internet'} },
+      { id:'core', x:0.50, y:0.24, type:'core',   label:{de:'Core Switch',en:'Core Switch'} },
+      { id:'d1',   x:0.25, y:0.42, type:'dist',   label:{de:'Dist 1',en:'Dist 1'} },
+      { id:'d2',   x:0.75, y:0.42, type:'dist',   label:{de:'Dist 2',en:'Dist 2'} },
+      { id:'s1',   x:0.15, y:0.78, type:'server', label:{de:'Server 1',en:'Server 1'} },
+      { id:'s2',   x:0.38, y:0.78, type:'server', label:{de:'Server 2',en:'Server 2'} },
+      { id:'c1',   x:0.62, y:0.78, type:'client', label:{de:'Client 1',en:'Client 1'} },
+      { id:'c2',   x:0.85, y:0.78, type:'client', label:{de:'Client 2',en:'Client 2'} }
+    ],
+    links: [
+      { from:'inet', to:'core', type:'wired' },
+      { from:'core', to:'d1',   type:'wired' },
+      { from:'core', to:'d2',   type:'wired' },
+      { from:'d1',   to:'s1',   type:'wired' },
+      { from:'d1',   to:'s2',   type:'wired' },
+      { from:'d2',   to:'c1',   type:'wired' },
+      { from:'d2',   to:'c2',   type:'wired' }
+    ],
+    packets: [
+      { from:'c1', to:'s1',   color:'#10b981', speed:0.4, offset:0.0,  label:{de:'App',en:'App'} },
+      { from:'c2', to:'s2',   color:'#22d3ee', speed:0.4, offset:0.35, label:{de:'DB',en:'DB'} },
+      { from:'s1', to:'inet', color:'#a78bfa', speed:0.3, offset:0.65, label:{de:'Sync',en:'Sync'} }
+    ]
+  },
+  {
+    id:'wlan',
+    title: { de:'7. WLAN mit Mesh', en:'7. WLAN with Mesh' },
+    desc:  { de:'Mehrere Access Points bilden ein gemeinsames WLAN. Der WLAN-Controller steuert die APs zentral (SSIDs, Kanäle, Roaming). Clients wechseln nahtlos zwischen den APs (Roaming), wenn sie sich bewegen.',
+             en:'Multiple access points form a single WLAN. The wireless controller manages the APs centrally (SSIDs, channels, roaming). Clients seamlessly switch between APs (roaming) as they move.' },
+    code:  'Internet\n   │\n[Router]\n   │\n[WLAN Controller]\n   ├┈┈[AP1]┈┈[AP2]\n   └┈┈[AP3]┈┈[AP4]\n       Clients roamen',
+    zones: [],
+    nodes: [
+      { id:'inet', x:0.50, y:0.10, type:'cloud',  label:{de:'Internet',en:'Internet'} },
+      { id:'rtr',  x:0.50, y:0.26, type:'router', label:{de:'Router',en:'Router'} },
+      { id:'ctrl', x:0.50, y:0.42, type:'controller', label:{de:'Controller',en:'Controller'} },
+      { id:'ap1',  x:0.14, y:0.62, type:'ap',     label:{de:'AP 1',en:'AP 1'} },
+      { id:'ap2',  x:0.38, y:0.62, type:'ap',     label:{de:'AP 2',en:'AP 2'} },
+      { id:'ap3',  x:0.62, y:0.62, type:'ap',     label:{de:'AP 3',en:'AP 3'} },
+      { id:'ap4',  x:0.86, y:0.62, type:'ap',     label:{de:'AP 4',en:'AP 4'} },
+      { id:'lap',  x:0.38, y:0.86, type:'laptop', label:{de:'Laptop',en:'Laptop'} },
+      { id:'ph',   x:0.62, y:0.86, type:'phone',  label:{de:'Handy',en:'Phone'} }
+    ],
+    links: [
+      { from:'inet', to:'rtr',  type:'wired' },
+      { from:'rtr',  to:'ctrl', type:'wired' },
+      { from:'ctrl', to:'ap1',  type:'wired' },
+      { from:'ctrl', to:'ap2',  type:'wired' },
+      { from:'ctrl', to:'ap3',  type:'wired' },
+      { from:'ctrl', to:'ap4',  type:'wired' },
+      { from:'ap1',  to:'ap2',  type:'wireless' },
+      { from:'ap2',  to:'ap3',  type:'wireless' },
+      { from:'ap3',  to:'ap4',  type:'wireless' },
+      { from:'ap2',  to:'lap',  type:'wireless' },
+      { from:'ap3',  to:'ph',   type:'wireless' }
+    ],
+    packets: [
+      { from:'lap', to:'inet', color:'#22d3ee', speed:0.35, offset:0.0,  label:{de:'HTTPS',en:'HTTPS'} },
+      { from:'ph',  to:'inet', color:'#10b981', speed:0.35, offset:0.40, label:{de:'App',en:'App'} },
+      { from:'ap1', to:'ap4',  color:'#a78bfa', speed:0.25, offset:0.65, label:{de:'Mesh',en:'Mesh'} }
+    ]
+  },
+  {
+    id:'hybrid',
+    title: { de:'8. Cloud-Hybrid', en:'8. Cloud-Hybrid' },
+    desc:  { de:'On-Premises-Ressourcen und Cloud-Ressourcen werden über VPN oder dedizierte Leitungen (ExpressRoute, Direct Connect) verbunden. Workloads können je nach Bedarf verteilt werden. Daten bleiben konsistent durch Synchronisation.',
+             en:'On-premises resources and cloud resources are connected via VPN or dedicated lines (ExpressRoute, Direct Connect). Workloads can be distributed as needed. Data stays consistent through synchronization.' },
+    code:  '  [Cloud VPC]            [On-Prem]\n   VM    DB              FW\n    ╲    ╱               ╱  ╲\n     Internet ──VPN── FW  Server Client',
+    zones: [
+      { x:0.58, y:0.08, w:0.38, h:0.30, color:'#3b82f6', label:{de:'Cloud (VPC)',en:'Cloud (VPC)'} },
+      { x:0.04, y:0.52, w:0.40, h:0.40, color:'#10b981', label:{de:'On-Premises',en:'On-Premises'} }
+    ],
+    nodes: [
+      { id:'vm',   x:0.68, y:0.22, type:'vm',       label:{de:'Cloud-VM',en:'Cloud VM'} },
+      { id:'cdb',  x:0.86, y:0.22, type:'db',       label:{de:'Cloud-DB',en:'Cloud DB'} },
+      { id:'inet', x:0.50, y:0.50, type:'cloud',    label:{de:'Internet',en:'Internet'} },
+      { id:'fw',   x:0.24, y:0.50, type:'firewall', label:{de:'On-Prem FW',en:'On-Prem FW'} },
+      { id:'srv',  x:0.14, y:0.78, type:'server',   label:{de:'Server',en:'Server'} },
+      { id:'cl',   x:0.36, y:0.78, type:'client',   label:{de:'Client',en:'Client'} }
+    ],
+    links: [
+      { from:'vm',   to:'inet', type:'vpn' },
+      { from:'cdb',  to:'inet', type:'vpn' },
+      { from:'fw',   to:'inet', type:'vpn' },
+      { from:'fw',   to:'srv',  type:'wired' },
+      { from:'fw',   to:'cl',   type:'wired' }
+    ],
+    packets: [
+      { from:'srv', to:'vm',  color:'#10b981', speed:0.30, offset:0.0,  label:{de:'Sync',en:'Sync'} },
+      { from:'cl',  to:'cdb', color:'#22d3ee', speed:0.28, offset:0.35, label:{de:'API',en:'API'} },
+      { from:'vm',  to:'srv', color:'#a78bfa', speed:0.30, offset:0.65, label:{de:'Backup',en:'Backup'} }
+    ]
+  }
+];
 
-                <div class="infobox">
-                    <div class="infobox-title">TCP Header <span data-lang-de>(Auszug)</span><span data-lang-en style="display:none;">(Excerpt)</span></div>
-                    <table style="width: 100%;">
-                        <tr><th>Source Port</th><td>16 Bit</td></tr>
-                        <tr><th>Dest Port</th><td>16 Bit</td></tr>
-                        <tr><th>Seq Number</th><td>32 Bit</td></tr>
-                        <tr><th>Ack Number</th><td>32 Bit</td></tr>
-                        <tr><th>Flags</th><td>SYN, ACK, FIN, RST...</td></tr>
-                        <tr><th>Window Size</th><td>16 Bit (Flow Control)</td></tr>
-                    </table>
-                </div>
+/* ==================================================================
+   CANVAS SETUP
+   ================================================================== */
+const canvas = document.getElementById('netCanvas');
+const ctx = canvas.getContext('2d');
+const wrapper = document.getElementById('netCanvas-wrapper');
+let width = 0, height = 0, lastTime = 0;
 
-                <p data-lang-de>Um die garantierte Zustellung zu gewährleisten, baut TCP vor der eigentlichen Datenübertragung eine logische Verbindung auf:</p>
-                <p data-lang-en style="display:none;">To guarantee delivery, TCP establishes a logical connection before any actual data transmission:</p>
+function updateDynamicColors() {
+  const s = getComputedStyle(document.body);
+  C_BG = s.getPropertyValue('--bg-color').trim() || '#0d1117';
+  C_GRID = s.getPropertyValue('--border-color').trim() || '#30363d';
+  C_TEXT = s.getPropertyValue('--text-color').trim() || '#c9d1d9';
+  C_PANEL = s.getPropertyValue('--panel-color').trim() || '#161b22';
+}
 
-                <ol class="list-decimal list-inside space-y-2 mb-4 p-4 border border-[var(--panel-border)] rounded bg-[var(--panel-color)] text-[var(--text-muted)]">
-                    <li><strong>SYN:</strong> <span data-lang-de>Der Client initiiert die Verbindung und sendet eine zufällige Sequenznummer (z.B. Seq=100) an den Server.</span><span data-lang-en style="display:none;">The client initiates the connection and sends a random sequence number (e.g., Seq=100) to the server.</span></li>
-                    <li><strong>SYN-ACK:</strong> <span data-lang-de>Der Server bestätigt den Erhalt (Ack=101) und sendet seine eigene Start-Sequenznummer (z.B. Seq=300).</span><span data-lang-en style="display:none;">The server acknowledges receipt (Ack=101) and sends its own starting sequence number (e.g., Seq=300).</span></li>
-                    <li><strong>ACK:</strong> <span data-lang-de>Der Client bestätigt die Sequenznummer des Servers (Ack=301). Die Verbindung ist nun ESTABLISHED.</span><span data-lang-en style="display:none;">The client acknowledges the server's sequence number (Ack=301). The connection is now ESTABLISHED.</span></li>
-                </ol>
+function resizeCanvas() {
+  if (!wrapper) return;
+  const rect = wrapper.getBoundingClientRect();
+  if (rect.width === 0) return;
+  width = canvas.width = rect.width;
+  height = canvas.height = rect.height;
+}
+window.addEventListener('resize', resizeCanvas);
 
-                <p class="mb-0" data-lang-de>Der Verbindungsabbau (Teardown) erfolgt über vier Schritte: Client sendet <strong>FIN</strong> &rarr; Server bestätigt mit <strong>ACK</strong> &rarr; Server sendet eigenes <strong>FIN</strong> &rarr; Client bestätigt mit <strong>ACK</strong>.</p>
-                <p class="mb-0" data-lang-en style="display:none;">Connection termination (Teardown) requires four steps: Client sends <strong>FIN</strong> &rarr; Server acknowledges with <strong>ACK</strong> &rarr; Server sends its own <strong>FIN</strong> &rarr; Client acknowledges with <strong>ACK</strong>.</p>
-            </div>
-        </section>
+/* ==================================================================
+   RENDERING HELPERS
+   ================================================================== */
+function roundRect(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.lineTo(x + w - r, y);
+  c.quadraticCurveTo(x + w, y, x + w, y + r);
+  c.lineTo(x + w, y + h - r);
+  c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  c.lineTo(x + r, y + h);
+  c.quadraticCurveTo(x, y + h, x, y + h - r);
+  c.lineTo(x, y + r);
+  c.quadraticCurveTo(x, y, x + r, y);
+  c.closePath();
+}
 
-        <!-- ========================================== -->
-        <!-- 2. Application Protocols                   -->
-        <!-- ========================================== -->
-        <section id="layer7" class="scroll-mt-10 searchable-block topic-panel mt-12">
-            <h2>
-                <span data-lang-de>2. Anwendungsprotokolle (Layer 7)</span>
-                <span data-lang-en style="display:none;">2. Application Protocols (Layer 7)</span>
-            </h2>
+function drawBackground() {
+  ctx.save();
+  ctx.strokeStyle = C_GRID + '22';
+  ctx.lineWidth = 1;
+  const gs = 40;
+  for (let x = 0; x < width; x += gs) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+  }
+  for (let y = 0; y < height; y += gs) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+  }
+  ctx.restore();
+}
 
-            <p class="panel-intro" data-lang-de>Anwendungsprotokolle nutzen die darunterliegende Transportschicht, um dem Benutzer oder dem System spezifische Dienste bereitzustellen.</p>
-            <p class="panel-intro" data-lang-en style="display:none;">Application protocols utilize the underlying transport layer to provide specific services to the user or the system.</p>
+function drawZone(zone) {
+  const x = zone.x * width, y = zone.y * height;
+  const w = zone.w * width, h = zone.h * height;
+  ctx.save();
+  roundRect(ctx, x, y, w, h, 12);
+  ctx.fillStyle = zone.color + '10';
+  ctx.fill();
+  ctx.strokeStyle = zone.color + '55';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([6, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = zone.color;
+  ctx.font = '600 11px Inter, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(isGerman ? zone.label.de : zone.label.en, x + 10, y + 6);
+  ctx.restore();
+}
 
-            <div class="subtopic-card">
-                <h3 id="app-web" class="scroll-mt-10">
-                    <span data-lang-de>2.1 Web & Dateifreigabe (HTTP, FTP, SMB)</span>
-                    <span data-lang-en style="display:none;">2.1 Web & File Sharing (HTTP, FTP, SMB)</span>
-                </h3>
-                <table class="wikitable">
-                    <tr><th class="w-24">Protocol</th><th class="w-32">Port / Transport</th><th><span data-lang-de>Beschreibung</span><span data-lang-en style="display:none;">Description</span></th></tr>
-                    <tr>
-                        <td><strong><a href="https://en.wikipedia.org/wiki/HTTP" target="_blank">HTTP/S</a></strong></td>
-                        <td>80 / 443 (TCP)</td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de><strong>Hypertext Transfer Protocol (Secure).</strong> Das Fundament des WWW. HTTPS sichert die TCP-Verbindung zusätzlich durch SSL/TLS ab.</span>
-                            <span data-lang-en style="display:none;"><strong>Hypertext Transfer Protocol (Secure).</strong> The foundation of the WWW. HTTPS secures the TCP connection using SSL/TLS.</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong><a href="https://en.wikipedia.org/wiki/File_Transfer_Protocol" target="_blank">FTP</a></strong></td>
-                        <td>20, 21 (TCP)</td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de><strong>File Transfer Protocol.</strong> Nutzt Port 21 (Control) und Port 20 (Data). Sendet Passwörter im Klartext. Heute primär SFTP (über SSH).</span>
-                            <span data-lang-en style="display:none;"><strong>File Transfer Protocol.</strong> Uses Port 21 (Control) and Port 20 (Data). Sends passwords in plaintext. Today SFTP (via SSH) is preferred.</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong><a href="https://en.wikipedia.org/wiki/Server_Message_Block" target="_blank">SMB / CIFS</a></strong></td>
-                        <td>139, 445 (TCP)</td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de><strong>Server Message Block.</strong> Standard für Datei- und Druckerfreigaben in Netzwerken (Windows / Samba). Port 445 arbeitet nativ über TCP.</span>
-                            <span data-lang-en style="display:none;"><strong>Server Message Block.</strong> Standard for file and printer sharing in networks (Windows / Samba). Port 445 works natively over TCP.</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong><a href="https://en.wikipedia.org/wiki/Network_File_System" target="_blank">NFS</a></strong></td>
-                        <td>2049 (TCP/UDP)</td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de><strong>Network File System.</strong> Standard für Dateifreigaben in UNIX/Linux-Umgebungen.</span>
-                            <span data-lang-en style="display:none;"><strong>Network File System.</strong> Standard for file sharing in UNIX/Linux environments.</span>
-                        </td>
-                    </tr>
-                </table>
-            </div>
+function drawLink(link, a, b) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(a.px, a.py);
+  ctx.lineTo(b.px, b.py);
+  if (link.type === 'wireless') {
+    ctx.setLineDash([6, 6]);
+    ctx.strokeStyle = C_GRID + '99';
+    ctx.lineWidth = 1.8;
+  } else if (link.type === 'vpn') {
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = '#a78bfa';
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = '#a78bfa';
+    ctx.shadowBlur = 6;
+  } else {
+    ctx.setLineDash([]);
+    ctx.strokeStyle = C_GRID;
+    ctx.lineWidth = 2;
+  }
+  ctx.stroke();
+  ctx.restore();
+}
 
-            <div class="subtopic-card">
-                <h3 id="app-mail" class="scroll-mt-10">
-                    <span data-lang-de>2.2 E-Mail-Protokolle (SMTP, IMAP, POP3)</span>
-                    <span data-lang-en style="display:none;">2.2 Mail Protocols (SMTP, IMAP, POP3)</span>
-                </h3>
-                <table class="wikitable">
-                    <tr><th class="w-24">Protocol</th><th class="w-32">Port / Transport</th><th><span data-lang-de>Beschreibung</span><span data-lang-en style="display:none;">Description</span></th></tr>
-                    <tr>
-                        <td><strong><a href="https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol" target="_blank">SMTP</a></strong></td>
-                        <td>25, 587 (TCP)</td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de>Dient ausschließlich dem <em>Versand</em> von Mails. Port 587 erzwingt Verschlüsselung (STARTTLS).</span>
-                            <span data-lang-en style="display:none;">Used exclusively for <em>sending</em> emails. Port 587 enforces encryption (STARTTLS).</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong><a href="https://en.wikipedia.org/wiki/Internet_Message_Access_Protocol" target="_blank">IMAP</a></strong></td>
-                        <td>143, 993 (TCP)</td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de>Zum <em>Abruf</em> von Mails. Hält den Status auf dem Server, ideal für mehrere Endgeräte. 993 ist verschlüsselt (IMAPS).</span>
-                            <span data-lang-en style="display:none;">Used for <em>retrieving</em> emails. Keeps state on the server, ideal for multiple devices. 993 is encrypted (IMAPS).</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong><a href="https://en.wikipedia.org/wiki/Post_Office_Protocol" target="_blank">POP3</a></strong></td>
-                        <td>110, 995 (TCP)</td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de>Lädt Mails herunter und löscht sie dort standardmäßig (Download & Delete).</span>
-                            <span data-lang-en style="display:none;">Downloads emails and deletes them from the server by default (Download & Delete).</span>
-                        </td>
-                    </tr>
-                </table>
-            </div>
+function drawNode(node) {
+  const style = NODE_STYLE[node.type] || NODE_STYLE.client;
+  const color = style.color;
+  const w = 72, h = 54;
+  const x = node.px, y = node.py;
 
-            <div class="subtopic-card">
-                <h3 id="app-infra" class="scroll-mt-10">
-                    <span data-lang-de>2.3 Infrastruktur (DHCP, DNS, ARP)</span>
-                    <span data-lang-en style="display:none;">2.3 Infrastructure (DHCP, DNS, ARP)</span>
-                </h3>
-                <table class="wikitable">
-                    <tr><th class="w-24">Protocol</th><th class="w-32">Port / Layer</th><th><span data-lang-de>Beschreibung</span><span data-lang-en style="display:none;">Description</span></th></tr>
-                    <tr>
-                        <td><strong><a href="https://en.wikipedia.org/wiki/Dynamic_Host_Configuration_Protocol" target="_blank">DHCP</a></strong></td>
-                        <td>67, 68 (UDP)</td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de>Weist IP-Konfigurationen dynamisch zu. Folgt dem <strong>DORA</strong> Prinzip: Discover, Offer, Request, Ack.</span>
-                            <span data-lang-en style="display:none;">Assigns IP configurations dynamically. Follows the <strong>DORA</strong> principle: Discover, Offer, Request, Ack.</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong><a href="https://en.wikipedia.org/wiki/Domain_Name_System" target="_blank">DNS</a></strong></td>
-                        <td>53 (UDP/TCP)</td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de>Übersetzt Namen (google.com) in IPs. Nutzt UDP für Standardabfragen, TCP für Zonentransfers.</span>
-                            <span data-lang-en style="display:none;">Translates names (google.com) into IPs. Uses UDP for standard queries, TCP for zone transfers.</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong><a href="https://en.wikipedia.org/wiki/Address_Resolution_Protocol" target="_blank">ARP</a></strong></td>
-                        <td>Layer 2 / 3</td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de>Löst eine IP in eine MAC-Adresse im lokalen Netz auf. (In IPv6 abgelöst durch NDP).</span>
-                            <span data-lang-en style="display:none;">Resolves an IP into a MAC address on the local network. (Replaced by NDP in IPv6).</span>
-                        </td>
-                    </tr>
-                </table>
-            </div>
+  ctx.save();
+  ctx.shadowColor = color + '80';
+  ctx.shadowBlur = 12;
+  roundRect(ctx, x - w/2, y - h/2, w, h, 10);
+  ctx.fillStyle = C_PANEL;
+  ctx.fill();
+  ctx.restore();
 
-            <div class="subtopic-card">
-                <h3 id="app-remote" class="scroll-mt-10">
-                    <span data-lang-de>2.4 Fernzugriff & Verwaltung (SSH, RDP)</span>
-                    <span data-lang-en style="display:none;">2.4 Remote & Management (SSH, RDP)</span>
-                </h3>
-                <table class="wikitable">
-                    <tr><th class="w-24">Protocol</th><th class="w-32">Port / Transport</th><th><span data-lang-de>Beschreibung</span><span data-lang-en style="display:none;">Description</span></th></tr>
-                    <tr>
-                        <td><strong><a href="https://en.wikipedia.org/wiki/Secure_Shell" target="_blank">SSH</a></strong></td>
-                        <td>22 (TCP)</td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de>Gesicherte Verbindung für Kommandozeilenzugriff (Linux) und sichere Dateiübertragung (SFTP). Ersetzte Telnet (Port 23).</span>
-                            <span data-lang-en style="display:none;">Secured connection for command-line access (Linux) and file transfer (SFTP). Replaced Telnet (Port 23).</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong><a href="https://en.wikipedia.org/wiki/Remote_Desktop_Protocol" target="_blank">RDP</a></strong></td>
-                        <td>3389 (TCP/UDP)</td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de>Protokoll von Microsoft zur Übertragung von grafischen Benutzeroberflächen.</span>
-                            <span data-lang-en style="display:none;">Microsoft's protocol for transmitting graphical user interfaces remotely.</span>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-        </section>
+  ctx.save();
+  roundRect(ctx, x - w/2, y - h/2, w, h, 10);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
 
-        <!-- ========================================== -->
-        <!-- 3. IPv4 & Subnetting                       -->
-        <!-- ========================================== -->
-        <section id="ipv4" class="scroll-mt-10 searchable-block topic-panel mt-12">
-            <h2>
-                <span data-lang-de>3. IPv4 & Subnetting</span>
-                <span data-lang-en style="display:none;">3. IPv4 & Subnetting</span>
-            </h2>
+  ctx.save();
+  ctx.font = '24px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(style.icon, x, y - 4);
+  ctx.restore();
 
-            <p class="panel-intro" data-lang-de><a href="https://de.wikipedia.org/wiki/IPv4" target="_blank">IPv4</a>-Adressen sind 32 Bit lang (4 Oktette, z.B. <code>192.168.1.100</code>). Da der Adressraum erschöpft ist, werden Netze durch <a href="https://de.wikipedia.org/wiki/Subnetting" target="_blank">Subnetting</a> in kleinere Segmente unterteilt.</p>
-            <p class="panel-intro" data-lang-en style="display:none;"><a href="https://en.wikipedia.org/wiki/IPv4" target="_blank">IPv4</a> addresses are 32 bits long (4 octets, e.g., <code>192.168.1.100</code>). Because the address space is exhausted, networks are divided into smaller segments using <a href="https://en.wikipedia.org/wiki/Subnetwork" target="_blank">Subnetting</a>.</p>
+  ctx.save();
+  ctx.font = '600 10px Inter, sans-serif';
+  ctx.fillStyle = C_TEXT;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const label = isGerman ? node.label.de : node.label.en;
+  ctx.fillText(label, x, y + h/2 + 4);
+  ctx.restore();
+}
 
-            <div class="subtopic-card">
-                <h3 id="ipv4-classes" class="scroll-mt-10">
-                    <span data-lang-de>3.1 Netzklassen & RFC 1918</span>
-                    <span data-lang-en style="display:none;">3.1 Network Classes & RFC 1918</span>
-                </h3>
-                <p data-lang-de>Das klassische <em>Classful Routing</em> wurde durch <a href="https://de.wikipedia.org/wiki/Classless_Inter-Domain_Routing" target="_blank">CIDR</a> abgelöst, ist aber weiterhin prüfungsrelevant. Private IP-Bereiche (RFC 1918) werden im Internet nicht geroutet und benötigen <a href="https://de.wikipedia.org/wiki/Network_Address_Translation" target="_blank">NAT</a>.</p>
-                <p data-lang-en style="display:none;">Classic <em>Classful Routing</em> has been replaced by <a href="https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing" target="_blank">CIDR</a>, but remains relevant for exams. Private IP ranges (RFC 1918) are not routed on the public internet and require <a href="https://en.wikipedia.org/wiki/Network_address_translation" target="_blank">NAT</a>.</p>
+function drawPacket(packet, a, b, time) {
+  const tprog = ((time * packet.speed + packet.offset) % 1);
+  const x = a.px + (b.px - a.px) * tprog;
+  const y = a.py + (b.py - a.py) * tprog;
 
-                <table class="wikitable">
-                    <tr><th><span data-lang-de>Klasse</span><span data-lang-en style="display:none;">Class</span></th><th>1. Octet</th><th>CIDR Mask</th><th><span data-lang-de>Privater Bereich</span><span data-lang-en style="display:none;">Private Range</span> (RFC 1918)</th></tr>
-                    <tr><td>A</td><td>1 - 126</td><td>/8 (255.0.0.0)</td><td><code>10.0.0.0</code> – <code>10.255.255.255</code></td></tr>
-                    <tr><td>B</td><td>128 - 191</td><td>/16 (255.255.0.0)</td><td><code>172.16.0.0</code> – <code>172.31.255.255</code></td></tr>
-                    <tr><td>C</td><td>192 - 223</td><td>/24 (255.255.255.0)</td><td><code>192.168.0.0</code> – <code>192.168.255.255</code></td></tr>
-                </table>
-            </div>
+  ctx.save();
+  ctx.shadowColor = packet.color;
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  ctx.arc(x, y, 6, 0, Math.PI * 2);
+  ctx.fillStyle = packet.color;
+  ctx.fill();
+  ctx.strokeStyle = C_BG;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
 
-            <div class="subtopic-card">
-                <h3 id="ipv4-magic" class="scroll-mt-10">
-                    <span data-lang-de>3.2 Subnetting: Magic Number Methode</span>
-                    <span data-lang-en style="display:none;">3.2 Subnetting: Magic Number Method</span>
-                </h3>
-                <div class="bg-[var(--panel-color)] border border-[var(--panel-border)] p-5 rounded space-y-3">
-                    <p><strong><span data-lang-de>Beispiel:</span><span data-lang-en style="display:none;">Example:</span></strong> <code>192.168.10.100 /26</code> (Mask: 255.255.255.192).</p>
-                    <ol class="list-decimal list-inside space-y-2 text-sm text-[var(--text-muted)]" data-lang-de>
-                        <li><strong>Interessantes Oktett:</strong> Das erste Oktett der Maske, das nicht 255 oder 0 ist (hier: 192).</li>
-                        <li><strong>Magic Number (Blockgröße):</strong> <code>256 - 192 = 64</code>. Das Netz springt in 64er-Blöcken.</li>
-                        <li><strong>Netzwerkadresse:</strong> Welches Vielfache von 64 passt in die IP 100? Es ist die 64. &rarr; <code>192.168.10.64</code>.</li>
-                        <li><strong>Broadcast-Adresse:</strong> Nächster Block (64+64=128) minus 1 &rarr; <code>192.168.10.127</code>.</li>
-                        <li><strong>Nutzbare Hosts:</strong> Von <code>.65</code> bis <code>.126</code> (Anzahl: 2^(32-26) - 2 = 62 Hosts).</li>
-                    </ol>
-                    <ol class="list-decimal list-inside space-y-2 text-sm text-[var(--text-muted)]" data-lang-en style="display:none;">
-                        <li><strong>Interesting Octet:</strong> The first octet of the mask that is not 255 or 0 (here: 192).</li>
-                        <li><strong>Magic Number (Block size):</strong> <code>256 - 192 = 64</code>. Subnets increment in blocks of 64.</li>
-                        <li><strong>Network Address:</strong> Which multiple of 64 fits into the IP 100? It's 64. &rarr; <code>192.168.10.64</code>.</li>
-                        <li><strong>Broadcast Address:</strong> Next block (64+64=128) minus 1 &rarr; <code>192.168.10.127</code>.</li>
-                        <li><strong>Usable Hosts:</strong> From <code>.65</code> to <code>.126</code> (Total: 2^(32-26) - 2 = 62 Hosts).</li>
-                    </ol>
-                </div>
-            </div>
-        </section>
+  if (packet.label && tprog > 0.15 && tprog < 0.85) {
+    ctx.save();
+    ctx.font = '600 9px Inter, sans-serif';
+    ctx.fillStyle = packet.color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(isGerman ? packet.label.de : packet.label.en, x, y - 10);
+    ctx.restore();
+  }
+}
 
-        <!-- ========================================== -->
-        <!-- 4. IPv6                                    -->
-        <!-- ========================================== -->
-        <section id="ipv6" class="scroll-mt-10 searchable-block topic-panel mt-12">
-            <h2>
-                <span data-lang-de>4. IPv6</span>
-                <span data-lang-en style="display:none;">4. IPv6</span>
-            </h2>
+function drawFrame(time) {
+  if (width === 0 || height === 0) return;
+  ctx.clearRect(0, 0, width, height);
+  drawBackground();
 
-            <p class="panel-intro" data-lang-de><a href="https://de.wikipedia.org/wiki/IPv6" target="_blank">IPv6</a> verwendet 128 Bit lange Adressen (8 Blöcke in Hexadezimal). Es gibt keinen Broadcast mehr (ersetzt durch Multicast) und NAT ist obsolet.</p>
-            <p class="panel-intro" data-lang-en style="display:none;"><a href="https://en.wikipedia.org/wiki/IPv6" target="_blank">IPv6</a> uses 128-bit addresses (8 hexadecimal blocks). Broadcasts are removed (replaced by Multicast) and NAT is obsolete.</p>
+  const setup = setups[currentSetupIdx];
+  const nodeMap = {};
+  setup.nodes.forEach(n => {
+    n.px = n.x * width;
+    n.py = n.y * height;
+    nodeMap[n.id] = n;
+  });
 
-            <div class="subtopic-card">
-                <h3 id="ipv6-rules" class="scroll-mt-10">
-                    <span data-lang-de>4.1 Verkürzungsregeln</span>
-                    <span data-lang-en style="display:none;">4.1 Abbreviation Rules</span>
-                </h3>
-                <ul class="list-disc list-inside bg-[var(--panel-color)] p-4 border border-[var(--panel-border)] rounded text-sm text-[var(--text-muted)]" data-lang-de>
-                    <li><strong>Führende Nullen:</strong> Dürfen innerhalb eines Hextets entfallen (<code>0db8</code> &rarr; <code>db8</code>).</li>
-                    <li><strong>Nullenkompression:</strong> Ein <em>einziger</em> Block aus reinen Null-Hextets darf durch <code>::</code> ersetzt werden. Darf strikt nur <strong>einmal</strong> geschehen!</li>
-                </ul>
-                <ul class="list-disc list-inside bg-[var(--panel-color)] p-4 border border-[var(--panel-border)] rounded text-sm text-[var(--text-muted)]" data-lang-en style="display:none;">
-                    <li><strong>Leading Zeros:</strong> Can be omitted within a block (<code>0db8</code> &rarr; <code>db8</code>).</li>
-                    <li><strong>Zero Compression:</strong> A <em>single</em> contiguous block of all-zero blocks can be replaced by <code>::</code>. This can strictly only happen <strong>once</strong> per address!</li>
-                </ul>
-            </div>
+  (setup.zones || []).forEach(drawZone);
 
-            <div class="subtopic-card">
-                <h3 id="ipv6-types" class="scroll-mt-10">
-                    <span data-lang-de>4.2 Wichtige Adresstypen</span>
-                    <span data-lang-en style="display:none;">4.2 Address Types</span>
-                </h3>
-                <table class="wikitable">
-                    <tr><th><span data-lang-de>Typ</span><span data-lang-en style="display:none;">Type</span></th><th>Prefix</th><th><span data-lang-de>Bedeutung</span><span data-lang-en style="display:none;">Meaning</span></th></tr>
-                    <tr>
-                        <td><strong>Global Unicast</strong></td><td><code>2000::/3</code></td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de>Weltweit eindeutig und routbar (öffentliche IP).</span>
-                            <span data-lang-en style="display:none;">Globally unique and routable (public IP).</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong>Link-Local</strong></td><td><code>fe80::/10</code></td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de>Nur im lokalen Subnetz gültig. Essenziell für NDP. Ähnlich APIPA.</span>
-                            <span data-lang-en style="display:none;">Valid only on the local link. Essential for NDP. Similar to APIPA.</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong>Unique Local (ULA)</strong></td><td><code>fc00::/7</code></td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de>Entspricht privaten IPv4-Netzen (RFC 1918).</span>
-                            <span data-lang-en style="display:none;">Equivalent to private IPv4 networks (RFC 1918).</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong>Multicast</strong></td><td><code>ff00::/8</code></td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de>Adressiert eine definierte Gruppe. Ersetzt Broadcast.</span>
-                            <span data-lang-en style="display:none;">Addresses a specific group of nodes. Replaces Broadcast.</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong>Loopback</strong></td><td><code>::1/128</code></td>
-                        <td class="text-[var(--text-muted)]">Localhost (127.0.0.1).</td>
-                    </tr>
-                </table>
-            </div>
-        </section>
+  setup.links.forEach(link => {
+    const a = nodeMap[link.from], b = nodeMap[link.to];
+    if (a && b) drawLink(link, a, b);
+  });
 
-        <!-- ========================================== -->
-        <!-- 5. CLI Commands                            -->
-        <!-- ========================================== -->
-        <section id="commands" class="scroll-mt-10 searchable-block topic-panel mt-12">
-            <h2>
-                <span data-lang-de>5. CLI Befehle</span>
-                <span data-lang-en style="display:none;">5. CLI Commands</span>
-            </h2>
+  setup.packets.forEach(p => {
+    const a = nodeMap[p.from], b = nodeMap[p.to];
+    if (a && b) drawPacket(p, a, b, time);
+  });
 
-            <div class="subtopic-card">
-                <h3 id="cmd-basics" class="scroll-mt-10">
-                    <span data-lang-de>5.1 Grundlagen & IP</span>
-                    <span data-lang-en style="display:none;">5.1 Basics & IP</span>
-                </h3>
-                <table class="wikitable">
-                    <tr><th class="w-1/4"><span data-lang-de>Zweck</span><span data-lang-en style="display:none;">Purpose</span></th><th class="w-1/3">Windows (CMD/PS)</th><th>Linux (Bash)</th></tr>
-                    <tr>
-                        <td><strong>IP Info</strong></td>
-                        <td><code>ipconfig /all</code></td>
-                        <td><code>ip a</code> / <code>ifconfig</code></td>
-                    </tr>
-                    <tr>
-                        <td><strong><span data-lang-de>Verbindungstest</span><span data-lang-en style="display:none;">Connectivity</span></strong></td>
-                        <td><code>ping 8.8.8.8 -t</code></td>
-                        <td><code>ping -c 4 8.8.8.8</code></td>
-                    </tr>
-                    <tr>
-                        <td><strong>DNS Flush</strong></td>
-                        <td><code>ipconfig /flushdns</code></td>
-                        <td><code>resolvectl flush-caches</code></td>
-                    </tr>
-                </table>
-            </div>
+  setup.nodes.forEach(drawNode);
+  drawLegend();
+}
 
-            <div class="subtopic-card">
-                <h3 id="cmd-routing" class="scroll-mt-10">
-                    <span data-lang-de>5.2 Routing & DNS</span>
-                    <span data-lang-en style="display:none;">5.2 Routing & DNS</span>
-                </h3>
-                <table class="wikitable">
-                    <tr><th class="w-1/4"><span data-lang-de>Zweck</span><span data-lang-en style="display:none;">Purpose</span></th><th class="w-1/3">Windows (CMD/PS)</th><th>Linux (Bash)</th></tr>
-                    <tr>
-                        <td><strong>Trace Route</strong></td>
-                        <td><code>tracert google.com</code></td>
-                        <td><code>traceroute google.com</code></td>
-                    </tr>
-                    <tr>
-                        <td><strong>DNS Query</strong></td>
-                        <td><code>nslookup heise.de</code></td>
-                        <td><code>dig heise.de</code> / <code>host</code></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Routing Table</strong></td>
-                        <td><code>route print</code></td>
-                        <td><code>ip route</code></td>
-                    </tr>
-                    <tr>
-                        <td><strong>ARP Cache</strong></td>
-                        <td><code>arp -a</code></td>
-                        <td><code>ip neigh</code></td>
-                    </tr>
-                </table>
-            </div>
+function drawLegend() {
+  ctx.save();
+  ctx.font = '500 10px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillStyle = C_TEXT;
+  ctx.globalAlpha = 0.5;
+  const text = isGerman ? 'Klick auf Weiter für das nächste Szenario' : 'Click Next for the next scenario';
+  ctx.fillText(text, width / 2, height - 10);
+  ctx.restore();
+}
 
-            <div class="subtopic-card">
-                <h3 id="cmd-analyse" class="scroll-mt-10">
-                    <span data-lang-de>5.3 Analyse & Ports</span>
-                    <span data-lang-en style="display:none;">5.3 Analysis & Ports</span>
-                </h3>
-                <table class="wikitable">
-                    <tr><th class="w-1/4"><span data-lang-de>Zweck</span><span data-lang-en style="display:none;">Purpose</span></th><th class="w-1/3">Windows (CMD/PS)</th><th>Linux (Bash)</th></tr>
-                    <tr>
-                        <td><strong>Active Ports</strong></td>
-                        <td><code>netstat -ano</code></td>
-                        <td><code>ss -tulpn</code></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Port Check</strong></td>
-                        <td><code>Test-NetConnection 10.0.0.1 -Port 80</code></td>
-                        <td><code>nc -vz 10.0.0.1 80</code></td>
-                    </tr>
-                </table>
-            </div>
-        </section>
+function animateLoop(ts) {
+  if (!lastTime) lastTime = ts;
+  const time = ts / 1000;
+  drawFrame(time);
+  requestAnimationFrame(animateLoop);
+}
 
-        <!-- ========================================== -->
-        <!-- 6. Network Security                        -->
-        <!-- ========================================== -->
-        <section id="security" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
-            <h2>
-                <span data-lang-de>6. Netzwerksicherheit</span>
-                <span data-lang-en style="display:none;">6. Network Security</span>
-            </h2>
+function updateSetupDOM() {
+  const s = setups[currentSetupIdx];
+  document.getElementById('setup-counter').textContent = currentSetupIdx + 1;
+  document.getElementById('setup-title').textContent = isGerman ? s.title.de : s.title.en;
+  document.getElementById('setup-desc').innerHTML = isGerman ? s.desc.de : s.desc.en;
+  document.getElementById('setup-code').textContent = s.code;
 
-            <div class="subtopic-card">
-                <h3 id="sec-cia" class="scroll-mt-10">
-                    <span data-lang-de>6.1 CIA Triade</span>
-                    <span data-lang-en style="display:none;">6.1 CIA Triad</span>
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div class="bg-[var(--panel-color)] p-4 border border-[var(--panel-border)] rounded">
-                        <h4 class="mt-0 text-[var(--link-color)]">Confidentiality</h4>
-                        <p class="text-[var(--text-muted)] mb-0" data-lang-de>Nur autorisierte Personen dürfen Daten lesen. Realisiert durch <strong>Verschlüsselung</strong>.</p>
-                        <p class="text-[var(--text-muted)] mb-0" data-lang-en style="display:none;">Only authorized entities can read data. Realized via <strong>Encryption</strong>.</p>
-                    </div>
-                    <div class="bg-[var(--panel-color)] p-4 border border-[var(--panel-border)] rounded">
-                        <h4 class="mt-0 text-[var(--link-color)]">Integrity</h4>
-                        <p class="text-[var(--text-muted)] mb-0" data-lang-de>Daten dürfen nicht unbemerkt verändert werden. Realisiert durch <strong>Hash-Werte</strong> (SHA-256).</p>
-                        <p class="text-[var(--text-muted)] mb-0" data-lang-en style="display:none;">Data cannot be altered unnoticed. Realized via <strong>Hash values</strong> (SHA-256).</p>
-                    </div>
-                    <div class="bg-[var(--panel-color)] p-4 border border-[var(--panel-border)] rounded">
-                        <h4 class="mt-0 text-[var(--link-color)]">Availability</h4>
-                        <p class="text-[var(--text-muted)] mb-0" data-lang-de>Systeme müssen erreichbar sein. Geschützt durch Redundanz (<a href="https://de.wikipedia.org/wiki/RAID" target="_blank">RAID</a>, Cluster).</p>
-                        <p class="text-[var(--text-muted)] mb-0" data-lang-en style="display:none;">Systems must be accessible. Protected via redundancy (<a href="https://en.wikipedia.org/wiki/RAID" target="_blank">RAID</a>, Clusters).</p>
-                    </div>
-                </div>
-            </div>
+  document.querySelectorAll('.toc-example').forEach(a => {
+    a.classList.toggle('active', parseInt(a.dataset.idx) === currentSetupIdx);
+  });
+}
 
-            <div class="subtopic-card">
-                <h3 id="sec-proto" class="scroll-mt-10">
-                    <span data-lang-de>6.2 VPN, TLS, Firewalls</span>
-                    <span data-lang-en style="display:none;">6.2 VPN, TLS, Firewalls</span>
-                </h3>
-                <table class="wikitable">
-                    <tr><th class="w-1/4">Concept</th><th><span data-lang-de>Beschreibung</span><span data-lang-en style="display:none;">Description</span></th></tr>
-                    <tr>
-                        <td><strong><a href="https://en.wikipedia.org/wiki/Transport_Layer_Security" target="_blank">SSL / TLS</a></strong></td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de>Transport Layer Security. Legt einen verschlüsselten Tunnel über TCP (z.B. HTTPS).</span>
-                            <span data-lang-en style="display:none;">Transport Layer Security. Creates an encrypted tunnel over TCP (e.g., HTTPS).</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong><a href="https://en.wikipedia.org/wiki/IPsec" target="_blank">IPsec</a> (VPN)</strong></td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de>Sichert Layer 3. Nutzt IKE auf Port 500 UDP.</span>
-                            <span data-lang-en style="display:none;">Secures Layer 3. Uses IKE on Port 500 UDP.</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong><a href="https://en.wikipedia.org/wiki/Stateful_firewall" target="_blank">Stateful Firewall</a></strong></td>
-                        <td class="text-[var(--text-muted)]">
-                            <span data-lang-de>Überwacht den <em>Zustand</em> von Verbindungen, lässt Antworten auf interne Anfragen automatisch durch.</span>
-                            <span data-lang-en style="display:none;">Monitors the <em>state</em> of connections, automatically allowing responses to internal requests.</span>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-        </section>
+function nextPhase() {
+  currentSetupIdx = (currentSetupIdx + 1) % setups.length;
+  updateSetupDOM();
+}
+function prevPhase() {
+  currentSetupIdx = (currentSetupIdx - 1 + setups.length) % setups.length;
+  updateSetupDOM();
+}
 
-    </main>
+/* ==================================================================
+   LANGUAGE
+   ================================================================== */
+function toggleLang() {
+  isGerman = !isGerman;
+  document.getElementById('lang-indicator').textContent = isGerman ? 'DE' : 'EN';
+  document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+  updateSetupDOM();
 
-    <script>
-        // Smooth scrolling active state update for TOC
-        document.addEventListener('DOMContentLoaded', () => {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    const id = entry.target.getAttribute('id');
-                    const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+  const menu = document.getElementById('themeContextMenu');
+  if (menu && menu.classList.contains('open')) buildThemeMenuItems();
+}
 
-                    if (entry.isIntersecting) {
-                        document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
-                        if(tocLink) tocLink.classList.add('active');
-                    }
-                });
-            }, {
-                rootMargin: '-10% 0px -80% 0px',
-                threshold: [0, 0.1, 1]
-            });
+/* ==================================================================
+   SEARCH / DOWNLOAD
+   ================================================================== */
+function filterWiki() {
+  const input = document.getElementById('wikiSearch');
+  const filter = input.value.toLowerCase();
+  const blocks = document.querySelectorAll('.searchable-block');
+  const mainContent = document.getElementById('main-content');
+  removeHighlights(mainContent);
+  if (!filter) { blocks.forEach(b => b.style.display = 'block'); return; }
+  blocks.forEach(b => {
+    const text = b.innerText.toLowerCase();
+    if (text.includes(filter)) { b.style.display = 'block'; highlightText(b, input.value); }
+    else { b.style.display = 'none'; }
+  });
+}
+function highlightText(el, kw) {
+  if (!kw) return;
+  const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
+  const toReplace = []; let node;
+  while (node = tw.nextNode()) {
+    if (node.nodeValue.toLowerCase().includes(kw.toLowerCase())) {
+      if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE' && node.parentNode.tagName !== 'CODE') {
+        toReplace.push(node);
+      }
+    }
+  }
+  toReplace.forEach(node => {
+    const re = new RegExp(`(${escapeRegExp(kw)})`, 'gi');
+    const frag = document.createDocumentFragment();
+    let m, last = 0; const text = node.nodeValue;
+    while ((m = re.exec(text)) !== null) {
+      frag.appendChild(document.createTextNode(text.substring(last, m.index)));
+      const span = document.createElement('span');
+      span.className = 'search-match font-semibold';
+      span.textContent = m[0]; frag.appendChild(span);
+      last = re.lastIndex;
+    }
+    frag.appendChild(document.createTextNode(text.substring(last)));
+    node.parentNode.replaceChild(frag, node);
+  });
+}
+function removeHighlights(el) {
+  el.querySelectorAll('.search-match').forEach(span => {
+    const p = span.parentNode;
+    p.replaceChild(document.createTextNode(span.textContent), span);
+    p.normalize();
+  });
+}
+function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
-            document.querySelectorAll('section, h3[id]').forEach((section) => {
-                observer.observe(section);
-            });
-        });
+function downloadHTML() {
+  removeHighlights(document.getElementById('main-content'));
+  const html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'cheatSheetNetworks.html';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
-        // Search logic
-        function filterWiki() {
-            const input = document.getElementById('wikiSearch');
-            const filter = input.value.toLowerCase();
-            const blocks = document.querySelectorAll('.searchable-block');
-            const mainContent = document.getElementById('main-content');
+function updateDownloadVisibility() {
+  const isLocal = (location.protocol === 'file:');
+  const btn = document.getElementById('downloadBtn');
+  const divider = document.getElementById('downloadDivider');
+  if (btn)     btn.style.display = isLocal ? 'none' : '';
+  if (divider) divider.style.display = isLocal ? 'none' : '';
+}
 
-            removeHighlights(mainContent);
+/* ==================================================================
+   COLOUR SCHEMES
+   ================================================================== */
+const FALLBACK_COLOR_CONFIG = {
+  version: '1.0',
+  defaultScheme: 'dark',
+  storageKey: 'cheatSheetNetwork.scheme',
+  base: {
+    'shadow-color': 'rgba(0, 0, 0, 0.45)',
+    'shadow-color-strong': 'rgba(0, 0, 0, 0.7)',
+    'card-shadow': '0 0 22px 0 var(--shadow-color), 0 0 10px 0 var(--shadow-color), 0 4px 24px 0 var(--shadow-color)',
+    'card-shadow-hover': '0 0 40px 0 var(--shadow-color-strong), 0 0 18px 0 var(--shadow-color-strong), 0 8px 36px 0 var(--shadow-color-strong)',
+    'table-alt': 'rgba(255, 255, 255, 0.02)',
+    'search-match': 'rgba(34, 211, 238, 0.3)',
+    'search-text': '#ffffff'
+  },
+  schemes: [
+    {
+      id: 'dark', name: { de: 'Dunkel (Standard)', en: 'Dark (default)' }, dark: true,
+      colors: {
+        'bg-color':'#0d1117','panel-color':'#161b22','sidebar-color':'#0d1117','border-color':'#30363d',
+        'text-color':'#c9d1d9','text-muted':'#8b949e','link-color':'#22d3ee','link-hover':'#67e8f9',
+        'heading-color':'#f0f6fc','subtitle-color':'#c9d1d9','code-bg':'#1c2128','code-block-bg':'#0d1117','info-box':'#1c2433',
+        'c-phase-1':'#3b82f6','c-phase-2':'#a78bfa','c-phase-3':'#f59e0b','c-phase-4':'#10b981','c-phase-5':'#ef4444',
+        'accent-blue':'#3b82f6','accent-green':'#10b981','accent-amber':'#f59e0b',
+        'accent-violet':'#8b5cf6','accent-teal':'#14b8a6','accent-red':'#ef4444','accent-gray':'#6b7280'
+      }
+    },
+    {
+      id: 'light', name: { de: 'Hell', en: 'Light' }, dark: false,
+      colors: {
+        'bg-color':'#f4f6f9','panel-color':'#ffffff','sidebar-color':'#ffffff','border-color':'#cbd5e1',
+        'text-color':'#0f172a','text-muted':'#475569','link-color':'#0891b2','link-hover':'#0e7490',
+        'heading-color':'#020617','subtitle-color':'#0f172a','code-bg':'#e2e8f0','code-block-bg':'#f8fafc','info-box':'#cffafe',
+        'shadow-color':'rgba(0,0,0,0.16)','shadow-color-strong':'rgba(0,0,0,0.28)',
+        'table-alt':'rgba(0,0,0,0.015)','search-match':'rgba(8,145,178,0.2)','search-text':'#000000',
+        'c-phase-1':'#2563eb','c-phase-2':'#7c3aed','c-phase-3':'#d97706','c-phase-4':'#059669','c-phase-5':'#dc2626',
+        'accent-blue':'#2563eb','accent-green':'#059669','accent-amber':'#d97706',
+        'accent-violet':'#7c3aed','accent-teal':'#0d9488','accent-red':'#dc2626','accent-gray':'#6b7280'
+      }
+    },
+    {
+      id: 'solarized-dark', name: { de: 'Solarized Dunkel', en: 'Solarized Dark' }, dark: true,
+      colors: {
+        'bg-color':'#002b36','panel-color':'#073642','sidebar-color':'#073642','border-color':'#586e75',
+        'text-color':'#93a1a1','text-muted':'#839496','link-color':'#2aa198','link-hover':'#268bd2',
+        'heading-color':'#fdf6e3','subtitle-color':'#eee8d5','code-bg':'#073642','code-block-bg':'#00252e','info-box':'#0a4b5c',
+        'c-phase-1':'#268bd2','c-phase-2':'#6c71c4','c-phase-3':'#b58900','c-phase-4':'#859900','c-phase-5':'#dc322f',
+        'accent-blue':'#268bd2','accent-green':'#859900','accent-amber':'#b58900',
+        'accent-violet':'#6c71c4','accent-teal':'#2aa198','accent-red':'#dc322f','accent-gray':'#586e75'
+      }
+    },
+    {
+      id: 'solarized-light', name: { de: 'Solarized Hell', en: 'Solarized Light' }, dark: false,
+      colors: {
+        'bg-color':'#fdf6e3','panel-color':'#eee8d5','sidebar-color':'#eee8d5','border-color':'#93a1a1',
+        'text-color':'#073642','text-muted':'#586e75','link-color':'#268bd2','link-hover':'#1e6fa3',
+        'heading-color':'#002b36','subtitle-color':'#073642','code-bg':'#f5efdc','code-block-bg':'#e8dfc9','info-box':'#e8dfc9',
+        'shadow-color':'rgba(0,0,0,0.12)','shadow-color-strong':'rgba(0,0,0,0.22)',
+        'table-alt':'rgba(0,0,0,0.025)','search-match':'rgba(181,137,0,0.35)','search-text':'#002b36',
+        'c-phase-1':'#268bd2','c-phase-2':'#6c71c4','c-phase-3':'#b58900','c-phase-4':'#859900','c-phase-5':'#dc322f',
+        'accent-blue':'#268bd2','accent-green':'#859900','accent-amber':'#b58900',
+        'accent-violet':'#6c71c4','accent-teal':'#2aa198','accent-red':'#dc322f','accent-gray':'#839496'
+      }
+    },
+    {
+      id: 'dracula', name: { de: 'Dracula', en: 'Dracula' }, dark: true,
+      colors: {
+        'bg-color':'#282a36','panel-color':'#343746','sidebar-color':'#21222c','border-color':'#44475a',
+        'text-color':'#f8f8f2','text-muted':'#bdc1d4','link-color':'#8be9fd','link-hover':'#bd93f9',
+        'heading-color':'#ffffff','subtitle-color':'#f8f8f2','code-bg':'#21222c','code-block-bg':'#191a21','info-box':'#44475a',
+        'c-phase-1':'#8be9fd','c-phase-2':'#bd93f9','c-phase-3':'#f1fa8c','c-phase-4':'#50fa7b','c-phase-5':'#ff5555',
+        'accent-blue':'#8be9fd','accent-green':'#50fa7b','accent-amber':'#f1fa8c',
+        'accent-violet':'#bd93f9','accent-teal':'#8be9fd','accent-red':'#ff5555','accent-gray':'#6272a4'
+      }
+    },
+    {
+      id: 'nord', name: { de: 'Nord', en: 'Nord' }, dark: true,
+      colors: {
+        'bg-color':'#2e3440','panel-color':'#3b4252','sidebar-color':'#2e3440','border-color':'#4c566a',
+        'text-color':'#d8dee9','text-muted':'#a5adbb','link-color':'#88c0d0','link-hover':'#8fbcbb',
+        'heading-color':'#eceff4','subtitle-color':'#e5e9f0','code-bg':'#292e39','code-block-bg':'#242933','info-box':'#434c5e',
+        'c-phase-1':'#5e81ac','c-phase-2':'#b48ead','c-phase-3':'#ebcb8b','c-phase-4':'#a3be8c','c-phase-5':'#bf616a',
+        'accent-blue':'#5e81ac','accent-green':'#a3be8c','accent-amber':'#ebcb8b',
+        'accent-violet':'#b48ead','accent-teal':'#8fbcbb','accent-red':'#bf616a','accent-gray':'#4c566a'
+      }
+    },
+    {
+      id: 'gruvbox-dark', name: { de: 'Gruvbox Dunkel', en: 'Gruvbox Dark' }, dark: true,
+      colors: {
+        'bg-color':'#282828','panel-color':'#3c3836','sidebar-color':'#1d2021','border-color':'#504945',
+        'text-color':'#ebdbb2','text-muted':'#a89984','link-color':'#83a598','link-hover':'#8ec07c',
+        'heading-color':'#fbf1c7','subtitle-color':'#ebdbb2','code-bg':'#1d2021','code-block-bg':'#141414','info-box':'#3c3836',
+        'c-phase-1':'#83a598','c-phase-2':'#d3869b','c-phase-3':'#fabd2f','c-phase-4':'#b8bb26','c-phase-5':'#fb4934',
+        'accent-blue':'#83a598','accent-green':'#b8bb26','accent-amber':'#fabd2f',
+        'accent-violet':'#d3869b','accent-teal':'#8ec07c','accent-red':'#fb4934','accent-gray':'#928374'
+      }
+    },
+    {
+      id: 'gruvbox-light', name: { de: 'Gruvbox Hell', en: 'Gruvbox Light' }, dark: false,
+      colors: {
+        'bg-color':'#fbf1c7','panel-color':'#f2e5bc','sidebar-color':'#f2e5bc','border-color':'#d5c4a1',
+        'text-color':'#3c3836','text-muted':'#7c6f64','link-color':'#076678','link-hover':'#427b58',
+        'heading-color':'#282828','subtitle-color':'#3c3836','code-bg':'#ebdbb2','code-block-bg':'#e0d3a8','info-box':'#e0d3a8',
+        'shadow-color':'rgba(60,56,54,0.18)','shadow-color-strong':'rgba(60,56,54,0.3)',
+        'table-alt':'rgba(0,0,0,0.025)','search-match':'rgba(181,118,20,0.35)','search-text':'#282828',
+        'c-phase-1':'#076678','c-phase-2':'#8f3f71','c-phase-3':'#b57614','c-phase-4':'#79740e','c-phase-5':'#9d0006',
+        'accent-blue':'#076678','accent-green':'#79740e','accent-amber':'#b57614',
+        'accent-violet':'#8f3f71','accent-teal':'#427b58','accent-red':'#9d0006','accent-gray':'#7c6f64'
+      }
+    },
+    {
+      id: 'monokai', name: { de: 'Monokai', en: 'Monokai' }, dark: true,
+      colors: {
+        'bg-color':'#272822','panel-color':'#2f302a','sidebar-color':'#1e1f1c','border-color':'#49483e',
+        'text-color':'#f8f8f2','text-muted':'#a6a28c','link-color':'#66d9ef','link-hover':'#a6e22e',
+        'heading-color':'#f8f8f2','subtitle-color':'#e6db74','code-bg':'#1e1f1c','code-block-bg':'#141511','info-box':'#3e3d32',
+        'c-phase-1':'#66d9ef','c-phase-2':'#ae81ff','c-phase-3':'#e6db74','c-phase-4':'#a6e22e','c-phase-5':'#f92672',
+        'accent-blue':'#66d9ef','accent-green':'#a6e22e','accent-amber':'#e6db74',
+        'accent-violet':'#ae81ff','accent-teal':'#66d9ef','accent-red':'#f92672','accent-gray':'#75715e'
+      }
+    },
+    {
+      id: 'tokyo-night', name: { de: 'Tokyo Night', en: 'Tokyo Night' }, dark: true,
+      colors: {
+        'bg-color':'#1a1b26','panel-color':'#1f2335','sidebar-color':'#16161e','border-color':'#292e42',
+        'text-color':'#c0caf5','text-muted':'#9aa5ce','link-color':'#7dcfff','link-hover':'#7aa2f7',
+        'heading-color':'#ffffff','subtitle-color':'#c0caf5','code-bg':'#16161e','code-block-bg':'#101019','info-box':'#292e42',
+        'c-phase-1':'#7aa2f7','c-phase-2':'#bb9af7','c-phase-3':'#e0af68','c-phase-4':'#9ece6a','c-phase-5':'#f7768e',
+        'accent-blue':'#7aa2f7','accent-green':'#9ece6a','accent-amber':'#e0af68',
+        'accent-violet':'#bb9af7','accent-teal':'#7dcfff','accent-red':'#f7768e','accent-gray':'#565f89'
+      }
+    },
+    {
+      id: 'catppuccin-mocha', name: { de: 'Catppuccin Mocha', en: 'Catppuccin Mocha' }, dark: true,
+      colors: {
+        'bg-color':'#1e1e2e','panel-color':'#313244','sidebar-color':'#181825','border-color':'#45475a',
+        'text-color':'#cdd6f4','text-muted':'#a6adc8','link-color':'#89b4fa','link-hover':'#74c7ec',
+        'heading-color':'#f5e0dc','subtitle-color':'#cdd6f4','code-bg':'#181825','code-block-bg':'#11111b','info-box':'#313244',
+        'c-phase-1':'#89b4fa','c-phase-2':'#cba6f7','c-phase-3':'#f9e2af','c-phase-4':'#a6e3a1','c-phase-5':'#f38ba8',
+        'accent-blue':'#89b4fa','accent-green':'#a6e3a1','accent-amber':'#f9e2af',
+        'accent-violet':'#cba6f7','accent-teal':'#94e2d5','accent-red':'#f38ba8','accent-gray':'#6c7086'
+      }
+    },
+    {
+      id: 'catppuccin-latte', name: { de: 'Catppuccin Latte', en: 'Catppuccin Latte' }, dark: false,
+      colors: {
+        'bg-color':'#eff1f5','panel-color':'#ffffff','sidebar-color':'#e6e9ef','border-color':'#ccd0da',
+        'text-color':'#4c4f69','text-muted':'#6c6f85','link-color':'#1e66f5','link-hover':'#7287fd',
+        'heading-color':'#1e1e2e','subtitle-color':'#4c4f69','code-bg':'#e6e9ef','code-block-bg':'#dce0e8','info-box':'#dce0e8',
+        'shadow-color':'rgba(76,79,105,0.15)','shadow-color-strong':'rgba(76,79,105,0.28)',
+        'table-alt':'rgba(0,0,0,0.02)','search-match':'rgba(223,142,29,0.35)','search-text':'#1e1e2e',
+        'c-phase-1':'#1e66f5','c-phase-2':'#8839ef','c-phase-3':'#df8e1d','c-phase-4':'#40a02b','c-phase-5':'#d20f39',
+        'accent-blue':'#1e66f5','accent-green':'#40a02b','accent-amber':'#df8e1d',
+        'accent-violet':'#8839ef','accent-teal':'#179299','accent-red':'#d20f39','accent-gray':'#8c8fa1'
+      }
+    },
+    {
+      id: 'one-light', name: { de: 'One Light', en: 'One Light' }, dark: false,
+      colors: {
+        'bg-color':'#fafafa','panel-color':'#ffffff','sidebar-color':'#f0f0f1','border-color':'#d4d4d5',
+        'text-color':'#383a42','text-muted':'#696c77','link-color':'#0184bc','link-hover':'#4078f2',
+        'heading-color':'#1c1d21','subtitle-color':'#383a42','code-bg':'#f0f0f1','code-block-bg':'#e5e5e6','info-box':'#e5e5e6',
+        'shadow-color':'rgba(56,58,66,0.12)','shadow-color-strong':'rgba(56,58,66,0.22)',
+        'table-alt':'rgba(0,0,0,0.015)','search-match':'rgba(193,132,1,0.35)','search-text':'#1c1d21',
+        'c-phase-1':'#4078f2','c-phase-2':'#a626a4','c-phase-3':'#c18401','c-phase-4':'#50a14f','c-phase-5':'#e45649',
+        'accent-blue':'#4078f2','accent-green':'#50a14f','accent-amber':'#c18401',
+        'accent-violet':'#a626a4','accent-teal':'#0184bc','accent-red':'#e45649','accent-gray':'#a0a1a7'
+      }
+    },
+    {
+      id: 'high-contrast', name: { de: 'Hoher Kontrast', en: 'High Contrast' }, dark: true,
+      colors: {
+        'bg-color':'#000000','panel-color':'#0a0a0a','sidebar-color':'#000000','border-color':'#ffffff',
+        'text-color':'#ffffff','text-muted':'#e0e0e0','link-color':'#00ffff','link-hover':'#ffff00',
+        'heading-color':'#ffff00','subtitle-color':'#ffffff','code-bg':'#1a1a1a','code-block-bg':'#0a0a0a','info-box':'#1a1a1a',
+        'shadow-color':'rgba(255,255,255,0.25)','shadow-color-strong':'rgba(255,255,255,0.45)',
+        'table-alt':'rgba(255,255,255,0.08)','search-match':'rgba(255,255,0,0.6)','search-text':'#000000',
+        'c-phase-1':'#00ffff','c-phase-2':'#ff00ff','c-phase-3':'#ffff00','c-phase-4':'#00ff00','c-phase-5':'#ff3030',
+        'accent-blue':'#00bfff','accent-green':'#00ff00','accent-amber':'#ffff00',
+        'accent-violet':'#ff00ff','accent-teal':'#00ffff','accent-red':'#ff3030','accent-gray':'#c0c0c0'
+      }
+    },
+    {
+      id: 'sepia', name: { de: 'Sepia', en: 'Sepia' }, dark: false,
+      colors: {
+        'bg-color':'#f4ecd8','panel-color':'#fbf5e6','sidebar-color':'#efe6ce','border-color':'#d6c8a8',
+        'text-color':'#5b4636','text-muted':'#7c6650','link-color':'#8b5a2b','link-hover':'#6b4420',
+        'heading-color':'#3b2c1e','subtitle-color':'#5b4636','code-bg':'#efe6ce','code-block-bg':'#e8dcc0','info-box':'#e8dcc0',
+        'shadow-color':'rgba(91,70,54,0.18)','shadow-color-strong':'rgba(91,70,54,0.32)',
+        'table-alt':'rgba(91,70,54,0.05)','search-match':'rgba(139,90,43,0.35)','search-text':'#3b2c1e',
+        'c-phase-1':'#4682b4','c-phase-2':'#8b5a8b','c-phase-3':'#b8860b','c-phase-4':'#6b8e23','c-phase-5':'#a52a2a',
+        'accent-blue':'#4682b4','accent-green':'#6b8e23','accent-amber':'#b8860b',
+        'accent-violet':'#8b5a8b','accent-teal':'#5f9ea0','accent-red':'#a52a2a','accent-gray':'#8b7355'
+      }
+    }
+  ]
+};
 
-            if (!filter) {
-                blocks.forEach(block => block.style.display = 'block');
-                return;
-            }
+const COLORS_JSON_PATH = 'settings/colors.json';
+let colorConfig = FALLBACK_COLOR_CONFIG;
+let activeSchemeId = null;
+let colorsLoadedFromFile = false;
+let lastDarkSchemeId  = 'dark';
+let lastLightSchemeId = 'light';
 
-            blocks.forEach(block => {
-                const text = block.innerText.toLowerCase();
-                if (text.includes(filter)) {
-                    block.style.display = 'block';
-                    highlightText(block, input.value);
-                } else {
-                    block.style.display = 'none';
-                }
-            });
-        }
+function getSchemeById(id) { return (colorConfig.schemes || []).find(s => s.id === id) || null; }
+function resolveSchemeColors(scheme) { return Object.assign({}, colorConfig.base || {}, scheme.colors || {}); }
 
-        function highlightText(element, keyword) {
-            if (!keyword) return;
-            const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
-            const nodesToReplace = [];
+async function initColorSchemes() {
+  try {
+    const res = await fetch(COLORS_JSON_PATH, { cache: 'no-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!data || !Array.isArray(data.schemes) || data.schemes.length === 0) throw new Error('colors.json has no "schemes" array');
+    colorConfig = data;
+    colorsLoadedFromFile = true;
+    console.info('[colors] Loaded ' + data.schemes.length + ' schemes from ' + COLORS_JSON_PATH);
+  } catch (err) {
+    console.info('[colors] Using built-in palette (' + colorConfig.schemes.length + ' schemes). To load external colours, serve the folder over HTTP so ' + COLORS_JSON_PATH + ' can be fetched.');
+  }
+  const stored = readStoredScheme();
+  const preferred = colorConfig.defaultScheme || colorConfig.schemes[0].id;
+  const initial = (stored && getSchemeById(stored)) ? stored
+                : (getSchemeById(preferred) ? preferred : colorConfig.schemes[0].id);
+  const initScheme = getSchemeById(initial);
+  if (initScheme) {
+    if (initScheme.dark) lastDarkSchemeId = initScheme.id;
+    else                 lastLightSchemeId = initScheme.id;
+  }
+  applyColorScheme(initial);
+}
 
-            let node;
-            while (node = treeWalker.nextNode()) {
-                if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
-                    if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE') {
-                        nodesToReplace.push(node);
-                    }
-                }
-            }
+function applyColorScheme(id) {
+  const scheme = getSchemeById(id) || colorConfig.schemes[0];
+  if (!scheme) return;
+  const root = document.documentElement;
+  const colors = resolveSchemeColors(scheme);
+  Object.keys(colors).forEach(key => {
+    if (colors[key] === null || colors[key] === undefined) return;
+    root.style.setProperty('--' + key, String(colors[key]));
+  });
+  root.classList.toggle('light', !scheme.dark);
+  root.classList.toggle('theme-dark', !!scheme.dark);
+  root.style.colorScheme = scheme.dark ? 'dark' : 'light';
+  root.setAttribute('data-color-scheme', scheme.id);
+  if (scheme.dark) lastDarkSchemeId = scheme.id;
+  else             lastLightSchemeId = scheme.id;
+  activeSchemeId = scheme.id;
+  storeScheme(scheme.id);
+  updateThemeToggleIcon(scheme.dark);
+  updateDynamicColors();
+}
 
-            nodesToReplace.forEach(node => {
-                const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
-                const fragment = document.createDocumentFragment();
-                let match;
-                let lastIndex = 0;
-                const text = node.nodeValue;
+function updateThemeToggleIcon(isDark) {
+  const icon = document.getElementById('themeToggleIcon');
+  if (!icon) return;
+  icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+}
 
-                while ((match = regex.exec(text)) !== null) {
-                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
-                    const span = document.createElement('span');
-                    span.className = 'search-match font-semibold';
-                    span.textContent = match[0];
-                    fragment.appendChild(span);
-                    lastIndex = regex.lastIndex;
-                }
-                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
-                node.parentNode.replaceChild(fragment, node);
-            });
-        }
+function toggleDarkLight() {
+  hideThemeMenu();
+  const current = getSchemeById(activeSchemeId);
+  if (!current) return;
+  if (current.dark) {
+    const target = getSchemeById(lastLightSchemeId) ? lastLightSchemeId
+                 : (colorConfig.schemes.find(s => !s.dark) || {}).id;
+    if (target) applyColorScheme(target);
+  } else {
+    const target = getSchemeById(lastDarkSchemeId) ? lastDarkSchemeId
+                 : (colorConfig.schemes.find(s => s.dark) || {}).id;
+    if (target) applyColorScheme(target);
+  }
+}
 
-        function removeHighlights(element) {
-            const highlights = element.querySelectorAll('.search-match');
-            highlights.forEach(span => {
-                const parent = span.parentNode;
-                parent.replaceChild(document.createTextNode(span.textContent), span);
-                parent.normalize();
-            });
-        }
+function buildThemeMenuItems() {
+  const menu = document.getElementById('themeContextMenu');
+  if (!menu) return;
+  menu.innerHTML = '';
+  const header = document.createElement('div');
+  header.className = 'theme-menu-header';
+  header.textContent = isGerman
+    ? 'Farbschema wählen (' + colorConfig.schemes.length + ')'
+    : 'Choose colour scheme (' + colorConfig.schemes.length + ')';
+  menu.appendChild(header);
+  const schemes = colorConfig.schemes || [];
+  const langTag = isGerman ? 'de' : 'en';
+  const PREVIEW_KEYS = ['bg-color', 'panel-color', 'code-block-bg', 'link-color', 'c-phase-4', 'c-phase-3'];
+  schemes.forEach(s => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'theme-menu-item' + (s.id === activeSchemeId ? ' active' : '');
+    btn.setAttribute('role', 'menuitem');
+    const swWrap = document.createElement('span');
+    swWrap.className = 'scheme-swatches';
+    const colors = resolveSchemeColors(s);
+    PREVIEW_KEYS.forEach(k => {
+      const dot = document.createElement('span');
+      dot.style.background = colors[k] || 'transparent';
+      swWrap.appendChild(dot);
+    });
+    btn.appendChild(swWrap);
+    const nameEl = document.createElement('span');
+    nameEl.className = 'scheme-name';
+    const name = s.name || {};
+    nameEl.textContent = (typeof name === 'string' ? name : (name[langTag] || name.de || name.en || s.id));
+    btn.appendChild(nameEl);
+    const check = document.createElement('i');
+    check.className = 'fa-solid fa-check scheme-check';
+    btn.appendChild(check);
+    btn.addEventListener('click', () => { applyColorScheme(s.id); hideThemeMenu(); });
+    menu.appendChild(btn);
+  });
+}
 
-        function escapeRegExp(string) {
-            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        }
+function showThemeMenu(e) {
+  if (e) e.preventDefault();
+  const menu = document.getElementById('themeContextMenu');
+  if (!menu) return;
+  buildThemeMenuItems();
+  menu.classList.add('open');
+}
 
-        // Theme Toggle
-        function toggleTheme() {
-            const html = document.documentElement;
-            const icon = document.getElementById('theme-icon');
-            if (html.classList.contains('light')) {
-                html.classList.remove('light');
-                icon.className = 'fa-solid fa-sun';
-            } else {
-                html.classList.add('light');
-                icon.className = 'fa-solid fa-moon';
-            }
-        }
+function hideThemeMenu() {
+  const menu = document.getElementById('themeContextMenu');
+  if (menu) menu.classList.remove('open');
+}
 
-        // Global Language Toggle
-        let isGerman = true;
-        function toggleLang() {
-            isGerman = !isGerman;
-            const indicator = document.getElementById('lang-indicator');
-            indicator.textContent = isGerman ? 'DE' : 'EN';
-            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+function storageKey() { return (colorConfig && colorConfig.storageKey) || 'cheatSheetNetwork.scheme'; }
+function storeScheme(id) { try { localStorage.setItem(storageKey(), id); } catch (_) {} }
+function readStoredScheme() { try { return localStorage.getItem(storageKey()); } catch (_) { return null; } }
 
-            const deEls = document.querySelectorAll('[data-lang-de]');
-            const enEls = document.querySelectorAll('[data-lang-en]');
+/* ==================================================================
+   INIT
+   ================================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+  updateDynamicColors();
+  updateSetupDOM();
 
-            if (isGerman) {
-                deEls.forEach(el => el.style.display = '');
-                enEls.forEach(el => el.style.display = 'none');
-            } else {
-                deEls.forEach(el => el.style.display = 'none');
-                enEls.forEach(el => el.style.display = '');
-            }
-        }
+  /* Download visibility */
+  updateDownloadVisibility();
 
-        // Download HTML
-        function downloadHTML() {
-            removeHighlights(document.getElementById('main-content'));
+  /* Theme toggle button */
+  const themeBtn = document.getElementById('themeToggleBtn');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', (e) => { e.preventDefault(); toggleDarkLight(); });
+    themeBtn.addEventListener('contextmenu', (e) => { showThemeMenu(e); });
+  }
 
-            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
+  /* Close theme menu on outside click */
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('themeContextMenu');
+    if (!menu || !menu.classList.contains('open')) return;
+    const btn = document.getElementById('themeToggleBtn');
+    if (menu.contains(e.target)) return;
+    if (btn && btn.contains(e.target)) return;
+    hideThemeMenu();
+  });
 
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'Network_Cheatsheet.html';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-    </script>
+  /* Close on Escape */
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideThemeMenu(); });
+
+  /* Example links in sidebar */
+  document.querySelectorAll('.toc-example').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      currentSetupIdx = parseInt(a.dataset.idx);
+      updateSetupDOM();
+      document.getElementById('visualizer').scrollIntoView({ behavior:'smooth', block:'start' });
+    });
+  });
+
+  /* Keyboard navigation */
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowRight') nextPhase();
+    if (e.key === 'ArrowLeft') prevPhase();
+  });
+
+  /* Scroll spy */
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const id = entry.target.getAttribute('id');
+      const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+      if (entry.isIntersecting) {
+        document.querySelectorAll('.toc-link').forEach(l => l.classList.remove('active'));
+        if (tocLink) tocLink.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-10% 0px -80% 0px', threshold: [0, 0.1, 1] });
+  document.querySelectorAll('section, h3[id]').forEach(s => observer.observe(s));
+
+  /* Canvas init (canvas is now at the bottom but is measured on load, so
+     we delay one tick to ensure layout is complete) */
+  setTimeout(() => {
+    resizeCanvas();
+    requestAnimationFrame(animateLoop);
+  }, 100);
+
+  /* Colours from settings/colors.json (or built-in fallback) */
+  initColorSchemes();
+});
+</script>
 </body>
 </html>

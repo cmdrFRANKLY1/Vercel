@@ -37,78 +37,58 @@
     </script>
 
     <style>
+        /* ============================================================
+           FALLBACK PALETTE (dark)
+           Real values come from settings/colors.json (or the built-in
+           15-scheme fallback in the script below).
+           ============================================================ */
         :root {
-            /* Dark Mode Defaults */
             --bg-color: #181a1b;
             --panel-color: #202324;
             --sidebar-color: #202122;
             --border-color: #54595d;
+            --panel-border: #54595d;
             --text-color: #ffffff;
             --text-muted: #a8aeb3;
             --link-color: #99c1f1;
             --link-hover: #629deb;
             --heading-color: #ffffff;
+            --subtitle-color: #eaecf0;
             --code-bg: #27292a;
+            --code-block-bg: #111213;
             --info-box: #2c2d30;
             --table-alt: rgba(255,255,255,0.02);
             --search-match: rgba(250, 204, 21, 0.3);
             --search-text: #ffffff;
             --card-hover: rgba(255,255,255,0.04);
 
-            /* Layout tuning for large (maximized 1080p) viewports */
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-violet: #8b5cf6;
+            --accent-teal: #14b8a6;
+            --accent-red: #ef4444;
+            --accent-gray: #6b7280;
+
             --content-max: 1600px;
-            --sidebar-w: 20rem; /* 320px */
+            --sidebar-w: 20rem;
 
-            /* Panel borders & strengthened omni-directional encasing shadow */
-            --panel-border: #54595d;
+            --shadow-color: rgba(0, 0, 0, 0.55);
+            --shadow-color-strong: rgba(0, 0, 0, 0.7);
             --card-shadow:
-                0 0 22px 0 rgba(0, 0, 0, 0.55),
-                0 0 10px 0 rgba(0, 0, 0, 0.45),
-                0 4px 24px 0 rgba(0, 0, 0, 0.35);
+                0 0 22px 0 var(--shadow-color),
+                0 0 10px 0 var(--shadow-color),
+                0 4px 24px 0 var(--shadow-color);
             --card-shadow-hover:
-                0 0 40px 0 rgba(0, 0, 0, 0.7),
-                0 0 18px 0 rgba(0, 0, 0, 0.55),
-                0 8px 36px 0 rgba(0, 0, 0, 0.45);
+                0 0 40px 0 var(--shadow-color-strong),
+                0 0 18px 0 var(--shadow-color-strong),
+                0 8px 36px 0 var(--shadow-color-strong);
         }
 
-        html.light {
-            /* Light Mode Overrides */
-            --bg-color: #f4f6f9;
-            --panel-color: #ffffff;
-            --sidebar-color: #ffffff;
-            --border-color: #cbd5e1;
-            --text-color: #000000;
-            --text-muted: #1f2937;
-            --link-color: #2563eb;
-            --link-hover: #1d4ed8;
-            --heading-color: #000000;
-            --code-bg: #f1f5f9;
-            --info-box: #e0f2fe;
-            --table-alt: rgba(0,0,0,0.015);
-            --search-match: rgba(250, 204, 21, 0.5);
-            --search-text: #000000;
-            --card-hover: rgba(0,0,0,0.03);
-
-            /* Stronger encasing shadow for light mode as well */
-            --panel-border: #e2e8f0;
-            --card-shadow:
-                0 0 28px 0 rgba(0, 0, 0, 0.18),
-                0 0 12px 0 rgba(0, 0, 0, 0.12),
-                0 4px 24px 0 rgba(0, 0, 0, 0.10);
-            --card-shadow-hover:
-                0 0 48px 0 rgba(0, 0, 0, 0.28),
-                0 0 22px 0 rgba(0, 0, 0, 0.20),
-                0 8px 36px 0 rgba(0, 0, 0, 0.16);
-        }
-
-        /* When the sidebar is collapsed, the main content gains ~260px of freed width.
-           Bump the max-width cap so the content actually fills that space. */
         body.sidebar-collapsed {
             --content-max: 1850px;
         }
 
-        /* Base font size — actual value is driven by JS in updateScaling()
-           so it can react to both viewport width and sidebar state. */
         html { font-size: 16px; }
 
         body {
@@ -120,7 +100,6 @@
             overflow-x: hidden;
         }
 
-        /* Fluid, viewport-aware typography */
         h1, h2, h3, h4 {
             font-family: 'Lora', serif;
             color: var(--heading-color);
@@ -128,6 +107,8 @@
             line-height: 1.15;
             text-wrap: balance;
         }
+        h3, h4 { color: var(--subtitle-color, var(--heading-color)); }
+
         h1 {
             font-size: clamp(2.1rem, 3vw, 3.1rem) !important;
             border-bottom: 2px solid var(--border-color);
@@ -165,7 +146,6 @@
             color: var(--text-color);
         }
 
-        /* ---------- Layout helpers (matching Datenschutz cheatsheet) ---------- */
         .app-sidebar {
             width: var(--sidebar-w);
             max-height: 50vh;
@@ -186,7 +166,6 @@
         @media (min-width: 1280px) { .app-main { padding: 2rem; } }
         @media (min-width: 1600px) { .app-main { padding: 2.25rem 2.5rem; } }
 
-        /* ============ Panel (searchable-block wrapper) ============ */
         .searchable-block {
             background-color: var(--panel-color);
             border: 1px solid var(--panel-border);
@@ -203,7 +182,6 @@
             box-shadow: var(--card-shadow-hover);
         }
 
-        /* Wiki-style Tables */
         .wikitable {
             width: 100%;
             border-collapse: collapse;
@@ -225,7 +203,6 @@
         .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); }
         .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
 
-        /* Wiki-style Infobox */
         .infobox {
             float: right;
             width: 320px;
@@ -253,14 +230,12 @@
             border-radius: 0.35rem 0.35rem 0 0;
         }
 
-        /* TOC Styles */
         .toc-link.active { font-weight: 600; color: var(--heading-color); position: relative; }
         .toc-link.active::before {
             content: ''; position: absolute; left: -1rem; top: 0; height: 100%;
             width: 3px; background-color: var(--link-color);
         }
 
-        /* Sidebar scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-color); }
         ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
@@ -268,7 +243,6 @@
 
         .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
 
-        /* ============ Resource Cards ============ */
         .res-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -328,15 +302,12 @@
             .infobox { float: none; width: 100%; margin: 1em 0; }
         }
 
-        /* Global Language Switcher Support */
         [data-lang-de], [data-lang-en] { transition: opacity 0.15s ease-in-out; }
 
-        /* Modal specific transition */
         #leaveModal { transition: opacity 0.15s ease; }
 
         /* ============================================================ */
-        /* SIDEBAR TOGGLE — ported from viona.html                       */
-        /* (Desktop: icons-only collapse. Mobile: fixed overlay drawer.) */
+        /* SIDEBAR TOGGLE                                                */
         /* ============================================================ */
         #sidebar {
             transition: width 0.25s ease, padding 0.25s ease, background-color 0.2s, border-color 0.2s;
@@ -345,7 +316,6 @@
         #sidebarToggle { display: none; }
         #sidebarOverlay { display: none; }
 
-        /* ---- Collapsed (icons-only) mode — desktop only ---- */
         @media (min-width: 721px) {
             body.sidebar-collapsed #sidebar {
                 width: 60px !important;
@@ -393,7 +363,6 @@
             }
         }
 
-        /* ---- Mobile: sidebar becomes a fixed overlay drawer ---- */
         @media (max-width: 720px) {
             #sidebarToggle { display: flex; }
             .sb-collapse-row { display: none !important; }
@@ -415,22 +384,89 @@
             body.sidebar-open #sidebar { transform: translateX(0); }
             body.sidebar-open #sidebarOverlay { display: block; }
 
-            /* Neutralize app-sidebar constraints when in drawer mode */
             .app-sidebar { position: fixed !important; max-height: none !important; }
 
-            /* Tame the big h1 inside the mobile viewport */
             h1 { font-size: 1.6rem !important; }
         }
+
+        /* ---------- Sidebar control buttons ---------- */
+        .ctrl-btn {
+            flex: 1;
+            padding: 0.375rem 0;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            transition: background-color .15s, color .15s;
+            cursor: pointer;
+        }
+        .ctrl-btn:hover { background: var(--bg-color); color: var(--link-color); }
+
+        /* ---------- Theme context menu ---------- */
+        #themeContextMenu {
+            display: none;
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + .35rem);
+            max-height: 24rem;
+            overflow-y: auto;
+            background: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            border-radius: .75rem;
+            box-shadow: 0 12px 36px var(--shadow-color-strong), 0 4px 12px var(--shadow-color);
+            z-index: 200;
+        }
+        #themeContextMenu.open { display: block; }
+        .theme-menu-header {
+            padding: .5rem .75rem;
+            font-size: .62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+            background: var(--info-box);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .theme-menu-item {
+            display: flex;
+            align-items: center;
+            gap: .55rem;
+            width: 100%;
+            padding: .5rem .75rem;
+            font-size: .8rem;
+            color: var(--text-color);
+            text-align: left;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: background .12s, color .12s;
+            border-left: 3px solid transparent;
+        }
+        .theme-menu-item:hover { background: var(--bg-color); color: var(--link-color); }
+        .theme-menu-item.active {
+            font-weight: 700;
+            color: var(--link-color);
+            background: var(--info-box);
+            border-left-color: var(--link-color);
+        }
+        .theme-menu-item .scheme-swatches { display: inline-flex; gap: 2px; flex-shrink: 0; }
+        .theme-menu-item .scheme-swatches span { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--border-color); }
+        .theme-menu-item .scheme-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .theme-menu-item .scheme-check { font-size: .65rem; color: var(--link-color); opacity: 0; }
+        .theme-menu-item.active .scheme-check { opacity: 1; }
     </style>
 </head>
 <body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
 
-    <!-- Sidebar overlay for narrow iframes -->
     <div id="sidebarOverlay" class="fixed inset-0 bg-black/60 z-[150]" onclick="document.body.classList.remove('sidebar-open')"></div>
 
     <aside id="sidebar" class="app-sidebar flex-shrink-0 bg-[var(--sidebar-color)] border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
 
-        <!-- Collapse Toggle (desktop only) -->
         <div class="flex justify-end mb-2 sb-collapse-row">
             <button onclick="toggleSidebarCollapse()" class="w-7 h-7 flex items-center justify-center rounded text-[var(--text-muted)] hover:bg-[var(--bg-color)] hover:text-[var(--text-color)] transition-colors border border-transparent hover:border-[var(--border-color)]" title="Toggle Sidebar">
                 <i id="collapseIcon" class="fa-solid fa-angles-left text-xs"></i>
@@ -438,31 +474,30 @@
         </div>
 
         <!-- Controls: Language, Theme, Download -->
-        <div class="sb-controls flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded border border-[var(--panel-border)] shadow-sm">
-            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--bg-color)] py-1 rounded text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent hover:border-[var(--border-color)]" title="Toggle Language">
+        <div class="sb-controls flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded border border-[var(--panel-border)] shadow-sm relative">
+            <button onclick="toggleLang()" class="ctrl-btn" title="Sprache wechseln / Toggle language">
                 <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator" class="sb-hide">DE</span>
             </button>
             <div class="w-px h-4 bg-[var(--border-color)] sb-divider"></div>
-            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--bg-color)] py-1 rounded text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent hover:border-[var(--border-color)]" title="Toggle Theme">
-                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            <button id="themeToggleBtn" class="ctrl-btn" title="Linksklick: Hell/Dunkel · Rechtsklick: alle Farbschemata">
+                <i id="themeToggleIcon" class="fa-solid fa-sun"></i>
             </button>
-            <div class="w-px h-4 bg-[var(--border-color)] sb-divider"></div>
-            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--bg-color)] py-1 rounded text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent hover:border-[var(--border-color)]" title="Download Dashboard">
+            <div id="downloadDivider" class="w-px h-4 bg-[var(--border-color)] sb-divider"></div>
+            <button id="downloadBtn" onclick="downloadHTML()" class="ctrl-btn" style="color:var(--link-color)" title="Download Dashboard">
                 <i class="fa-solid fa-download"></i>
             </button>
+            <div id="themeContextMenu" role="menu" aria-label="Farbschemata"></div>
         </div>
 
-        <!-- Logo -->
         <div class="mb-6 pb-4 border-b border-[var(--border-color)] sb-logo-wrap">
             <i class="fa-solid fa-compass text-3xl mb-3 text-[var(--text-color)] opacity-80"></i>
             <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight sb-hide">
                 <span data-lang-de>Ressourcen-<br>Dashboard</span>
                 <span data-lang-en style="display:none;">Resources<br>Dashboard</span>
             </div>
-            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono sb-hide">Links &amp; Tools v1.0</div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono sb-hide">Links &amp; Tools v1.1</div>
         </div>
 
-        <!-- Search -->
         <div class="mb-6 relative sb-search">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
@@ -499,7 +534,6 @@
 
     <main class="app-main" id="main-content">
 
-        <!-- Mobile header with hamburger (hidden on desktop) -->
         <div class="flex items-center gap-3 mb-4 lg:hidden">
             <button id="sidebarToggle" class="items-center justify-center w-9 h-9 rounded border border-[var(--panel-border)] bg-[var(--panel-color)] flex-shrink-0 hover:bg-[var(--info-box)] transition-colors shadow-sm" onclick="document.body.classList.toggle('sidebar-open')" title="Menu">
                 <i class="fa-solid fa-bars"></i>
@@ -534,9 +568,7 @@
 
         <hr class="border-[var(--border-color)] my-8">
 
-        <!-- ========================================== -->
-        <!-- 1. Suchen & Wissen                         -->
-        <!-- ========================================== -->
+        <!-- 1. Suchen & Wissen -->
         <section id="suche" class="scroll-mt-10 searchable-block" style="--accent:#60a5fa;">
             <h2 class="cat-heading">
                 <i class="fa-solid fa-magnifying-glass mr-2 text-3xl align-middle opacity-80"></i>
@@ -607,13 +639,11 @@
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- 2. Wörterbücher & Sprache                  -->
-        <!-- ========================================== -->
+        <!-- 2. Wörterbücher & Sprache -->
         <section id="woerterbuch" class="scroll-mt-10 searchable-block mt-12" style="--accent:#34d399;">
             <h2 class="cat-heading">
                 <i class="fa-solid fa-language mr-2 text-3xl align-middle opacity-80"></i>
-                <span data-lang-de>Wörterbucher &amp; Sprache</span>
+                <span data-lang-de>Wörterbücher &amp; Sprache</span>
                 <span data-lang-en style="display:none;">Dictionaries &amp; Language</span>
             </h2>
             <div class="res-grid">
@@ -680,9 +710,7 @@
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- 3. Soziale Medien                          -->
-        <!-- ========================================== -->
+        <!-- 3. Soziale Medien -->
         <section id="social" class="scroll-mt-10 searchable-block mt-12" style="--accent:#f472b6;">
             <h2 class="cat-heading">
                 <i class="fa-solid fa-hashtag mr-2 text-3xl align-middle opacity-80"></i>
@@ -773,9 +801,7 @@
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- 4. Entwicklung & Code                      -->
-        <!-- ========================================== -->
+        <!-- 4. Entwicklung & Code -->
         <section id="dev" class="scroll-mt-10 searchable-block mt-12" style="--accent:#a78bfa;">
             <h2 class="cat-heading">
                 <i class="fa-solid fa-code mr-2 text-3xl align-middle opacity-80"></i>
@@ -876,9 +902,7 @@
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- 5. Notizen & Produktivität                 -->
-        <!-- ========================================== -->
+        <!-- 5. Notizen & Produktivität -->
         <section id="notes" class="scroll-mt-10 searchable-block mt-12" style="--accent:#fbbf24;">
             <h2 class="cat-heading">
                 <i class="fa-solid fa-note-sticky mr-2 text-3xl align-middle opacity-80"></i>
@@ -959,9 +983,7 @@
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- 6. Design & Medien                         -->
-        <!-- ========================================== -->
+        <!-- 6. Design & Medien -->
         <section id="design" class="scroll-mt-10 searchable-block mt-12" style="--accent:#22d3ee;">
             <h2 class="cat-heading">
                 <i class="fa-solid fa-palette mr-2 text-3xl align-middle opacity-80"></i>
@@ -1052,9 +1074,7 @@
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- 7. System & Utilities                      -->
-        <!-- ========================================== -->
+        <!-- 7. System & Utilities -->
         <section id="system" class="scroll-mt-10 searchable-block mt-12" style="--accent:#94a3b8;">
             <h2 class="cat-heading">
                 <i class="fa-solid fa-screwdriver-wrench mr-2 text-3xl align-middle opacity-80"></i>
@@ -1155,9 +1175,7 @@
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- 8. Sicherheit & Datenschutz                -->
-        <!-- ========================================== -->
+        <!-- 8. Sicherheit & Datenschutz -->
         <section id="security" class="scroll-mt-10 searchable-block mt-12" style="--accent:#f87171;">
             <h2 class="cat-heading">
                 <i class="fa-solid fa-shield-halved mr-2 text-3xl align-middle opacity-80"></i>
@@ -1238,9 +1256,7 @@
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- 9. Lernen & Kurse                          -->
-        <!-- ========================================== -->
+        <!-- 9. Lernen & Kurse -->
         <section id="lernen" class="scroll-mt-10 searchable-block mt-12" style="--accent:#c084fc;">
             <h2 class="cat-heading">
                 <i class="fa-solid fa-graduation-cap mr-2 text-3xl align-middle opacity-80"></i>
@@ -1311,9 +1327,7 @@
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- 10. KI-Werkzeuge                           -->
-        <!-- ========================================== -->
+        <!-- 10. KI-Werkzeuge -->
         <section id="ki" class="scroll-mt-10 searchable-block mt-12" style="--accent:#2dd4bf;">
             <h2 class="cat-heading">
                 <i class="fa-solid fa-robot mr-2 text-3xl align-middle opacity-80"></i>
@@ -1374,9 +1388,7 @@
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- 11. Behörden & Recht                       -->
-        <!-- ========================================== -->
+        <!-- 11. Behörden & Recht -->
         <section id="behoerden" class="scroll-mt-10 searchable-block mt-12 mb-20" style="--accent:#facc15;">
             <h2 class="cat-heading">
                 <i class="fa-solid fa-landmark mr-2 text-3xl align-middle opacity-80"></i>
@@ -1429,9 +1441,6 @@
 
     </main>
 
-    <!-- ========================================== -->
-    <!-- LEAVE CONFIRMATION MODAL                   -->
-    <!-- ========================================== -->
     <div id="leaveModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm">
         <div class="bg-[var(--panel-color)] border border-[var(--panel-border)] rounded-lg max-w-md w-full mx-4 p-6" style="box-shadow: var(--card-shadow-hover);">
             <div class="flex items-center gap-3 mb-4">
@@ -1457,22 +1466,23 @@
     </div>
 
     <script>
-        // ==========================================
-        // VIEWPORT-AWARE SCALING (responds to sidebar state)
-        // ==========================================
+        /* ==================================================================
+           GLOBAL STATE
+           ================================================================== */
+        let isGerman = true;
+
+        /* ==================================================================
+           VIEWPORT-AWARE SCALING
+           ================================================================== */
         function updateScaling() {
             const w = window.innerWidth;
             const isDesktop = w >= 721;
             const collapsed = isDesktop && document.body.classList.contains('sidebar-collapsed');
             let size = 16;
 
-            // Base scaling by viewport width
             if (w >= 1800) size = 18;
             else if (w >= 1536) size = 17;
 
-            // When the sidebar is collapsed, the effective content area is ~260px
-            // wider than what the viewport suggests. Trigger the next scaling tier
-            // earlier so the content grows into the freed space.
             if (collapsed) {
                 if (w >= 1540) size = Math.max(size, 18);
                 else if (w >= 1280) size = Math.max(size, 17);
@@ -1481,9 +1491,9 @@
             document.documentElement.style.fontSize = size + 'px';
         }
 
-        // ==========================================
-        // SIDEBAR TOGGLE (ported from viona.html)
-        // ==========================================
+        /* ==================================================================
+           SIDEBAR TOGGLE
+           ================================================================== */
         window.toggleSidebarCollapse = function() {
             document.body.classList.toggle('sidebar-collapsed');
             const isCollapsed = document.body.classList.contains('sidebar-collapsed');
@@ -1495,44 +1505,55 @@
             updateScaling();
         };
 
-        // Smooth scrolling active state update for TOC
-        document.addEventListener('DOMContentLoaded', () => {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    const id = entry.target.getAttribute('id');
-                    const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+        /* ==================================================================
+           LANGUAGE (attribute-based)
+           ================================================================== */
+        function toggleLang() {
+            isGerman = !isGerman;
+            const indicator = document.getElementById('lang-indicator');
+            indicator.textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
 
-                    if (entry.isIntersecting) {
-                        document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
-                        if (tocLink) tocLink.classList.add('active');
-                    }
-                });
-            }, {
-                rootMargin: '-10% 0px -80% 0px',
-                threshold: [0, 0.1, 1]
-            });
+            const deEls = document.querySelectorAll('[data-lang-de]');
+            const enEls = document.querySelectorAll('[data-lang-en]');
 
-            document.querySelectorAll('section[id]').forEach((section) => {
-                observer.observe(section);
-            });
+            if (isGerman) {
+                deEls.forEach(el => el.style.display = '');
+                enEls.forEach(el => el.style.display = 'none');
+            } else {
+                deEls.forEach(el => el.style.display = 'none');
+                enEls.forEach(el => el.style.display = '');
+            }
 
-            // Restore collapsed state from localStorage
-            try {
-                if (localStorage.getItem('resources-sidebar-collapsed') === '1') {
-                    document.body.classList.add('sidebar-collapsed');
-                    const icon = document.getElementById('collapseIcon');
-                    if (icon) icon.className = 'fa-solid fa-angles-right text-xs';
-                }
-            } catch(e) {}
+            const menu = document.getElementById('themeContextMenu');
+            if (menu && menu.classList.contains('open')) buildThemeMenuItems();
+        }
 
-            // Apply the correct font size on load
-            updateScaling();
-        });
+        /* ==================================================================
+           DOWNLOAD
+           ================================================================== */
+        function downloadHTML() {
+            removeHighlights(document.getElementById('main-content'));
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'Resources.html';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
 
-        // Recompute font size when the viewport changes
-        window.addEventListener('resize', updateScaling);
+        function updateDownloadVisibility() {
+            const isLocal = (location.protocol === 'file:');
+            const btn = document.getElementById('downloadBtn');
+            const divider = document.getElementById('downloadDivider');
+            if (btn)     btn.style.display = isLocal ? 'none' : '';
+            if (divider) divider.style.display = isLocal ? 'none' : '';
+        }
 
-        // Search logic (filters resource cards)
+        /* ==================================================================
+           SEARCH
+           ================================================================== */
         function filterWiki() {
             const input = document.getElementById('wikiSearch');
             const filter = input.value.trim().toLowerCase();
@@ -1565,7 +1586,6 @@
             if (!keyword) return;
             const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
             const nodesToReplace = [];
-
             let node;
             while (node = treeWalker.nextNode()) {
                 if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
@@ -1574,14 +1594,10 @@
                     }
                 }
             }
-
             nodesToReplace.forEach(node => {
                 const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
                 const fragment = document.createDocumentFragment();
-                let match;
-                let lastIndex = 0;
-                const text = node.nodeValue;
-
+                let match; let lastIndex = 0; const text = node.nodeValue;
                 while ((match = regex.exec(text)) !== null) {
                     fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
                     const span = document.createElement('span');
@@ -1594,73 +1610,349 @@
                 node.parentNode.replaceChild(fragment, node);
             });
         }
-
         function removeHighlights(element) {
-            const highlights = element.querySelectorAll('.search-match');
-            highlights.forEach(span => {
+            element.querySelectorAll('.search-match').forEach(span => {
                 const parent = span.parentNode;
                 parent.replaceChild(document.createTextNode(span.textContent), span);
                 parent.normalize();
             });
         }
+        function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
-        function escapeRegExp(string) {
-            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        /* ==================================================================
+           COLOUR SCHEMES
+           ================================================================== */
+        const FALLBACK_COLOR_CONFIG = {
+            version: '1.0',
+            defaultScheme: 'dark',
+            storageKey: 'resourcesDashboard.scheme',
+            base: {
+                'shadow-color': 'rgba(0, 0, 0, 0.55)',
+                'shadow-color-strong': 'rgba(0, 0, 0, 0.7)',
+                'card-shadow': '0 0 22px 0 var(--shadow-color), 0 0 10px 0 var(--shadow-color), 0 4px 24px 0 var(--shadow-color)',
+                'card-shadow-hover': '0 0 40px 0 var(--shadow-color-strong), 0 0 18px 0 var(--shadow-color-strong), 0 8px 36px 0 var(--shadow-color-strong)',
+                'table-alt': 'rgba(255, 255, 255, 0.02)',
+                'search-match': 'rgba(250, 204, 21, 0.3)',
+                'search-text': '#ffffff'
+            },
+            schemes: [
+                {
+                    id: 'dark', name: { de: 'Dunkel (Standard)', en: 'Dark (default)' }, dark: true,
+                    colors: {
+                        'bg-color':'#181a1b','panel-color':'#202324','sidebar-color':'#202122','border-color':'#54595d','panel-border':'#54595d',
+                        'text-color':'#ffffff','text-muted':'#a8aeb3','link-color':'#99c1f1','link-hover':'#629deb',
+                        'heading-color':'#ffffff','subtitle-color':'#eaecf0','code-bg':'#27292a','code-block-bg':'#111213','info-box':'#2c2d30',
+                        'card-hover':'rgba(255,255,255,0.04)',
+                        'accent-blue':'#3b82f6','accent-green':'#10b981','accent-amber':'#f59e0b',
+                        'accent-violet':'#8b5cf6','accent-teal':'#14b8a6','accent-red':'#ef4444','accent-gray':'#6b7280'
+                    }
+                },
+                {
+                    id: 'light', name: { de: 'Hell', en: 'Light' }, dark: false,
+                    colors: {
+                        'bg-color':'#f4f6f9','panel-color':'#ffffff','sidebar-color':'#ffffff','border-color':'#cbd5e1','panel-border':'#e2e8f0',
+                        'text-color':'#000000','text-muted':'#1f2937','link-color':'#2563eb','link-hover':'#1d4ed8',
+                        'heading-color':'#000000','subtitle-color':'#0f172a','code-bg':'#f1f5f9','code-block-bg':'#f8fafc','info-box':'#e0f2fe',
+                        'shadow-color':'rgba(0,0,0,0.18)','shadow-color-strong':'rgba(0,0,0,0.28)',
+                        'table-alt':'rgba(0,0,0,0.015)','search-match':'rgba(250,204,21,0.5)','search-text':'#000000',
+                        'card-hover':'rgba(0,0,0,0.03)',
+                        'accent-blue':'#2563eb','accent-green':'#059669','accent-amber':'#d97706',
+                        'accent-violet':'#7c3aed','accent-teal':'#0d9488','accent-red':'#dc2626','accent-gray':'#6b7280'
+                    }
+                },
+                {
+                    id: 'solarized-dark', name: { de: 'Solarized Dunkel', en: 'Solarized Dark' }, dark: true,
+                    colors: {
+                        'bg-color':'#002b36','panel-color':'#073642','sidebar-color':'#073642','border-color':'#586e75','panel-border':'#586e75',
+                        'text-color':'#93a1a1','text-muted':'#839496','link-color':'#268bd2','link-hover':'#2aa198',
+                        'heading-color':'#fdf6e3','subtitle-color':'#eee8d5','code-bg':'#073642','code-block-bg':'#00252e','info-box':'#0a4b5c',
+                        'card-hover':'rgba(255,255,255,0.04)',
+                        'accent-blue':'#268bd2','accent-green':'#859900','accent-amber':'#b58900',
+                        'accent-violet':'#6c71c4','accent-teal':'#2aa198','accent-red':'#dc322f','accent-gray':'#586e75'
+                    }
+                },
+                {
+                    id: 'solarized-light', name: { de: 'Solarized Hell', en: 'Solarized Light' }, dark: false,
+                    colors: {
+                        'bg-color':'#fdf6e3','panel-color':'#eee8d5','sidebar-color':'#eee8d5','border-color':'#93a1a1','panel-border':'#d5cdb6',
+                        'text-color':'#073642','text-muted':'#586e75','link-color':'#268bd2','link-hover':'#1e6fa3',
+                        'heading-color':'#002b36','subtitle-color':'#073642','code-bg':'#f5efdc','code-block-bg':'#e8dfc9','info-box':'#e8dfc9',
+                        'shadow-color':'rgba(0,0,0,0.12)','shadow-color-strong':'rgba(0,0,0,0.22)',
+                        'table-alt':'rgba(0,0,0,0.025)','search-match':'rgba(181,137,0,0.35)','search-text':'#002b36',
+                        'card-hover':'rgba(0,0,0,0.03)',
+                        'accent-blue':'#268bd2','accent-green':'#859900','accent-amber':'#b58900',
+                        'accent-violet':'#6c71c4','accent-teal':'#2aa198','accent-red':'#dc322f','accent-gray':'#839496'
+                    }
+                },
+                {
+                    id: 'dracula', name: { de: 'Dracula', en: 'Dracula' }, dark: true,
+                    colors: {
+                        'bg-color':'#282a36','panel-color':'#343746','sidebar-color':'#21222c','border-color':'#44475a','panel-border':'#44475a',
+                        'text-color':'#f8f8f2','text-muted':'#bdc1d4','link-color':'#8be9fd','link-hover':'#bd93f9',
+                        'heading-color':'#ffffff','subtitle-color':'#f8f8f2','code-bg':'#21222c','code-block-bg':'#191a21','info-box':'#44475a',
+                        'card-hover':'rgba(255,255,255,0.04)',
+                        'accent-blue':'#8be9fd','accent-green':'#50fa7b','accent-amber':'#f1fa8c',
+                        'accent-violet':'#bd93f9','accent-teal':'#8be9fd','accent-red':'#ff5555','accent-gray':'#6272a4'
+                    }
+                },
+                {
+                    id: 'nord', name: { de: 'Nord', en: 'Nord' }, dark: true,
+                    colors: {
+                        'bg-color':'#2e3440','panel-color':'#3b4252','sidebar-color':'#2e3440','border-color':'#4c566a','panel-border':'#4c566a',
+                        'text-color':'#d8dee9','text-muted':'#a5adbb','link-color':'#88c0d0','link-hover':'#8fbcbb',
+                        'heading-color':'#eceff4','subtitle-color':'#e5e9f0','code-bg':'#292e39','code-block-bg':'#242933','info-box':'#434c5e',
+                        'card-hover':'rgba(255,255,255,0.04)',
+                        'accent-blue':'#5e81ac','accent-green':'#a3be8c','accent-amber':'#ebcb8b',
+                        'accent-violet':'#b48ead','accent-teal':'#8fbcbb','accent-red':'#bf616a','accent-gray':'#4c566a'
+                    }
+                },
+                {
+                    id: 'gruvbox-dark', name: { de: 'Gruvbox Dunkel', en: 'Gruvbox Dark' }, dark: true,
+                    colors: {
+                        'bg-color':'#282828','panel-color':'#3c3836','sidebar-color':'#1d2021','border-color':'#504945','panel-border':'#504945',
+                        'text-color':'#ebdbb2','text-muted':'#a89984','link-color':'#83a598','link-hover':'#8ec07c',
+                        'heading-color':'#fbf1c7','subtitle-color':'#ebdbb2','code-bg':'#1d2021','code-block-bg':'#141414','info-box':'#3c3836',
+                        'card-hover':'rgba(255,255,255,0.04)',
+                        'accent-blue':'#83a598','accent-green':'#b8bb26','accent-amber':'#fabd2f',
+                        'accent-violet':'#d3869b','accent-teal':'#8ec07c','accent-red':'#fb4934','accent-gray':'#928374'
+                    }
+                },
+                {
+                    id: 'gruvbox-light', name: { de: 'Gruvbox Hell', en: 'Gruvbox Light' }, dark: false,
+                    colors: {
+                        'bg-color':'#fbf1c7','panel-color':'#f2e5bc','sidebar-color':'#f2e5bc','border-color':'#d5c4a1','panel-border':'#d5c4a1',
+                        'text-color':'#3c3836','text-muted':'#7c6f64','link-color':'#076678','link-hover':'#427b58',
+                        'heading-color':'#282828','subtitle-color':'#3c3836','code-bg':'#ebdbb2','code-block-bg':'#e0d3a8','info-box':'#e0d3a8',
+                        'shadow-color':'rgba(60,56,54,0.18)','shadow-color-strong':'rgba(60,56,54,0.3)',
+                        'table-alt':'rgba(0,0,0,0.025)','search-match':'rgba(181,118,20,0.35)','search-text':'#282828',
+                        'card-hover':'rgba(0,0,0,0.03)',
+                        'accent-blue':'#076678','accent-green':'#79740e','accent-amber':'#b57614',
+                        'accent-violet':'#8f3f71','accent-teal':'#427b58','accent-red':'#9d0006','accent-gray':'#7c6f64'
+                    }
+                },
+                {
+                    id: 'monokai', name: { de: 'Monokai', en: 'Monokai' }, dark: true,
+                    colors: {
+                        'bg-color':'#272822','panel-color':'#2f302a','sidebar-color':'#1e1f1c','border-color':'#49483e','panel-border':'#49483e',
+                        'text-color':'#f8f8f2','text-muted':'#a6a28c','link-color':'#66d9ef','link-hover':'#a6e22e',
+                        'heading-color':'#f8f8f2','subtitle-color':'#e6db74','code-bg':'#1e1f1c','code-block-bg':'#141511','info-box':'#3e3d32',
+                        'card-hover':'rgba(255,255,255,0.04)',
+                        'accent-blue':'#66d9ef','accent-green':'#a6e22e','accent-amber':'#e6db74',
+                        'accent-violet':'#ae81ff','accent-teal':'#66d9ef','accent-red':'#f92672','accent-gray':'#75715e'
+                    }
+                },
+                {
+                    id: 'tokyo-night', name: { de: 'Tokyo Night', en: 'Tokyo Night' }, dark: true,
+                    colors: {
+                        'bg-color':'#1a1b26','panel-color':'#1f2335','sidebar-color':'#16161e','border-color':'#292e42','panel-border':'#292e42',
+                        'text-color':'#c0caf5','text-muted':'#9aa5ce','link-color':'#7aa2f7','link-hover':'#7dcfff',
+                        'heading-color':'#ffffff','subtitle-color':'#c0caf5','code-bg':'#16161e','code-block-bg':'#101019','info-box':'#292e42',
+                        'card-hover':'rgba(255,255,255,0.04)',
+                        'accent-blue':'#7aa2f7','accent-green':'#9ece6a','accent-amber':'#e0af68',
+                        'accent-violet':'#bb9af7','accent-teal':'#7dcfff','accent-red':'#f7768e','accent-gray':'#565f89'
+                    }
+                },
+                {
+                    id: 'catppuccin-mocha', name: { de: 'Catppuccin Mocha', en: 'Catppuccin Mocha' }, dark: true,
+                    colors: {
+                        'bg-color':'#1e1e2e','panel-color':'#313244','sidebar-color':'#181825','border-color':'#45475a','panel-border':'#45475a',
+                        'text-color':'#cdd6f4','text-muted':'#a6adc8','link-color':'#89b4fa','link-hover':'#74c7ec',
+                        'heading-color':'#f5e0dc','subtitle-color':'#cdd6f4','code-bg':'#181825','code-block-bg':'#11111b','info-box':'#313244',
+                        'card-hover':'rgba(255,255,255,0.04)',
+                        'accent-blue':'#89b4fa','accent-green':'#a6e3a1','accent-amber':'#f9e2af',
+                        'accent-violet':'#cba6f7','accent-teal':'#94e2d5','accent-red':'#f38ba8','accent-gray':'#6c7086'
+                    }
+                },
+                {
+                    id: 'catppuccin-latte', name: { de: 'Catppuccin Latte', en: 'Catppuccin Latte' }, dark: false,
+                    colors: {
+                        'bg-color':'#eff1f5','panel-color':'#ffffff','sidebar-color':'#e6e9ef','border-color':'#ccd0da','panel-border':'#dce0e8',
+                        'text-color':'#4c4f69','text-muted':'#6c6f85','link-color':'#1e66f5','link-hover':'#7287fd',
+                        'heading-color':'#1e1e2e','subtitle-color':'#4c4f69','code-bg':'#e6e9ef','code-block-bg':'#dce0e8','info-box':'#dce0e8',
+                        'shadow-color':'rgba(76,79,105,0.15)','shadow-color-strong':'rgba(76,79,105,0.28)',
+                        'table-alt':'rgba(0,0,0,0.02)','search-match':'rgba(223,142,29,0.35)','search-text':'#1e1e2e',
+                        'card-hover':'rgba(0,0,0,0.03)',
+                        'accent-blue':'#1e66f5','accent-green':'#40a02b','accent-amber':'#df8e1d',
+                        'accent-violet':'#8839ef','accent-teal':'#179299','accent-red':'#d20f39','accent-gray':'#8c8fa1'
+                    }
+                },
+                {
+                    id: 'one-light', name: { de: 'One Light', en: 'One Light' }, dark: false,
+                    colors: {
+                        'bg-color':'#fafafa','panel-color':'#ffffff','sidebar-color':'#f0f0f1','border-color':'#d4d4d5','panel-border':'#e5e5e6',
+                        'text-color':'#383a42','text-muted':'#696c77','link-color':'#4078f2','link-hover':'#2a5cd6',
+                        'heading-color':'#1c1d21','subtitle-color':'#383a42','code-bg':'#f0f0f1','code-block-bg':'#e5e5e6','info-box':'#e5e5e6',
+                        'shadow-color':'rgba(56,58,66,0.12)','shadow-color-strong':'rgba(56,58,66,0.22)',
+                        'table-alt':'rgba(0,0,0,0.015)','search-match':'rgba(193,132,1,0.35)','search-text':'#1c1d21',
+                        'card-hover':'rgba(0,0,0,0.03)',
+                        'accent-blue':'#4078f2','accent-green':'#50a14f','accent-amber':'#c18401',
+                        'accent-violet':'#a626a4','accent-teal':'#0184bc','accent-red':'#e45649','accent-gray':'#a0a1a7'
+                    }
+                },
+                {
+                    id: 'high-contrast', name: { de: 'Hoher Kontrast', en: 'High Contrast' }, dark: true,
+                    colors: {
+                        'bg-color':'#000000','panel-color':'#0a0a0a','sidebar-color':'#000000','border-color':'#ffffff','panel-border':'#ffffff',
+                        'text-color':'#ffffff','text-muted':'#e0e0e0','link-color':'#ffff00','link-hover':'#ffcc00',
+                        'heading-color':'#ffff00','subtitle-color':'#ffffff','code-bg':'#1a1a1a','code-block-bg':'#0a0a0a','info-box':'#1a1a1a',
+                        'shadow-color':'rgba(255,255,255,0.25)','shadow-color-strong':'rgba(255,255,255,0.45)',
+                        'table-alt':'rgba(255,255,255,0.08)','search-match':'rgba(255,255,0,0.6)','search-text':'#000000',
+                        'card-hover':'rgba(255,255,255,0.08)',
+                        'accent-blue':'#00bfff','accent-green':'#00ff00','accent-amber':'#ffff00',
+                        'accent-violet':'#ff00ff','accent-teal':'#00ffff','accent-red':'#ff3030','accent-gray':'#c0c0c0'
+                    }
+                },
+                {
+                    id: 'sepia', name: { de: 'Sepia', en: 'Sepia' }, dark: false,
+                    colors: {
+                        'bg-color':'#f4ecd8','panel-color':'#fbf5e6','sidebar-color':'#efe6ce','border-color':'#d6c8a8','panel-border':'#e0d3b3',
+                        'text-color':'#5b4636','text-muted':'#7c6650','link-color':'#8b5a2b','link-hover':'#6b4420',
+                        'heading-color':'#3b2c1e','subtitle-color':'#5b4636','code-bg':'#efe6ce','code-block-bg':'#e8dcc0','info-box':'#e8dcc0',
+                        'shadow-color':'rgba(91,70,54,0.18)','shadow-color-strong':'rgba(91,70,54,0.32)',
+                        'table-alt':'rgba(91,70,54,0.05)','search-match':'rgba(139,90,43,0.35)','search-text':'#3b2c1e',
+                        'card-hover':'rgba(91,70,54,0.06)',
+                        'accent-blue':'#4682b4','accent-green':'#6b8e23','accent-amber':'#b8860b',
+                        'accent-violet':'#8b5a8b','accent-teal':'#5f9ea0','accent-red':'#a52a2a','accent-gray':'#8b7355'
+                    }
+                }
+            ]
+        };
+
+        const COLORS_JSON_PATH = 'settings/colors.json';
+        let colorConfig = FALLBACK_COLOR_CONFIG;
+        let activeSchemeId = null;
+        let colorsLoadedFromFile = false;
+        let lastDarkSchemeId  = 'dark';
+        let lastLightSchemeId = 'light';
+
+        function getSchemeById(id) { return (colorConfig.schemes || []).find(s => s.id === id) || null; }
+        function resolveSchemeColors(scheme) { return Object.assign({}, colorConfig.base || {}, scheme.colors || {}); }
+
+        async function initColorSchemes() {
+            try {
+                const res = await fetch(COLORS_JSON_PATH, { cache: 'no-cache' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                if (!data || !Array.isArray(data.schemes) || data.schemes.length === 0) throw new Error('colors.json has no "schemes" array');
+                colorConfig = data;
+                colorsLoadedFromFile = true;
+                console.info('[colors] Loaded ' + data.schemes.length + ' schemes from ' + COLORS_JSON_PATH);
+            } catch (err) {
+                console.info('[colors] Using built-in palette (' + colorConfig.schemes.length + ' schemes). To load external colours, serve the folder over HTTP so ' + COLORS_JSON_PATH + ' can be fetched.');
+            }
+            const stored = readStoredScheme();
+            const preferred = colorConfig.defaultScheme || colorConfig.schemes[0].id;
+            const initial = (stored && getSchemeById(stored)) ? stored
+                          : (getSchemeById(preferred) ? preferred : colorConfig.schemes[0].id);
+            const initScheme = getSchemeById(initial);
+            if (initScheme) {
+                if (initScheme.dark) lastDarkSchemeId = initScheme.id;
+                else                 lastLightSchemeId = initScheme.id;
+            }
+            applyColorScheme(initial);
         }
 
-        // Theme Toggle
-        function toggleTheme() {
-            const html = document.documentElement;
-            const icon = document.getElementById('theme-icon');
-            if (html.classList.contains('light')) {
-                html.classList.remove('light');
-                icon.className = 'fa-solid fa-sun';
+        function applyColorScheme(id) {
+            const scheme = getSchemeById(id) || colorConfig.schemes[0];
+            if (!scheme) return;
+            const root = document.documentElement;
+            const colors = resolveSchemeColors(scheme);
+            Object.keys(colors).forEach(key => {
+                if (colors[key] === null || colors[key] === undefined) return;
+                root.style.setProperty('--' + key, String(colors[key]));
+            });
+            root.classList.toggle('light', !scheme.dark);
+            root.classList.toggle('theme-dark', !!scheme.dark);
+            root.style.colorScheme = scheme.dark ? 'dark' : 'light';
+            root.setAttribute('data-color-scheme', scheme.id);
+            if (scheme.dark) lastDarkSchemeId = scheme.id;
+            else             lastLightSchemeId = scheme.id;
+            activeSchemeId = scheme.id;
+            storeScheme(scheme.id);
+            updateThemeToggleIcon(scheme.dark);
+        }
+
+        function updateThemeToggleIcon(isDark) {
+            const icon = document.getElementById('themeToggleIcon');
+            if (!icon) return;
+            icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        }
+
+        function toggleDarkLight() {
+            hideThemeMenu();
+            const current = getSchemeById(activeSchemeId);
+            if (!current) return;
+            if (current.dark) {
+                const target = getSchemeById(lastLightSchemeId) ? lastLightSchemeId
+                             : (colorConfig.schemes.find(s => !s.dark) || {}).id;
+                if (target) applyColorScheme(target);
             } else {
-                html.classList.add('light');
-                icon.className = 'fa-solid fa-moon';
+                const target = getSchemeById(lastDarkSchemeId) ? lastDarkSchemeId
+                             : (colorConfig.schemes.find(s => s.dark) || {}).id;
+                if (target) applyColorScheme(target);
             }
         }
 
-        // Global Language Toggle
-        let isGerman = true;
-        function toggleLang() {
-            isGerman = !isGerman;
-            const indicator = document.getElementById('lang-indicator');
-            indicator.textContent = isGerman ? 'DE' : 'EN';
-            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
-
-            const deEls = document.querySelectorAll('[data-lang-de]');
-            const enEls = document.querySelectorAll('[data-lang-en]');
-
-            if (isGerman) {
-                deEls.forEach(el => el.style.display = '');
-                enEls.forEach(el => el.style.display = 'none');
-            } else {
-                deEls.forEach(el => el.style.display = 'none');
-                enEls.forEach(el => el.style.display = '');
-            }
+        function buildThemeMenuItems() {
+            const menu = document.getElementById('themeContextMenu');
+            if (!menu) return;
+            menu.innerHTML = '';
+            const header = document.createElement('div');
+            header.className = 'theme-menu-header';
+            header.textContent = isGerman
+                ? 'Farbschema wählen (' + colorConfig.schemes.length + ')'
+                : 'Choose colour scheme (' + colorConfig.schemes.length + ')';
+            menu.appendChild(header);
+            const schemes = colorConfig.schemes || [];
+            const langTag = isGerman ? 'de' : 'en';
+            const PREVIEW_KEYS = ['bg-color', 'panel-color', 'code-block-bg', 'link-color', 'accent-green', 'accent-amber'];
+            schemes.forEach(s => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'theme-menu-item' + (s.id === activeSchemeId ? ' active' : '');
+                btn.setAttribute('role', 'menuitem');
+                const swWrap = document.createElement('span');
+                swWrap.className = 'scheme-swatches';
+                const colors = resolveSchemeColors(s);
+                PREVIEW_KEYS.forEach(k => {
+                    const dot = document.createElement('span');
+                    dot.style.background = colors[k] || 'transparent';
+                    swWrap.appendChild(dot);
+                });
+                btn.appendChild(swWrap);
+                const nameEl = document.createElement('span');
+                nameEl.className = 'scheme-name';
+                const name = s.name || {};
+                nameEl.textContent = (typeof name === 'string' ? name : (name[langTag] || name.de || name.en || s.id));
+                btn.appendChild(nameEl);
+                const check = document.createElement('i');
+                check.className = 'fa-solid fa-check scheme-check';
+                btn.appendChild(check);
+                btn.addEventListener('click', () => { applyColorScheme(s.id); hideThemeMenu(); });
+                menu.appendChild(btn);
+            });
         }
 
-        // Download HTML
-        function downloadHTML() {
-            removeHighlights(document.getElementById('main-content'));
-
-            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'Resources.html';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+        function showThemeMenu(e) {
+            if (e) e.preventDefault();
+            const menu = document.getElementById('themeContextMenu');
+            if (!menu) return;
+            buildThemeMenuItems();
+            menu.classList.add('open');
         }
 
-        // ==========================================
-        // LEAVE CONFIRMATION FOR EXTERNAL LINKS
-        // ==========================================
+        function hideThemeMenu() {
+            const menu = document.getElementById('themeContextMenu');
+            if (menu) menu.classList.remove('open');
+        }
+
+        function storageKey() { return (colorConfig && colorConfig.storageKey) || 'resourcesDashboard.scheme'; }
+        function storeScheme(id) { try { localStorage.setItem(storageKey(), id); } catch (_) {} }
+        function readStoredScheme() { try { return localStorage.getItem(storageKey()); } catch (_) { return null; } }
+
+        /* ==================================================================
+           LEAVE CONFIRMATION FOR EXTERNAL LINKS
+           ================================================================== */
         let pendingUrl = null;
         const modal = document.getElementById('leaveModal');
         const confirmBtn = document.getElementById('leaveConfirm');
@@ -1678,37 +1970,81 @@
             pendingUrl = null;
         }
 
-        // Attach event listeners to all external links (target="_blank")
-        document.querySelectorAll('a[target="_blank"]').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const href = this.href;
-                showLeaveModal(href);
+        /* ==================================================================
+           INIT
+           ================================================================== */
+        document.addEventListener('DOMContentLoaded', () => {
+            /* Scrollspy */
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                        if (tocLink) tocLink.classList.add('active');
+                    }
+                });
+            }, { rootMargin: '-10% 0px -80% 0px', threshold: [0, 0.1, 1] });
+
+            document.querySelectorAll('section[id]').forEach((section) => {
+                observer.observe(section);
             });
-        });
 
-        confirmBtn.addEventListener('click', function() {
-            if (pendingUrl) {
-                window.open(pendingUrl, '_blank', 'noopener');
+            /* Restore collapsed state from localStorage */
+            try {
+                if (localStorage.getItem('resources-sidebar-collapsed') === '1') {
+                    document.body.classList.add('sidebar-collapsed');
+                    const icon = document.getElementById('collapseIcon');
+                    if (icon) icon.className = 'fa-solid fa-angles-right text-xs';
+                }
+            } catch(e) {}
+
+            updateScaling();
+
+            /* Download visibility */
+            updateDownloadVisibility();
+
+            /* Theme toggle button */
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (themeBtn) {
+                themeBtn.addEventListener('click', (e) => { e.preventDefault(); toggleDarkLight(); });
+                themeBtn.addEventListener('contextmenu', (e) => { showThemeMenu(e); });
             }
-            hideLeaveModal();
-        });
+            document.addEventListener('click', (e) => {
+                const menu = document.getElementById('themeContextMenu');
+                if (!menu || !menu.classList.contains('open')) return;
+                const btn = document.getElementById('themeToggleBtn');
+                if (menu.contains(e.target)) return;
+                if (btn && btn.contains(e.target)) return;
+                hideThemeMenu();
+            });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideThemeMenu(); });
 
-        cancelBtn.addEventListener('click', hideLeaveModal);
+            /* Leave modal external links */
+            document.querySelectorAll('a[target="_blank"]').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showLeaveModal(this.href);
+                });
+            });
 
-        // Close modal on Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+            confirmBtn.addEventListener('click', function() {
+                if (pendingUrl) window.open(pendingUrl, '_blank', 'noopener');
                 hideLeaveModal();
-            }
+            });
+            cancelBtn.addEventListener('click', hideLeaveModal);
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !modal.classList.contains('hidden')) hideLeaveModal();
+            });
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) hideLeaveModal();
+            });
+
+            /* Colours from settings/colors.json (or built-in fallback) */
+            initColorSchemes();
         });
 
-        // Close modal on outside click
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                hideLeaveModal();
-            }
-        });
+        window.addEventListener('resize', updateScaling);
     </script>
 </body>
 </html>

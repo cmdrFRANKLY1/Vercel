@@ -37,71 +37,57 @@
     </script>
 
     <style>
+        /* ============================================================
+           FALLBACK PALETTE (dark) – real values come from colors.json
+           ============================================================ */
         :root {
-            /* Dark Mode Defaults */
             --bg-color: #181a1b;
             --panel-color: #202324;
             --sidebar-color: #202122;
             --border-color: #54595d;
+            --panel-border: #54595d;
             --text-color: #eaecf0;
             --text-muted: #a8aeb3;
             --link-color: #99c1f1;
             --link-hover: #629deb;
             --heading-color: #ffffff;
+            --subtitle-color: #e6e9ed;
             --code-bg: #27292a;
             --info-box: #2c2d30;
-            --table-alt: rgba(255,255,255,0.02);
-            --search-match: rgba(250, 204, 21, 0.3);
+
+            --shadow-color: rgba(0, 0, 0, 0.45);
+            --shadow-color-strong: rgba(0, 0, 0, 0.7);
+            --table-alt: rgba(255, 255, 255, 0.02);
+            --search-match: rgba(250, 204, 21, 0.35);
             --search-text: #ffffff;
 
-            /* Layout tuning for large (maximized 1080p) viewports */
+            --card-shadow:
+                0 0 22px 0 var(--shadow-color),
+                0 0 10px 0 var(--shadow-color),
+                0 4px 24px 0 var(--shadow-color);
+            --card-shadow-hover:
+                0 0 40px 0 var(--shadow-color-strong),
+                0 0 18px 0 var(--shadow-color-strong),
+                0 8px 36px 0 var(--shadow-color-strong);
+
+            --tok-kw: #c678dd;
+            --tok-str: #98c379;
+            --tok-num: #d19a66;
+            --tok-com: #7f848e;
+
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-violet: #8b5cf6;
+            --accent-teal: #14b8a6;
+            --accent-red: #ef4444;
+            --accent-gray: #6b7280;
+
             --content-max: 1600px;
-            --sidebar-w: 20rem; /* 320px */
-
-            /* Panel borders & strengthened omni-directional encasing shadow */
-            --panel-border: #54595d;
-            --card-shadow:
-                0 0 22px 0 rgba(0, 0, 0, 0.55),
-                0 0 10px 0 rgba(0, 0, 0, 0.45),
-                0 4px 24px 0 rgba(0, 0, 0, 0.35);
-            --card-shadow-hover:
-                0 0 40px 0 rgba(0, 0, 0, 0.7),
-                0 0 18px 0 rgba(0, 0, 0, 0.55),
-                0 8px 36px 0 rgba(0, 0, 0, 0.45);
-        }
-
-        html.light {
-            /* Light Mode Overrides */
-            --bg-color: #f4f6f9;
-            --panel-color: #ffffff;
-            --sidebar-color: #ffffff;
-            --border-color: #cbd5e1;
-            --text-color: #000000;
-            --text-muted: #1f2937;
-            --link-color: #2563eb;
-            --link-hover: #1d4ed8;
-            --heading-color: #000000;
-            --code-bg: #f1f5f9;
-            --info-box: #e0f2fe;
-            --table-alt: rgba(0,0,0,0.015);
-            --search-match: rgba(250, 204, 21, 0.5);
-            --search-text: #000000;
-
-            /* Stronger encasing shadow for light mode as well */
-            --panel-border: #e2e8f0;
-            --card-shadow:
-                0 0 28px 0 rgba(0, 0, 0, 0.18),
-                0 0 12px 0 rgba(0, 0, 0, 0.12),
-                0 4px 24px 0 rgba(0, 0, 0, 0.10);
-            --card-shadow-hover:
-                0 0 48px 0 rgba(0, 0, 0, 0.28),
-                0 0 22px 0 rgba(0, 0, 0, 0.20),
-                0 8px 36px 0 rgba(0, 0, 0, 0.16);
+            --sidebar-w: 20rem;
         }
 
         html { font-size: 16px; }
-
-        /* Scale the document up on very wide (maximized 1080p) viewports */
         @media (min-width: 1536px)  { html { font-size: 17px; } }
         @media (min-width: 1800px)  { html { font-size: 18px; } }
 
@@ -116,7 +102,6 @@
             overflow-x: hidden;
         }
 
-        /* ---------- Fluid, viewport-aware typography ---------- */
         h1, h2, h3, h4 {
             font-family: 'Lora', serif;
             color: var(--heading-color);
@@ -124,6 +109,8 @@
             line-height: 1.15;
             text-wrap: balance;
         }
+        h3, h4 { color: var(--subtitle-color, var(--heading-color)); }
+
         h1 {
             font-size: clamp(2.1rem, 3vw, 3.1rem) !important;
             padding-bottom: 0.5rem;
@@ -161,7 +148,6 @@
             color: var(--text-color);
         }
 
-        /* ---------- Wiki-style Tables ---------- */
         .wikitable {
             width: 100%;
             border-collapse: collapse;
@@ -191,7 +177,6 @@
         .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
         .wikitable code { background: transparent; border: none; padding: 0; }
 
-        /* ---------- Wiki-style Infobox ---------- */
         .infobox {
             float: right;
             width: 320px;
@@ -210,7 +195,6 @@
             border-bottom: 1px solid var(--panel-border); color: var(--heading-color);
             border-top-left-radius: 0.4rem; border-top-right-radius: 0.4rem;
         }
-        /* Force infobox to be non-floating inside cards */
         .subtopic-card .infobox,
         .topic-panel > .infobox {
             float: none;
@@ -218,14 +202,12 @@
             margin: 1em 0;
         }
 
-        /* ---------- TOC Styles ---------- */
         .toc-link.active { font-weight: 700; color: var(--heading-color); position: relative; }
         .toc-link.active::before {
             content: ''; position: absolute; left: -1rem; top: 0; height: 100%;
             width: 3px; background-color: var(--link-color);
         }
 
-        /* Sidebar scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-color); }
         ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
@@ -233,7 +215,98 @@
 
         .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
 
-        /* ---------- Layout helpers ---------- */
+        /* ---------- Sidebar control buttons ---------- */
+        .ctrl-btn {
+            flex: 1;
+            padding: 0.375rem 0;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            transition: background-color .15s, color .15s;
+            cursor: pointer;
+        }
+        .ctrl-btn:hover { background: var(--code-bg); color: var(--link-color); }
+
+        /* ---------- Theme context menu ---------- */
+        #themeContextMenu {
+            display: none;
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 0.35rem);
+            max-height: 24rem;
+            overflow-y: auto;
+            background: var(--panel-color);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            box-shadow: 0 12px 36px var(--shadow-color-strong), 0 4px 12px var(--shadow-color);
+            z-index: 200;
+        }
+        #themeContextMenu.open { display: block; }
+
+        .theme-menu-header {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+            background: var(--info-box);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .theme-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8rem;
+            color: var(--text-color);
+            text-align: left;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: background .12s, color .12s;
+            border-left: 3px solid transparent;
+        }
+        .theme-menu-item:hover {
+            background: var(--code-bg);
+            color: var(--link-color);
+        }
+        .theme-menu-item.active {
+            font-weight: 700;
+            color: var(--link-color);
+            background: var(--info-box);
+            border-left-color: var(--link-color);
+        }
+        .theme-menu-item .scheme-swatches {
+            display: inline-flex;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        .theme-menu-item .scheme-swatches span {
+            width: 9px; height: 9px; border-radius: 50%;
+            border: 1px solid var(--border-color);
+        }
+        .theme-menu-item .scheme-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .theme-menu-item .scheme-check {
+            font-size: 0.65rem;
+            color: var(--link-color);
+            opacity: 0;
+        }
+        .theme-menu-item.active .scheme-check { opacity: 1; }
+
         .app-sidebar {
             width: var(--sidebar-w);
             max-height: 50vh;
@@ -253,7 +326,6 @@
         @media (min-width: 1280px) { .app-main { padding: 2rem; } }
         @media (min-width: 1600px) { .app-main { padding: 2.25rem 2.5rem; } }
 
-        /* ---------- Topic Panel (outer container) ---------- */
         .topic-panel {
             background-color: var(--panel-color);
             border: 1px solid var(--panel-border);
@@ -273,7 +345,6 @@
         .topic-panel.mb-8 { margin-bottom: 2rem; }
         .topic-panel.mb-20 { margin-bottom: 5rem; }
 
-        /* ---------- Subtopic Card (inner block) ---------- */
         .subtopic-card {
             background-color: var(--bg-color);
             border: 1px solid var(--panel-border);
@@ -291,7 +362,6 @@
         }
         .subtopic-card > h3:first-child { margin-top: 0; }
 
-        /* Non-card intro paragraph inside a panel */
         .panel-intro {
             margin-bottom: 1.5rem;
             color: var(--text-color);
@@ -301,11 +371,10 @@
             .infobox { float: none; width: 100%; margin: 1em 0; }
         }
 
-        /* Global Language Switcher Support */
         [data-lang-de], [data-lang-en] { transition: opacity 0.15s ease-in-out; }
 
         /* ============================================ */
-        /* Block Builder (preserved from original)      */
+        /* Block Builder                                */
         /* ============================================ */
         .palette-btn {
             width: 100%; display: flex; align-items: center; gap: 0.5rem;
@@ -374,7 +443,7 @@
             cursor: pointer;
         }
         .blk-btn:hover { background: var(--bg-color); color: var(--link-color); }
-        .blk-btn.danger:hover { color: #ef4444; }
+        .blk-btn.danger:hover { color: var(--accent-red); }
 
         .dropzone {
             border: 1px dashed var(--border-color); border-radius: 4px;
@@ -424,14 +493,10 @@
             border-color: var(--border-color);
         }
 
-        .tok-kw  { color: #c678dd; }
-        .tok-str { color: #98c379; }
-        .tok-num { color: #d19a66; }
-        .tok-com { color: #7f848e; font-style: italic; }
-        html.light .tok-kw  { color: #a626a4; }
-        html.light .tok-str { color: #3f8f3d; }
-        html.light .tok-num { color: #986801; }
-        html.light .tok-com { color: #9aa0a6; }
+        .tok-kw  { color: var(--tok-kw); }
+        .tok-str { color: var(--tok-str); }
+        .tok-num { color: var(--tok-num); }
+        .tok-com { color: var(--tok-com); font-style: italic; }
 
         pre { margin: 0; }
         pre code { font-family: 'Fira Code', Consolas, monospace; }
@@ -441,7 +506,7 @@
             background: var(--panel-color); border: 1px solid var(--link-color);
             color: var(--link-color); font-size: 0.75rem; font-weight: 600;
             padding: 0.4rem 0.9rem; border-radius: 999px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px var(--shadow-color-strong);
             z-index: 9999; pointer-events: none;
             opacity: 0; transition: opacity .15s;
         }
@@ -450,7 +515,6 @@
 </head>
 <body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
 
-    <!-- Floating drag hint -->
     <div class="drag-hint">
         <i class="fa-solid fa-hand-pointer mr-1"></i>
         <span data-lang-de>Obere/untere Hälfte eines Blocks = davor/danach einfügen · gestrichelter Rahmen = ans Ende</span>
@@ -459,19 +523,27 @@
 
     <aside class="app-sidebar flex-shrink-0 bg-[var(--sidebar-color)] border-b lg:border-b-0 lg:border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
 
-        <!-- Controls: Language, Theme, Download -->
-        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
-            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm relative">
+
+            <button onclick="toggleLang()" class="ctrl-btn" title="Sprache wechseln / Toggle language">
                 <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
             </button>
+
             <div class="w-px h-4 bg-[var(--border-color)]"></div>
-            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
-                <i id="theme-icon" class="fa-solid fa-sun"></i>
+
+            <button id="themeToggleBtn" class="ctrl-btn"
+                    title="Linksklick: Hell/Dunkel · Rechtsklick: alle Farbschemata">
+                <i id="themeToggleIcon" class="fa-solid fa-sun"></i>
             </button>
-            <div class="w-px h-4 bg-[var(--border-color)]"></div>
-            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Cheatsheet">
+
+            <div id="downloadDivider" class="w-px h-4 bg-[var(--border-color)]"></div>
+
+            <button id="downloadBtn" onclick="downloadHTML()" class="ctrl-btn" style="color: var(--link-color);"
+                    title="Download Cheatsheet">
                 <i class="fa-solid fa-download"></i>
             </button>
+
+            <div id="themeContextMenu" role="menu" aria-label="Farbschemata"></div>
         </div>
 
         <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
@@ -480,7 +552,7 @@
                 <span data-lang-de>Logik-<br>Baukasten</span>
                 <span data-lang-en style="display:none;">Logic<br>Builder</span>
             </div>
-            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v1.0 – Multi-Lang</div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v1.3 – Multi-Lang</div>
         </div>
 
         <div class="mb-6 relative">
@@ -545,9 +617,6 @@
 
     <main class="app-main" id="main-content">
 
-        <!-- ========================================== -->
-        <!-- Intro panel                                -->
-        <!-- ========================================== -->
         <div class="topic-panel mt-0 mb-8">
             <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0">
                 <span data-lang-de>Logik &amp; Bedingungen</span>
@@ -558,9 +627,6 @@
             <p class="text-lg mb-0" data-lang-en style="display:none;">This reference combines a <strong>visual coding block builder</strong> with a cross-language reference. Assemble blocks into an algorithm — and instantly see how the same flow looks in <strong>pseudocode, Python, JavaScript, Java, C#, and C++</strong>. All examples are for <em>educational purposes only</em>.</p>
         </div>
 
-        <!-- ========================================== -->
-        <!-- 1. Block Builder                           -->
-        <!-- ========================================== -->
         <section id="builder" class="scroll-mt-10 searchable-block topic-panel mt-8">
             <h2>
                 <span data-lang-de>1. Coding-Block Baukasten</span>
@@ -577,7 +643,6 @@
                 </h3>
 
                 <div class="grid grid-cols-1 lg:grid-cols-[250px_1fr] gap-4">
-                    <!-- Palette -->
                     <div class="bg-[var(--panel-color)] border border-[var(--panel-border)] rounded p-3 h-fit">
                         <div class="font-bold text-xs uppercase tracking-wider text-[var(--heading-color)] mb-3">
                             <i class="fa-solid fa-shapes mr-1"></i>
@@ -589,14 +654,13 @@
                                 <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>
                                 <span data-lang-de>Beispiel</span><span data-lang-en style="display:none;">Example</span>
                             </button>
-                            <button onclick="clearProgram()" class="flex-1 text-xs font-semibold px-2 py-1.5 rounded border border-[var(--panel-border)] text-[var(--text-muted)] hover:bg-[var(--bg-color)] hover:text-[#ef4444] transition-colors">
+                            <button onclick="clearProgram()" class="flex-1 text-xs font-semibold px-2 py-1.5 rounded border border-[var(--panel-border)] text-[var(--text-muted)] hover:bg-[var(--bg-color)] hover:text-[var(--accent-red)] transition-colors">
                                 <i class="fa-solid fa-trash mr-1"></i>
                                 <span data-lang-de>Leeren</span><span data-lang-en style="display:none;">Clear</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Canvas -->
                     <div class="bg-[var(--bg-color)] border border-[var(--panel-border)] rounded p-3">
                         <div class="flex items-center gap-2 mb-3 pb-2 border-b border-[var(--border-color)]">
                             <i class="fa-solid fa-diagram-project text-[var(--link-color)] text-sm"></i>
@@ -613,7 +677,6 @@
                     </div>
                 </div>
 
-                <!-- Code Output -->
                 <div class="mt-6">
                     <div class="flex items-center gap-2 mb-2 flex-wrap">
                         <div id="langTabs" class="flex flex-wrap gap-1"></div>
@@ -632,7 +695,6 @@
                 </div>
             </div>
 
-            <!-- Structural programming info -->
             <div class="subtopic-card">
                 <h3>
                     <span data-lang-de>Strukturelle Programmierweise</span>
@@ -665,9 +727,6 @@
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- 2. Operatoren                              -->
-        <!-- ========================================== -->
         <section id="operatoren" class="scroll-mt-10 searchable-block topic-panel mt-12">
             <h2>
                 <span data-lang-de>2. Bedingungen &amp; Operatoren</span>
@@ -743,10 +802,10 @@
                         <th>A</th><th>B</th>
                         <th>A UND B</th><th>A ODER B</th><th>A XOR B</th><th>NICHT A</th>
                     </tr>
-                    <tr><td class="font-mono">wahr</td><td class="font-mono">wahr</td><td class="font-mono text-[#10b981]">wahr</td><td class="font-mono text-[#10b981]">wahr</td><td class="font-mono text-[#ef4444]">falsch</td><td class="font-mono text-[#ef4444]">falsch</td></tr>
-                    <tr><td class="font-mono">wahr</td><td class="font-mono">falsch</td><td class="font-mono text-[#ef4444]">falsch</td><td class="font-mono text-[#10b981]">wahr</td><td class="font-mono text-[#10b981]">wahr</td><td class="font-mono text-[#ef4444]">falsch</td></tr>
-                    <tr><td class="font-mono">falsch</td><td class="font-mono">wahr</td><td class="font-mono text-[#ef4444]">falsch</td><td class="font-mono text-[#10b981]">wahr</td><td class="font-mono text-[#10b981]">wahr</td><td class="font-mono text-[#10b981]">wahr</td></tr>
-                    <tr><td class="font-mono">falsch</td><td class="font-mono">falsch</td><td class="font-mono text-[#ef4444]">falsch</td><td class="font-mono text-[#ef4444]">falsch</td><td class="font-mono text-[#ef4444]">falsch</td><td class="font-mono text-[#10b981]">wahr</td></tr>
+                    <tr><td class="font-mono">wahr</td><td class="font-mono">wahr</td><td class="font-mono text-[var(--accent-green)]">wahr</td><td class="font-mono text-[var(--accent-green)]">wahr</td><td class="font-mono text-[var(--accent-red)]">falsch</td><td class="font-mono text-[var(--accent-red)]">falsch</td></tr>
+                    <tr><td class="font-mono">wahr</td><td class="font-mono">falsch</td><td class="font-mono text-[var(--accent-red)]">falsch</td><td class="font-mono text-[var(--accent-green)]">wahr</td><td class="font-mono text-[var(--accent-green)]">wahr</td><td class="font-mono text-[var(--accent-red)]">falsch</td></tr>
+                    <tr><td class="font-mono">falsch</td><td class="font-mono">wahr</td><td class="font-mono text-[var(--accent-red)]">falsch</td><td class="font-mono text-[var(--accent-green)]">wahr</td><td class="font-mono text-[var(--accent-green)]">wahr</td><td class="font-mono text-[var(--accent-green)]">wahr</td></tr>
+                    <tr><td class="font-mono">falsch</td><td class="font-mono">falsch</td><td class="font-mono text-[var(--accent-red)]">falsch</td><td class="font-mono text-[var(--accent-red)]">falsch</td><td class="font-mono text-[var(--accent-red)]">falsch</td><td class="font-mono text-[var(--accent-green)]">wahr</td></tr>
                 </table>
 
                 <p data-lang-de class="mt-4"><strong>Kurzschlussauswertung (Short-Circuit):</strong> Bei <code>A &amp;&amp; B</code> wird <code>B</code> nur ausgewertet, wenn <code>A</code> wahr ist. Bei <code>A || B</code> wird <code>B</code> nur ausgewertet, wenn <code>A</code> falsch ist. Das ist wichtig, um Fehler zu vermeiden, z.&nbsp;B. <code>if (liste != null &amp;&amp; liste.length &gt; 0)</code>.</p>
@@ -754,9 +813,6 @@
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- 3. Kontrollstrukturen                      -->
-        <!-- ========================================== -->
         <section id="kontrollstrukturen" class="scroll-mt-10 searchable-block topic-panel mt-12">
             <h2>
                 <span data-lang-de>3. Kontrollstrukturen im Sprachvergleich</span>
@@ -851,9 +907,6 @@
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- 4. Datentypen                              -->
-        <!-- ========================================== -->
         <section id="datentypen" class="scroll-mt-10 searchable-block topic-panel mt-12">
             <h2>
                 <span data-lang-de>4. Datentypen</span>
@@ -885,9 +938,6 @@
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- 5. Muster                                  -->
-        <!-- ========================================== -->
         <section id="muster" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
             <h2>
                 <span data-lang-de>5. Typische Algorithmus-Muster</span>
@@ -957,7 +1007,7 @@ ENDE SOLANGE</td>
 
     <script>
         /* ============================================================ */
-        /* LANGUAGE / THEME / SEARCH / DOWNLOAD (shared with cheatsheet) */
+        /* LANGUAGE / SEARCH / DOWNLOAD                                  */
         /* ============================================================ */
 
         let isGerman = true;
@@ -972,23 +1022,16 @@ ENDE SOLANGE</td>
             const ind = document.getElementById('lang-indicator');
             if (ind) ind.textContent = isGerman ? 'DE' : 'EN';
             document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+
+            const menu = document.getElementById('themeContextMenu');
+            if (menu && menu.classList.contains('open')) {
+                buildThemeMenuItems();
+            }
         }
 
         function toggleLang() {
             isGerman = !isGerman;
             renderProgram();
-        }
-
-        function toggleTheme() {
-            const html = document.documentElement;
-            const icon = document.getElementById('theme-icon');
-            if (html.classList.contains('light')) {
-                html.classList.remove('light');
-                icon.className = 'fa-solid fa-sun';
-            } else {
-                html.classList.add('light');
-                icon.className = 'fa-solid fa-moon';
-            }
         }
 
         function filterWiki() {
@@ -1072,12 +1115,449 @@ ENDE SOLANGE</td>
         }
 
         /* ============================================================ */
+        /* COLOUR SCHEMES                                                */
+        /* ------------------------------------------------------------ */
+        /* The full palette is embedded below so that everything works  */
+        /* even when the file is opened directly via  file://           */
+        /* (fetch() is blocked there). When served over HTTP,           */
+        /* settings/colors.json  overrides this built-in palette so you */
+        /* can keep editing colours externally without touching the HTML*/
+        /* ============================================================ */
+
+        const FALLBACK_COLOR_CONFIG = {
+            version: '1.0',
+            defaultScheme: 'dark',
+            storageKey: 'cheatSheetCoding.scheme',
+            base: {
+                'shadow-color': 'rgba(0, 0, 0, 0.45)',
+                'shadow-color-strong': 'rgba(0, 0, 0, 0.7)',
+                'card-shadow': '0 0 22px 0 var(--shadow-color), 0 0 10px 0 var(--shadow-color), 0 4px 24px 0 var(--shadow-color)',
+                'card-shadow-hover': '0 0 40px 0 var(--shadow-color-strong), 0 0 18px 0 var(--shadow-color-strong), 0 8px 36px 0 var(--shadow-color-strong)',
+                'table-alt': 'rgba(255, 255, 255, 0.02)',
+                'search-match': 'rgba(250, 204, 21, 0.35)',
+                'search-text': '#ffffff'
+            },
+            schemes: [
+                {
+                    id: 'dark', name: { de: 'Dunkel (Standard)', en: 'Dark (default)' }, dark: true,
+                    colors: {
+                        'bg-color': '#181a1b', 'panel-color': '#202324', 'sidebar-color': '#202122',
+                        'border-color': '#54595d', 'panel-border': '#54595d',
+                        'text-color': '#eaecf0', 'text-muted': '#a8aeb3',
+                        'heading-color': '#ffffff', 'subtitle-color': '#e6e9ed',
+                        'link-color': '#99c1f1', 'link-hover': '#629deb',
+                        'code-bg': '#27292a', 'info-box': '#2c2d30',
+                        'tok-kw': '#c678dd', 'tok-str': '#98c379', 'tok-num': '#d19a66', 'tok-com': '#7f848e',
+                        'accent-blue': '#3b82f6', 'accent-green': '#10b981', 'accent-amber': '#f59e0b',
+                        'accent-violet': '#8b5cf6', 'accent-teal': '#14b8a6', 'accent-red': '#ef4444', 'accent-gray': '#6b7280'
+                    }
+                },
+                {
+                    id: 'light', name: { de: 'Hell', en: 'Light' }, dark: false,
+                    colors: {
+                        'bg-color': '#f4f6f9', 'panel-color': '#ffffff', 'sidebar-color': '#ffffff',
+                        'border-color': '#cbd5e1', 'panel-border': '#e2e8f0',
+                        'text-color': '#000000', 'text-muted': '#4b5563',
+                        'heading-color': '#000000', 'subtitle-color': '#111827',
+                        'link-color': '#2563eb', 'link-hover': '#1d4ed8',
+                        'code-bg': '#f1f5f9', 'info-box': '#e0f2fe',
+                        'shadow-color': 'rgba(0, 0, 0, 0.16)', 'shadow-color-strong': 'rgba(0, 0, 0, 0.28)',
+                        'table-alt': 'rgba(0, 0, 0, 0.015)',
+                        'search-match': 'rgba(250, 204, 21, 0.5)', 'search-text': '#000000',
+                        'tok-kw': '#a626a4', 'tok-str': '#3f8f3d', 'tok-num': '#986801', 'tok-com': '#9aa0a6',
+                        'accent-blue': '#2563eb', 'accent-green': '#059669', 'accent-amber': '#d97706',
+                        'accent-violet': '#7c3aed', 'accent-teal': '#0d9488', 'accent-red': '#dc2626', 'accent-gray': '#6b7280'
+                    }
+                },
+                {
+                    id: 'solarized-dark', name: { de: 'Solarized Dunkel', en: 'Solarized Dark' }, dark: true,
+                    colors: {
+                        'bg-color': '#002b36', 'panel-color': '#073642', 'sidebar-color': '#073642',
+                        'border-color': '#586e75', 'panel-border': '#586e75',
+                        'text-color': '#93a1a1', 'text-muted': '#839496',
+                        'heading-color': '#fdf6e3', 'subtitle-color': '#eee8d5',
+                        'link-color': '#268bd2', 'link-hover': '#2aa198',
+                        'code-bg': '#073642', 'info-box': '#0a4b5c',
+                        'tok-kw': '#859900', 'tok-str': '#2aa198', 'tok-num': '#d33682', 'tok-com': '#586e75',
+                        'accent-blue': '#268bd2', 'accent-green': '#859900', 'accent-amber': '#b58900',
+                        'accent-violet': '#6c71c4', 'accent-teal': '#2aa198', 'accent-red': '#dc322f', 'accent-gray': '#586e75'
+                    }
+                },
+                {
+                    id: 'solarized-light', name: { de: 'Solarized Hell', en: 'Solarized Light' }, dark: false,
+                    colors: {
+                        'bg-color': '#fdf6e3', 'panel-color': '#eee8d5', 'sidebar-color': '#eee8d5',
+                        'border-color': '#93a1a1', 'panel-border': '#d5cdb6',
+                        'text-color': '#073642', 'text-muted': '#586e75',
+                        'heading-color': '#002b36', 'subtitle-color': '#073642',
+                        'link-color': '#268bd2', 'link-hover': '#1e6fa3',
+                        'code-bg': '#f5efdc', 'info-box': '#e8dfc9',
+                        'shadow-color': 'rgba(0, 0, 0, 0.12)', 'shadow-color-strong': 'rgba(0, 0, 0, 0.22)',
+                        'table-alt': 'rgba(0, 0, 0, 0.025)',
+                        'search-match': 'rgba(181, 137, 0, 0.35)', 'search-text': '#002b36',
+                        'tok-kw': '#859900', 'tok-str': '#2aa198', 'tok-num': '#d33682', 'tok-com': '#93a1a1',
+                        'accent-blue': '#268bd2', 'accent-green': '#859900', 'accent-amber': '#b58900',
+                        'accent-violet': '#6c71c4', 'accent-teal': '#2aa198', 'accent-red': '#dc322f', 'accent-gray': '#839496'
+                    }
+                },
+                {
+                    id: 'dracula', name: { de: 'Dracula', en: 'Dracula' }, dark: true,
+                    colors: {
+                        'bg-color': '#282a36', 'panel-color': '#343746', 'sidebar-color': '#21222c',
+                        'border-color': '#44475a', 'panel-border': '#44475a',
+                        'text-color': '#f8f8f2', 'text-muted': '#bdc1d4',
+                        'heading-color': '#ffffff', 'subtitle-color': '#f8f8f2',
+                        'link-color': '#8be9fd', 'link-hover': '#bd93f9',
+                        'code-bg': '#21222c', 'info-box': '#44475a',
+                        'tok-kw': '#ff79c6', 'tok-str': '#f1fa8c', 'tok-num': '#bd93f9', 'tok-com': '#6272a4',
+                        'accent-blue': '#8be9fd', 'accent-green': '#50fa7b', 'accent-amber': '#f1fa8c',
+                        'accent-violet': '#bd93f9', 'accent-teal': '#8be9fd', 'accent-red': '#ff5555', 'accent-gray': '#6272a4'
+                    }
+                },
+                {
+                    id: 'nord', name: { de: 'Nord', en: 'Nord' }, dark: true,
+                    colors: {
+                        'bg-color': '#2e3440', 'panel-color': '#3b4252', 'sidebar-color': '#2e3440',
+                        'border-color': '#4c566a', 'panel-border': '#4c566a',
+                        'text-color': '#d8dee9', 'text-muted': '#a5adbb',
+                        'heading-color': '#eceff4', 'subtitle-color': '#e5e9f0',
+                        'link-color': '#88c0d0', 'link-hover': '#8fbcbb',
+                        'code-bg': '#292e39', 'info-box': '#434c5e',
+                        'tok-kw': '#81a1c1', 'tok-str': '#a3be8c', 'tok-num': '#b48ead', 'tok-com': '#616e88',
+                        'accent-blue': '#5e81ac', 'accent-green': '#a3be8c', 'accent-amber': '#ebcb8b',
+                        'accent-violet': '#b48ead', 'accent-teal': '#8fbcbb', 'accent-red': '#bf616a', 'accent-gray': '#4c566a'
+                    }
+                },
+                {
+                    id: 'gruvbox-dark', name: { de: 'Gruvbox Dunkel', en: 'Gruvbox Dark' }, dark: true,
+                    colors: {
+                        'bg-color': '#282828', 'panel-color': '#3c3836', 'sidebar-color': '#1d2021',
+                        'border-color': '#504945', 'panel-border': '#504945',
+                        'text-color': '#ebdbb2', 'text-muted': '#a89984',
+                        'heading-color': '#fbf1c7', 'subtitle-color': '#ebdbb2',
+                        'link-color': '#83a598', 'link-hover': '#8ec07c',
+                        'code-bg': '#1d2021', 'info-box': '#3c3836',
+                        'tok-kw': '#fb4934', 'tok-str': '#b8bb26', 'tok-num': '#d3869b', 'tok-com': '#928374',
+                        'accent-blue': '#83a598', 'accent-green': '#b8bb26', 'accent-amber': '#fabd2f',
+                        'accent-violet': '#d3869b', 'accent-teal': '#8ec07c', 'accent-red': '#fb4934', 'accent-gray': '#928374'
+                    }
+                },
+                {
+                    id: 'gruvbox-light', name: { de: 'Gruvbox Hell', en: 'Gruvbox Light' }, dark: false,
+                    colors: {
+                        'bg-color': '#fbf1c7', 'panel-color': '#f2e5bc', 'sidebar-color': '#f2e5bc',
+                        'border-color': '#d5c4a1', 'panel-border': '#d5c4a1',
+                        'text-color': '#3c3836', 'text-muted': '#7c6f64',
+                        'heading-color': '#282828', 'subtitle-color': '#3c3836',
+                        'link-color': '#076678', 'link-hover': '#427b58',
+                        'code-bg': '#ebdbb2', 'info-box': '#e0d3a8',
+                        'shadow-color': 'rgba(60, 56, 54, 0.18)', 'shadow-color-strong': 'rgba(60, 56, 54, 0.3)',
+                        'table-alt': 'rgba(0, 0, 0, 0.025)',
+                        'search-match': 'rgba(181, 118, 20, 0.35)', 'search-text': '#282828',
+                        'tok-kw': '#9d0006', 'tok-str': '#79740e', 'tok-num': '#8f3f71', 'tok-com': '#a89984',
+                        'accent-blue': '#076678', 'accent-green': '#79740e', 'accent-amber': '#b57614',
+                        'accent-violet': '#8f3f71', 'accent-teal': '#427b58', 'accent-red': '#9d0006', 'accent-gray': '#7c6f64'
+                    }
+                },
+                {
+                    id: 'monokai', name: { de: 'Monokai', en: 'Monokai' }, dark: true,
+                    colors: {
+                        'bg-color': '#272822', 'panel-color': '#2f302a', 'sidebar-color': '#1e1f1c',
+                        'border-color': '#49483e', 'panel-border': '#49483e',
+                        'text-color': '#f8f8f2', 'text-muted': '#a6a28c',
+                        'heading-color': '#f8f8f2', 'subtitle-color': '#e6db74',
+                        'link-color': '#66d9ef', 'link-hover': '#a6e22e',
+                        'code-bg': '#1e1f1c', 'info-box': '#3e3d32',
+                        'tok-kw': '#f92672', 'tok-str': '#e6db74', 'tok-num': '#ae81ff', 'tok-com': '#75715e',
+                        'accent-blue': '#66d9ef', 'accent-green': '#a6e22e', 'accent-amber': '#e6db74',
+                        'accent-violet': '#ae81ff', 'accent-teal': '#66d9ef', 'accent-red': '#f92672', 'accent-gray': '#75715e'
+                    }
+                },
+                {
+                    id: 'tokyo-night', name: { de: 'Tokyo Night', en: 'Tokyo Night' }, dark: true,
+                    colors: {
+                        'bg-color': '#1a1b26', 'panel-color': '#1f2335', 'sidebar-color': '#16161e',
+                        'border-color': '#292e42', 'panel-border': '#292e42',
+                        'text-color': '#c0caf5', 'text-muted': '#9aa5ce',
+                        'heading-color': '#ffffff', 'subtitle-color': '#c0caf5',
+                        'link-color': '#7aa2f7', 'link-hover': '#7dcfff',
+                        'code-bg': '#16161e', 'info-box': '#292e42',
+                        'tok-kw': '#bb9af7', 'tok-str': '#9ece6a', 'tok-num': '#ff9e64', 'tok-com': '#565f89',
+                        'accent-blue': '#7aa2f7', 'accent-green': '#9ece6a', 'accent-amber': '#e0af68',
+                        'accent-violet': '#bb9af7', 'accent-teal': '#7dcfff', 'accent-red': '#f7768e', 'accent-gray': '#565f89'
+                    }
+                },
+                {
+                    id: 'catppuccin-mocha', name: { de: 'Catppuccin Mocha', en: 'Catppuccin Mocha' }, dark: true,
+                    colors: {
+                        'bg-color': '#1e1e2e', 'panel-color': '#313244', 'sidebar-color': '#181825',
+                        'border-color': '#45475a', 'panel-border': '#45475a',
+                        'text-color': '#cdd6f4', 'text-muted': '#a6adc8',
+                        'heading-color': '#f5e0dc', 'subtitle-color': '#cdd6f4',
+                        'link-color': '#89b4fa', 'link-hover': '#74c7ec',
+                        'code-bg': '#181825', 'info-box': '#313244',
+                        'tok-kw': '#cba6f7', 'tok-str': '#a6e3a1', 'tok-num': '#fab387', 'tok-com': '#6c7086',
+                        'accent-blue': '#89b4fa', 'accent-green': '#a6e3a1', 'accent-amber': '#f9e2af',
+                        'accent-violet': '#cba6f7', 'accent-teal': '#94e2d5', 'accent-red': '#f38ba8', 'accent-gray': '#6c7086'
+                    }
+                },
+                {
+                    id: 'catppuccin-latte', name: { de: 'Catppuccin Latte', en: 'Catppuccin Latte' }, dark: false,
+                    colors: {
+                        'bg-color': '#eff1f5', 'panel-color': '#ffffff', 'sidebar-color': '#e6e9ef',
+                        'border-color': '#ccd0da', 'panel-border': '#dce0e8',
+                        'text-color': '#4c4f69', 'text-muted': '#6c6f85',
+                        'heading-color': '#1e1e2e', 'subtitle-color': '#4c4f69',
+                        'link-color': '#1e66f5', 'link-hover': '#7287fd',
+                        'code-bg': '#e6e9ef', 'info-box': '#dce0e8',
+                        'shadow-color': 'rgba(76, 79, 105, 0.15)', 'shadow-color-strong': 'rgba(76, 79, 105, 0.28)',
+                        'table-alt': 'rgba(0, 0, 0, 0.02)',
+                        'search-match': 'rgba(223, 142, 29, 0.35)', 'search-text': '#1e1e2e',
+                        'tok-kw': '#8839ef', 'tok-str': '#40a02b', 'tok-num': '#fe640b', 'tok-com': '#9ca0b0',
+                        'accent-blue': '#1e66f5', 'accent-green': '#40a02b', 'accent-amber': '#df8e1d',
+                        'accent-violet': '#8839ef', 'accent-teal': '#179299', 'accent-red': '#d20f39', 'accent-gray': '#8c8fa1'
+                    }
+                },
+                {
+                    id: 'one-light', name: { de: 'One Light', en: 'One Light' }, dark: false,
+                    colors: {
+                        'bg-color': '#fafafa', 'panel-color': '#ffffff', 'sidebar-color': '#f0f0f1',
+                        'border-color': '#d4d4d5', 'panel-border': '#e5e5e6',
+                        'text-color': '#383a42', 'text-muted': '#696c77',
+                        'heading-color': '#1c1d21', 'subtitle-color': '#383a42',
+                        'link-color': '#4078f2', 'link-hover': '#2a5cd6',
+                        'code-bg': '#f0f0f1', 'info-box': '#e5e5e6',
+                        'shadow-color': 'rgba(56, 58, 66, 0.12)', 'shadow-color-strong': 'rgba(56, 58, 66, 0.22)',
+                        'table-alt': 'rgba(0, 0, 0, 0.015)',
+                        'search-match': 'rgba(193, 132, 1, 0.35)', 'search-text': '#1c1d21',
+                        'tok-kw': '#a626a4', 'tok-str': '#50a14f', 'tok-num': '#986801', 'tok-com': '#a0a1a7',
+                        'accent-blue': '#4078f2', 'accent-green': '#50a14f', 'accent-amber': '#c18401',
+                        'accent-violet': '#a626a4', 'accent-teal': '#0184bc', 'accent-red': '#e45649', 'accent-gray': '#a0a1a7'
+                    }
+                },
+                {
+                    id: 'high-contrast', name: { de: 'Hoher Kontrast', en: 'High Contrast' }, dark: true,
+                    colors: {
+                        'bg-color': '#000000', 'panel-color': '#0a0a0a', 'sidebar-color': '#000000',
+                        'border-color': '#ffffff', 'panel-border': '#ffffff',
+                        'text-color': '#ffffff', 'text-muted': '#e0e0e0',
+                        'heading-color': '#ffff00', 'subtitle-color': '#ffffff',
+                        'link-color': '#ffff00', 'link-hover': '#ffcc00',
+                        'code-bg': '#1a1a1a', 'info-box': '#1a1a1a',
+                        'shadow-color': 'rgba(255, 255, 255, 0.25)', 'shadow-color-strong': 'rgba(255, 255, 255, 0.45)',
+                        'table-alt': 'rgba(255, 255, 255, 0.08)',
+                        'search-match': 'rgba(255, 255, 0, 0.6)', 'search-text': '#000000',
+                        'tok-kw': '#00ffff', 'tok-str': '#00ff00', 'tok-num': '#ffff00', 'tok-com': '#c0c0c0',
+                        'accent-blue': '#00bfff', 'accent-green': '#00ff00', 'accent-amber': '#ffff00',
+                        'accent-violet': '#ff00ff', 'accent-teal': '#00ffff', 'accent-red': '#ff3030', 'accent-gray': '#c0c0c0'
+                    }
+                },
+                {
+                    id: 'sepia', name: { de: 'Sepia', en: 'Sepia' }, dark: false,
+                    colors: {
+                        'bg-color': '#f4ecd8', 'panel-color': '#fbf5e6', 'sidebar-color': '#efe6ce',
+                        'border-color': '#d6c8a8', 'panel-border': '#e0d3b3',
+                        'text-color': '#5b4636', 'text-muted': '#7c6650',
+                        'heading-color': '#3b2c1e', 'subtitle-color': '#5b4636',
+                        'link-color': '#8b5a2b', 'link-hover': '#6b4420',
+                        'code-bg': '#efe6ce', 'info-box': '#e8dcc0',
+                        'shadow-color': 'rgba(91, 70, 54, 0.18)', 'shadow-color-strong': 'rgba(91, 70, 54, 0.32)',
+                        'table-alt': 'rgba(91, 70, 54, 0.05)',
+                        'search-match': 'rgba(139, 90, 43, 0.35)', 'search-text': '#3b2c1e',
+                        'tok-kw': '#a0522d', 'tok-str': '#6b8e23', 'tok-num': '#b8860b', 'tok-com': '#9c8a6e',
+                        'accent-blue': '#4682b4', 'accent-green': '#6b8e23', 'accent-amber': '#b8860b',
+                        'accent-violet': '#8b5a8b', 'accent-teal': '#5f9ea0', 'accent-red': '#a52a2a', 'accent-gray': '#8b7355'
+                    }
+                }
+            ]
+        };
+
+        const COLORS_JSON_PATH = 'settings/colors.json';
+
+        let colorConfig = FALLBACK_COLOR_CONFIG;
+        let activeSchemeId = null;
+        let colorsLoadedFromFile = false;
+
+        let lastDarkSchemeId  = 'dark';
+        let lastLightSchemeId = 'light';
+
+        function getSchemeById(id) {
+            return (colorConfig.schemes || []).find(s => s.id === id) || null;
+        }
+
+        function resolveSchemeColors(scheme) {
+            return Object.assign({}, colorConfig.base || {}, scheme.colors || {});
+        }
+
+        async function initColorSchemes() {
+            try {
+                const res = await fetch(COLORS_JSON_PATH, { cache: 'no-cache' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                if (!data || !Array.isArray(data.schemes) || data.schemes.length === 0) {
+                    throw new Error('colors.json has no "schemes" array');
+                }
+                colorConfig = data;
+                colorsLoadedFromFile = true;
+                console.info('[colors] Loaded ' + data.schemes.length + ' schemes from ' + COLORS_JSON_PATH);
+            } catch (err) {
+                console.info(
+                    '[colors] Using built-in palette (' + colorConfig.schemes.length +
+                    ' schemes). To load external colours, serve the folder over HTTP so ' +
+                    COLORS_JSON_PATH + ' can be fetched.'
+                );
+            }
+
+            const stored = readStoredScheme();
+            const preferred = colorConfig.defaultScheme || colorConfig.schemes[0].id;
+            const initial = (stored && getSchemeById(stored)) ? stored
+                          : (getSchemeById(preferred) ? preferred : colorConfig.schemes[0].id);
+
+            const initScheme = getSchemeById(initial);
+            if (initScheme) {
+                if (initScheme.dark) lastDarkSchemeId = initScheme.id;
+                else                 lastLightSchemeId = initScheme.id;
+            }
+
+            applyColorScheme(initial);
+        }
+
+        function applyColorScheme(id) {
+            const scheme = getSchemeById(id) || colorConfig.schemes[0];
+            if (!scheme) return;
+
+            const root = document.documentElement;
+            const colors = resolveSchemeColors(scheme);
+
+            Object.keys(colors).forEach(key => {
+                if (colors[key] === null || colors[key] === undefined) return;
+                root.style.setProperty('--' + key, String(colors[key]));
+            });
+
+            root.style.colorScheme = scheme.dark ? 'dark' : 'light';
+            root.classList.toggle('theme-dark', !!scheme.dark);
+            root.setAttribute('data-color-scheme', scheme.id);
+
+            if (scheme.dark) lastDarkSchemeId = scheme.id;
+            else             lastLightSchemeId = scheme.id;
+
+            activeSchemeId = scheme.id;
+            storeScheme(scheme.id);
+
+            updateThemeToggleIcon(scheme.dark);
+        }
+
+        function updateThemeToggleIcon(isDark) {
+            const icon = document.getElementById('themeToggleIcon');
+            if (!icon) return;
+            icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        }
+
+        function toggleDarkLight() {
+            hideThemeMenu();
+            const current = getSchemeById(activeSchemeId);
+            if (!current) return;
+            if (current.dark) {
+                const target = getSchemeById(lastLightSchemeId) ? lastLightSchemeId
+                             : (colorConfig.schemes.find(s => !s.dark) || {}).id;
+                if (target) applyColorScheme(target);
+            } else {
+                const target = getSchemeById(lastDarkSchemeId) ? lastDarkSchemeId
+                             : (colorConfig.schemes.find(s => s.dark) || {}).id;
+                if (target) applyColorScheme(target);
+            }
+        }
+
+        function buildThemeMenuItems() {
+            const menu = document.getElementById('themeContextMenu');
+            if (!menu) return;
+            menu.innerHTML = '';
+
+            const header = document.createElement('div');
+            header.className = 'theme-menu-header';
+            header.textContent = isGerman
+                ? 'Farbschema wählen (' + colorConfig.schemes.length + ')'
+                : 'Choose colour scheme (' + colorConfig.schemes.length + ')';
+            menu.appendChild(header);
+
+            const schemes = colorConfig.schemes || [];
+            const langTag = isGerman ? 'de' : 'en';
+            const PREVIEW_KEYS = ['bg-color', 'panel-color', 'code-bg',
+                                  'link-color', 'accent-green', 'accent-amber'];
+
+            schemes.forEach(s => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'theme-menu-item' + (s.id === activeSchemeId ? ' active' : '');
+                btn.setAttribute('role', 'menuitem');
+
+                const swWrap = document.createElement('span');
+                swWrap.className = 'scheme-swatches';
+                const colors = resolveSchemeColors(s);
+                PREVIEW_KEYS.forEach(k => {
+                    const dot = document.createElement('span');
+                    dot.style.background = colors[k] || 'transparent';
+                    swWrap.appendChild(dot);
+                });
+                btn.appendChild(swWrap);
+
+                const nameEl = document.createElement('span');
+                nameEl.className = 'scheme-name';
+                const name = s.name || {};
+                nameEl.textContent = (typeof name === 'string' ? name : (name[langTag] || name.de || name.en || s.id));
+                btn.appendChild(nameEl);
+
+                const check = document.createElement('i');
+                check.className = 'fa-solid fa-check scheme-check';
+                btn.appendChild(check);
+
+                btn.addEventListener('click', () => {
+                    applyColorScheme(s.id);
+                    hideThemeMenu();
+                });
+
+                menu.appendChild(btn);
+            });
+        }
+
+        function showThemeMenu(e) {
+            if (e) e.preventDefault();
+            const menu = document.getElementById('themeContextMenu');
+            if (!menu) return;
+            buildThemeMenuItems();
+            menu.classList.add('open');
+        }
+
+        function hideThemeMenu() {
+            const menu = document.getElementById('themeContextMenu');
+            if (menu) menu.classList.remove('open');
+        }
+
+        function updateDownloadVisibility() {
+            const isLocal = (location.protocol === 'file:');
+            const btn = document.getElementById('downloadBtn');
+            const divider = document.getElementById('downloadDivider');
+            if (btn)     btn.style.display = isLocal ? 'none' : '';
+            if (divider) divider.style.display = isLocal ? 'none' : '';
+        }
+
+        function storageKey() {
+            return (colorConfig && colorConfig.storageKey) || 'cheatSheetCoding.scheme';
+        }
+        function storeScheme(id) {
+            try { localStorage.setItem(storageKey(), id); } catch (_) {}
+        }
+        function readStoredScheme() {
+            try { return localStorage.getItem(storageKey()); } catch (_) { return null; }
+        }
+
+        /* ============================================================ */
         /* BLOCK DEFINITIONS                                            */
         /* ============================================================ */
 
         const BLOCK_TYPES = {
             declare: {
-                icon: 'fa-cube', color: '#3b82f6',
+                icon: 'fa-cube', color: 'var(--accent-blue)',
                 title: { de: 'Variable deklarieren', en: 'Declare variable' },
                 params: [
                     { key: 'type', kind: 'select', options: ['int', 'double', 'boolean', 'String'], default: 'int' },
@@ -1086,7 +1566,7 @@ ENDE SOLANGE</td>
                 ]
             },
             assign: {
-                icon: 'fa-pen', color: '#3b82f6',
+                icon: 'fa-pen', color: 'var(--accent-blue)',
                 title: { de: 'Wert zuweisen', en: 'Assign value' },
                 params: [
                     { key: 'name', kind: 'text', default: 'x', size: 4 },
@@ -1094,29 +1574,29 @@ ENDE SOLANGE</td>
                 ]
             },
             output: {
-                icon: 'fa-terminal', color: '#10b981',
+                icon: 'fa-terminal', color: 'var(--accent-green)',
                 title: { de: 'Ausgabe', en: 'Output' },
                 params: [{ key: 'value', kind: 'text', default: '"Hallo"', size: 12 }]
             },
             input: {
-                icon: 'fa-keyboard', color: '#14b8a6',
+                icon: 'fa-keyboard', color: 'var(--accent-teal)',
                 title: { de: 'Eingabe', en: 'Input' },
                 params: [{ key: 'name', kind: 'text', default: 'eingabe', size: 8 }]
             },
             if: {
-                icon: 'fa-code-branch', color: '#f59e0b',
+                icon: 'fa-code-branch', color: 'var(--accent-amber)',
                 title: { de: 'Wenn / Sonst', en: 'If / Else' },
                 container: true, hasElse: true,
                 params: [{ key: 'cond', kind: 'text', default: 'x > 10', size: 14 }]
             },
             while: {
-                icon: 'fa-rotate', color: '#8b5cf6',
+                icon: 'fa-rotate', color: 'var(--accent-violet)',
                 title: { de: 'Solange-Schleife', en: 'While loop' },
                 container: true,
                 params: [{ key: 'cond', kind: 'text', default: 'x < 10', size: 14 }]
             },
             for: {
-                icon: 'fa-repeat', color: '#8b5cf6',
+                icon: 'fa-repeat', color: 'var(--accent-violet)',
                 title: { de: 'Zählschleife', en: 'For loop' },
                 container: true,
                 params: [
@@ -1127,17 +1607,17 @@ ENDE SOLANGE</td>
                 ]
             },
             comment: {
-                icon: 'fa-comment', color: '#6b7280',
+                icon: 'fa-comment', color: 'var(--accent-gray)',
                 title: { de: 'Kommentar', en: 'Comment' },
                 params: [{ key: 'text', kind: 'text', default: '...', size: 22, bilingual: true }]
             },
             break: {
-                icon: 'fa-hand', color: '#ef4444',
+                icon: 'fa-hand', color: 'var(--accent-red)',
                 title: { de: 'Abbrechen (break)', en: 'Break' },
                 params: []
             },
             continue: {
-                icon: 'fa-forward', color: '#ef4444',
+                icon: 'fa-forward', color: 'var(--accent-red)',
                 title: { de: 'Fortfahren (continue)', en: 'Continue' },
                 params: []
             }
@@ -1529,7 +2009,7 @@ ENDE SOLANGE</td>
                     if (block.hasElse) {
                         el.appendChild(renderBranch(block, 'else', { de: 'Sonst', en: 'Else' }));
                         const rm = document.createElement('button');
-                        rm.className = 'text-[0.65rem] mt-1 text-[var(--text-muted)] hover:text-[#ef4444] font-semibold';
+                        rm.className = 'text-[0.65rem] mt-1 text-[var(--text-muted)] hover:text-[var(--accent-red)] font-semibold';
                         rm.innerHTML = '<i class="fa-solid fa-minus mr-1"></i><span data-lang-de>Sonst entfernen</span><span data-lang-en style="display:none;">Remove else</span>';
                         rm.onclick = () => {
                             block.hasElse = false;
@@ -1884,10 +2364,10 @@ ENDE SOLANGE</td>
             const original = btn.innerHTML;
             navigator.clipboard.writeText(code).then(() => {
                 btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i>OK';
-                btn.classList.add('text-[#10b981]');
+                btn.classList.add('text-[var(--accent-green)]');
                 setTimeout(() => {
                     btn.innerHTML = original;
-                    btn.classList.remove('text-[#10b981]');
+                    btn.classList.remove('text-[var(--accent-green)]');
                     applyLang();
                 }, 1200);
             }).catch(() => {});
@@ -1965,6 +2445,34 @@ ENDE SOLANGE</td>
             program = EXAMPLES[0]();
             exampleIndex = 1;
             renderProgram();
+
+            updateDownloadVisibility();
+
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (themeBtn) {
+                themeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    toggleDarkLight();
+                });
+                themeBtn.addEventListener('contextmenu', (e) => {
+                    showThemeMenu(e);
+                });
+            }
+
+            document.addEventListener('click', (e) => {
+                const menu = document.getElementById('themeContextMenu');
+                if (!menu || !menu.classList.contains('open')) return;
+                const btn = document.getElementById('themeToggleBtn');
+                if (menu.contains(e.target)) return;
+                if (btn && btn.contains(e.target)) return;
+                hideThemeMenu();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') hideThemeMenu();
+            });
+
+            initColorSchemes();
 
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {

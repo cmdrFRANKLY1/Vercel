@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Der Weg des Datenschutzes</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg-color: #121212;
+        --panel-color: #1e1e1e;
+        --border-color: #333333;
+        --text-color: #e0e0e0;
+        --text-muted: #b0b0b0;
+        --link-color: #b0b0b0;
+        --heading-color: #ffffff;
+        --code-bg: #2a2a2a;
+        --shadow-color: rgba(0,0,0,.45);
+        --card-shadow: 0 0 22px 0 var(--shadow-color), 0 0 10px 0 var(--shadow-color), 0 4px 24px 0 var(--shadow-color);
+    }
+    * { box-sizing: border-box; }
+    html { font-size: 17px; }
+    body {
+        margin: 0; background: var(--bg-color); color: var(--text-color);
+        font-family: 'Inter', sans-serif; overflow: hidden;
+        display: flex; justify-content: center; align-items: center; min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    .viz-shell {
+        position: relative;
+        width: 100%; max-width: 1600px; height: 90vh; min-height: 520px;
+        margin: 1.25rem;
+        background: var(--panel-color);
+        border: 1px solid var(--border-color);
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+    }
+
+    .canvas-wrap {
+        position: absolute; inset: 0;
+        background: var(--bg-color);
+    }
+    canvas { display: block; width: 100%; height: 100%; }
+
+    .title-tag {
+        position: absolute;
+        top: 1.1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: .55rem 1.1rem .6rem 1.1rem;
+        background: rgba(20,20,20,0.78);
+        border: 1px solid var(--border-color);
+        border-radius: .7rem;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 25;
+        pointer-events: none;
+        text-align: center;
+        box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+        white-space: nowrap;
+    }
+    .title-tag .t1 {
+        display: block;
+        font-size: .88rem; font-weight: 800; color: var(--heading-color);
+        letter-spacing: .01em; line-height: 1.2;
+    }
+    .title-tag .t2 {
+        display: block;
+        font-size: .58rem; font-weight: 600; letter-spacing: .18em;
+        text-transform: uppercase; color: var(--text-muted); margin-top: .25rem;
+    }
+
+    .loading-bar-container {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        height: 5px; background: rgba(255,255,255,0.08); z-index: 40;
+        overflow: hidden;
+    }
+    .loading-bar-fill {
+        height: 100%; width: 0%; background: var(--link-color);
+        transition: width 0.1s linear;
+    }
+
+    @media (max-width: 600px) {
+        .title-tag { top: .7rem; padding: .45rem .8rem .5rem .8rem; }
+        .title-tag .t1 { font-size: .74rem; }
+        .title-tag .t2 { font-size: .52rem; }
+    }
+</style>
+</head>
+<body>
+
+<section class="viz-shell">
+    <div class="canvas-wrap" id="netCanvas-wrapper">
+        <canvas id="netCanvas"></canvas>
+
+        <div class="title-tag">
+            <span class="t1">Der Weg des Datenschutzes</span>
+            <span class="t2">In 6 einfachen Schritten</span>
+        </div>
+    </div>
+    <div class="loading-bar-container">
+        <div class="loading-bar-fill" id="loadingBarFill"></div>
+    </div>
+</section>
+
+<script>
+/* ================================================================
+   DIE 6 SCHRITTE
+   ================================================================ */
+const STEPS = [
+    { title: 'EU',              sub: 'Macht die DSGVO',            color: '#5b8def', icon: 'stars' },
+    { title: 'Deutschland',     sub: 'Macht das BDSG',             color: '#e0b64a', icon: 'paragraph' },
+    { title: 'Firmen & Ämter',  sub: 'Müssen sich dran halten',    color: '#c58af9', icon: 'building' },
+    { title: 'Bürger',          sub: 'Können sich beschweren',     color: '#5fd39a', icon: 'person' },
+    { title: 'Aufsichtsbehörde',sub: 'Prüft und bestraft',         color: '#f0a35e', icon: 'eye' },
+    { title: 'Bußgeld',         sub: 'Bis zu 20 Mio. €',           color: '#e0685a', icon: 'euro' },
+];
+
+/* ================================================================
+   ZEITPLAN
+   ================================================================ */
+const CYCLE = 16.0;                                      // Gesamtdauer
+const STEP_TIMES = [0.5, 2.5, 4.5, 6.5, 8.5, 10.5];      // Aktivierung
+const HOLD_END   = 14.0;                                 // Ende der Haltephase
+
+/* ================================================================
+   HILFSFUNKTIONEN
+   ================================================================ */
+function hexA(hex, a) {
+    const h = hex.replace('#', '');
+    const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
+function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+function easeOutBack(t) {
+    const c1 = 1.70158, c3 = c1 + 1;
+    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
+
+/* ================================================================
+   IKONEN
+   ================================================================ */
+function drawStar(ctx, cx, cy, outer, inner, points) {
+    ctx.beginPath();
+    for (let i = 0; i < points * 2; i++) {
+        const r = i % 2 === 0 ? outer : inner;
+        const a = i / (points * 2) * Math.PI * 2 - Math.PI / 2;
+        const px = cx + Math.cos(a) * r;
+        const py = cy + Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+}
+
+function drawStars(ctx, x, y, r) {
+    for (let i = 0; i < 12; i++) {
+        const a = i / 12 * Math.PI * 2 - Math.PI / 2;
+        const sx = x + Math.cos(a) * r * 0.68;
+        const sy = y + Math.sin(a) * r * 0.68;
+        drawStar(ctx, sx, sy, r * 0.20, r * 0.085, 5);
+    }
+}
+
+function drawParagraph(ctx, x, y, r) {
+    ctx.font = `800 ${Math.round(r * 1.95)}px Georgia, "Times New Roman", serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('§', x, y + r * 0.10);
+}
+
+function drawBuilding(ctx, x, y, r) {
+    const bw = r * 1.10, bh = r * 1.55;
+    const bx = x - bw / 2, by = y - bh / 2 + r * 0.12;
+    ctx.beginPath();
+    ctx.rect(bx, by, bw, bh);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(bx - r * 0.10, by);
+    ctx.lineTo(x, by - r * 0.38);
+    ctx.lineTo(bx + bw + r * 0.10, by);
+    ctx.stroke();
+    const ww = bw * 0.20, wh = bh * 0.15;
+    [-bw * 0.24, bw * 0.24].forEach(dx => {
+        [-bh * 0.26, 0, bh * 0.26].forEach(dy => {
+            ctx.beginPath();
+            ctx.rect(x + dx - ww / 2, by + bh * 0.5 + dy - wh / 2, ww, wh);
+            ctx.fill();
+        });
+    });
+}
+
+function drawPerson(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x, y - r * 0.42, r * 0.32, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x - r * 0.58, y + r * 0.85);
+    ctx.quadraticCurveTo(x - r * 0.58, y + r * 0.05, x, y + r * 0.05);
+    ctx.quadraticCurveTo(x + r * 0.58, y + r * 0.05, x + r * 0.58, y + r * 0.85);
+    ctx.closePath();
+    ctx.fill();
+}
+
+function drawEye(ctx, x, y, r) {
+    const w = r * 0.88, h = r * 0.68;
+    ctx.beginPath();
+    ctx.moveTo(x - w, y);
+    ctx.quadraticCurveTo(x, y - h, x + w, y);
+    ctx.quadraticCurveTo(x, y + h, x - w, y);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.30, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function drawEuro(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.90, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.font = `800 ${Math.round(r * 1.30)}px Inter, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('€', x, y + r * 0.06);
+}
+
+function drawIcon(name, ctx, x, y, r) {
+    switch (name) {
+        case 'stars':     drawStars(ctx, x, y, r); break;
+        case 'paragraph': drawParagraph(ctx, x, y, r); break;
+        case 'building':  drawBuilding(ctx, x, y, r); break;
+        case 'person':    drawPerson(ctx, x, y, r); break;
+        case 'eye':       drawEye(ctx, x, y, r); break;
+        case 'euro':      drawEuro(ctx, x, y, r); break;
+    }
+}
+
+/* ================================================================
+   LAYOUT
+   ================================================================ */
+const layout = {
+    positions: [],
+    nodeR: 50,
+    isVert: false
+};
+
+function computeLayout() {
+    const n = STEPS.length;
+    const isVert = canvasWidth < 780;
+    layout.isVert = isVert;
+
+    let nodeR;
+    if (isVert) {
+        nodeR = Math.max(22, Math.min(canvasWidth * 0.10, canvasHeight / (n * 3.0), 46));
+    } else {
+        nodeR = Math.max(28, Math.min(canvasWidth / (n * 3.0), canvasHeight * 0.11, 58));
+    }
+    layout.nodeR = nodeR;
+
+    const positions = [];
+    if (isVert) {
+        const padTop = 64 + nodeR;
+        const padBot = 64 + nodeR;
+        const topY = padTop;
+        const botY = canvasHeight - padBot;
+        const stepY = (botY - topY) / (n - 1);
+        for (let i = 0; i < n; i++) {
+            positions.push({ x: canvasWidth * 0.24, y: topY + stepY * i });
+        }
+    } else {
+        const padX = 74 + nodeR;
+        const startX = padX;
+        const endX = canvasWidth - padX;
+        const stepX = (endX - startX) / (n - 1);
+        const baseY = canvasHeight * 0.44;
+        for (let i = 0; i < n; i++) {
+            positions.push({ x: startX + stepX * i, y: baseY });
+        }
+    }
+    layout.positions = positions;
+}
+
+function posAt(p) {
+    const n = STEPS.length;
+    const idx = Math.max(0, Math.min(1, p)) * (n - 1);
+    const i = Math.min(Math.floor(idx), n - 2);
+    const k = idx - i;
+    const a = layout.positions[i];
+    const b = layout.positions[i + 1];
+    return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k };
+}
+
+function cometProgress(t) {
+    const n = STEPS.length;
+    if (t <= STEP_TIMES[0]) return 0;
+    if (t >= STEP_TIMES[n - 1]) return 1;
+    for (let i = 0; i < n - 1; i++) {
+        if (t >= STEP_TIMES[i] && t < STEP_TIMES[i + 1]) {
+            const k = (t - STEP_TIMES[i]) / (STEP_TIMES[i + 1] - STEP_TIMES[i]);
+            return (i + easeInOutCubic(k)) / (n - 1);
+        }
+    }
+    return 1;
+}
+
+/* ================================================================
+   CANVAS
+   ================================================================ */
+let canvas, ctx, wrapper;
+let canvasWidth = 0, canvasHeight = 0;
+
+function drawBackground() {
+    const cx = canvasWidth / 2, cy = canvasHeight / 2;
+    const R = Math.max(canvasWidth, canvasHeight) * 0.75;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+    grad.addColorStop(0, 'rgba(38,35,30,0.55)');
+    grad.addColorStop(0.55, 'rgba(24,22,20,0.25)');
+    grad.addColorStop(1, 'rgba(18,18,18,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+}
+
+function drawPath(t) {
+    const pos = layout.positions;
+    const n = pos.length;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(pos[0].x, pos[0].y);
+    for (let i = 1; i < n; i++) ctx.lineTo(pos[i].x, pos[i].y);
+    ctx.stroke();
+
+    if (t > STEP_TIMES[0]) {
+        const cp = cometProgress(t);
+        const end = posAt(cp);
+        ctx.strokeStyle = 'rgba(255,255,255,0.30)';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(pos[0].x, pos[0].y);
+        const idxF = cp * (n - 1);
+        const iF = Math.floor(idxF);
+        for (let i = 1; i <= iF; i++) ctx.lineTo(pos[i].x, pos[i].y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function drawBadge(num, x, y, r, active, prog, color) {
+    const isVert = layout.isVert;
+    const bx = isVert ? x - r - 22 : x;
+    const by = isVert ? y : y - r - 26;
+    const br = 13;
+
+    ctx.save();
+    ctx.globalAlpha = active ? (0.45 + 0.55 * prog) : 0.30;
+
+    ctx.beginPath();
+    ctx.arc(bx, by, br, 0, Math.PI * 2);
+    ctx.fillStyle = active ? color : 'rgba(255,255,255,0.10)';
+    ctx.fill();
+
+    ctx.fillStyle = active ? '#0e0e0e' : 'rgba(255,255,255,0.55)';
+    ctx.font = '800 13px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(num), bx, by + 0.5);
+    ctx.restore();
+}
+
+function drawLabels(nd, x, y, r, active, prog) {
+    const isVert = layout.isVert;
+
+    const tx = isVert ? x + r + 18 : x;
+    const ty = isVert ? y - 8 : y + r + 26;
+    const sx = isVert ? x + r + 18 : x;
+    const sy = isVert ? y + 14 : y + r + 48;
+
+    ctx.save();
+    ctx.textAlign = isVert ? 'left' : 'center';
+    ctx.textBaseline = 'middle';
+
+    /* Titel */
+    ctx.globalAlpha = active ? (0.45 + 0.55 * prog) : 0.35;
+    ctx.font = `700 ${isVert ? 16 : 17}px Inter, sans-serif`;
+    ctx.fillStyle = active ? '#ffffff' : 'rgba(255,255,255,0.50)';
+    ctx.fillText(nd.title, tx, ty);
+
+    /* Untertitel */
+    ctx.globalAlpha = active ? (0.35 + 0.55 * prog) : 0.20;
+    ctx.font = `600 ${isVert ? 12 : 12.5}px Inter, sans-serif`;
+    ctx.fillStyle = nd.color;
+    ctx.fillText(nd.sub, sx, sy);
+
+    ctx.restore();
+}
+
+function drawNode(i, t) {
+    const nd = STEPS[i];
+    const p = layout.positions[i];
+    const r = layout.nodeR;
+    const x = p.x, y = p.y;
+
+    const active = t >= STEP_TIMES[i];
+    const prog = active ? Math.min(1, (t - STEP_TIMES[i]) / 0.5) : 0;
+
+    const baseAlpha = active ? (0.38 + 0.62 * prog) : 0.22;
+
+    /* Glow */
+    if (active && prog > 0) {
+        const glowR = r * 2.3;
+        const grad = ctx.createRadialGradient(x, y, r * 0.7, x, y, glowR);
+        grad.addColorStop(0, hexA(nd.color, 0.42 * prog));
+        grad.addColorStop(0.45, hexA(nd.color, 0.14 * prog));
+        grad.addColorStop(1, hexA(nd.color, 0));
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(x, y, glowR, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    /* Pop + sanfter Puls */
+    const pop = (1 + 0.10 * easeOutBack(prog))
+              * (active && prog >= 1 ? (1 + 0.015 * Math.sin(t * 2.5 + i * 1.3)) : 1);
+    const rr = r * pop;
+
+    ctx.save();
+    ctx.globalAlpha = baseAlpha;
+
+    /* Körper */
+    ctx.beginPath();
+    ctx.arc(x, y, rr, 0, Math.PI * 2);
+    ctx.fillStyle = '#1a1816';
+    ctx.fill();
+
+    /* Farbiger Ring */
+    ctx.beginPath();
+    ctx.arc(x, y, rr, 0, Math.PI * 2);
+    ctx.strokeStyle = nd.color;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    /* Innerer Ring */
+    ctx.beginPath();
+    ctx.arc(x, y, rr * 0.86, 0, Math.PI * 2);
+    ctx.strokeStyle = hexA(nd.color, 0.28);
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    /* Icon mit Glow */
+    ctx.fillStyle = nd.color;
+    ctx.strokeStyle = nd.color;
+    ctx.lineWidth = 2.2;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    if (active) {
+        ctx.shadowColor = nd.color;
+        ctx.shadowBlur = 10 * prog;
+    }
+    drawIcon(nd.icon, ctx, x, y, rr * 0.50);
+
+    ctx.restore();
+
+    /* Nummer & Text */
+    drawBadge(i + 1, x, y, rr, active, prog, nd.color);
+    drawLabels(nd, x, y, rr, active, prog);
+}
+
+function drawComet(t) {
+    const n = STEPS.length;
+    const cp = cometProgress(t);
+    const pos = posAt(cp);
+    const r = layout.nodeR;
+
+    /* Schweif */
+    const trailLen = 0.07;
+    const segs = 9;
+    for (let i = segs; i >= 0; i--) {
+        const tt = cp - (i / segs) * trailLen;
+        if (tt < 0) continue;
+        const p = posAt(tt);
+        const a = (1 - i / segs) * 0.45;
+        const rad = r * 0.14 * (1 - (i / segs) * 0.65);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${a})`;
+        ctx.fill();
+    }
+
+    /* Kopf-Glow */
+    const grad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, r * 0.60);
+    grad.addColorStop(0, 'rgba(255,255,255,0.95)');
+    grad.addColorStop(0.35, 'rgba(255,255,255,0.42)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, r * 0.60, 0, Math.PI * 2);
+    ctx.fill();
+
+    /* Kern */
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, r * 0.14, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+}
+
+function drawFrame(t) {
+    if (!ctx || !canvasWidth || !canvasHeight) return;
+
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    drawBackground();
+
+    /* Globales Ein-/Ausblenden */
+    let ga = 1;
+    if (t < 0.5) ga = t / 0.5;
+    else if (t > HOLD_END) ga = Math.max(0, 1 - (t - HOLD_END) / (CYCLE - HOLD_END));
+
+    ctx.save();
+    ctx.globalAlpha = ga;
+
+    drawPath(t);
+    for (let i = 0; i < STEPS.length; i++) drawNode(i, t);
+    drawComet(t);
+
+    ctx.restore();
+}
+
+/* ================================================================
+   ANIMATION
+   ================================================================ */
+let cycleTime = 0;
+let lastTs = 0;
+
+function loop(ts) {
+    if (!lastTs) lastTs = ts;
+    const dt = Math.min(0.1, (ts - lastTs) / 1000);
+    lastTs = ts;
+
+    cycleTime += dt;
+    if (cycleTime >= CYCLE) cycleTime -= CYCLE;
+
+    const fill = document.getElementById('loadingBarFill');
+    if (fill) fill.style.width = ((cycleTime / CYCLE) * 100) + '%';
+
+    drawFrame(cycleTime);
+    requestAnimationFrame(loop);
+}
+
+/* ================================================================
+   RESIZE & INIT
+   ================================================================ */
+function resizeCanvas() {
+    if (!wrapper || !canvas) return;
+    const rect = wrapper.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = Math.round(rect.width  * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    canvas.style.width  = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    canvasWidth = rect.width;
+    canvasHeight = rect.height;
+    computeLayout();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    canvas  = document.getElementById('netCanvas');
+    wrapper = document.getElementById('netCanvas-wrapper');
+    ctx = canvas.getContext('2d');
+
+    if (window.ResizeObserver) {
+        new ResizeObserver(() => resizeCanvas()).observe(wrapper);
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    requestAnimationFrame(() => {
+        resizeCanvas();
+        requestAnimationFrame(loop);
+    });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Random Network</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg-color: #121212;
+        --panel-color: #1e1e1e;
+        --border-color: #333333;
+        --text-color: #e0e0e0;
+        --text-muted: #b0b0b0;
+        --link-color: #b0b0b0;
+        --heading-color: #ffffff;
+        --code-bg: #2a2a2a;
+        --shadow-color: rgba(0,0,0,.45);
+        --card-shadow: 0 0 22px 0 var(--shadow-color), 0 0 10px 0 var(--shadow-color), 0 4px 24px 0 var(--shadow-color);
+    }
+    * { box-sizing: border-box; }
+    html { font-size: 17px; }
+    body {
+        margin: 0; background: var(--bg-color); color: var(--text-color);
+        font-family: 'Inter', sans-serif; overflow: hidden;
+        display: flex; justify-content: center; align-items: center; min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    .viz-shell {
+        position: relative;
+        width: 100%; max-width: 1600px; height: 90vh; min-height: 520px;
+        margin: 1.25rem;
+        background: var(--panel-color);
+        border: 1px solid var(--border-color);
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+    }
+
+    .canvas-wrap {
+        position: absolute; inset: 0;
+        background: var(--bg-color);
+    }
+    canvas { display: block; width: 100%; height: 100%; }
+
+    .reload-btn {
+        position: absolute; top: .85rem; right: .85rem;
+        width: 42px; height: 42px; border-radius: 50%;
+        background: rgba(30, 30, 30, 0.85);
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        transition: background .15s, color .15s, border-color .15s, transform .3s ease;
+        z-index: 30;
+    }
+    .reload-btn:hover {
+        background: var(--code-bg); color: var(--heading-color);
+        border-color: var(--link-color);
+    }
+    .reload-btn:active { transform: scale(0.92); }
+    .reload-btn.spinning { transform: rotate(360deg); transition: transform .6s cubic-bezier(.4,0,.2,1); }
+    .reload-btn svg { width: 18px; height: 18px; }
+
+    .group-panel {
+        position: absolute;
+        top: .85rem;
+        right: 4.2rem;
+        width: 240px;
+        max-height: calc(100% - 1.7rem);
+        background: rgba(20,20,20,0.78);
+        border: 1px solid var(--border-color);
+        border-radius: .75rem;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 25;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 8px 28px rgba(0,0,0,0.4);
+        transition: width .22s ease;
+    }
+    .group-panel.collapsed { width: auto; }
+
+    .group-panel-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: .55rem .7rem .55rem .9rem;
+        font-size: .68rem;
+        text-transform: uppercase;
+        letter-spacing: .14em;
+        font-weight: 700;
+        color: var(--text-muted);
+        border-bottom: 1px solid var(--border-color);
+        user-select: none;
+        gap: .6rem;
+    }
+    .group-panel.collapsed .group-panel-header { border-bottom: none; }
+    .group-panel-header .header-right {
+        display: flex; align-items: center; gap: .45rem;
+    }
+    .group-panel-header .count-badge {
+        font-family: 'Fira Code', monospace;
+        font-size: .68rem;
+        color: var(--heading-color);
+        background: var(--code-bg);
+        border: 1px solid var(--border-color);
+        border-radius: .35rem;
+        padding: .1rem .45rem;
+        letter-spacing: 0;
+        min-width: 1.4rem;
+        text-align: center;
+    }
+
+    .toggle-btn {
+        width: 24px; height: 24px;
+        display: flex; align-items: center; justify-content: center;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: .35rem;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 0;
+        transition: background .15s, color .15s, border-color .15s;
+    }
+    .toggle-btn:hover {
+        background: var(--code-bg);
+        color: var(--heading-color);
+        border-color: var(--border-color);
+    }
+    .toggle-btn svg {
+        width: 12px; height: 12px;
+        transition: transform .25s ease;
+    }
+    .group-panel.collapsed .toggle-btn svg {
+        transform: rotate(-90deg);
+    }
+
+    .group-list {
+        overflow-y: auto;
+        padding: .35rem;
+        scrollbar-width: thin;
+    }
+    .group-panel.collapsed .group-list { display: none; }
+
+    .group-item {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        padding: .5rem .6rem;
+        border-radius: .5rem;
+        cursor: default;
+        transition: background .12s;
+        border: 1px solid transparent;
+    }
+    .group-item:hover {
+        background: rgba(255,255,255,0.055);
+        border-color: rgba(255,255,255,0.08);
+    }
+    .group-swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        flex-shrink: 0;
+        border: 1.5px solid;
+        background: transparent;
+    }
+    .group-info { flex: 1; min-width: 0; }
+    .group-name {
+        font-size: .78rem;
+        font-weight: 600;
+        color: var(--text-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.3;
+        display: block;
+    }
+    .group-count {
+        font-size: .65rem;
+        color: var(--text-muted);
+        font-family: 'Fira Code', monospace;
+        margin-top: .1rem;
+        letter-spacing: .02em;
+        display: block;
+    }
+
+    @media (max-width: 760px) {
+        .group-panel {
+            width: 200px;
+            top: auto; bottom: .85rem;
+            right: 4.2rem; left: auto;
+            max-height: 40vh;
+        }
+        .group-panel.collapsed { width: auto; }
+    }
+
+    .loading-bar-container {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        height: 5px; background: rgba(255,255,255,0.08); z-index: 40;
+        overflow: hidden;
+    }
+    .loading-bar-fill {
+        height: 100%; width: 0%; background: var(--link-color);
+        transition: width 0.1s linear;
+    }
+
+    .group-list::-webkit-scrollbar { width: 6px; }
+    .group-list::-webkit-scrollbar-track { background: transparent; }
+    .group-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+    .group-list::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<section class="viz-shell">
+    <div class="canvas-wrap" id="netCanvas-wrapper">
+        <canvas id="netCanvas"></canvas>
+
+        <aside class="group-panel" id="groupPanel">
+            <div class="group-panel-header" id="groupPanelHeader">
+                <span>Groups</span>
+                <span class="header-right">
+                    <span class="count-badge" id="groupCount">0</span>
+                    <button class="toggle-btn" id="groupToggleBtn" title="Collapse groups panel" aria-label="Toggle groups panel">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                </span>
+            </div>
+            <div class="group-list" id="groupList"></div>
+        </aside>
+
+        <button class="reload-btn" id="reloadBtn" title="Generate new random network" aria-label="Generate new random network">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-3-6.7"></path>
+                <polyline points="21 3 21 9 15 9"></polyline>
+            </svg>
+        </button>
+    </div>
+    <div class="loading-bar-container">
+        <div class="loading-bar-fill" id="loadingBarFill"></div>
+    </div>
+</section>
+
+<script>
+/* ================================================================
+   HELPERS
+   ================================================================ */
+const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const chance = p => Math.random() < p;
+const shuffle = arr => {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+};
+
+/* ================================================================
+   ICON PATH HELPERS
+   ================================================================ */
+function rr(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
+/* --- Social media / streaming platform icons --- */
+function iconTwitch(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.moveTo(x - r, y - r*0.55);
+    ctx.lineTo(x + r*0.35, y - r*0.55);
+    ctx.lineTo(x + r*0.35, y - r);
+    ctx.lineTo(x + r, y - r);
+    ctx.lineTo(x + r, y + r*0.35);
+    ctx.lineTo(x + r*0.4, y + r*0.95);
+    ctx.lineTo(x + r*0.4, y + r*0.35);
+    ctx.lineTo(x - r, y + r*0.35);
+    ctx.closePath();
+    ctx.stroke();
+    if (r >= 7) {
+        ctx.beginPath();
+        ctx.moveTo(x - r*0.5, y - r*0.15);
+        ctx.lineTo(x - r*0.5, y + r*0.15);
+        ctx.moveTo(x - r*0.1, y - r*0.15);
+        ctx.lineTo(x - r*0.1, y + r*0.15);
+        ctx.stroke();
+    }
+}
+
+function iconYouTube(ctx, x, y, r) {
+    const w = r*1.9, h = r*1.35;
+    rr(ctx, x - w/2, y - h/2, w, h, h*0.3);
+    ctx.fill();
+    ctx.save();
+    ctx.fillStyle = '#0a0a0a';
+    ctx.beginPath();
+    ctx.moveTo(x - r*0.25, y - r*0.5);
+    ctx.lineTo(x + r*0.55, y);
+    ctx.lineTo(x - r*0.25, y + r*0.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+}
+
+function iconNetflix(ctx, x, y, r) {
+    const prev = ctx.lineWidth;
+    ctx.lineWidth = Math.max(1.6, r * 0.32);
+    ctx.beginPath();
+    ctx.moveTo(x - r*0.5, y + r*0.75);
+    ctx.lineTo(x - r*0.5, y - r*0.75);
+    ctx.lineTo(x + r*0.5, y + r*0.75);
+    ctx.lineTo(x + r*0.5, y - r*0.75);
+    ctx.stroke();
+    ctx.lineWidth = prev;
+}
+
+function iconSpotify(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x, y, r*0.9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.save();
+    ctx.strokeStyle = '#0a0a0a';
+    ctx.lineWidth = 1.6;
+    for (let i = 0; i < 3; i++) {
+        const yy = y - r*0.25 + i * r*0.28;
+        const ww = r * (0.55 - i * 0.1);
+        ctx.beginPath();
+        ctx.arc(x, yy + ww*0.5, ww, Math.PI * 1.15, Math.PI * 1.85);
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function iconDiscord(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.moveTo(x - r*0.85, y - r*0.25);
+    ctx.quadraticCurveTo(x - r*0.95, y + r*0.65, x - r*0.4, y + r*0.6);
+    ctx.lineTo(x + r*0.4, y + r*0.6);
+    ctx.quadraticCurveTo(x + r*0.95, y + r*0.65, x + r*0.85, y - r*0.25);
+    ctx.quadraticCurveTo(x + r*0.5, y - r*0.85, x, y - r*0.85);
+    ctx.quadraticCurveTo(x - r*0.5, y - r*0.85, x - r*0.85, y - r*0.25);
+    ctx.closePath();
+    ctx.fill();
+    ctx.save();
+    ctx.fillStyle = '#0a0a0a';
+    ctx.beginPath();
+    ctx.arc(x - r*0.3, y - r*0.05, r*0.15, 0, Math.PI * 2);
+    ctx.arc(x + r*0.3, y - r*0.05, r*0.15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+}
+
+function iconX(ctx, x, y, r) {
+    const prev = ctx.lineWidth;
+    ctx.lineWidth = Math.max(1.6, r * 0.36);
+    ctx.beginPath();
+    ctx.moveTo(x - r*0.7, y - r*0.7);
+    ctx.lineTo(x + r*0.7, y + r*0.7);
+    ctx.moveTo(x + r*0.7, y - r*0.7);
+    ctx.lineTo(x - r*0.7, y + r*0.7);
+    ctx.stroke();
+    ctx.lineWidth = prev;
+}
+
+function iconInstagram(ctx, x, y, r) {
+    rr(ctx, x - r*0.85, y - r*0.85, r*1.7, r*1.7, r*0.45);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, r*0.48, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x + r*0.5, y - r*0.5, r*0.13, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function iconGoogle(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x, y, r*0.9, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + r*0.7, y);
+    ctx.lineTo(x + r*0.15, y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, r*0.5, Math.PI * -0.15, Math.PI * 0.75);
+    ctx.stroke();
+}
+
+function iconSteam(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x - r*0.25, y + r*0.05, r*0.6, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x + r*0.5, y - r*0.35, r*0.32, 0, Math.PI * 2);
+    ctx.stroke();
+}
+
+function iconAmazon(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x - r*0.05, y - r*0.15, r*0.5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + r*0.45, y - r*0.5);
+    ctx.lineTo(x + r*0.45, y + r*0.25);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x - r*0.65, y + r*0.55);
+    ctx.quadraticCurveTo(x, y + r*0.9, x + r*0.65, y + r*0.5);
+    ctx.stroke();
+}
+
+/* ================================================================
+   SERVICE CATALOG
+   Platforms (type: 'platform') → colored brand icon
+   Protocols (type: 'protocol') → plain white text pill
+   ================================================================ */
+const SERVICES = {
+    /* ---------- Platforms (colored icons) ---------- */
+    twitch:    { type: 'platform', label: 'Twitch',    color: '#9146FF', icon: iconTwitch },
+    youtube:   { type: 'platform', label: 'YouTube',   color: '#FF0000', icon: iconYouTube },
+    netflix:   { type: 'platform', label: 'Netflix',   color: '#E50914', icon: iconNetflix },
+    spotify:   { type: 'platform', label: 'Spotify',   color: '#1DB954', icon: iconSpotify },
+    discord:   { type: 'platform', label: 'Discord',   color: '#5865F2', icon: iconDiscord },
+    x:         { type: 'platform', label: 'X',         color: '#FFFFFF', icon: iconX },
+    instagram: { type: 'platform', label: 'Instagram', color: '#E1306C', icon: iconInstagram },
+    google:    { type: 'platform', label: 'Google',    color: '#4285F4', icon: iconGoogle },
+    steam:     { type: 'platform', label: 'Steam',     color: '#66C0F4', icon: iconSteam },
+    amazon:    { type: 'platform', label: 'Amazon',    color: '#FF9900', icon: iconAmazon },
+
+    /* ---------- Protocols (text labels) ---------- */
+    https:     { type: 'protocol', label: 'HTTPS' },
+    dns:       { type: 'protocol', label: 'DNS' },
+    ssh:       { type: 'protocol', label: 'SSH' },
+    smb:       { type: 'protocol', label: 'SMB' },
+    stream:    { type: 'protocol', label: 'Stream' },
+    sync:      { type: 'protocol', label: 'Sync' },
+    backup:    { type: 'protocol', label: 'Backup' },
+    mqtt:      { type: 'protocol', label: 'MQTT' },
+    sql:       { type: 'protocol', label: 'SQL' },
+    smtp:      { type: 'protocol', label: 'SMTP' },
+    api:       { type: 'protocol', label: 'API' },
+};
+
+/* Weighted pool: common protocols appear more often */
+const FLOW_SERVICE_IDS = [
+    'https','https','https','dns','dns','dns','google','google',
+    'youtube','youtube','netflix','twitch','spotify','discord',
+    'instagram','x','steam','amazon',
+    'ssh','smb','stream','sync','backup','mqtt','sql','smtp','api'
+];
+
+/* #rrggbb → "r, g, b" for rgba() */
+function hexToRgbStr(hex) {
+    const h = hex.replace('#','');
+    const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+    return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
+}
+
+/* ================================================================
+   NODE STYLES & LABELS
+   ================================================================ */
+const NODE_STYLE = {
+    cloud:      { icon: '☁', shade: 1.00 },
+    router:     { icon: '⬡', shade: 0.92 },
+    firewall:   { icon: '⬢', shade: 0.85 },
+    switch:     { icon: '⧉', shade: 0.88 },
+    core:       { icon: '◆', shade: 0.95 },
+    dist:       { icon: '◇', shade: 0.88 },
+    ap:         { icon: '◉', shade: 0.88 },
+    controller: { icon: '◈', shade: 0.88 },
+    server:     { icon: '▤', shade: 0.75 },
+    db:         { icon: '▥', shade: 0.75 },
+    file:       { icon: '▤', shade: 0.75 },
+    nas:        { icon: '▦', shade: 0.75 },
+    web:        { icon: '◎', shade: 0.75 },
+    mail:       { icon: '✉', shade: 0.75 },
+    vm:         { icon: '◯', shade: 0.75 },
+    client:     { icon: '▢', shade: 0.65 },
+    laptop:     { icon: '▭', shade: 0.65 },
+    phone:      { icon: '▯', shade: 0.65 },
+    tv:         { icon: '▭', shade: 0.55 },
+    printer:    { icon: '▥', shade: 0.55 },
+    iot:        { icon: '◌', shade: 0.88 },
+    building:   { icon: '▦', shade: 0.92 },
+};
+
+const NODE_LABELS = {
+    cloud:'Internet', router:'Router', firewall:'Firewall', switch:'Switch',
+    core:'Core Switch', dist:'Dist Switch', ap:'Access Point', controller:'Controller',
+    server:'Server', db:'DB Server', file:'File Server', nas:'NAS',
+    web:'Web Server', mail:'Mail Gateway', vm:'Cloud VM',
+    client:'PC', laptop:'Laptop', phone:'Phone', tv:'Smart TV',
+    printer:'Printer', iot:'IoT Device', building:'Site'
+};
+
+const WIRELESS = new Set(['laptop', 'phone', 'tv', 'iot']);
+const ENDPOINT_TYPES = new Set(['client','laptop','phone','tv','printer','iot','server','db','file','nas','web','mail','vm']);
+
+const GROUP_COLORS = [
+    { border: 'rgba(220,220,220,0.42)', fill: 'rgba(220,220,220,0.045)', label: 'rgba(235,235,235,0.90)', swatch: '#dcdcdc' },
+    { border: 'rgba(170,200,235,0.50)', fill: 'rgba(170,200,235,0.055)', label: 'rgba(195,218,242,0.95)', swatch: '#aac8eb' },
+    { border: 'rgba(240,200,165,0.50)', fill: 'rgba(240,200,165,0.055)', label: 'rgba(248,214,185,0.95)', swatch: '#f0c8a5' },
+    { border: 'rgba(165,220,180,0.50)', fill: 'rgba(165,220,180,0.055)', label: 'rgba(190,232,205,0.95)', swatch: '#a5dcb4' },
+    { border: 'rgba(220,180,230,0.50)', fill: 'rgba(220,180,230,0.055)', label: 'rgba(233,203,240,0.95)', swatch: '#dcb4e6' },
+    { border: 'rgba(230,225,160,0.50)', fill: 'rgba(230,225,160,0.055)', label: 'rgba(240,237,185,0.95)', swatch: '#e6e1a0' },
+    { border: 'rgba(150,220,220,0.50)', fill: 'rgba(150,220,220,0.055)', label: 'rgba(180,232,232,0.95)', swatch: '#96dcdc' },
+];
+
+let _ipCounter = 10;
+function nextIp(sub) { return sub + '.' + (_ipCounter++); }
+
+/* ================================================================
+   GRAPH BUILDER
+   ================================================================ */
+function Graph() {
+    this.nodes = [];
+    this.links = [];
+    this.flows = [];
+    this.groups = [];
+    this.byId = {};
+}
+Graph.prototype.add = function(id, type, opts = {}) {
+    const node = {
+        id, type,
+        label: opts.label ?? NODE_LABELS[type] ?? type,
+        ip: opts.ip ?? (opts.sub ? nextIp(opts.sub) : '—'),
+        x: opts.x ?? 0.5,
+        y: opts.y ?? 0.5
+    };
+    this.byId[id] = node;
+    this.nodes.push(node);
+    return node;
+};
+Graph.prototype.link = function(from, to, type = 'wired') {
+    this.links.push({ from, to, type });
+};
+Graph.prototype.flow = function(from, to, serviceId) {
+    const service = SERVICES[serviceId] || SERVICES.https;
+    this.flows.push({
+        from, to, service,
+        speed: 0.22 + Math.random() * 0.28,
+        offset: Math.random()
+    });
+};
+Graph.prototype.group = function(label, memberIds, colorIdx) {
+    this.groups.push({
+        label,
+        memberIds: memberIds.slice(),
+        colorIdx: colorIdx ?? (this.groups.length % GROUP_COLORS.length)
+    });
+};
+
+/* ================================================================
+   LAYOUT HELPERS
+   ================================================================ */
+function placeRow(nodes, y, x0 = 0.08, x1 = 0.92) {
+    const n = nodes.length;
+    if (!n) return;
+    if (n === 1) { nodes[0].x = 0.5; nodes[0].y = y; return; }
+    nodes.forEach((nd, i) => {
+        nd.x = x0 + (x1 - x0) * (i / (n - 1));
+        nd.y = y;
+    });
+}
+
+function placeUnder(g, parentId, childIds, y, spread = 0.16) {
+    const parent = g.byId[parentId];
+    const n = childIds.length;
+    if (!n) return;
+    if (n === 1) {
+        g.byId[childIds[0]].x = parent.x;
+        g.byId[childIds[0]].y = y;
+        return;
+    }
+    const step = (spread * 2) / (n - 1);
+    childIds.forEach((id, i) => {
+        const c = g.byId[id];
+        c.x = Math.max(0.06, Math.min(0.94, parent.x - spread + step * i));
+        c.y = y;
+    });
+}
+
+function layoutTree(g, rootId) {
+    const adj = {};
+    g.nodes.forEach(n => adj[n.id] = []);
+    g.links.forEach(l => { adj[l.from].push(l.to); adj[l.to].push(l.from); });
+
+    const children = {}, depth = {};
+    const visited = new Set([rootId]);
+    const q = [rootId];
+    depth[rootId] = 0;
+    while (q.length) {
+        const u = q.shift();
+        children[u] = children[u] || [];
+        for (const v of adj[u]) {
+            if (!visited.has(v)) {
+                visited.add(v);
+                depth[v] = depth[u] + 1;
+                children[u].push(v);
+                q.push(v);
+            }
+        }
+    }
+    const orphans = g.nodes.filter(n => !(n.id in depth));
+
+    const xPos = {};
+    let leafCounter = 0;
+    function assign(id) {
+        const ch = children[id] || [];
+        if (ch.length === 0) { xPos[id] = leafCounter++; return; }
+        ch.forEach(assign);
+        const xs = ch.map(c => xPos[c]);
+        xPos[id] = (Math.min(...xs) + Math.max(...xs)) / 2;
+    }
+    assign(rootId);
+    const maxPos = Math.max(1, leafCounter - 1);
+    const maxDepth = Math.max(1, ...Object.values(depth));
+    g.nodes.forEach(n => {
+        if (!(n.id in xPos)) return;
+        n.x = 0.06 + 0.88 * (xPos[n.id] / maxPos);
+        n.y = 0.10 + 0.75 * (depth[n.id] / maxDepth);
+    });
+    if (orphans.length) {
+        orphans.forEach((n, i) => {
+            n.x = orphans.length === 1 ? 0.5 : 0.10 + 0.80 * (i / (orphans.length - 1));
+            n.y = 0.88;
+        });
+    }
+}
+
+function layoutCircular(g, ids, cx = 0.5, cy = 0.5, rx = 0.32, ry = 0.28) {
+    const n = ids.length;
+    ids.forEach((id, i) => {
+        const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+        g.byId[id].x = cx + rx * Math.cos(a);
+        g.byId[id].y = cy + ry * Math.sin(a);
+    });
+}
+
+/* ================================================================
+   FLOW GENERATION
+   ================================================================ */
+function addRandomFlows(g, count) {
+    const endpoints = g.nodes.filter(n => ENDPOINT_TYPES.has(n.type));
+    const pool = endpoints.length >= 2 ? endpoints : g.nodes;
+    const n = count ?? ri(3, 7);
+    for (let i = 0; i < n; i++) {
+        const a = pick(pool);
+        const b = pick(pool);
+        if (a.id === b.id) continue;
+        g.flow(a.id, b.id, pick(FLOW_SERVICE_IDS));
+    }
+    const cloud = g.nodes.find(n => n.type === 'cloud');
+    if (cloud && endpoints.length && chance(0.7)) {
+        const dev = pick(endpoints);
+        g.flow(dev.id, cloud.id, pick(['https','dns','youtube','netflix','twitch','stream']));
+    }
+}
+
+/* ================================================================
+   BFS PATH RESOLUTION
+   ================================================================ */
+function bfsPath(g, from, to) {
+    const adj = {};
+    g.nodes.forEach(n => adj[n.id] = []);
+    g.links.forEach(l => { adj[l.from].push(l.to); adj[l.to].push(l.from); });
+    if (!(from in adj) || !(to in adj)) return null;
+    const prev = { [from]: null };
+    const q = [from];
+    while (q.length) {
+        const u = q.shift();
+        if (u === to) {
+            const path = [];
+            let c = to;
+            while (c !== null) { path.unshift(c); c = prev[c]; }
+            return path;
+        }
+        for (const v of adj[u]) {
+            if (!(v in prev)) { prev[v] = u; q.push(v); }
+        }
+    }
+    return null;
+}
+
+/* ================================================================
+   ARCHITECTURE BUILDERS
+   ================================================================ */
+
+function buildFlat() {
+    const g = new Graph();
+    g.add('inet', 'cloud', { x: 0.50, y: 0.12 });
+    g.add('rtr', 'router', { x: 0.50, y: 0.42, sub: '192.168.1' });
+    g.link('inet', 'rtr');
+
+    const count = ri(4, 9);
+    const pool = shuffle(['laptop','client','phone','tv','printer','iot','laptop','phone','client','nas','tv']);
+    const types = pool.slice(0, count);
+
+    const devices = [];
+    types.forEach((t, i) => {
+        const id = 'd' + i;
+        g.add(id, t, { sub: '192.168.1' });
+        g.link('rtr', id, WIRELESS.has(t) ? 'wireless' : 'wired');
+        devices.push(id);
+    });
+    placeRow(devices.map(id => g.byId[id]), 0.80);
+
+    g.group('LAN · 192.168.1.0/24', ['rtr', ...devices], 1);
+
+    addRandomFlows(g);
+    return g;
+}
+
+function buildSoho() {
+    const g = new Graph();
+    g.add('inet', 'cloud', { x: 0.50, y: 0.10 });
+    g.add('fw', 'firewall', { x: 0.50, y: 0.25, sub: '192.168.1' });
+    g.add('sw', 'switch', { x: 0.35, y: 0.46 });
+    g.add('ap', 'ap', { x: 0.78, y: 0.46 });
+    g.link('inet', 'fw');
+    g.link('fw', 'sw');
+    g.link('fw', 'ap', 'wireless');
+
+    const wired = [];
+    const wTypes = shuffle(['server','client','client','printer','nas','client']);
+    const wCount = ri(2, 4);
+    for (let i = 0; i < wCount; i++) {
+        const id = 'w' + i;
+        g.add(id, wTypes[i], { sub: '192.168.1' });
+        g.link('sw', id);
+        wired.push(id);
+    }
+    placeUnder(g, 'sw', wired, 0.76, 0.14);
+
+    const wireless = [];
+    const wlTypes = shuffle(['laptop','phone','phone','laptop']);
+    const wlCount = ri(1, 3);
+    for (let i = 0; i < wlCount; i++) {
+        const id = 'a' + i;
+        g.add(id, wlTypes[i], { sub: '192.168.1' });
+        g.link('ap', id, 'wireless');
+        wireless.push(id);
+    }
+    placeUnder(g, 'ap', wireless, 0.76, 0.12);
+
+    g.group('Edge / Firewall', ['fw'], 2);
+    g.group('Wired LAN', ['sw', ...wired], 1);
+    g.group('Wi-Fi Clients', ['ap', ...wireless], 3);
+
+    addRandomFlows(g);
+    return g;
+}
+
+function buildTree() {
+    const g = new Graph();
+    const tiers = ri(3, 4);
+    g.add('inet', 'cloud', { x: 0.50, y: 0.06 });
+
+    let prev = ['inet'];
+    const tierTypes = ['core','dist','switch','switch'];
+    const tierGroups = {};
+    for (let t = 1; t < tiers; t++) {
+        const count = t === 1 ? ri(1, 2) : ri(2, 4);
+        const ids = [];
+        for (let i = 0; i < count; i++) {
+            const id = `t${t}_${i}`;
+            const type = tierTypes[Math.min(t, tierTypes.length - 1)];
+            g.add(id, type);
+            g.link(pick(prev), id);
+            ids.push(id);
+        }
+        tierGroups[t] = ids;
+        prev = ids;
+    }
+
+    const allDevices = [];
+    let di = 0;
+    prev.forEach(leaf => {
+        const n = ri(1, 3);
+        for (let i = 0; i < n; i++) {
+            const t = pick(['client','laptop','phone','printer','nas','server','tv','iot']);
+            const id = 'd' + (di++);
+            g.add(id, t, { sub: '10.0.0' });
+            g.link(leaf, id, WIRELESS.has(t) ? 'wireless' : 'wired');
+            allDevices.push(id);
+        }
+    });
+
+    layoutTree(g, 'inet');
+
+    const tierNames = ['Core', 'Distribution', 'Access'];
+    Object.keys(tierGroups).forEach((t, idx) => {
+        const name = tierNames[Math.min(idx, tierNames.length - 1)];
+        g.group(`${name} Layer`, tierGroups[t], idx + 1);
+    });
+    g.group('End Devices', allDevices, 4);
+
+    addRandomFlows(g);
+    return g;
+}
+
+function buildVlans() {
+    const g = new Graph();
+    g.add('inet', 'cloud', { x: 0.50, y: 0.10 });
+    g.add('rtr', 'router', { x: 0.50, y: 0.26, sub: '192.168.0' });
+    g.add('sw', 'switch', { x: 0.50, y: 0.44 });
+    g.link('inet', 'rtr');
+    g.link('rtr', 'sw');
+
+    const numVlans = ri(2, 4);
+    const vlanNames = shuffle(['Office','Guests','IoT','Servers','Management','Production']).slice(0, numVlans);
+    const vlanTypes = {
+        'Office':     ['client','laptop','printer'],
+        'Guests':     ['phone','laptop'],
+        'IoT':        ['iot','iot','iot'],
+        'Servers':    ['server','db','nas'],
+        'Management': ['client','client'],
+        'Production': ['client','printer','iot']
+    };
+
+    const bandW = 0.92 / numVlans;
+    vlanNames.forEach((name, vi) => {
+        const members = [];
+        const types = vlanTypes[name] || ['client'];
+        const n = ri(1, Math.min(3, types.length));
+        const chosen = shuffle(types).slice(0, n);
+        chosen.forEach((t, i) => {
+            const id = `v${vi}_${i}`;
+            g.add(id, t, { sub: '10.' + (vi + 1) + '.0' });
+            g.link('sw', id, WIRELESS.has(t) ? 'wireless' : 'wired');
+            members.push(id);
+        });
+        const cx = 0.06 + bandW * (vi + 0.5);
+        const spread = bandW * 0.35;
+        const step = members.length > 1 ? (spread * 2) / (members.length - 1) : 0;
+        members.forEach((id, i) => {
+            const node = g.byId[id];
+            node.x = Math.max(0.05, Math.min(0.95, cx - spread + step * i));
+            node.y = 0.78;
+        });
+        g.group(`VLAN · ${name}`, members, (vi % (GROUP_COLORS.length - 1)) + 1);
+    });
+
+    addRandomFlows(g);
+    return g;
+}
+
+function buildDmz() {
+    const g = new Graph();
+    g.add('inet', 'cloud', { x: 0.50, y: 0.08 });
+    g.add('fw1', 'firewall', { x: 0.50, y: 0.22 });
+    g.add('fw2', 'firewall', { x: 0.50, y: 0.62, sub: '192.168.1' });
+    g.link('inet', 'fw1');
+    g.link('fw1', 'fw2');
+
+    const dmzPool = shuffle(['web','mail','web','file']).slice(0, ri(2, 3));
+    const dmzIds = [];
+    dmzPool.forEach((t, i) => {
+        const id = 'dmz' + i;
+        g.add(id, t, { sub: '10.10.10' });
+        g.link('fw1', id);
+        dmzIds.push(id);
+    });
+    placeRow(dmzIds.map(id => g.byId[id]), 0.42);
+
+    const lanTypes = shuffle(['db','file','client','server','client','printer']).slice(0, ri(2, 4));
+    const lanIds = [];
+    lanTypes.forEach((t, i) => {
+        const id = 'lan' + i;
+        g.add(id, t, { sub: '192.168.1' });
+        g.link('fw2', id, WIRELESS.has(t) ? 'wireless' : 'wired');
+        lanIds.push(id);
+    });
+    placeRow(lanIds.map(id => g.byId[id]), 0.86);
+
+    g.group('Edge Firewalls', ['fw1', 'fw2'], 2);
+    g.group('DMZ · 10.10.10.0/24', dmzIds, 3);
+    g.group('Internal LAN · 192.168.1.0/24', lanIds, 1);
+
+    addRandomFlows(g);
+    return g;
+}
+
+function buildRing() {
+    const g = new Graph();
+    const n = ri(4, 6);
+    const routerIds = [];
+    for (let i = 0; i < n; i++) {
+        const id = 'r' + i;
+        g.add(id, 'router', { sub: '10.' + (i + 1) + '.0' });
+        routerIds.push(id);
+    }
+    for (let i = 0; i < n; i++) {
+        g.link(routerIds[i], routerIds[(i + 1) % n]);
+    }
+    layoutCircular(g, routerIds, 0.5, 0.42, 0.32, 0.24);
+    g.group('Backbone Ring', routerIds, 1);
+
+    let di = 0;
+    routerIds.forEach((rid, ri_) => {
+        const count = ri(1, 3);
+        const r = g.byId[rid];
+        const a = Math.atan2(r.y - 0.42, r.x - 0.5);
+        const members = [];
+        for (let i = 0; i < count; i++) {
+            const t = pick(['client','laptop','phone','server','printer','nas']);
+            const id = 'd' + (di++);
+            g.add(id, t, { sub: '10.' + (ri_ + 1) + '.0' });
+            g.link(rid, id, WIRELESS.has(t) ? 'wireless' : 'wired');
+            members.push(id);
+        }
+        const outwardR = 0.42;
+        members.forEach((id, i) => {
+            const offA = a + (i - (members.length - 1) / 2) * 0.18;
+            const c = g.byId[id];
+            c.x = 0.5 + outwardR * Math.cos(offA);
+            c.y = 0.42 + (outwardR * 0.85) * Math.sin(offA);
+        });
+        g.group(`Site ${ri_ + 1}`, [rid, ...members], ((ri_ + 1) % (GROUP_COLORS.length - 1)) + 1);
+    });
+
+    g.add('inet', 'cloud', { x: 0.5, y: 0.05 });
+    g.link('inet', routerIds[0]);
+
+    addRandomFlows(g);
+    return g;
+}
+
+function buildSpineLeaf() {
+    const g = new Graph();
+    const numSpines = ri(2, 3);
+    const numLeaves = ri(3, 5);
+    const spines = [], leaves = [];
+
+    for (let i = 0; i < numSpines; i++) {
+        const id = 'sp' + i;
+        g.add(id, 'core');
+        spines.push(id);
+    }
+    for (let i = 0; i < numLeaves; i++) {
+        const id = 'lf' + i;
+        g.add(id, 'switch');
+        leaves.push(id);
+    }
+    spines.forEach(s => leaves.forEach(l => g.link(s, l)));
+
+    const serverLeaves = Math.ceil(numLeaves / 2);
+    const serverIds = [], clientIds = [];
+    let di = 0;
+    leaves.forEach((lid, li) => {
+        const count = ri(1, 3);
+        for (let i = 0; i < count; i++) {
+            const isServerSide = li < serverLeaves;
+            const t = isServerSide
+                ? pick(['server','db','vm','file'])
+                : pick(['client','laptop','printer']);
+            const id = 'd' + (di++);
+            g.add(id, t, { sub: '10.20.' + li });
+            g.link(lid, id);
+            (isServerSide ? serverIds : clientIds).push(id);
+        }
+    });
+
+    placeRow(spines.map(id => g.byId[id]), 0.16, 0.22, 0.78);
+    placeRow(leaves.map(id => g.byId[id]), 0.48, 0.10, 0.90);
+    leaves.forEach(lid => {
+        const children = g.nodes.filter(n => g.links.some(l => l.from === lid && l.to === n.id));
+        placeUnder(g, lid, children.map(c => c.id), 0.80, 0.07);
+    });
+
+    g.group('Spine Layer', spines, 1);
+    g.group('Leaf Layer', leaves, 2);
+    if (serverIds.length) g.group('Server Zone', serverIds, 3);
+    if (clientIds.length) g.group('Client Zone', clientIds, 4);
+
+    g.add('inet', 'cloud', { x: 0.5, y: 0.02 });
+    g.link('inet', spines[0]);
+
+    addRandomFlows(g);
+    return g;
+}
+
+function buildWan() {
+    const g = new Graph();
+    g.add('inet', 'cloud', { x: 0.50, y: 0.10 });
+
+    const n = ri(2, 4);
+    const routerIds = [], buildingIds = [];
+    for (let i = 0; i < n; i++) {
+        const sub = '10.' + (i + 1) + '.0';
+        const rid = 'r' + i;
+        const bid = 'b' + i;
+        const label = i === 0 ? 'HQ' : 'Branch ' + i;
+        g.add(rid, 'router', { sub, label: i === 0 ? 'HQ Router' : 'Branch Router ' + i });
+        g.add(bid, 'building', { label });
+        g.link(rid, 'inet', 'wireless');
+        g.link(rid, bid);
+        routerIds.push(rid); buildingIds.push(bid);
+    }
+    placeRow(routerIds.map(id => g.byId[id]), 0.42);
+    placeRow(buildingIds.map(id => g.byId[id]), 0.72);
+
+    const siteGroups = {};
+    routerIds.forEach((rid, i) => { siteGroups[i] = [rid, buildingIds[i]]; });
+
+    let di = 0;
+    buildingIds.forEach((bid, i) => {
+        const count = ri(0, 2);
+        const b = g.byId[bid];
+        const members = [];
+        for (let j = 0; j < count; j++) {
+            const t = pick(['client','laptop','server','printer']);
+            const id = 'd' + (di++);
+            g.add(id, t, { sub: '10.' + (i + 1) + '.0' });
+            g.link(bid, id);
+            members.push(id);
+        }
+        members.forEach((id, j) => {
+            const c = g.byId[id];
+            c.x = b.x + (j - (members.length - 1) / 2) * 0.05;
+            c.y = 0.90;
+        });
+        siteGroups[i] = [...siteGroups[i], ...members];
+    });
+
+    Object.keys(siteGroups).forEach((i, idx) => {
+        const label = idx === 0 ? 'Site · HQ' : `Site · Branch ${idx}`;
+        g.group(label, siteGroups[i], (idx % (GROUP_COLORS.length - 1)) + 1);
+    });
+
+    addRandomFlows(g);
+    return g;
+}
+
+function buildHybrid() {
+    const g = new Graph();
+    g.add('inet', 'cloud', { x: 0.50, y: 0.50 });
+    g.add('fw', 'firewall', { x: 0.22, y: 0.50, sub: '10.0.0' });
+
+    const onprem = [];
+    const opTypes = shuffle(['server','db','client','client','printer']).slice(0, ri(2, 4));
+    opTypes.forEach((t, i) => {
+        const id = 'op' + i;
+        g.add(id, t, { sub: '10.0.0' });
+        g.link('fw', id);
+        onprem.push(id);
+    });
+
+    g.add('cvpc', 'switch', { x: 0.78, y: 0.50, label: 'Cloud VPC' });
+    g.link('cvpc', 'inet', 'wireless');
+    const cloud = [];
+    const cTypes = shuffle(['vm','db','server','vm']).slice(0, ri(2, 3));
+    cTypes.forEach((t, i) => {
+        const id = 'cl' + i;
+        g.add(id, t, { sub: '172.16.0' });
+        g.link('cvpc', id);
+        cloud.push(id);
+    });
+
+    onprem.forEach((id, i) => {
+        const c = g.byId[id];
+        c.x = 0.10 + (i % 2) * 0.12;
+        c.y = (i < 2) ? 0.26 : 0.76;
+    });
+    cloud.forEach((id, i) => {
+        const c = g.byId[id];
+        c.x = 0.82 + (i % 2) * 0.10;
+        c.y = (i < 2) ? 0.26 : 0.76;
+    });
+    g.link('fw', 'inet');
+
+    g.group('On-Premises · 10.0.0.0/24', ['fw', ...onprem], 2);
+    g.group('Cloud VPC · 172.16.0.0/16', ['cvpc', ...cloud], 3);
+    g.group('Internet', ['inet'], 1);
+
+    addRandomFlows(g);
+    return g;
+}
+
+function buildCampus() {
+    const g = new Graph();
+    g.add('inet', 'cloud', { x: 0.50, y: 0.08 });
+    g.add('core', 'core', { x: 0.50, y: 0.24 });
+    g.link('inet', 'core');
+
+    const numB = ri(2, 4);
+    const buildings = [], dists = [];
+    for (let i = 0; i < numB; i++) {
+        const id = 'b' + i;
+        g.add(id, 'building', { label: 'Building ' + (i + 1) });
+        g.link('core', id);
+        buildings.push(id);
+    }
+    const buildingGroups = {};
+    buildings.forEach((bid, i) => {
+        const id = 'dsw' + i;
+        g.add(id, 'dist', { sub: '10.' + (i + 1) + '.0' });
+        g.link(bid, id);
+        dists.push(id);
+        const members = [bid, id];
+        const count = ri(1, 3);
+        for (let j = 0; j < count; j++) {
+            const t = pick(['client','laptop','phone','printer','ap','iot']);
+            const did = `b${i}_d${j}`;
+            g.add(did, t, { sub: '10.' + (i + 1) + '.0' });
+            g.link(id, did, WIRELESS.has(t) ? 'wireless' : 'wired');
+            members.push(did);
+        }
+        buildingGroups[i] = members;
+    });
+
+    placeRow(buildings.map(id => g.byId[id]), 0.48);
+    placeRow(dists.map(id => g.byId[id]), 0.68);
+    dists.forEach(did => {
+        const children = g.nodes.filter(n => g.links.some(l => l.from === did && l.to === n.id));
+        placeUnder(g, did, children.map(c => c.id), 0.86, 0.07);
+    });
+
+    Object.keys(buildingGroups).forEach((i) => {
+        g.group(`Building ${parseInt(i) + 1}`, buildingGroups[i], ((parseInt(i)) % (GROUP_COLORS.length - 1)) + 1);
+    });
+
+    addRandomFlows(g);
+    return g;
+}
+
+/* ================================================================
+   TOP-LEVEL GENERATOR
+   ================================================================ */
+const STYLE_BUILDERS = [
+    buildFlat, buildSoho, buildTree, buildVlans, buildDmz,
+    buildRing, buildSpineLeaf, buildWan, buildHybrid, buildCampus
+];
+
+const netData = { nodes: [], links: [], packets: [], groups: [] };
+
+function generateRandomNetwork() {
+    _ipCounter = 10;
+    const builder = pick(STYLE_BUILDERS);
+    const g = builder();
+
+    g.flows.forEach(f => {
+        const path = bfsPath(g, f.from, f.to);
+        if (path && path.length >= 2) f.path = path;
+    });
+
+    g.nodes.forEach(n => { n.vx = n.x; n.vy = n.y; });
+
+    netData.nodes = g.nodes;
+    netData.links = g.links;
+    netData.packets = g.flows.filter(f => f.path);
+    netData.groups = g.groups;
+
+    _nmCache = null;
+    applyFit();
+    renderGroupPanel();
+}
+
+/* ================================================================
+   AUTO-FIT LAYOUT
+   ================================================================ */
+function applyFit() {
+    if (!netData.nodes.length) return;
+    if (!canvasWidth || !canvasHeight) return;
+
+    const { w: nw, h: nh } = nodeMetrics();
+    const padX = (nw / 2 + 22) / canvasWidth;
+    const padTop = (nh / 2 + 18) / canvasHeight;
+    const padBottom = (nh / 2 + 42) / canvasHeight;
+
+    const left = padX, right = 1 - padX;
+    const top = padTop, bottom = 1 - padBottom;
+    const targetW = Math.max(0.02, right - left);
+    const targetH = Math.max(0.02, bottom - top);
+
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    netData.nodes.forEach(n => {
+        if (n.vx < minX) minX = n.vx;
+        if (n.vx > maxX) maxX = n.vx;
+        if (n.vy < minY) minY = n.vy;
+        if (n.vy > maxY) maxY = n.vy;
+    });
+    const vW = Math.max(0.001, maxX - minX);
+    const vH = Math.max(0.001, maxY - minY);
+
+    let scale;
+    if (vW < 0.05 && vH < 0.05) {
+        scale = 1;
+    } else if (vH < 0.05) {
+        scale = targetW / vW;
+    } else if (vW < 0.05) {
+        scale = targetH / vH;
+    } else {
+        scale = Math.min(targetW / vW, targetH / vH);
+    }
+
+    const cx = (left + right) / 2;
+    const cy = (top + bottom) / 2;
+    const vcx = (minX + maxX) / 2;
+    const vcy = (minY + maxY) / 2;
+
+    netData.nodes.forEach(n => {
+        n.x = cx + (n.vx - vcx) * scale;
+        n.y = cy + (n.vy - vcy) * scale;
+    });
+}
+
+/* ================================================================
+   GROUP PANEL
+   ================================================================ */
+let hoveredGroupIdx = -1;
+
+function renderGroupPanel() {
+    const list = document.getElementById('groupList');
+    const countEl = document.getElementById('groupCount');
+    if (!list) return;
+
+    if (countEl) countEl.textContent = netData.groups.length;
+    list.innerHTML = '';
+
+    netData.groups.forEach((grp, idx) => {
+        const color = GROUP_COLORS[grp.colorIdx % GROUP_COLORS.length];
+        const item = document.createElement('div');
+        item.className = 'group-item';
+        item.dataset.idx = idx;
+        const n = grp.memberIds.length;
+        item.innerHTML = `
+            <span class="group-swatch" style="border-color:${color.swatch}; background:${color.fill};"></span>
+            <span class="group-info">
+                <span class="group-name">${grp.label}</span>
+                <span class="group-count">${n} device${n === 1 ? '' : 's'}</span>
+            </span>
+        `;
+        item.addEventListener('mouseenter', () => { hoveredGroupIdx = idx; });
+        item.addEventListener('mouseleave', () => { hoveredGroupIdx = -1; });
+        list.appendChild(item);
+    });
+}
+
+function toggleGroupPanel() {
+    const panel = document.getElementById('groupPanel');
+    const btn = document.getElementById('groupToggleBtn');
+    if (!panel) return;
+    const collapsed = panel.classList.toggle('collapsed');
+    if (btn) {
+        btn.title = collapsed ? 'Expand groups panel' : 'Collapse groups panel';
+        btn.setAttribute('aria-label', collapsed ? 'Expand groups panel' : 'Collapse groups panel');
+    }
+}
+
+/* ================================================================
+   CANVAS RENDERING
+   ================================================================ */
+let canvas, ctx, wrapper;
+let canvasWidth = 0, canvasHeight = 0;
+const C_BG = '#121212';
+const C_PANEL = '#1e1e1e';
+
+function baseColor(a) { return `rgba(255,255,255, ${a})`; }
+function nodeColor(s) { return `rgba(255,255,255, ${s})`; }
+
+let _nmCache = null;
+function nodeMetrics() {
+    if (_nmCache) return _nmCache;
+    const n = Math.max(1, netData.nodes.length);
+    const raw = canvasWidth / (Math.sqrt(n) * 3.6);
+    const w = Math.max(40, Math.min(76, raw));
+    _nmCache = { w, h: w * 0.72 };
+    return _nmCache;
+}
+
+function roundRect(c, x, y, w, h, r) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+}
+
+function drawBackground() {
+    ctx.save();
+    ctx.strokeStyle = baseColor(0.05);
+    ctx.lineWidth = 1;
+    const gs = 40;
+    for (let x = 0; x < canvasWidth; x += gs) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvasHeight); ctx.stroke();
+    }
+    for (let y = 0; y < canvasHeight; y += gs) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvasWidth, y); ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function drawGroups(map) {
+    const { w: nw, h: nh } = nodeMetrics();
+    netData.groups.forEach((grp, idx) => {
+        const members = grp.memberIds.map(id => map.get(id)).filter(Boolean);
+        if (!members.length) return;
+
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        members.forEach(n => {
+            if (n.px - nw / 2 < minX) minX = n.px - nw / 2;
+            if (n.px + nw / 2 > maxX) maxX = n.px + nw / 2;
+            if (n.py - nh / 2 < minY) minY = n.py - nh / 2;
+            if (n.py + nh / 2 > maxY) maxY = n.py + nh / 2;
+        });
+        const padX = 16, padTop = 24, padBottom = 30;
+        minX -= padX; maxX += padX;
+        minY -= padTop; maxY += padBottom;
+
+        const isHover = (idx === hoveredGroupIdx);
+        const color = GROUP_COLORS[grp.colorIdx % GROUP_COLORS.length];
+
+        ctx.save();
+        roundRect(ctx, minX, minY, maxX - minX, maxY - minY, 14);
+
+        const fill = isHover
+            ? color.fill.replace(/0\.0(\d+)/, (_, d) => '0.1' + (parseInt(d) + 3))
+            : color.fill;
+        ctx.fillStyle = fill;
+        ctx.fill();
+
+        ctx.strokeStyle = isHover ? color.label : color.border;
+        ctx.setLineDash([5, 4]);
+        ctx.lineWidth = isHover ? 2 : 1.5;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = color.label;
+        ctx.globalAlpha = isHover ? 1 : 0.75;
+        ctx.font = '600 11px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(grp.label, minX + 10, minY + 7);
+        ctx.globalAlpha = 1;
+        ctx.restore();
+    });
+}
+
+function drawLink(link, a, b) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(a.px, a.py);
+    ctx.lineTo(b.px, b.py);
+    if (link.type === 'wireless') {
+        ctx.setLineDash([6, 6]);
+        ctx.strokeStyle = baseColor(0.32);
+        ctx.lineWidth = 1.8;
+    } else {
+        ctx.setLineDash([]);
+        ctx.strokeStyle = baseColor(0.22);
+        ctx.lineWidth = 2;
+    }
+    ctx.stroke();
+    ctx.restore();
+}
+
+function drawNode(node) {
+    const style = NODE_STYLE[node.type] || NODE_STYLE.client;
+    const color = nodeColor(style.shade);
+    const { w, h } = nodeMetrics();
+    const x = node.px, y = node.py;
+
+    ctx.save();
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 12;
+    roundRect(ctx, x - w/2, y - h/2, w, h, 10);
+    ctx.fillStyle = C_PANEL;
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    roundRect(ctx, x - w/2, y - h/2, w, h, 10);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.font = `${Math.round(w * 0.36)}px "Segoe UI Symbol","Apple Symbols","Noto Sans Symbols 2",Inter,sans-serif`;
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(style.icon, x, y - h * 0.10);
+    ctx.restore();
+
+    ctx.save();
+    ctx.font = `600 ${Math.max(10, Math.min(12.5, w * 0.18))}px Inter, sans-serif`;
+    ctx.fillStyle = baseColor(0.92);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(node.label, x, y + h/2 + 5);
+
+    if (node.ip && node.ip !== '—') {
+        ctx.font = `500 ${Math.max(8.5, Math.min(10, w * 0.145))}px "Fira Code", monospace`;
+        ctx.fillStyle = baseColor(0.55);
+        ctx.fillText(node.ip, x, y + h/2 + 5 + Math.max(12, w * 0.20));
+    }
+    ctx.restore();
+}
+
+function drawPacket(p, map, time) {
+    const pts = [];
+    for (const id of p.path) {
+        const n = map.get(id);
+        if (n) pts.push(n);
+    }
+    if (pts.length < 2) return;
+
+    const segs = [];
+    let total = 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+        const d = Math.hypot(pts[i+1].px - pts[i].px, pts[i+1].py - pts[i].py);
+        segs.push(d);
+        total += d;
+    }
+    if (total <= 0) return;
+
+    const tt = (((time * p.speed + p.offset) % 1) + 1) % 1;
+    let d = tt * total, i = 0;
+    while (i < segs.length - 1 && d > segs[i]) { d -= segs[i]; i++; }
+    const a = pts[i], b = pts[i+1];
+    const k = segs[i] > 0 ? d / segs[i] : 0;
+    const x = a.px + (b.px - a.px) * k;
+    const y = a.py + (b.py - a.py) * k;
+
+    const service = p.service || SERVICES.https;
+
+    if (service.type === 'platform') {
+        /* ---------- Colored brand icon ---------- */
+        const color = service.color || '#ffffff';
+        const rgb = hexToRgbStr(color);
+        const iconR = 9;
+
+        // Colored halo
+        ctx.save();
+        ctx.globalAlpha = 0.22;
+        ctx.beginPath();
+        ctx.arc(x, y, iconR * 1.8, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${rgb}, 1)`;
+        ctx.fill();
+        ctx.restore();
+
+        // Glowing brand icon
+        ctx.save();
+        ctx.shadowColor = `rgba(${rgb}, 1)`;
+        ctx.shadowBlur = 14;
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 1.9;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        service.icon(ctx, x, y, iconR);
+        ctx.restore();
+    } else {
+        /* ---------- Plain white text pill ---------- */
+        const label = service.label;
+
+        ctx.save();
+        ctx.font = '700 10px Inter, sans-serif';
+        const tw = ctx.measureText(label).width;
+        const padX = 7;
+        const boxW = tw + padX * 2;
+        const boxH = 15;
+
+        // Dark pill with soft white glow
+        ctx.shadowColor = 'rgba(255,255,255,0.55)';
+        ctx.shadowBlur = 9;
+        roundRect(ctx, x - boxW/2, y - boxH/2, boxW, boxH, boxH/2);
+        ctx.fillStyle = 'rgba(22,22,22,0.95)';
+        ctx.fill();
+
+        // Reset shadow before stroke so the border doesn't double-glow
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Text
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, x, y + 0.5);
+
+        ctx.restore();
+    }
+}
+
+function drawFrame(time) {
+    if (!ctx || !canvasWidth || !canvasHeight) return;
+    _nmCache = null;
+
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    drawBackground();
+
+    applyFit();
+
+    const map = new Map();
+    netData.nodes.forEach(n => {
+        n.px = n.x * canvasWidth;
+        n.py = n.y * canvasHeight;
+        map.set(n.id, n);
+    });
+
+    drawGroups(map);
+
+    netData.links.forEach(l => {
+        const a = map.get(l.from), b = map.get(l.to);
+        if (a && b) drawLink(l, a, b);
+    });
+
+    netData.nodes.forEach(drawNode);
+
+    netData.packets.forEach(p => drawPacket(p, map, time));
+}
+
+/* ================================================================
+   ANIMATION LOOP & TIMER
+   ================================================================ */
+const SPEED_MULTIPLIER = 0.30;
+const DURATION = 30;
+
+let animTime = 0, lastTs = 0, timeElapsed = 0;
+
+function loop(ts) {
+    if (!lastTs) lastTs = ts;
+    const dt = Math.min(0.1, (ts - lastTs) / 1000);
+    lastTs = ts;
+
+    animTime    += dt * SPEED_MULTIPLIER;
+    timeElapsed += dt * SPEED_MULTIPLIER;
+
+    if (timeElapsed >= DURATION) {
+        timeElapsed = 0;
+        generateRandomNetwork();
+    }
+
+    const fill = document.getElementById('loadingBarFill');
+    if (fill) fill.style.width = ((timeElapsed / DURATION) * 100) + '%';
+
+    drawFrame(animTime);
+    requestAnimationFrame(loop);
+}
+
+function resizeCanvas() {
+    if (!wrapper || !canvas) return;
+    const rect = wrapper.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = Math.round(rect.width  * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    canvas.style.width  = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    canvasWidth = rect.width;
+    canvasHeight = rect.height;
+    _nmCache = null;
+    applyFit();
+}
+
+function manualRegenerate() {
+    const btn = document.getElementById('reloadBtn');
+    if (btn) {
+        btn.classList.add('spinning');
+        setTimeout(() => btn.classList.remove('spinning'), 650);
+    }
+    timeElapsed = 0;
+    generateRandomNetwork();
+}
+
+/* ================================================================
+   INIT
+   ================================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+    canvas  = document.getElementById('netCanvas');
+    wrapper = document.getElementById('netCanvas-wrapper');
+    ctx = canvas.getContext('2d');
+
+    if (window.ResizeObserver) {
+        new ResizeObserver(() => resizeCanvas()).observe(wrapper);
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    document.getElementById('reloadBtn').addEventListener('click', manualRegenerate);
+
+    document.getElementById('groupToggleBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleGroupPanel();
+    });
+    document.getElementById('groupPanelHeader').addEventListener('click', (e) => {
+        if (e.target.closest('#groupToggleBtn')) return;
+        toggleGroupPanel();
+    });
+
+    requestAnimationFrame(() => {
+        resizeCanvas();
+        generateRandomNetwork();
+        requestAnimationFrame(loop);
+    });
+});
+</script>
+</body>
+</html>

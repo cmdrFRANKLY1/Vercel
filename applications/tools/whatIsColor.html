@@ -37,62 +37,52 @@
     </script>
 
     <style>
+        /* Fallback Palette - Values overwritten dynamically by JS Color API */
         :root {
-            /* Dark Mode Defaults */
             --bg-color: #181a1b;
             --panel-color: #202324;
             --sidebar-color: #202122;
             --border-color: #54595d;
-            --text-color: #ffffff;
+            --panel-border: #54595d;
+            --text-color: #eaecf0;
             --text-muted: #a8aeb3;
+            --heading-color: #ffffff;
+            --subtitle-color: #e6e9ed;
             --link-color: #99c1f1;
             --link-hover: #629deb;
-            --heading-color: #ffffff;
             --code-bg: #27292a;
             --info-box: #2c2d30;
-            --table-alt: rgba(255,255,255,0.02);
-            --search-match: rgba(250, 204, 21, 0.3);
+
+            --shadow-color: rgba(0, 0, 0, 0.45);
+            --shadow-color-strong: rgba(0, 0, 0, 0.7);
+            --table-alt: rgba(255, 255, 255, 0.02);
+            --search-match: rgba(250, 204, 21, 0.35);
             --search-text: #ffffff;
+
+            --card-shadow:
+                0 0 22px 0 var(--shadow-color),
+                0 0 10px 0 var(--shadow-color),
+                0 4px 24px 0 var(--shadow-color);
+            --card-shadow-hover:
+                0 0 40px 0 var(--shadow-color-strong),
+                0 0 18px 0 var(--shadow-color-strong),
+                0 8px 36px 0 var(--shadow-color-strong);
+
+            --tok-kw: #c678dd;
+            --tok-str: #98c379;
+            --tok-num: #d19a66;
+            --tok-com: #7f848e;
+
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-violet: #8b5cf6;
+            --accent-teal: #14b8a6;
+            --accent-red: #ef4444;
+            --accent-gray: #6b7280;
 
             --content-max: 1600px;
             --sidebar-w: 20rem;
-
-            --panel-border: #54595d;
-            --card-shadow:
-                0 0 22px 0 rgba(0, 0, 0, 0.55),
-                0 0 10px 0 rgba(0, 0, 0, 0.45),
-                0 4px 24px 0 rgba(0, 0, 0, 0.35);
-            --card-shadow-hover:
-                0 0 40px 0 rgba(0, 0, 0, 0.7),
-                0 0 18px 0 rgba(0, 0, 0, 0.55),
-                0 8px 36px 0 rgba(0, 0, 0, 0.45);
-        }
-
-        html.light {
-            --bg-color: #f4f6f9;
-            --panel-color: #ffffff;
-            --sidebar-color: #ffffff;
-            --border-color: #cbd5e1;
-            --text-color: #000000;
-            --text-muted: #1f2937;
-            --link-color: #2563eb;
-            --link-hover: #1d4ed8;
-            --heading-color: #000000;
-            --code-bg: #f1f5f9;
-            --info-box: #e0f2fe;
-            --table-alt: rgba(0,0,0,0.015);
-            --search-match: rgba(250, 204, 21, 0.5);
-            --search-text: #000000;
-
-            --panel-border: #e2e8f0;
-            --card-shadow:
-                0 0 28px 0 rgba(0, 0, 0, 0.18),
-                0 0 12px 0 rgba(0, 0, 0, 0.12),
-                0 4px 24px 0 rgba(0, 0, 0, 0.10);
-            --card-shadow-hover:
-                0 0 48px 0 rgba(0, 0, 0, 0.28),
-                0 0 22px 0 rgba(0, 0, 0, 0.20),
-                0 8px 36px 0 rgba(0, 0, 0, 0.16);
         }
 
         html { font-size: 16px; }
@@ -168,6 +158,7 @@
 
         .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
 
+        /* Panels & Layout */
         .app-sidebar { width: var(--sidebar-w); max-height: 50vh; }
         @media (min-width: 1024px) { .app-sidebar { max-height: 100vh; } }
 
@@ -206,6 +197,44 @@
         .subtopic-card > h3:first-child { margin-top: 0; }
 
         .panel-intro { margin-bottom: 1.5rem; color: var(--text-color); }
+
+        /* ---------- Sidebar control buttons ---------- */
+        .ctrl-btn {
+            flex: 1; padding: 0.375rem 0; border-radius: 0.5rem;
+            font-size: 0.875rem; font-weight: 600; color: var(--text-muted);
+            border: 1px solid transparent; transition: background-color .15s, color .15s;
+            cursor: pointer;
+        }
+        .ctrl-btn:hover { background: var(--code-bg); color: var(--link-color); }
+
+        /* ---------- Theme context menu ---------- */
+        #themeContextMenu {
+            display: none; position: absolute; left: 0; right: 0; top: calc(100% + 0.35rem);
+            max-height: 24rem; overflow-y: auto; background: var(--panel-color);
+            border: 1px solid var(--panel-border); border-radius: 0.75rem;
+            box-shadow: 0 12px 36px var(--shadow-color-strong), 0 4px 12px var(--shadow-color);
+            z-index: 200;
+        }
+        #themeContextMenu.open { display: block; }
+        .theme-menu-header {
+            padding: 0.5rem 0.75rem; font-size: 0.62rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color); background: var(--info-box);
+            position: sticky; top: 0; z-index: 1;
+        }
+        .theme-menu-item {
+            display: flex; align-items: center; gap: 0.55rem; width: 100%;
+            padding: 0.5rem 0.75rem; font-size: 0.8rem; color: var(--text-color);
+            text-align: left; border: none; background: transparent; cursor: pointer;
+            transition: background .12s, color .12s; border-left: 3px solid transparent;
+        }
+        .theme-menu-item:hover { background: var(--code-bg); color: var(--link-color); }
+        .theme-menu-item.active { font-weight: 700; color: var(--link-color); background: var(--info-box); border-left-color: var(--link-color); }
+        .theme-menu-item .scheme-swatches { display: inline-flex; gap: 2px; flex-shrink: 0; }
+        .theme-menu-item .scheme-swatches span { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--border-color); }
+        .theme-menu-item .scheme-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .theme-menu-item .scheme-check { font-size: 0.65rem; color: var(--link-color); opacity: 0; }
+        .theme-menu-item.active .scheme-check { opacity: 1; }
 
         [data-lang-de], [data-lang-en] { transition: opacity 0.15s ease-in-out; }
 
@@ -344,10 +373,6 @@
             border-radius: 4px; border: 1px solid rgba(128,128,128,.5);
             vertical-align: middle; margin: 0 0.25em;
         }
-
-        @media (max-width: 1024px) {
-            .infobox { float: none; width: 100%; margin: 1em 0; }
-        }
     </style>
 </head>
 <body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
@@ -358,18 +383,19 @@
     <aside class="app-sidebar flex-shrink-0 bg-[var(--sidebar-color)] border-b lg:border-b-0 lg:border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
 
         <!-- Controls -->
-        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
-            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm relative">
+            <button onclick="toggleLang()" class="ctrl-btn" title="Sprache wechseln / Toggle language">
                 <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
             </button>
             <div class="w-px h-4 bg-[var(--border-color)]"></div>
-            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
-                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            <button id="themeToggleBtn" class="ctrl-btn" title="Linksklick: Hell/Dunkel · Rechtsklick: alle Farbschemata">
+                <i id="themeToggleIcon" class="fa-solid fa-sun"></i>
             </button>
-            <div class="w-px h-4 bg-[var(--border-color)]"></div>
-            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Cheatsheet">
+            <div id="downloadDivider" class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button id="downloadBtn" onclick="downloadHTML()" class="ctrl-btn" style="color: var(--link-color);" title="Download Cheatsheet">
                 <i class="fa-solid fa-download"></i>
             </button>
+            <div id="themeContextMenu" role="menu" aria-label="Farbschemata"></div>
         </div>
 
         <!-- Branding -->
@@ -379,7 +405,7 @@
                 <span data-lang-de>Was ist Farbe?</span>
                 <span data-lang-en style="display:none;">What is Color?</span>
             </div>
-            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">RGB · HEX · HSL · HSV · CMYK v1.0</div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">RGB · HEX · HSL · HSV · CMYK v1.1</div>
         </div>
 
         <!-- Search -->
@@ -398,9 +424,6 @@
             </div>
 
             <ul class="space-y-1">
-                <li><a href="#picker" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
-                    <span data-lang-de>0. Interaktiver Picker</span><span data-lang-en style="display:none;">0. Interactive Picker</span></a></li>
-
                 <li class="pt-2"><a href="#grundlagen" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
                     <span data-lang-de>1. Grundlagen der Farbe</span><span data-lang-en style="display:none;">1. Color Basics</span></a>
                     <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
@@ -443,6 +466,9 @@
                         <li><a href="#bildvideo" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors"><span data-lang-de>5.3 Bild &amp; Video</span><span data-lang-en style="display:none;">5.3 Image &amp; Video</span></a></li>
                     </ul>
                 </li>
+
+                <li class="pt-2"><a href="#picker" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span data-lang-de>6. Interaktiver Picker</span><span data-lang-en style="display:none;">6. Interactive Picker</span></a></li>
             </ul>
         </nav>
     </aside>
@@ -467,88 +493,6 @@
                 A <strong>color code</strong> is a machine-readable representation of a color inside a color model. On computers, the most common are <strong>RGB</strong> (screens), <strong>HEX</strong> (web), and <strong>CMYK</strong> (print). For design, accessibility, and image processing, <strong>HSL</strong>, <strong>HSV</strong>, <strong>Lab</strong>, and <strong>OKLCH</strong> are added on top.
             </p>
         </div>
-
-        <!-- ========================================== -->
-        <!-- 0. Interactive Picker                       -->
-        <!-- ========================================== -->
-        <section id="picker" class="scroll-mt-10 searchable-block topic-panel mt-8">
-            <h2>
-                <span data-lang-de>0. Interaktiver Farbwähler</span>
-                <span data-lang-en style="display:none;">0. Interactive Color Picker</span>
-            </h2>
-
-            <p class="panel-intro" data-lang-de>
-                Klicke oder ziehe auf der Farbfläche, um Sättigung und Helligkeit zu wählen. Nutze die unteren Schieberegler für Farbton (Hue) und Deckkraft (Alpha). Du kannst jeden Code auch direkt in die Felder rechts eintippen — die Position auf der Karte wird sofort aktualisiert.
-            </p>
-            <p class="panel-intro" data-lang-en style="display:none;">
-                Click or drag on the color canvas to pick saturation and brightness. Use the sliders below for hue and alpha. You can also type any code into the fields on the right — the marker on the map updates instantly.
-            </p>
-
-            <div class="subtopic-card">
-                <div class="picker-grid">
-                    <!-- Left: canvas + sliders -->
-                    <div>
-                        <div class="map-wrap">
-                            <canvas id="map" width="600" height="420"></canvas>
-                            <div class="marker" id="marker"></div>
-                        </div>
-
-                        <div class="slider" id="hueBar"><div class="thumb" id="hueThumb"></div></div>
-
-                        <div class="slider" id="alphaBar">
-                            <div class="checker"></div>
-                            <div class="grad" id="alphaGrad"></div>
-                            <div class="thumb" id="alphaThumb"></div>
-                        </div>
-
-                        <div class="hint">
-                            <span data-lang-de><b>Klick / Ziehen</b> auf der Karte für Sättigung &amp; Helligkeit · <b>Regler</b> für Hue &amp; Alpha · <b>Eingabefelder</b> für exakte Codes.</span>
-                            <span data-lang-en style="display:none;"><b>Click / drag</b> the map for saturation &amp; brightness · <b>sliders</b> for hue &amp; alpha · <b>type</b> exact codes in the fields.</span>
-                        </div>
-                    </div>
-
-                    <!-- Right: preview + code fields -->
-                    <div>
-                        <div class="preview" id="preview"><span id="previewHex">#4C91FF</span></div>
-
-                        <div class="codes">
-                            <div class="code-row"><span class="lbl">HEX</span>
-                                <input id="v-hex"  class="val" spellcheck="false" autocomplete="off" placeholder="#4C91FF">
-                                <button data-copy="v-hex">Copy</button></div>
-
-                            <div class="code-row"><span class="lbl">RGB</span>
-                                <input id="v-rgb"  class="val" spellcheck="false" autocomplete="off" placeholder="rgb(76, 145, 255)">
-                                <button data-copy="v-rgb">Copy</button></div>
-
-                            <div class="code-row"><span class="lbl">RGBA</span>
-                                <input id="v-rgba" class="val" spellcheck="false" autocomplete="off" placeholder="rgba(76, 145, 255, 1)">
-                                <button data-copy="v-rgba">Copy</button></div>
-
-                            <div class="code-row"><span class="lbl">HSL</span>
-                                <input id="v-hsl"  class="val" spellcheck="false" autocomplete="off" placeholder="hsl(217, 70%, 65%)">
-                                <button data-copy="v-hsl">Copy</button></div>
-
-                            <div class="code-row"><span class="lbl">HSV</span>
-                                <input id="v-hsv"  class="val" spellcheck="false" autocomplete="off" placeholder="hsv(217, 70%, 100%)">
-                                <button data-copy="v-hsv">Copy</button></div>
-
-                            <div class="code-row"><span class="lbl">CMYK</span>
-                                <input id="v-cmyk" class="val" spellcheck="false" autocomplete="off" placeholder="cmyk(70%, 43%, 0%, 0%)">
-                                <button data-copy="v-cmyk">Copy</button></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Palette -->
-                <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--panel-border)">
-                    <div class="sect-title">
-                        <span data-lang-de>Palette — klicken zum Springen</span>
-                        <span data-lang-en style="display:none;">Palette — click to jump</span>
-                    </div>
-                    <div class="palette-scroll"><div class="palette" id="palette"></div></div>
-                </div>
-            </div>
-        </section>
 
         <!-- ========================================== -->
         <!-- 1. Grundlagen der Farbe                     -->
@@ -922,7 +866,7 @@
         <!-- ========================================== -->
         <!-- 5. Praktische Anwendung                     -->
         <!-- ========================================== -->
-        <section id="praxis" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
+        <section id="praxis" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-8">
             <h2>
                 <span data-lang-de>5. Praktische Anwendung</span>
                 <span data-lang-en style="display:none;">5. Practical Application</span>
@@ -1011,11 +955,349 @@
             </div>
         </section>
 
+        <!-- ========================================== -->
+        <!-- 6. Interactive Picker                       -->
+        <!-- ========================================== -->
+        <section id="picker" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
+            <h2>
+                <span data-lang-de>6. Interaktiver Farbwähler</span>
+                <span data-lang-en style="display:none;">6. Interactive Color Picker</span>
+            </h2>
+
+            <p class="panel-intro" data-lang-de>
+                Klicke oder ziehe auf der Farbfläche, um Sättigung und Helligkeit zu wählen. Nutze die unteren Schieberegler für Farbton (Hue) und Deckkraft (Alpha). Du kannst jeden Code auch direkt in die Felder rechts eintippen — die Position auf der Karte wird sofort aktualisiert.
+            </p>
+            <p class="panel-intro" data-lang-en style="display:none;">
+                Click or drag on the color canvas to pick saturation and brightness. Use the sliders below for hue and alpha. You can also type any code into the fields on the right — the marker on the map updates instantly.
+            </p>
+
+            <div class="subtopic-card">
+                <div class="picker-grid">
+                    <!-- Left: canvas + sliders -->
+                    <div>
+                        <div class="map-wrap">
+                            <canvas id="map" width="600" height="420"></canvas>
+                            <div class="marker" id="marker"></div>
+                        </div>
+
+                        <div class="slider" id="hueBar"><div class="thumb" id="hueThumb"></div></div>
+
+                        <div class="slider" id="alphaBar">
+                            <div class="checker"></div>
+                            <div class="grad" id="alphaGrad"></div>
+                            <div class="thumb" id="alphaThumb"></div>
+                        </div>
+
+                        <div class="hint">
+                            <span data-lang-de><b>Klick / Ziehen</b> auf der Karte für Sättigung &amp; Helligkeit · <b>Regler</b> für Hue &amp; Alpha · <b>Eingabefelder</b> für exakte Codes.</span>
+                            <span data-lang-en style="display:none;"><b>Click / drag</b> the map for saturation &amp; brightness · <b>sliders</b> for hue &amp; alpha · <b>type</b> exact codes in the fields.</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: preview + code fields -->
+                    <div>
+                        <div class="preview" id="preview"><span id="previewHex">#4C91FF</span></div>
+
+                        <div class="codes">
+                            <div class="code-row"><span class="lbl">HEX</span>
+                                <input id="v-hex"  class="val" spellcheck="false" autocomplete="off" placeholder="#4C91FF">
+                                <button data-copy="v-hex">Copy</button></div>
+
+                            <div class="code-row"><span class="lbl">RGB</span>
+                                <input id="v-rgb"  class="val" spellcheck="false" autocomplete="off" placeholder="rgb(76, 145, 255)">
+                                <button data-copy="v-rgb">Copy</button></div>
+
+                            <div class="code-row"><span class="lbl">RGBA</span>
+                                <input id="v-rgba" class="val" spellcheck="false" autocomplete="off" placeholder="rgba(76, 145, 255, 1)">
+                                <button data-copy="v-rgba">Copy</button></div>
+
+                            <div class="code-row"><span class="lbl">HSL</span>
+                                <input id="v-hsl"  class="val" spellcheck="false" autocomplete="off" placeholder="hsl(217, 70%, 65%)">
+                                <button data-copy="v-hsl">Copy</button></div>
+
+                            <div class="code-row"><span class="lbl">HSV</span>
+                                <input id="v-hsv"  class="val" spellcheck="false" autocomplete="off" placeholder="hsv(217, 70%, 100%)">
+                                <button data-copy="v-hsv">Copy</button></div>
+
+                            <div class="code-row"><span class="lbl">CMYK</span>
+                                <input id="v-cmyk" class="val" spellcheck="false" autocomplete="off" placeholder="cmyk(70%, 43%, 0%, 0%)">
+                                <button data-copy="v-cmyk">Copy</button></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Palette -->
+                <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--panel-border)">
+                    <div class="sect-title">
+                        <span data-lang-de>Palette — klicken zum Springen</span>
+                        <span data-lang-en style="display:none;">Palette — click to jump</span>
+                    </div>
+                    <div class="palette-scroll"><div class="palette" id="palette"></div></div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <script>
     /* ====================================================== */
-    /* PART 1 — Picker logic                                   */
+    /* PART 1 — Color System & UI logic                       */
+    /* ====================================================== */
+
+    const FALLBACK_COLOR_CONFIG = {
+        version: '1.0',
+        defaultScheme: 'dark',
+        storageKey: 'whatIsColor.scheme',
+        base: {
+            'shadow-color': 'rgba(0, 0, 0, 0.45)',
+            'shadow-color-strong': 'rgba(0, 0, 0, 0.7)',
+            'card-shadow': '0 0 22px 0 var(--shadow-color), 0 0 10px 0 var(--shadow-color), 0 4px 24px 0 var(--shadow-color)',
+            'card-shadow-hover': '0 0 40px 0 var(--shadow-color-strong), 0 0 18px 0 var(--shadow-color-strong), 0 8px 36px 0 var(--shadow-color-strong)',
+            'table-alt': 'rgba(255, 255, 255, 0.02)',
+            'search-match': 'rgba(250, 204, 21, 0.35)',
+            'search-text': '#ffffff'
+        },
+        schemes: [
+            {
+                id: 'dark', name: { de: 'Dunkel (Standard)', en: 'Dark (default)' }, dark: true,
+                colors: {
+                    'bg-color': '#181a1b', 'panel-color': '#202324', 'sidebar-color': '#202122',
+                    'border-color': '#54595d', 'panel-border': '#54595d',
+                    'text-color': '#eaecf0', 'text-muted': '#a8aeb3',
+                    'heading-color': '#ffffff', 'subtitle-color': '#e6e9ed',
+                    'link-color': '#99c1f1', 'link-hover': '#629deb',
+                    'code-bg': '#27292a', 'info-box': '#2c2d30',
+                    'tok-kw': '#c678dd', 'tok-str': '#98c379', 'tok-num': '#d19a66', 'tok-com': '#7f848e',
+                    'accent-blue': '#3b82f6', 'accent-green': '#10b981', 'accent-amber': '#f59e0b',
+                    'accent-violet': '#8b5cf6', 'accent-teal': '#14b8a6', 'accent-red': '#ef4444', 'accent-gray': '#6b7280'
+                }
+            },
+            {
+                id: 'light', name: { de: 'Hell', en: 'Light' }, dark: false,
+                colors: {
+                    'bg-color': '#f4f6f9', 'panel-color': '#ffffff', 'sidebar-color': '#ffffff',
+                    'border-color': '#cbd5e1', 'panel-border': '#e2e8f0',
+                    'text-color': '#000000', 'text-muted': '#4b5563',
+                    'heading-color': '#000000', 'subtitle-color': '#111827',
+                    'link-color': '#2563eb', 'link-hover': '#1d4ed8',
+                    'code-bg': '#f1f5f9', 'info-box': '#e0f2fe',
+                    'shadow-color': 'rgba(0, 0, 0, 0.16)', 'shadow-color-strong': 'rgba(0, 0, 0, 0.28)',
+                    'table-alt': 'rgba(0, 0, 0, 0.015)',
+                    'search-match': 'rgba(250, 204, 21, 0.5)', 'search-text': '#000000',
+                    'tok-kw': '#a626a4', 'tok-str': '#3f8f3d', 'tok-num': '#986801', 'tok-com': '#9aa0a6',
+                    'accent-blue': '#2563eb', 'accent-green': '#059669', 'accent-amber': '#d97706',
+                    'accent-violet': '#7c3aed', 'accent-teal': '#0d9488', 'accent-red': '#dc2626', 'accent-gray': '#6b7280'
+                }
+            }
+        ]
+    };
+
+    const COLORS_JSON_PATH = 'settings/colors.json';
+
+    let colorConfig = FALLBACK_COLOR_CONFIG;
+    let activeSchemeId = null;
+    let lastDarkSchemeId = 'dark';
+    let lastLightSchemeId = 'light';
+
+    function getSchemeById(id) {
+        return (colorConfig.schemes || []).find(s => s.id === id) || null;
+    }
+
+    function resolveSchemeColors(scheme) {
+        return Object.assign({}, colorConfig.base || {}, scheme.colors || {});
+    }
+
+    async function initColorSchemes() {
+        try {
+            const res = await fetch(COLORS_JSON_PATH, { cache: 'no-cache' });
+            if (res.ok) {
+                const data = await res.json();
+                if (data && Array.isArray(data.schemes)) {
+                    colorConfig = data;
+                }
+            }
+        } catch (err) {
+            console.info('[colors] Using built-in palette due to fetch error on ' + COLORS_JSON_PATH);
+        }
+
+        const stored = readStoredScheme();
+        const preferred = colorConfig.defaultScheme || colorConfig.schemes[0].id;
+        const initial = (stored && getSchemeById(stored)) ? stored
+                        : (getSchemeById(preferred) ? preferred : colorConfig.schemes[0].id);
+
+        const initScheme = getSchemeById(initial);
+        if (initScheme) {
+            if (initScheme.dark) lastDarkSchemeId = initScheme.id;
+            else                 lastLightSchemeId = initScheme.id;
+        }
+
+        applyColorScheme(initial);
+    }
+
+    function applyColorScheme(id) {
+        const scheme = getSchemeById(id) || colorConfig.schemes[0];
+        if (!scheme) return;
+
+        const root = document.documentElement;
+        const colors = resolveSchemeColors(scheme);
+
+        Object.keys(colors).forEach(key => {
+            if (colors[key] === null || colors[key] === undefined) return;
+            root.style.setProperty('--' + key, String(colors[key]));
+        });
+
+        root.style.colorScheme = scheme.dark ? 'dark' : 'light';
+        root.classList.toggle('theme-dark', !!scheme.dark);
+        root.setAttribute('data-color-scheme', scheme.id);
+
+        if (scheme.dark) lastDarkSchemeId = scheme.id;
+        else             lastLightSchemeId = scheme.id;
+
+        activeSchemeId = scheme.id;
+        storeScheme(scheme.id);
+
+        const icon = document.getElementById('themeToggleIcon');
+        if (icon) icon.className = scheme.dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    }
+
+    function toggleDarkLight() {
+        hideThemeMenu();
+        const current = getSchemeById(activeSchemeId);
+        if (!current) return;
+        if (current.dark) {
+            const target = getSchemeById(lastLightSchemeId) ? lastLightSchemeId
+                            : (colorConfig.schemes.find(s => !s.dark) || {}).id;
+            if (target) applyColorScheme(target);
+        } else {
+            const target = getSchemeById(lastDarkSchemeId) ? lastDarkSchemeId
+                            : (colorConfig.schemes.find(s => s.dark) || {}).id;
+            if (target) applyColorScheme(target);
+        }
+    }
+
+    function buildThemeMenuItems() {
+        const menu = document.getElementById('themeContextMenu');
+        if (!menu) return;
+        menu.innerHTML = '';
+
+        const header = document.createElement('div');
+        header.className = 'theme-menu-header';
+        header.textContent = isGerman
+            ? 'Farbschema wählen (' + colorConfig.schemes.length + ')'
+            : 'Choose colour scheme (' + colorConfig.schemes.length + ')';
+        menu.appendChild(header);
+
+        const schemes = colorConfig.schemes || [];
+        const langTag = isGerman ? 'de' : 'en';
+        // Utilizing the key values present in colors_5.json
+        const PREVIEW_KEYS = ['bg-color', 'panel-color', 'code-bg', 'link-color', 'accent-green', 'accent-amber'];
+
+        schemes.forEach(s => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'theme-menu-item' + (s.id === activeSchemeId ? ' active' : '');
+
+            const swWrap = document.createElement('span');
+            swWrap.className = 'scheme-swatches';
+            const colors = resolveSchemeColors(s);
+            PREVIEW_KEYS.forEach(k => {
+                const dot = document.createElement('span');
+                dot.style.background = colors[k] || 'transparent';
+                swWrap.appendChild(dot);
+            });
+            btn.appendChild(swWrap);
+
+            const nameEl = document.createElement('span');
+            nameEl.className = 'scheme-name';
+            const name = s.name || {};
+            nameEl.textContent = (typeof name === 'string' ? name : (name[langTag] || name.de || name.en || s.id));
+            btn.appendChild(nameEl);
+
+            const check = document.createElement('i');
+            check.className = 'fa-solid fa-check scheme-check';
+            btn.appendChild(check);
+
+            btn.addEventListener('click', () => {
+                applyColorScheme(s.id);
+                hideThemeMenu();
+            });
+
+            menu.appendChild(btn);
+        });
+    }
+
+    function showThemeMenu(e) {
+        if (e) e.preventDefault();
+        const menu = document.getElementById('themeContextMenu');
+        if (!menu) return;
+        buildThemeMenuItems();
+        menu.classList.add('open');
+    }
+
+    function hideThemeMenu() {
+        const menu = document.getElementById('themeContextMenu');
+        if (menu) menu.classList.remove('open');
+    }
+
+    function updateDownloadVisibility() {
+        const isLocal = (location.protocol === 'file:');
+        const btn = document.getElementById('downloadBtn');
+        const divider = document.getElementById('downloadDivider');
+        if (btn)     btn.style.display = isLocal ? 'none' : '';
+        if (divider) divider.style.display = isLocal ? 'none' : '';
+    }
+
+    function storageKey() {
+        return (colorConfig && colorConfig.storageKey) || 'whatIsColor.scheme';
+    }
+    function storeScheme(id) {
+        try { localStorage.setItem(storageKey(), id); } catch (_) {}
+    }
+    function readStoredScheme() {
+        try { return localStorage.getItem(storageKey()); } catch (_) { return null; }
+    }
+
+    let isGerman = true;
+
+    function applyLang() {
+        document.querySelectorAll('[data-lang-de]').forEach(el => {
+            el.style.display = isGerman ? '' : 'none';
+        });
+        document.querySelectorAll('[data-lang-en]').forEach(el => {
+            el.style.display = isGerman ? 'none' : '';
+        });
+        const ind = document.getElementById('lang-indicator');
+        if (ind) ind.textContent = isGerman ? 'DE' : 'EN';
+        document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+
+        const menu = document.getElementById('themeContextMenu');
+        if (menu && menu.classList.contains('open')) {
+            buildThemeMenuItems();
+        }
+    }
+
+    function toggleLang() {
+        isGerman = !isGerman;
+        applyLang();
+    }
+
+    function downloadHTML() {
+        removeHighlights(document.getElementById('main-content'));
+        const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+        const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'What_is_Color.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+
+    /* ====================================================== */
+    /* PART 2 — Picker logic                                   */
     /* ====================================================== */
 
     /* basic helpers */
@@ -1304,27 +1586,6 @@
     attachSlider(hueBar,   t => setHue(t * 360));
     attachSlider(alphaBar, t => setAlpha(t));
 
-    /* palette */
-    const palette = document.getElementById('palette');
-    const HUE_COLS = 18;
-    const SHADES = [
-        [0.12, 1.00], [0.30, 1.00], [0.50, 1.00],
-        [0.72, 1.00], [1.00, 1.00], [1.00, 0.72], [1.00, 0.45]
-    ];
-
-    for (const [s, v] of SHADES) {
-        for (let i = 0; i < HUE_COLS; i++) {
-            const hue = i * (360 / HUE_COLS);
-            const [r, g, b] = hsvToRgb(hue, s, v);
-            const sw = document.createElement('div');
-            sw.className = 'sw';
-            sw.style.background = `rgb(${r},${g},${b})`;
-            sw.title = `#${h2(r)}${h2(g)}${h2(b)}`;
-            sw.addEventListener('click', () => pickHsv(hue, s, v));
-            palette.appendChild(sw);
-        }
-    }
-
     /* copy buttons */
     document.querySelectorAll('[data-copy]').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -1344,31 +1605,6 @@
             const old = btn.textContent;
             btn.textContent = '✓';
             setTimeout(() => btn.textContent = old, 900);
-        });
-    });
-
-    /* ====================================================== */
-    /* PART 2 — Cheatsheet shell logic                         */
-    /* ====================================================== */
-
-    /* TOC scroll spy */
-    document.addEventListener('DOMContentLoaded', () => {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                const id = entry.target.getAttribute('id');
-                const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
-                if (entry.isIntersecting) {
-                    document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
-                    if (tocLink) tocLink.classList.add('active');
-                }
-            });
-        }, {
-            rootMargin: '-10% 0px -80% 0px',
-            threshold: [0, 0.1, 1]
-        });
-
-        document.querySelectorAll('section, h3[id]').forEach((section) => {
-            observer.observe(section);
         });
     });
 
@@ -1444,56 +1680,83 @@
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
-    /* Theme */
-    function toggleTheme() {
-        const html = document.documentElement;
-        const icon = document.getElementById('theme-icon');
-        if (html.classList.contains('light')) {
-            html.classList.remove('light');
-            icon.className = 'fa-solid fa-sun';
-        } else {
-            html.classList.add('light');
-            icon.className = 'fa-solid fa-moon';
+    /* ====================================================== */
+    /* PART 3 — Bootstrapping                                 */
+    /* ====================================================== */
+    document.addEventListener('DOMContentLoaded', () => {
+        initColorSchemes();
+        applyLang();
+        updateDownloadVisibility();
+
+        // TOC Observer
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const id = entry.target.getAttribute('id');
+                const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+                if (entry.isIntersecting) {
+                    document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                    if (tocLink) tocLink.classList.add('active');
+                }
+            });
+        }, {
+            rootMargin: '-10% 0px -80% 0px',
+            threshold: [0, 0.1, 1]
+        });
+
+        document.querySelectorAll('section, h3[id]').forEach((section) => {
+            observer.observe(section);
+        });
+
+        // Theme Button Context Menu
+        const themeBtn = document.getElementById('themeToggleBtn');
+        if (themeBtn) {
+            themeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleDarkLight();
+            });
+            themeBtn.addEventListener('contextmenu', (e) => {
+                showThemeMenu(e);
+            });
         }
-    }
 
-    /* Language */
-    let isGerman = true;
-    function toggleLang() {
-        isGerman = !isGerman;
-        document.getElementById('lang-indicator').textContent = isGerman ? 'DE' : 'EN';
-        document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('themeContextMenu');
+            if (!menu || !menu.classList.contains('open')) return;
+            const btn = document.getElementById('themeToggleBtn');
+            if (menu.contains(e.target)) return;
+            if (btn && btn.contains(e.target)) return;
+            hideThemeMenu();
+        });
 
-        const deEls = document.querySelectorAll('[data-lang-de]');
-        const enEls = document.querySelectorAll('[data-lang-en]');
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') hideThemeMenu();
+        });
 
-        if (isGerman) {
-            deEls.forEach(el => el.style.display = '');
-            enEls.forEach(el => el.style.display = 'none');
-        } else {
-            deEls.forEach(el => el.style.display = 'none');
-            enEls.forEach(el => el.style.display = '');
+        // Generate Palette swatches
+        const paletteContainer = document.getElementById('palette');
+        const HUE_COLS = 18;
+        const SHADES = [
+            [0.12, 1.00], [0.30, 1.00], [0.50, 1.00],
+            [0.72, 1.00], [1.00, 1.00], [1.00, 0.72], [1.00, 0.45]
+        ];
+
+        for (const [s, v] of SHADES) {
+            for (let i = 0; i < HUE_COLS; i++) {
+                const hue = i * (360 / HUE_COLS);
+                const [r, g, b] = hsvToRgb(hue, s, v);
+                const sw = document.createElement('div');
+                sw.className = 'sw';
+                sw.style.background = `rgb(${r},${g},${b})`;
+                sw.title = `#${h2(r)}${h2(g)}${h2(b)}`;
+                sw.addEventListener('click', () => pickHsv(hue, s, v));
+                paletteContainer.appendChild(sw);
+            }
         }
-    }
 
-    /* Download */
-    function downloadHTML() {
-        removeHighlights(document.getElementById('main-content'));
-        const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-        const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'ColorCodes_Cheatsheet.html';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
-
-    /* init picker */
-    drawMap();
-    render();
+        // Draw initial Picker map
+        drawMap();
+        render();
+    });
     </script>
 </body>
 </html>
