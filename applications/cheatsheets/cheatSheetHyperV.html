@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyper-V Cheatsheet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wiki: {
+                            bg: 'var(--bg-color)',
+                            panel: 'var(--panel-color)',
+                            border: 'var(--border-color)',
+                            text: 'var(--text-color)',
+                            textMuted: 'var(--text-muted)',
+                            link: 'var(--link-color)',
+                            linkHover: 'var(--link-hover)',
+                            heading: 'var(--heading-color)',
+                            codeBg: 'var(--code-bg)',
+                            infoBox: 'var(--info-box)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #181a1b;
+            --panel-color: #202324;
+            --sidebar-color: #202122;
+            --border-color: #54595d;
+            --text-color: #eaecf0;
+            --text-muted: #a8aeb3;
+            --link-color: #38bdf8; /* Light Blue for Hyper-V / Windows */
+            --link-hover: #7dd3fc;
+            --heading-color: #ffffff;
+            --code-bg: #27292a;
+            --code-block-bg: #111213;
+            --info-box: #2c2d30;
+            --table-alt: rgba(255,255,255,0.02);
+            --search-match: rgba(56, 189, 248, 0.3);
+            --search-text: #ffffff;
+
+            /* Architecture Colors */
+            --c-host: #64748b; /* Slate */
+            --c-hypervisor: #0ea5e9; /* Azure Blue */
+            --c-vm1: #10b981; /* Emerald */
+            --c-vm2: #f59e0b; /* Amber */
+            --c-vm3: #8b5cf6; /* Violet */
+
+            /* Layout tuning */
+            --content-max: 1600px;
+            --sidebar-w: 20rem;
+
+            /* Shadows */
+            --panel-border: #54595d;
+            --card-shadow:
+                0 0 22px 0 rgba(0, 0, 0, 0.55),
+                0 0 10px 0 rgba(0, 0, 0, 0.45),
+                0 4px 24px 0 rgba(0, 0, 0, 0.35);
+            --card-shadow-hover:
+                0 0 40px 0 rgba(0, 0, 0, 0.7),
+                0 0 18px 0 rgba(0, 0, 0, 0.55),
+                0 8px 36px 0 rgba(0, 0, 0, 0.45);
+        }
+
+        html.light {
+            --bg-color: #f4f6f9;
+            --panel-color: #ffffff;
+            --sidebar-color: #ffffff;
+            --border-color: #cbd5e1;
+            --text-color: #0f172a;
+            --text-muted: #475569;
+            --link-color: #0284c7; /* Darker Blue */
+            --link-hover: #0369a1;
+            --heading-color: #020617;
+            --code-bg: #e2e8f0;
+            --code-block-bg: #f8fafc;
+            --info-box: #e0f2fe;
+            --table-alt: rgba(0,0,0,0.015);
+            --search-match: rgba(2, 132, 199, 0.2);
+            --search-text: #000000;
+
+            --panel-border: #e2e8f0;
+            --card-shadow:
+                0 0 28px 0 rgba(0, 0, 0, 0.18),
+                0 0 12px 0 rgba(0, 0, 0, 0.12),
+                0 4px 24px 0 rgba(0, 0, 0, 0.10);
+            --card-shadow-hover:
+                0 0 48px 0 rgba(0, 0, 0, 0.28),
+                0 0 22px 0 rgba(0, 0, 0, 0.20),
+                0 8px 36px 0 rgba(0, 0, 0, 0.16);
+        }
+
+        html { font-size: 16px; }
+        @media (min-width: 1536px)  { html { font-size: 17px; } }
+        @media (min-width: 1800px)  { html { font-size: 18px; } }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.65;
+            transition: background-color 0.2s, color 0.2s;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Lora', serif;
+            color: var(--heading-color);
+            font-weight: 800 !important;
+            line-height: 1.15;
+            text-wrap: balance;
+        }
+        h1 { font-size: clamp(2.1rem, 3vw, 3.1rem) !important; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+        h2 { font-size: clamp(1.6rem, 2.1vw, 2.15rem) !important; padding-bottom: 0.4rem; margin-top: 0; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); }
+        h3 { font-size: clamp(1.25rem, 1.5vw, 1.6rem) !important; margin-top: 1.25rem; margin-bottom: 0.7rem; }
+        h4 { font-size: clamp(1.1rem, 1.2vw, 1.35rem) !important; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+        p { margin-bottom: 1rem; max-width: 90ch; }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--heading-color);
+        }
+
+        pre code {
+            display: block;
+            background-color: var(--code-block-bg);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--panel-border);
+            overflow-x: auto;
+            color: var(--text-color);
+            line-height: 1.5;
+            margin: 1rem 0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .ps-cmd { color: #f59e0b; font-weight: bold; } /* Powershell Yellow/Orange */
+        .ps-param { color: #a78bfa; } /* Powershell Purple */
+        .ps-string { color: #10b981; } /* String Green */
+
+        .wikitable {
+            width: 100%; border-collapse: collapse; margin: 1em 0;
+            background-color: var(--bg-color); font-size: 0.95em;
+            border: 1px solid var(--panel-border); border-radius: 0.5rem;
+            overflow: hidden; table-layout: auto;
+        }
+        .wikitable th, .wikitable td { border: 1px solid var(--panel-border); padding: 0.7em 0.95em; text-align: left; vertical-align: top; }
+        .wikitable th { background-color: var(--info-box); font-weight: 600; color: var(--heading-color); }
+        .wikitable tr:nth-child(even) { background-color: var(--table-alt); }
+
+        .toc-link.active { font-weight: 600; color: var(--heading-color); position: relative; }
+        .toc-link.active::before { content: ''; position: absolute; left: -1rem; top: 0; height: 100%; width: 3px; background-color: var(--link-color); }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .search-match { background-color: var(--search-match); border-radius: 2px; padding: 0 2px; color: var(--search-text) !important; }
+
+        .app-sidebar { width: var(--sidebar-w); max-height: 50vh; }
+        @media (min-width: 1024px) { .app-sidebar { max-height: 100vh; } }
+
+        .app-main { flex: 1 1 0%; min-width: 0; width: 100%; max-width: var(--content-max); padding: 1rem; }
+        @media (min-width: 1024px) { .app-main { padding: 1.5rem; } }
+        @media (min-width: 1280px) { .app-main { padding: 2rem; } }
+        @media (min-width: 1600px) { .app-main { padding: 2.25rem 2.5rem; } }
+
+        .topic-panel { background-color: var(--panel-color); border: 1px solid var(--panel-border); box-shadow: var(--card-shadow); border-radius: 1rem; padding: 1.5rem; margin: 2rem 0; transition: box-shadow 0.3s ease; }
+        @media (min-width: 1024px) { .topic-panel { padding: 2.25rem; } }
+        .topic-panel:hover { box-shadow: var(--card-shadow-hover); }
+        .topic-panel.mt-0 { margin-top: 0; }
+        .topic-panel.mb-8 { margin-bottom: 2rem; }
+        .topic-panel.mb-20 { margin-bottom: 5rem; }
+
+        .subtopic-card { background-color: var(--bg-color); border: 1px solid var(--panel-border); border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem; transition: box-shadow 0.2s ease, transform 0.2s ease; }
+        .subtopic-card:last-child { margin-bottom: 0; }
+        .subtopic-card:hover { box-shadow: var(--card-shadow); transform: translateY(-2px); }
+        .subtopic-card > h3:first-child { margin-top: 0; }
+
+        .panel-intro { margin-bottom: 1.5rem; color: var(--text-color); }
+        
+        .btn-primary { background-color: var(--link-color); color: #fff; transition: transform 0.1s, opacity 0.2s; border: none; }
+        html:not(.light) .btn-primary { color: #000; }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(1px); }
+
+        .btn-secondary { background-color: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); transition: all 0.2s; }
+        .btn-secondary:hover { background-color: var(--info-box); border-color: var(--link-color); }
+        
+        #canvas-wrapper { position: relative; width: 100%; height: 100%; }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        .lang-en { display: none; }
+        body[data-active-lang="en"] .lang-de { display: none !important; }
+        body[data-active-lang="en"] .lang-en { display: block !important; }
+        body[data-active-lang="en"] span.lang-en, body[data-active-lang="en"] a.lang-en { display: inline !important; }
+        body[data-active-lang="de"] .lang-en { display: none !important; }
+        body[data-active-lang="de"] .lang-de { display: block !important; }
+        body[data-active-lang="de"] span.lang-de, body[data-active-lang="de"] a.lang-de { display: inline !important; }
+        [data-lang-de], [data-lang-en] { transition: opacity 0.15s ease-in-out; }
+    </style>
+</head>
+<body class="flex flex-col lg:flex-row min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]" data-active-lang="de">
+
+    <aside class="app-sidebar flex-shrink-0 bg-[var(--sidebar-color)] border-b lg:border-b-0 lg:border-r border-[var(--border-color)] lg:h-screen lg:sticky lg:top-0 overflow-y-auto p-4 lg:p-6 z-40 relative transition-colors">
+        
+        <!-- Controls -->
+        <div class="flex items-center justify-between gap-2 mb-6 bg-[var(--panel-color)] p-2 rounded-xl border border-[var(--panel-border)] shadow-sm">
+            <button onclick="toggleLang()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Language">
+                <i class="fa-solid fa-language mr-1"></i> <span id="lang-indicator">DE</span>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="toggleTheme()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--text-muted)] transition-colors border border-transparent" title="Toggle Theme">
+                <i id="theme-icon" class="fa-solid fa-sun"></i>
+            </button>
+            <div class="w-px h-4 bg-[var(--border-color)]"></div>
+            <button onclick="downloadHTML()" class="flex-1 hover:bg-[var(--code-bg)] py-1.5 rounded-lg text-sm font-semibold text-[var(--link-color)] transition-colors border border-transparent" title="Download Cheatsheet">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+
+        <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
+            <i class="fa-brands fa-windows text-3xl mb-3 text-[var(--link-color)] opacity-90"></i>
+            <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
+                <span class="lang-de">Hyper-V<br>Virtualisierung</span>
+                <span class="lang-en">Hyper-V<br>Virtualization</span>
+            </div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v3.1 - SysAdmin</div>
+        </div>
+
+        <!-- Search Box -->
+        <div class="mb-6 relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-sm"></i>
+            </div>
+            <input type="text" id="wikiSearch" placeholder="Search..." class="w-full bg-[var(--bg-color)] border border-[var(--panel-border)] rounded-xl pl-10 pr-3 py-2.5 text-sm text-[var(--text-color)] focus:outline-none focus:border-[var(--link-color)] transition-all shadow-sm" onkeyup="filterWiki()">
+        </div>
+
+        <!-- Table of Contents -->
+        <nav class="text-sm space-y-1.5" id="toc-nav">
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span class="lang-de">Inhaltsverzeichnis</span>
+                <span class="lang-en">Table of Contents</span>
+            </div>
+            <ul class="space-y-1">
+                <li><a href="#simulation" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors mb-2">
+                    <i class="fa-solid fa-play-circle mr-1"></i>
+                    <span class="lang-de">Interaktive Architektur</span><span class="lang-en">Interactive Architecture</span>
+                </a></li>
+                <li><a href="#grundlagen" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">1. Grundlagen</span><span class="lang-en">1. Fundamentals</span>
+                </a>
+                    <ul class="pl-4 space-y-1 border-l border-[var(--border-color)] ml-2 mt-1">
+                        <li><a href="#hypervisor" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors">
+                            <span class="lang-de">1.1 Typ-1 Hypervisor</span><span class="lang-en">1.1 Type-1 Hypervisor</span>
+                        </a></li>
+                        <li><a href="#vswitch" class="toc-link block py-1 px-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--link-color)] hover:bg-[var(--code-bg)] transition-colors">
+                            <span class="lang-de">1.2 Virtual Switches</span><span class="lang-en">1.2 Virtual Switches</span>
+                        </a></li>
+                    </ul>
+                </li>
+                <li class="pt-2"><a href="#powershell" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">2. PowerShell (VMs verwalten)</span><span class="lang-en">2. PowerShell (Managing VMs)</span>
+                </a></li>
+                <li class="pt-2"><a href="#storage" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">3. Storage (VHDX & Checkpoints)</span><span class="lang-en">3. Storage (VHDX & Checkpoints)</span>
+                </a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="app-main" id="main-content">
+        <!-- Intro panel -->
+        <div class="searchable-block topic-panel mt-0 mb-8">
+            <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0">
+                <span class="lang-de">Microsoft Hyper-V</span>
+                <span class="lang-en">Microsoft Hyper-V</span>
+            </h1>
+            <p class="text-lg mb-0">
+                <span class="lang-de"><strong>Hyper-V</strong> ist Microsofts hardwarebasierte Virtualisierungslösung. Als Typ-1-Hypervisor greift es direkt auf die physische Hardware zu, um virtuelle Maschinen (VMs) zu erstellen und zu verwalten, was eine hohe Leistung und Isolation für Enterprise-Umgebungen gewährleistet.</span>
+                <span class="lang-en"><strong>Hyper-V</strong> is Microsoft's hardware-based virtualization solution. As a Type-1 hypervisor, it interacts directly with physical hardware to create and manage virtual machines (VMs), ensuring high performance and isolation for enterprise environments.</span>
+            </p>
+        </div>
+
+        <!-- INTERACTIVE SIMULATION -->
+        <section id="simulation" class="scroll-mt-10 searchable-block topic-panel mb-8 !p-0 overflow-hidden border-2 border-[var(--border-color)]">
+            <div class="p-5 border-b border-[var(--border-color)] bg-[var(--panel-color)]">
+                <h2 class="!mt-0 !mb-1 text-[var(--link-color)] border-none">
+                    <i class="fa-solid fa-server mr-2"></i>
+                    <span class="lang-de">Interaktiver Visualizer: Hyper-V Architektur</span>
+                    <span class="lang-en">Interactive Visualizer: Hyper-V Architecture</span>
+                </h2>
+                <p class="text-sm text-[var(--text-muted)] !mb-0">
+                    <span class="lang-de">Verstehe, wie Ressourcen zwischen Host, Hypervisor und Gast-VMs aufgeteilt werden.</span>
+                    <span class="lang-en">Understand how resources are allocated between Host, Hypervisor, and Guest VMs.</span>
+                </p>
+            </div>
+            
+            <div class="flex flex-col-reverse lg:flex-row h-[750px] lg:h-[550px] bg-[var(--bg-color)] relative w-full">
+                
+                <!-- Left: Explanation & Controls -->
+                <div class="w-full lg:w-[380px] flex-shrink-0 bg-[var(--panel-color)] border-t lg:border-t-0 lg:border-r border-[var(--border-color)] flex flex-col h-auto lg:h-full z-10 p-5 overflow-y-auto">
+                    
+                    <div class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">
+                        <span class="lang-de">Phase</span><span class="lang-en">Phase</span> 
+                        <span id="step-counter" class="text-[var(--heading-color)]">1</span> / 4
+                    </div>
+
+                    <h4 id="phase-title" class="text-xl text-[var(--link-color)] border-b border-[var(--border-color)] pb-2 mb-3 mt-0">
+                        <!-- Injected by JS -->
+                    </h4>
+
+                    <div id="phase-desc" class="text-sm text-[var(--text-color)] leading-relaxed flex-grow min-h-[90px]">
+                         <!-- Injected by JS -->
+                    </div>
+
+                    <!-- PowerShell Code Display -->
+                    <div class="mt-2 mb-4 border border-[var(--border-color)] rounded-md bg-[var(--code-block-bg)] p-3">
+                        <pre class="!m-0 !p-0 !bg-transparent !border-none !shadow-none text-xs"><code id="ps-display">
+                        </code></pre>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="flex gap-2 mt-auto pt-4 border-t border-[var(--border-color)]">
+                        <button onclick="prevPhase()" class="btn-secondary px-3 py-2 rounded-lg font-semibold text-sm flex-1">
+                            <i class="fa-solid fa-arrow-left mr-1"></i> <span class="lang-de">Zurück</span><span class="lang-en">Back</span>
+                        </button>
+                        <button onclick="nextPhase()" class="btn-primary px-3 py-2 rounded-lg font-semibold text-sm flex-1 shadow-sm">
+                            <span class="lang-de">Weiter</span><span class="lang-en">Next</span> <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: Canvas -->
+                <div id="canvas-wrapper" class="flex-grow relative h-full min-h-[300px]">
+                    <canvas id="simCanvas"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 1 -->
+        <section id="grundlagen" class="scroll-mt-10 searchable-block topic-panel mt-8">
+            <h2>
+                <span class="lang-de">1. Grundkonzepte</span>
+                <span class="lang-en">1. Core Concepts</span>
+            </h2>
+
+            <div class="subtopic-card">
+                <h3 id="hypervisor" class="scroll-mt-10">
+                    <span class="lang-de">1.1 Typ-1 Hypervisor (Bare-Metal)</span>
+                    <span class="lang-en">1.1 Type-1 Hypervisor (Bare-Metal)</span>
+                </h3>
+                <p>
+                    <span class="lang-de">Im Gegensatz zu Programmen wie VirtualBox (Typ-2), läuft Hyper-V direkt auf der physischen Hardware (Bare-Metal). Das "Host-Betriebssystem" (die Parent Partition) läuft eigentlich <em>neben</em> den VMs, verwaltet sie aber durch direkte Hypercalls an den Hypervisor.</span>
+                    <span class="lang-en">Unlike programs like VirtualBox (Type-2), Hyper-V runs directly on physical hardware (Bare-Metal). The "Host OS" (Parent Partition) actually runs <em>alongside</em> the VMs, but manages them via direct hypercalls to the hypervisor.</span>
+                </p>
+                <div class="flex justify-around items-center text-center mt-6 py-4 bg-[var(--panel-color)] border border-[var(--panel-border)] rounded-lg">
+                    <div>
+                        <i class="fa-solid fa-computer text-3xl text-[var(--c-host)] mb-2"></i>
+                        <div class="text-xs font-bold uppercase text-[var(--text-muted)]"><span class="lang-de">Hardware</span><span class="lang-en">Hardware</span></div>
+                    </div>
+                    <i class="fa-solid fa-arrow-right text-[var(--border-color)]"></i>
+                    <div>
+                        <i class="fa-solid fa-layer-group text-3xl text-[var(--c-hypervisor)] mb-2"></i>
+                        <div class="text-xs font-bold uppercase text-[var(--text-muted)]">Hyper-V</div>
+                    </div>
+                    <i class="fa-solid fa-arrow-right text-[var(--border-color)]"></i>
+                    <div>
+                        <i class="fa-brands fa-windows text-3xl text-[var(--c-vm1)] mb-2"></i>
+                        <div class="text-xs font-bold uppercase text-[var(--text-muted)]">Guest VMs</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="subtopic-card">
+                <h3 id="vswitch" class="scroll-mt-10">
+                    <span class="lang-de">1.2 Virtual Switches</span>
+                    <span class="lang-en">1.2 Virtual Switches</span>
+                </h3>
+                <table class="wikitable mt-4">
+                    <thead>
+                        <tr>
+                            <th>Typ (Type)</th>
+                            <th><span class="lang-de">Erreichbarkeit</span><span class="lang-en">Connectivity</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>External</strong></td>
+                            <td><span class="lang-de">VMs können mit dem physischen Netzwerk (LAN/Internet) kommunizieren. Bindet an eine physische Netzwerkkarte (NIC).</span><span class="lang-en">VMs can communicate with the physical network (LAN/Internet). Binds to a physical NIC.</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Internal</strong></td>
+                            <td><span class="lang-de">VMs können miteinander UND mit dem Host kommunizieren. (Kein Internet).</span><span class="lang-en">VMs can communicate with each other AND the Host OS. (No Internet).</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Private</strong></td>
+                            <td><span class="lang-de">VMs können NUR untereinander kommunizieren. Völlig isoliert vom Host.</span><span class="lang-en">VMs can ONLY communicate with each other. Completely isolated from the Host.</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 2: PowerShell -->
+        <section id="powershell" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2>
+                <span class="lang-de">2. PowerShell (VMs verwalten)</span>
+                <span class="lang-en">2. PowerShell (Managing VMs)</span>
+            </h2>
+            <p class="panel-intro">
+                <span class="lang-de">Die GUI (Hyper-V Manager) ist gut, aber PowerShell ist für Automatisierung unerlässlich. Modul: <code>Hyper-V</code>.</span>
+                <span class="lang-en">The GUI (Hyper-V Manager) is good, but PowerShell is essential for automation. Module: <code>Hyper-V</code>.</span>
+            </p>
+            
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <div class="subtopic-card !mb-0">
+                    <h3><span class="lang-de">VM erstellen</span><span class="lang-en">Create VM</span></h3>
+<pre><code><span class="ps-cmd">New-VM</span> <span class="ps-param">-Name</span> <span class="ps-string">"Web-01"</span> `
+       <span class="ps-param">-MemoryStartupBytes</span> 4GB `
+       <span class="ps-param">-NewVHDPath</span> <span class="ps-string">"C:\VMs\Web-01.vhdx"</span> `
+       <span class="ps-param">-NewVHDSizeBytes</span> 50GB `
+       <span class="ps-param">-SwitchName</span> <span class="ps-string">"Ext-Switch"</span></code></pre>
+                </div>
+                
+                <div class="subtopic-card !mb-0">
+                    <h3><span class="lang-de">Zustand ändern</span><span class="lang-en">Change State</span></h3>
+<pre><code><span class="ps-cmd">Start-VM</span> <span class="ps-param">-Name</span> <span class="ps-string">"Web-01"</span>
+<span class="ps-cmd">Stop-VM</span> <span class="ps-param">-Name</span> <span class="ps-string">"Web-01"</span> <span class="ps-param">-Force</span>
+<span class="ps-cmd">Restart-VM</span> <span class="ps-param">-Name</span> <span class="ps-string">"Web-01"</span></code></pre>
+                </div>
+                
+                <div class="subtopic-card xl:col-span-2 !mb-0">
+                    <h3><span class="lang-de">Ressourcen anpassen (Dynamic Memory)</span><span class="lang-en">Adjust Resources (Dynamic Memory)</span></h3>
+                    <p class="text-xs text-[var(--text-muted)] mt-1 mb-2">
+                        <i class="fa-solid fa-lightbulb text-yellow-500 mr-1"></i>
+                        <span class="lang-de">Dynamic Memory erlaubt es der VM, RAM je nach Bedarf freizugeben oder anzufordern.</span>
+                        <span class="lang-en">Dynamic Memory allows the VM to request or release RAM based on actual demand.</span>
+                    </p>
+<pre class="!mt-0"><code><span class="ps-cmd">Set-VMMemory</span> <span class="ps-param">-VMName</span> <span class="ps-string">"Web-01"</span> `
+             <span class="ps-param">-DynamicMemoryEnabled</span> $true `
+             <span class="ps-param">-MinimumBytes</span> 1GB `
+             <span class="ps-param">-MaximumBytes</span> 8GB</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Storage -->
+        <section id="storage" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
+            <h2>
+                <span class="lang-de">3. Storage (VHDX & Checkpoints)</span>
+                <span class="lang-en">3. Storage (VHDX & Checkpoints)</span>
+            </h2>
+
+            <div class="subtopic-card">
+                <h3 id="vhdx" class="scroll-mt-10">
+                    <span class="lang-de">3.1 Virtuelle Festplatten (VHDX)</span>
+                    <span class="lang-en">3.1 Virtual Hard Disks (VHDX)</span>
+                </h3>
+                <ul class="list-disc pl-5 mt-2 space-y-2 text-[var(--text-muted)]">
+                    <li><strong class="text-[var(--text-color)]">Fixed Size:</strong> <span class="lang-de">Reserviert den gesamten Speicherplatz sofort. Bessere Performance.</span><span class="lang-en">Allocates all storage space immediately. Better performance.</span></li>
+                    <li><strong class="text-[var(--text-color)]">Dynamically Expanding:</strong> <span class="lang-de">Datei wächst erst, wenn Daten geschrieben werden. Spart Platz.</span><span class="lang-en">File grows only when data is written. Saves physical space.</span></li>
+                    <li><strong class="text-[var(--text-color)]">Differencing:</strong> <span class="lang-de">Baut auf einer "Parent-Disk" auf. Speichert nur die Änderungen. Ideal für Testumgebungen.</span><span class="lang-en">Based on a Parent Disk. Stores only changes. Ideal for lab environments.</span></li>
+                </ul>
+            </div>
+
+            <div class="subtopic-card">
+                <h3 id="checkpoints" class="scroll-mt-10">
+                    <span class="lang-de">3.2 Checkpoints (Snapshots)</span>
+                    <span class="lang-en">3.2 Checkpoints (Snapshots)</span>
+                </h3>
+                <p>
+                    <span class="lang-de">Ein Checkpoint friert den Zustand (und optional den RAM) einer VM zu einem bestimmten Zeitpunkt ein. Nützlich vor Updates.</span>
+                    <span class="lang-en">A checkpoint freezes the state (and optionally memory) of a VM at a specific point in time. Useful before updates.</span>
+                </p>
+<pre><code><span class="text-[var(--text-muted)]"># Standard Checkpoint erstellen / Create</span>
+<span class="ps-cmd">Checkpoint-VM</span> <span class="ps-param">-Name</span> <span class="ps-string">"Web-01"</span> <span class="ps-param">-SnapshotName</span> <span class="ps-string">"Pre-Patch"</span>
+
+<span class="text-[var(--text-muted)]"># Zu Checkpoint zurückkehren / Revert</span>
+<span class="ps-cmd">Restore-VMCheckpoint</span> <span class="ps-param">-Name</span> <span class="ps-string">"Web-01"</span> <span class="ps-param">-SnapshotName</span> <span class="ps-string">"Pre-Patch"</span></code></pre>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // --- GLOBAL VARIABLES & THEME STATE ---
+        let isGerman = true;
+
+        // Dynamic Canvas Colors tied to CSS variables
+        let C_BG, C_GRID, C_TEXT, C_PANEL;
+        let C_HOST = "#64748b";
+        let C_HYPER = "#0ea5e9";
+        let C_VM1 = "#10b981";
+        let C_VM2 = "#f59e0b";
+
+        function updateDynamicColors() {
+            const style = getComputedStyle(document.body);
+            C_BG = style.getPropertyValue('--bg-color').trim() || "#181a1b";
+            C_GRID = style.getPropertyValue('--border-color').trim() || "#2c2d30";
+            C_TEXT = style.getPropertyValue('--text-color').trim() || "#eaecf0";
+            C_PANEL = style.getPropertyValue('--panel-color').trim() || "#202324";
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('light')) {
+                html.classList.remove('light');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon';
+            }
+            updateDynamicColors(); // Refresh canvas theme
+        }
+
+        function toggleLang() {
+            isGerman = !isGerman;
+            const indicator = document.getElementById('lang-indicator');
+            indicator.textContent = isGerman ? 'DE' : 'EN';
+            document.body.setAttribute('data-active-lang', isGerman ? 'de' : 'en');
+        }
+
+        // --- ANIMATION / SIMULATION LOGIC ---
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('canvas-wrapper');
+
+        let width, height;
+        let lastTime = 0;
+        let currentPhaseIdx = 0;
+
+        // Architecture Phases setup
+        const phases = [
+            {
+                id: 'baremetal',
+                title: '<span class="lang-de">1. Physischer Server</span><span class="lang-en">1. Physical Server</span>',
+                desc: '<span class="lang-de">Wir beginnen mit nackter Hardware (Bare-Metal). CPU, RAM und Storage liegen ungenutzt bereit. Das Host-Betriebssystem verwaltet alles exklusiv.</span><span class="lang-en">We start with bare-metal hardware. CPU, RAM, and Storage are available. The Host OS manages everything exclusively.</span>',
+                ps: `<span class="text-[var(--text-muted)]"># Install Hyper-V Feature</span>\n<span class="ps-cmd">Install-WindowsFeature</span> <span class="ps-param">-Name</span> Hyper-V`,
+                vmsActive: 0,
+                hypervisorOpacity: 0
+            },
+            {
+                id: 'hypervisor',
+                title: '<span class="lang-de">2. Hypervisor Layer</span><span class="lang-en">2. Hypervisor Layer</span>',
+                desc: '<span class="lang-de">Die Hyper-V Rolle ist installiert. Der Hypervisor schiebt sich <strong>unter</strong> das Host-OS (Root Partition). Er kontrolliert nun direkt den Zugriff auf die physische Hardware.</span><span class="lang-en">Hyper-V role is installed. The hypervisor injects itself <strong>beneath</strong> the Host OS (Root Partition). It now directly controls access to physical hardware.</span>',
+                ps: `<span class="text-[var(--text-muted)]"># Hypervisor is active. Host is now a partition.</span>\n<span class="ps-cmd">Get-VMHost</span>`,
+                vmsActive: 0,
+                hypervisorOpacity: 1
+            },
+            {
+                id: 'vm1',
+                title: '<span class="lang-de">3. Erste Virtuelle Maschine</span><span class="lang-en">3. First Virtual Machine</span>',
+                desc: '<span class="lang-de">Eine Gast-Partition (VM) wird erstellt. Der Hypervisor weist ihr isolierte CPU-Zeit und RAM zu (VMBus). Sie läuft völlig getrennt vom Host-OS.</span><span class="lang-en">A Guest Partition (VM) is created. The hypervisor allocates isolated CPU time and RAM to it. It runs completely separated from the Host OS.</span>',
+                ps: `<span class="ps-cmd">New-VM</span> <span class="ps-param">-Name</span> <span class="ps-string">"AppServer"</span> <span class="ps-param">-MemoryStartupBytes</span> 4GB\n<span class="ps-cmd">Start-VM</span> <span class="ps-param">-Name</span> <span class="ps-string">"AppServer"</span>`,
+                vmsActive: 1,
+                hypervisorOpacity: 1
+            },
+            {
+                id: 'vm2',
+                title: '<span class="lang-de">4. Ressourcen-Teilung</span><span class="lang-en">4. Resource Sharing</span>',
+                desc: '<span class="lang-de">Mehrere VMs teilen sich die Hardware. Der Hypervisor sichert ab, dass keine VM auf den Speicher der anderen zugreifen kann (Isolation) und verteilt Taktzyklen fair.</span><span class="lang-en">Multiple VMs share hardware. The hypervisor ensures no VM can access another\'s memory (Isolation) and schedules clock cycles fairly.</span>',
+                ps: `<span class="ps-cmd">New-VM</span> <span class="ps-param">-Name</span> <span class="ps-string">"DBServer"</span> <span class="ps-param">-MemoryStartupBytes</span> 8GB\n<span class="ps-cmd">Start-VM</span> <span class="ps-param">-Name</span> <span class="ps-string">"DBServer"</span>`,
+                vmsActive: 2,
+                hypervisorOpacity: 1
+            }
+        ];
+
+        // Layout metrics for drawing
+        let metrics = {
+            hwY: 0, hwH: 0,
+            hypY: 0, hypH: 0,
+            hostX: 0, hostY: 0, hostW: 0, hostH: 0,
+            vmBaseX: 0, vmY: 0, vmW: 0, vmH: 0, gap: 20
+        };
+
+        // Animation state
+        let animState = {
+            hypervisorAlpha: 0,
+            hostYOffset: 0, // Host moves up when hypervisor is injected
+            vm1Alpha: 0,
+            vm2Alpha: 0,
+            packets: [] // Resource flow particles
+        };
+
+        class ResourcePacket {
+            constructor(sourceType, destType, color) {
+                this.x = 0; this.y = 0;
+                this.tx = 0; this.ty = 0;
+                this.color = color;
+                this.progress = 0;
+                this.speed = 0.5 + Math.random() * 0.5;
+                this.sourceType = sourceType;
+                this.destType = destType;
+                this.setPath();
+            }
+
+            setPath() {
+                // Flow from Hardware -> Hypervisor -> VMs/Host
+                const hwCenter = metrics.hwY + metrics.hwH/2;
+                const hypCenter = metrics.hypY + metrics.hypH/2;
+                
+                let startX, startY, endX, endY;
+
+                // Source is always hardware area for visualization
+                startX = width * 0.2 + Math.random() * (width * 0.6);
+                startY = metrics.hwY + Math.random() * metrics.hwH;
+
+                if (this.destType === 'host') {
+                    endX = metrics.hostX + metrics.hostW/2;
+                    endY = metrics.hostY + metrics.hostH;
+                } else if (this.destType === 'vm1') {
+                    endX = metrics.vmBaseX + metrics.vmW/2;
+                    endY = metrics.vmY + metrics.vmH;
+                } else if (this.destType === 'vm2') {
+                    endX = metrics.vmBaseX + metrics.vmW + metrics.gap + metrics.vmW/2;
+                    endY = metrics.vmY + metrics.vmH;
+                }
+
+                this.path = [
+                    {x: startX, y: startY},
+                    {x: startX, y: hypCenter}, // Route through hypervisor
+                    {x: endX, y: hypCenter},
+                    {x: endX, y: endY}
+                ];
+                this.x = startX; this.y = startY;
+            }
+
+            update(dt) {
+                this.progress += this.speed * dt;
+                if(this.progress >= 3) {
+                    this.progress = 0;
+                    this.setPath();
+                }
+
+                // Interpolate along path segments
+                const seg = Math.floor(this.progress);
+                const t = this.progress - seg;
+                
+                if (seg < 3) {
+                    const p1 = this.path[seg];
+                    const p2 = this.path[seg+1];
+                    this.x = p1.x + (p2.x - p1.x) * t;
+                    this.y = p1.y + (p2.y - p1.y) * t;
+                }
+            }
+
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        function resizeCanvas() {
+            if(!wrapper) return;
+            const rect = wrapper.getBoundingClientRect();
+            if(rect.width === 0) return;
+            width = canvas.width = rect.width;
+            height = canvas.height = rect.height;
+
+            const padding = 40;
+            const contentW = width - padding * 2;
+            const contentH = height - padding * 2;
+
+            // Calculate Box Layouts
+            metrics.hwH = 60;
+            metrics.hwY = height - padding - metrics.hwH;
+
+            metrics.hypH = 40;
+            metrics.hypY = metrics.hwY - metrics.hypH - 10; // Fixed gap for hypervisor
+
+            const topAreaH = contentH - metrics.hwH - metrics.hypH - 40;
+            
+            metrics.hostW = contentW * 0.3;
+            metrics.hostH = topAreaH;
+            metrics.hostX = padding;
+            // Base Y is down on hardware, moves up during animation
+            
+            metrics.vmW = (contentW - metrics.hostW - metrics.gap * 2) / 2;
+            metrics.vmH = topAreaH;
+            metrics.vmBaseX = metrics.hostX + metrics.hostW + metrics.gap;
+            metrics.vmY = padding;
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function updateSimDOM() {
+            const phase = phases[currentPhaseIdx];
+            document.getElementById('step-counter').innerText = currentPhaseIdx + 1;
+            document.getElementById('phase-title').innerHTML = phase.title;
+            document.getElementById('phase-desc').innerHTML = phase.desc;
+            document.getElementById('ps-display').innerHTML = phase.ps;
+            
+            // Adjust particles based on phase
+            animState.packets = [];
+            // Host gets packets
+            for(let i=0; i<8; i++) animState.packets.push(new ResourcePacket('hw', 'host', C_HOST));
+            
+            if (phase.vmsActive >= 1) {
+                for(let i=0; i<8; i++) animState.packets.push(new ResourcePacket('hw', 'vm1', C_VM1));
+            }
+            if (phase.vmsActive >= 2) {
+                for(let i=0; i<8; i++) animState.packets.push(new ResourcePacket('hw', 'vm2', C_VM2));
+            }
+        }
+
+        function nextPhase() { currentPhaseIdx = (currentPhaseIdx + 1) % phases.length; updateSimDOM(); }
+        function prevPhase() { currentPhaseIdx = (currentPhaseIdx - 1 + phases.length) % phases.length; updateSimDOM(); }
+
+        function drawRoundedRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
+
+        function animateLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+            lastTime = timestamp;
+
+            ctx.clearRect(0, 0, width, height);
+            
+            const phase = phases[currentPhaseIdx];
+
+            // LERP states
+            const lSpeed = 5 * dt;
+            animState.hypervisorAlpha += (phase.hypervisorOpacity - animState.hypervisorAlpha) * lSpeed;
+            
+            // Host moves up if hypervisor is active
+            const targetHostY = animState.hypervisorAlpha > 0.5 ? 40 : metrics.hypY;
+            animState.hostYOffset += (targetHostY - animState.hostYOffset) * lSpeed;
+            metrics.hostY = animState.hostYOffset;
+            // Adjust host height to bridge gap
+            metrics.hostH = metrics.hypY - metrics.hostY - 10;
+            if(metrics.hostH < 0) metrics.hostH = 0; // Prevent negative height glitch on load
+
+            animState.vm1Alpha += ((phase.vmsActive >= 1 ? 1 : 0) - animState.vm1Alpha) * lSpeed;
+            animState.vm2Alpha += ((phase.vmsActive >= 2 ? 1 : 0) - animState.vm2Alpha) * lSpeed;
+
+            const pad = 40;
+
+            // Draw Hardware (Base)
+            ctx.fillStyle = C_PANEL;
+            ctx.strokeStyle = C_GRID; ctx.lineWidth = 2;
+            drawRoundedRect(ctx, pad, metrics.hwY, width - pad*2, metrics.hwH, 8);
+            ctx.fill(); ctx.stroke();
+            ctx.fillStyle = C_TEXT; ctx.font = "bold 14px Inter"; ctx.textAlign = "center";
+            ctx.fillText(isGerman ? "PHYSISCHE HARDWARE (CPU, RAM, DISK)" : "PHYSICAL HARDWARE (CPU, RAM, DISK)", width/2, metrics.hwY + 35);
+
+            // Draw Hypervisor
+            if (animState.hypervisorAlpha > 0.01) {
+                ctx.save();
+                ctx.globalAlpha = animState.hypervisorAlpha;
+                ctx.fillStyle = C_HYPER + "33"; // Transparent bg
+                ctx.strokeStyle = C_HYPER;
+                drawRoundedRect(ctx, pad, metrics.hypY, width - pad*2, metrics.hypH, 6);
+                ctx.fill(); ctx.stroke();
+                ctx.fillStyle = C_HYPER;
+                ctx.fillText("HYPER-V HYPERVISOR", width/2, metrics.hypY + 25);
+                ctx.restore();
+            }
+
+            // Draw Particles (only if hypervisor is active, otherwise host direct)
+            if (animState.hypervisorAlpha > 0.8) {
+                animState.packets.forEach(p => {
+                    p.update(dt);
+                    p.draw(ctx);
+                });
+            }
+
+            // Draw Host OS (Parent Partition)
+            ctx.fillStyle = C_HOST + "22";
+            ctx.strokeStyle = C_HOST;
+            drawRoundedRect(ctx, metrics.hostX, metrics.hostY, metrics.hostW, metrics.hostH, 8);
+            ctx.fill(); ctx.stroke();
+            ctx.fillStyle = C_HOST;
+            ctx.fillText(isGerman ? "Host OS" : "Host OS", metrics.hostX + metrics.hostW/2, metrics.hostY + metrics.hostH/2 - 10);
+            ctx.font = "11px Inter";
+            ctx.fillText(isGerman ? "(Parent Partition)" : "(Parent Partition)", metrics.hostX + metrics.hostW/2, metrics.hostY + metrics.hostH/2 + 10);
+
+            // Draw VM 1
+            if (animState.vm1Alpha > 0.01) {
+                ctx.save();
+                ctx.globalAlpha = animState.vm1Alpha;
+                ctx.fillStyle = C_VM1 + "22";
+                ctx.strokeStyle = C_VM1;
+                drawRoundedRect(ctx, metrics.vmBaseX, metrics.vmY, metrics.vmW, metrics.vmH, 8);
+                ctx.fill(); ctx.stroke();
+                ctx.fillStyle = C_VM1; ctx.font = "bold 14px Inter";
+                ctx.fillText("VM 1 (AppServer)", metrics.vmBaseX + metrics.vmW/2, metrics.vmY + metrics.vmH/2);
+                ctx.restore();
+            }
+
+            // Draw VM 2
+            if (animState.vm2Alpha > 0.01) {
+                ctx.save();
+                ctx.globalAlpha = animState.vm2Alpha;
+                const vm2X = metrics.vmBaseX + metrics.vmW + metrics.gap;
+                ctx.fillStyle = C_VM2 + "22";
+                ctx.strokeStyle = C_VM2;
+                drawRoundedRect(ctx, vm2X, metrics.vmY, metrics.vmW, metrics.vmH, 8);
+                ctx.fill(); ctx.stroke();
+                ctx.fillStyle = C_VM2; ctx.font = "bold 14px Inter";
+                ctx.fillText("VM 2 (DBServer)", vm2X + metrics.vmW/2, metrics.vmY + metrics.vmH/2);
+                ctx.restore();
+            }
+
+            requestAnimationFrame(animateLoop);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Scrollspy logic
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.toc-link').forEach(link => link.classList.remove('active'));
+                        if(tocLink) tocLink.classList.add('active');
+                    }
+                });
+            }, { rootMargin: '-10% 0px -80% 0px', threshold: [0, 0.1, 1] });
+
+            document.querySelectorAll('section, h3[id], div[id="simulation"]').forEach((section) => {
+                observer.observe(section);
+            });
+
+            updateDynamicColors();
+            updateSimDOM();
+            
+            // Prevent initialization glitch on host Y axis
+            metrics.hostY = 40;
+            animState.hostYOffset = 40;
+
+            setTimeout(() => {
+                resizeCanvas();
+                requestAnimationFrame(animateLoop);
+            }, 100); 
+        });
+
+        function filterWiki() {
+            const input = document.getElementById('wikiSearch');
+            const filter = input.value.toLowerCase();
+            const blocks = document.querySelectorAll('.searchable-block');
+            const mainContent = document.getElementById('main-content');
+
+            removeHighlights(mainContent);
+            if (!filter) { blocks.forEach(block => block.style.display = 'block'); return; }
+
+            blocks.forEach(block => {
+                const text = block.innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    block.style.display = 'block';
+                    highlightText(block, input.value);
+                } else {
+                    block.style.display = 'none';
+                }
+            });
+        }
+
+        function highlightText(element, keyword) {
+            if (!keyword) return;
+            const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+            let node;
+            while (node = treeWalker.nextNode()) {
+                if (node.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                    if (node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE' && node.parentNode.tagName !== 'CODE' && !node.parentNode.classList.contains('katex')) {
+                        nodesToReplace.push(node);
+                    }
+                }
+            }
+            nodesToReplace.forEach(node => {
+                const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+                const fragment = document.createDocumentFragment();
+                let match; let lastIndex = 0; const text = node.nodeValue;
+                while ((match = regex.exec(text)) !== null) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    const span = document.createElement('span');
+                    span.className = 'search-match font-semibold';
+                    span.textContent = match[0];
+                    fragment.appendChild(span);
+                    lastIndex = regex.lastIndex;
+                }
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                node.parentNode.replaceChild(fragment, node);
+            });
+        }
+
+        function removeHighlights(element) {
+            const highlights = element.querySelectorAll('.search-match');
+            highlights.forEach(span => {
+                const parent = span.parentNode;
+                parent.replaceChild(document.createTextNode(span.textContent), span);
+                parent.normalize();
+            });
+        }
+
+        function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+        function downloadHTML() {
+            removeHighlights(document.getElementById('main-content'));
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'Hyper-V_Cheatsheet.html';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
