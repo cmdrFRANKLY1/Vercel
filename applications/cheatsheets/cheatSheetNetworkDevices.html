@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Network Hardware & DHCP Cheatsheet</title>
+    <title>Network Components Cheatsheet</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -44,7 +44,6 @@
     <style>
         /* ============================================================
            FALLBACK PALETTE (dark)
-           Merged properties for both Hardware and DHCP components
            ============================================================ */
         :root {
             --bg-color: #181a1b;
@@ -65,30 +64,24 @@
             --search-match: rgba(250, 204, 21, 0.3);
             --search-text: #ffffff;
 
-            /* Hardware Specific Colors */
-            --c-active: #3b82f6;   
-            --c-passive: #9ca3af;  
-            --c-packet: #10b981;   
-            --c-error: #ef4444;    
-            --accent-violet: #8b5cf6;
-
-            /* DHCP Specific Colors */
-            --c-d: #3b82f6; /* Blue - Discover */
-            --c-o: #8b5cf6; /* Purple - Offer */
-            --c-r: #f59e0b; /* Amber - Request */
-            --c-a: #10b981; /* Green - Ack */
+            /* Component Specific Colors */
+            --c-active: #3b82f6;   /* Blue for Active Components */
+            --c-passive: #9ca3af;  /* Gray for Passive Components */
+            --c-packet: #10b981;   /* Green for data packets */
+            --c-error: #ef4444;    /* Red for errors/drops */
 
             /* Accents */
             --accent-blue: #3b82f6;
             --accent-green: #10b981;
             --accent-amber: #f59e0b;
+            --accent-violet: #8b5cf6;
             --accent-teal: #14b8a6;
             --accent-red: #ef4444;
             --accent-gray: #6b7280;
 
             /* Layout tuning */
             --content-max: 1600px;
-            --sidebar-w: 22rem; /* slightly wider for combined TOC */
+            --sidebar-w: 20rem;
 
             /* Shadows */
             --shadow-color: rgba(0, 0, 0, 0.55);
@@ -103,7 +96,7 @@
                 0 8px 36px 0 var(--shadow-color-strong);
         }
 
-        html { font-size: 16px; scroll-behavior: smooth; }
+        html { font-size: 16px; }
         @media (min-width: 1536px)  { html { font-size: 17px; } }
         @media (min-width: 1800px)  { html { font-size: 18px; } }
 
@@ -155,8 +148,6 @@
         .subtopic-card:hover { box-shadow: var(--card-shadow); transform: translateY(-2px); }
 
         .math-card { background-color: var(--panel-color); border: 1px solid var(--panel-border); border-radius: 0.5rem; padding: 1.25rem; margin: 1rem 0; }
-        .symbol-legend { display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1rem; align-items: start; font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
-        .symbol-legend .sym { font-family: 'Fira Code', monospace; color: var(--heading-color); font-weight: 500; text-align: right; }
 
         .btn-primary { background-color: var(--link-color); color: #fff; transition: transform 0.1s, opacity 0.2s; border: none; }
         html:not(.light) .btn-primary { color: #000; }
@@ -211,12 +202,12 @@
         </div>
 
         <div class="mb-6 pb-4 border-b border-[var(--border-color)]">
-            <i class="fa-solid fa-network-wired text-3xl mb-3 text-[var(--text-color)] opacity-80"></i>
+            <i class="fa-solid fa-sitemap text-3xl mb-3 text-[var(--text-color)] opacity-80"></i>
             <div class="font-serif text-2xl tracking-tight text-[var(--heading-color)] leading-tight">
-                <span class="lang-de">Hardware &amp; DHCP<br>Cheatsheet</span>
-                <span class="lang-en">Hardware &amp; DHCP<br>Cheatsheet</span>
+                <span class="lang-de">Aktive & Passive<br>Netzkomponenten</span>
+                <span class="lang-en">Active & Passive<br>Network Components</span>
             </div>
-            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v2.0 - Combined Networking</div>
+            <div class="text-xs text-[var(--text-muted)] mt-2 font-mono">v1.0 - Hardware</div>
         </div>
 
         <div class="mb-6 relative">
@@ -227,72 +218,37 @@
         </div>
 
         <nav class="text-sm space-y-1.5" id="toc-nav">
-            <div class="font-bold text-[var(--heading-color)] mb-2 mt-4 uppercase tracking-wider text-xs flex items-center">
-                <i class="fa-solid fa-sitemap mr-2 text-[var(--text-muted)]"></i>
-                <span class="lang-de">Teil 1: Hardware</span>
-                <span class="lang-en">Part 1: Hardware</span>
+            <div class="font-bold text-[var(--heading-color)] mb-3 uppercase tracking-wider text-xs">
+                <span class="lang-de">Inhaltsverzeichnis</span>
+                <span class="lang-en">Table of Contents</span>
             </div>
-            <ul class="space-y-1 pl-2 border-l-2 border-[var(--border-color)] ml-1 mb-4">
-                <li><a href="#sim-comp" class="toc-link block py-1 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
-                    <span class="lang-de">Simulation: Datenfluss</span><span class="lang-en">Sim: Data Flow</span>
+            <ul class="space-y-1">
+                <li><a href="#simulation" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors mb-2">
+                    <i class="fa-solid fa-play-circle mr-1"></i>
+                    <span class="lang-de">Datenfluss Simulation</span><span class="lang-en">Data Flow Simulation</span>
                 </a></li>
-                <li><a href="#intro-comp" class="toc-link block py-1 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                <li><a href="#intro" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
                     <span class="lang-de">1. Grundlagen</span><span class="lang-en">1. Basics</span>
                 </a></li>
-                <li><a href="#passive" class="toc-link block py-1 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                <li><a href="#passive" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
                     <span class="lang-de">2. Passive Komponenten</span><span class="lang-en">2. Passive Components</span>
                 </a></li>
-                <li><a href="#active" class="toc-link block py-1 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                <li><a href="#active" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
                     <span class="lang-de">3. Aktive Komponenten</span><span class="lang-en">3. Active Components</span>
                 </a></li>
-                <li><a href="#switch-features" class="toc-link block py-1 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
-                    <span class="lang-de">4. Switch-Features</span><span class="lang-en">4. Switch Features</span>
+                <li><a href="#matrix" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">4. Direkter Vergleich</span><span class="lang-en">4. Direct Comparison</span>
                 </a></li>
-                <li><a href="#matrix-comp" class="toc-link block py-1 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
-                    <span class="lang-de">5. Direkter Vergleich</span><span class="lang-en">5. Direct Comparison</span>
-                </a></li>
-                <li><a href="#rule543" class="toc-link block py-1 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
-                    <span class="lang-de">6. Die 5-4-3 Regel</span><span class="lang-en">6. The 5-4-3 Rule</span>
-                </a></li>
-            </ul>
-
-            <div class="font-bold text-[var(--heading-color)] mb-2 mt-4 uppercase tracking-wider text-xs flex items-center">
-                <i class="fa-solid fa-server mr-2 text-[var(--text-muted)]"></i>
-                <span class="lang-de">Teil 2: DHCP & DORA</span>
-                <span class="lang-en">Part 2: DHCP & DORA</span>
-            </div>
-            <ul class="space-y-1 pl-2 border-l-2 border-[var(--border-color)] ml-1">
-                <li><a href="#sim-dhcp" class="toc-link block py-1 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
-                    <span class="lang-de">Simulation: DORA</span><span class="lang-en">Sim: DORA</span>
-                </a></li>
-                <li><a href="#intro-dhcp" class="toc-link block py-1 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
-                    <span class="lang-de">7. Was ist DHCP?</span><span class="lang-en">7. What is DHCP?</span>
-                </a></li>
-                <li><a href="#dora" class="toc-link block py-1 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
-                    <span class="lang-de">8. Der D.O.R.A. Prozess</span><span class="lang-en">8. The D.O.R.A. Process</span>
-                </a></li>
-                <li><a href="#lease" class="toc-link block py-1 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
-                    <span class="lang-de">9. Lease Time (Mietzeit)</span><span class="lang-en">9. Lease Time</span>
-                </a></li>
-                <li><a href="#apipa" class="toc-link block py-1 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
-                    <span class="lang-de">10. Fallback: APIPA</span><span class="lang-en">10. Fallback: APIPA</span>
-                </a></li>
-                <li><a href="#relay" class="toc-link block py-1 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
-                    <span class="lang-de">11. DHCP Relay (Helper)</span><span class="lang-en">11. DHCP Relay (Helper)</span>
-                </a></li>
-                <li><a href="#ports" class="toc-link block py-1 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
-                    <span class="lang-de">12. Ports &amp; UDP</span><span class="lang-en">12. Ports &amp; UDP</span>
+                <li><a href="#rule543" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">5. Die 5-4-3 Regel</span><span class="lang-en">5. The 5-4-3 Rule</span>
                 </a></li>
             </ul>
         </nav>
     </aside>
 
     <main class="app-main" id="main-content">
-        <!-- ==================================================================================== -->
-        <!-- PART 1: NETWORK HARDWARE COMPONENTS                                                  -->
-        <!-- ==================================================================================== -->
-
-        <div id="intro-comp" class="searchable-block topic-panel mt-0 mb-8">
+        <!-- Intro -->
+        <div id="intro" class="searchable-block topic-panel mt-0 mb-8">
             <h1 id="top" class="border-b-0 pb-0 mb-4 mt-0">
                 <span class="lang-de">Das Fundament der Netzwerke</span>
                 <span class="lang-en">The Foundation of Networks</span>
@@ -303,7 +259,8 @@
             </p>
         </div>
 
-        <section id="sim-comp" class="scroll-mt-10 searchable-block topic-panel mb-8 !p-0 overflow-hidden border-2 border-[var(--border-color)]">
+        <!-- INTERACTIVE SIMULATION -->
+        <section id="simulation" class="scroll-mt-10 searchable-block topic-panel mb-8 !p-0 overflow-hidden border-2 border-[var(--border-color)]">
             <div class="p-5 border-b border-[var(--border-color)] bg-[var(--panel-color)] flex justify-between items-center flex-wrap gap-4">
                 <div>
                     <h2 class="!mt-0 !mb-1 text-[var(--link-color)] border-none">
@@ -318,22 +275,23 @@
                 </div>
 
                 <div class="flex items-center gap-4 bg-[var(--bg-color)] p-3 rounded-lg border border-[var(--border-color)]">
-                    <button onclick="startSimulationComp('local')" class="btn-primary px-4 py-2 rounded-lg font-bold text-sm shadow flex-shrink-0">
+                    <button onclick="startSimulation('local')" class="btn-primary px-4 py-2 rounded-lg font-bold text-sm shadow flex-shrink-0">
                         <i class="fa-solid fa-server mr-2"></i>
                         <span class="lang-de">Lokaler Traffic</span><span class="lang-en">Local Traffic</span>
                     </button>
-                    <button onclick="startSimulationComp('internet')" class="px-4 py-2 rounded-lg font-bold text-sm shadow flex-shrink-0 text-white transition-transform active:translate-y-px hover:opacity-90" style="background-color: var(--accent-violet)">
+                    <button onclick="startSimulation('internet')" class="px-4 py-2 rounded-lg font-bold text-sm shadow flex-shrink-0 text-white transition-transform active:translate-y-px hover:opacity-90" style="background-color: var(--accent-violet)">
                         <i class="fa-solid fa-globe mr-2"></i>
                         <span class="lang-de">Internet Traffic</span><span class="lang-en">Internet Traffic</span>
                     </button>
                 </div>
             </div>
 
-            <div class="w-full bg-[var(--bg-color)] relative" style="height: 350px;">
-                <canvas id="simCanvasComp"></canvas>
+            <div class="w-full bg-[var(--bg-color)] relative" style="height: 400px;">
+                <canvas id="simCanvas"></canvas>
             </div>
         </section>
 
+        <!-- PASSIVE COMPONENTS -->
         <section id="passive" class="scroll-mt-10 searchable-block topic-panel mt-8">
             <h2>
                 <span class="lang-de">2. Passive Komponenten (Layer 1)</span>
@@ -386,6 +344,7 @@
             </div>
         </section>
 
+        <!-- ACTIVE COMPONENTS -->
         <section id="active" class="scroll-mt-10 searchable-block topic-panel mt-12">
             <h2>
                 <span class="lang-de">3. Aktive Komponenten</span>
@@ -530,74 +489,11 @@
             </div>
         </section>
 
-        <section id="switch-features" class="scroll-mt-10 searchable-block topic-panel mt-12">
+        <!-- COMPARISON MATRIX -->
+        <section id="matrix" class="scroll-mt-10 searchable-block topic-panel mt-12">
             <h2>
-                <span class="lang-de">4. Switch-Features: Duplex & Aggregation</span>
-                <span class="lang-en">4. Switch Features: Duplex & Aggregation</span>
-            </h2>
-
-            <div class="subtopic-card border-l-4" style="border-left-color: var(--c-active)">
-                <p>
-                    <span class="lang-de">Moderne Switches bieten fortgeschrittene Funktionen, um die Geschwindigkeit, Zuverlässigkeit und Effizienz des Netzwerks zu maximieren. Zwei der wichtigsten Konzepte sind <strong>Vollduplex</strong> und <strong>Link Aggregation</strong>.</span>
-                    <span class="lang-en">Modern switches offer advanced features to maximize network speed, reliability, and efficiency. Two of the most important concepts are <strong>Full Duplex</strong> and <strong>Link Aggregation</strong>.</span>
-                </p>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                    <!-- Duplex Modes -->
-                    <div class="bg-[var(--bg-color)] p-4 rounded-lg border border-[var(--border-color)]">
-                        <h4 class="mt-0 flex justify-between items-center text-[var(--c-active)]">
-                            <span><i class="fa-solid fa-arrows-up-down mr-2"></i><span class="lang-de">Übertragungsmodi (Duplex)</span><span class="lang-en">Transmission Modes (Duplex)</span></span>
-                        </h4>
-                        <ul class="space-y-3 mt-3 text-sm">
-                            <li class="flex gap-2">
-                                <i class="fa-solid fa-arrow-right mt-1 text-[var(--c-passive)]"></i>
-                                <div>
-                                    <strong>Simplex:</strong> <span class="lang-de">Wie ein Radio. Nur in eine Richtung (Senden ODER Empfangen).</span><span class="lang-en">Like a radio. One direction only (Send OR Receive).</span>
-                                </div>
-                            </li>
-                            <li class="flex gap-2">
-                                <i class="fa-solid fa-right-left mt-1 text-[var(--accent-amber)]"></i>
-                                <div>
-                                    <strong>Half-Duplex:</strong> <span class="lang-de">Wie ein Walkie-Talkie. Beide Richtungen, aber <strong>nicht gleichzeitig</strong>. (Typisch für alte Hubs).</span><span class="lang-en">Like a walkie-talkie. Both directions, but <strong>not simultaneously</strong>. (Typical for legacy Hubs).</span>
-                                </div>
-                            </li>
-                            <li class="flex gap-2">
-                                <i class="fa-solid fa-arrows-left-right mt-1 text-[var(--c-packet)]"></i>
-                                <div>
-                                    <strong>Vollduplex (Full-Duplex):</strong> <span class="lang-de">Wie ein Telefon. Gleichzeitiges Senden und Empfangen. <strong>Kollisionen sind unmöglich!</strong></span><span class="lang-en">Like a telephone. Simultaneous sending and receiving. <strong>Collisions are impossible!</strong></span>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <!-- Link Aggregation -->
-                    <div class="bg-[var(--bg-color)] p-4 rounded-lg border border-[var(--border-color)] relative">
-                        <h4 class="mt-0 flex justify-between items-center text-[var(--accent-violet)]">
-                            <span><i class="fa-solid fa-link mr-2"></i><span class="lang-de">Link Aggregation (LACP)</span><span class="lang-en">Link Aggregation (LACP)</span></span>
-                        </h4>
-                        <p class="text-sm mb-3">
-                            <span class="lang-de">Was passiert, wenn ein 1-Gigabit-Kabel zwischen zwei Switches nicht ausreicht? Anstatt ein teures 10-Gigabit-Kabel zu kaufen, bündelt man mehrere physische Kabel zu einem logischen "Super-Kabel" (Trunk/LAG).</span>
-                            <span class="lang-en">What happens when a 1-Gigabit cable between two switches isn't enough? Instead of buying an expensive 10-Gigabit cable, you bundle multiple physical cables into one logical "super cable" (Trunk/LAG).</span>
-                        </p>
-                        <div class="bg-[var(--code-bg)] p-3 rounded border border-[var(--panel-border)] flex flex-col gap-2 text-xs">
-                            <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-gauge-high text-[var(--c-packet)]"></i>
-                                <span><strong><span class="lang-de">Mehr Bandbreite:</span><span class="lang-en">More Bandwidth:</span></strong> <span class="lang-de">2x 1 GBit/s = 2 GBit/s Gesamtkapazität.</span><span class="lang-en">2x 1 Gbps = 2 Gbps total capacity.</span></span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-shield-heart text-[var(--c-active)]"></i>
-                                <span><strong><span class="lang-de">Ausfallsicherheit:</span><span class="lang-en">Failover (Redundancy):</span></strong> <span class="lang-de">Fällt ein Kabel aus, übernimmt das andere nahtlos.</span><span class="lang-en">If one physical cable fails, the remaining cables take over seamlessly.</span></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="matrix-comp" class="scroll-mt-10 searchable-block topic-panel mt-12">
-            <h2>
-                <span class="lang-de">5. Direkter Vergleich</span>
-                <span class="lang-en">5. Direct Comparison</span>
+                <span class="lang-de">4. Direkter Vergleich</span>
+                <span class="lang-en">4. Direct Comparison</span>
             </h2>
 
             <table class="wikitable mt-6">
@@ -634,10 +530,11 @@
             </table>
         </section>
 
-        <section id="rule543" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-12">
+        <!-- 5-4-3 RULE -->
+        <section id="rule543" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
             <h2>
-                <span class="lang-de">6. Die 5-4-3 Regel (Historisch)</span>
-                <span class="lang-en">6. The 5-4-3 Rule (Historical)</span>
+                <span class="lang-de">5. Die 5-4-3 Regel (Historisch)</span>
+                <span class="lang-en">5. The 5-4-3 Rule (Historical)</span>
             </h2>
             
             <div class="subtopic-card">
@@ -693,278 +590,6 @@
                 </div>
             </div>
         </section>
-
-
-        <!-- ==================================================================================== -->
-        <!-- PART 2: DHCP & DORA PROTOCOL                                                         -->
-        <!-- ==================================================================================== -->
-
-        <div id="intro-dhcp" class="searchable-block topic-panel mt-12 mb-8">
-            <h1 class="border-b-0 pb-0 mb-4 mt-0">
-                <span class="lang-de">DHCP: Wie Computer eine IP bekommen</span>
-                <span class="lang-en">DHCP: How Computers Get an IP</span>
-            </h1>
-            <p class="text-lg mb-0">
-                <span class="lang-de"><strong>DHCP</strong> (Dynamic Host Configuration Protocol) ist der Grund, warum du dich einfach in ein WLAN einloggen kannst und sofort Internet hast. Ohne DHCP müsstest du jedem Gerät manuell eine IP-Adresse, eine Subnetzmaske und einen Router zuweisen. Es nutzt im Hintergrund UDP (mehr dazu in <a href="cheatSheetTCPandUDP.html" class="font-mono text-[var(--link-color)] bg-[var(--code-bg)] px-1 rounded">cheatSheetTCPandUDP.html</a>).</span>
-                <span class="lang-en"><strong>DHCP</strong> (Dynamic Host Configuration Protocol) is the reason you can just connect to Wi-Fi and instantly have internet access. Without DHCP, you'd have to manually assign an IP address, subnet mask, and router to every single device. Under the hood, it uses UDP (learn more in <a href="cheatSheetTCPandUDP.html" class="font-mono text-[var(--link-color)] bg-[var(--code-bg)] px-1 rounded">cheatSheetTCPandUDP.html</a>).</span>
-            </p>
-        </div>
-
-        <section id="sim-dhcp" class="scroll-mt-10 searchable-block topic-panel mb-8 !p-0 overflow-hidden border-2 border-[var(--border-color)]">
-            <div class="p-5 border-b border-[var(--border-color)] bg-[var(--panel-color)] flex justify-between items-center flex-wrap gap-4">
-                <div>
-                    <h2 class="!mt-0 !mb-1 text-[var(--link-color)] border-none">
-                        <i class="fa-solid fa-handshake-angle mr-2"></i>
-                        <span class="lang-de">Der DORA-Tanz</span>
-                        <span class="lang-en">The DORA Dance</span>
-                    </h2>
-                    <p class="text-sm text-[var(--text-muted)] !mb-0">
-                        <span class="lang-de">Beobachte, wie ein Client (Laptop) vom Router eine IP anfordert.</span>
-                        <span class="lang-en">Watch how a client (laptop) requests an IP from the router.</span>
-                    </p>
-                </div>
-
-                <div class="flex items-center gap-4 bg-[var(--bg-color)] p-3 rounded-lg border border-[var(--border-color)]">
-                    <button onclick="startSimulationDHCP()" class="btn-primary px-4 py-2 rounded-lg font-bold text-sm shadow flex-shrink-0">
-                        <i class="fa-solid fa-bolt mr-2"></i>
-                        <span class="lang-de">DORA Starten</span><span class="lang-en">Start DORA</span>
-                    </button>
-                    <button onclick="startSimulationRelay()" class="px-4 py-2 rounded-lg font-bold text-sm shadow flex-shrink-0 text-white transition-transform active:translate-y-px hover:opacity-90" style="background-color: var(--accent-violet)">
-                        <i class="fa-solid fa-route mr-2"></i>
-                        <span class="lang-de">DHCP Relay</span><span class="lang-en">DHCP Relay</span>
-                    </button>
-                    <button onclick="startSimulationAPIPA()" class="px-4 py-2 rounded-lg font-bold text-sm shadow flex-shrink-0 text-white transition-transform active:translate-y-px hover:opacity-90" style="background-color: var(--c-error)">
-                        <i class="fa-solid fa-triangle-exclamation mr-2"></i>
-                        <span class="lang-de">APIPA Auslösen</span><span class="lang-en">Trigger APIPA</span>
-                    </button>
-                </div>
-            </div>
-
-            <div class="w-full bg-[var(--bg-color)] relative" style="height: 350px;">
-                <canvas id="simCanvasDHCP"></canvas>
-            </div>
-        </section>
-
-        <section id="dora" class="scroll-mt-10 searchable-block topic-panel mt-8">
-            <h2>
-                <span class="lang-de">8. Der D.O.R.A. Prozess</span>
-                <span class="lang-en">8. The D.O.R.A. Process</span>
-            </h2>
-
-            <div class="subtopic-card">
-                <p>
-                    <span class="lang-de">Wenn ein Gerät dem Netzwerk beitritt, durchläuft es vier Schritte, um eine IP-Adresse zu bekommen. Das nennt man den <strong>DORA</strong>-Prozess. Da der Client am Anfang noch keine IP hat, schreit er oft ins gesamte Netzwerk (Broadcast).</span>
-                    <span class="lang-en">When a device joins a network, it goes through four steps to get an IP address. This is called the <strong>DORA</strong> process. Since the client doesn't have an IP at first, it often shouts to the entire network (Broadcast).</span>
-                </p>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                    
-                    <!-- Discover -->
-                    <div class="bg-[var(--bg-color)] p-4 rounded-lg border border-[var(--border-color)] relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-1 h-full" style="background-color: var(--c-d)"></div>
-                        <h4 class="mt-0 flex justify-between items-center" style="color:var(--c-d)">
-                            <span><i class="fa-solid fa-magnifying-glass mr-2"></i><strong>D</strong>iscover</span>
-                            <span class="text-xs font-mono bg-[var(--code-bg)] px-2 py-1 rounded text-[var(--text-color)]">Client $\rightarrow$ All</span>
-                        </h4>
-                        <p class="text-sm mb-0">
-                            <span class="lang-de">Der Client ruft ins Netzwerk: <em>"Hallo? Ist hier ein DHCP-Server? Ich brauche eine IP-Adresse!"</em> Dies passiert als <strong>Broadcast</strong> (an alle), weil er noch nicht weiß, wo der Server ist.</span>
-                            <span class="lang-en">The client shouts to the network: <em>"Hello? Is there a DHCP server here? I need an IP address!"</em> This is sent as a <strong>Broadcast</strong> (to everyone) because it doesn't know where the server is.</span>
-                        </p>
-                    </div>
-
-                    <!-- Offer -->
-                    <div class="bg-[var(--bg-color)] p-4 rounded-lg border border-[var(--border-color)] relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-1 h-full" style="background-color: var(--c-o)"></div>
-                        <h4 class="mt-0 flex justify-between items-center" style="color:var(--c-o)">
-                            <span><i class="fa-solid fa-gift mr-2"></i><strong>O</strong>ffer</span>
-                            <span class="text-xs font-mono bg-[var(--code-bg)] px-2 py-1 rounded text-[var(--text-color)]">Server $\rightarrow$ Client</span>
-                        </h4>
-                        <p class="text-sm mb-0">
-                            <span class="lang-de">Der DHCP-Server antwortet: <em>"Hallo! Ich bin ein Server. Ich hätte die IP <strong>192.168.1.50</strong> für dich frei."</em></span>
-                            <span class="lang-en">The DHCP server replies: <em>"Hello! I am a server. I have the IP <strong>192.168.1.50</strong> available for you."</em></span>
-                        </p>
-                    </div>
-
-                    <!-- Request -->
-                    <div class="bg-[var(--bg-color)] p-4 rounded-lg border border-[var(--border-color)] relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-1 h-full" style="background-color: var(--c-r)"></div>
-                        <h4 class="mt-0 flex justify-between items-center" style="color:var(--c-r)">
-                            <span><i class="fa-solid fa-hand-holding-heart mr-2"></i><strong>R</strong>equest</span>
-                            <span class="text-xs font-mono bg-[var(--code-bg)] px-2 py-1 rounded text-[var(--text-color)]">Client $\rightarrow$ All</span>
-                        </h4>
-                        <p class="text-sm mb-0">
-                            <span class="lang-de">Der Client antwortet (wieder als Broadcast): <em>"Super, ich nehme die 192.168.1.50!"</em> Der Broadcast ist wichtig, damit <strong>andere</strong> potenzielle DHCP-Server wissen, dass der Client bereits versorgt ist und ihre eigenen Angebote zurückziehen können.</span>
-                            <span class="lang-en">The client replies (again as a Broadcast): <em>"Awesome, I'll take 192.168.1.50!"</em> The broadcast is important so that <strong>other</strong> potential DHCP servers know the client has accepted an offer and can cancel theirs.</span>
-                        </p>
-                    </div>
-
-                    <!-- Acknowledge -->
-                    <div class="bg-[var(--bg-color)] p-4 rounded-lg border border-[var(--border-color)] relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-1 h-full" style="background-color: var(--c-a)"></div>
-                        <h4 class="mt-0 flex justify-between items-center" style="color:var(--c-a)">
-                            <span><i class="fa-solid fa-circle-check mr-2"></i><strong>A</strong>cknowledge</span>
-                            <span class="text-xs font-mono bg-[var(--code-bg)] px-2 py-1 rounded text-[var(--text-color)]">Server $\rightarrow$ Client</span>
-                        </h4>
-                        <p class="text-sm mb-0">
-                            <span class="lang-de">Der Server bestätigt final: <em>"Alles klar, die IP gehört dir! Hier sind noch Infos wie Gateway und DNS, und du darfst die IP für 24 Stunden behalten."</em></span>
-                            <span class="lang-en">The server finally confirms: <em>"Alright, the IP is yours! Here is the Gateway and DNS info, and you can keep this IP for 24 hours."</em></span>
-                        </p>
-                    </div>
-
-                </div>
-            </div>
-        </section>
-
-        <section id="lease" class="scroll-mt-10 searchable-block topic-panel mt-12">
-            <h2>
-                <span class="lang-de">9. Lease Time (Der Mietvertrag)</span>
-                <span class="lang-en">9. Lease Time (Renting the IP)</span>
-            </h2>
-
-            <div class="subtopic-card">
-                <p>
-                    <span class="lang-de">IP-Adressen werden nicht verschenkt, sie werden <strong>vermietet</strong>. Die Dauer dieser Miete nennt man <em>Lease Time</em>. Wenn du das Netzwerk verlässt, kann der Server die IP nach Ablauf der Zeit jemand anderem geben.</span>
-                    <span class="lang-en">IP addresses are not given away forever; they are <strong>leased</strong> (rented). The duration is called the <em>Lease Time</em>. If you leave the network, the server can give the IP to someone else once the lease expires.</span>
-                </p>
-
-                <div class="math-card my-4">
-                    <p class="font-mono text-sm mb-2 font-semibold mt-0">
-                        <span class="lang-de">Renewal (Verlängerung)</span>
-                        <span class="lang-en">Renewal Process</span>
-                    </p>
-                    <p class="text-sm text-[var(--text-muted)] mb-3">
-                        <span class="lang-de">Ein Gerät wartet nicht, bis die Zeit komplett abgelaufen ist. Es versucht die Miete schon vorher zu verlängern:</span>
-                        <span class="lang-en">A device doesn't wait until the time completely runs out. It tries to renew the lease early:</span>
-                    </p>
-                    
-                    <div class="symbol-legend mt-2">
-                        <div class="sym" style="color:var(--c-d)">$T_1$ (50%)</div>
-                        <div>
-                            <span class="lang-de">Nach der <strong>Hälfte der Zeit</strong> fragt der Client den Server direkt (Unicast): "Darf ich die IP behalten?"</span>
-                            <span class="lang-en">At <strong>50% of the lease time</strong>, the client asks the server directly (Unicast): "Can I keep this IP?"</span>
-                        </div>
-
-                        <div class="sym" style="color:var(--c-r)">$T_2$ (87.5%)</div>
-                        <div>
-                            <span class="lang-de">Falls der Server bei $T_1$ nicht antwortet, gerät der Client leicht in Panik und schreit bei <strong>87.5% der Zeit</strong> ins ganze Netz (Broadcast): "Kann BITTE irgendein Server meine IP verlängern?"</span>
-                            <span class="lang-en">If the server didn't reply at $T_1$, the client panics slightly and shouts to the whole network (Broadcast) at <strong>87.5% of the time</strong>: "Can ANY server PLEASE renew my IP?"</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="apipa" class="scroll-mt-10 searchable-block topic-panel mt-12">
-            <h2>
-                <span class="lang-de">10. Was passiert bei einem Fehler? (APIPA)</span>
-                <span class="lang-en">10. What happens on failure? (APIPA)</span>
-            </h2>
-            <div class="subtopic-card">
-                <p>
-                    <span class="lang-de">Wenn der DHCP-Server ausfällt oder nicht erreichbar ist, greift ein Notfall-Mechanismus namens <strong>APIPA</strong> (Automatic Private IP Addressing). Das Gerät gibt sich nach einem kurzen Timeout einfach selbst eine IP-Adresse.</span>
-                    <span class="lang-en">If the DHCP server is down or unreachable, a fallback mechanism called <strong>APIPA</strong> (Automatic Private IP Addressing) takes over. After a short timeout, the device simply assigns itself an IP address.</span>
-                </p>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                    <div class="bg-[var(--bg-color)] p-4 rounded-lg border border-[var(--border-color)] border-l-4" style="border-left-color: var(--c-error)">
-                        <h4 class="mt-0 flex justify-between items-center text-[var(--c-error)]">
-                            <span><i class="fa-solid fa-triangle-exclamation mr-2"></i><span class="lang-de">Der 169.254.x.x Bereich</span><span class="lang-en">The 169.254.x.x Range</span></span>
-                        </h4>
-                        <p class="text-sm mb-0">
-                            <span class="lang-de">Das Gerät wählt zufällig eine Adresse aus dem Bereich <code>169.254.0.1</code> bis <code>169.254.255.254</code> (Subnetzmaske <code>255.255.0.0</code>). Wenn du also jemals eine IP siehst, die mit <strong>169.254</strong> beginnt, weißt du sofort: Dein DHCP-Server hat nicht geantwortet!</span>
-                            <span class="lang-en">The device randomly picks an address from the <code>169.254.0.1</code> to <code>169.254.255.254</code> range (Subnet Mask <code>255.255.0.0</code>). If you ever see an IP starting with <strong>169.254</strong>, you immediately know: Your DHCP server didn't respond!</span>
-                        </p>
-                    </div>
-                    
-                    <div class="bg-[var(--bg-color)] p-4 rounded-lg border border-[var(--border-color)] border-l-4" style="border-left-color: var(--c-r)">
-                        <h4 class="mt-0 flex justify-between items-center text-[var(--c-r)]">
-                            <span><i class="fa-solid fa-network-wired mr-2"></i><span class="lang-de">Einschränkungen</span><span class="lang-en">Limitations</span></span>
-                        </h4>
-                        <p class="text-sm mb-0">
-                            <span class="lang-de">Mit einer APIPA-Adresse kannst du zwar mit anderen Geräten im <strong>gleichen lokalen Netzwerk</strong> kommunizieren (die ebenfalls APIPA nutzen), aber du hast <strong>kein Internet</strong>, da kein Standard-Gateway (Router) zugewiesen wurde.</span>
-                            <span class="lang-en">With an APIPA address, you can communicate with other devices on the <strong>same local network</strong> (that also use APIPA), but you will have <strong>no internet access</strong> because no default gateway (router) was assigned.</span>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="relay" class="scroll-mt-10 searchable-block topic-panel mt-12">
-            <h2>
-                <span class="lang-de">11. DHCP Relay Agent (IP Helper)</span>
-                <span class="lang-en">11. DHCP Relay Agent (IP Helper)</span>
-            </h2>
-            <div class="subtopic-card">
-                <p>
-                    <span class="lang-de">Der erste Schritt von DORA (Discover) ist ein <strong>Broadcast</strong>. Das Problem: <strong>Router blockieren Broadcasts!</strong> Wenn sich dein PC und der DHCP-Server in verschiedenen Netzwerken (VLANs) befinden, würde die Anfrage niemals beim Server ankommen.</span>
-                    <span class="lang-en">The first step of DORA (Discover) is a <strong>Broadcast</strong>. The problem: <strong>Routers drop broadcasts!</strong> If your PC and the DHCP server are in different networks (VLANs), the request would never reach the server.</span>
-                </p>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                    <div class="bg-[var(--bg-color)] p-4 rounded-lg border border-[var(--border-color)] border-l-4" style="border-left-color: var(--accent-violet)">
-                        <h4 class="mt-0 flex justify-between items-center text-[var(--accent-violet)]">
-                            <span><i class="fa-solid fa-route mr-2"></i><span class="lang-de">Die Lösung: Relay Agent</span><span class="lang-en">The Solution: Relay Agent</span></span>
-                        </h4>
-                        <p class="text-sm mb-0">
-                            <span class="lang-de">Wir konfigurieren den Router als <strong>DHCP Relay Agent</strong>. Er fängt den Broadcast des Clients ab, packt ihn in ein normales <strong>Unicast</strong>-Paket und schickt es direkt an die feste IP-Adresse des DHCP-Servers.</span>
-                            <span class="lang-en">We configure the router as a <strong>DHCP Relay Agent</strong>. It catches the client's broadcast, wraps it into a normal <strong>Unicast</strong> packet, and routes it directly to the specific IP address of the DHCP server.</span>
-                        </p>
-                    </div>
-                    
-                    <div class="math-card my-0 flex flex-col justify-center">
-                        <p class="font-mono text-sm mb-2 font-semibold mt-0 border-b border-[var(--border-color)] pb-2">
-                            <span class="lang-de">Konfigurations-Beispiel (Cisco)</span><span class="lang-en">Configuration Example (Cisco)</span>
-                        </p>
-                        <div class="font-mono text-xs text-[var(--text-color)] mt-2 bg-[var(--code-block-bg)] p-3 rounded border border-[var(--border-color)]">
-                            Router(config)# interface GigabitEthernet0/1<br>
-                            Router(config-if)# ip address 192.168.10.1 255.255.255.0<br>
-                            <span class="text-[var(--accent-violet)] font-bold">Router(config-if)# ip helper-address 10.0.0.5</span>
-                        </div>
-                        <p class="text-xs text-[var(--text-muted)] mt-2 mb-0">
-                            <span class="lang-de">Der Befehl <code>ip helper-address</code> sagt dem Router, wohin er die abgefangenen Broadcasts schicken soll (hier zur 10.0.0.5).</span>
-                            <span class="lang-en">The <code>ip helper-address</code> command tells the router where to forward the intercepted broadcasts (here to 10.0.0.5).</span>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="ports" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
-            <h2>
-                <span class="lang-de">12. Ports &amp; UDP</span>
-                <span class="lang-en">12. Ports &amp; UDP</span>
-            </h2>
-            <div class="subtopic-card">
-                <p>
-                    <span class="lang-de">DHCP muss <strong>schnell</strong> sein und funktioniert auch dann, wenn noch keine stabile Verbindung existiert. Deshalb nutzt es das <strong>UDP-Protokoll</strong> (genau wie in <a href="cheatSheetTCPandUDP.html" class="font-mono text-[var(--link-color)] hover:underline">cheatSheetTCPandUDP.html</a> erklärt, gilt hier "Fire and Forget").</span>
-                    <span class="lang-en">DHCP needs to be <strong>fast</strong> and must work even before a stable connection is established. Therefore, it uses the <strong>UDP protocol</strong> (just as explained in <a href="cheatSheetTCPandUDP.html" class="font-mono text-[var(--link-color)] hover:underline">cheatSheetTCPandUDP.html</a>, it's "Fire and Forget").</span>
-                </p>
-
-                <table class="wikitable mt-4">
-                    <tr>
-                        <th class="w-1/4">Role</th>
-                        <th class="w-1/4">Protocol</th>
-                        <th class="w-1/2">Port</th>
-                    </tr>
-                    <tr>
-                        <td><strong>DHCP Server</strong> (Router)</td>
-                        <td class="font-mono" style="color:var(--c-r)">UDP</td>
-                        <td class="font-mono text-lg font-bold" style="color:var(--c-a)">67</td>
-                    </tr>
-                    <tr>
-                        <td><strong>DHCP Client</strong> (Laptop/Handy)</td>
-                        <td class="font-mono" style="color:var(--c-r)">UDP</td>
-                        <td class="font-mono text-lg font-bold" style="color:var(--c-d)">68</td>
-                    </tr>
-                </table>
-                
-                <p class="text-sm mt-4 text-[var(--text-muted)]">
-                    <i class="fa-solid fa-lightbulb mr-1 text-[var(--c-r)]"></i>
-                    <span class="lang-de"><strong>Eselsbrücke:</strong> Der Server (67) ist älter/kommt zuerst, der Client (68) ist jünger/kommt danach.</span>
-                    <span class="lang-en"><strong>Mnemonic:</strong> The server (67) comes first numerically, the client (68) comes second.</span>
-                </p>
-            </div>
-        </section>
     </main>
 
     <script>
@@ -973,18 +598,13 @@
            ================================================================== */
         let isGerman = true;
 
-        // Dynamic Colors Merged
+        // Dynamic Colors
         let C_BG, C_GRID, C_TEXT, C_PANEL;
         let C_ACTIVE = "#3b82f6";
         let C_PASSIVE = "#9ca3af";
         let C_PACKET = "#10b981";
         let C_ERR = "#ef4444";
         let C_ROUTER = "#8b5cf6";
-        
-        let C_D = "#3b82f6";
-        let C_O = "#8b5cf6";
-        let C_R = "#f59e0b";
-        let C_A = "#10b981";
 
         function updateDynamicColors() {
             const style = getComputedStyle(document.body);
@@ -998,11 +618,6 @@
             C_PACKET = style.getPropertyValue('--c-packet').trim() || C_PACKET;
             C_ERR = style.getPropertyValue('--c-error').trim() || C_ERR;
             C_ROUTER = style.getPropertyValue('--accent-violet').trim() || C_ROUTER;
-
-            C_D = style.getPropertyValue('--c-d').trim() || C_D;
-            C_O = style.getPropertyValue('--c-o').trim() || C_O;
-            C_R = style.getPropertyValue('--c-r').trim() || C_R;
-            C_A = style.getPropertyValue('--c-a').trim() || C_A;
         }
 
         /* ==================================================================
@@ -1017,11 +632,8 @@
             if (menu && menu.classList.contains('open')) buildThemeMenuItems();
             
             // Update Canvas Text if running
-            if(compSimState.statusText !== "") {
-                updateSimStatusTextComp();
-            }
-            if(doraState.phase !== -1) {
-                updateSimStatusTextDHCP();
+            if(simState.statusText !== "") {
+                updateSimStatusText();
             }
         }
 
@@ -1034,7 +646,7 @@
             const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url; a.download = 'Combined_Networking_Cheatsheet.html';
+            a.href = url; a.download = 'Network_Components_Cheatsheet.html';
             document.body.appendChild(a); a.click(); document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
@@ -1102,7 +714,7 @@
         const FALLBACK_COLOR_CONFIG = {
             version: '1.0',
             defaultScheme: 'dark',
-            storageKey: 'cheatSheetCombined.scheme',
+            storageKey: 'cheatSheetNetComp.scheme',
             base: {
                 'shadow-color': 'rgba(0, 0, 0, 0.55)',
                 'shadow-color-strong': 'rgba(0, 0, 0, 0.7)',
@@ -1120,7 +732,6 @@
                         'text-color':'#eaecf0','text-muted':'#a8aeb3','link-color':'#99c1f1','link-hover':'#629deb',
                         'heading-color':'#ffffff','subtitle-color':'#eaecf0','code-bg':'#27292a','code-block-bg':'#111213','info-box':'#2c2d30',
                         'c-active':'#3b82f6','c-passive':'#9ca3af','c-packet':'#10b981','c-error':'#ef4444',
-                        'c-d':'#3b82f6','c-o':'#8b5cf6','c-r':'#f59e0b','c-a':'#10b981',
                         'accent-blue':'#3b82f6','accent-green':'#10b981','accent-amber':'#f59e0b',
                         'accent-violet':'#8b5cf6','accent-teal':'#14b8a6','accent-red':'#ef4444','accent-gray':'#6b7280'
                     }
@@ -1134,7 +745,6 @@
                         'shadow-color':'rgba(0,0,0,0.16)','shadow-color-strong':'rgba(0,0,0,0.28)',
                         'table-alt':'rgba(0,0,0,0.015)','search-match':'rgba(250,204,21,0.5)','search-text':'#000000',
                         'c-active':'#2563eb','c-passive':'#64748b','c-packet':'#059669','c-error':'#dc2626',
-                        'c-d':'#2563eb','c-o':'#7c3aed','c-r':'#d97706','c-a':'#059669',
                         'accent-blue':'#2563eb','accent-green':'#059669','accent-amber':'#d97706',
                         'accent-violet':'#7c3aed','accent-teal':'#0d9488','accent-red':'#dc2626','accent-gray':'#6b7280'
                     }
@@ -1146,7 +756,6 @@
                         'text-color':'#f8f8f2','text-muted':'#bdc1d4','link-color':'#8be9fd','link-hover':'#bd93f9',
                         'heading-color':'#ffffff','subtitle-color':'#f8f8f2','code-bg':'#21222c','code-block-bg':'#191a21','info-box':'#44475a',
                         'c-active':'#8be9fd','c-passive':'#6272a4','c-packet':'#50fa7b','c-error':'#ff5555',
-                        'c-d':'#8be9fd','c-o':'#bd93f9','c-r':'#ffb86c','c-a':'#50fa7b',
                         'accent-blue':'#8be9fd','accent-green':'#50fa7b','accent-amber':'#ffb86c',
                         'accent-violet':'#bd93f9','accent-teal':'#8be9fd','accent-red':'#ff5555','accent-gray':'#6272a4'
                     }
@@ -1253,25 +862,26 @@
             if (menu) menu.classList.remove('open');
         }
 
-        function storageKey() { return (colorConfig && colorConfig.storageKey) || 'cheatSheetCombined.scheme'; }
+        function storageKey() { return (colorConfig && colorConfig.storageKey) || 'cheatSheetNetComp.scheme'; }
         function storeScheme(id) { try { localStorage.setItem(storageKey(), id); } catch (_) {} }
         function readStoredScheme() { try { return localStorage.getItem(storageKey()); } catch (_) { return null; } }
 
 
         /* ==================================================================
-           ANIMATION / SIMULATION LOGIC: COMPONENTS
+           ANIMATION / SIMULATION LOGIC
            ================================================================== */
-        const canvasComp = document.getElementById('simCanvasComp');
-        const ctxComp = canvasComp.getContext('2d');
-        let widthComp, heightComp;
-        
-        // Define our nodes dynamically based on canvas size
-        let nodesComp = {};
-        
-        const PACKET_SPEED_COMP = 350; // px per second
-        let activePacketComp = null;
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let lastTime = 0;
 
-        let compSimState = {
+        // Define our nodes dynamically based on canvas size
+        let nodes = {};
+        
+        const PACKET_SPEED = 350; // px per second
+        let activePacket = null;
+
+        let simState = {
             mode: 'idle', // idle, local, internet
             step: 0,
             statusText: "",
@@ -1279,46 +889,46 @@
             pauseTimer: 0
         };
 
-        function resizeCanvasComp() {
-            const wrapper = canvasComp.parentElement;
+        function resizeCanvas() {
+            const wrapper = canvas.parentElement;
             if(!wrapper) return;
             const rect = wrapper.getBoundingClientRect();
             if(rect.width === 0) return;
 
-            widthComp = canvasComp.width = rect.width;
-            heightComp = canvasComp.height = rect.height;
+            width = canvas.width = rect.width;
+            height = canvas.height = rect.height;
 
             // Layout Nodes
-            let yMid = heightComp / 2 - 20;
+            let yMid = height / 2 - 20;
 
-            nodesComp = {
-                pc:     { id: 'pc', x: widthComp * 0.1, y: yMid, w: 60, h: 60, type: 'end', label: 'PC', color: C_GRID },
-                outlet: { id: 'outlet', x: widthComp * 0.25, y: yMid, w: 30, h: 40, type: 'passive', label: 'Dose', labelEn: 'Outlet', color: C_PASSIVE },
-                panel:  { id: 'panel', x: widthComp * 0.45, y: yMid, w: 40, h: 80, type: 'passive', label: 'Patchfeld', labelEn: 'Panel', color: C_PASSIVE },
-                switch: { id: 'switch', x: widthComp * 0.65, y: yMid, w: 60, h: 40, type: 'active', label: 'Switch', color: C_ACTIVE },
+            nodes = {
+                pc:     { id: 'pc', x: width * 0.1, y: yMid, w: 60, h: 60, type: 'end', label: 'PC', color: C_GRID },
+                outlet: { id: 'outlet', x: width * 0.25, y: yMid, w: 30, h: 40, type: 'passive', label: 'Dose', labelEn: 'Outlet', color: C_PASSIVE },
+                panel:  { id: 'panel', x: width * 0.45, y: yMid, w: 40, h: 80, type: 'passive', label: 'Patchfeld', labelEn: 'Panel', color: C_PASSIVE },
+                switch: { id: 'switch', x: width * 0.65, y: yMid, w: 60, h: 40, type: 'active', label: 'Switch', color: C_ACTIVE },
                 
                 // Branches
-                localServer: { id: 'localServer', x: widthComp * 0.65, y: yMid + 120, w: 60, h: 80, type: 'end', label: 'Lokaler Server', labelEn: 'Local Server', color: C_GRID },
-                router:      { id: 'router', x: widthComp * 0.85, y: yMid - 60, w: 50, h: 40, type: 'active', label: 'Router', color: C_ROUTER },
-                cloud:       { id: 'cloud', x: widthComp * 0.9, y: yMid + 80, w: 80, h: 50, type: 'end', label: 'Internet', color: C_GRID }
+                localServer: { id: 'localServer', x: width * 0.65, y: yMid + 120, w: 60, h: 80, type: 'end', label: 'Lokaler Server', labelEn: 'Local Server', color: C_GRID },
+                router:      { id: 'router', x: width * 0.85, y: yMid - 60, w: 50, h: 40, type: 'active', label: 'Router', color: C_ROUTER },
+                cloud:       { id: 'cloud', x: width * 0.9, y: yMid + 80, w: 80, h: 50, type: 'end', label: 'Internet', color: C_GRID }
             };
         }
-        window.addEventListener('resize', resizeCanvasComp);
+        window.addEventListener('resize', resizeCanvas);
 
-        class CompSimPacket {
+        class SimPacket {
             constructor(path, onComplete) {
-                this.path = path; 
+                this.path = path; // Array of node IDs e.g. ['pc', 'outlet', 'panel', 'switch', 'router']
                 this.currentLeg = 0;
                 this.progress = 0;
                 this.dead = false;
-                this.isWaiting = false; 
+                this.isWaiting = false; // Prevent multiple arrival triggers
                 this.onComplete = onComplete;
                 this.setupLeg();
             }
 
             setupLeg() {
-                let startNode = nodesComp[this.path[this.currentLeg]];
-                let targetNode = nodesComp[this.path[this.currentLeg + 1]];
+                let startNode = nodes[this.path[this.currentLeg]];
+                let targetNode = nodes[this.path[this.currentLeg + 1]];
                 
                 this.startX = startNode.x;
                 this.startY = startNode.y;
@@ -1327,19 +937,20 @@
                 this.x = this.startX;
                 this.y = this.startY;
                 this.progress = 0;
-                this.isWaiting = false; 
+                this.isWaiting = false; // Unlock animation for the next leg
             }
 
             update(dt) {
                 if(this.dead || this.isWaiting) return;
 
-                if(compSimState.pauseTimer > 0) return;
+                // If sim is paused (processing at an active component), don't move
+                if(simState.pauseTimer > 0) return;
 
                 const dx = this.targetX - this.startX;
                 const dy = this.targetY - this.startY;
                 const distance = Math.sqrt(dx*dx + dy*dy);
                 
-                const step = (PACKET_SPEED_COMP * dt) / distance;
+                const step = (PACKET_SPEED * dt) / distance;
                 this.progress += step;
 
                 if (this.progress >= 1) {
@@ -1347,7 +958,7 @@
                     this.x = this.targetX;
                     this.y = this.targetY;
                     
-                    this.isWaiting = true; 
+                    this.isWaiting = true; // Lock until the next leg is set up
                     this.arriveAtNode();
                 } else {
                     this.x = this.startX + dx * this.progress;
@@ -1357,34 +968,38 @@
 
             arriveAtNode() {
                 let currentNodeId = this.path[this.currentLeg + 1];
-                let currentNode = nodesComp[currentNodeId];
+                let currentNode = nodes[currentNodeId];
 
+                // Safeguard against missing nodes or out-of-bounds indices
                 if (!currentNode) {
                     this.dead = true;
                     return;
                 }
 
+                // If it's an active component, PAUSE for "processing"
                 if(currentNode.type === 'active') {
-                    compSimState.activeComponent = currentNodeId;
-                    compSimState.pauseTimer = 0.8; 
-                    updateSimStatusTextComp(currentNodeId);
+                    simState.activeComponent = currentNodeId;
+                    simState.pauseTimer = 0.8; // Pause for 0.8 seconds
+                    updateSimStatusText(currentNodeId);
                 }
 
                 this.currentLeg++;
 
                 if (this.currentLeg >= this.path.length - 1) {
+                    // Reached final destination
                     setTimeout(() => {
                         this.dead = true;
-                        compSimState.activeComponent = null;
-                        compSimState.mode = 'idle';
+                        simState.activeComponent = null;
+                        simState.mode = 'idle';
                         if(this.onComplete) this.onComplete();
-                    }, compSimState.pauseTimer * 1000 + 200);
+                    }, simState.pauseTimer * 1000 + 200);
                 } else {
+                    // Setup next leg, but delay it if we are paused
                     setTimeout(() => {
                         this.setupLeg();
-                        compSimState.activeComponent = null;
-                        updateSimStatusTextComp(); 
-                    }, compSimState.pauseTimer * 1000);
+                        simState.activeComponent = null;
+                        updateSimStatusText(); // Clear or update text
+                    }, simState.pauseTimer * 1000);
                 }
             }
 
@@ -1396,6 +1011,7 @@
                 ctx.arc(this.x, this.y, 6, 0, 2*Math.PI);
                 ctx.fill();
 
+                // Add a small trailing glow
                 ctx.globalAlpha = 0.4;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, 12, 0, 2*Math.PI);
@@ -1404,31 +1020,31 @@
             }
         }
 
-        function updateSimStatusTextComp(nodeId = null) {
-            if(compSimState.mode === 'idle') {
-                compSimState.statusText = isGerman ? "Warte auf Traffic..." : "Waiting for traffic...";
+        function updateSimStatusText(nodeId = null) {
+            if(simState.mode === 'idle') {
+                simState.statusText = isGerman ? "Warte auf Traffic..." : "Waiting for traffic...";
                 return;
             }
 
             if(nodeId === 'switch') {
-                compSimState.statusText = isGerman ? "Switch (Aktiv): Liest MAC-Adresse, bestimmt Ziel-Port..." 
+                simState.statusText = isGerman ? "Switch (Aktiv): Liest MAC-Adresse, bestimmt Ziel-Port..." 
                                                : "Switch (Active): Reading MAC address, determining target port...";
             } else if(nodeId === 'router') {
-                compSimState.statusText = isGerman ? "Router (Aktiv): Liest IP-Adresse, leitet ins Internet..." 
+                simState.statusText = isGerman ? "Router (Aktiv): Liest IP-Adresse, leitet ins Internet..." 
                                                : "Router (Active): Reading IP address, routing to internet...";
             } else if(!nodeId) {
-                compSimState.statusText = isGerman ? "Datenpaket fließt durch passive Verkabelung..." 
+                simState.statusText = isGerman ? "Datenpaket fließt durch passive Verkabelung..." 
                                                : "Packet flowing through passive cabling...";
             }
         }
 
-        function startSimulationComp(mode) {
-            if(activePacketComp && !activePacketComp.dead) return; 
+        function startSimulation(mode) {
+            if(activePacket && !activePacket.dead) return; // Wait till finished
 
-            compSimState.mode = mode;
-            compSimState.activeComponent = null;
-            compSimState.pauseTimer = 0;
-            updateSimStatusTextComp();
+            simState.mode = mode;
+            simState.activeComponent = null;
+            simState.pauseTimer = 0;
+            updateSimStatusText();
 
             let path = [];
             if(mode === 'local') {
@@ -1437,443 +1053,137 @@
                 path = ['pc', 'outlet', 'panel', 'switch', 'router', 'cloud'];
             }
 
-            if (!nodesComp || !nodesComp.pc) return; 
+            if (!nodes || !nodes.pc) return; // Abort if layout isn't ready
 
-            activePacketComp = new CompSimPacket(path, () => {
-                compSimState.statusText = isGerman ? "Erfolgreich zugestellt!" : "Successfully delivered!";
+            activePacket = new SimPacket(path, () => {
+                simState.statusText = isGerman ? "Erfolgreich zugestellt!" : "Successfully delivered!";
             });
         }
 
-        function drawEnvironmentComp() {
-            if (!nodesComp || !nodesComp.pc) return; 
+        function drawEnvironment() {
+            if (!nodes || !nodes.pc) return; // Safeguard against uninitialized nodes
 
-            ctxComp.strokeStyle = C_GRID;
-            ctxComp.lineWidth = 3;
-            ctxComp.beginPath();
+            // Draw Cables (Lines between nodes)
+            ctx.strokeStyle = C_GRID;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
             
-            ctxComp.moveTo(nodesComp.pc.x, nodesComp.pc.y);
-            ctxComp.lineTo(nodesComp.outlet.x, nodesComp.outlet.y);
-            ctxComp.lineTo(nodesComp.panel.x, nodesComp.panel.y);
-            ctxComp.lineTo(nodesComp.switch.x, nodesComp.switch.y);
+            // PC to Switch path
+            ctx.moveTo(nodes.pc.x, nodes.pc.y);
+            ctx.lineTo(nodes.outlet.x, nodes.outlet.y);
+            ctx.lineTo(nodes.panel.x, nodes.panel.y);
+            ctx.lineTo(nodes.switch.x, nodes.switch.y);
             
-            ctxComp.moveTo(nodesComp.switch.x, nodesComp.switch.y);
-            ctxComp.lineTo(nodesComp.localServer.x, nodesComp.localServer.y);
+            // Switch to Server
+            ctx.moveTo(nodes.switch.x, nodes.switch.y);
+            ctx.lineTo(nodes.localServer.x, nodes.localServer.y);
             
-            ctxComp.moveTo(nodesComp.switch.x, nodesComp.switch.y);
-            ctxComp.lineTo(nodesComp.router.x, nodesComp.router.y);
-            ctxComp.lineTo(nodesComp.cloud.x, nodesComp.cloud.y);
+            // Switch to Router to Cloud
+            ctx.moveTo(nodes.switch.x, nodes.switch.y);
+            ctx.lineTo(nodes.router.x, nodes.router.y);
+            ctx.lineTo(nodes.cloud.x, nodes.cloud.y);
             
-            ctxComp.stroke();
+            ctx.stroke();
 
-            ctxComp.fillStyle = C_TEXT;
-            ctxComp.font = "italic 16px Inter";
-            ctxComp.textAlign = "center";
-            ctxComp.fillText(compSimState.statusText, widthComp / 2, 35);
+            // Status Text Top
+            ctx.fillStyle = C_TEXT;
+            ctx.font = "italic 16px Inter";
+            ctx.textAlign = "center";
+            ctx.fillText(simState.statusText, width / 2, 35);
 
-            Object.values(nodesComp).forEach(node => {
-                let isProcessing = (compSimState.activeComponent === node.id);
+            // Draw Nodes
+            Object.values(nodes).forEach(node => {
+                let isProcessing = (simState.activeComponent === node.id);
                 
-                ctxComp.fillStyle = C_PANEL;
-                ctxComp.strokeStyle = node.color;
+                ctx.fillStyle = C_PANEL;
+                ctx.strokeStyle = node.color;
                 
+                // Active components stand out more
                 if(node.type === 'active') {
-                    ctxComp.lineWidth = 3;
+                    ctx.lineWidth = 3;
                     if(isProcessing) {
-                        ctxComp.shadowColor = node.color;
-                        ctxComp.shadowBlur = 15;
+                        ctx.shadowColor = node.color;
+                        ctx.shadowBlur = 15;
                     }
                 } else if(node.type === 'passive') {
-                    ctxComp.lineWidth = 2;
-                    ctxComp.setLineDash([4, 4]); 
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([4, 4]); // Dashed line to show it's "transparent" to data
                 } else {
-                    ctxComp.lineWidth = 2;
+                    ctx.lineWidth = 2;
                 }
 
-                ctxComp.beginPath();
+                ctx.beginPath();
                 if(node.id === 'cloud') {
-                    ctxComp.ellipse(node.x, node.y, node.w/2, node.h/2, 0, 0, 2*Math.PI);
+                    // Simple cloud shape
+                    ctx.ellipse(node.x, node.y, node.w/2, node.h/2, 0, 0, 2*Math.PI);
                 } else if(node.id === 'router') {
-                    ctxComp.arc(node.x, node.y, node.w/2, 0, 2*Math.PI);
+                    ctx.arc(node.x, node.y, node.w/2, 0, 2*Math.PI);
                 } else {
-                    ctxComp.roundRect(node.x - node.w/2, node.y - node.h/2, node.w, node.h, 6);
+                    ctx.roundRect(node.x - node.w/2, node.y - node.h/2, node.w, node.h, 6);
                 }
-                ctxComp.fill(); 
-                ctxComp.stroke();
+                ctx.fill(); 
+                ctx.stroke();
                 
-                ctxComp.setLineDash([]);
-                ctxComp.shadowBlur = 0; 
+                ctx.setLineDash([]);
+                ctx.shadowBlur = 0; // Reset shadow
 
-                ctxComp.fillStyle = C_TEXT;
-                ctxComp.font = node.type === 'active' ? "bold 12px Inter" : "11px Inter";
-                ctxComp.textAlign = "center";
-                ctxComp.textBaseline = "middle";
+                // Label
+                ctx.fillStyle = C_TEXT;
+                ctx.font = node.type === 'active' ? "bold 12px Inter" : "11px Inter";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
                 
                 let labelText = isGerman ? node.label : (node.labelEn || node.label);
                 
+                // Small icons inside or above based on type
                 if(node.type === 'passive') {
-                    ctxComp.fillStyle = C_PASSIVE;
-                    ctxComp.fillText(labelText, node.x, node.y - node.h/2 - 12);
+                    ctx.fillStyle = C_PASSIVE;
+                    ctx.fillText(labelText, node.x, node.y - node.h/2 - 12);
                 } else {
-                    ctxComp.fillText(labelText, node.x, node.y - node.h/2 - 15);
+                    ctx.fillText(labelText, node.x, node.y - node.h/2 - 15);
                 }
                 
+                // Internal details for Active components
                 if(node.type === 'active') {
-                    ctxComp.fillStyle = isProcessing ? C_PACKET : C_GRID;
-                    if(Date.now() % 400 < 200 && isProcessing) ctxComp.fillStyle = C_PANEL; 
+                    // Draw little LEDs
+                    ctx.fillStyle = isProcessing ? C_PACKET : C_GRID;
+                    if(Date.now() % 400 < 200 && isProcessing) ctx.fillStyle = C_PANEL; // Blink
                     
                     if(node.id === 'switch') {
-                        ctxComp.fillRect(node.x - 15, node.y + 5, 6, 6);
-                        ctxComp.fillRect(node.x - 5, node.y + 5, 6, 6);
-                        ctxComp.fillRect(node.x + 5, node.y + 5, 6, 6);
-                        ctxComp.fillRect(node.x + 15, node.y + 5, 6, 6);
+                        ctx.fillRect(node.x - 15, node.y + 5, 6, 6);
+                        ctx.fillRect(node.x - 5, node.y + 5, 6, 6);
+                        ctx.fillRect(node.x + 5, node.y + 5, 6, 6);
+                        ctx.fillRect(node.x + 15, node.y + 5, 6, 6);
                     } else if (node.id === 'router') {
-                        ctxComp.beginPath(); ctxComp.arc(node.x, node.y, 4, 0, 2*Math.PI); ctxComp.fill();
+                        ctx.beginPath(); ctx.arc(node.x, node.y, 4, 0, 2*Math.PI); ctx.fill();
                     }
                 }
             });
         }
 
-        /* ==================================================================
-           ANIMATION / SIMULATION LOGIC: DHCP & DORA
-           ================================================================== */
-        const canvasDHCP = document.getElementById('simCanvasDHCP');
-        const ctxDHCP = canvasDHCP.getContext('2d');
-        let widthDHCP, heightDHCP;
+        function animateLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+            lastTime = timestamp;
 
-        let clientBox = {x:0, y:0, w:80, h:120};
-        let relayBox  = {x:0, y:0, w:80, h:120};
-        let serverBox = {x:0, y:0, w:80, h:160};
-        
-        const PACKET_SPEED_DHCP = 400; // px per second
+            ctx.clearRect(0, 0, width, height);
 
-        let doraState = {
-            phase: -1, // -1: Idle, 0: Discover, 1: Offer, 2: Request, 3: Ack, 4: Done, 5: APIPA Fallback
-            statusText: "",
-            clientIP: "0.0.0.0",
-            serverPool: "192.168.1.50",
-            isAPIPA: false,
-            isRelay: false
-        };
-        
-        let activePacketDHCP = null; 
-
-        function resizeCanvasDHCP() {
-            const wrapper = canvasDHCP.parentElement;
-            if(!wrapper) return;
-            const rect = wrapper.getBoundingClientRect();
-            if(rect.width === 0) return;
-
-            widthDHCP = canvasDHCP.width = rect.width;
-            heightDHCP = canvasDHCP.height = rect.height;
-
-            clientBox = { x: 40, y: heightDHCP/2 - 60, w: 90, h: 100 };
-            relayBox  = { x: widthDHCP/2 - 45, y: heightDHCP/2 - 60, w: 90, h: 100 };
-            serverBox = { x: widthDHCP - 130, y: heightDHCP/2 - 80, w: 90, h: 140 };
-        }
-        window.addEventListener('resize', resizeCanvasDHCP);
-
-        class DoraPacket {
-            constructor(type, startX, targetX, y, isBroadcast, phase) {
-                this.type = type;   
-                this.phase = phase; 
-                this.startX = startX;
-                this.targetX = targetX;
-                this.x = startX;
-                this.y = y;
-                this.progress = 0;
-                this.dead = false;
-                this.isBroadcast = isBroadcast;
-                
-                if (type === 0) { this.color = C_D; this.label = "DISCOVER"; }
-                else if (type === 1) { this.color = C_O; this.label = "OFFER"; }
-                else if (type === 2) { this.color = C_R; this.label = "REQUEST"; }
-                else { this.color = C_A; this.label = "ACK"; }
+            if(simState.pauseTimer > 0) {
+                simState.pauseTimer -= dt;
+                if(simState.pauseTimer < 0) simState.pauseTimer = 0;
             }
 
-            update(dt) {
-                if(this.dead) return;
-                const distance = Math.abs(this.targetX - this.startX);
-                const step = (PACKET_SPEED_DHCP * dt) / distance;
-                this.progress += step;
-
-                if (this.progress >= 1) {
-                    this.progress = 1;
-                    this.dead = true;
-                    onPacketArriveDHCP(this.phase);
-                }
-                this.x = this.startX + (this.targetX - this.startX) * this.progress;
+            drawEnvironment();
+            if (activePacket) {
+                activePacket.update(dt);
+                activePacket.draw(ctx);
             }
 
-            draw(ctx) {
-                if(this.dead) return;
-                
-                if (this.isBroadcast) {
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, 30 + (Math.sin(Date.now()/150) * 10), 0, 2*Math.PI);
-                    ctx.strokeStyle = this.color;
-                    ctx.globalAlpha = 0.3;
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                    ctx.globalAlpha = 1.0;
-                }
-
-                let w = 85, h = 26;
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.roundRect(this.x - w/2, this.y - h/2, w, h, 6);
-                ctx.fill();
-
-                ctx.fillStyle = "#fff";
-                ctx.font = "bold 11px Inter";
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText(this.label, this.x, this.y + 1);
-            }
-        }
-
-        function updateSimStatusTextDHCP() {
-            if (doraState.isRelay) {
-                if (doraState.phase === 0) doraState.statusText = isGerman ? "Schritt 1: DISCOVER Broadcast -> Router" : "Step 1: DISCOVER Broadcast -> Router";
-                else if (doraState.phase === 1) doraState.statusText = isGerman ? "Schritt 1.5: Router -> Server (Unicast)" : "Step 1.5: Router -> Server (Unicast)";
-                else if (doraState.phase === 2) doraState.statusText = isGerman ? "Schritt 2: OFFER Server -> Router" : "Step 2: OFFER Server -> Router";
-                else if (doraState.phase === 3) doraState.statusText = isGerman ? "Schritt 2.5: OFFER Router -> Client" : "Step 2.5: OFFER Router -> Client";
-                else if (doraState.phase === 4) doraState.statusText = isGerman ? "Schritt 3: REQUEST Client -> Router" : "Step 3: REQUEST Client -> Router";
-                else if (doraState.phase === 5) doraState.statusText = isGerman ? "Schritt 3.5: REQUEST Router -> Server" : "Step 3.5: REQUEST Router -> Server";
-                else if (doraState.phase === 6) doraState.statusText = isGerman ? "Schritt 4: ACK Server -> Router" : "Step 4: ACK Server -> Router";
-                else if (doraState.phase === 7) doraState.statusText = isGerman ? "Schritt 4.5: ACK Router -> Client" : "Step 4.5: ACK Router -> Client";
-                else if (doraState.phase === 8) doraState.statusText = isGerman ? "Erfolgreich über Relay verbunden!" : "Successfully connected via Relay!";
-                else doraState.statusText = isGerman ? "Warte auf Start..." : "Waiting to start...";
-                return;
-            }
-
-            if (doraState.phase === 0) {
-                if (doraState.isAPIPA) doraState.statusText = isGerman ? "Schritt 1: DISCOVER... (Keine Antwort!)" : "Step 1: DISCOVER... (No response!)";
-                else doraState.statusText = isGerman ? "Schritt 1: DISCOVER (Ich brauche eine IP!)" : "Step 1: DISCOVER (I need an IP!)";
-            }
-            else if (doraState.phase === 1) doraState.statusText = isGerman ? "Schritt 2: OFFER (Wie wäre es mit 192.168.1.50?)" : "Step 2: OFFER (How about 192.168.1.50?)";
-            else if (doraState.phase === 2) doraState.statusText = isGerman ? "Schritt 3: REQUEST (Ja, ich nehme die 192.168.1.50!)" : "Step 3: REQUEST (Yes, I'll take 192.168.1.50!)";
-            else if (doraState.phase === 3) doraState.statusText = isGerman ? "Schritt 4: ACKNOWLEDGE (Bestätigt. Gehört dir!)" : "Step 4: ACKNOWLEDGE (Confirmed. It's yours!)";
-            else if (doraState.phase === 4) doraState.statusText = isGerman ? "Erfolgreich verbunden!" : "Successfully connected!";
-            else if (doraState.phase === 5) doraState.statusText = isGerman ? "TIMEOUT! APIPA IP 169.254.42.107 vergeben." : "TIMEOUT! Assigned APIPA IP 169.254.42.107.";
-            else doraState.statusText = isGerman ? "Warte auf Start..." : "Waiting to start...";
-        }
-
-        function startSimulationDHCP() {
-            doraState.isAPIPA = false;
-            doraState.isRelay = false;
-            doraState.phase = 0;
-            doraState.clientIP = "0.0.0.0";
-            updateSimStatusTextDHCP();
-            activePacketDHCP = new DoraPacket(0, clientBox.x + clientBox.w, serverBox.x, heightDHCP/2, true, 0);
-        }
-
-        function startSimulationAPIPA() {
-            doraState.isAPIPA = true;
-            doraState.isRelay = false;
-            doraState.phase = 0;
-            doraState.clientIP = "0.0.0.0";
-            updateSimStatusTextDHCP();
-            activePacketDHCP = new DoraPacket(0, clientBox.x + clientBox.w, serverBox.x, heightDHCP/2, true, 0);
-        }
-
-        function startSimulationRelay() {
-            doraState.isAPIPA = false;
-            doraState.isRelay = true;
-            doraState.phase = 0;
-            doraState.clientIP = "0.0.0.0";
-            updateSimStatusTextDHCP();
-            activePacketDHCP = new DoraPacket(0, clientBox.x + clientBox.w, relayBox.x, heightDHCP/2, true, 0);
-        }
-
-        function onPacketArriveDHCP(completedPhase) {
-            if (doraState.isAPIPA && completedPhase === 0) {
-                setTimeout(() => {
-                    doraState.phase = 5;
-                    doraState.clientIP = "169.254.42.107"; 
-                    updateSimStatusTextDHCP();
-                    activePacketDHCP = null;
-                }, 1200);
-                return;
-            }
-
-            if (doraState.isRelay) {
-                setTimeout(() => {
-                    doraState.phase = completedPhase + 1;
-                    updateSimStatusTextDHCP();
-
-                    let cRight = clientBox.x + clientBox.w;
-                    let cLeft = clientBox.x;
-                    let rRight = relayBox.x + relayBox.w;
-                    let rLeft = relayBox.x;
-                    let sLeft = serverBox.x;
-                    let sRight = serverBox.x + serverBox.w;
-
-                    if (doraState.phase === 1) activePacketDHCP = new DoraPacket(0, rRight, sLeft, heightDHCP/2, false, 1);
-                    else if (doraState.phase === 2) activePacketDHCP = new DoraPacket(1, sLeft, rRight, heightDHCP/2, false, 2);
-                    else if (doraState.phase === 3) activePacketDHCP = new DoraPacket(1, rLeft, cRight, heightDHCP/2, false, 3);
-                    else if (doraState.phase === 4) activePacketDHCP = new DoraPacket(2, cRight, rLeft, heightDHCP/2, true, 4);
-                    else if (doraState.phase === 5) activePacketDHCP = new DoraPacket(2, rRight, sLeft, heightDHCP/2, false, 5);
-                    else if (doraState.phase === 6) activePacketDHCP = new DoraPacket(3, sLeft, rRight, heightDHCP/2, false, 6);
-                    else if (doraState.phase === 7) activePacketDHCP = new DoraPacket(3, rLeft, cRight, heightDHCP/2, false, 7);
-                    else if (doraState.phase === 8) {
-                        doraState.clientIP = doraState.serverPool; 
-                        activePacketDHCP = null;
-                    }
-                }, 400);
-                return;
-            }
-
-            setTimeout(() => {
-                doraState.phase = completedPhase + 1;
-                updateSimStatusTextDHCP();
-
-                if (doraState.phase === 1) {
-                    activePacketDHCP = new DoraPacket(1, serverBox.x, clientBox.x + clientBox.w, heightDHCP/2, false, 1);
-                } else if (doraState.phase === 2) {
-                    activePacketDHCP = new DoraPacket(2, clientBox.x + clientBox.w, serverBox.x, heightDHCP/2, true, 2);
-                } else if (doraState.phase === 3) {
-                    activePacketDHCP = new DoraPacket(3, serverBox.x, clientBox.x + clientBox.w, heightDHCP/2, false, 3);
-                } else if (doraState.phase === 4) {
-                    doraState.clientIP = doraState.serverPool; 
-                    activePacketDHCP = null;
-                }
-            }, 400); 
-        }
-
-        function drawEnvironmentDHCP() {
-            ctxDHCP.strokeStyle = C_GRID;
-            ctxDHCP.lineWidth = 2;
-            ctxDHCP.setLineDash([6, 6]);
-            ctxDHCP.beginPath();
-            if (doraState.isRelay) {
-                ctxDHCP.moveTo(clientBox.x + clientBox.w, heightDHCP/2);
-                ctxDHCP.lineTo(relayBox.x, heightDHCP/2);
-                ctxDHCP.moveTo(relayBox.x + relayBox.w, heightDHCP/2);
-                ctxDHCP.lineTo(serverBox.x, heightDHCP/2);
-            } else {
-                ctxDHCP.moveTo(clientBox.x + clientBox.w, heightDHCP/2);
-                ctxDHCP.lineTo(serverBox.x, heightDHCP/2);
-            }
-            ctxDHCP.stroke();
-            ctxDHCP.setLineDash([]);
-
-            ctxDHCP.fillStyle = C_TEXT;
-            ctxDHCP.font = "italic 16px Inter";
-            ctxDHCP.textAlign = "center";
-            ctxDHCP.fillText(doraState.statusText, widthDHCP / 2, 40);
-
-            ctxDHCP.fillStyle = C_PANEL;
-            ctxDHCP.strokeStyle = (doraState.phase === 4 || doraState.phase === 8) ? C_A : ((doraState.phase === 5 && doraState.isAPIPA) ? C_ERR : C_GRID);
-            ctxDHCP.lineWidth = (doraState.phase === 4 || doraState.phase === 8 || (doraState.phase === 5 && doraState.isAPIPA)) ? 3 : 2;
-            ctxDHCP.beginPath();
-            ctxDHCP.roundRect(clientBox.x, clientBox.y, clientBox.w, clientBox.h, 8);
-            ctxDHCP.fill(); ctxDHCP.stroke();
-            
-            ctxDHCP.fillStyle = C_BG;
-            ctxDHCP.fillRect(clientBox.x + 10, clientBox.y + 10, clientBox.w - 20, 50);
-
-            ctxDHCP.fillStyle = C_TEXT;
-            ctxDHCP.font = "bold 14px Inter";
-            ctxDHCP.fillText("CLIENT", clientBox.x + clientBox.w/2, clientBox.y - 10);
-            
-            ctxDHCP.font = "11px Fira Code";
-            ctxDHCP.fillStyle = (doraState.clientIP === "0.0.0.0") ? C_ERR : ((doraState.phase === 5 && doraState.isAPIPA) ? C_ERR : C_A);
-            ctxDHCP.fillText("IP: " + doraState.clientIP, clientBox.x + clientBox.w/2, clientBox.y + 85);
-
-            if (doraState.isRelay) {
-                ctxDHCP.fillStyle = C_PANEL;
-                ctxDHCP.strokeStyle = C_GRID;
-                ctxDHCP.lineWidth = 2;
-                ctxDHCP.beginPath();
-                ctxDHCP.roundRect(relayBox.x, relayBox.y, relayBox.w, relayBox.h, 8);
-                ctxDHCP.fill(); ctxDHCP.stroke();
-                
-                ctxDHCP.fillStyle = C_BG;
-                ctxDHCP.beginPath();
-                ctxDHCP.arc(relayBox.x + relayBox.w/2, relayBox.y + relayBox.h/2 + 5, 20, 0, 2*Math.PI);
-                ctxDHCP.fill(); ctxDHCP.stroke();
-                
-                ctxDHCP.fillStyle = C_TEXT;
-                ctxDHCP.font = "bold 14px Arial";
-                ctxDHCP.fillText("⤨", relayBox.x + relayBox.w/2, relayBox.y + relayBox.h/2 + 10);
-
-                ctxDHCP.font = "bold 14px Inter";
-                ctxDHCP.fillStyle = C_TEXT;
-                ctxDHCP.fillText("ROUTER", relayBox.x + relayBox.w/2, relayBox.y - 10);
-                
-                ctxDHCP.font = "10px Inter";
-                ctxDHCP.fillStyle = "var(--accent-violet)";
-                ctxDHCP.fillText("Relay Agent", relayBox.x + relayBox.w/2, relayBox.y + relayBox.h + 15);
-            }
-
-            ctxDHCP.globalAlpha = doraState.isAPIPA ? 0.3 : 1.0;
-
-            ctxDHCP.fillStyle = C_PANEL;
-            ctxDHCP.strokeStyle = C_GRID;
-            ctxDHCP.lineWidth = 2;
-            ctxDHCP.beginPath();
-            ctxDHCP.roundRect(serverBox.x, serverBox.y, serverBox.w, serverBox.h, 8);
-            ctxDHCP.fill(); ctxDHCP.stroke();
-            
-            ctxDHCP.fillStyle = C_BG;
-            ctxDHCP.fillRect(serverBox.x + 10, serverBox.y + 20, serverBox.w - 20, 20);
-            ctxDHCP.fillRect(serverBox.x + 10, serverBox.y + 50, serverBox.w - 20, 20);
-            ctxDHCP.fillRect(serverBox.x + 10, serverBox.y + 80, serverBox.w - 20, 20);
-
-            ctxDHCP.fillStyle = C_TEXT;
-            ctxDHCP.font = "bold 14px Inter";
-            ctxDHCP.fillText("DHCP SERVER", serverBox.x + serverBox.w/2, serverBox.y - 10);
-
-            ctxDHCP.font = "11px Inter";
-            ctxDHCP.fillStyle = C_O;
-            ctxDHCP.fillText(isGerman ? "Pool:" : "Pool:", serverBox.x + serverBox.w/2, serverBox.y + 115);
-            ctxDHCP.font = "11px Fira Code";
-            ctxDHCP.fillText(doraState.serverPool, serverBox.x + serverBox.w/2, serverBox.y + 128);
-
-            if (doraState.isAPIPA) {
-                ctxDHCP.fillStyle = C_ERR;
-                ctxDHCP.font = "bold 18px Inter";
-                ctxDHCP.fillText("OFFLINE", serverBox.x + serverBox.w/2, serverBox.y + serverBox.h / 2);
-            }
-
-            ctxDHCP.globalAlpha = 1.0;
-        }
-
-        let lastTimeCombined = 0;
-        function animateLoopCombined(timestamp) {
-            if (!lastTimeCombined) lastTimeCombined = timestamp;
-            const dt = Math.min((timestamp - lastTimeCombined) / 1000, 0.1);
-            lastTimeCombined = timestamp;
-
-            // Update & Draw Components
-            if (widthComp && heightComp) {
-                ctxComp.clearRect(0, 0, widthComp, heightComp);
-                if(compSimState.pauseTimer > 0) {
-                    compSimState.pauseTimer -= dt;
-                    if(compSimState.pauseTimer < 0) compSimState.pauseTimer = 0;
-                }
-                drawEnvironmentComp();
-                if (activePacketComp) {
-                    activePacketComp.update(dt);
-                    activePacketComp.draw(ctxComp);
-                }
-            }
-
-            // Update & Draw DHCP
-            if (widthDHCP && heightDHCP) {
-                ctxDHCP.clearRect(0, 0, widthDHCP, heightDHCP);
-                drawEnvironmentDHCP();
-                if (activePacketDHCP) {
-                    activePacketDHCP.update(dt);
-                    activePacketDHCP.draw(ctxDHCP);
-                }
-            }
-
-            requestAnimationFrame(animateLoopCombined);
+            requestAnimationFrame(animateLoop);
         }
 
         /* ==================================================================
-           INIT ALL
+           INIT
            ================================================================== */
         document.addEventListener('DOMContentLoaded', () => {
             const observer = new IntersectionObserver((entries) => {
@@ -1887,12 +1197,14 @@
                 });
             }, { rootMargin: '-10% 0px -80% 0px', threshold: [0, 0.1, 1] });
 
-            document.querySelectorAll('section, h3[id], div[id^="intro"]').forEach((section) => {
+            document.querySelectorAll('section, h3[id], div[id="intro"]').forEach((section) => {
                 observer.observe(section);
             });
 
+            /* Download visibility */
             updateDownloadVisibility();
 
+            /* Theme toggle button */
             const themeBtn = document.getElementById('themeToggleBtn');
             if (themeBtn) {
                 themeBtn.addEventListener('click', (e) => { e.preventDefault(); toggleDarkLight(); });
@@ -1909,13 +1221,10 @@
             document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideThemeMenu(); });
 
             updateDynamicColors();
-            updateSimStatusTextComp();
-            updateSimStatusTextDHCP();
-
+            updateSimStatusText();
             setTimeout(() => {
-                resizeCanvasComp();
-                resizeCanvasDHCP();
-                requestAnimationFrame(animateLoopCombined);
+                resizeCanvas();
+                requestAnimationFrame(animateLoop);
             }, 100);
 
             initColorSchemes();
