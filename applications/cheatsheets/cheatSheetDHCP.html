@@ -252,8 +252,11 @@
                 <li><a href="#apipa" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
                     <span class="lang-de">4. Fallback: APIPA</span><span class="lang-en">4. Fallback: APIPA</span>
                 </a></li>
+                <li><a href="#relay" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">5. DHCP Relay (Helper)</span><span class="lang-en">5. DHCP Relay (Helper)</span>
+                </a></li>
                 <li><a href="#ports" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
-                    <span class="lang-de">5. Ports &amp; UDP</span><span class="lang-en">5. Ports &amp; UDP</span>
+                    <span class="lang-de">6. Ports &amp; UDP</span><span class="lang-en">6. Ports &amp; UDP</span>
                 </a></li>
             </ul>
         </nav>
@@ -291,6 +294,10 @@
                     <button onclick="startSimulation()" class="btn-primary px-4 py-2 rounded-lg font-bold text-sm shadow flex-shrink-0">
                         <i class="fa-solid fa-bolt mr-2"></i>
                         <span class="lang-de">DORA Starten</span><span class="lang-en">Start DORA</span>
+                    </button>
+                    <button onclick="startSimulationRelay()" class="px-4 py-2 rounded-lg font-bold text-sm shadow flex-shrink-0 text-white transition-transform active:translate-y-px hover:opacity-90" style="background-color: var(--accent-violet)">
+                        <i class="fa-solid fa-route mr-2"></i>
+                        <span class="lang-de">DHCP Relay</span><span class="lang-en">DHCP Relay</span>
                     </button>
                     <button onclick="startSimulationAPIPA()" class="px-4 py-2 rounded-lg font-bold text-sm shadow flex-shrink-0 text-white transition-transform active:translate-y-px hover:opacity-90" style="background-color: var(--c-error)">
                         <i class="fa-solid fa-triangle-exclamation mr-2"></i>
@@ -451,11 +458,52 @@
             </div>
         </section>
 
+        <!-- DHCP RELAY SECTION -->
+        <section id="relay" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2>
+                <span class="lang-de">5. DHCP Relay Agent (IP Helper)</span>
+                <span class="lang-en">5. DHCP Relay Agent (IP Helper)</span>
+            </h2>
+            <div class="subtopic-card">
+                <p>
+                    <span class="lang-de">Der erste Schritt von DORA (Discover) ist ein <strong>Broadcast</strong>. Das Problem: <strong>Router blockieren Broadcasts!</strong> Wenn sich dein PC und der DHCP-Server in verschiedenen Netzwerken (VLANs) befinden, würde die Anfrage niemals beim Server ankommen.</span>
+                    <span class="lang-en">The first step of DORA (Discover) is a <strong>Broadcast</strong>. The problem: <strong>Routers drop broadcasts!</strong> If your PC and the DHCP server are in different networks (VLANs), the request would never reach the server.</span>
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                    <div class="bg-[var(--bg-color)] p-4 rounded-lg border border-[var(--border-color)] border-l-4" style="border-left-color: var(--accent-violet)">
+                        <h4 class="mt-0 flex justify-between items-center text-[var(--accent-violet)]">
+                            <span><i class="fa-solid fa-route mr-2"></i><span class="lang-de">Die Lösung: Relay Agent</span><span class="lang-en">The Solution: Relay Agent</span></span>
+                        </h4>
+                        <p class="text-sm mb-0">
+                            <span class="lang-de">Wir konfigurieren den Router als <strong>DHCP Relay Agent</strong>. Er fängt den Broadcast des Clients ab, packt ihn in ein normales <strong>Unicast</strong>-Paket und schickt es direkt an die feste IP-Adresse des DHCP-Servers.</span>
+                            <span class="lang-en">We configure the router as a <strong>DHCP Relay Agent</strong>. It catches the client's broadcast, wraps it into a normal <strong>Unicast</strong> packet, and routes it directly to the specific IP address of the DHCP server.</span>
+                        </p>
+                    </div>
+                    
+                    <div class="math-card my-0 flex flex-col justify-center">
+                        <p class="font-mono text-sm mb-2 font-semibold mt-0 border-b border-[var(--border-color)] pb-2">
+                            <span class="lang-de">Konfigurations-Beispiel (Cisco)</span><span class="lang-en">Configuration Example (Cisco)</span>
+                        </p>
+                        <div class="font-mono text-xs text-[var(--text-color)] mt-2 bg-[var(--code-block-bg)] p-3 rounded border border-[var(--border-color)]">
+                            Router(config)# interface GigabitEthernet0/1<br>
+                            Router(config-if)# ip address 192.168.10.1 255.255.255.0<br>
+                            <span class="text-[var(--accent-violet)] font-bold">Router(config-if)# ip helper-address 10.0.0.5</span>
+                        </div>
+                        <p class="text-xs text-[var(--text-muted)] mt-2 mb-0">
+                            <span class="lang-de">Der Befehl <code>ip helper-address</code> sagt dem Router, wohin er die abgefangenen Broadcasts schicken soll (hier zur 10.0.0.5).</span>
+                            <span class="lang-en">The <code>ip helper-address</code> command tells the router where to forward the intercepted broadcasts (here to 10.0.0.5).</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- PORTS AND TCP/UDP -->
         <section id="ports" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
             <h2>
-                <span class="lang-de">5. Ports &amp; UDP</span>
-                <span class="lang-en">5. Ports &amp; UDP</span>
+                <span class="lang-de">6. Ports &amp; UDP</span>
+                <span class="lang-en">6. Ports &amp; UDP</span>
             </h2>
             <div class="subtopic-card">
                 <p>
@@ -782,6 +830,7 @@
         let lastTime = 0;
 
         let clientBox = {x:0, y:0, w:80, h:120};
+        let relayBox  = {x:0, y:0, w:80, h:120};
         let serverBox = {x:0, y:0, w:80, h:160};
         
         const PACKET_SPEED = 400; // px per second
@@ -791,7 +840,8 @@
             statusText: "",
             clientIP: "0.0.0.0",
             serverPool: "192.168.1.50",
-            isAPIPA: false
+            isAPIPA: false,
+            isRelay: false
         };
         
         let activePacket = null; // Only one packet flies at a time in DORA
@@ -806,24 +856,27 @@
             height = canvas.height = rect.height;
 
             clientBox = { x: 40, y: height/2 - 60, w: 90, h: 100 };
+            relayBox  = { x: width/2 - 45, y: height/2 - 60, w: 90, h: 100 };
             serverBox = { x: width - 130, y: height/2 - 80, w: 90, h: 140 };
         }
         window.addEventListener('resize', resizeCanvas);
 
         class DoraPacket {
-            constructor(phase, startX, targetX, y) {
-                this.phase = phase; // 0=D, 1=O, 2=R, 3=A
+            constructor(type, startX, targetX, y, isBroadcast, phase) {
+                this.type = type;   // 0:D, 1:O, 2:R, 3:A
+                this.phase = phase; // Track the exact step in the animation sequence
                 this.startX = startX;
                 this.targetX = targetX;
                 this.x = startX;
                 this.y = y;
                 this.progress = 0;
                 this.dead = false;
+                this.isBroadcast = isBroadcast;
                 
-                if (phase === 0) { this.color = C_D; this.label = "DISCOVER"; this.isBroadcast = true; }
-                else if (phase === 1) { this.color = C_O; this.label = "OFFER"; this.isBroadcast = false; }
-                else if (phase === 2) { this.color = C_R; this.label = "REQUEST"; this.isBroadcast = true; }
-                else { this.color = C_A; this.label = "ACK"; this.isBroadcast = false; }
+                if (type === 0) { this.color = C_D; this.label = "DISCOVER"; }
+                else if (type === 1) { this.color = C_O; this.label = "OFFER"; }
+                else if (type === 2) { this.color = C_R; this.label = "REQUEST"; }
+                else { this.color = C_A; this.label = "ACK"; }
             }
 
             update(dt) {
@@ -869,6 +922,20 @@
         }
 
         function updateSimStatusText() {
+            if (doraState.isRelay) {
+                if (doraState.phase === 0) doraState.statusText = isGerman ? "Schritt 1: DISCOVER Broadcast -> Router" : "Step 1: DISCOVER Broadcast -> Router";
+                else if (doraState.phase === 1) doraState.statusText = isGerman ? "Schritt 1.5: Router -> Server (Unicast)" : "Step 1.5: Router -> Server (Unicast)";
+                else if (doraState.phase === 2) doraState.statusText = isGerman ? "Schritt 2: OFFER Server -> Router" : "Step 2: OFFER Server -> Router";
+                else if (doraState.phase === 3) doraState.statusText = isGerman ? "Schritt 2.5: OFFER Router -> Client" : "Step 2.5: OFFER Router -> Client";
+                else if (doraState.phase === 4) doraState.statusText = isGerman ? "Schritt 3: REQUEST Client -> Router" : "Step 3: REQUEST Client -> Router";
+                else if (doraState.phase === 5) doraState.statusText = isGerman ? "Schritt 3.5: REQUEST Router -> Server" : "Step 3.5: REQUEST Router -> Server";
+                else if (doraState.phase === 6) doraState.statusText = isGerman ? "Schritt 4: ACK Server -> Router" : "Step 4: ACK Server -> Router";
+                else if (doraState.phase === 7) doraState.statusText = isGerman ? "Schritt 4.5: ACK Router -> Client" : "Step 4.5: ACK Router -> Client";
+                else if (doraState.phase === 8) doraState.statusText = isGerman ? "Erfolgreich über Relay verbunden!" : "Successfully connected via Relay!";
+                else doraState.statusText = isGerman ? "Warte auf Start..." : "Waiting to start...";
+                return;
+            }
+
             if (doraState.phase === 0) {
                 if (doraState.isAPIPA) doraState.statusText = isGerman ? "Schritt 1: DISCOVER... (Keine Antwort!)" : "Step 1: DISCOVER... (No response!)";
                 else doraState.statusText = isGerman ? "Schritt 1: DISCOVER (Ich brauche eine IP!)" : "Step 1: DISCOVER (I need an IP!)";
@@ -883,18 +950,29 @@
 
         function startSimulation() {
             doraState.isAPIPA = false;
+            doraState.isRelay = false;
             doraState.phase = 0;
             doraState.clientIP = "0.0.0.0";
             updateSimStatusText();
-            activePacket = new DoraPacket(0, clientBox.x + clientBox.w, serverBox.x, height/2);
+            activePacket = new DoraPacket(0, clientBox.x + clientBox.w, serverBox.x, height/2, true, 0);
         }
 
         function startSimulationAPIPA() {
             doraState.isAPIPA = true;
+            doraState.isRelay = false;
             doraState.phase = 0;
             doraState.clientIP = "0.0.0.0";
             updateSimStatusText();
-            activePacket = new DoraPacket(0, clientBox.x + clientBox.w, serverBox.x, height/2);
+            activePacket = new DoraPacket(0, clientBox.x + clientBox.w, serverBox.x, height/2, true, 0);
+        }
+
+        function startSimulationRelay() {
+            doraState.isAPIPA = false;
+            doraState.isRelay = true;
+            doraState.phase = 0;
+            doraState.clientIP = "0.0.0.0";
+            updateSimStatusText();
+            activePacket = new DoraPacket(0, clientBox.x + clientBox.w, relayBox.x, height/2, true, 0);
         }
 
         function onPacketArrive(completedPhase) {
@@ -909,16 +987,43 @@
                 return;
             }
 
+            if (doraState.isRelay) {
+                setTimeout(() => {
+                    doraState.phase = completedPhase + 1;
+                    updateSimStatusText();
+
+                    let cRight = clientBox.x + clientBox.w;
+                    let cLeft = clientBox.x;
+                    let rRight = relayBox.x + relayBox.w;
+                    let rLeft = relayBox.x;
+                    let sLeft = serverBox.x;
+                    let sRight = serverBox.x + serverBox.w;
+
+                    if (doraState.phase === 1) activePacket = new DoraPacket(0, rRight, sLeft, height/2, false, 1);
+                    else if (doraState.phase === 2) activePacket = new DoraPacket(1, sLeft, rRight, height/2, false, 2);
+                    else if (doraState.phase === 3) activePacket = new DoraPacket(1, rLeft, cRight, height/2, false, 3);
+                    else if (doraState.phase === 4) activePacket = new DoraPacket(2, cRight, rLeft, height/2, true, 4);
+                    else if (doraState.phase === 5) activePacket = new DoraPacket(2, rRight, sLeft, height/2, false, 5);
+                    else if (doraState.phase === 6) activePacket = new DoraPacket(3, sLeft, rRight, height/2, false, 6);
+                    else if (doraState.phase === 7) activePacket = new DoraPacket(3, rLeft, cRight, height/2, false, 7);
+                    else if (doraState.phase === 8) {
+                        doraState.clientIP = doraState.serverPool; // IP assigned!
+                        activePacket = null;
+                    }
+                }, 400);
+                return;
+            }
+
             setTimeout(() => {
                 doraState.phase = completedPhase + 1;
                 updateSimStatusText();
 
                 if (doraState.phase === 1) {
-                    activePacket = new DoraPacket(1, serverBox.x, clientBox.x + clientBox.w, height/2);
+                    activePacket = new DoraPacket(1, serverBox.x, clientBox.x + clientBox.w, height/2, false, 1);
                 } else if (doraState.phase === 2) {
-                    activePacket = new DoraPacket(2, clientBox.x + clientBox.w, serverBox.x, height/2);
+                    activePacket = new DoraPacket(2, clientBox.x + clientBox.w, serverBox.x, height/2, true, 2);
                 } else if (doraState.phase === 3) {
-                    activePacket = new DoraPacket(3, serverBox.x, clientBox.x + clientBox.w, height/2);
+                    activePacket = new DoraPacket(3, serverBox.x, clientBox.x + clientBox.w, height/2, false, 3);
                 } else if (doraState.phase === 4) {
                     doraState.clientIP = doraState.serverPool; // IP assigned!
                     activePacket = null;
@@ -927,13 +1032,20 @@
         }
 
         function drawEnvironment() {
-            // Center connecting line
+            // Connecting line(s)
             ctx.strokeStyle = C_GRID;
             ctx.lineWidth = 2;
             ctx.setLineDash([6, 6]);
             ctx.beginPath();
-            ctx.moveTo(clientBox.x + clientBox.w, height/2);
-            ctx.lineTo(serverBox.x, height/2);
+            if (doraState.isRelay) {
+                ctx.moveTo(clientBox.x + clientBox.w, height/2);
+                ctx.lineTo(relayBox.x, height/2);
+                ctx.moveTo(relayBox.x + relayBox.w, height/2);
+                ctx.lineTo(serverBox.x, height/2);
+            } else {
+                ctx.moveTo(clientBox.x + clientBox.w, height/2);
+                ctx.lineTo(serverBox.x, height/2);
+            }
             ctx.stroke();
             ctx.setLineDash([]);
 
@@ -945,8 +1057,8 @@
 
             // Draw Client
             ctx.fillStyle = C_PANEL;
-            ctx.strokeStyle = (doraState.phase === 4) ? C_A : ((doraState.phase === 5) ? C_ERR : C_GRID);
-            ctx.lineWidth = (doraState.phase === 4 || doraState.phase === 5) ? 3 : 2;
+            ctx.strokeStyle = (doraState.phase === 4 || doraState.phase === 8) ? C_A : ((doraState.phase === 5 && doraState.isAPIPA) ? C_ERR : C_GRID);
+            ctx.lineWidth = (doraState.phase === 4 || doraState.phase === 8 || (doraState.phase === 5 && doraState.isAPIPA)) ? 3 : 2;
             ctx.beginPath();
             ctx.roundRect(clientBox.x, clientBox.y, clientBox.w, clientBox.h, 8);
             ctx.fill(); ctx.stroke();
@@ -960,8 +1072,37 @@
             ctx.fillText("CLIENT", clientBox.x + clientBox.w/2, clientBox.y - 10);
             
             ctx.font = "11px Fira Code";
-            ctx.fillStyle = (doraState.clientIP === "0.0.0.0") ? C_ERR : ((doraState.phase === 5) ? C_ERR : C_A);
+            ctx.fillStyle = (doraState.clientIP === "0.0.0.0") ? C_ERR : ((doraState.phase === 5 && doraState.isAPIPA) ? C_ERR : C_A);
             ctx.fillText("IP: " + doraState.clientIP, clientBox.x + clientBox.w/2, clientBox.y + 85);
+
+            // Draw Relay if active
+            if (doraState.isRelay) {
+                ctx.fillStyle = C_PANEL;
+                ctx.strokeStyle = C_GRID;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect(relayBox.x, relayBox.y, relayBox.w, relayBox.h, 8);
+                ctx.fill(); ctx.stroke();
+                
+                // Router symbol inside relay box
+                ctx.fillStyle = C_BG;
+                ctx.beginPath();
+                ctx.arc(relayBox.x + relayBox.w/2, relayBox.y + relayBox.h/2 + 5, 20, 0, 2*Math.PI);
+                ctx.fill(); ctx.stroke();
+                
+                // Draw 4 arrows inside router circle
+                ctx.fillStyle = C_TEXT;
+                ctx.font = "bold 14px Arial";
+                ctx.fillText("⤨", relayBox.x + relayBox.w/2, relayBox.y + relayBox.h/2 + 10);
+
+                ctx.font = "bold 14px Inter";
+                ctx.fillStyle = C_TEXT;
+                ctx.fillText("ROUTER", relayBox.x + relayBox.w/2, relayBox.y - 10);
+                
+                ctx.font = "10px Inter";
+                ctx.fillStyle = "var(--accent-violet)";
+                ctx.fillText("Relay Agent", relayBox.x + relayBox.w/2, relayBox.y + relayBox.h + 15);
+            }
 
             // Draw Server
             ctx.globalAlpha = doraState.isAPIPA ? 0.3 : 1.0;
