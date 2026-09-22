@@ -249,8 +249,11 @@
                 <li><a href="#lease" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
                     <span class="lang-de">3. Lease Time (Mietzeit)</span><span class="lang-en">3. Lease Time</span>
                 </a></li>
+                <li><a href="#apipa" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
+                    <span class="lang-de">4. Fallback: APIPA</span><span class="lang-en">4. Fallback: APIPA</span>
+                </a></li>
                 <li><a href="#ports" class="toc-link block py-1.5 px-2 rounded-lg text-[var(--link-color)] hover:bg-[var(--code-bg)] font-medium transition-colors">
-                    <span class="lang-de">4. Ports &amp; UDP</span><span class="lang-en">4. Ports &amp; UDP</span>
+                    <span class="lang-de">5. Ports &amp; UDP</span><span class="lang-en">5. Ports &amp; UDP</span>
                 </a></li>
             </ul>
         </nav>
@@ -288,6 +291,10 @@
                     <button onclick="startSimulation()" class="btn-primary px-4 py-2 rounded-lg font-bold text-sm shadow flex-shrink-0">
                         <i class="fa-solid fa-bolt mr-2"></i>
                         <span class="lang-de">DORA Starten</span><span class="lang-en">Start DORA</span>
+                    </button>
+                    <button onclick="startSimulationAPIPA()" class="px-4 py-2 rounded-lg font-bold text-sm shadow flex-shrink-0 text-white transition-transform active:translate-y-px hover:opacity-90" style="background-color: var(--c-error)">
+                        <i class="fa-solid fa-triangle-exclamation mr-2"></i>
+                        <span class="lang-de">APIPA Auslösen</span><span class="lang-en">Trigger APIPA</span>
                     </button>
                 </div>
             </div>
@@ -408,11 +415,47 @@
             </div>
         </section>
 
+        <!-- APIPA SECTION -->
+        <section id="apipa" class="scroll-mt-10 searchable-block topic-panel mt-12">
+            <h2>
+                <span class="lang-de">4. Was passiert bei einem Fehler? (APIPA)</span>
+                <span class="lang-en">4. What happens on failure? (APIPA)</span>
+            </h2>
+            <div class="subtopic-card">
+                <p>
+                    <span class="lang-de">Wenn der DHCP-Server ausfällt oder nicht erreichbar ist, greift ein Notfall-Mechanismus namens <strong>APIPA</strong> (Automatic Private IP Addressing). Das Gerät gibt sich nach einem kurzen Timeout einfach selbst eine IP-Adresse.</span>
+                    <span class="lang-en">If the DHCP server is down or unreachable, a fallback mechanism called <strong>APIPA</strong> (Automatic Private IP Addressing) takes over. After a short timeout, the device simply assigns itself an IP address.</span>
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                    <div class="bg-[var(--bg-color)] p-4 rounded-lg border border-[var(--border-color)] border-l-4" style="border-left-color: var(--c-error)">
+                        <h4 class="mt-0 flex justify-between items-center text-[var(--c-error)]">
+                            <span><i class="fa-solid fa-triangle-exclamation mr-2"></i><span class="lang-de">Der 169.254.x.x Bereich</span><span class="lang-en">The 169.254.x.x Range</span></span>
+                        </h4>
+                        <p class="text-sm mb-0">
+                            <span class="lang-de">Das Gerät wählt zufällig eine Adresse aus dem Bereich <code>169.254.0.1</code> bis <code>169.254.255.254</code> (Subnetzmaske <code>255.255.0.0</code>). Wenn du also jemals eine IP siehst, die mit <strong>169.254</strong> beginnt, weißt du sofort: Dein DHCP-Server hat nicht geantwortet!</span>
+                            <span class="lang-en">The device randomly picks an address from the <code>169.254.0.1</code> to <code>169.254.255.254</code> range (Subnet Mask <code>255.255.0.0</code>). If you ever see an IP starting with <strong>169.254</strong>, you immediately know: Your DHCP server didn't respond!</span>
+                        </p>
+                    </div>
+                    
+                    <div class="bg-[var(--bg-color)] p-4 rounded-lg border border-[var(--border-color)] border-l-4" style="border-left-color: var(--c-r)">
+                        <h4 class="mt-0 flex justify-between items-center text-[var(--c-r)]">
+                            <span><i class="fa-solid fa-network-wired mr-2"></i><span class="lang-de">Einschränkungen</span><span class="lang-en">Limitations</span></span>
+                        </h4>
+                        <p class="text-sm mb-0">
+                            <span class="lang-de">Mit einer APIPA-Adresse kannst du zwar mit anderen Geräten im <strong>gleichen lokalen Netzwerk</strong> kommunizieren (die ebenfalls APIPA nutzen), aber du hast <strong>kein Internet</strong>, da kein Standard-Gateway (Router) zugewiesen wurde.</span>
+                            <span class="lang-en">With an APIPA address, you can communicate with other devices on the <strong>same local network</strong> (that also use APIPA), but you will have <strong>no internet access</strong> because no default gateway (router) was assigned.</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- PORTS AND TCP/UDP -->
         <section id="ports" class="scroll-mt-10 searchable-block topic-panel mt-12 mb-20">
             <h2>
-                <span class="lang-de">4. Ports &amp; UDP</span>
-                <span class="lang-en">4. Ports &amp; UDP</span>
+                <span class="lang-de">5. Ports &amp; UDP</span>
+                <span class="lang-en">5. Ports &amp; UDP</span>
             </h2>
             <div class="subtopic-card">
                 <p>
@@ -744,10 +787,11 @@
         const PACKET_SPEED = 400; // px per second
 
         let doraState = {
-            phase: -1, // -1: Idle, 0: Discover, 1: Offer, 2: Request, 3: Ack, 4: Done
+            phase: -1, // -1: Idle, 0: Discover, 1: Offer, 2: Request, 3: Ack, 4: Done, 5: APIPA Fallback
             statusText: "",
             clientIP: "0.0.0.0",
-            serverPool: "192.168.1.50"
+            serverPool: "192.168.1.50",
+            isAPIPA: false
         };
         
         let activePacket = null; // Only one packet flies at a time in DORA
@@ -825,15 +869,28 @@
         }
 
         function updateSimStatusText() {
-            if (doraState.phase === 0) doraState.statusText = isGerman ? "Schritt 1: DISCOVER (Ich brauche eine IP!)" : "Step 1: DISCOVER (I need an IP!)";
+            if (doraState.phase === 0) {
+                if (doraState.isAPIPA) doraState.statusText = isGerman ? "Schritt 1: DISCOVER... (Keine Antwort!)" : "Step 1: DISCOVER... (No response!)";
+                else doraState.statusText = isGerman ? "Schritt 1: DISCOVER (Ich brauche eine IP!)" : "Step 1: DISCOVER (I need an IP!)";
+            }
             else if (doraState.phase === 1) doraState.statusText = isGerman ? "Schritt 2: OFFER (Wie wäre es mit 192.168.1.50?)" : "Step 2: OFFER (How about 192.168.1.50?)";
             else if (doraState.phase === 2) doraState.statusText = isGerman ? "Schritt 3: REQUEST (Ja, ich nehme die 192.168.1.50!)" : "Step 3: REQUEST (Yes, I'll take 192.168.1.50!)";
             else if (doraState.phase === 3) doraState.statusText = isGerman ? "Schritt 4: ACKNOWLEDGE (Bestätigt. Gehört dir!)" : "Step 4: ACKNOWLEDGE (Confirmed. It's yours!)";
             else if (doraState.phase === 4) doraState.statusText = isGerman ? "Erfolgreich verbunden!" : "Successfully connected!";
+            else if (doraState.phase === 5) doraState.statusText = isGerman ? "TIMEOUT! APIPA IP 169.254.42.107 vergeben." : "TIMEOUT! Assigned APIPA IP 169.254.42.107.";
             else doraState.statusText = isGerman ? "Warte auf Start..." : "Waiting to start...";
         }
 
         function startSimulation() {
+            doraState.isAPIPA = false;
+            doraState.phase = 0;
+            doraState.clientIP = "0.0.0.0";
+            updateSimStatusText();
+            activePacket = new DoraPacket(0, clientBox.x + clientBox.w, serverBox.x, height/2);
+        }
+
+        function startSimulationAPIPA() {
+            doraState.isAPIPA = true;
             doraState.phase = 0;
             doraState.clientIP = "0.0.0.0";
             updateSimStatusText();
@@ -841,6 +898,17 @@
         }
 
         function onPacketArrive(completedPhase) {
+            if (doraState.isAPIPA && completedPhase === 0) {
+                // Server doesn't respond. Wait and trigger APIPA.
+                setTimeout(() => {
+                    doraState.phase = 5;
+                    doraState.clientIP = "169.254.42.107"; // Random APIPA IP
+                    updateSimStatusText();
+                    activePacket = null;
+                }, 1200);
+                return;
+            }
+
             setTimeout(() => {
                 doraState.phase = completedPhase + 1;
                 updateSimStatusText();
@@ -877,8 +945,8 @@
 
             // Draw Client
             ctx.fillStyle = C_PANEL;
-            ctx.strokeStyle = (doraState.phase === 4) ? C_A : C_GRID;
-            ctx.lineWidth = (doraState.phase === 4) ? 3 : 2;
+            ctx.strokeStyle = (doraState.phase === 4) ? C_A : ((doraState.phase === 5) ? C_ERR : C_GRID);
+            ctx.lineWidth = (doraState.phase === 4 || doraState.phase === 5) ? 3 : 2;
             ctx.beginPath();
             ctx.roundRect(clientBox.x, clientBox.y, clientBox.w, clientBox.h, 8);
             ctx.fill(); ctx.stroke();
@@ -892,10 +960,12 @@
             ctx.fillText("CLIENT", clientBox.x + clientBox.w/2, clientBox.y - 10);
             
             ctx.font = "11px Fira Code";
-            ctx.fillStyle = (doraState.clientIP === "0.0.0.0") ? C_ERR : C_A;
+            ctx.fillStyle = (doraState.clientIP === "0.0.0.0") ? C_ERR : ((doraState.phase === 5) ? C_ERR : C_A);
             ctx.fillText("IP: " + doraState.clientIP, clientBox.x + clientBox.w/2, clientBox.y + 85);
 
             // Draw Server
+            ctx.globalAlpha = doraState.isAPIPA ? 0.3 : 1.0;
+
             ctx.fillStyle = C_PANEL;
             ctx.strokeStyle = C_GRID;
             ctx.lineWidth = 2;
@@ -919,6 +989,13 @@
             ctx.font = "11px Fira Code";
             ctx.fillText(doraState.serverPool, serverBox.x + serverBox.w/2, serverBox.y + 128);
 
+            if (doraState.isAPIPA) {
+                ctx.fillStyle = C_ERR;
+                ctx.font = "bold 18px Inter";
+                ctx.fillText("OFFLINE", serverBox.x + serverBox.w/2, serverBox.y + serverBox.h / 2);
+            }
+
+            ctx.globalAlpha = 1.0;
         }
 
         function animateLoop(timestamp) {
