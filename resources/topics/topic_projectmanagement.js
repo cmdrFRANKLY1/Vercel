@@ -16,7 +16,7 @@ registerTopic({
     // ────────────────────────────────────────────────────────────
 
     icon: 'fa-project-diagram',
-    titleDe: 'Projektmanagement',
+    titleDe: 'Projekt Management',
     titleEn: 'Project Management',
     descDe: 'Moderne Praktiken, Modelle und Werkzeuge für Projekte im Jahr 2026.',
     descEn: 'Modern practices, models, and tools for projects in 2026.',
@@ -311,8 +311,8 @@ registerTopic({
         // --- TLDR SECTION ---
         {
             id: 'tldr-summary',
-            titleDe: 'TLDR – Projektmanagement Kompakt',
-            titleEn: 'TLDR – Project Management Compact',
+            titleDe: 'TLDR',
+            titleEn: 'TLDR',
             introDe: 'Die wichtigsten Punkte zum Projektmanagement auf einen Blick.',
             introEn: 'The most important points about project management at a glance.',
             subtopics: [

@@ -895,8 +895,8 @@ registerTopic({
            ============================================================ */
         {
             id: 'tldr-summary',
-            titleDe: 'TLDR – Netzwerke in vier Sätzen',
-            titleEn: 'TLDR – Networking in Four Sentences',
+            titleDe: 'TLDR',
+            titleEn: 'TLDR',
             introDe: 'Das Wichtigste an einem Ort.',
             introEn: 'The most important points in one place.',
             subtopics: [

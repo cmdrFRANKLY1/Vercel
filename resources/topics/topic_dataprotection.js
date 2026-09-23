@@ -768,8 +768,8 @@
         
         sections.push({
             id: tldrId,
-            titleDe: 'TL;DR: Datenschutz für Systemintegratoren',
-            titleEn: 'TL;DR: Privacy for System Integrators',
+            titleDe: 'TLDR',
+            titleEn: 'TLDR',
             subtopics: []
         });
 

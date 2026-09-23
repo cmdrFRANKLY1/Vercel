@@ -399,8 +399,8 @@ registerTopic({
        Panel 3 — Data flow through HW  (input/output rails, packets)
        ============================================================= */
     illustrations: {
-        titleDe: 'Hardware-Illustrationen',
-        titleEn: 'Hardware Illustrations',
+        titleDe: 'Visualisierungen & Grafiken',
+        titleEn: 'Visualisations & Graphics',
         introDe: 'Drei animierte Blockdiagramme mit sichtbarem Fluss: Hardware-Schichten (aufwärts, 3D), Firmware-Startkette BIOS → OS (aufwärts, mit Boot-Progress) und Datenfluss durch die Hardware (abwärts, mit Datenpaketen).',
         introEn: 'Three animated block diagrams with visible flow: hardware layers (upward, 3D), firmware boot chain BIOS → OS (upward, with boot progress), and data flow through hardware (downward, with data packets).',
         animations: [
