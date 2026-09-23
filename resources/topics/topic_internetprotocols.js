@@ -989,17 +989,156 @@ registerTopic({
         }
     ],
 
-    /* ============================================================
-       ILLUSTRATIONS — 6 pure-CSS animations (Inter font)
+       /* ============================================================
+       ILLUSTRATIONS — 7 pure-CSS animations (Inter font)
        ============================================================ */
     illustrations: {
         titleDe: 'Visualisierungen & Grafiken',
         titleEn: 'Visualizations & Graphics',
-        introDe: 'Sechs kurze Animationen, die die wichtigsten Netzwerk-Konzepte zeigen.',
-        introEn: 'Six short animations illustrating the most important networking concepts.',
+        introDe: 'Sieben kurze Animationen, die die wichtigsten Netzwerk-Konzepte zeigen.',
+        introEn: 'Seven short animations illustrating the most important networking concepts.',
         animations: [
 
-            /* 1 — LAYER STACK */
+            /* 1 — OSI LAYERS (7 Schichten) */
+            {
+                id: 'vis-osi-layers',
+                titleDe: 'OSI-Schichten (7 Schichten)',
+                titleEn: 'OSI Layers (7 Layers)',
+                descDe: 'Die sieben Schichten des OSI-Modells — von der physischen Übertragung (L1) bis zur Anwendung (L7). Ein Datenpaket wandert hinab und wieder hinauf.',
+                descEn: 'The seven layers of the OSI model — from physical transmission (L1) up to the application (L7). A data packet travels down and back up again.',
+                html: `
+                <style>
+                    .pm-osi7-stage { position: relative; padding: 1rem 0.5rem 1rem 3.2rem; max-width: 500px; margin: 0 auto; font-family: 'Inter', sans-serif; }
+                    .pm-osi7-stack { display: flex; flex-direction: column; gap: 5px; }
+                    .pm-osi7-layer {
+                        display: flex; align-items: center; gap: 0.6rem;
+                        padding: 0.5rem 0.7rem; border-radius: 0.4rem;
+                        background: var(--bg-color); border: 1px solid var(--border-color);
+                        font-size: 0.7rem; color: var(--text-color);
+                        font-family: 'Inter', sans-serif;
+                        will-change: transform, border-color, box-shadow, background;
+                    }
+                    .pm-osi7-num {
+                        flex-shrink: 0;
+                        width: 1.35rem; height: 1.35rem;
+                        display: inline-flex; align-items: center; justify-content: center;
+                        border-radius: 0.3rem;
+                        font-family: 'Fira Code', monospace;
+                        font-size: 0.6rem; font-weight: 800;
+                        color: #0e0e0e;
+                    }
+                    .pm-osi7-layer strong { font-weight: 700; color: var(--heading-color); font-family: 'Inter', sans-serif; }
+                    .pm-osi7-layer .pm-osi7-en { color: var(--text-muted); font-size: 0.6rem; font-family: 'Inter', sans-serif; }
+                    .pm-osi7-layer .pm-osi7-ex { margin-left: auto; color: var(--text-muted); font-size: 0.6rem; font-family: 'Inter', sans-serif; text-align: right; }
+
+                    /* Farben pro Schicht */
+                    .pm-osi7-l7 { --lcolor: #f08ab0; } /* Application  */
+                    .pm-osi7-l6 { --lcolor: #c58af9; } /* Presentation */
+                    .pm-osi7-l5 { --lcolor: #5b8def; } /* Session      */
+                    .pm-osi7-l4 { --lcolor: #5fd39a; } /* Transport    */
+                    .pm-osi7-l3 { --lcolor: #e0c078; } /* Network      */
+                    .pm-osi7-l2 { --lcolor: #f0a35e; } /* Data Link    */
+                    .pm-osi7-l1 { --lcolor: #e0685a; } /* Physical     */
+
+                    .pm-osi7-num { background: var(--lcolor); }
+
+                    /* Animations-Timing: nacheinander aufleuchten */
+                    .pm-osi7-l7 { animation: pm-osi7-glow 6s ease-in-out infinite; animation-delay: 0.0s; }
+                    .pm-osi7-l6 { animation: pm-osi7-glow 6s ease-in-out infinite; animation-delay: 0.35s; }
+                    .pm-osi7-l5 { animation: pm-osi7-glow 6s ease-in-out infinite; animation-delay: 0.7s; }
+                    .pm-osi7-l4 { animation: pm-osi7-glow 6s ease-in-out infinite; animation-delay: 1.05s; }
+                    .pm-osi7-l3 { animation: pm-osi7-glow 6s ease-in-out infinite; animation-delay: 1.4s; }
+                    .pm-osi7-l2 { animation: pm-osi7-glow 6s ease-in-out infinite; animation-delay: 1.75s; }
+                    .pm-osi7-l1 { animation: pm-osi7-glow 6s ease-in-out infinite; animation-delay: 2.1s; }
+
+                    @keyframes pm-osi7-glow {
+                        0%, 100% { transform: translateX(0); background: var(--bg-color); border-color: var(--border-color); box-shadow: none; }
+                        5%, 18%  { transform: translateX(8px); background: var(--code-bg); border-color: var(--lcolor); box-shadow: 0 0 18px -6px var(--lcolor); }
+                        30%      { transform: translateX(0); background: var(--bg-color); border-color: var(--border-color); box-shadow: none; }
+                    }
+
+                    /* Schienen/Leiter links */
+                    .pm-osi7-rail {
+                        position: absolute; left: 1.35rem; top: 1rem; bottom: 1rem;
+                        width: 2px; background: var(--border-color); border-radius: 2px; overflow: hidden;
+                    }
+                    .pm-osi7-rail-fill {
+                        position: absolute; left: -2px; width: 6px; height: 16px; border-radius: 3px;
+                        background: linear-gradient(180deg, #f08ab0, #c58af9, #5b8def, #5fd39a, #e0c078, #f0a35e, #e0685a);
+                        animation: pm-osi7-travel 6s ease-in-out infinite;
+                        box-shadow: 0 0 10px rgba(91, 141, 239, 0.7);
+                    }
+                    @keyframes pm-osi7-travel {
+                        0%, 4%   { top: -16px; opacity: 0; }
+                        10%      { opacity: 1; }
+                        50%      { top: 100%; opacity: 1; }
+                        56%      { top: 100%; opacity: 0; }
+                        100%     { top: 100%; opacity: 0; }
+                    }
+
+                    @media (prefers-reduced-motion: reduce) {
+                        .pm-osi7-layer, .pm-osi7-rail-fill { animation: none !important; }
+                    }
+                </style>
+                <div class="pm-osi7-stage">
+                    <div class="pm-osi7-rail"><div class="pm-osi7-rail-fill"></div></div>
+                    <div class="pm-osi7-stack">
+
+                        <div class="pm-osi7-layer pm-osi7-l7">
+                            <span class="pm-osi7-num">7</span>
+                            <strong data-lang-de>Anwendung</strong><strong data-lang-en style="display:none;">Application</strong>
+                            <span class="pm-osi7-en" data-lang-de>Application</span><span class="pm-osi7-en" data-lang-en style="display:none;">Anwendung</span>
+                            <span class="pm-osi7-ex">HTTP · DNS · SSH</span>
+                        </div>
+
+                        <div class="pm-osi7-layer pm-osi7-l6">
+                            <span class="pm-osi7-num">6</span>
+                            <strong data-lang-de>Darstellung</strong><strong data-lang-en style="display:none;">Presentation</strong>
+                            <span class="pm-osi7-en" data-lang-de>Presentation</span><span class="pm-osi7-en" data-lang-en style="display:none;">Darstellung</span>
+                            <span class="pm-osi7-ex">TLS · Encoding</span>
+                        </div>
+
+                        <div class="pm-osi7-layer pm-osi7-l5">
+                            <span class="pm-osi7-num">5</span>
+                            <strong data-lang-de>Sitzung</strong><strong data-lang-en style="display:none;">Session</strong>
+                            <span class="pm-osi7-en" data-lang-de>Session</span><span class="pm-osi7-en" data-lang-en style="display:none;">Sitzung</span>
+                            <span class="pm-osi7-ex">Sitzungsverwaltung</span>
+                        </div>
+
+                        <div class="pm-osi7-layer pm-osi7-l4">
+                            <span class="pm-osi7-num">4</span>
+                            <strong data-lang-de>Transport</strong><strong data-lang-en style="display:none;">Transport</strong>
+                            <span class="pm-osi7-en" data-lang-de>Transport</span><span class="pm-osi7-en" data-lang-en style="display:none;">Transport</span>
+                            <span class="pm-osi7-ex">TCP · UDP · QUIC</span>
+                        </div>
+
+                        <div class="pm-osi7-layer pm-osi7-l3">
+                            <span class="pm-osi7-num">3</span>
+                            <strong data-lang-de>Vermittlung</strong><strong data-lang-en style="display:none;">Network</strong>
+                            <span class="pm-osi7-en" data-lang-de>Network</span><span class="pm-osi7-en" data-lang-en style="display:none;">Vermittlung</span>
+                            <span class="pm-osi7-ex">IPv4 · IPv6 · ICMP</span>
+                        </div>
+
+                        <div class="pm-osi7-layer pm-osi7-l2">
+                            <span class="pm-osi7-num">2</span>
+                            <strong data-lang-de>Sicherung</strong><strong data-lang-en style="display:none;">Data Link</strong>
+                            <span class="pm-osi7-en" data-lang-de>Data Link</span><span class="pm-osi7-en" data-lang-en style="display:none;">Sicherung</span>
+                            <span class="pm-osi7-ex">Ethernet · Wi-Fi · MAC</span>
+                        </div>
+
+                        <div class="pm-osi7-layer pm-osi7-l1">
+                            <span class="pm-osi7-num">1</span>
+                            <strong data-lang-de>Bitübertragung</strong><strong data-lang-en style="display:none;">Physical</strong>
+                            <span class="pm-osi7-en" data-lang-de>Physical</span><span class="pm-osi7-en" data-lang-en style="display:none;">Bitübertragung</span>
+                            <span class="pm-osi7-ex">Kabel · Funk · Licht</span>
+                        </div>
+
+                    </div>
+                </div>
+                `
+            },
+
+            /* 2 — LAYER STACK */
             {
                 id: 'vis-layer-stack',
                 titleDe: 'Schichten & Kapselung',
@@ -1062,7 +1201,7 @@ registerTopic({
                 `
             },
 
-            /* 2 — TCP HANDSHAKE */
+            /* 3 — TCP HANDSHAKE */
             {
                 id: 'vis-tcp-handshake',
                 titleDe: 'TCP 3-Way Handshake',
@@ -1129,7 +1268,7 @@ registerTopic({
                 `
             },
 
-            /* 3 — DHCP DORA (fixed: horizontal tracks) */
+            /* 4 — DHCP DORA */
             {
                 id: 'vis-dhcp-dora',
                 titleDe: 'DHCP — DORA-Ablauf',
@@ -1273,7 +1412,7 @@ registerTopic({
                 `
             },
 
-            /* 4 — DNS CHAIN */
+            /* 5 — DNS CHAIN */
             {
                 id: 'vis-dns-chain',
                 titleDe: 'DNS-Auflösung',
@@ -1332,7 +1471,7 @@ registerTopic({
                 `
             },
 
-            /* 5 — TCP vs UDP (side by side) */
+            /* 6 — TCP vs UDP (side by side) */
             {
                 id: 'vis-tcp-udp',
                 titleDe: 'TCP vs. UDP',
@@ -1408,7 +1547,7 @@ registerTopic({
                 `
             },
 
-            /* 6 — SUBNETTING / CIDR BAR */
+            /* 7 — SUBNETTING / CIDR BAR */
             {
                 id: 'vis-subnetting',
                 titleDe: 'Subnetting mit CIDR',
