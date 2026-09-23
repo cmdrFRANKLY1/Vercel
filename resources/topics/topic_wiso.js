@@ -1255,6 +1255,15 @@ registerTopic({
                         13%   { opacity: 0; }
                         100%  { opacity: 0; }
                     }
+                    /* JS-driven sync: descriptions follow the SVG's SMIL clock */
+                        .wiso-sd-layout.js-driven .wiso-sd-desc {
+                            animation: none;
+                            opacity: 0;
+                            transition: opacity 0.4s ease;
+                        }
+                        .wiso-sd-layout.js-driven .wiso-sd-desc.is-active {
+                            opacity: 1;
+                        }
                     @media (prefers-reduced-motion: reduce) {
                         .wiso-sd-desc { animation: none !important; opacity: 1; }
                         .wiso-sd-desc:not(.s1) { display: none; }
