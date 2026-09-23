@@ -1,4 +1,4 @@
-// resources/topics/topic_hardwarehardware.js
+// resources/topics/topic_computerhardware.js
 // Registers a topic covering computer hardware and network hardware.
 // Loaded via <script> injection.
 
@@ -284,427 +284,941 @@ registerTopic({
     ],
 
     /* =============================================================
-       ILLUSTRATIONS — pure CSS/SVG block-layer-stack animations
+       ILLUSTRATIONS — three animated diagrams
+       Panel 1 — Hardware layers       (3D perspective, LED status)
+       Panel 2 — Firmware boot chain   (console header, progress bar)
+       Panel 3 — Data flow through HW  (input/output rails, packets)
        ============================================================= */
     illustrations: {
         titleDe: 'Hardware-Illustrationen',
         titleEn: 'Hardware Illustrations',
-        introDe: 'Zwei animierte Blockdiagramme: der Schichtenaufbau eines Computers und der Datenfluss durch die Hardwareschichten.',
-        introEn: 'Two animated block diagrams: the layered structure of a computer and the data flow through the hardware layers.',
+        introDe: 'Drei animierte Blockdiagramme mit sichtbarem Fluss: Hardware-Schichten (aufwärts, 3D), Firmware-Startkette BIOS → OS (aufwärts, mit Boot-Progress) und Datenfluss durch die Hardware (abwärts, mit Datenpaketen).',
+        introEn: 'Three animated block diagrams with visible flow: hardware layers (upward, 3D), firmware boot chain BIOS → OS (upward, with boot progress), and data flow through hardware (downward, with data packets).',
         animations: [
 
             /* ============================================================
-               1) BLOCK-LAYER-STACK — How a Computer Works
-               Bottom → top: Power → Mainboard → CPU → RAM → Storage →
-               I/O → OS/Apps. Each block pulses in sequence.
-               ============================================================ */
-           
-               {
-    id: 'hardware-vis-layer-stack',
-    titleDe: 'Wie ein Computer funktioniert',
-    titleEn: 'How a Computer Works',
-    descDe: 'Der schichtweise Aufbau eines Computers – vom Einschalten bis zum laufenden Betriebssystem. Von unten nach oben: Stromversorgung → Mainboard & Chipsatz → CPU (Recheneinheit) → RAM (Kurzzeitspeicher) → Speicher (SSD/HDD) → BIOS/UEFI (Firmware) → Bootloader → Betriebssystem-Kernel → Betriebssystem → Anwendungen. Jede Schicht baut auf der darunterliegenden auf und übergibt die Kontrolle an die nächste.',
-    descEn: 'The layered structure of a computer — from power-on to a running operating system. From bottom to top: Power Supply → Motherboard & Chipset → CPU (Processing Unit) → RAM (Short-term Memory) → Storage (SSD/HDD) → BIOS/UEFI (Firmware) → Bootloader → OS Kernel → Operating System → Applications. Each layer builds upon the one below and hands control to the next.',
-    html: `
-    <style>
-        .hw-ls-wrap {
-            max-width: 620px;
-            margin: 0.5rem auto;
-            display: flex;
-            flex-direction: column-reverse;   /* bottom-up stacking */
-            gap: 5px;
-        }
-        .hw-ls-block {
-            display: flex;
-            align-items: center;
-            gap: 0.7rem;
-            padding: 0.55rem 0.85rem;
-            border-radius: 0.55rem;
-            border: 1.5px solid var(--border-color);
-            background: var(--code-bg);
-            color: var(--text-color);
-            font-size: 0.76rem;
-            font-weight: 700;
-            letter-spacing: 0.01em;
-            position: relative;
-            overflow: hidden;
-            animation: hw-ls-glow 20s ease-in-out infinite;
-            animation-delay: calc(var(--hw-ls-i) * 2s);
-            will-change: transform, border-color, box-shadow;
-        }
-        .hw-ls-block i {
-            font-size: 0.9rem;
-            opacity: 0.85;
-            color: var(--hw-ls-c);
-            width: 1.1rem;
-            text-align: center;
-            flex-shrink: 0;
-        }
-        .hw-ls-block .hw-ls-label {
-            flex: 1;
-            line-height: 1.25;
-        }
-        .hw-ls-block .hw-ls-sub {
-            display: block;
-            font-size: 0.62rem;
-            font-weight: 500;
-            color: var(--text-muted);
-            margin-top: 1px;
-            letter-spacing: 0;
-        }
-        .hw-ls-block .hw-ls-tag {
-            font-size: 0.55rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            opacity: 0.7;
-            flex-shrink: 0;
-        }
-        .hw-ls-block::before {
-            content: '';
-            position: absolute;
-            left: 0; top: 0; bottom: 0;
-            width: 4px;
-            background: var(--hw-ls-c);
-            opacity: 0.85;
-        }
-        /* upward connector between layers */
-        .hw-ls-block::after {
-            content: '';
-            position: absolute;
-            left: 1.5rem;
-            top: -5px;
-            width: 2px;
-            height: 5px;
-            background: linear-gradient(to top, var(--hw-ls-c), transparent);
-            opacity: 0.55;
-        }
-        .hw-ls-wrap > .hw-ls-block:first-child::after { display: none; }
-
-        /* visual separation: hardware vs firmware vs software */
-        .hw-ls-sep {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin: 4px 0;
-            padding: 0 0.2rem;
-            font-size: 0.55rem;
-            font-weight: 800;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            opacity: 0.75;
-        }
-        .hw-ls-sep::before,
-        .hw-ls-sep::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border-color);
-        }
-
-        @keyframes hw-ls-glow {
-            0%, 100% { transform: translateX(0);    border-color: var(--border-color); box-shadow: none; }
-            1.2%, 3.8% { transform: translateX(6px); border-color: var(--hw-ls-c);    box-shadow: 0 0 22px -6px var(--hw-ls-c); }
-            5%       { transform: translateX(0);    border-color: var(--border-color); box-shadow: none; }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .hw-ls-block { animation: none !important; }
-        }
-        @media (max-width: 480px) {
-            .hw-ls-block { font-size: 0.68rem; padding: 0.45rem 0.65rem; }
-            .hw-ls-block .hw-ls-tag { display: none; }
-            .hw-ls-block .hw-ls-sub { font-size: 0.58rem; }
-        }
-    </style>
-
-    <div class="hw-ls-wrap">
-        <!-- order in DOM: top → bottom, but column-reverse flips it visually.
-             Animation delay increases going UP the visual stack. -->
-
-        <!-- ===================== APPLICATIONS ===================== -->
-        <div class="hw-ls-block" style="--hw-ls-i:9; --hw-ls-c:#a855f7;">
-            <i class="fa-solid fa-window-maximize"></i>
-            <span class="hw-ls-label">
-                <span data-lang-de>Anwendungen</span>
-                <span data-lang-en style="display:none;">Applications</span>
-                <span class="hw-ls-sub">
-                    <span data-lang-de>Browser, Office, Spiele – nutzen das OS über APIs.</span>
-                    <span data-lang-en style="display:none;">Browser, Office, games — use the OS via APIs.</span>
-                </span>
-            </span>
-            <span class="hw-ls-tag">10</span>
-        </div>
-
-        <!-- ===================== OPERATING SYSTEM ===================== -->
-        <div class="hw-ls-block" style="--hw-ls-i:8; --hw-ls-c:#8b5cf6;">
-            <i class="fa-solid fa-desktop"></i>
-            <span class="hw-ls-label">
-                <span data-lang-de>Betriebssystem (OS)</span>
-                <span data-lang-en style="display:none;">Operating System (OS)</span>
-                <span class="hw-ls-sub">
-                    <span data-lang-de>Windows, Linux, macOS – Dateisystem, Treiber, Benutzeroberfläche.</span>
-                    <span data-lang-en style="display:none;">Windows, Linux, macOS — file system, drivers, UI.</span>
-                </span>
-            </span>
-            <span class="hw-ls-tag">09</span>
-        </div>
-
-        <!-- ===================== KERNEL ===================== -->
-        <div class="hw-ls-block" style="--hw-ls-i:7; --hw-ls-c:#6366f1;">
-            <i class="fa-solid fa-gears"></i>
-            <span class="hw-ls-label">
-                <span data-lang-de>Betriebssystem-Kernel</span>
-                <span data-lang-en style="display:none;">OS Kernel</span>
-                <span class="hw-ls-sub">
-                    <span data-lang-de>Verwaltet CPU, Speicher und Geräte – Herzstück des OS.</span>
-                    <span data-lang-en style="display:none;">Manages CPU, memory, and devices — the core of the OS.</span>
-                </span>
-            </span>
-            <span class="hw-ls-tag">08</span>
-        </div>
-
-        <!-- ===================== BOOTLOADER ===================== -->
-        <div class="hw-ls-block" style="--hw-ls-i:6; --hw-ls-c:#0ea5e9;">
-            <i class="fa-solid fa-boot"></i>
-            <span class="hw-ls-label">
-                <span data-lang-de>Bootloader</span>
-                <span data-lang-en style="display:none;">Bootloader</span>
-                <span class="hw-ls-sub">
-                    <span data-lang-de>GRUB, Windows Boot Manager – lädt den Kernel in den RAM.</span>
-                    <span data-lang-en style="display:none;">GRUB, Windows Boot Manager — loads the kernel into RAM.</span>
-                </span>
-            </span>
-            <span class="hw-ls-tag">07</span>
-        </div>
-
-        <!-- ===================== BIOS / UEFI ===================== -->
-        <div class="hw-ls-block" style="--hw-ls-i:5; --hw-ls-c:#14b8a6;">
-            <i class="fa-solid fa-microchip"></i>
-            <span class="hw-ls-label">
-                <span data-lang-de>BIOS / UEFI (Firmware)</span>
-                <span data-lang-en style="display:none;">BIOS / UEFI (Firmware)</span>
-                <span class="hw-ls-sub">
-                    <span data-lang-de>Erste Software nach dem Einschalten – initialisiert Hardware (POST).</span>
-                    <span data-lang-en style="display:none;">First software after power-on — initialises hardware (POST).</span>
-                </span>
-            </span>
-            <span class="hw-ls-tag">06</span>
-        </div>
-
-        <!-- ---------- separation: firmware vs hardware ---------- -->
-        <div class="hw-ls-sep">
-            <span data-lang-de>Firmware ↑ · Hardware ↓</span>
-            <span data-lang-en style="display:none;">Firmware ↑ · Hardware ↓</span>
-        </div>
-
-        <!-- ===================== STORAGE ===================== -->
-        <div class="hw-ls-block" style="--hw-ls-i:4; --hw-ls-c:#f59e0b;">
-            <i class="fa-solid fa-hard-drive"></i>
-            <span class="hw-ls-label">
-                <span data-lang-de>Speicher (SSD/HDD, Langzeitspeicher)</span>
-                <span data-lang-en style="display:none;">Storage (SSD/HDD, Long-term Memory)</span>
-                <span class="hw-ls-sub">
-                    <span data-lang-de>Enthält BIOS/UEFI, Bootloader, OS und alle Daten dauerhaft.</span>
-                    <span data-lang-en style="display:none;">Holds BIOS/UEFI, bootloader, OS, and all data permanently.</span>
-                </span>
-            </span>
-            <span class="hw-ls-tag">05</span>
-        </div>
-
-        <!-- ===================== RAM ===================== -->
-        <div class="hw-ls-block" style="--hw-ls-i:3; --hw-ls-c:#10b981;">
-            <i class="fa-solid fa-memory"></i>
-            <span class="hw-ls-label">
-                <span data-lang-de>RAM (Arbeitsspeicher, Kurzzeitspeicher)</span>
-                <span data-lang-en style="display:none;">RAM (Memory, Short-term)</span>
-                <span class="hw-ls-sub">
-                    <span data-lang-de>Hier wird der OS-Kernel nach dem Bootvorgang geladen.</span>
-                    <span data-lang-en style="display:none;">The OS kernel is loaded here after the boot process.</span>
-                </span>
-            </span>
-            <span class="hw-ls-tag">04</span>
-        </div>
-
-        <!-- ===================== CPU ===================== -->
-        <div class="hw-ls-block" style="--hw-ls-i:2; --hw-ls-c:#3b82f6;">
-            <i class="fa-solid fa-microchip"></i>
-            <span class="hw-ls-label">
-                <span data-lang-de>CPU (Prozessor, Recheneinheit)</span>
-                <span data-lang-en style="display:none;">CPU (Processor, Processing Unit)</span>
-                <span class="hw-ls-sub">
-                    <span data-lang-de>Führt den BIOS-Code und später den OS-Kernel aus.</span>
-                    <span data-lang-en style="display:none;">Executes the BIOS code and later the OS kernel.</span>
-                </span>
-            </span>
-            <span class="hw-ls-tag">03</span>
-        </div>
-
-        <!-- ===================== MAINBOARD ===================== -->
-        <div class="hw-ls-block" style="--hw-ls-i:1; --hw-ls-c:#6366f1;">
-            <i class="fa-solid fa-server"></i>
-            <span class="hw-ls-label">
-                <span data-lang-de>Mainboard &amp; Chipsatz</span>
-                <span data-lang-en style="display:none;">Motherboard &amp; Chipset</span>
-                <span class="hw-ls-sub">
-                    <span data-lang-de>Verbindet CPU, RAM, Speicher und Firmware-Chip (BIOS/UEFI).</span>
-                    <span data-lang-en style="display:none;">Connects CPU, RAM, storage, and the firmware chip (BIOS/UEFI).</span>
-                </span>
-            </span>
-            <span class="hw-ls-tag">02</span>
-        </div>
-
-        <!-- ===================== POWER ===================== -->
-        <div class="hw-ls-block" style="--hw-ls-i:0; --hw-ls-c:#ef4444;">
-            <i class="fa-solid fa-bolt"></i>
-            <span class="hw-ls-label">
-                <span data-lang-de>Stromversorgung (Netzteil)</span>
-                <span data-lang-en style="display:none;">Power Supply</span>
-                <span class="hw-ls-sub">
-                    <span data-lang-de>Liefert Strom – der Startpunkt des Bootvorgangs.</span>
-                    <span data-lang-en style="display:none;">Supplies power — the starting point of the boot process.</span>
-                </span>
-            </span>
-            <span class="hw-ls-tag">01</span>
-        </div>
-    </div>
-    `
-},
-
-            /* ============================================================
-               2) BLOCK-LAYER-STACK — Data Flow Through Hardware Layers
-               Input → RAM → CPU → Storage → Output. Blocks pulse in
-               the order data actually travels.
+               1) HARDWARE LAYERS — UPWARD FLOW, 3D PERSPECTIVE
                ============================================================ */
             {
-                id: 'hardware-vis-data-flow',
-                titleDe: 'Datenfluss durch die Hardwareschichten',
-                titleEn: 'Data Flow Through Hardware Layers',
-                descDe: 'Wie Daten durch die Hardwareschichten fließen: Eine Eingabe (z. B. Tastendruck) gelangt über die Peripherie in den RAM, wird von der CPU verarbeitet, im Speicher abgelegt und schließlich über die Ausgabe (z. B. Monitor) sichtbar gemacht. Die Blöcke leuchten in der Reihenfolge des Datenwegs auf.',
-                descEn: 'How data flows through the hardware layers: An input (e.g., key press) enters via peripherals into RAM, is processed by the CPU, stored in storage, and finally made visible via output (e.g., monitor). The blocks light up in the order of the data path.',
+                id: 'hardware-vis-hardware-layers',
+                titleDe: 'Hardware-Schichten',
+                titleEn: 'Hardware Layers',
+                descDe: 'Der physische Aufbau eines Computers mit sichtbarem Fluss von unten nach oben: Stromversorgung → Mainboard & Chipsatz → CPU → RAM → Speicher. Jede Schicht hat eine Status-LED; der leuchtende Impuls zeigt die Richtung (Strom & Signale steigen die Schichten hinauf).',
+                descEn: 'The physical build-up of a computer with visible flow from bottom to top: Power Supply → Motherboard & Chipset → CPU → RAM → Storage. Each layer has a status LED; the glowing pulse shows the direction (power & signals climb the layers).',
                 html: `
                 <style>
-                    .hw-df-wrap {
-                        max-width: 560px;
-                        margin: 0.5rem auto;
+                    .hw-lay {
+                        position: relative;
+                        max-width: 680px;
+                        margin: 1rem auto 0.5rem;
+                        padding-left: 3rem;
                         display: flex;
-                        flex-direction: column;
-                        gap: 6px;
+                        flex-direction: column-reverse;
+                        gap: 11px;
+                        --pulse: #f59e0b;
+                        perspective: 1000px;
                     }
-                    .hw-df-block {
-                        display: flex;
+                    .hw-lay-rail {
+                        position: absolute;
+                        left: 16px; top: 6px; bottom: 6px;
+                        width: 4px;
+                        border-radius: 4px;
+                        background: linear-gradient(to top,
+                            #ef4444 0%, #6366f1 25%, #3b82f6 50%, #10b981 75%, #f59e0b 100%);
+                        opacity: 0.4;
+                        overflow: hidden;
+                        box-shadow: 0 0 20px rgba(255,255,255,0.08);
+                    }
+                    .hw-lay-rail::after {
+                        content: '';
+                        position: absolute;
+                        left: 0; right: 0; height: 42%;
+                        background: linear-gradient(to top,
+                            transparent, rgba(255,255,255,0.75) 50%, transparent);
+                        animation: hw-lay-shim 4.5s linear infinite;
+                    }
+                    @keyframes hw-lay-shim { 0% { top: 100%; } 100% { top: -42%; } }
+
+                    .hw-lay-pulse,
+                    .hw-lay-pulse-trail {
+                        position: absolute;
+                        left: 10px;
+                        border-radius: 50%;
+                        background: #fff;
+                        pointer-events: none;
+                        z-index: 3;
+                    }
+                    .hw-lay-pulse {
+                        width: 16px; height: 16px;
+                        box-shadow:
+                            0 0 14px 4px rgba(255,255,255,0.95),
+                            0 0 28px 10px var(--pulse);
+                        animation: hw-lay-travel 15s linear infinite;
+                    }
+                    .hw-lay-pulse-trail {
+                        width: 12px; height: 12px;
+                        background: var(--pulse);
+                        opacity: 0.55;
+                        filter: blur(3px);
+                        animation: hw-lay-travel 15s linear infinite;
+                        animation-delay: 0.15s;
+                    }
+                    @keyframes hw-lay-travel {
+                        0%   { top: calc(100% - 22px); opacity: 0; }
+                        5%   { top: calc(100% - 22px); opacity: 1; }
+                        87%  { top: 6px;               opacity: 1; }
+                        95%  { top: 6px;               opacity: 0; }
+                        100% { top: calc(100% - 22px); opacity: 0; }
+                    }
+
+                    .hw-lay-block {
+                        display: grid;
+                        grid-template-columns: 2.3rem 1fr auto auto;
                         align-items: center;
-                        gap: 0.7rem;
-                        padding: 0.6rem 0.85rem;
-                        border-radius: 0.55rem;
+                        gap: 0.85rem;
+                        padding: 0.7rem 0.9rem 0.7rem 0.7rem;
+                        border-radius: 0.65rem;
                         border: 1.5px solid var(--border-color);
-                        background: var(--code-bg);
+                        background: linear-gradient(135deg,
+                            color-mix(in srgb, var(--c) 6%, var(--code-bg)),
+                            var(--code-bg));
                         color: var(--text-color);
                         font-size: 0.78rem;
                         font-weight: 700;
                         position: relative;
                         overflow: hidden;
-                        animation: hw-df-glow 15s ease-in-out infinite;
-                        animation-delay: calc(var(--hw-df-i) * 2.5s);
+                        animation: hw-lay-glow 15s ease-in-out infinite;
+                        animation-delay: calc(var(--i) * 3s);
                         will-change: transform, border-color, box-shadow;
+                        transform-style: preserve-3d;
                     }
-                    .hw-df-block i {
-                        font-size: 0.95rem;
-                        opacity: 0.85;
-                        color: var(--hw-df-c);
-                        width: 1.1rem;
-                        text-align: center;
-                        flex-shrink: 0;
+                    .hw-lay-block .ico {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 2.3rem; height: 2.3rem;
+                        border-radius: 0.5rem;
+                        background: color-mix(in srgb, var(--c) 15%, transparent);
+                        color: var(--c);
+                        font-size: 1rem;
+                        box-shadow: inset 0 0 8px color-mix(in srgb, var(--c) 25%, transparent);
                     }
-                    .hw-df-block .hw-df-label { flex: 1; line-height: 1.25; }
-                    .hw-df-block .hw-df-step {
-                        font-size: 0.55rem;
+                    .hw-lay-info { line-height: 1.25; min-width: 0; }
+                    .hw-lay-info .t { display: block; font-weight: 800; }
+                    .hw-lay-info .s {
+                        display: block;
+                        font-size: 0.62rem;
+                        font-weight: 500;
+                        color: var(--text-muted);
+                        margin-top: 2px;
+                    }
+                    .hw-lay-led {
+                        width: 8px; height: 8px;
+                        border-radius: 50%;
+                        background: var(--c);
+                        box-shadow: 0 0 6px var(--c);
+                        opacity: 0.35;
+                        animation: hw-lay-led 15s ease-in-out infinite;
+                        animation-delay: calc(var(--i) * 3s);
+                    }
+                    @keyframes hw-lay-led {
+                        0%, 100% { opacity: 0.3; box-shadow: 0 0 4px var(--c); }
+                        5%, 20%  { opacity: 1;   box-shadow: 0 0 14px var(--c), inset 0 0 4px rgba(255,255,255,0.7); }
+                        30%      { opacity: 0.3; box-shadow: 0 0 4px var(--c); }
+                    }
+                    .hw-lay-num {
+                        font-size: 0.58rem;
                         font-weight: 800;
                         letter-spacing: 0.08em;
-                        text-transform: uppercase;
-                        color: var(--hw-df-c);
-                        opacity: 0.9;
-                        flex-shrink: 0;
+                        color: var(--text-muted);
+                        opacity: 0.6;
                     }
-                    .hw-df-block::before {
+                    .hw-lay-block::before {
                         content: '';
                         position: absolute;
                         left: 0; top: 0; bottom: 0;
                         width: 4px;
-                        background: var(--hw-df-c);
-                        opacity: 0.85;
+                        background: var(--c);
+                        box-shadow: 0 0 8px var(--c);
                     }
-                    /* downward arrow connector */
-                    .hw-df-block::after {
-                        content: '↓';
-                        position: absolute;
-                        left: 50%;
-                        bottom: -14px;
-                        transform: translateX(-50%);
-                        font-size: 0.8rem;
-                        color: var(--hw-df-c);
-                        opacity: 0.6;
-                        line-height: 1;
+                    @keyframes hw-lay-glow {
+                        0%, 100% {
+                            transform: translateX(0) translateZ(0) rotateY(0deg);
+                            border-color: var(--border-color);
+                            box-shadow: none;
+                        }
+                        3%, 17% {
+                            transform: translateX(8px) translateZ(20px) rotateY(-1.2deg);
+                            border-color: var(--c);
+                            box-shadow:
+                                0 10px 30px -8px var(--c),
+                                0 0 0 1px color-mix(in srgb, var(--c) 35%, transparent);
+                        }
+                        22% {
+                            transform: translateX(0) translateZ(0) rotateY(0deg);
+                            border-color: var(--border-color);
+                            box-shadow: none;
+                        }
                     }
-                    .hw-df-wrap > .hw-df-block:last-child::after { display: none; }
-
-                    @keyframes hw-df-glow {
-                        0%, 100% { transform: translateY(0);    border-color: var(--border-color); box-shadow: none; }
-                        2%, 6%   { transform: translateY(-2px); border-color: var(--hw-df-c);    box-shadow: 0 0 22px -6px var(--hw-df-c); }
-                        9%       { transform: translateY(0);    border-color: var(--border-color); box-shadow: none; }
-                    }
-
                     @media (prefers-reduced-motion: reduce) {
-                        .hw-df-block { animation: none !important; }
+                        .hw-lay-block, .hw-lay-pulse, .hw-lay-pulse-trail,
+                        .hw-lay-rail::after, .hw-lay-led { animation: none !important; }
                     }
                     @media (max-width: 480px) {
-                        .hw-df-block { font-size: 0.7rem; padding: 0.5rem 0.7rem; }
-                        .hw-df-block .hw-df-step { display: none; }
+                        .hw-lay { padding-left: 2.4rem; }
+                        .hw-lay-block {
+                            grid-template-columns: 1.9rem 1fr auto;
+                            gap: 0.6rem;
+                            padding: 0.55rem 0.7rem;
+                        }
+                        .hw-lay-block .ico { width: 1.9rem; height: 1.9rem; font-size: 0.85rem; }
+                        .hw-lay-info .s { display: none; }
+                        .hw-lay-num { display: none; }
                     }
                 </style>
 
-                <div class="hw-df-wrap">
-                    <div class="hw-df-block" style="--hw-df-i:0; --hw-df-c:#ec4899;">
-                        <i class="fa-solid fa-keyboard"></i>
-                        <span class="hw-df-label">
-                            <span data-lang-de>Eingabe: Tastatur / Maus</span>
-                            <span data-lang-en style="display:none;">Input: Keyboard / Mouse</span>
+                <div class="hw-lay">
+                    <div class="hw-lay-rail"></div>
+                    <div class="hw-lay-pulse"></div>
+                    <div class="hw-lay-pulse-trail"></div>
+
+                    <!-- DOM order = bottom → top (with column-reverse) -->
+                    <div class="hw-lay-block" style="--i:0; --c:#ef4444;">
+                        <span class="ico"><i class="fa-solid fa-bolt"></i></span>
+                        <span class="hw-lay-info">
+                            <span class="t">
+                                <span data-lang-de>Stromversorgung (Netzteil)</span>
+                                <span data-lang-en style="display:none;">Power Supply</span>
+                            </span>
+                            <span class="s">
+                                <span data-lang-de>Wandelt Netzspannung in stabile Gleichspannung für alle Komponenten.</span>
+                                <span data-lang-en style="display:none;">Converts mains AC into stable DC for all components.</span>
+                            </span>
                         </span>
-                        <span class="hw-df-step">01</span>
+                        <span class="hw-lay-led"></span>
+                        <span class="hw-lay-num">01</span>
                     </div>
-                    <div class="hw-df-block" style="--hw-df-i:1; --hw-df-c:#10b981;">
-                        <i class="fa-solid fa-memory"></i>
-                        <span class="hw-df-label">
-                            <span data-lang-de>RAM: Daten werden kurzzeitig gepuffert</span>
-                            <span data-lang-en style="display:none;">RAM: data is buffered temporarily</span>
+
+                    <div class="hw-lay-block" style="--i:1; --c:#6366f1;">
+                        <span class="ico"><i class="fa-solid fa-server"></i></span>
+                        <span class="hw-lay-info">
+                            <span class="t">
+                                <span data-lang-de>Mainboard &amp; Chipsatz</span>
+                                <span data-lang-en style="display:none;">Motherboard &amp; Chipset</span>
+                            </span>
+                            <span class="s">
+                                <span data-lang-de>Verteilt Strom und Signale an CPU, RAM, Speicher und Firmware-Chip.</span>
+                                <span data-lang-en style="display:none;">Distributes power and signals to CPU, RAM, storage, and the firmware chip.</span>
+                            </span>
                         </span>
-                        <span class="hw-df-step">02</span>
+                        <span class="hw-lay-led"></span>
+                        <span class="hw-lay-num">02</span>
                     </div>
-                    <div class="hw-df-block" style="--hw-df-i:2; --hw-df-c:#3b82f6;">
-                        <i class="fa-solid fa-microchip"></i>
-                        <span class="hw-df-label">
-                            <span data-lang-de>CPU: Verarbeitung &amp; Berechnung</span>
-                            <span data-lang-en style="display:none;">CPU: processing &amp; computation</span>
+
+                    <div class="hw-lay-block" style="--i:2; --c:#3b82f6;">
+                        <span class="ico"><i class="fa-solid fa-microchip"></i></span>
+                        <span class="hw-lay-info">
+                            <span class="t">
+                                <span data-lang-de>CPU (Prozessor, Recheneinheit)</span>
+                                <span data-lang-en style="display:none;">CPU (Processor, Processing Unit)</span>
+                            </span>
+                            <span class="s">
+                                <span data-lang-de>Führt alle Berechnungen und logischen Operationen aus.</span>
+                                <span data-lang-en style="display:none;">Performs all calculations and logical operations.</span>
+                            </span>
                         </span>
-                        <span class="hw-df-step">03</span>
+                        <span class="hw-lay-led"></span>
+                        <span class="hw-lay-num">03</span>
                     </div>
-                    <div class="hw-df-block" style="--hw-df-i:3; --hw-df-c:#f59e0b;">
-                        <i class="fa-solid fa-hard-drive"></i>
-                        <span class="hw-df-label">
-                            <span data-lang-de>Speicher: dauerhafte Ablage (SSD/HDD)</span>
-                            <span data-lang-en style="display:none;">Storage: permanent save (SSD/HDD)</span>
+
+                    <div class="hw-lay-block" style="--i:3; --c:#10b981;">
+                        <span class="ico"><i class="fa-solid fa-memory"></i></span>
+                        <span class="hw-lay-info">
+                            <span class="t">
+                                <span data-lang-de>RAM (Arbeitsspeicher, Kurzzeitspeicher)</span>
+                                <span data-lang-en style="display:none;">RAM (Memory, Short-term)</span>
+                            </span>
+                            <span class="s">
+                                <span data-lang-de>Hält aktive Programme und Daten für schnellen CPU-Zugriff.</span>
+                                <span data-lang-en style="display:none;">Holds active programs and data for fast CPU access.</span>
+                            </span>
                         </span>
-                        <span class="hw-df-step">04</span>
+                        <span class="hw-lay-led"></span>
+                        <span class="hw-lay-num">04</span>
                     </div>
-                    <div class="hw-df-block" style="--hw-df-i:4; --hw-df-c:#8b5cf6;">
-                        <i class="fa-solid fa-display"></i>
-                        <span class="hw-df-label">
-                            <span data-lang-de>Ausgabe: Monitor zeigt das Ergebnis</span>
-                            <span data-lang-en style="display:none;">Output: monitor shows the result</span>
+
+                    <div class="hw-lay-block" style="--i:4; --c:#f59e0b;">
+                        <span class="ico"><i class="fa-solid fa-hard-drive"></i></span>
+                        <span class="hw-lay-info">
+                            <span class="t">
+                                <span data-lang-de>Speicher (SSD/HDD, Langzeitspeicher)</span>
+                                <span data-lang-en style="display:none;">Storage (SSD/HDD, Long-term)</span>
+                            </span>
+                            <span class="s">
+                                <span data-lang-de>Speichert BIOS/UEFI, Bootloader, OS und alle Daten dauerhaft.</span>
+                                <span data-lang-en style="display:none;">Stores BIOS/UEFI, bootloader, OS, and all data permanently.</span>
+                            </span>
                         </span>
-                        <span class="hw-df-step">05</span>
+                        <span class="hw-lay-led"></span>
+                        <span class="hw-lay-num">05</span>
+                    </div>
+                </div>
+                `
+            },
+
+            /* ============================================================
+               2) FIRMWARE BOOT CHAIN — CONSOLE HEADER + BOOT PROGRESS
+               ============================================================ */
+            {
+                id: 'hardware-vis-firmware-flow',
+                titleDe: 'Firmware-Startkette: von BIOS bis OS',
+                titleEn: 'Firmware Boot Chain: BIOS to OS',
+                descDe: 'Der Startvorgang eines Computers als gerichteter Fluss von unten nach oben. Der Konsolen-Kopf oben zeigt den POST-Status, der Fortschrittsbalken den Boot-Fortschritt. Jede Stufe erhält nacheinander die Kontrolle: BIOS/UEFI (Firmware) → Bootloader → Betriebssystem-Kernel → Betriebssystem → Anwendungen.',
+                descEn: 'The computer boot process as a directed flow from bottom to top. The console header at the top shows POST status; the progress bar shows boot progress. Each stage receives control in turn: BIOS/UEFI (firmware) → Bootloader → OS Kernel → Operating System → Applications.',
+                html: `
+                <style>
+                    .hw-boot {
+                        position: relative;
+                        max-width: 680px;
+                        margin: 1rem auto 0.5rem;
+                        --pulse: #a855f7;
+                    }
+                    /* ---- console-style header ---- */
+                    .hw-boot-head {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.75rem;
+                        padding: 0.55rem 0.85rem;
+                        background: color-mix(in srgb, var(--code-bg) 70%, #000);
+                        border: 1px solid var(--border-color);
+                        border-radius: 0.55rem 0.55rem 0 0;
+                        font-family: 'Courier New', 'Menlo', monospace;
+                        font-size: 0.66rem;
+                        letter-spacing: 0.03em;
+                        color: var(--text-muted);
+                        margin-bottom: 0.7rem;
+                    }
+                    .hw-boot-head .power {
+                        width: 9px; height: 9px;
+                        border-radius: 50%;
+                        background: #ef4444;
+                        box-shadow: 0 0 8px #ef4444;
+                        animation: hw-boot-power 15s ease-in-out infinite;
+                        flex-shrink: 0;
+                    }
+                    @keyframes hw-boot-power {
+                        0%      { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+                        4%      { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+                        8%, 90% { background: #10b981; box-shadow: 0 0 10px #10b981; }
+                        94%     { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+                        100%    { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+                    }
+                    .hw-boot-head .msg { flex: 1; color: var(--text-color); opacity: 0.85; }
+                    .hw-boot-head .counter {
+                        font-weight: 800;
+                        color: var(--text-color);
+                        letter-spacing: 0.05em;
+                    }
+                    /* ---- progress bar ---- */
+                    .hw-boot-progress {
+                        position: relative;
+                        height: 3px;
+                        background: var(--border-color);
+                        border-radius: 2px;
+                        overflow: hidden;
+                        margin: 0 0 0.9rem;
+                    }
+                    .hw-boot-progress::after {
+                        content: '';
+                        position: absolute;
+                        left: 0; top: 0; bottom: 0;
+                        width: 0%;
+                        background: linear-gradient(to right,
+                            #14b8a6, #0ea5e9, #6366f1, #8b5cf6, #a855f7);
+                        animation: hw-boot-fill 15s ease-in-out infinite;
+                    }
+                    @keyframes hw-boot-fill {
+                        0%, 5%   { width: 0%; }
+                        85%      { width: 100%; }
+                        92%      { width: 100%; }
+                        100%     { width: 0%; }
+                    }
+                    /* ---- rail + wrap ---- */
+                    .hw-boot-wrap {
+                        position: relative;
+                        padding-left: 3rem;
+                        display: flex;
+                        flex-direction: column-reverse;
+                        gap: 10px;
+                    }
+                    .hw-boot-rail {
+                        position: absolute;
+                        left: 16px; top: 6px; bottom: 6px;
+                        width: 4px;
+                        border-radius: 4px;
+                        background: linear-gradient(to top,
+                            #14b8a6 0%, #0ea5e9 25%, #6366f1 50%, #8b5cf6 75%, #a855f7 100%);
+                        opacity: 0.4;
+                        overflow: hidden;
+                    }
+                    .hw-boot-rail::after {
+                        content: '';
+                        position: absolute;
+                        left: 0; right: 0; height: 42%;
+                        background: linear-gradient(to top,
+                            transparent, rgba(255,255,255,0.75) 50%, transparent);
+                        animation: hw-boot-shim 4s linear infinite;
+                    }
+                    @keyframes hw-boot-shim { 0% { top: 100%; } 100% { top: -42%; } }
+                    /* ---- pulse ---- */
+                    .hw-boot-pulse,
+                    .hw-boot-pulse-trail {
+                        position: absolute;
+                        left: 10px;
+                        border-radius: 50%;
+                        background: #fff;
+                        pointer-events: none;
+                        z-index: 3;
+                    }
+                    .hw-boot-pulse {
+                        width: 16px; height: 16px;
+                        box-shadow:
+                            0 0 14px 4px rgba(255,255,255,0.95),
+                            0 0 28px 10px var(--pulse);
+                        animation: hw-boot-travel 15s linear infinite;
+                    }
+                    .hw-boot-pulse-trail {
+                        width: 12px; height: 12px;
+                        background: var(--pulse);
+                        opacity: 0.55;
+                        filter: blur(3px);
+                        animation: hw-boot-travel 15s linear infinite;
+                        animation-delay: 0.15s;
+                    }
+                    @keyframes hw-boot-travel {
+                        0%   { top: calc(100% - 22px); opacity: 0; }
+                        5%   { top: calc(100% - 22px); opacity: 1; }
+                        87%  { top: 6px;               opacity: 1; }
+                        95%  { top: 6px;               opacity: 0; }
+                        100% { top: calc(100% - 22px); opacity: 0; }
+                    }
+                    /* ---- blocks ---- */
+                    .hw-boot-block {
+                        display: grid;
+                        grid-template-columns: 2.3rem 1fr auto;
+                        align-items: center;
+                        gap: 0.85rem;
+                        padding: 0.7rem 0.9rem 0.7rem 0.7rem;
+                        border-radius: 0.65rem;
+                        border: 1.5px solid var(--border-color);
+                        background: linear-gradient(135deg,
+                            color-mix(in srgb, var(--c) 6%, var(--code-bg)),
+                            var(--code-bg));
+                        font-size: 0.78rem;
+                        font-weight: 700;
+                        position: relative;
+                        overflow: hidden;
+                        animation: hw-boot-glow 15s ease-in-out infinite;
+                        animation-delay: calc(var(--i) * 3s);
+                        will-change: transform, border-color, box-shadow;
+                    }
+                    .hw-boot-block .ico {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 2.3rem; height: 2.3rem;
+                        border-radius: 0.5rem;
+                        background: color-mix(in srgb, var(--c) 15%, transparent);
+                        color: var(--c);
+                        font-size: 1rem;
+                        box-shadow: inset 0 0 8px color-mix(in srgb, var(--c) 25%, transparent);
+                    }
+                    .hw-boot-info { line-height: 1.25; min-width: 0; }
+                    .hw-boot-info .t { display: block; font-weight: 800; }
+                    .hw-boot-info .s {
+                        display: block;
+                        font-size: 0.62rem;
+                        font-weight: 500;
+                        color: var(--text-muted);
+                        margin-top: 2px;
+                    }
+                    .hw-boot-status {
+                        font-family: 'Courier New', 'Menlo', monospace;
+                        font-size: 0.6rem;
+                        font-weight: 800;
+                        letter-spacing: 0.05em;
+                        color: var(--c);
+                        padding: 0.2rem 0.5rem;
+                        border-radius: 0.3rem;
+                        background: color-mix(in srgb, var(--c) 10%, transparent);
+                        opacity: 0.4;
+                        animation: hw-boot-status 15s ease-in-out infinite;
+                        animation-delay: calc(var(--i) * 3s);
+                        white-space: nowrap;
+                    }
+                    @keyframes hw-boot-status {
+                        0%, 100% { opacity: 0.4; }
+                        3%, 17%  { opacity: 1; }
+                        22%      { opacity: 0.4; }
+                    }
+                    .hw-boot-block::before {
+                        content: '';
+                        position: absolute;
+                        left: 0; top: 0; bottom: 0;
+                        width: 4px;
+                        background: var(--c);
+                        box-shadow: 0 0 8px var(--c);
+                    }
+                    @keyframes hw-boot-glow {
+                        0%, 100% {
+                            transform: translateX(0);
+                            border-color: var(--border-color);
+                            box-shadow: none;
+                        }
+                        3%, 17% {
+                            transform: translateX(8px);
+                            border-color: var(--c);
+                            box-shadow:
+                                0 10px 30px -8px var(--c),
+                                0 0 0 1px color-mix(in srgb, var(--c) 35%, transparent);
+                        }
+                        22% {
+                            transform: translateX(0);
+                            border-color: var(--border-color);
+                            box-shadow: none;
+                        }
+                    }
+                    @media (prefers-reduced-motion: reduce) {
+                        .hw-boot-block, .hw-boot-pulse, .hw-boot-pulse-trail,
+                        .hw-boot-rail::after, .hw-boot-progress::after,
+                        .hw-boot-head .power, .hw-boot-status { animation: none !important; }
+                    }
+                    @media (max-width: 480px) {
+                        .hw-boot-wrap { padding-left: 2.4rem; }
+                        .hw-boot-block {
+                            grid-template-columns: 1.9rem 1fr auto;
+                            gap: 0.6rem;
+                            padding: 0.55rem 0.7rem;
+                        }
+                        .hw-boot-block .ico { width: 1.9rem; height: 1.9rem; font-size: 0.85rem; }
+                        .hw-boot-info .s { display: none; }
+                        .hw-boot-head { font-size: 0.58rem; }
+                    }
+                </style>
+
+                <div class="hw-boot">
+                    <div class="hw-boot-head">
+                        <span class="power"></span>
+                        <span class="msg">
+                            <span data-lang-de>POST · Hardware-Initialisierung läuft</span>
+                            <span data-lang-en style="display:none;">POST · hardware initialisation running</span>
+                        </span>
+                        <span class="counter">BIOS → OS</span>
+                    </div>
+                    <div class="hw-boot-progress"></div>
+
+                    <div class="hw-boot-wrap">
+                        <div class="hw-boot-rail"></div>
+                        <div class="hw-boot-pulse"></div>
+                        <div class="hw-boot-pulse-trail"></div>
+
+                        <!-- DOM order = bottom → top (with column-reverse) -->
+                        <div class="hw-boot-block" style="--i:0; --c:#14b8a6;">
+                            <span class="ico"><i class="fa-solid fa-microchip"></i></span>
+                            <span class="hw-boot-info">
+                                <span class="t">
+                                    <span data-lang-de>BIOS / UEFI (Firmware)</span>
+                                    <span data-lang-en style="display:none;">BIOS / UEFI (Firmware)</span>
+                                </span>
+                                <span class="s">
+                                    <span data-lang-de>Erste Software nach dem Einschalten. Führt den POST aus und initialisiert die Hardware.</span>
+                                    <span data-lang-en style="display:none;">First software after power-on. Runs POST and initialises hardware.</span>
+                                </span>
+                            </span>
+                            <span class="hw-boot-status">STEP 1/5</span>
+                        </div>
+
+                        <div class="hw-boot-block" style="--i:1; --c:#0ea5e9;">
+                            <span class="ico"><i class="fa-solid fa-boot"></i></span>
+                            <span class="hw-boot-info">
+                                <span class="t">
+                                    <span data-lang-de>Bootloader</span>
+                                    <span data-lang-en style="display:none;">Bootloader</span>
+                                </span>
+                                <span class="s">
+                                    <span data-lang-de>GRUB, Windows Boot Manager – lädt den Kernel vom Speicher in den RAM.</span>
+                                    <span data-lang-en style="display:none;">GRUB, Windows Boot Manager — loads the kernel from storage into RAM.</span>
+                                </span>
+                            </span>
+                            <span class="hw-boot-status">STEP 2/5</span>
+                        </div>
+
+                        <div class="hw-boot-block" style="--i:2; --c:#6366f1;">
+                            <span class="ico"><i class="fa-solid fa-gears"></i></span>
+                            <span class="hw-boot-info">
+                                <span class="t">
+                                    <span data-lang-de>Betriebssystem-Kernel</span>
+                                    <span data-lang-en style="display:none;">OS Kernel</span>
+                                </span>
+                                <span class="s">
+                                    <span data-lang-de>Übernimmt die Kontrolle – verwaltet CPU, Speicher und Geräte.</span>
+                                    <span data-lang-en style="display:none;">Takes over control — manages CPU, memory, and devices.</span>
+                                </span>
+                            </span>
+                            <span class="hw-boot-status">STEP 3/5</span>
+                        </div>
+
+                        <div class="hw-boot-block" style="--i:3; --c:#8b5cf6;">
+                            <span class="ico"><i class="fa-solid fa-desktop"></i></span>
+                            <span class="hw-boot-info">
+                                <span class="t">
+                                    <span data-lang-de>Betriebssystem (OS)</span>
+                                    <span data-lang-en style="display:none;">Operating System (OS)</span>
+                                </span>
+                                <span class="s">
+                                    <span data-lang-de>Windows, Linux, macOS – Dateisystem, Treiber, Benutzeroberfläche.</span>
+                                    <span data-lang-en style="display:none;">Windows, Linux, macOS — file system, drivers, user interface.</span>
+                                </span>
+                            </span>
+                            <span class="hw-boot-status">STEP 4/5</span>
+                        </div>
+
+                        <div class="hw-boot-block" style="--i:4; --c:#a855f7;">
+                            <span class="ico"><i class="fa-solid fa-window-maximize"></i></span>
+                            <span class="hw-boot-info">
+                                <span class="t">
+                                    <span data-lang-de>Anwendungen</span>
+                                    <span data-lang-en style="display:none;">Applications</span>
+                                </span>
+                                <span class="s">
+                                    <span data-lang-de>Browser, Office, Spiele – nutzen das OS über APIs.</span>
+                                    <span data-lang-en style="display:none;">Browser, Office, games — use the OS via APIs.</span>
+                                </span>
+                            </span>
+                            <span class="hw-boot-status">STEP 5/5</span>
+                        </div>
+                    </div>
+                </div>
+                `
+            },
+
+            /* ============================================================
+               3) DATA FLOW — DOWNWARD FLOW WITH I/O RAILS + PACKETS
+               ============================================================ */
+            {
+                id: 'hardware-vis-data-flow',
+                titleDe: 'Datenfluss durch die Hardwareschichten',
+                titleEn: 'Data Flow Through Hardware Layers',
+                descDe: 'Wie Daten durch die Hardwareschichten fließen – von oben nach unten: Eingabe (Tastatur/Maus) → RAM (Pufferung) → CPU (Verarbeitung) → Speicher (Ablage) → Ausgabe (Monitor). Der Hauptimpuls und die kleinen Datenpakete wandern abwärts und zeigen so den Weg der Daten. Links die INPUT-, rechts die OUTPUT-Seite.',
+                descEn: 'How data flows through the hardware layers — from top to bottom: Input (keyboard/mouse) → RAM (buffering) → CPU (processing) → Storage (saving) → Output (monitor). The main pulse and small data packets travel downward to show the data path. INPUT side on the left, OUTPUT side on the right.',
+                html: `
+                <style>
+                    .hw-data {
+                        max-width: 720px;
+                        margin: 1rem auto 0.5rem;
+                        display: grid;
+                        grid-template-columns: auto 1fr auto;
+                        gap: 0.7rem;
+                        align-items: stretch;
+                        --pulse: #8b5cf6;
+                    }
+                    .hw-data-side {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 0.55rem;
+                        font-weight: 800;
+                        letter-spacing: 0.18em;
+                        text-transform: uppercase;
+                        color: var(--text-muted);
+                        opacity: 0.65;
+                        writing-mode: vertical-rl;
+                        padding: 0.5rem 0;
+                    }
+                    .hw-data-side.left { transform: rotate(180deg); }
+                    .hw-data-side .lbl {
+                        padding: 0.4rem 0.15rem;
+                        border-radius: 0.35rem;
+                        background: color-mix(in srgb, var(--sc) 10%, transparent);
+                        color: var(--sc);
+                    }
+                    .hw-data-side.left .lbl  { --sc: #ec4899; }
+                    .hw-data-side.right .lbl { --sc: #8b5cf6; }
+
+                    .hw-data-wrap {
+                        position: relative;
+                        padding-left: 3rem;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 10px;
+                    }
+                    .hw-data-rail {
+                        position: absolute;
+                        left: 16px; top: 6px; bottom: 6px;
+                        width: 4px;
+                        border-radius: 4px;
+                        background: linear-gradient(to bottom,
+                            #ec4899 0%, #10b981 25%, #3b82f6 50%, #f59e0b 75%, #8b5cf6 100%);
+                        opacity: 0.4;
+                        overflow: hidden;
+                    }
+                    .hw-data-rail::after {
+                        content: '';
+                        position: absolute;
+                        left: 0; right: 0; height: 42%;
+                        background: linear-gradient(to bottom,
+                            transparent, rgba(255,255,255,0.75) 50%, transparent);
+                        animation: hw-data-shim 4.5s linear infinite;
+                    }
+                    @keyframes hw-data-shim { 0% { top: -42%; } 100% { top: 100%; } }
+
+                    /* main pulse */
+                    .hw-data-pulse,
+                    .hw-data-pulse-trail {
+                        position: absolute;
+                        left: 10px;
+                        border-radius: 50%;
+                        background: #fff;
+                        pointer-events: none;
+                        z-index: 4;
+                    }
+                    .hw-data-pulse {
+                        width: 16px; height: 16px;
+                        box-shadow:
+                            0 0 14px 4px rgba(255,255,255,0.95),
+                            0 0 28px 10px var(--pulse);
+                        animation: hw-data-travel 15s linear infinite;
+                    }
+                    .hw-data-pulse-trail {
+                        width: 12px; height: 12px;
+                        background: var(--pulse);
+                        opacity: 0.55;
+                        filter: blur(3px);
+                        animation: hw-data-travel 15s linear infinite;
+                        animation-delay: 0.15s;
+                    }
+                    @keyframes hw-data-travel {
+                        0%   { top: 6px;               opacity: 0; }
+                        5%   { top: 6px;               opacity: 1; }
+                        87%  { top: calc(100% - 22px); opacity: 1; }
+                        95%  { top: calc(100% - 22px); opacity: 0; }
+                        100% { top: 6px;               opacity: 0; }
+                    }
+
+                    /* small data packets alongside the main rail */
+                    .hw-data-packet {
+                        position: absolute;
+                        left: 11px;
+                        width: 8px; height: 8px;
+                        border-radius: 50%;
+                        background: var(--pk, #fff);
+                        box-shadow: 0 0 8px var(--pk, #fff);
+                        opacity: 0;
+                        animation: hw-data-pk 15s linear infinite;
+                        animation-delay: var(--pk-delay, 0s);
+                        z-index: 2;
+                    }
+                    @keyframes hw-data-pk {
+                        0%   { top: 4%;  opacity: 0; }
+                        6%   { opacity: 0.9; }
+                        94%  { opacity: 0.9; }
+                        100% { top: 96%; opacity: 0; }
+                    }
+
+                    /* blocks */
+                    .hw-data-block {
+                        display: grid;
+                        grid-template-columns: 2.3rem 1fr auto;
+                        align-items: center;
+                        gap: 0.85rem;
+                        padding: 0.7rem 0.9rem 0.7rem 0.7rem;
+                        border-radius: 0.65rem;
+                        border: 1.5px solid var(--border-color);
+                        background: linear-gradient(135deg,
+                            color-mix(in srgb, var(--c) 6%, var(--code-bg)),
+                            var(--code-bg));
+                        font-size: 0.78rem;
+                        font-weight: 700;
+                        position: relative;
+                        overflow: hidden;
+                        animation: hw-data-glow 15s ease-in-out infinite;
+                        animation-delay: calc(var(--i) * 3s);
+                        will-change: transform, border-color, box-shadow;
+                    }
+                    .hw-data-block .ico {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 2.3rem; height: 2.3rem;
+                        border-radius: 0.5rem;
+                        background: color-mix(in srgb, var(--c) 15%, transparent);
+                        color: var(--c);
+                        font-size: 1rem;
+                        box-shadow: inset 0 0 8px color-mix(in srgb, var(--c) 25%, transparent);
+                    }
+                    .hw-data-info { line-height: 1.25; min-width: 0; }
+                    .hw-data-info .t { display: block; font-weight: 800; }
+                    .hw-data-info .s {
+                        display: block;
+                        font-size: 0.62rem;
+                        font-weight: 500;
+                        color: var(--text-muted);
+                        margin-top: 2px;
+                    }
+                    .hw-data-tag {
+                        font-size: 0.58rem;
+                        font-weight: 800;
+                        letter-spacing: 0.08em;
+                        color: var(--text-muted);
+                        opacity: 0.6;
+                    }
+                    .hw-data-block::before {
+                        content: '';
+                        position: absolute;
+                        left: 0; top: 0; bottom: 0;
+                        width: 4px;
+                        background: var(--c);
+                        box-shadow: 0 0 8px var(--c);
+                    }
+                    @keyframes hw-data-glow {
+                        0%, 100% {
+                            transform: translateX(0);
+                            border-color: var(--border-color);
+                            box-shadow: none;
+                        }
+                        3%, 17% {
+                            transform: translateX(8px);
+                            border-color: var(--c);
+                            box-shadow:
+                                0 10px 30px -8px var(--c),
+                                0 0 0 1px color-mix(in srgb, var(--c) 35%, transparent);
+                        }
+                        22% {
+                            transform: translateX(0);
+                            border-color: var(--border-color);
+                            box-shadow: none;
+                        }
+                    }
+                    @media (prefers-reduced-motion: reduce) {
+                        .hw-data-block, .hw-data-pulse, .hw-data-pulse-trail,
+                        .hw-data-rail::after, .hw-data-packet { animation: none !important; }
+                    }
+                    @media (max-width: 640px) {
+                        .hw-data { grid-template-columns: 1fr; }
+                        .hw-data-side { display: none; }
+                    }
+                    @media (max-width: 480px) {
+                        .hw-data-wrap { padding-left: 2.4rem; }
+                        .hw-data-block {
+                            grid-template-columns: 1.9rem 1fr auto;
+                            gap: 0.6rem;
+                            padding: 0.55rem 0.7rem;
+                        }
+                        .hw-data-block .ico { width: 1.9rem; height: 1.9rem; font-size: 0.85rem; }
+                        .hw-data-info .s { display: none; }
+                    }
+                </style>
+
+                <div class="hw-data">
+                    <div class="hw-data-side left">
+                        <span class="lbl">
+                            <span data-lang-de>Eingabe</span>
+                            <span data-lang-en style="display:none;">Input</span>
+                        </span>
+                    </div>
+
+                    <div class="hw-data-wrap">
+                        <div class="hw-data-rail"></div>
+                        <div class="hw-data-pulse"></div>
+                        <div class="hw-data-pulse-trail"></div>
+                        <div class="hw-data-packet" style="--pk:#ec4899; --pk-delay:0.8s;"></div>
+                        <div class="hw-data-packet" style="--pk:#10b981; --pk-delay:3.8s;"></div>
+                        <div class="hw-data-packet" style="--pk:#3b82f6; --pk-delay:6.8s;"></div>
+                        <div class="hw-data-packet" style="--pk:#f59e0b; --pk-delay:9.8s;"></div>
+                        <div class="hw-data-packet" style="--pk:#8b5cf6; --pk-delay:12.8s;"></div>
+
+                        <!-- DOM order = top → bottom -->
+                        <div class="hw-data-block" style="--i:0; --c:#ec4899;">
+                            <span class="ico"><i class="fa-solid fa-keyboard"></i></span>
+                            <span class="hw-data-info">
+                                <span class="t">
+                                    <span data-lang-de>Eingabe: Tastatur / Maus</span>
+                                    <span data-lang-en style="display:none;">Input: Keyboard / Mouse</span>
+                                </span>
+                                <span class="s">
+                                    <span data-lang-de>Der Benutzer gibt Daten ein – Startpunkt des Datenwegs.</span>
+                                    <span data-lang-en style="display:none;">The user enters data — the starting point of the data path.</span>
+                                </span>
+                            </span>
+                            <span class="hw-data-tag">01</span>
+                        </div>
+
+                        <div class="hw-data-block" style="--i:1; --c:#10b981;">
+                            <span class="ico"><i class="fa-solid fa-memory"></i></span>
+                            <span class="hw-data-info">
+                                <span class="t">
+                                    <span data-lang-de>RAM: Zwischenspeicherung</span>
+                                    <span data-lang-en style="display:none;">RAM: temporary buffering</span>
+                                </span>
+                                <span class="s">
+                                    <span data-lang-de>Die Eingabe wird kurzzeitig im Arbeitsspeicher gepuffert.</span>
+                                    <span data-lang-en style="display:none;">The input is briefly buffered in memory.</span>
+                                </span>
+                            </span>
+                            <span class="hw-data-tag">02</span>
+                        </div>
+
+                        <div class="hw-data-block" style="--i:2; --c:#3b82f6;">
+                            <span class="ico"><i class="fa-solid fa-microchip"></i></span>
+                            <span class="hw-data-info">
+                                <span class="t">
+                                    <span data-lang-de>CPU: Verarbeitung &amp; Berechnung</span>
+                                    <span data-lang-en style="display:none;">CPU: processing &amp; computation</span>
+                                </span>
+                                <span class="s">
+                                    <span data-lang-de>Der Prozessor führt die nötigen Operationen aus.</span>
+                                    <span data-lang-en style="display:none;">The processor performs the required operations.</span>
+                                </span>
+                            </span>
+                            <span class="hw-data-tag">03</span>
+                        </div>
+
+                        <div class="hw-data-block" style="--i:3; --c:#f59e0b;">
+                            <span class="ico"><i class="fa-solid fa-hard-drive"></i></span>
+                            <span class="hw-data-info">
+                                <span class="t">
+                                    <span data-lang-de>Speicher: dauerhafte Ablage (SSD/HDD)</span>
+                                    <span data-lang-en style="display:none;">Storage: permanent save (SSD/HDD)</span>
+                                </span>
+                                <span class="s">
+                                    <span data-lang-de>Ergebnisse werden dauerhaft auf SSD/HDD geschrieben.</span>
+                                    <span data-lang-en style="display:none;">Results are written permanently to SSD/HDD.</span>
+                                </span>
+                            </span>
+                            <span class="hw-data-tag">04</span>
+                        </div>
+
+                        <div class="hw-data-block" style="--i:4; --c:#8b5cf6;">
+                            <span class="ico"><i class="fa-solid fa-display"></i></span>
+                            <span class="hw-data-info">
+                                <span class="t">
+                                    <span data-lang-de>Ausgabe: Monitor zeigt das Ergebnis</span>
+                                    <span data-lang-en style="display:none;">Output: monitor shows the result</span>
+                                </span>
+                                <span class="s">
+                                    <span data-lang-de>Der Benutzer sieht das verarbeitete Ergebnis.</span>
+                                    <span data-lang-en style="display:none;">The user sees the processed result.</span>
+                                </span>
+                            </span>
+                            <span class="hw-data-tag">05</span>
+                        </div>
+                    </div>
+
+                    <div class="hw-data-side right">
+                        <span class="lbl">
+                            <span data-lang-de>Ausgabe</span>
+                            <span data-lang-en style="display:none;">Output</span>
+                        </span>
                     </div>
                 </div>
                 `
@@ -716,10 +1230,10 @@ registerTopic({
         titleDe: 'Hardware-Links',
         titleEn: 'Hardware Links',
         items: [
-            { icon: 'fa-globe',         href: 'https://de.wikipedia.org/wiki/Hardware', target: '_blank', labelDe: 'Wikipedia: Hardware', labelEn: 'Wikipedia: Hardware' },
-            { icon: 'fa-link',          href: 'https://de.wikipedia.org/wiki/Netzwerkhardware', target: '_blank', labelDe: 'Wikipedia: Netzwerkhardware', labelEn: 'Wikipedia: Network Hardware' },
-            { icon: 'fa-external-link', href: 'https://www.computerhope.com/', target: '_blank', labelDe: 'Computer Hope', labelEn: 'Computer Hope' },
-            { icon: 'fa-paperclip',     href: 'https://www.tomshardware.com/', target: '_blank', labelDe: 'Tom\'s Hardware', labelEn: 'Tom\'s Hardware' }
+            { icon: 'fa-globe',         href: 'https://de.wikipedia.org/wiki/Hardware',           target: '_blank', labelDe: 'Wikipedia: Hardware',              labelEn: 'Wikipedia: Hardware' },
+            { icon: 'fa-link',          href: 'https://de.wikipedia.org/wiki/Netzwerkhardware',  target: '_blank', labelDe: 'Wikipedia: Netzwerkhardware',      labelEn: 'Wikipedia: Network Hardware' },
+            { icon: 'fa-external-link', href: 'https://www.computerhope.com/',                    target: '_blank', labelDe: 'Computer Hope',                    labelEn: 'Computer Hope' },
+            { icon: 'fa-paperclip',     href: 'https://www.tomshardware.com/',                    target: '_blank', labelDe: 'Tom\'s Hardware',                  labelEn: 'Tom\'s Hardware' }
         ]
     },
 
