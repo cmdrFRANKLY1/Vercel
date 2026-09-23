@@ -16,7 +16,7 @@ registerTopic({
     sidebarTitleEn: 'Hardware',
     sidebarSubtitleDe: 'Computer & Netzwerk',
     sidebarSubtitleEn: 'Computer & Network',
-    sidebarVersion: 'Hardware v1.0',
+    sidebarVersion: 'Hardware v1.1',
 
     hero: {
         titleDe: 'Hardware: Computer und Netzwerk',
@@ -26,19 +26,20 @@ registerTopic({
     },
 
     quickLinks: [
-        { icon: 'fa-desktop',           href: '#section1', switchToDoc: true, labelDe: 'Computer-Hardware', labelEn: 'Computer Hardware' },
-        { icon: 'fa-network-wired',     href: '#section2', switchToDoc: true, labelDe: 'Netzwerk-Hardware', labelEn: 'Network Hardware' },
-        { icon: 'fa-exchange-alt',      href: '#section3', switchToDoc: true, labelDe: 'Zusammenspiel', labelEn: 'Interaction' },
+        { icon: 'fa-desktop',           href: '#section1', switchToDoc: true, labelDe: 'Computer-Komponenten', labelEn: 'Computer Components' },
+        { icon: 'fa-network-wired',     href: '#section2', switchToDoc: true, labelDe: 'Netzwerk-Hardware',    labelEn: 'Network Hardware' },
+        { icon: 'fa-plug',              href: '#section3', switchToDoc: true, labelDe: 'Schnittstellen',       labelEn: 'Interfaces & Ports' },
         { icon: 'fa-external-link-alt', href: 'https://de.wikipedia.org/wiki/Hardware', target: '_blank', labelDe: 'Wikipedia: Hardware', labelEn: 'Wikipedia: Hardware' }
     ],
 
     sections: [
+        /* ============ 1. COMPUTER-KOMPONENTEN ============ */
         {
             id: 'section1',
-            titleDe: 'Computer-Hardware',
-            titleEn: 'Computer Hardware',
-            introDe: 'Computer-Hardware umfasst alle physischen Bestandteile eines Computers. Man unterscheidet interne Komponenten, die sich im Gehäuse befinden, und Peripheriegeräte, die extern angeschlossen werden.',
-            introEn: 'Computer hardware includes all physical components of a computer. A distinction is made between internal components located inside the case and peripheral devices connected externally.',
+            titleDe: 'Computer-Komponenten',
+            titleEn: 'Computer Components',
+            introDe: 'Computer-Komponenten umfassen alle physischen Bestandteile eines Computers. Man unterscheidet interne Komponenten, die sich im Gehäuse befinden, und Peripheriegeräte, die extern angeschlossen werden.',
+            introEn: 'Computer components include all physical parts of a computer. A distinction is made between internal components located inside the case and peripheral devices connected externally.',
             subtopics: [
                 {
                     id: 'subsection1_1',
@@ -97,6 +98,7 @@ registerTopic({
             ]
         },
 
+        /* ============ 2. NETZWERK-HARDWARE ============ */
         {
             id: 'section2',
             titleDe: 'Netzwerk-Hardware',
@@ -161,41 +163,147 @@ registerTopic({
             ]
         },
 
+        /* ============ 3. SCHNITTSTELLEN & ANSCHLÜSSE ============ */
         {
             id: 'section3',
-            titleDe: 'Zusammenspiel von Computer- und Netzwerk-Hardware',
-            titleEn: 'Interaction of Computer and Network Hardware',
+            titleDe: 'Schnittstellen & Anschlüsse',
+            titleEn: 'Interfaces & Ports',
+            introDe: 'Schnittstellen verbinden interne Komponenten untereinander und externe Geräte mit dem Computer. Man unterscheidet interne Schnittstellen (SATA, M.2, PCIe), externe Schnittstellen (USB, HDMI, DisplayPort, Thunderbolt, Ethernet) und drahtlose Schnittstellen (WLAN, Bluetooth, NFC).',
+            introEn: 'Interfaces connect internal components with each other and external devices with the computer. A distinction is made between internal interfaces (SATA, M.2, PCIe), external interfaces (USB, HDMI, DisplayPort, Thunderbolt, Ethernet), and wireless interfaces (Wi-Fi, Bluetooth, NFC).',
             subtopics: [
                 {
                     id: 'subsection3_1',
-                    titleDe: 'Wie alles zusammenarbeitet',
-                    titleEn: 'How Everything Works Together',
+                    titleDe: 'Interne Schnittstellen',
+                    titleEn: 'Internal Interfaces',
                     htmlDe: `
                     <div class="overflow-x-auto w-full">
                     <table class="wikitable">
-                    <tr><th class="w-[20%]">Ebene</th><th>Komponenten</th></tr>
-                    <tr><td><strong>Client</strong></td><td class="text-[var(--text-muted)]">Computer mit CPU, RAM, Netzwerkkarte und Betriebssystem, der Dienste anfordert.</td></tr>
-                    <tr><td><strong>Netzwerk</strong></td><td class="text-[var(--text-muted)]">Router, Switches, Kabel und Access Points, die Daten zwischen Clients und Servern transportieren.</td></tr>
-                    <tr><td><strong>Server</strong></td><td class="text-[var(--text-muted)]">Leistungsstarker Computer, der Dienste wie Webseiten, E-Mail oder Dateispeicher bereitstellt.</td></tr>
-                    <tr><td><strong>Peripherie</strong></td><td class="text-[var(--text-muted)]">Drucker, Scanner und externe Speicher, die über das Netzwerk gemeinsam genutzt werden können.</td></tr>
+                    <tr><th class="w-1/4">Schnittstelle</th><th class="w-1/5">Typ</th><th>Verwendung &amp; Eigenschaften</th></tr>
+                    <tr>
+                    <td><strong>SATA III</strong></td>
+                    <td class="text-[var(--text-muted)]">Kabel</td>
+                    <td class="text-[var(--text-muted)]">Verbindet HDDs und SSDs mit dem Mainboard. Bis zu 6 Gbit/s (~550 MB/s).</td>
+                    </tr>
+                    <tr>
+                    <td><strong>M.2</strong></td>
+                    <td class="text-[var(--text-muted)]">Steckplatz</td>
+                    <td class="text-[var(--text-muted)]">Kompakte SSDs direkt auf dem Mainboard. NVMe-Varianten bis zu 7 GB/s.</td>
+                    </tr>
+                    <tr>
+                    <td><strong>PCIe</strong></td>
+                    <td class="text-[var(--text-muted)]">Steckplatz</td>
+                    <td class="text-[var(--text-muted)]">Erweiterungskarten (GPU, NIC, Soundkarte). PCIe 4.0 x16: ~32 GB/s.</td>
+                    </tr>
+                    <tr>
+                    <td><strong>DIMM</strong></td>
+                    <td class="text-[var(--text-muted)]">Steckplatz</td>
+                    <td class="text-[var(--text-muted)]">Steckplatz für RAM-Module (DDR4/DDR5).</td>
+                    </tr>
+                    <tr>
+                    <td><strong>SATA-Strom / 24-Pin ATX</strong></td>
+                    <td class="text-[var(--text-muted)]">Strom</td>
+                    <td class="text-[var(--text-muted)]">Verbindung vom Netzteil zu Laufwerken bzw. Mainboard.</td>
+                    </tr>
                     </table>
                     </div>
                     `,
                     htmlEn: `
                     <div class="overflow-x-auto w-full">
                     <table class="wikitable">
-                    <tr><th class="w-[20%]">Layer</th><th>Components</th></tr>
-                    <tr><td><strong>Client</strong></td><td class="text-[var(--text-muted)]">Computer with CPU, RAM, network card, and operating system that requests services.</td></tr>
-                    <tr><td><strong>Network</strong></td><td class="text-[var(--text-muted)]">Routers, switches, cables, and access points that transport data between clients and servers.</td></tr>
-                    <tr><td><strong>Server</strong></td><td class="text-[var(--text-muted)]">High-performance computer that provides services such as websites, email, or file storage.</td></tr>
-                    <tr><td><strong>Peripherals</strong></td><td class="text-[var(--text-muted)]">Printers, scanners, and external storage that can be shared over the network.</td></tr>
+                    <tr><th class="w-1/4">Interface</th><th class="w-1/5">Type</th><th>Use &amp; Characteristics</th></tr>
+                    <tr>
+                    <td><strong>SATA III</strong></td>
+                    <td class="text-[var(--text-muted)]">Cable</td>
+                    <td class="text-[var(--text-muted)]">Connects HDDs and SSDs to the motherboard. Up to 6 Gbit/s (~550 MB/s).</td>
+                    </tr>
+                    <tr>
+                    <td><strong>M.2</strong></td>
+                    <td class="text-[var(--text-muted)]">Slot</td>
+                    <td class="text-[var(--text-muted)]">Compact SSDs mounted directly on the motherboard. NVMe variants up to 7 GB/s.</td>
+                    </tr>
+                    <tr>
+                    <td><strong>PCIe</strong></td>
+                    <td class="text-[var(--text-muted)]">Slot</td>
+                    <td class="text-[var(--text-muted)]">Expansion cards (GPU, NIC, sound card). PCIe 4.0 x16: ~32 GB/s.</td>
+                    </tr>
+                    <tr>
+                    <td><strong>DIMM</strong></td>
+                    <td class="text-[var(--text-muted)]">Slot</td>
+                    <td class="text-[var(--text-muted)]">Slot for RAM modules (DDR4/DDR5).</td>
+                    </tr>
+                    <tr>
+                    <td><strong>SATA Power / 24-Pin ATX</strong></td>
+                    <td class="text-[var(--text-muted)]">Power</td>
+                    <td class="text-[var(--text-muted)]">Connection from PSU to drives or motherboard.</td>
+                    </tr>
                     </table>
+                    </div>
+                    `
+                },
+                {
+                    id: 'subsection3_2',
+                    titleDe: 'Externe Schnittstellen',
+                    titleEn: 'External Interfaces',
+                    htmlDe: `
+                    <div class="overflow-x-auto w-full">
+                    <table class="wikitable">
+                    <tr><th class="w-1/5">Anschluss</th><th class="w-1/5">Datenrate</th><th>Einsatz</th></tr>
+                    <tr><td><strong>USB 2.0</strong></td><td class="text-[var(--text-muted)]">480 Mbit/s</td><td class="text-[var(--text-muted)]">Tastatur, Maus, langsame Peripherie.</td></tr>
+                    <tr><td><strong>USB 3.2 Gen 1</strong></td><td class="text-[var(--text-muted)]">5 Gbit/s</td><td class="text-[var(--text-muted)]">USB-Sticks, externe Festplatten.</td></tr>
+                    <tr><td><strong>USB 3.2 Gen 2</strong></td><td class="text-[var(--text-muted)]">10 Gbit/s</td><td class="text-[var(--text-muted)]">Schnelle SSDs, Kameras.</td></tr>
+                    <tr><td><strong>USB4 / Thunderbolt 4</strong></td><td class="text-[var(--text-muted)]">40 Gbit/s</td><td class="text-[var(--text-muted)]">Docks, eGPUs, Monitore, Stromversorgung (bis 100 W).</td></tr>
+                    <tr><td><strong>HDMI 2.1</strong></td><td class="text-[var(--text-muted)]">~48 Gbit/s</td><td class="text-[var(--text-muted)]">Bild + Ton, 4K@120 Hz, 8K@60 Hz.</td></tr>
+                    <tr><td><strong>DisplayPort 2.0</strong></td><td class="text-[var(--text-muted)]">~80 Gbit/s</td><td class="text-[var(--text-muted)]">Hochauflösende Monitore, Daisy-Chaining.</td></tr>
+                    <tr><td><strong>Ethernet (RJ45)</strong></td><td class="text-[var(--text-muted)]">1–10 Gbit/s</td><td class="text-[var(--text-muted)]">Kabelgebundenes Netzwerk (siehe Netzwerk-Hardware).</td></tr>
+                    <tr><td><strong>3,5 mm Klinke</strong></td><td class="text-[var(--text-muted)]">Analog</td><td class="text-[var(--text-muted)]">Kopfhörer, Mikrofon, Lautsprecher.</td></tr>
+                    </table>
+                    </div>
+                    `,
+                    htmlEn: `
+                    <div class="overflow-x-auto w-full">
+                    <table class="wikitable">
+                    <tr><th class="w-1/5">Port</th><th class="w-1/5">Data rate</th><th>Use</th></tr>
+                    <tr><td><strong>USB 2.0</strong></td><td class="text-[var(--text-muted)]">480 Mbit/s</td><td class="text-[var(--text-muted)]">Keyboard, mouse, slow peripherals.</td></tr>
+                    <tr><td><strong>USB 3.2 Gen 1</strong></td><td class="text-[var(--text-muted)]">5 Gbit/s</td><td class="text-[var(--text-muted)]">USB sticks, external hard drives.</td></tr>
+                    <tr><td><strong>USB 3.2 Gen 2</strong></td><td class="text-[var(--text-muted)]">10 Gbit/s</td><td class="text-[var(--text-muted)]">Fast SSDs, cameras.</td></tr>
+                    <tr><td><strong>USB4 / Thunderbolt 4</strong></td><td class="text-[var(--text-muted)]">40 Gbit/s</td><td class="text-[var(--text-muted)]">Docks, eGPUs, monitors, power delivery (up to 100 W).</td></tr>
+                    <tr><td><strong>HDMI 2.1</strong></td><td class="text-[var(--text-muted)]">~48 Gbit/s</td><td class="text-[var(--text-muted)]">Video + audio, 4K@120 Hz, 8K@60 Hz.</td></tr>
+                    <tr><td><strong>DisplayPort 2.0</strong></td><td class="text-[var(--text-muted)]">~80 Gbit/s</td><td class="text-[var(--text-muted)]">High-resolution monitors, daisy-chaining.</td></tr>
+                    <tr><td><strong>Ethernet (RJ45)</strong></td><td class="text-[var(--text-muted)]">1–10 Gbit/s</td><td class="text-[var(--text-muted)]">Wired network (see Network Hardware).</td></tr>
+                    <tr><td><strong>3.5 mm jack</strong></td><td class="text-[var(--text-muted)]">Analog</td><td class="text-[var(--text-muted)]">Headphones, microphone, speakers.</td></tr>
+                    </table>
+                    </div>
+                    `
+                },
+                {
+                    id: 'subsection3_3',
+                    titleDe: 'Drahtlose Schnittstellen',
+                    titleEn: 'Wireless Interfaces',
+                    htmlDe: `
+                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
+                    <ul class="list-disc pl-4 space-y-1">
+                    <li><strong>WLAN (Wi-Fi):</strong> Drahtloses Netzwerk. Standards IEEE 802.11 a/b/g/n/ac/ax (Wi-Fi 6). Frequenzbänder 2,4 / 5 / 6 GHz.</li>
+                    <li><strong>Bluetooth:</strong> Kurzstrecken-Funk für Tastaturen, Mäuse, Headsets. Reichweite typ. 10 m.</li>
+                    <li><strong>NFC:</strong> Sehr kurze Reichweite (&lt; 10 cm) – für kontaktloses Bezahlen, Ausweise, Pairing.</li>
+                    <li><strong>Mobilfunk (LTE / 5G):</strong> Weiträumige Vernetzung über Mobilfunknetze, meist per USB-Stick oder WWAN-Modul.</li>
+                    </ul>
+                    </div>
+                    `,
+                    htmlEn: `
+                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
+                    <ul class="list-disc pl-4 space-y-1">
+                    <li><strong>Wi-Fi:</strong> Wireless network. Standards IEEE 802.11 a/b/g/n/ac/ax (Wi-Fi 6). Frequency bands 2.4 / 5 / 6 GHz.</li>
+                    <li><strong>Bluetooth:</strong> Short-range radio for keyboards, mice, headsets. Range typically 10 m.</li>
+                    <li><strong>NFC:</strong> Very short range (&lt; 10 cm) — for contactless payment, ID cards, pairing.</li>
+                    <li><strong>Mobile (LTE / 5G):</strong> Wide-area connectivity via cellular networks, usually via USB dongle or WWAN module.</li>
+                    </ul>
                     </div>
                     `
                 }
             ]
         },
 
+        /* ============ 4. REFERENZEN ============ */
         {
             id: 'section4',
             titleDe: 'Referenzen',
@@ -205,12 +313,13 @@ registerTopic({
                     id: 'subsection4_1',
                     titleDe: 'Interne Referenzen',
                     titleEn: 'Internal References',
-                    htmlDe: `<p class="text-xs">Weitere Details zu Netzwerkgeräten finden Sie in <a href="#subsection2_1">Netzwerkgeräte</a>. Informationen zu Peripheriegeräten finden Sie in <a href="#subsection1_2">Peripheriegeräte</a>.</p>`,
-                    htmlEn: `<p class="text-xs">For more details on network devices, see <a href="#subsection2_1">Network Devices</a>. For information on peripheral devices, see <a href="#subsection1_2">Peripheral Devices</a>.</p>`
+                    htmlDe: `<p class="text-xs">Weitere Details zu Netzwerkgeräten finden Sie in <a href="#subsection2_1">Netzwerkgeräte</a>. Informationen zu Peripheriegeräten finden Sie in <a href="#subsection1_2">Peripheriegeräte</a>. Eine Übersicht der Anschlüsse finden Sie unter <a href="#subsection3_1">Interne Schnittstellen</a>.</p>`,
+                    htmlEn: `<p class="text-xs">For more details on network devices, see <a href="#subsection2_1">Network Devices</a>. For information on peripheral devices, see <a href="#subsection1_2">Peripheral Devices</a>. An overview of ports is available under <a href="#subsection3_1">Internal Interfaces</a>.</p>`
                 }
             ]
         },
 
+        /* ============ 5. FAZIT ============ */
         {
             id: 'section5',
             titleDe: 'Fazit',
@@ -226,7 +335,7 @@ registerTopic({
             ]
         },
 
-        /* --- TLDR --- */
+        /* ============ TLDR ============ */
         {
             id: 'tldr-summary',
             titleDe: 'TLDR',
@@ -241,7 +350,7 @@ registerTopic({
                     htmlDe: `
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 mt-2">
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
-                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-microchip opacity-70"></i><span>1. Computer-Hardware</span></div>
+                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-microchip opacity-70"></i><span>1. Computer-Komponenten</span></div>
                             <p class="text-xs text-[var(--text-muted)] leading-relaxed">Interne Komponenten wie CPU, RAM, Mainboard und GPU sowie Peripheriegeräte wie Tastatur, Maus und Monitor.</p>
                         </div>
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
@@ -249,8 +358,8 @@ registerTopic({
                             <p class="text-xs text-[var(--text-muted)] leading-relaxed">Router, Switches, Modems, Access Points und Netzwerkkabel ermöglichen die Kommunikation zwischen Geräten.</p>
                         </div>
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
-                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-exchange-alt opacity-70"></i><span>3. Zusammenspiel</span></div>
-                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">Clients, Netzwerk und Server arbeiten zusammen, um Dienste wie Webseiten, E-Mail und Dateiaustausch zu ermöglichen.</p>
+                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-plug opacity-70"></i><span>3. Schnittstellen</span></div>
+                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">Intern: SATA, M.2, PCIe, DIMM. Extern: USB, HDMI, DisplayPort, Thunderbolt, Ethernet. Drahtlos: WLAN, Bluetooth, NFC.</p>
                         </div>
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
                             <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-puzzle-piece opacity-70"></i><span>4. Grundlage der IT</span></div>
@@ -261,7 +370,7 @@ registerTopic({
                     htmlEn: `
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 mt-2">
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
-                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-microchip opacity-70"></i><span>1. Computer Hardware</span></div>
+                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-microchip opacity-70"></i><span>1. Computer Components</span></div>
                             <p class="text-xs text-[var(--text-muted)] leading-relaxed">Internal components like CPU, RAM, motherboard, and GPU, as well as peripherals like keyboard, mouse, and monitor.</p>
                         </div>
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
@@ -269,8 +378,8 @@ registerTopic({
                             <p class="text-xs text-[var(--text-muted)] leading-relaxed">Routers, switches, modems, access points, and network cables enable communication between devices.</p>
                         </div>
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
-                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-exchange-alt opacity-70"></i><span>3. Interaction</span></div>
-                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">Clients, network, and servers work together to enable services like websites, email, and file sharing.</p>
+                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-plug opacity-70"></i><span>3. Interfaces &amp; Ports</span></div>
+                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">Internal: SATA, M.2, PCIe, DIMM. External: USB, HDMI, DisplayPort, Thunderbolt, Ethernet. Wireless: Wi-Fi, Bluetooth, NFC.</p>
                         </div>
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
                             <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-puzzle-piece opacity-70"></i><span>4. Foundation of IT</span></div>
@@ -583,7 +692,6 @@ registerTopic({
                         margin: 1rem auto 0.5rem;
                         --pulse: #a855f7;
                     }
-                    /* ---- console-style header ---- */
                     .hw-boot-head {
                         display: flex;
                         align-items: center;
@@ -619,7 +727,6 @@ registerTopic({
                         color: var(--text-color);
                         letter-spacing: 0.05em;
                     }
-                    /* ---- progress bar ---- */
                     .hw-boot-progress {
                         position: relative;
                         height: 3px;
@@ -643,7 +750,6 @@ registerTopic({
                         92%      { width: 100%; }
                         100%     { width: 0%; }
                     }
-                    /* ---- rail + wrap ---- */
                     .hw-boot-wrap {
                         position: relative;
                         padding-left: 3rem;
@@ -670,7 +776,6 @@ registerTopic({
                         animation: hw-boot-shim 4s linear infinite;
                     }
                     @keyframes hw-boot-shim { 0% { top: 100%; } 100% { top: -42%; } }
-                    /* ---- pulse ---- */
                     .hw-boot-pulse,
                     .hw-boot-pulse-trail {
                         position: absolute;
@@ -702,7 +807,6 @@ registerTopic({
                         95%  { top: 6px;               opacity: 0; }
                         100% { top: calc(100% - 22px); opacity: 0; }
                     }
-                    /* ---- blocks ---- */
                     .hw-boot-block {
                         display: grid;
                         grid-template-columns: 2.3rem 1fr auto;
@@ -972,7 +1076,6 @@ registerTopic({
                     }
                     @keyframes hw-data-shim { 0% { top: -42%; } 100% { top: 100%; } }
 
-                    /* main pulse */
                     .hw-data-pulse,
                     .hw-data-pulse-trail {
                         position: absolute;
@@ -1004,8 +1107,6 @@ registerTopic({
                         95%  { top: calc(100% - 22px); opacity: 0; }
                         100% { top: 6px;               opacity: 0; }
                     }
-
-                    /* small data packets alongside the main rail */
                     .hw-data-packet {
                         position: absolute;
                         left: 11px;
@@ -1025,7 +1126,6 @@ registerTopic({
                         100% { top: 96%; opacity: 0; }
                     }
 
-                    /* blocks */
                     .hw-data-block {
                         display: grid;
                         grid-template-columns: 2.3rem 1fr auto;

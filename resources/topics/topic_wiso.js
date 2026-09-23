@@ -151,15 +151,15 @@
    TOPIC REGISTRATION
    ================================================================== */
 registerTopic({
-    id: 'WiSo',
+    id: 'WiSO',
     icon: 'fa-briefcase',
     titleDe: 'Wirtschaft & Sozialkunde',
-    titleEn: 'Economics & Social Studies',
-    descDe: 'WiSo-Referenz für die Abschlussprüfung: Vertragsrecht, Arbeitsrecht, Mitbestimmung, Sozialversicherungen, Unternehmensformen sowie Markttypen und Angebot/Nachfrage.',
-    descEn: 'WiSo reference for the final exam: contract law, labor law, co-determination, social security, corporate legal forms, plus market structures and supply/demand.',
+    titleEn: 'Economics and Social Studies',
+    descDe: 'WiSo-Referenz: Mitbestimmung, Sozialversicherungen, Unternehmensformen sowie Markttypen und Angebot/Nachfrage.',
+    descEn: 'WiSo reference: co-determination, social security, corporate forms, plus market structures and supply/demand.',
 
-    sidebarTitleDe: 'WiSo-Referenz',
-    sidebarTitleEn: 'WiSo Cheatsheet',
+    sidebarTitleDe: 'Wirtschaft & Sozialkunde',
+    sidebarTitleEn: 'Economics & Social Studies',
     sidebarSubtitleDe: 'Wirtschaft & Sozialkunde',
     sidebarSubtitleEn: 'Economics & Social Studies',
     sidebarVersion: 'v3.4',
@@ -167,33 +167,29 @@ registerTopic({
     hero: {
         titleDe: 'Wirtschaft & Sozialkunde (WiSo)',
         titleEn: 'Economics & Social Studies (WiSo)',
-        introDe: 'Das Fach <strong>Wirtschaft und Sozialkunde</strong> ist ein zentraler Bestandteil der Abschlussprüfung für Fachinformatiker und IT-System-Elektroniker in Deutschland. Diese Referenz umfasst die prüfungsrelevanten Themenbereiche Vertragsrecht, Arbeitsrecht, betriebliche Mitbestimmung, das System der sozialen Sicherung, die wichtigsten Unternehmensrechtsformen sowie die volkswirtschaftlichen Grundlagen <a href="#markttypen">Markttypen</a> und <a href="#angebot-nachfrage">Angebot &amp; Nachfrage</a>.',
-        introEn: 'The subject <strong>Economics and Social Studies (WiSo)</strong> is a central component of the final examination for IT specialists in Germany. This reference covers exam-relevant topics: contract law, labor law, co-determination, the social security system, corporate legal forms, and the economic fundamentals <a href="#markttypen">market structures</a> and <a href="#angebot-nachfrage">supply &amp; demand</a>.'
+        introDe: 'Diese Referenz umfasst die Themenbereiche betriebliche Mitbestimmung, das System der sozialen Sicherung, die wichtigsten Unternehmensformen sowie die volkswirtschaftlichen Grundlagen <a href="#markttypen">Markttypen</a> und <a href="#angebot-nachfrage">Angebot &amp; Nachfrage</a>.',
+        introEn: 'This reference covers the topics of co-determination, the social security system, corporate forms, and the economic fundamentals of <a href="#markttypen">market structures</a> and <a href="#angebot-nachfrage">supply &amp; demand</a>.'
     },
 
     quickLinks: [
-        { icon: 'fa-file-contract',  href: '#vertragsrecht',      switchToDoc: true, labelDe: 'Vertragsrecht',      labelEn: 'Contract Law' },
-        { icon: 'fa-user-tie',       href: '#arbeitsrecht',       switchToDoc: true, labelDe: 'Arbeitsrecht',       labelEn: 'Labor Law' },
         { icon: 'fa-people-group',   href: '#mitbestimmung',      switchToDoc: true, labelDe: 'Mitbestimmung',      labelEn: 'Co-determination' },
         { icon: 'fa-shield-heart',   href: '#sozialversicherung', switchToDoc: true, labelDe: 'Sozialversicherung', labelEn: 'Social Security' },
-        { icon: 'fa-building',       href: '#rechtsformen',       switchToDoc: true, labelDe: 'Rechtsformen',       labelEn: 'Legal Forms' },
+        { icon: 'fa-building',       href: '#rechtsformen',       switchToDoc: true, labelDe: 'Unternehmensformen', labelEn: 'Corporate Forms' },
         { icon: 'fa-chess-knight',   href: '#markttypen',         switchToDoc: true, labelDe: 'Markttypen',         labelEn: 'Market Structures' },
         { icon: 'fa-chart-line',     href: '#angebot-nachfrage',  switchToDoc: true, labelDe: 'Angebot & Nachfrage', labelEn: 'Supply & Demand' }
     ],
 
     sections: [
-        /* ============ 1. VERTRAGSRECHT ============ */
+        /* ============ 1. MITBESTIMMUNG ============ */
         {
-            id: 'vertragsrecht',
-            titleDe: '1. Vertragsrecht (BGB)',
-            titleEn: '1. Contract Law (BGB)',
-            introDe: 'Grundlage für Verträge in Deutschland ist das <a href="https://de.wikipedia.org/wiki/B%C3%BCrgerliches_Gesetzbuch" target="_blank">Bürgerliche Gesetzbuch (BGB)</a>. Ein Vertrag kommt durch zwei übereinstimmende Willenserklärungen zustande: <strong>Antrag (Angebot)</strong> und <strong>Annahme</strong>.',
-            introEn: 'The basis for contracts in Germany is the Civil Code (BGB). A contract is formed by two matching declarations of intent: <strong>Offer</strong> and <strong>Acceptance</strong>.',
+            id: 'mitbestimmung',
+            titleDe: '1. Betriebliche Mitbestimmung',
+            titleEn: '1. Corporate Co-determination',
             subtopics: [
                 {
-                    id: 'geschaeftsfaehigkeit',
-                    titleDe: '1.1 Geschäftsfähigkeit (§§ 104 ff. BGB)',
-                    titleEn: '1.1 Legal Capacity (§§ 104 ff. BGB)',
+                    id: 'betriebsrat',
+                    titleDe: '1.1 Der Betriebsrat (BetrVG)',
+                    titleEn: '1.1 The Works Council (BetrVG)',
                     htmlDe: `
                     <div class="overflow-x-auto w-full"><table class="wikitable">
                     <tr><th class="w-1/4">Stufe</th><th class="w-1/4">Alter</th><th>Rechtsfolge bei Verträgen</th></tr>
@@ -352,26 +348,26 @@ registerTopic({
                 },
                 {
                     id: 'jav',
-                    titleDe: '3.2 Jugend- und Auszubildendenvertretung (JAV)',
-                    titleEn: '3.2 Youth and Trainee Representation (JAV)',
+                    titleDe: '1.2 Jugend- und Auszubildendenvertretung (JAV)',
+                    titleEn: '1.2 Youth and Trainee Representation (JAV)',
                     htmlDe: `<p class="mb-0">Die JAV vertritt die Interessen der jugendlichen Arbeitnehmer (unter 18) und Azubis (unter 25). Voraussetzung: bestehender Betriebsrat und mind. 5 Jugendliche/Azubis.</p>`,
                     htmlEn: `<p class="mb-0">The JAV represents young employees (under 18) and trainees (under 25). Requires an existing works council and at least 5 young employees/trainees.</p>`
                 }
             ]
         },
 
-        /* ============ 4. SOZIALVERSICHERUNGEN ============ */
+        /* ============ 2. SOZIALVERSICHERUNGEN ============ */
         {
             id: 'sozialversicherung',
-            titleDe: '4. Das System der Sozialversicherungen',
-            titleEn: '4. The Social Security System',
+            titleDe: '2. Das System der Sozialversicherungen',
+            titleEn: '2. The Social Security System',
             introDe: 'Das deutsche Sozialversicherungssystem folgt dem Solidaritätsprinzip. Beiträge werden paritätisch (50/50) getragen (Ausnahme: Unfallversicherung).',
             introEn: 'The German social security system follows solidarity. Contributions are split 50/50 (exception: accident insurance).',
             subtopics: [
                 {
                     id: 'sv-zweige',
-                    titleDe: '4.1 Die 5 Säulen',
-                    titleEn: '4.1 The 5 Pillars',
+                    titleDe: '2.1 Die 5 Säulen',
+                    titleEn: '2.1 The 5 Pillars',
                     htmlDe: `
                     <div class="overflow-x-auto w-full"><table class="wikitable min-w-[600px]">
                     <tr><th>Versicherung</th><th>Einführung</th><th>Träger</th><th>Beitragszahler</th><th>Leistungen</th></tr>
@@ -393,8 +389,8 @@ registerTopic({
                 },
                 {
                     id: 'generationenvertrag',
-                    titleDe: '4.2 Generationenvertrag (Rentenversicherung)',
-                    titleEn: '4.2 Generational Contract (Pension)',
+                    titleDe: '2.2 Generationenvertrag (Rentenversicherung)',
+                    titleEn: '2.2 Generational Contract (Pension)',
                     htmlDe: `
                     <div class="text-[var(--text-muted)] bg-[var(--panel-color)] p-4 border border-[var(--panel-border)] rounded">
                         <p>Das Rentensystem basiert auf dem <strong>Umlageverfahren</strong>: Die arbeitende Generation zahlt direkt an die jetzigen Rentner.</p>
@@ -409,18 +405,18 @@ registerTopic({
             ]
         },
 
-        /* ============ 5. RECHTSFORMEN ============ */
+        /* ============ 3. UNTERNEHMENSFORMEN ============ */
         {
             id: 'rechtsformen',
-            titleDe: '5. Rechtsformen der Unternehmen',
-            titleEn: '5. Legal Forms of Enterprises',
+            titleDe: '3. Unternehmensformen',
+            titleEn: '3. Corporate Forms',
             introDe: 'Man unterscheidet Einzelunternehmen, Personengesellschaften und Kapitalgesellschaften.',
             introEn: 'Distinction between sole proprietorships, partnerships and corporations.',
             subtopics: [
                 {
                     id: 'einzelunternehmen',
-                    titleDe: '5.1 Einzelunternehmen',
-                    titleEn: '5.1 Sole Proprietorship',
+                    titleDe: '3.1 Einzelunternehmen',
+                    titleEn: '3.1 Sole Proprietorship',
                     htmlDe: `
                     <div class="overflow-x-auto w-full"><table class="wikitable">
                     <tr><th class="w-[20%]">Merkmal</th><th>Details</th></tr>
@@ -438,8 +434,8 @@ registerTopic({
                 },
                 {
                     id: 'personengesellschaften',
-                    titleDe: '5.2 Personengesellschaften (OHG, KG)',
-                    titleEn: '5.2 Partnerships (OHG, KG)',
+                    titleDe: '3.2 Personengesellschaften (OHG, KG)',
+                    titleEn: '3.2 Partnerships (OHG, KG)',
                     htmlDe: `
                     <div class="overflow-x-auto w-full"><table class="wikitable">
                     <tr><th class="w-[20%]">Rechtsform</th><th>Merkmale</th></tr>
@@ -455,8 +451,8 @@ registerTopic({
                 },
                 {
                     id: 'kapitalgesellschaften',
-                    titleDe: '5.3 Kapitalgesellschaften (GmbH, AG)',
-                    titleEn: '5.3 Corporations (GmbH, AG)',
+                    titleDe: '3.3 Kapitalgesellschaften (GmbH, AG)',
+                    titleEn: '3.3 Corporations (GmbH, AG)',
                     htmlDe: `
                     <p class="text-[var(--text-muted)]">Kapitalgesellschaften sind juristische Personen, Haftung auf Gesellschaftsvermögen beschränkt.</p>
                     <div class="overflow-x-auto w-full"><table class="wikitable">
@@ -475,18 +471,18 @@ registerTopic({
             ]
         },
 
-        /* ============ 6. MARKTTYPEN ============ */
+        /* ============ 4. MARKTTYPEN ============ */
         {
             id: 'markttypen',
-            titleDe: '6. Markttypen & Marktformen',
-            titleEn: '6. Market Types & Structures',
+            titleDe: '4. Markttypen & Marktformen',
+            titleEn: '4. Market Types & Structures',
             introDe: 'Märkte werden nach der <strong>Anzahl der Marktteilnehmer</strong> klassifiziert (Stackelberg-Matrix). Die Struktur bestimmt Marktmacht und Preisbildung.',
             introEn: 'Markets are classified by <strong>number of participants</strong> (Stackelberg matrix). Structure dictates market power and pricing.',
             subtopics: [
                 {
                     id: 'markt-matrix',
-                    titleDe: '6.1 Die 3×3 Markt-Matrix',
-                    titleEn: '6.1 The 3×3 Market Matrix',
+                    titleDe: '4.1 Die 3×3 Markt-Matrix',
+                    titleEn: '4.1 The 3×3 Market Matrix',
                     htmlDe: `
                     <div class="overflow-x-auto w-full mt-3"><table class="wikitable">
                     <tr><th>Form</th><th>Anbieter / Nachfrager</th><th>Beispiel</th></tr>
@@ -510,8 +506,8 @@ registerTopic({
                 },
                 {
                     id: 'polypol-monopol-oligopol',
-                    titleDe: '6.2 Polypol, Monopol und Oligopol',
-                    titleEn: '6.2 Polypoly, Monopoly and Oligopoly',
+                    titleDe: '4.2 Polypol, Monopol und Oligopol',
+                    titleEn: '4.2 Polypoly, Monopoly and Oligopoly',
                     htmlDe: `
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
                         <div class="bg-[var(--panel-color)] p-4 rounded-lg border border-[var(--panel-border)]">
@@ -575,8 +571,8 @@ registerTopic({
                 },
                 {
                     id: 'marktmacht',
-                    titleDe: '6.3 Kennzahlen der Marktmacht (Lerner, HHI)',
-                    titleEn: '6.3 Market Power Metrics (Lerner, HHI)',
+                    titleDe: '4.3 Kennzahlen der Marktmacht (Lerner, HHI)',
+                    titleEn: '4.3 Market Power Metrics (Lerner, HHI)',
                     htmlDe: `
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="bg-[var(--bg-color)] p-4 rounded-lg border border-[var(--panel-border)]">
@@ -617,18 +613,18 @@ registerTopic({
             ]
         },
 
-        /* ============ 7. ANGEBOT & NACHFRAGE ============ */
+        /* ============ 5. ANGEBOT & NACHFRAGE ============ */
         {
             id: 'angebot-nachfrage',
-            titleDe: '7. Angebot, Nachfrage & Marktgleichgewicht',
-            titleEn: '7. Supply, Demand & Market Equilibrium',
+            titleDe: '5. Angebot, Nachfrage & Marktgleichgewicht',
+            titleEn: '5. Supply, Demand & Market Equilibrium',
             introDe: 'Das Modell von <strong>Angebot und Nachfrage</strong> ist Fundament der Mikroökonomie: Preise und Mengen entstehen durch das Zusammenspiel von Konsumenten und Unternehmen.',
             introEn: 'The model of <strong>supply and demand</strong> is the foundation of microeconomics: prices and quantities emerge from the interaction of consumers and firms.',
             subtopics: [
                 {
                     id: 'nachfrage-angebot-funktionen',
-                    titleDe: '7.1 Nachfrage- und Angebotsfunktion',
-                    titleEn: '7.1 Demand and Supply Functions',
+                    titleDe: '5.1 Nachfrage- und Angebotsfunktion',
+                    titleEn: '5.1 Demand and Supply Functions',
                     htmlDe: `
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="bg-[var(--panel-color)] p-4 rounded border border-[var(--panel-border)]">
@@ -674,8 +670,8 @@ registerTopic({
                 },
                 {
                     id: 'gleichgewicht-shocks',
-                    titleDe: '7.2 Marktgleichgewicht und Shocks',
-                    titleEn: '7.2 Equilibrium and Shocks',
+                    titleDe: '5.2 Marktgleichgewicht und Shocks',
+                    titleEn: '5.2 Equilibrium and Shocks',
                     htmlDe: `
                     <p>Gleichgewicht: Q<sub>D</sub> = Q<sub>S</sub> ⇒ P* = (a−c)/(b+d).</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-3">
@@ -703,8 +699,8 @@ registerTopic({
                 },
                 {
                     id: 'elastizitaet-rente',
-                    titleDe: '7.3 Elastizität und Wohlfahrtsrenten',
-                    titleEn: '7.3 Elasticity and Welfare Surpluses',
+                    titleDe: '5.3 Elastizität und Wohlfahrtsrenten',
+                    titleEn: '5.3 Elasticity and Welfare Surpluses',
                     htmlDe: `
                     <div class="bg-[var(--panel-color)] p-4 rounded border border-[var(--panel-border)] text-center mb-3">
                         <div class="text-xl font-mono text-[var(--accent-violet)]">ε = (% ΔQ<sub>D</sub>) / (% ΔP)</div>
@@ -762,25 +758,6 @@ registerTopic({
                     htmlDe: `
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
-                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-file-contract opacity-70"></i><span>Vertragsrecht</span></div>
-                            <ul class="text-xs text-[var(--text-muted)] list-disc pl-4 space-y-1">
-                                <li>Vertrag = Antrag + Annahme</li>
-                                <li>Unter 7: geschäftsunfähig</li>
-                                <li>7–17: beschränkt geschäftsfähig</li>
-                                <li>Ab 18: voll geschäftsfähig</li>
-                                <li>Nichtig vs. anfechtbar</li>
-                            </ul>
-                        </div>
-                        <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
-                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-user-tie opacity-70"></i><span>Arbeitsrecht</span></div>
-                            <ul class="text-xs text-[var(--text-muted)] list-disc pl-4 space-y-1">
-                                <li>Kündigung schriftlich (§ 622 BGB)</li>
-                                <li>Fristlos nur bei wichtigem Grund</li>
-                                <li>KSchG: &gt;10 MA, &gt;6 Monate</li>
-                                <li>JArbSchG: unter 18, max. 8h/Tag</li>
-                            </ul>
-                        </div>
-                        <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
                             <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-shield-heart opacity-70"></i><span>Sozialversicherung</span></div>
                             <ul class="text-xs text-[var(--text-muted)] list-disc pl-4 space-y-1">
                                 <li>KV, UV, RV, ALV, PV</li>
@@ -790,7 +767,7 @@ registerTopic({
                             </ul>
                         </div>
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
-                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-building opacity-70"></i><span>Rechtsformen</span></div>
+                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-building opacity-70"></i><span>Unternehmensformen</span></div>
                             <ul class="text-xs text-[var(--text-muted)] list-disc pl-4 space-y-1">
                                 <li>Einzelunternehmen: unbeschränkt</li>
                                 <li>OHG: alle Vollhafter</li>
@@ -1621,10 +1598,6 @@ registerTopic({
         titleDe: 'Weiterführende Quellen',
         titleEn: 'Further Resources',
         items: [
-            { icon: 'fa-book',         href: 'https://de.wikipedia.org/wiki/B%C3%BCrgerliches_Gesetzbuch', target: '_blank', labelDe: 'BGB (Wikipedia)',                 labelEn: 'BGB (Wikipedia)' },
-            { icon: 'fa-gavel',        href: 'https://www.gesetze-im-internet.de/bgb/',                     target: '_blank', labelDe: 'BGB im Internet',                 labelEn: 'BGB online' },
-            { icon: 'fa-user-shield',  href: 'https://www.gesetze-im-internet.de/kschg/',                    target: '_blank', labelDe: 'Kündigungsschutzgesetz (KSchG)',  labelEn: 'Dismissal Protection Act' },
-            { icon: 'fa-child',        href: 'https://www.gesetze-im-internet.de/jarbschg/',                 target: '_blank', labelDe: 'Jugendarbeitsschutzgesetz',       labelEn: 'Youth Employment Act' },
             { icon: 'fa-people-group', href: 'https://www.gesetze-im-internet.de/betrvg/',                   target: '_blank', labelDe: 'Betriebsverfassungsgesetz (BetrVG)', labelEn: 'Works Constitution Act' },
             { icon: 'fa-chess-knight', href: 'https://de.wikipedia.org/wiki/Marktform',                      target: '_blank', labelDe: 'Marktformen (Wikipedia)',         labelEn: 'Market structures (Wikipedia)' },
             { icon: 'fa-chart-line',   href: 'https://de.wikipedia.org/wiki/Angebot_und_Nachfrage',          target: '_blank', labelDe: 'Angebot & Nachfrage (Wikipedia)', labelEn: 'Supply & demand (Wikipedia)' }

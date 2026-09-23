@@ -386,7 +386,6 @@
     /* ============================================================
        LAW DATA CONFIG
        ============================================================ */
-
     const LAW_CONFIGS = [
         {
             code: 'dsgvo_2018',
@@ -395,7 +394,8 @@
             sections: [
                 { id: 'dsgvo-grundlagen', title: { de: '1. DSGVO Grundlagen & Grundsätze', en: '1. GDPR Principles' },              icon: 'fa-list-check',     norms: ['art:5', 'art:6'] },
                 { id: 'dsgvo-rechte',     title: { de: '2. DSGVO Betroffenenrechte',       en: '2. GDPR Data Subject Rights' },     icon: 'fa-user-shield',    norms: ['art:15', 'art:16', 'art:17', 'art:20', 'art:21'] },
-                { id: 'dsgvo-pflichten',  title: { de: '3. DSGVO Pflichten & Rollen',      en: '3. GDPR Duties & Roles' },          icon: 'fa-clipboard-check', norms: ['art:28', 'art:32', 'art:33', 'art:35'] }
+                // Added Art. 30 (VVT) here to ensure the actual legal text is displayed before our VVT Summary Section.
+                { id: 'dsgvo-pflichten',  title: { de: '3. DSGVO Pflichten & Rollen',      en: '3. GDPR Duties & Roles' },          icon: 'fa-clipboard-check', norms: ['art:28', 'art:30', 'art:32', 'art:33', 'art:35'] }
             ]
         },
         {
@@ -431,7 +431,7 @@
        MOCK / FALLBACK DATA
        ============================================================ */
     function getOfflineMockXml(code) {
-        if (code === 'dsgvo_2018') return `<?xml version="1.0" encoding="UTF-8"?><dokumente><norm><metadaten><enbez>Art. 5</enbez><titel>Grundsätze für die Verarbeitung personenbezogener Daten</titel></metadaten><textdaten><text><Content><P>Personenbezogene Daten müssen auf rechtmäßige Weise, nach Treu und Glauben und in einer für die betroffene Person nachvollziehbaren Weise verarbeitet werden ("Rechtmäßigkeit, Verarbeitung nach Treu und Glauben, Transparenz"); für festgelegte, eindeutige und legitime Zwecke erhoben werden ("Zweckbindung"); dem Zweck angemessen und erheblich sowie auf das für die Zwecke der Verarbeitung notwendige Maß beschränkt sein ("Datenminimierung"); sachlich richtig und erforderlichenfalls auf dem neuesten Stand sein ("Richtigkeit"); in einer Form gespeichert werden, die die Identifizierung der betroffenen Personen nur so lange ermöglicht, wie es für die Zwecke, für die sie verarbeitet werden, erforderlich ist ("Speicherbegrenzung"); in einer Weise verarbeitet werden, die eine angemessene Sicherheit der personenbezogenen Daten gewährleistet ("Integrität und Vertraulichkeit").</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 6</enbez><titel>Rechtmäßigkeit der Verarbeitung</titel></metadaten><textdaten><text><Content><P>Die Verarbeitung ist nur rechtmäßig, wenn mindestens eine der nachstehenden Bedingungen erfüllt ist: a) Die betroffene Person hat ihre Einwilligung gegeben, b) die Verarbeitung ist für die Erfüllung eines Vertrags erforderlich, c) die Verarbeitung ist zur Erfüllung einer rechtlichen Verpflichtung erforderlich, d) lebenswichtige Interessen, e) öffentliches Interesse, f) berechtigte Interessen des Verantwortlichen, sofern nicht die Interessen oder Grundrechte der betroffenen Person überwiegen.</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 15</enbez><titel>Auskunftsrecht der betroffenen Person</titel></metadaten><textdaten><text><Content><P>Die betroffene Person hat das Recht, von dem Verantwortlichen eine Bestätigung darüber zu verlangen, ob sie betreffende personenbezogene Daten verarbeitet werden; ist dies der Fall, so hat sie ein Recht auf Auskunft über diese personenbezogenen Daten und auf weitere Informationen wie Verarbeitungszwecke und Kategorien personenbezogener Daten.</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 16</enbez><titel>Recht auf Berichtigung</titel></metadaten><textdaten><text><Content><P>Die betroffene Person hat das Recht, von dem Verantwortlichen unverzüglich die Berichtigung sie betreffender unrichtiger personenbezogener Daten zu verlangen.</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 17</enbez><titel>Recht auf Löschung ("Recht auf Vergessenwerden")</titel></metadaten><textdaten><text><Content><P>Die betroffene Person hat das Recht, von dem Verantwortlichen zu verlangen, dass sie betreffende personenbezogene Daten unverzüglich gelöscht werden, und der Verantwortliche ist verpflichtet, personenbezogene Daten unverzüglich zu löschen, sofern einer der Gründe zutrifft (z. B. Daten sind für die Zwecke nicht mehr notwendig oder die Einwilligung wurde widerrufen).</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 20</enbez><titel>Recht auf Datenübertragbarkeit</titel></metadaten><textdaten><text><Content><P>Die betroffene Person hat das Recht, die sie betreffenden personenbezogenen Daten, die sie einem Verantwortlichen bereitgestellt hat, in einem strukturierten, gängigen und maschinenlesbaren Format zu erhalten.</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 21</enbez><titel>Widerspruchsrecht</titel></metadaten><textdaten><text><Content><P>Die betroffene Person hat das Recht, aus Gründen, die sich aus ihrer besonderen Situation ergeben, jederzeit gegen die Verarbeitung sie betreffender personenbezogener Daten Widerspruch einzulegen.</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 28</enbez><titel>Auftragsverarbeiter</titel></metadaten><textdaten><text><Content><P>Erfolgt eine Verarbeitung im Auftrag eines Verantwortlichen, so arbeitet dieser nur mit Auftragsverarbeitern, die hinreichend Garantien dafür bieten, dass geeignete technische und organisatorische Maßnahmen so durchgeführt werden, dass die Verarbeitung im Einklang mit den Anforderungen dieser Verordnung erfolgt und den Schutz der Rechte der betroffenen Person gewährleistet.</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 32</enbez><titel>Sicherheit der Verarbeitung</titel></metadaten><textdaten><text><Content><P>Unter Berücksichtigung des Stands der Technik, der Implementierungskosten und der Art, des Umfangs, der Umstände und der Zwecke der Verarbeitung sowie der unterschiedlichen Eintrittswahrscheinlichkeit und Schwere des Risikos für die Rechte und Freiheiten natürlicher Personen treffen der Verantwortliche und der Auftragsverarbeiter geeignete technische und organisatorische Maßnahmen, um ein dem Risiko angemessenes Schutzniveau zu gewährleisten (z.B. Pseudonymisierung, Verschlüsselung).</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 33</enbez><titel>Meldung von Verletzungen des Schutzes personenbezogener Daten</titel></metadaten><textdaten><text><Content><P>Im Falle einer Verletzung des Schutzes personenbezogener Daten meldet der Verantwortliche diese unverzüglich und möglichst binnen 72 Stunden, nachdem ihm die Verletzung bekannt wurde, der zuständigen Aufsichtsbehörde, es sei denn, dass die Verletzung voraussichtlich nicht zu einem Risiko für die Rechte und Freiheiten natürlicher Personen führt.</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 35</enbez><titel>Datenschutz-Folgenabschätzung</titel></metadaten><textdaten><text><Content><P>Hat eine Form der Verarbeitung voraussichtlich ein hohes Risiko für die Rechte und Freiheiten natürlicher Personen zur Folge, so führt der Verantwortliche vorab eine Abschätzung der Folgen der vorgesehenen Verarbeitungsvorgänge für den Schutz personenbezogener Daten durch.</P></Content></text></textdaten></norm></dokumente>`;
+        if (code === 'dsgvo_2018') return `<?xml version="1.0" encoding="UTF-8"?><dokumente><norm><metadaten><enbez>Art. 5</enbez><titel>Grundsätze für die Verarbeitung personenbezogener Daten</titel></metadaten><textdaten><text><Content><P>Personenbezogene Daten müssen auf rechtmäßige Weise, nach Treu und Glauben und in einer für die betroffene Person nachvollziehbaren Weise verarbeitet werden ("Rechtmäßigkeit, Verarbeitung nach Treu und Glauben, Transparenz"); für festgelegte, eindeutige und legitime Zwecke erhoben werden ("Zweckbindung"); dem Zweck angemessen und erheblich sowie auf das für die Zwecke der Verarbeitung notwendige Maß beschränkt sein ("Datenminimierung"); sachlich richtig und erforderlichenfalls auf dem neuesten Stand sein ("Richtigkeit"); in einer Form gespeichert werden, die die Identifizierung der betroffenen Personen nur so lange ermöglicht, wie es für die Zwecke, für die sie verarbeitet werden, erforderlich ist ("Speicherbegrenzung"); in einer Weise verarbeitet werden, die eine angemessene Sicherheit der personenbezogenen Daten gewährleistet ("Integrität und Vertraulichkeit").</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 6</enbez><titel>Rechtmäßigkeit der Verarbeitung</titel></metadaten><textdaten><text><Content><P>Die Verarbeitung ist nur rechtmäßig, wenn mindestens eine der nachstehenden Bedingungen erfüllt ist: a) Die betroffene Person hat ihre Einwilligung gegeben, b) die Verarbeitung ist für die Erfüllung eines Vertrags erforderlich, c) die Verarbeitung ist zur Erfüllung einer rechtlichen Verpflichtung erforderlich, d) lebenswichtige Interessen, e) öffentliches Interesse, f) berechtigte Interessen des Verantwortlichen, sofern nicht die Interessen oder Grundrechte der betroffenen Person überwiegen.</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 15</enbez><titel>Auskunftsrecht der betroffenen Person</titel></metadaten><textdaten><text><Content><P>Die betroffene Person hat das Recht, von dem Verantwortlichen eine Bestätigung darüber zu verlangen, ob sie betreffende personenbezogene Daten verarbeitet werden; ist dies der Fall, so hat sie ein Recht auf Auskunft über diese personenbezogenen Daten und auf weitere Informationen wie Verarbeitungszwecke und Kategorien personenbezogener Daten.</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 16</enbez><titel>Recht auf Berichtigung</titel></metadaten><textdaten><text><Content><P>Die betroffene Person hat das Recht, von dem Verantwortlichen unverzüglich die Berichtigung sie betreffender unrichtiger personenbezogener Daten zu verlangen.</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 17</enbez><titel>Recht auf Löschung ("Recht auf Vergessenwerden")</titel></metadaten><textdaten><text><Content><P>Die betroffene Person hat das Recht, von dem Verantwortlichen zu verlangen, dass sie betreffende personenbezogene Daten unverzüglich gelöscht werden, und der Verantwortliche ist verpflichtet, personenbezogene Daten unverzüglich zu löschen, sofern einer der Gründe zutrifft (z. B. Daten sind für die Zwecke nicht mehr notwendig oder die Einwilligung wurde widerrufen).</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 20</enbez><titel>Recht auf Datenübertragbarkeit</titel></metadaten><textdaten><text><Content><P>Die betroffene Person hat das Recht, die sie betreffenden personenbezogenen Daten, die sie einem Verantwortlichen bereitgestellt hat, in einem strukturierten, gängigen und maschinenlesbaren Format zu erhalten.</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 21</enbez><titel>Widerspruchsrecht</titel></metadaten><textdaten><text><Content><P>Die betroffene Person hat das Recht, aus Gründen, die sich aus ihrer besonderen Situation ergeben, jederzeit gegen die Verarbeitung sie betreffender personenbezogener Daten Widerspruch einzulegen.</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 28</enbez><titel>Auftragsverarbeiter</titel></metadaten><textdaten><text><Content><P>Erfolgt eine Verarbeitung im Auftrag eines Verantwortlichen, so arbeitet dieser nur mit Auftragsverarbeitern, die hinreichend Garantien dafür bieten, dass geeignete technische und organisatorische Maßnahmen so durchgeführt werden, dass die Verarbeitung im Einklang mit den Anforderungen dieser Verordnung erfolgt und den Schutz der Rechte der betroffenen Person gewährleistet.</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 30</enbez><titel>Verzeichnis von Verarbeitungstätigkeiten</titel></metadaten><textdaten><text><Content><P>(1) Jeder Verantwortliche und gegebenenfalls sein Vertreter führen ein Verzeichnis aller Verarbeitungstätigkeiten, die ihrer Zuständigkeit unterliegen. Dieses Verzeichnis enthält sämtliche folgenden Angaben: a) den Namen und die Kontaktdaten des Verantwortlichen und gegebenenfalls des gemeinsam mit ihm Verantwortlichen, des Vertreters des Verantwortlichen sowie eines etwaigen Datenschutzbeauftragten; b) die Zwecke der Verarbeitung; c) eine Beschreibung der Kategorien betroffener Personen und der Kategorien personenbezogener Daten; d) die Kategorien von Empfängern, gegenüber denen die personenbezogenen Daten offengelegt worden sind oder noch offengelegt werden, einschließlich Empfänger in Drittländern oder internationalen Organisationen; e) gegebenenfalls Übermittlungen von personenbezogenen Daten an ein Drittland oder an eine internationale Organisation, einschließlich der Angabe des betreffenden Drittlands oder der betreffenden internationalen Organisation, sowie bei den in Artikel 49 Absatz 1 Unterabsatz 2 genannten Datenübermittlungen die Dokumentierung geeigneter Garantien; f) wenn möglich, die vorgesehenen Fristen für die Löschung der verschiedenen Datenkategorien; g) wenn möglich, eine allgemeine Beschreibung der technischen und organisatorischen Maßnahmen gemäß Artikel 32 Absatz 1.</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 32</enbez><titel>Sicherheit der Verarbeitung</titel></metadaten><textdaten><text><Content><P>Unter Berücksichtigung des Stands der Technik, der Implementierungskosten und der Art, des Umfangs, der Umstände und der Zwecke der Verarbeitung sowie der unterschiedlichen Eintrittswahrscheinlichkeit und Schwere des Risikos für die Rechte und Freiheiten natürlicher Personen treffen der Verantwortliche und der Auftragsverarbeiter geeignete technische und organisatorische Maßnahmen, um ein dem Risiko angemessenes Schutzniveau zu gewährleisten (z.B. Pseudonymisierung, Verschlüsselung).</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 33</enbez><titel>Meldung von Verletzungen des Schutzes personenbezogener Daten</titel></metadaten><textdaten><text><Content><P>Im Falle einer Verletzung des Schutzes personenbezogener Daten meldet der Verantwortliche diese unverzüglich und möglichst binnen 72 Stunden, nachdem ihm die Verletzung bekannt wurde, der zuständigen Aufsichtsbehörde, es sei denn, dass die Verletzung voraussichtlich nicht zu einem Risiko für die Rechte und Freiheiten natürlicher Personen führt.</P></Content></text></textdaten></norm><norm><metadaten><enbez>Art. 35</enbez><titel>Datenschutz-Folgenabschätzung</titel></metadaten><textdaten><text><Content><P>Hat eine Form der Verarbeitung voraussichtlich ein hohes Risiko für die Rechte und Freiheiten natürlicher Personen zur Folge, so führt der Verantwortliche vorab eine Abschätzung der Folgen der vorgesehenen Verarbeitungsvorgänge für den Schutz personenbezogener Daten durch.</P></Content></text></textdaten></norm></dokumente>`;
         if (code === 'bdsg_2018') return `<?xml version="1.0" encoding="UTF-8"?><dokumente><norm><metadaten><enbez>§ 26</enbez><titel>Datenverarbeitung für Zwecke des Beschäftigungsverhältnisses</titel></metadaten><textdaten><text><Content><P>Personenbezogene Daten von Beschäftigten dürfen für Zwecke des Beschäftigungsverhältnisses verarbeitet werden, wenn dies für die Entscheidung über die Begründung eines Beschäftigungsverhältnisses oder nach Begründung für dessen Durchführung oder Beendigung erforderlich ist.</P></Content></text></textdaten></norm><norm><metadaten><enbez>§ 38</enbez><titel>Datenschutzbeauftragter nichtöffentlicher Stellen</titel></metadaten><textdaten><text><Content><P>Ergänzend zu Artikel 37 der Verordnung (EU) 2016/679 benennen der Verantwortliche und der Auftragsverarbeiter eine Datenschutzbeauftragte oder einen Datenschutzbeauftragten, soweit sie in der Regel mindestens 20 Personen ständig mit der automatisierten Verarbeitung personenbezogener Daten beschäftigen.</P></Content></text></textdaten></norm><norm><metadaten><enbez>§ 42</enbez><titel>Strafvorschriften</titel></metadaten><textdaten><text><Content><P>Mit Freiheitsstrafe bis zu drei Jahren oder mit Geldstrafe wird bestraft, wer wissentlich nicht allgemein zugängliche personenbezogene Daten einer großen Zahl von Personen, ohne hierzu berechtigt zu sein, einem Dritten übermittelt und hierbei gewerbsmäßig handelt.</P></Content></text></textdaten></norm><norm><metadaten><enbez>§ 43</enbez><titel>Bußgeldvorschriften</titel></metadaten><textdaten><text><Content><P>Ordnungswidrig handelt, wer vorsätzlich oder fahrlässig eine Auskunft nicht, nicht richtig, nicht vollständig oder nicht rechtzeitig erteilt.</P></Content></text></textdaten></norm></dokumente>`;
         if (code === 'ttdsg') return `<?xml version="1.0" encoding="UTF-8"?><dokumente><norm><metadaten><enbez>§ 1</enbez><titel>Anwendungsbereich</titel></metadaten><textdaten><text><Content><P>Dieses Gesetz regelt den Datenschutz und den Schutz der Privatsphäre in der Telekommunikation und bei Telemedien.</P></Content></text></textdaten></norm><norm><metadaten><enbez>§ 25</enbez><titel>Schutz der Privatsphäre bei Endeinrichtungen</titel></metadaten><textdaten><text><Content><P>Die Speicherung von Informationen in der Endeinrichtung des Endnutzers oder der Zugriff auf Informationen, die bereits in der Endeinrichtung gespeichert sind, sind nur zulässig, wenn der Endnutzer auf der Grundlage von klaren und umfassenden Informationen eingewilligt hat. Die Einwilligung ist nicht erforderlich, wenn die Speicherung oder der Zugriff unbedingt erforderlich ist, um einen vom Nutzer ausdrücklich gewünschten Telemediendienst zur Verfügung zu stellen.</P></Content></text></textdaten></norm></dokumente>`;
         if (code === 'tkg_2021') return `<?xml version="1.0" encoding="UTF-8"?><dokumente><norm><metadaten><enbez>§ 3</enbez><titel>Fernmeldegeheimnis</titel></metadaten><textdaten><text><Content><P>Dem Fernmeldegeheimnis unterliegen der Inhalt der Telekommunikation und ihre näheren Umstände, insbesondere die Tatsache, ob jemand an einem Telekommunikationsvorgang beteiligt ist oder war.</P></Content></text></textdaten></norm><norm><metadaten><enbez>§ 91</enbez><titel>Sicherheitskonzept</titel></metadaten><textdaten><text><Content><P>Wer öffentliche Telekommunikationsnetze betreibt oder öffentlich zugängliche Telekommunikationsdienste erbringt, hat angemessene technische und organisatorische Maßnahmen zu ergreifen, um die Sicherheit der Telekommunikationsnetze und -dienste zu gewährleisten.</P></Content></text></textdaten></norm></dokumente>`;
@@ -648,6 +648,121 @@
             });
         });
 
+        // --- VVT SECTION (Educational & Full Subtopics) ---
+        const vvtId = 'vvt-uebersicht';
+        const vvtSubtopics = [
+            { id: 'vvt-einfach',  titleDe: '1. VVT einfach erklärt (Das Daten-Tagebuch)', titleEn: '1. ROPA simply explained' },
+            { id: 'vvt-wer',      titleDe: '2. Wer muss ein VVT führen?',                 titleEn: '2. Who needs to keep one?' },
+            { id: 'vvt-inhalt',   titleDe: '3. Was muss rein? (Die Checkliste)',          titleEn: '3. What goes inside? (Checklist)' },
+            { id: 'vvt-it-rolle', titleDe: '4. Was hat die IT damit zu tun?',             titleEn: '4. What is the IT role?' },
+            { id: 'vvt-zweck',    titleDe: '5. Kontrolle & Warum das Ganze?',             titleEn: '5. Audits & Why we do it' }
+        ];
+
+        sections.push({
+            id: vvtId,
+            titleDe: 'Verzeichnis der Verarbeitungstätigkeiten',
+            titleEn: 'Record of Processing Activities',
+            subtopics: vvtSubtopics
+        });
+
+        html += `<section id="${vvtId}" class="scroll-mt-6 searchable-block topic-panel mt-6 dsg-injected">`;
+        html += `<h2>
+            <span data-lang-de>Verzeichnis der Verarbeitungstätigkeiten (VVT)</span>
+            <span data-lang-en style="display:none;">Record of Processing Activities (ROPA)</span>
+        </h2>`;
+
+        html += `<div class="mb-6 text-sm text-[var(--text-muted)]">
+            <p data-lang-de>Das VVT (Art. 30 DSGVO) ist das wichtigste Dokument im Datenschutz. Hier erklären wir es Schritt für Schritt, ganz einfach und verständlich.</p>
+            <p data-lang-en style="display:none;">The ROPA (Art. 30 GDPR) is the most important document in data protection. Here we explain it step by step, very simply.</p>
+        </div>`;
+
+        // Subtopic 1: Einfach erklärt
+        html += `<div class="subtopic-card">
+            <h3 id="vvt-einfach" class="scroll-mt-6 text-sm font-semibold flex items-center gap-2">
+                <i class="fa-solid fa-book-open text-[var(--link-color)] opacity-80"></i>
+                <span data-lang-de>1. VVT einfach erklärt (Das Daten-Tagebuch)</span>
+                <span data-lang-en style="display:none;">1. ROPA simply explained (The Data Diary)</span>
+            </h3>
+            <div class="text-sm text-[var(--text-muted)] leading-relaxed space-y-2 mt-2">
+                <p data-lang-de><strong>Stell dir vor:</strong> Das VVT ist wie ein Rezeptbuch oder ein "Tagebuch" für eine Firma. Anstatt aufzuschreiben, was man gekocht hat, schreibt die Firma auf, <strong>was sie mit den Daten anderer Leute macht</strong>.</p>
+                <p data-lang-de>Jedes Mal, wenn eine Firma Daten benutzt (z.B. um Gehalt zu überweisen, eine Werbe-E-Mail zu schreiben oder Bewerbungen zu sortieren), ist das ein "Prozess". <strong>Das VVT ist einfach nur eine große Liste all dieser Prozesse.</strong></p>
+                <p data-lang-en style="display:none;"><strong>Imagine:</strong> The ROPA is like a recipe book or diary for a company. Instead of writing down what was cooked, the company writes down <strong>what it does with other people's data</strong>.</p>
+            </div>
+        </div>`;
+
+        // Subtopic 2: Wer braucht das?
+        html += `<div class="subtopic-card">
+            <h3 id="vvt-wer" class="scroll-mt-6 text-sm font-semibold flex items-center gap-2">
+                <i class="fa-solid fa-users text-[var(--link-color)] opacity-80"></i>
+                <span data-lang-de>2. Wer muss ein VVT führen?</span>
+                <span data-lang-en style="display:none;">2. Who has to keep one?</span>
+            </h3>
+            <div class="text-sm text-[var(--text-muted)] leading-relaxed space-y-2 mt-2">
+                <ul class="list-disc pl-5 space-y-1">
+                    <li data-lang-de><strong>Kurz gesagt: Fast jeder!</strong> Jede Organisation und jeder "Auftragsverarbeiter" (jemand, der Daten für andere verarbeitet) muss so ein Dokument haben.</li>
+                    <li data-lang-de><strong>Auftragsverarbeiter haben doppelte Arbeit:</strong> Wenn eine IT-Firma z.B. Server für Kunden bereitstellt, muss sie ein VVT für ihre <em>eigenen</em> Daten (z.B. eigene Mitarbeiter) führen <strong>UND</strong> ein zweites VVT für die Daten, die sie für den Kunden verarbeitet.</li>
+                    <li data-lang-de><strong>Ausreden zählen nicht:</strong> Es gibt zwar Ausnahmen für sehr kleine Firmen, aber sobald man z.B. regelmäßig Gehälter überweist, ist die Ausnahme hinfällig.</li>
+                </ul>
+            </div>
+        </div>`;
+
+        // Subtopic 3: Was muss rein?
+        html += `<div class="subtopic-card">
+            <h3 id="vvt-inhalt" class="scroll-mt-6 text-sm font-semibold flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-[var(--link-color)] opacity-80"></i>
+                <span data-lang-de>3. Was muss rein? (Die Checkliste)</span>
+                <span data-lang-en style="display:none;">3. What goes inside? (The Checklist)</span>
+            </h3>
+            <div class="text-sm text-[var(--text-muted)] leading-relaxed mt-2">
+                <p data-lang-de class="mb-2">Das Gesetz (Art. 30 DSGVO) gibt eine feste Checkliste vor. Für jeden Prozess (z.B. "Gehaltsabrechnung") muss folgendes eingetragen werden:</p>
+                <ul class="list-disc pl-5 space-y-2">
+                    <li data-lang-de><strong>Wer ist verantwortlich?</strong> (Name der Firma, Chef, und der Datenschutzbeauftragte).</li>
+                    <li data-lang-de><strong>Warum machen wir das? (Zweck):</strong> z.B. "Um das Gehalt der Mitarbeiter pünktlich zu überweisen".</li>
+                    <li data-lang-de><strong>Wessen Daten nehmen wir?</strong> z.B. "Mitarbeiter" (Betroffenenkategorie).</li>
+                    <li data-lang-de><strong>Welche Daten genau?</strong> z.B. "Name, Adresse, Steuer-ID, Kontonummer" (Datenkategorien).</li>
+                    <li data-lang-de><strong>Wer bekommt die Daten noch? (Empfänger):</strong> z.B. "Das Finanzamt" oder "Cloud-Server in den USA". (Besonders wichtig: Daten, die ins Nicht-EU-Ausland gehen!).</li>
+                    <li data-lang-de><strong>Wann wird gelöscht? (Löschfrist):</strong> z.B. "Wird 10 Jahre nach Vertragsende gelöscht".</li>
+                    <li data-lang-de><strong>Wie schützen wir die Daten? (TOMs):</strong> z.B. "Passwörter, verschlüsselte Festplatten, Alarmanlage im Büro".</li>
+                </ul>
+            </div>
+        </div>`;
+
+        // Subtopic 4: Rolle der IT
+        html += `<div class="subtopic-card">
+            <h3 id="vvt-it-rolle" class="scroll-mt-6 text-sm font-semibold flex items-center gap-2">
+                <i class="fa-solid fa-server text-[var(--link-color)] opacity-80"></i>
+                <span data-lang-de>4. Was hat die IT-Abteilung damit zu tun?</span>
+                <span data-lang-en style="display:none;">4. What is the IT department's role?</span>
+            </h3>
+            <div class="text-sm text-[var(--text-muted)] leading-relaxed mt-2">
+                <p data-lang-de class="mb-2">Die IT schreibt das VVT meistens nicht selbst (das macht das Management oder der DSB). Aber die IT muss die <strong>Beweise</strong> liefern, dass das, was im VVT steht, auch wirklich stimmt!</p>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li data-lang-de><strong>Automatische Löschung:</strong> Wenn im VVT steht "wird nach 30 Tagen gelöscht", muss die IT ein Script schreiben, das genau das zuverlässig tut.</li>
+                    <li data-lang-de><strong>Protokollierung (Logging):</strong> Die IT muss nachweisen können, wer wann auf welche Daten zugegriffen hat.</li>
+                    <li data-lang-de><strong>Cloudspeicherung & Backups:</strong> Die IT muss wissen, auf welchen Servern (und in welchen Ländern) die Daten physisch liegen.</li>
+                    <li data-lang-de><strong>Zugriffsrechte:</strong> Die IT stellt sicher, dass z.B. der Azubi nicht die Gehaltsliste im Ordner sehen kann (Berechtigungskonzepte).</li>
+                </ul>
+            </div>
+        </div>`;
+
+        // Subtopic 5: Zweck & Kontrolle
+        html += `<div class="subtopic-card">
+            <h3 id="vvt-zweck" class="scroll-mt-6 text-sm font-semibold flex items-center gap-2">
+                <i class="fa-solid fa-magnifying-glass-chart text-[var(--link-color)] opacity-80"></i>
+                <span data-lang-de>5. Kontrolle & Warum das Ganze?</span>
+                <span data-lang-en style="display:none;">5. Audits & Why we do it?</span>
+            </h3>
+            <div class="text-sm text-[var(--text-muted)] leading-relaxed space-y-2 mt-2">
+                <p data-lang-de><strong>Der DSB (Datenschutzbeauftragte) kontrolliert</strong> regelmäßig, ob das VVT aktuell ist.</p>
+                <p data-lang-de><strong>Rechenschaftspflicht:</strong> Wenn die staatliche Aufsichtsbehörde bei einer Firma anklopft, heißt der erste Satz meistens: <em>"Zeigen Sie uns bitte ihr VVT!"</em>. Wer keines hat, muss sofort mit einem dicken Bußgeld rechnen.</p>
+                <p data-lang-de><strong>Die Basis für alles:</strong> Ohne VVT weiß eine Firma gar nicht, welche Daten sie überhaupt hat. Wenn ein Kunde anruft und sagt: "Bitte löschen Sie alle meine Daten!", muss die Firma im VVT nachschauen, wo diese Daten überall versteckt sind.</p>
+            </div>
+        </div>`;
+
+        html += `</section>`;
+        // --- END OF VVT SECTION ---
+
+
         // --- NEW TLDR SECTION (CARD GRID LAYOUT) ---
         const tldrId = 'tldr-summary';
         
@@ -858,7 +973,6 @@
     /* ============================================================
        TOPIC DEFINITION
        ============================================================ */
-
     const topicDef = {
         id: 'datenschutz',
 
@@ -897,6 +1011,7 @@
             { icon: 'fa-list-check',      href: '#dsgvo-grundlagen',   switchToDoc: true, labelDe: 'DSGVO Grundsätze',    labelEn: 'GDPR Principles' },
             { icon: 'fa-user-shield',     href: '#dsgvo-rechte',       switchToDoc: true, labelDe: 'Betroffenenrechte',   labelEn: 'Subject Rights' },
             { icon: 'fa-clipboard-check', href: '#dsgvo-pflichten',    switchToDoc: true, labelDe: 'TOMs & Pflichten',    labelEn: 'TOMs & Duties' },
+            { icon: 'fa-book',            href: '#vvt-uebersicht',     switchToDoc: true, labelDe: 'VVT (Verzeichnis)',   labelEn: 'ROPA (Records)' },
             { icon: 'fa-users',           href: '#bdsg-beschaeftigte', switchToDoc: true, labelDe: 'Beschäftigtenschutz', labelEn: 'Employee Privacy' }
         ],
 
@@ -974,7 +1089,6 @@
         /* ============================================================
            LIFECYCLE HOOKS
            ============================================================ */
-
         onRender: async function (rootEl) {
             // 1. Always (re)start the animation for this fresh DOM
             startAnimation(rootEl);
