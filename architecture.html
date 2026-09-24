@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture — cmdrFRANKLYs EpicSpace</title>
+
+    <link rel="stylesheet" href="dist/tailwind.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #121212;
+            --panel-color: #1e1e1e;
+            --sidebar-color: #181818;
+            --border-color: #333333;
+            --panel-border: #333333;
+            --text-color: #e0e0e0;
+            --text-muted: #9e9e9e;
+            --link-color: #b0b0b0;
+            --link-hover: #ffffff;
+            --heading-color: #ffffff;
+            --subtitle-color: #e0e0e0;
+            --code-bg: #2a2a2a;
+            --info-box: #252525;
+            --accent-green: #5fd39a;
+            --accent-blue: #5b8def;
+            --accent-amber: #e0b64a;
+            --accent-violet: #c58af9;
+            --accent-red: #e0685a;
+        }
+        :root.light {
+            --bg-color: #f5f5f5;
+            --panel-color: #ffffff;
+            --sidebar-color: #fafafa;
+            --border-color: #d8d8d8;
+            --panel-border: #d8d8d8;
+            --text-color: #212121;
+            --text-muted: #5c5c5c;
+            --link-color: #424242;
+            --link-hover: #000000;
+            --heading-color: #000000;
+            --code-bg: #ececec;
+            --info-box: #f4f4f4;
+        }
+
+        html { font-size: 15px; scroll-behavior: smooth; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.55;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Inter', sans-serif;
+            color: var(--heading-color);
+            font-weight: 700;
+            line-height: 1.2;
+            text-wrap: balance;
+        }
+        h1 { font-size: 2rem; margin: 0 0 0.5rem; }
+        h2 { font-size: 1.4rem; margin: 2rem 0 0.85rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; }
+        h4 { font-size: 0.95rem; margin: 1rem 0 0.35rem; color: var(--text-color); }
+        p  { margin: 0 0 0.85rem; max-width: 90ch; }
+
+        a { color: var(--link-color); text-decoration: none; }
+        a:hover { color: var(--link-hover); text-decoration: underline; }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            color: var(--text-color);
+        }
+        pre {
+            background-color: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.9rem 1rem;
+            overflow-x: auto;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            margin: 0.5rem 0 1rem;
+        }
+        pre code { background: none; border: none; padding: 0; font-size: inherit; }
+
+        .layout {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 2rem;
+            padding: 2rem 1.5rem 4rem;
+        }
+        .toc {
+            position: sticky;
+            top: 2rem;
+            align-self: flex-start;
+            width: 16rem;
+            flex-shrink: 0;
+            background-color: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.6rem;
+            padding: 1rem;
+            max-height: calc(100vh - 4rem);
+            overflow-y: auto;
+        }
+        .toc-title {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 0.6rem;
+        }
+        .toc ul { list-style: none; padding: 0; margin: 0; }
+        .toc li { margin: 0.15rem 0; }
+        .toc a {
+            display: block;
+            padding: 0.3rem 0.5rem;
+            font-size: 0.78rem;
+            border-radius: 0.35rem;
+            color: var(--text-muted);
+        }
+        .toc a:hover { background-color: var(--code-bg); color: var(--link-color); text-decoration: none; }
+        .toc ul ul { margin-left: 0.75rem; margin-top: 0.15rem; }
+        .toc ul ul a { font-size: 0.72rem; padding: 0.2rem 0.5rem; }
+
+        .content { flex: 1; min-width: 0; }
+
+        .panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.6rem;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .tree {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.78rem;
+            line-height: 1.65;
+            white-space: pre;
+            color: var(--text-muted);
+        }
+        .tree .dir { color: var(--heading-color); font-weight: 700; }
+        .tree .file { color: var(--text-color); }
+        .tree .note { color: var(--accent-green); font-style: italic; }
+        .tree .bad  { color: var(--accent-red); font-style: italic; }
+
+        .badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 0.1rem 0.45rem;
+            border-radius: 0.3rem;
+            background-color: var(--code-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            vertical-align: middle;
+            margin-left: 0.4rem;
+        }
+        .badge.green  { color: var(--accent-green);  border-color: var(--accent-green);  }
+        .badge.blue   { color: var(--accent-blue);   border-color: var(--accent-blue);   }
+        .badge.amber  { color: var(--accent-amber);  border-color: var(--accent-amber);  }
+        .badge.violet { color: var(--accent-violet); border-color: var(--accent-violet); }
+        .badge.red    { color: var(--accent-red);    border-color: var(--accent-red);    }
+
+        .callout {
+            border-left: 4px solid var(--accent-blue);
+            background-color: var(--info-box);
+            padding: 0.75rem 1rem;
+            border-radius: 0.35rem;
+            margin: 1rem 0;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+        .callout.warn  { border-left-color: var(--accent-amber); }
+        .callout.bad   { border-left-color: var(--accent-red); }
+        .callout.good  { border-left-color: var(--accent-green); }
+        .callout strong { color: var(--text-color); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            margin: 0.75rem 0 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.4rem;
+            overflow: hidden;
+        }
+        th, td {
+            text-align: left;
+            vertical-align: top;
+            padding: 0.5rem 0.7rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            background-color: var(--info-box);
+            color: var(--heading-color);
+            font-weight: 600;
+            font-size: 0.78rem;
+        }
+        tr:last-child td { border-bottom: none; }
+        td code { white-space: nowrap; }
+
+        .steps { counter-reset: step; padding-left: 0; list-style: none; margin: 0.75rem 0; }
+        .steps > li {
+            position: relative;
+            padding-left: 2.25rem;
+            margin-bottom: 0.85rem;
+            counter-increment: step;
+        }
+        .steps > li::before {
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0.1rem;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            background-color: var(--code-bg);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--link-color);
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem 1.2rem;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin: 0.5rem 0 0.75rem;
+        }
+        .legend > span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .legend .swatch {
+            display: inline-block;
+            width: 0.85rem;
+            height: 0.85rem;
+            border-radius: 0.2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        @media (max-width: 960px) {
+            .layout { flex-direction: column; gap: 1rem; }
+            .toc { position: static; width: auto; max-height: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- ==================== SIDEBAR TOC ==================== -->
+    <nav class="toc">
+        <div class="toc-title">On this page</div>
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#mental-model">Mental model</a></li>
+            <li>
+                <a href="#tree">Folder layout</a>
+                <ul>
+                    <li><a href="#tree-wiso">WiSo</a></li>
+                    <li><a href="#tree-dataprotection">Datenschutz</a></li>
+                    <li><a href="#tree-root">Root files</a></li>
+                </ul>
+            </li>
+            <li><a href="#loading">How a topic loads</a></li>
+            <li>
+                <a href="#add">How to add things</a>
+                <ul>
+                    <li><a href="#add-subtopic">Sub-topic</a></li>
+                    <li><a href="#add-section">Section</a></li>
+                    <li><a href="#add-illustration">Illustration</a></li>
+                    <li><a href="#add-quiz">Quiz question</a></li>
+                    <li><a href="#add-quicklink">Quick link</a></li>
+                    <li><a href="#add-controller">Interactive controller</a></li>
+                    <li><a href="#add-topic">Whole new topic</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="#remove">How to remove things</a>
+                <ul>
+                    <li><a href="#remove-subtopic">Sub-topic / section</a></li>
+                    <li><a href="#remove-topic">Whole topic</a></li>
+                </ul>
+            </li>
+            <li><a href="#rules">Golden rules</a></li>
+            <li><a href="#pitfalls">Common pitfalls</a></li>
+        </ul>
+    </nav>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <main class="content">
+
+        <h1>Site architecture</h1>
+        <p class="mb-4" style="color: var(--text-muted);">
+            A field guide to how the dashboard and its topics fit together, and where to add or remove things.
+        </p>
+
+        <!-- ============================================================ -->
+        <h2 id="overview">Overview</h2>
+
+        <p>
+            The app is a static HTML site. There is no build step, no bundler, no framework.
+            <code>index.html</code> loads a handful of classic scripts from <code>resources/modules/</code>.
+            One of those scripts (<code>topics.js</code>) reads <code>topicList.json</code> and loads each topic.
+            Each topic calls <code>registerTopic(&hellip;)</code>, which drops it into
+            <code>App.topics._registry</code>. The dashboard reads that registry and renders a card per topic.
+        </p>
+
+        <div class="callout">
+            <strong>One rule:</strong> if a topic is not in <code>App.topics._registry</code>, it will not appear
+            on the dashboard. Registration is the only way in.
+        </div>
+
+        <!-- ============================================================ -->
+        <h2 id="mental-model">Mental model</h2>
+
+        <p>Everything you see fits into three layers:</p>
+
+        <table>
+            <tr>
+                <th>Layer</th>
+                <th>Responsibility</th>
+                <th>Examples</th>
+            </tr>
+            <tr>
+                <td><strong>Shell</strong></td>
+                <td>Sidebar, dashboard, calendar, modals, i18n, theming.</td>
+                <td><code>index.html</code>, <code>resources/modules/*.js</code></td>
+            </tr>
+            <tr>
+                <td><strong>Topic entry point</strong></td>
+                <td>Registers one topic with the shell. A thin file.</td>
+                <td><code>wiso/topic_wiso.js</code>, <code>dataprotection/topic_dataprotection.js</code></td>
+            </tr>
+            <tr>
+                <td><strong>Topic data &amp; behaviour</strong></td>
+                <td>The actual content and interactions for that topic.</td>
+                <td><code>wiso/data/</code>, <code>wiso/controllers/</code></td>
+            </tr>
+        </table>
+
+        <p>
+            The shell does not know what a "WiSo" is. It only knows the shape a topic object must have:
+            <code>id</code>, <code>titleDe</code>, <code>sections</code>, <code>illustrations</code>,
+            and so on. Everything else is up to the topic.
+        </p>
+
+        <!-- ============================================================ -->
+        <h2 id="tree">Folder layout</h2>
+
+        <div class="legend">
+            <span><span class="swatch" style="background: var(--accent-green);"></span> entry point</span>
+            <span><span class="swatch" style="background: var(--accent-blue);"></span> data</span>
+            <span><span class="swatch" style="background: var(--accent-amber);"></span> behaviour</span>
+            <span><span class="swatch" style="background: var(--accent-violet);"></span> render / services</span>
+        </div>
+
+        <h3 id="tree-wiso">WiSo</h3>
+
+        <div class="tree">
+<span class="dir">resources/topics/wiso/</span>
+├── <span class="file">topic_wiso.js</span>              <span class="note">← entry point · imports the two controllers</span>
+├── <span class="file">meta.js</span>                    <span class="note">← id, icon, titles, hero, quickLinks, links, footer</span>
+├── <span class="dir">controllers/</span>
+│   ├── <span class="file">matrix-hover.js</span>        <span class="note">← 3×3 matrix auto-cycle + hover</span>
+│   └── <span class="file">handelsrecht.js</span>        <span class="note">← quizzes, reveal, textareas, Firmenbaukasten</span>
+└── <span class="dir">data/</span>
+    ├── <span class="file">sections.js</span>              <span class="note">← assembles the 9 sections</span>
+    ├── <span class="file">illustrations.js</span>         <span class="note">← assembles the 3 illustrations</span>
+    ├── <span class="file">quiz-data.js</span>             <span class="note">← QA map + final quiz questions</span>
+    ├── <span class="dir">sections/</span>
+    │   ├── <span class="file">01-codetermination.js</span>
+    │   ├── <span class="file">02-labor-law.js</span>
+    │   ├── <span class="file">03-works-council.js</span>
+    │   ├── <span class="file">04-social-security.js</span>
+    │   ├── <span class="file">05-corporate-forms.js</span>
+    │   ├── <span class="file">06-market-structures.js</span>
+    │   ├── <span class="file">07-supply-demand.js</span>
+    │   ├── <span class="file">08-commercial-law.js</span>
+    │   ├── <span class="file">09-tldr.js</span>
+    └── <span class="dir">illustrations/</span>
+        ├── <span class="file">matrix.js</span>
+        ├── <span class="file">supply-demand.js</span>
+        └── <span class="file">market-power.js</span>
+        </div>
+
+        <h3 id="tree-dataprotection">Datenschutz</h3>
+
+        <div class="tree">
+<span class="dir">resources/topics/dataprotection/</span>
+├── <span class="file">topic_dataprotection.js</span>  <span class="note">← entry point · lifecycle hooks</span>
+├── <span class="file">meta.js</span>                    <span class="note">← static identity (no inline html)</span>
+├── <span class="file">lifecycle.js</span>               <span class="note">← onRender / onUnrender wiring</span>
+├── <span class="dir">controllers/</span>
+│   └── <span class="file">datenschutz-flow.js</span>    <span class="note">← canvas animation (start/stop)</span>
+├── <span class="dir">data/</span>
+│   ├── <span class="file">law-configs.js</span>          <span class="note">← LAW_CONFIGS, GII_BASE</span>
+│   ├── <span class="file">mock-xml.js</span>             <span class="note">← offline fallback XML</span>
+│   ├── <span class="file">sections.js</span>             <span class="note">← assembles dynamic + static</span>
+│   ├── <span class="file">illustrations.js</span>
+│   ├── <span class="dir">sections/</span>
+│   │   ├── <span class="file">01-static-vvt.js</span>    <span class="note">← full VVT card set</span>
+│   │   └── <span class="file">02-static-tldr.js</span>   <span class="note">← six-card TL;DR grid</span>
+│   └── <span class="dir">illustrations/</span>
+│       └── <span class="file">datenschutz-flow.js</span> <span class="note">← markup for the canvas shell</span>
+├── <span class="dir">render/</span>
+│   ├── <span class="file">html-builders.js</span>        <span class="note">← sections + norms → HTML string</span>
+│   └── <span class="file">dom-injection.js</span>       <span class="note">← insert HTML + loading panel</span>
+└── <span class="dir">services/</span>
+    ├── <span class="file">jszip-loader.js</span>         <span class="note">← lazy-load JSZip</span>
+    ├── <span class="file">law-fetcher.js</span>          <span class="note">← XML ZIP through CORS proxies</span>
+    ├── <span class="file">law-parser.js</span>           <span class="note">← XML → norm map</span>
+    └── <span class="file">law-data.js</span>            <span class="note">← module-scoped cache</span>
+        </div>
+
+        <h3 id="tree-root">Root files</h3>
+
+        <div class="tree">
+<span class="dir">root/</span>
+├── <span class="file">index.html</span>               <span class="note">← the only page</span>
+├── <span class="file">topicList.json</span>           <span class="note">← list of topic entry points</span>
+└── <span class="dir">resources/</span>
+    ├── <span class="dir">modules/</span>              <span class="note">← shell: util, state, topics, dashboard, …</span>
+    └── <span class="dir">topics/</span>               <span class="note">← one folder per topic</span>
+        </div>
+
+        <!-- ============================================================ -->
+        <h2 id="loading">How a topic loads</h2>
+
+        <ol class="steps">
+            <li><code>index.html</code> loads <code>resources/modules/topics.js</code> as a classic script.</li>
+            <li>That script defines <code>registerTopic()</code> and exposes it on <code>window</code>.</li>
+            <li>On DOM ready, <code>topics.js</code> fetches <code>topicList.json</code> and iterates the paths.</li>
+            <li>
+                For each path, it calls <code>import(path)</code> — a <strong>dynamic ES module import</strong>.
+                This works for classic scripts too, so mixed topics are fine.
+            </li>
+            <li>
+                The topic entry point executes. It imports its data, calls <code>registerTopic({...})</code>.
+            </li>
+            <li>
+                <code>registerTopic</code> drops the topic into <code>App.topics._registry</code>.
+            </li>
+            <li>When you click a dashboard card, the shell renders the topic object as HTML.</li>
+        </ol>
+
+        <div class="callout warn">
+            <strong>MIME trap:</strong> if a module's URL 404s, Live Server serves its HTML 404 page.
+            The browser refuses to execute an HTML page as a module and shows
+            <em>"disallowed MIME type (text/html)"</em>. That message always means
+            <em>file missing or wrong path</em>, never an actual MIME problem.
+        </div>
+
+        <!-- ============================================================ -->
+        <h2 id="add">How to add things</h2>
+
+        <h3 id="add-subtopic">Add a sub-topic to an existing section</h3>
+
+        <p>Say you want to add "4.3 Beitragsbemessungsgrenze" under Sozialversicherungen.</p>
+
+        <ol class="steps">
+            <li>Open <code>wiso/data/sections/04-social-security.js</code>.</li>
+            <li>Find the <code>subtopics: [...]</code> array.</li>
+            <li>Append a new object at the end of the array:</li>
+        </ol>
+
+<pre><code>{
+    id: 'beitragsbemessungsgrenze',
+    titleDe: '4.3 Beitragsbemessungsgrenze',
+    titleEn: '4.3 Contribution Ceiling',
+    htmlDe: `&lt;p&gt;Die Beitragsbemessungsgrenze ist …&lt;/p&gt;`,
+    htmlEn: `&lt;p&gt;The contribution ceiling is …&lt;/p&gt;`
+}</code></pre>
+
+        <ol class="steps" start="4" style="counter-reset: step 3;">
+            <li>Save the file.</li>
+            <li>Hard-reload the page (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>).</li>
+        </ol>
+
+        <p>
+            The new card appears in section 4, and the sidebar TOC picks it up automatically.
+            No other file needs to change.
+        </p>
+
+        <h3 id="add-section">Add a whole new section</h3>
+
+        <ol class="steps">
+            <li>Create <code>wiso/data/sections/10-labor-market.js</code>:</li>
+        </ol>
+
+<pre><code>// resources/topics/wiso/data/sections/10-labor-market.js
+
+export const section = {
+    id: 'arbeitsmarkt',
+    titleDe: '10. Arbeitsmarkt und Tarifrecht',
+    titleEn: '10. Labor Market and Collective Bargaining',
+    introDe: 'Grundlagen zu Tarifverträgen und Arbeitsmarkt.',
+    introEn: 'Fundamentals of collective agreements.',
+    subtopics: [
+        {
+            id: 'tarifvertrag',
+            titleDe: '10.1 Der Tarifvertrag',
+            titleEn: '10.1 Collective Agreement',
+            htmlDe: `&lt;p&gt;…&lt;/p&gt;`,
+            htmlEn: `&lt;p&gt;…&lt;/p&gt;`
+        }
+    ]
+};</code></pre>
+
+        <ol class="steps" start="2" style="counter-reset: step 1;">
+            <li>Register it in <code>wiso/data/sections.js</code>:</li>
+        </ol>
+
+<pre><code>import { section as s10 } from './sections/10-labor-market.js';
+
+export const sections = [s1, s2, s3, s4, s5, s6, s7, s8, s9, <strong>s10</strong>];</code></pre>
+
+        <ol class="steps" start="3" style="counter-reset: step 2;">
+            <li>Reload. Section 10 appears at the end of the WiSo page.</li>
+        </ol>
+
+        <div class="callout">
+            <strong>Numbered files matter.</strong> The <code>01-</code>, <code>02-</code>, … prefixes
+            are purely cosmetic — they do not control order. Order comes from the
+            <code>sections</code> array in <code>data/sections.js</code>. Renumbering a file
+            without updating its import breaks nothing as long as the path matches.
+        </div>
+
+        <h3 id="add-illustration">Add an illustration</h3>
+
+        <ol class="steps">
+            <li>Create <code>wiso/data/illustrations/tax-shift.js</code>:</li>
+        </ol>
+
+<pre><code>export const taxShift = {
+    id: 'wiso-vis-tax-shift',
+    titleDe: 'Steuerinzidenz',
+    titleEn: 'Tax Incidence',
+    descDe: 'Wie sich eine Steuer verteilt.',
+    descEn: 'How a tax distributes.',
+    html: `&lt;div class="my-illustration"&gt;…&lt;/div&gt;`
+};</code></pre>
+
+        <ol class="steps" start="2" style="counter-reset: step 1;">
+            <li>Register in <code>wiso/data/illustrations.js</code>:</li>
+        </ol>
+
+<pre><code>import { taxShift } from './illustrations/tax-shift.js';
+
+export const animations = [matrix, supplyDemand, marketPower, <strong>taxShift</strong>];</code></pre>
+
+        <div class="callout">
+            <strong>Interactive illustration?</strong> Put the JS in
+            <code>wiso/controllers/your-illustration.js</code> and import it from
+            <code>topic_wiso.js</code>. The illustration's <code>html</code> field then just
+            contains the canvas or a placeholder element the controller attaches to.
+        </div>
+
+        <h3 id="add-quiz">Add a quiz question</h3>
+
+        <ol class="steps">
+            <li>Open <code>wiso/data/quiz-data.js</code>.</li>
+            <li>Add an entry to <code>QA</code> (answer key + explanation):</li>
+        </ol>
+
+<pre><code>export const QA = {
+    // …
+    hrTarifvertrag: ['a', 'Richtig. Der Tarifvertrag wird zwischen Gewerkschaft und Arbeitgeberverband geschlossen.']
+};</code></pre>
+
+        <ol class="steps" start="3" style="counter-reset: step 2;">
+            <li>Add the question itself to <code>QUIZ_QUESTIONS</code> (only if it belongs to the final quiz):</li>
+        </ol>
+
+<pre><code>export const QUIZ_QUESTIONS = [
+    // …
+    ['Wer schließt einen Tarifvertrag?',
+     ['Gewerkschaft und Arbeitgeberverband', 'Einzelner Arbeitnehmer und Chef', 'Der Betriebsrat'],
+     0]
+];</code></pre>
+
+        <ol class="steps" start="4" style="counter-reset: step 3;">
+            <li>To render the question in a section, drop this markup wherever you want it:</li>
+        </ol>
+
+<pre><code>&lt;div class="wiso-task" data-wiso-question="hrTarifvertrag"&gt;
+    &lt;div class="font-semibold text-sm mb-2"&gt;Wer schließt einen Tarifvertrag?&lt;/div&gt;
+    &lt;div class="wiso-choices grid gap-2"&gt;
+        &lt;button class="wiso-choice" data-wiso-value="a"&gt;Gewerkschaft und Arbeitgeberverband&lt;/button&gt;
+        &lt;button class="wiso-choice" data-wiso-value="b"&gt;Einzelner Arbeitnehmer und Chef&lt;/button&gt;
+        &lt;button class="wiso-choice" data-wiso-value="c"&gt;Der Betriebsrat&lt;/button&gt;
+    &lt;/div&gt;
+    &lt;div class="wiso-feedback hidden mt-3 p-3 rounded text-sm"&gt;&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+        <div class="callout good">
+            The <code>handelsrecht.js</code> controller auto-discovers any
+            <code>[data-wiso-question]</code> element, so no code change is needed.
+        </div>
+
+        <h3 id="add-quicklink">Add a quick link or footer link</h3>
+
+        <p>Open <code>wiso/meta.js</code>.</p>
+
+        <p>Quick link (hero panel, top of page):</p>
+
+<pre><code>quickLinks: [
+    // …
+    { icon: 'fa-people-arrows', href: '#arbeitsmarkt', switchToDoc: true, labelDe: 'Arbeitsmarkt', labelEn: 'Labor Market' }
+]</code></pre>
+
+        <p>Footer link (external resource, bottom of page):</p>
+
+<pre><code>links: {
+    items: [
+        // …
+        { icon: 'fa-book', href: 'https://www.bmas.de/', target: '_blank', labelDe: 'BMAS', labelEn: 'Federal Ministry of Labour' }
+    ]
+}</code></pre>
+
+        <h3 id="add-controller">Add an interactive controller</h3>
+
+        <ol class="steps">
+            <li>Create <code>wiso/controllers/your-widget.js</code>:</li>
+        </ol>
+
+<pre><code>(function () {
+    'use strict';
+
+    function init() {
+        document.querySelectorAll('[data-my-widget]').forEach(function (el) {
+            if (el.__myWidget) return;
+            el.__myWidget = true;
+            // wire up behaviour
+        });
+    }
+
+    function start() {
+        init();
+        setInterval(init, 500);  // re-scan on re-renders
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start);
+    } else {
+        start();
+    }
+})();</code></pre>
+
+        <ol class="steps" start="2" style="counter-reset: step 1;">
+            <li>Import it from <code>wiso/topic_wiso.js</code>:</li>
+        </ol>
+
+<pre><code>import './controllers/matrix-hover.js';
+import './controllers/handelsrecht.js';
+import './controllers/your-widget.js';</code></pre>
+
+        <h3 id="add-topic">Add a whole new topic</h3>
+
+        <ol class="steps">
+            <li>
+                Create <code>resources/topics/your-topic/</code> with the same skeleton used by WiSo:
+                <code>meta.js</code>, <code>topic_your-topic.js</code>, <code>data/</code>,
+                <code>controllers/</code>.
+            </li>
+            <li>In <code>topic_your-topic.js</code>, import from <code>./meta.js</code> and call <code>registerTopic({...})</code>.</li>
+            <li>Add the path to <code>topicList.json</code>:</li>
+        </ol>
+
+<pre><code>{
+    "topics": [
+        // …
+        "resources/topics/your-topic/topic_your-topic.js"
+    ]
+}</code></pre>
+
+        <div class="callout">
+            <strong>Nesting:</strong> set <code>parentId</code> in your topic's <code>meta.js</code>
+            to nest it inside another topic's card on the dashboard.
+            E.g. <code>parentId: 'wiso'</code> would make your topic appear as a sub-topic of WiSo.
+        </div>
+
+        <!-- ============================================================ -->
+        <h2 id="remove">How to remove things</h2>
+
+        <h3 id="remove-subtopic">Remove a sub-topic or section</h3>
+
+        <ol class="steps">
+            <li>Open the section file, e.g. <code>wiso/data/sections/04-social-security.js</code>.</li>
+            <li>Delete the object from the <code>subtopics</code> array, or delete the whole file for a section removal.</li>
+            <li>If you deleted the file, also delete its import and array entry in <code>wiso/data/sections.js</code>.</li>
+            <li>Reload. The card is gone.</li>
+        </ol>
+
+        <div class="callout warn">
+            <strong>Watch for orphan references.</strong> If a <code>quickLink</code> in
+            <code>meta.js</code> points to <code>#arbeitsmarkt</code> and you removed
+            section <code>arbeitsmarkt</code>, the link will silently do nothing when clicked.
+            Grep <code>meta.js</code> for the removed ID before you save.
+        </div>
+
+        <h3 id="remove-topic">Remove a whole topic</h3>
+
+        <ol class="steps">
+            <li>Open <code>topicList.json</code>.</li>
+            <li>Delete the topic's path line.</li>
+            <li>
+                Optionally delete the topic's folder under <code>resources/topics/</code>.
+                Nothing in the shell references it after step 2.
+            </li>
+            <li>Reload. The dashboard card is gone.</li>
+        </ol>
+
+        <!-- ============================================================ -->
+        <h2 id="rules">Golden rules</h2>
+
+        <table>
+            <tr>
+                <th>#</th>
+                <th>Rule</th>
+                <th>Why</th>
+            </tr>
+            <tr>
+                <td>1</td>
+                <td>One file per section, one file per illustration.</td>
+                <td>Diffs stay small; entry points never need to change.</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>IDs are global within a topic.</td>
+                <td>They become DOM anchors and TOC hrefs. Collisions break scrolling.</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>Every user-visible string has a De and an En.</td>
+                <td>The i18n layer toggles both; a missing field renders blank.</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td>Never edit <code>topic_wiso.js</code> to add content.</td>
+                <td>Only controller imports belong there. Content goes in <code>data/</code>.</td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td>HTML strings are plain strings, not templates.</td>
+                <td>No <code>${}</code> inside <code>htmlDe</code>. Generate dynamically only via controllers.</td>
+            </tr>
+            <tr>
+                <td>6</td>
+                <td>Always hard-reload after editing data.</td>
+                <td>Sections are read once at page load. No hot-reload.</td>
+            </tr>
+            <tr>
+                <td>7</td>
+                <td>Keep assemblers in sync.</td>
+                <td>New file under <code>data/sections/</code> ⇒ new import in <code>data/sections.js</code>.</td>
+            </tr>
+        </table>
+
+        <!-- ============================================================ -->
+        <h2 id="pitfalls">Common pitfalls</h2>
+
+        <h3>"Disallowed MIME type (text/html)" in the console</h3>
+        <p>
+            Always a missing or misnamed file. The browser requested a <code>.js</code> URL, the server
+            returned its HTML 404 page, and the module loader refused to execute it.
+        </p>
+        <p>Fix: look at the URL in the error, walk the same path in VS Code, compare the last segment. Rename or move the file to match.</p>
+
+        <h3>Topic loads but the dashboard card never appears</h3>
+        <p>
+            Two causes: (a) <code>registerTopic</code> was never called because a transitive import
+            failed silently, or (b) <code>init.js</code> rendered the dashboard before
+            <code>loadAllTopics()</code> resolved. Open the console and check
+            <code>Object.keys(App.topics._registry)</code> — if your topic ID is missing, it's (a).
+        </p>
+
+        <h3>Sections appear but no sub-topic cards</h3>
+        <p>
+            The <code>html</code> / <code>htmlDe</code> / <code>htmlEn</code> field is empty, or it still
+            contains the placeholder <code>&lt;!-- paste … --&gt;</code> comment. The wrapper renders,
+            the body is empty. Replace the comment with real markup.
+        </p>
+
+        <h3>i18n toggle breaks</h3>
+        <p>
+            Every language-aware element must have both <code>data-lang-de</code> and
+            <code>data-lang-en</code>. If only one is present, the element stays visible in both modes,
+            or disappears entirely.
+        </p>
+
+        <h3>localStorage from a previous version wins</h3>
+        <p>
+            WiSo's quiz stores answers under <code>wiso-handelsrecht-v1</code>. Bump the version
+            string in <code>wiso/controllers/handelsrecht.js</code> if the storage shape changes;
+            otherwise stale data can appear on reload.
+        </p>
+
+    </main>
+
+</div>
+
+</body>
+</html>

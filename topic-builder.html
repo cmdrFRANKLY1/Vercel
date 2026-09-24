@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Topic Editor — cmdrFRANKLYs EpicSpace</title>
+<link rel="stylesheet" href="dist/tailwind.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+    --bg-color: #121212;
+    --panel-color: #1e1e1e;
+    --sidebar-color: #181818;
+    --border-color: #333333;
+    --panel-border: #333333;
+    --text-color: #e0e0e0;
+    --text-muted: #9e9e9e;
+    --link-color: #b0b0b0;
+    --link-hover: #ffffff;
+    --heading-color: #ffffff;
+    --code-bg: #2a2a2a;
+    --info-box: #252525;
+    --accent-green: #5fd39a;
+    --accent-blue: #5b8def;
+    --accent-amber: #e0b64a;
+    --accent-violet: #c58af9;
+    --accent-red: #e0685a;
+}
+:root.light {
+    --bg-color: #f5f5f5;
+    --panel-color: #ffffff;
+    --sidebar-color: #fafafa;
+    --border-color: #d8d8d8;
+    --panel-border: #d8d8d8;
+    --text-color: #212121;
+    --text-muted: #5c5c5c;
+    --link-color: #424242;
+    --link-hover: #000000;
+    --heading-color: #000000;
+    --code-bg: #ececec;
+    --info-box: #f4f4f4;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+h1, h2, h3, h4 { color: var(--heading-color); font-weight: 700; margin: 0; }
+h1 { font-size: 1.1rem; }
+h2 { font-size: 1rem; }
+h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+a { color: var(--link-color); text-decoration: none; }
+a:hover { color: var(--link-hover); text-decoration: underline; }
+button {
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    background: var(--code-bg);
+    color: var(--text-color);
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+button:hover:not(:disabled) { border-color: var(--link-color); color: var(--link-color); background: var(--info-box); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button.primary { background: var(--link-color); color: #0e0e0e; border-color: var(--link-color); }
+button.primary:hover:not(:disabled) { background: var(--link-hover); color: #000; }
+button.danger { border-color: var(--accent-red); color: var(--accent-red); }
+button.danger:hover:not(:disabled) { background: rgba(224,104,90,0.1); }
+input, textarea, select {
+    font-family: inherit;
+    font-size: 0.82rem;
+    background: var(--code-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    border-radius: 0.35rem;
+    padding: 0.45rem 0.6rem;
+    width: 100%;
+    outline: none;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--link-color); }
+textarea { font-family: 'Fira Code', monospace; font-size: 0.78rem; line-height: 1.5; resize: vertical; min-height: 5rem; }
+label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem; font-weight: 600; }
+code, pre { font-family: 'Fira Code', monospace; }
+kbd {
+    background: var(--code-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    padding: 0.05rem 0.35rem;
+    font-size: 0.72rem;
+    font-family: 'Fira Code', monospace;
+}
+
+.app { display: flex; height: 100vh; }
+.sidebar {
+    width: 22rem;
+    flex-shrink: 0;
+    background: var(--sidebar-color);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+.sidebar-head {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.sidebar-body { flex: 1; overflow-y: auto; padding: 0.5rem 0.75rem; }
+.tree { font-size: 0.8rem; }
+.tree .node {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.35rem;
+    border-radius: 0.3rem;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+}
+.tree .node:hover { background: var(--code-bg); }
+.tree .node.active { background: var(--info-box); color: var(--heading-color); font-weight: 600; }
+.tree .node .icon { width: 0.9rem; text-align: center; color: var(--text-muted); flex-shrink: 0; }
+.tree .node.directory .icon { color: var(--accent-amber); }
+.tree .node.topic .icon { color: var(--accent-green); }
+.tree .node.section .icon { color: var(--accent-blue); }
+.tree .node.illustration .icon { color: var(--accent-violet); }
+.tree .node.quiz .icon { color: var(--accent-red); }
+.tree .children { margin-left: 1rem; border-left: 1px dashed var(--border-color); padding-left: 0.35rem; }
+
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.main-head {
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    background: var(--sidebar-color);
+}
+.main-body { flex: 1; overflow-y: auto; padding: 1.25rem; }
+
+.empty {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+}
+.empty i { font-size: 4rem; opacity: 0.35; margin-bottom: 1rem; }
+.empty h2 { color: var(--heading-color); margin-bottom: 0.5rem; }
+.empty p { max-width: 40rem; margin-bottom: 1.5rem; }
+
+.panel {
+    background: var(--panel-color);
+    border: 1px solid var(--panel-border);
+    border-radius: 0.6rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+}
+.panel h2 { margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); font-size: 1rem; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+.row.one { grid-template-columns: 1fr; }
+.row.three { grid-template-columns: 1fr 1fr 1fr; }
+.field { display: flex; flex-direction: column; }
+
+.toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.toolbar-spacer { flex: 1; }
+
+.toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    padding: 0.7rem 1rem;
+    border-radius: 0.5rem;
+    background: var(--panel-color);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0;
+    transform: translateY(1rem);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    z-index: 100;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.success { border-color: var(--accent-green); }
+.toast.error { border-color: var(--accent-red); }
+.toast.info { border-color: var(--accent-blue); }
+
+.subtopic-card {
+    background: var(--bg-color);
+    border: 1px solid var(--panel-border);
+    border-radius: 0.5rem;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.75rem;
+}
+.subtopic-card .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.6rem;
+}
+.subtopic-card .head .title { font-weight: 600; color: var(--heading-color); }
+.subtopic-card .head .id { font-family: 'Fira Code', monospace; font-size: 0.68rem; color: var(--text-muted); }
+
+.dirty-dot {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--accent-amber);
+    margin-left: 0.4rem;
+}
+
+kbd { font-size: 0.68rem; }
+.help {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+    line-height: 1.4;
+}
+
+.tab-row { display: flex; gap: 0.35rem; margin-bottom: 1rem; }
+.tab-row button { border-radius: 0.35rem; }
+.tab-row button.active { background: var(--link-color); color: #0e0e0e; border-color: var(--link-color); }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+    <!-- ==================== SIDEBAR ==================== -->
+    <aside class="sidebar">
+        <div class="sidebar-head">
+            <h1><i class="fa-solid fa-folder-tree" style="opacity:0.7; margin-right:0.4rem;"></i>Topic Editor</h1>
+            <button id="btnToggleTheme" title="Toggle light/dark" style="padding:0.35rem 0.5rem;"><i class="fa-solid fa-sun"></i></button>
+        </div>
+        <div class="sidebar-body">
+            <div id="treeRoot" class="tree">
+                <div class="empty" style="height:auto; padding:2rem 1rem;">
+                    <i class="fa-regular fa-folder-open"></i>
+                    <p style="font-size:0.78rem; max-width:16rem;">
+                        Open the folder <code>resources/topics/</code> from your project to begin.
+                    </p>
+                    <button id="btnOpen2" class="primary" style="margin-top:0.5rem;"><i class="fa-solid fa-folder-open"></i> Open folder</button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ==================== MAIN ==================== -->
+    <main class="main">
+        <header class="main-head">
+            <div class="toolbar">
+                <button id="btnOpen"><i class="fa-solid fa-folder-open"></i> Open folder</button>
+                <button id="btnSaveAll" disabled><i class="fa-solid fa-floppy-disk"></i> Save all</button>
+                <button id="btnRevertAll" disabled><i class="fa-solid fa-rotate-left"></i> Revert all</button>
+            </div>
+            <div class="toolbar">
+                <span id="folderName" style="color:var(--text-muted); font-size:0.78rem;"></span>
+            </div>
+        </header>
+
+        <div class="main-body" id="mainBody">
+            <div class="empty">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <h2>Welcome</h2>
+                <p>
+                    Click <strong>Open folder</strong> and select your project's <code>resources/topics/</code> directory.
+                    The editor will parse every topic folder it finds and let you browse, edit, add, and remove
+                    sections, illustrations, and quiz data.
+                </p>
+                <p style="font-size:0.75rem;">
+                    Requires a Chromium-based browser (Chrome, Edge, Brave, Opera).<br>
+                    Files are written directly to disk on save. <strong>Make sure your work is committed or backed up.</strong>
+                </p>
+            </div>
+        </div>
+    </main>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   STATE
+   ============================================================ */
+const state = {
+    rootHandle: null,
+    topics: {},            // { [topicId]: TopicModel }
+    selectedNode: null,    // { kind, topicId, sectionId?, subtopicId?, illustrationId? }
+    dirty: new Set(),      // set of file paths that need saving
+    originalFileText: {},  // { path: originalText }
+    currentFileText: {},   // { path: currentText }
+    unsupported: false
+};
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+let toastTimer = null;
+function toast(msg, kind = 'info') {
+    const el = document.getElementById('toast');
+    el.className = 'toast show ' + kind;
+    el.innerHTML = `<i class="fa-solid ${kind === 'success' ? 'fa-check' : kind === 'error' ? 'fa-xmark' : 'fa-info-circle'}"></i> ${msg}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+/* ============================================================
+   FILE SYSTEM HELPERS
+   ============================================================ */
+async function readFile(handle) {
+    const file = await handle.getFile();
+    return await file.text();
+}
+async function writeFile(handle, text) {
+    const writable = await handle.createWritable();
+    await writable.write(text);
+    await writable.close();
+}
+async function getDirHandle(parent, name) {
+    try { return await parent.getDirectoryHandle(name); } catch { return null; }
+}
+async function getFileHandle(parent, name) {
+    try { return await parent.getFileHandle(name); } catch { return null; }
+}
+async function* iterateDir(dirHandle) {
+    for await (const entry of dirHandle.values()) {
+        yield entry;
+    }
+}
+
+/* ============================================================
+   JS FILE PARSING (best-effort, no AST)
+   ------------------------------------------------------------
+   Extracts:
+     - topic entry point: calls registerTopic({ ... })
+     - meta.js: exports id, titleDe, titleEn, ...
+     - sections.js: imports + exports sections array
+     - section files: export const section = { id, titleDe, ... subtopics: [...] }
+     - illustrations.js: imports + exports animations array
+     - illustration files: export const xxx = { id, titleDe, ... html }
+     - quiz-data.js: export const QA = {...}; export const QUIZ_QUESTIONS = [...]
+   ============================================================ */
+
+const RE = {
+    exportConst: /export\s+const\s+([A-Za-z_$][\w$]*)\s*=/,
+    importLine: /import\s+(?:\{[^}]*\}|\*\s+as\s+[\w$]+|[A-Za-z_$][\w$]*)\s+from\s+['"]([^'"]+)['"]/g,
+    importNamed: /import\s+\{\s*([^}]+?)\s*\}\s+from\s+['"]([^'"]+)['"]/g,
+    registerTopic: /registerTopic\s*\(\s*\{([\s\S]*?)\}\s*\)/m,
+};
+
+function extractBalanced(text, startIdx, openCh, closeCh) {
+    // Returns [content, endIdx] where content is the substring between
+    // the balanced open/close pair starting at startIdx.
+    let depth = 0;
+    let inStr = null;
+    let inTpl = false;
+    let inLineComment = false;
+    let inBlockComment = false;
+    for (let i = startIdx; i < text.length; i++) {
+        const c = text[i];
+        const next = text[i + 1];
+        if (inLineComment) { if (c === '\n') inLineComment = false; continue; }
+        if (inBlockComment) { if (c === '*' && next === '/') { inBlockComment = false; i++; } continue; }
+        if (inStr) {
+            if (c === '\\') { i++; continue; }
+            if (c === inStr) inStr = null;
+            continue;
+        }
+        if (inTpl) {
+            if (c === '\\') { i++; continue; }
+            if (c === '`') inTpl = false;
+            continue;
+        }
+        if (c === '/' && next === '/') { inLineComment = true; i++; continue; }
+        if (c === '/' && next === '*') { inBlockComment = true; i++; continue; }
+        if (c === '"' || c === "'") { inStr = c; continue; }
+        if (c === '`') { inTpl = true; continue; }
+        if (c === openCh) depth++;
+        else if (c === closeCh) {
+            depth--;
+            if (depth === 0) return [text.slice(startIdx + 1, i), i];
+        }
+    }
+    return [null, -1];
+}
+
+function extractObjectLiteralAfter(text, fromIdx) {
+    // Skip whitespace, find first { or [
+    let i = fromIdx;
+    while (i < text.length && /\s/.test(text[i])) i++;
+    const ch = text[i];
+    if (ch === '{') return extractBalanced(text, i, '{', '}');
+    if (ch === '[') return extractBalanced(text, i, '[', ']');
+    return [null, -1];
+}
+
+function parseTopicMetaFromText(text) {
+    // Reads flat `id: '...'`, `titleDe: '...'`, etc. from a meta.js file
+    // or from a registerTopic({...}) call.
+    const meta = {};
+    const fields = [
+        'id', 'icon', 'titleDe', 'titleEn', 'descDe', 'descEn',
+        'sidebarTitleDe', 'sidebarTitleEn',
+        'sidebarSubtitleDe', 'sidebarSubtitleEn', 'sidebarVersion'
+    ];
+    for (const f of fields) {
+        const re = new RegExp(`\\b${f}\\s*:\\s*(['"\`])((?:\\\\.|(?!\\1)[\\s\\S])*?)\\1`);
+        const m = text.match(re);
+        if (m) meta[f] = unescape(m[2]);
+    }
+    return meta;
+}
+
+function unescape(s) {
+    return s.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/\\`/g, '`').replace(/\\\\/g, '\\');
+}
+
+function parseSubtopicEntry(objText) {
+    // objText is the inner text of a `{ ... }` subtopic object literal
+    const sub = {};
+    for (const f of ['id', 'titleDe', 'titleEn', 'htmlDe', 'htmlEn', 'animation']) {
+        const re = new RegExp(`\\b${f}\\s*:\\s*(['"\`])((?:\\\\.|(?!\\1)[\\s\\S])*?)\\1`, 'm');
+        const m = objText.match(re);
+        if (m) sub[f] = unescape(m[2]);
+    }
+    return sub;
+}
+
+function parseSubtopicsArray(text) {
+    const idx = text.indexOf('subtopics');
+    if (idx < 0) return [];
+    const colonIdx = text.indexOf(':', idx);
+    const [arrText] = extractObjectLiteralAfter(text, colonIdx + 1);
+    if (!arrText) return [];
+    // Split the array into object literals at top level
+    const items = [];
+    let i = 0;
+    while (i < arrText.length) {
+        while (i < arrText.length && /[\s,]/.test(arrText[i])) i++;
+        if (i >= arrText.length) break;
+        if (arrText[i] !== '{') { i++; continue; }
+        const [objText, endIdx] = extractBalanced(arrText, i, '{', '}');
+        if (objText == null) break;
+        items.push(parseSubtopicEntry(objText));
+        i = endIdx + 1;
+    }
+    return items;
+}
+
+function parseSectionFile(text, fallbackId) {
+    const section = { id: fallbackId, subtopics: [] };
+    for (const f of ['id', 'titleDe', 'titleEn', 'introDe', 'introEn']) {
+        const re = new RegExp(`\\b${f}\\s*:\\s*(['"\`])((?:\\\\.|(?!\\1)[\\s\\S])*?)\\1`, 'm');
+        const m = text.match(re);
+        if (m) section[f] = unescape(m[2]);
+    }
+    section.subtopics = parseSubtopicsArray(text);
+    return section;
+}
+
+function parseIllustrationFile(text, fallbackId) {
+    const ill = { id: fallbackId };
+    for (const f of ['id', 'titleDe', 'titleEn', 'descDe', 'descEn']) {
+        const re = new RegExp(`\\b${f}\\s*:\\s*(['"\`])((?:\\\\.|(?!\\1)[\\s\\S])*?)\\1`, 'm');
+        const m = text.match(re);
+        if (m) ill[f] = unescape(m[2]);
+    }
+    // html may be on multiple lines
+    const htmlRe = /html\s*:\s*`([\s\S]*?)`/m;
+    const hm = text.match(htmlRe);
+    if (hm) ill.html = hm[1];
+    return ill;
+}
+
+/* ============================================================
+   DISCOVERY
+   ============================================================ */
+async function discoverTopics(rootHandle) {
+    const topics = {};
+    for await (const entry of iterateDir(rootHandle)) {
+        if (entry.kind !== 'directory') continue;
+
+        const topicFolder = entry;
+        const topicId = entry.name;
+
+        // Find the entry point: topic_<name>.js
+        let entryFile = null;
+        const candidates = [`topic_${topicId}.js`];
+        for (const c of candidates) {
+            const fh = await getFileHandle(topicFolder, c);
+            if (fh) { entryFile = fh; break; }
+        }
+        if (!entryFile) {
+            // try any topic_*.js
+            for await (const sub of iterateDir(topicFolder)) {
+                if (sub.kind === 'file' && /^topic_.+\.js$/.test(sub.name)) {
+                    entryFile = sub;
+                    break;
+                }
+            }
+        }
+        if (!entryFile) continue;
+
+        const topic = {
+            id: topicId,
+            folderName: topicId,
+            folderHandle: topicFolder,
+            entryFile: entryFile,
+            entryFilePath: `${topicId}/${entryFile.name}`,
+            meta: {},
+            metaFile: null,
+            sections: [],        // ordered, from data/sections.js
+            sectionsIndex: [],   // { importName, file }
+            illustrations: [],   // ordered
+            illustrationsIndex: [],
+            quiz: null,
+            rawFiles: {}         // { relPath: text }
+        };
+
+        // meta.js
+        const metaFile = await getFileHandle(topicFolder, 'meta.js');
+        if (metaFile) {
+            topic.metaFile = metaFile;
+            const text = await readFile(metaFile);
+            topic.meta = parseTopicMetaFromText(text);
+            topic.rawFiles['meta.js'] = text;
+        }
+
+        // data/
+        const dataDir = await getDirHandle(topicFolder, 'data');
+        if (dataDir) {
+            // sections.js
+            const secIndexFile = await getFileHandle(dataDir, 'sections.js');
+            if (secIndexFile) {
+                const text = await readFile(secIndexFile);
+                topic.rawFiles['data/sections.js'] = text;
+                topic.sectionsIndex = parseSectionsIndex(text);
+            }
+
+            // sections/*.js
+            const sectionsDir = await getDirHandle(dataDir, 'sections');
+            if (sectionsDir) {
+                for await (const entry of iterateDir(sectionsDir)) {
+                    if (entry.kind !== 'file' || !entry.name.endsWith('.js')) continue;
+                    const text = await readFile(entry);
+                    const parsed = parseSectionFile(text, entry.name.replace(/\.js$/, ''));
+                    parsed._fileHandle = entry;
+                    parsed._fileName = entry.name;
+                    parsed._raw = text;
+                    topic.sections.push(parsed);
+                    topic.rawFiles[`data/sections/${entry.name}`] = text;
+                }
+            }
+
+            // illustrations.js
+            const illIndexFile = await getFileHandle(dataDir, 'illustrations.js');
+            if (illIndexFile) {
+                const text = await readFile(illIndexFile);
+                topic.rawFiles['data/illustrations.js'] = text;
+                topic.illustrationsIndex = parseIllustrationsIndex(text);
+            }
+
+            // illustrations/*.js
+            const illDir = await getDirHandle(dataDir, 'illustrations');
+            if (illDir) {
+                for await (const entry of iterateDir(illDir)) {
+                    if (entry.kind !== 'file' || !entry.name.endsWith('.js')) continue;
+                    const text = await readFile(entry);
+                    const parsed = parseIllustrationFile(text, entry.name.replace(/\.js$/, ''));
+                    parsed._fileHandle = entry;
+                    parsed._fileName = entry.name;
+                    parsed._raw = text;
+                    topic.illustrations.push(parsed);
+                    topic.rawFiles[`data/illustrations/${entry.name}`] = text;
+                }
+            }
+
+            // quiz-data.js
+            const quizFile = await getFileHandle(dataDir, 'quiz-data.js');
+            if (quizFile) {
+                const text = await readFile(quizFile);
+                topic.quiz = { fileHandle: quizFile, raw: text };
+                topic.rawFiles['data/quiz-data.js'] = text;
+            }
+        }
+
+        // controllers/ (we list them but do not parse them deeply)
+        const ctrlsDir = await getDirHandle(topicFolder, 'controllers');
+        topic.controllers = [];
+        if (ctrlsDir) {
+            for await (const entry of iterateDir(ctrlsDir)) {
+                if (entry.kind === 'file' && entry.name.endsWith('.js')) {
+                    topic.controllers.push(entry.name);
+                }
+            }
+        }
+
+        topics[topicId] = topic;
+    }
+    return topics;
+}
+
+function parseSectionsIndex(text) {
+    // Matches `import { section as sN } from './sections/xx.js';`
+    const out = [];
+    const re = /import\s+\{\s*section\s+as\s+([A-Za-z_$][\w$]*)\s*\}\s+from\s+['"]\.\/sections\/([^'"]+)['"]/g;
+    let m;
+    while ((m = re.exec(text))) {
+        out.push({ alias: m[1], file: m[2] });
+    }
+    return out;
+}
+
+function parseIllustrationsIndex(text) {
+    const out = [];
+    const re = /import\s+\{\s*([A-Za-z_$][\w$]*)\s*\}\s+from\s+['"]\.\/illustrations\/([^'"]+)['"]/g;
+    let m;
+    while ((m = re.exec(text))) {
+        out.push({ alias: m[1], file: m[2] });
+    }
+    return out;
+}
+
+/* ============================================================
+   FILE WRITERS
+   ============================================================ */
+
+function q(s) { return (s == null ? '' : String(s)).replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${'); }
+function sq(s) { return (s == null ? '' : String(s)).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+
+function serializeSubtopic(sub, indent) {
+    const i = indent;
+    const il = ' '.repeat(i);
+    let out = '';
+    out += `${il}{\n`;
+    out += `${il}    id: '${sq(sub.id || '')}',\n`;
+    out += `${il}    titleDe: '${sq(sub.titleDe || '')}',\n`;
+    out += `${il}    titleEn: '${sq(sub.titleEn || '')}',\n`;
+    if (sub.htmlDe) out += `${il}    htmlDe: \`${q(sub.htmlDe)}\`,\n`;
+    else out += `${il}    htmlDe: '',\n`;
+    if (sub.htmlEn) out += `${il}    htmlEn: \`${q(sub.htmlEn)}\`,\n`;
+    else out += `${il}    htmlEn: ''\n`;
+    out += `${il}}`;
+    return out;
+}
+
+function serializeSection(section) {
+    let out = `// resources/topics/${state.currentTopicId || ''}/data/sections/${section._fileName || (section.id + '.js')}\n\n`;
+    out += `export const section = {\n`;
+    out += `    id: '${sq(section.id || '')}',\n`;
+    out += `    titleDe: '${sq(section.titleDe || '')}',\n`;
+    out += `    titleEn: '${sq(section.titleEn || '')}',\n`;
+    if (section.introDe || section.introEn) {
+        if (section.introDe) out += `    introDe: '${sq(section.introDe)}',\n`;
+        if (section.introEn) out += `    introEn: '${sq(section.introEn)}',\n`;
+    }
+    out += `    subtopics: [\n`;
+    const subs = section.subtopics || [];
+    subs.forEach((sub, i) => {
+        out += serializeSubtopic(sub, 8);
+        if (i < subs.length - 1) out += ',';
+        out += '\n';
+    });
+    out += `    ]\n};\n`;
+    return out;
+}
+
+function serializeIllustration(ill) {
+    let out = `// resources/topics/${state.currentTopicId || ''}/data/illustrations/${ill._fileName || (ill.id + '.js')}\n\n`;
+    out += `export const ${ill._exportName || 'illustration'} = {\n`;
+    out += `    id: '${sq(ill.id || '')}',\n`;
+    out += `    titleDe: '${sq(ill.titleDe || '')}',\n`;
+    out += `    titleEn: '${sq(ill.titleEn || '')}',\n`;
+    if (ill.descDe) out += `    descDe: '${sq(ill.descDe)}',\n`;
+    if (ill.descEn) out += `    descEn: '${sq(ill.descEn)}',\n`;
+    out += `    html: \`${q(ill.html || '')}\`\n};\n`;
+    return out;
+}
+
+/* ============================================================
+   TREE RENDERING
+   ============================================================ */
+function renderTree() {
+    const root = document.getElementById('treeRoot');
+    const topicIds = Object.keys(state.topics);
+    if (!topicIds.length) {
+        root.innerHTML = `
+            <div class="empty" style="height:auto; padding:2rem 1rem;">
+                <i class="fa-regular fa-folder-open"></i>
+                <p style="font-size:0.78rem; max-width:16rem;">No topics found in the selected folder.</p>
+            </div>`;
+        return;
+    }
+
+    let html = '';
+    topicIds.forEach(topicId => {
+        const topic = state.topics[topicId];
+        const topicLabel = topic.meta.titleDe || topic.meta.id || topicId;
+        const isTopicSelected = state.selectedNode &&
+            state.selectedNode.kind === 'topic' &&
+            state.selectedNode.topicId === topicId;
+
+        html += `<div class="node topic ${isTopicSelected ? 'active' : ''}" data-kind="topic" data-topic="${escapeAttr(topicId)}">
+            <i class="fa-solid fa-bolt icon"></i>
+            <span>${escapeHtml(topicLabel)} <span style="color:var(--text-muted); font-family:'Fira Code',monospace; font-size:0.68rem;">(${escapeHtml(topicId)})</span></span>
+        </div>`;
+
+        html += `<div class="children">`;
+
+        // Sections group
+        html += `<div style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); padding:0.35rem 0.35rem 0.15rem;">Sections (${topic.sections.length})</div>`;
+        topic.sections.forEach(sec => {
+            const isSel = state.selectedNode &&
+                state.selectedNode.kind === 'section' &&
+                state.selectedNode.topicId === topicId &&
+                state.selectedNode.sectionId === sec.id;
+            html += `<div class="node section ${isSel ? 'active' : ''}" data-kind="section" data-topic="${escapeAttr(topicId)}" data-section="${escapeAttr(sec.id)}">
+                <i class="fa-solid fa-cube icon"></i>
+                <span>${escapeHtml(sec.titleDe || sec.id)}</span>
+            </div>`;
+        });
+
+        // Illustrations group
+        html += `<div style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); padding:0.35rem 0.35rem 0.15rem;">Illustrations (${topic.illustrations.length})</div>`;
+        topic.illustrations.forEach(ill => {
+            const isSel = state.selectedNode &&
+                state.selectedNode.kind === 'illustration' &&
+                state.selectedNode.topicId === topicId &&
+                state.selectedNode.illustrationId === ill.id;
+            html += `<div class="node illustration ${isSel ? 'active' : ''}" data-kind="illustration" data-topic="${escapeAttr(topicId)}" data-illustration="${escapeAttr(ill.id)}">
+                <i class="fa-solid fa-image icon"></i>
+                <span>${escapeHtml(ill.titleDe || ill.id)}</span>
+            </div>`;
+        });
+
+        // Quiz
+        if (topic.quiz) {
+            const isSel = state.selectedNode &&
+                state.selectedNode.kind === 'quiz' &&
+                state.selectedNode.topicId === topicId;
+            html += `<div style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); padding:0.35rem 0.35rem 0.15rem;">Other</div>`;
+            html += `<div class="node quiz ${isSel ? 'active' : ''}" data-kind="quiz" data-topic="${escapeAttr(topicId)}">
+                <i class="fa-solid fa-circle-question icon"></i>
+                <span>Quiz data</span>
+            </div>`;
+        }
+
+        html += `</div>`;
+    });
+
+    root.innerHTML = html;
+
+    // Attach click handlers
+    root.querySelectorAll('.node').forEach(node => {
+        node.addEventListener('click', () => {
+            const kind = node.dataset.kind;
+            const topicId = node.dataset.topic;
+            if (kind === 'topic') state.selectedNode = { kind, topicId };
+            else if (kind === 'section') state.selectedNode = { kind, topicId, sectionId: node.dataset.section };
+            else if (kind === 'illustration') state.selectedNode = { kind, topicId, illustrationId: node.dataset.illustration };
+            else if (kind === 'quiz') state.selectedNode = { kind, topicId };
+            renderTree();
+            renderMain();
+        });
+    });
+}
+
+function escapeHtml(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escapeAttr(s) { return escapeHtml(s); }
+
+/* ============================================================
+   MAIN PANEL
+   ============================================================ */
+function renderMain() {
+    const body = document.getElementById('mainBody');
+    if (!state.selectedNode) {
+        body.innerHTML = `
+            <div class="empty">
+                <i class="fa-solid fa-hand-pointer"></i>
+                <h2>Nothing selected</h2>
+                <p>Pick a topic, section, illustration, or quiz from the sidebar.</p>
+            </div>`;
+        return;
+    }
+
+    const { kind, topicId } = state.selectedNode;
+    const topic = state.topics[topicId];
+    if (!topic) return;
+
+    if (kind === 'topic') return renderTopicPanel(body, topic);
+    if (kind === 'section') return renderSectionPanel(body, topic, state.selectedNode.sectionId);
+    if (kind === 'illustration') return renderIllustrationPanel(body, topic, state.selectedNode.illustrationId);
+    if (kind === 'quiz') return renderQuizPanel(body, topic);
+}
+
+function renderTopicPanel(body, topic) {
+    const m = topic.meta;
+    body.innerHTML = `
+        <div class="panel">
+            <h2><i class="fa-solid fa-bolt" style="color:var(--accent-green); margin-right:0.4rem;"></i>Topic · ${escapeHtml(m.titleDe || topic.id)}</h2>
+            <div class="row">
+                <div class="field"><label>ID</label><input value="${escapeAttr(m.id || topic.id)}" disabled></div>
+                <div class="field"><label>Icon (Font Awesome class)</label><input id="tIcon" value="${escapeAttr(m.icon || '')}"></div>
+            </div>
+            <div class="row">
+                <div class="field"><label>Title (DE)</label><input id="tTitleDe" value="${escapeAttr(m.titleDe || '')}"></div>
+                <div class="field"><label>Title (EN)</label><input id="tTitleEn" value="${escapeAttr(m.titleEn || '')}"></div>
+            </div>
+            <div class="row">
+                <div class="field"><label>Description (DE)</label><input id="tDescDe" value="${escapeAttr(m.descDe || '')}"></div>
+                <div class="field"><label>Description (EN)</label><input id="tDescEn" value="${escapeAttr(m.descEn || '')}"></div>
+            </div>
+            <div class="row three">
+                <div class="field"><label>Sidebar title (DE)</label><input id="tSbTitleDe" value="${escapeAttr(m.sidebarTitleDe || '')}"></div>
+                <div class="field"><label>Sidebar subtitle (DE)</label><input id="tSbSubDe" value="${escapeAttr(m.sidebarSubtitleDe || '')}"></div>
+                <div class="field"><label>Sidebar version</label><input id="tSbVer" value="${escapeAttr(m.sidebarVersion || '')}"></div>
+            </div>
+            <div class="toolbar" style="margin-top:0.75rem;">
+                <button class="primary" id="btnSaveTopic"><i class="fa-solid fa-floppy-disk"></i> Save meta.js</button>
+                <button id="btnAddSection"><i class="fa-solid fa-plus"></i> Add section</button>
+                <button id="btnAddIllustration"><i class="fa-solid fa-plus"></i> Add illustration</button>
+            </div>
+            <div class="help" style="margin-top:0.5rem;">Saving rewrites <code>meta.js</code> with a normalized structure. Comments and unusual formatting will be lost.</div>
+        </div>
+
+        <div class="panel">
+            <h2><i class="fa-solid fa-diagram-project" style="color:var(--accent-blue); margin-right:0.4rem;"></i>Sections in order</h2>
+            <div id="sectionOrder">
+                ${topic.sections.map((s, i) => `
+                    <div class="subtopic-card" data-section-order="${i}">
+                        <div class="head">
+                            <div>
+                                <div class="title">${escapeHtml(s.titleDe || s.id)}</div>
+                                <div class="id">${escapeHtml(s._fileName)}</div>
+                            </div>
+                            <div class="toolbar">
+                                <button data-move-up="${i}" ${i === 0 ? 'disabled' : ''}><i class="fa-solid fa-arrow-up"></i></button>
+                                <button data-move-down="${i}" ${i === topic.sections.length - 1 ? 'disabled' : ''}><i class="fa-solid fa-arrow-down"></i></button>
+                            </div>
+                        </div>
+                    </div>`).join('')}
+            </div>
+            <div class="help">Order here is what gets rendered in the page. Saving rewrites <code>data/sections.js</code>.</div>
+            <div class="toolbar" style="margin-top:0.75rem;">
+                <button class="primary" id="btnSaveSectionOrder"><i class="fa-solid fa-floppy-disk"></i> Save order</button>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('btnSaveTopic').addEventListener('click', () => saveTopicMeta(topic));
+    document.getElementById('btnAddSection').addEventListener('click', () => addSection(topic));
+    document.getElementById('btnAddIllustration').addEventListener('click', () => addIllustration(topic));
+    document.getElementById('btnSaveSectionOrder').addEventListener('click', () => saveSectionsIndex(topic));
+    body.querySelectorAll('[data-move-up]').forEach(b => b.addEventListener('click', () => moveSection(topic, +b.dataset.moveUp, -1)));
+    body.querySelectorAll('[data-move-down]').forEach(b => b.addEventListener('click', () => moveSection(topic, +b.dataset.moveDown, +1)));
+}
+
+function renderSectionPanel(body, topic, sectionId) {
+    const sec = topic.sections.find(s => s.id === sectionId);
+    if (!sec) return renderMain();
+
+    body.innerHTML = `
+        <div class="panel">
+            <h2><i class="fa-solid fa-cube" style="color:var(--accent-blue); margin-right:0.4rem;"></i>Section · ${escapeHtml(sec.titleDe || sec.id)}</h2>
+            <div class="row">
+                <div class="field"><label>ID (anchor, must be unique)</label><input id="secId" value="${escapeAttr(sec.id)}"></div>
+                <div class="field"><label>File name</label><input value="${escapeAttr(sec._fileName)}" disabled></div>
+            </div>
+            <div class="row">
+                <div class="field"><label>Title (DE)</label><input id="secTitleDe" value="${escapeAttr(sec.titleDe || '')}"></div>
+                <div class="field"><label>Title (EN)</label><input id="secTitleEn" value="${escapeAttr(sec.titleEn || '')}"></div>
+            </div>
+            <div class="row">
+                <div class="field"><label>Intro (DE)</label><textarea id="secIntroDe" rows="2">${escapeHtml(sec.introDe || '')}</textarea></div>
+                <div class="field"><label>Intro (EN)</label><textarea id="secIntroEn" rows="2">${escapeHtml(sec.introEn || '')}</textarea></div>
+            </div>
+            <div class="toolbar" style="margin-top:0.75rem;">
+                <button class="primary" id="btnSaveSection"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                <button id="btnAddSubtopic"><i class="fa-solid fa-plus"></i> Add sub-topic</button>
+                <div class="toolbar-spacer"></div>
+                <button class="danger" id="btnDeleteSection"><i class="fa-solid fa-trash"></i> Delete section</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2><i class="fa-solid fa-list" style="color:var(--accent-violet); margin-right:0.4rem;"></i>Sub-topics (${sec.subtopics.length})</h2>
+            <div id="subtopicsList"></div>
+        </div>
+    `;
+
+    document.getElementById('btnSaveSection').addEventListener('click', () => saveSection(topic, sec));
+    document.getElementById('btnAddSubtopic').addEventListener('click', () => addSubtopic(topic, sec));
+    document.getElementById('btnDeleteSection').addEventListener('click', () => deleteSection(topic, sec));
+
+    renderSubtopics(topic, sec);
+}
+
+function renderSubtopics(topic, sec) {
+    const list = document.getElementById('subtopicsList');
+    if (!sec.subtopics.length) {
+        list.innerHTML = `<div class="help">No sub-topics yet. Click "Add sub-topic".</div>`;
+        return;
+    }
+    list.innerHTML = sec.subtopics.map((sub, i) => `
+        <div class="subtopic-card" data-sub-idx="${i}">
+            <div class="head">
+                <div>
+                    <div class="title">${escapeHtml(sub.titleDe || sub.id || '(untitled)')}</div>
+                    <div class="id">${escapeHtml(sub.id || '')}</div>
+                </div>
+                <div class="toolbar">
+                    <button data-sub-edit="${i}"><i class="fa-solid fa-pen"></i> Edit</button>
+                    <button class="danger" data-sub-del="${i}"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    list.querySelectorAll('[data-sub-edit]').forEach(b => b.addEventListener('click', () => openSubtopicEditor(topic, sec, +b.dataset.subEdit)));
+    list.querySelectorAll('[data-sub-del]').forEach(b => b.addEventListener('click', () => deleteSubtopic(topic, sec, +b.dataset.subDel)));
+}
+
+function openSubtopicEditor(topic, sec, idx) {
+    const sub = sec.subtopics[idx];
+    const list = document.getElementById('subtopicsList');
+    const card = list.querySelector(`[data-sub-idx="${idx}"]`);
+    card.innerHTML = `
+        <div class="row">
+            <div class="field"><label>ID</label><input class="f-id" value="${escapeAttr(sub.id || '')}"></div>
+            <div class="field"><label>Title (DE)</label><input class="f-titleDe" value="${escapeAttr(sub.titleDe || '')}"></div>
+        </div>
+        <div class="row one">
+            <div class="field"><label>Title (EN)</label><input class="f-titleEn" value="${escapeAttr(sub.titleEn || '')}"></div>
+        </div>
+        <div class="row one">
+            <div class="field"><label>HTML (DE)</label><textarea class="f-htmlDe" rows="8">${escapeHtml(sub.htmlDe || '')}</textarea></div>
+        </div>
+        <div class="row one">
+            <div class="field"><label>HTML (EN)</label><textarea class="f-htmlEn" rows="8">${escapeHtml(sub.htmlEn || '')}</textarea></div>
+        </div>
+        <div class="toolbar">
+            <button class="primary" data-sub-save><i class="fa-solid fa-check"></i> Save sub-topic</button>
+            <button data-sub-cancel>Cancel</button>
+        </div>
+    `;
+    card.querySelector('[data-sub-save]').addEventListener('click', () => {
+        sub.id = card.querySelector('.f-id').value.trim();
+        sub.titleDe = card.querySelector('.f-titleDe').value;
+        sub.titleEn = card.querySelector('.f-titleEn').value;
+        sub.htmlDe = card.querySelector('.f-htmlDe').value;
+        sub.htmlEn = card.querySelector('.f-htmlEn').value;
+        renderSubtopics(topic, sec);
+        toast('Sub-topic updated in memory. Click Save on the section to write to disk.', 'info');
+    });
+    card.querySelector('[data-sub-cancel]').addEventListener('click', () => renderSubtopics(topic, sec));
+}
+
+function renderIllustrationPanel(body, topic, illId) {
+    const ill = topic.illustrations.find(x => x.id === illId);
+    if (!ill) return renderMain();
+
+    body.innerHTML = `
+        <div class="panel">
+            <h2><i class="fa-solid fa-image" style="color:var(--accent-violet); margin-right:0.4rem;"></i>Illustration · ${escapeHtml(ill.titleDe || ill.id)}</h2>
+            <div class="row">
+                <div class="field"><label>ID</label><input id="illId" value="${escapeAttr(ill.id)}"></div>
+                <div class="field"><label>File name</label><input value="${escapeAttr(ill._fileName)}" disabled></div>
+            </div>
+            <div class="row">
+                <div class="field"><label>Title (DE)</label><input id="illTitleDe" value="${escapeAttr(ill.titleDe || '')}"></div>
+                <div class="field"><label>Title (EN)</label><input id="illTitleEn" value="${escapeAttr(ill.titleEn || '')}"></div>
+            </div>
+            <div class="row">
+                <div class="field"><label>Description (DE)</label><input id="illDescDe" value="${escapeAttr(ill.descDe || '')}"></div>
+                <div class="field"><label>Description (EN)</label><input id="illDescEn" value="${escapeAttr(ill.descEn || '')}"></div>
+            </div>
+            <div class="row one">
+                <div class="field"><label>HTML (raw markup inserted into the illustration panel)</label><textarea id="illHtml" rows="12">${escapeHtml(ill.html || '')}</textarea></div>
+            </div>
+            <div class="toolbar" style="margin-top:0.75rem;">
+                <button class="primary" id="btnSaveIll"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                <div class="toolbar-spacer"></div>
+                <button class="danger" id="btnDeleteIll"><i class="fa-solid fa-trash"></i> Delete illustration</button>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('btnSaveIll').addEventListener('click', () => saveIllustration(topic, ill));
+    document.getElementById('btnDeleteIll').addEventListener('click', () => deleteIllustration(topic, ill));
+}
+
+function renderQuizPanel(body, topic) {
+    body.innerHTML = `
+        <div class="panel">
+            <h2><i class="fa-solid fa-circle-question" style="color:var(--accent-red); margin-right:0.4rem;"></i>Quiz data</h2>
+            <p class="help" style="margin-bottom:0.75rem;">
+                Edit <code>data/quiz-data.js</code> directly. This is the file the WiSo-style quiz controller reads.
+                The editor does not parse its contents into a form yet — too many shapes.
+            </p>
+            <div class="row one">
+                <div class="field"><label>Raw file contents</label><textarea id="quizRaw" rows="30" style="min-height:24rem;">${escapeHtml(topic.quiz.raw)}</textarea></div>
+            </div>
+            <div class="toolbar" style="margin-top:0.75rem;">
+                <button class="primary" id="btnSaveQuiz"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+            </div>
+        </div>
+    `;
+    document.getElementById('btnSaveQuiz').addEventListener('click', async () => {
+        const text = document.getElementById('quizRaw').value;
+        await writeFile(topic.quiz.fileHandle, text);
+        topic.quiz.raw = text;
+        toast('Quiz data saved.', 'success');
+    });
+}
+
+/* ============================================================
+   MUTATIONS
+   ============================================================ */
+async function saveTopicMeta(topic) {
+    const get = id => document.getElementById(id).value;
+    topic.meta.icon = get('tIcon');
+    topic.meta.titleDe = get('tTitleDe');
+    topic.meta.titleEn = get('tTitleEn');
+    topic.meta.descDe = get('tDescDe');
+    topic.meta.descEn = get('tDescEn');
+    topic.meta.sidebarTitleDe = get('tSbTitleDe');
+    topic.meta.sidebarSubtitleDe = get('tSbSubDe');
+    topic.meta.sidebarVersion = get('tSbVer');
+
+    if (!topic.metaFile) { toast('meta.js not found.', 'error'); return; }
+
+    const text = serializeMeta(topic.meta);
+    await writeFile(topic.metaFile, text);
+    topic.rawFiles['meta.js'] = text;
+    toast('meta.js saved.', 'success');
+}
+
+function serializeMeta(m) {
+    let out = `// resources/topics/${state.currentTopicId || ''}/meta.js\n\n`;
+    out += `export const id = '${sq(m.id || '')}';\n`;
+    out += `export const icon = '${sq(m.icon || '')}';\n`;
+    out += `export const titleDe = '${sq(m.titleDe || '')}';\n`;
+    out += `export const titleEn = '${sq(m.titleEn || '')}';\n`;
+    out += `export const descDe = '${sq(m.descDe || '')}';\n`;
+    out += `export const descEn = '${sq(m.descEn || '')}';\n`;
+    out += `export const sidebarTitleDe = '${sq(m.sidebarTitleDe || '')}';\n`;
+    out += `export const sidebarTitleEn = '${sq(m.sidebarTitleEn || '')}';\n`;
+    out += `export const sidebarSubtitleDe = '${sq(m.sidebarSubtitleDe || '')}';\n`;
+    out += `export const sidebarSubtitleEn = '${sq(m.sidebarSubtitleEn || '')}';\n`;
+    out += `export const sidebarVersion = '${sq(m.sidebarVersion || '')}';\n`;
+    return out;
+}
+
+async function saveSection(topic, sec) {
+    sec.id = document.getElementById('secId').value.trim();
+    sec.titleDe = document.getElementById('secTitleDe').value;
+    sec.titleEn = document.getElementById('secTitleEn').value;
+    sec.introDe = document.getElementById('secIntroDe').value;
+    sec.introEn = document.getElementById('secIntroEn').value;
+
+    const text = serializeSection(sec);
+    await writeFile(sec._fileHandle, text);
+    sec._raw = text;
+    topic.rawFiles[`data/sections/${sec._fileName}`] = text;
+    toast(`Saved ${sec._fileName}.`, 'success');
+}
+
+async function saveIllustration(topic, ill) {
+    ill.id = document.getElementById('illId').value.trim();
+    ill.titleDe = document.getElementById('illTitleDe').value;
+    ill.titleEn = document.getElementById('illTitleEn').value;
+    ill.descDe = document.getElementById('illDescDe').value;
+    ill.descEn = document.getElementById('illDescEn').value;
+    ill.html = document.getElementById('illHtml').value;
+
+    const text = serializeIllustration(ill);
+    await writeFile(ill._fileHandle, text);
+    ill._raw = text;
+    topic.rawFiles[`data/illustrations/${ill._fileName}`] = text;
+    toast(`Saved ${ill._fileName}.`, 'success');
+}
+
+async function addSection(topic) {
+    const name = prompt('New section file name (e.g. 10-labor-market.js)');
+    if (!name) return;
+    if (!name.endsWith('.js')) { toast('File name must end with .js', 'error'); return; }
+
+    const dataDir = await getDirHandle(topic.folderHandle, 'data');
+    if (!dataDir) { toast('data/ not found.', 'error'); return; }
+    let sectionsDir = await getDirHandle(dataDir, 'sections');
+    if (!sectionsDir) {
+        sectionsDir = await dataDir.getDirectoryHandle('sections', { create: true });
+    }
+
+    const fileHandle = await sectionsDir.getFileHandle(name, { create: true });
+    const newSection = {
+        id: name.replace(/\.js$/, '').replace(/^\d+-/, ''),
+        titleDe: 'New section',
+        titleEn: 'New section',
+        subtopics: [],
+        _fileHandle: fileHandle,
+        _fileName: name
+    };
+    const text = serializeSection(newSection);
+    await writeFile(fileHandle, text);
+
+    topic.sections.push(newSection);
+    topic.rawFiles[`data/sections/${name}`] = text;
+
+    // Update sections.js index
+    await addToSectionsIndex(topic, name);
+
+    renderTree();
+    renderMain();
+    toast(`Created ${name}. Don't forget to fill in the content.`, 'success');
+}
+
+async function addToSectionsIndex(topic, fileName) {
+    const dataDir = await getDirHandle(topic.folderHandle, 'data');
+    const secIndex = await getFileHandle(dataDir, 'sections.js');
+    if (!secIndex) { toast('data/sections.js not found — add the import manually.', 'error'); return; }
+
+    let text = await readFile(secIndex);
+    // Determine next alias sN
+    const matches = [...text.matchAll(/as\s+(s\d+)/g)].map(m => +m[1].replace('s', ''));
+    const next = (matches.length ? Math.max(...matches) : 0) + 1;
+    const alias = `s${next}`;
+    const baseName = fileName.replace(/\.js$/, '');
+
+    const importLine = `import { section as ${alias} } from './sections/${baseName}.js';`;
+    // Insert import after the last existing import
+    const importRe = /^import .+$/gm;
+    let lastIdx = 0, m;
+    while ((m = importRe.exec(text))) lastIdx = m.index + m[0].length;
+    text = text.slice(0, lastIdx) + '\n' + importLine + text.slice(lastIdx);
+
+    // Append to the exports array
+    const arrRe = /export\s+const\s+sections\s*=\s*\[([^\]]*)\]/m;
+    const arr = text.match(arrRe);
+    if (arr) {
+        const inner = arr[1].trim();
+        const newInner = inner ? inner + ', ' + alias : alias;
+        text = text.replace(arrRe, `export const sections = [${newInner}]`);
+    }
+
+    await writeFile(secIndex, text);
+    topic.rawFiles['data/sections.js'] = text;
+    topic.sectionsIndex = parseSectionsIndex(text);
+}
+
+async function addIllustration(topic) {
+    const name = prompt('New illustration file name (e.g. tax-shift.js)');
+    if (!name) return;
+    if (!name.endsWith('.js')) { toast('File name must end with .js', 'error'); return; }
+
+    const dataDir = await getDirHandle(topic.folderHandle, 'data');
+    if (!dataDir) { toast('data/ not found.', 'error'); return; }
+    let illDir = await getDirHandle(dataDir, 'illustrations');
+    if (!illDir) illDir = await dataDir.getDirectoryHandle('illustrations', { create: true });
+
+    const fileHandle = await illDir.getFileHandle(name, { create: true });
+    const exportName = name.replace(/\.js$/, '').replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+    const newIll = {
+        id: 'vis-' + name.replace(/\.js$/, ''),
+        titleDe: 'New illustration',
+        titleEn: 'New illustration',
+        descDe: '',
+        descEn: '',
+        html: '<div>Replace with your markup</div>',
+        _fileHandle: fileHandle,
+        _fileName: name,
+        _exportName: exportName
+    };
+    const text = serializeIllustration(newIll);
+    await writeFile(fileHandle, text);
+
+    topic.illustrations.push(newIll);
+    topic.rawFiles[`data/illustrations/${name}`] = text;
+
+    // Update illustrations.js index
+    const illIndex = await getFileHandle(dataDir, 'illustrations.js');
+    if (illIndex) {
+        let idx = await readFile(illIndex);
+        const baseName = name.replace(/\.js$/, '');
+        const importLine = `import { ${exportName} } from './illustrations/${baseName}.js';`;
+        const importRe = /^import .+$/gm;
+        let lastIdx = 0, m;
+        while ((m = importRe.exec(idx))) lastIdx = m.index + m[0].length;
+        idx = idx.slice(0, lastIdx) + '\n' + importLine + idx.slice(lastIdx);
+
+        const arrRe = /export\s+const\s+animations\s*=\s*\[([^\]]*)\]/m;
+        const arr = idx.match(arrRe);
+        if (arr) {
+            const inner = arr[1].trim();
+            const newInner = inner ? inner + ', ' + exportName : exportName;
+            idx = idx.replace(arrRe, `export const animations = [${newInner}]`);
+        }
+        await writeFile(illIndex, idx);
+        topic.rawFiles['data/illustrations.js'] = idx;
+    }
+
+    renderTree();
+    renderMain();
+    toast(`Created ${name}.`, 'success');
+}
+
+async function saveSectionsIndex(topic) {
+    const dataDir = await getDirHandle(topic.folderHandle, 'data');
+    const secIndex = await getFileHandle(dataDir, 'sections.js');
+    if (!secIndex) { toast('data/sections.js not found.', 'error'); return; }
+
+    // Rebuild from topic.sections order + index map
+    let imports = '';
+    let arrayParts = [];
+    topic.sections.forEach((sec, i) => {
+        const alias = `s${i + 1}`;
+        imports += `import { section as ${alias} } from './sections/${sec._fileName.replace(/\.js$/, '')}.js';\n`;
+        arrayParts.push(alias);
+    });
+
+    const text = `// resources/topics/${topic.id}/data/sections.js\n\n` +
+        imports + `\n` +
+        `export const sections = [${arrayParts.join(', ')}];\n`;
+
+    await writeFile(secIndex, text);
+    topic.rawFiles['data/sections.js'] = text;
+    topic.sectionsIndex = parseSectionsIndex(text);
+    toast('Section order saved.', 'success');
+}
+
+function moveSection(topic, idx, direction) {
+    const j = idx + direction;
+    if (j < 0 || j >= topic.sections.length) return;
+    const tmp = topic.sections[idx];
+    topic.sections[idx] = topic.sections[j];
+    topic.sections[j] = tmp;
+    renderMain();
+}
+
+async function deleteSection(topic, sec) {
+    if (!confirm(`Delete section "${sec.titleDe || sec.id}"?\nThis will also remove its file and its entry in sections.js.`)) return;
+
+    // Remove file
+    try {
+        const dataDir = await getDirHandle(topic.folderHandle, 'data');
+        const sectionsDir = await getDirHandle(dataDir, 'sections');
+        if (sectionsDir) await sectionsDir.removeEntry(sec._fileName);
+    } catch (e) { console.warn('Could not delete file:', e); }
+
+    // Remove from array
+    topic.sections = topic.sections.filter(s => s !== sec);
+    delete topic.rawFiles[`data/sections/${sec._fileName}`];
+
+    // Update sections.js
+    await saveSectionsIndex(topic);
+
+    // Also remove the raw file reference
+    state.selectedNode = { kind: 'topic', topicId: topic.id };
+    renderTree();
+    renderMain();
+    toast(`Deleted ${sec._fileName}.`, 'success');
+}
+
+async function deleteSubtopic(topic, sec, idx) {
+    if (!confirm(`Delete sub-topic "${sec.subtopics[idx].titleDe || sec.subtopics[idx].id}"?`)) return;
+    sec.subtopics.splice(idx, 1);
+    renderSubtopics(topic, sec);
+    toast('Removed in memory. Click Save on the section to write.', 'info');
+}
+
+function addSubtopic(topic, sec) {
+    sec.subtopics.push({
+        id: 'new-subtopic-' + (sec.subtopics.length + 1),
+        titleDe: 'New sub-topic',
+        titleEn: 'New sub-topic',
+        htmlDe: '<p>Content goes here.</p>',
+        htmlEn: '<p>Content goes here.</p>'
+    });
+    renderSubtopics(topic, sec);
+    // Auto-open editor for the new item
+    openSubtopicEditor(topic, sec, sec.subtopics.length - 1);
+}
+
+async function deleteIllustration(topic, ill) {
+    if (!confirm(`Delete illustration "${ill.titleDe || ill.id}"?`)) return;
+
+    try {
+        const dataDir = await getDirHandle(topic.folderHandle, 'data');
+        const illDir = await getDirHandle(dataDir, 'illustrations');
+        if (illDir) await illDir.removeEntry(ill._fileName);
+    } catch (e) { console.warn('Could not delete file:', e); }
+
+    topic.illustrations = topic.illustrations.filter(x => x !== ill);
+    delete topic.rawFiles[`data/illustrations/${ill._fileName}`];
+
+    // Update illustrations.js
+    const dataDir = await getDirHandle(topic.folderHandle, 'data');
+    const illIndex = await getFileHandle(dataDir, 'illustrations.js');
+    if (illIndex) {
+        let idx = await readFile(illIndex);
+        // Remove the import line and the array entry
+        const baseName = ill._fileName.replace(/\.js$/, '');
+        idx = idx.split('\n').filter(line => !line.includes(`./illustrations/${baseName}.js`)).join('\n');
+        // Remove from array
+        const arrRe = /export\s+const\s+animations\s*=\s*\[([^\]]*)\]/m;
+        const arr = idx.match(arrRe);
+        if (arr) {
+            const parts = arr[1].split(',').map(s => s.trim()).filter(Boolean);
+            const filtered = parts.filter(p => p !== ill._exportName);
+            idx = idx.replace(arrRe, `export const animations = [${filtered.join(', ')}]`);
+        }
+        await writeFile(illIndex, idx);
+        topic.rawFiles['data/illustrations.js'] = idx;
+    }
+
+    state.selectedNode = { kind: 'topic', topicId: topic.id };
+    renderTree();
+    renderMain();
+    toast(`Deleted ${ill._fileName}.`, 'success');
+}
+
+/* ============================================================
+   TOP-LEVEL ACTIONS
+   ============================================================ */
+async function openFolder() {
+    if (!window.showDirectoryPicker) {
+        state.unsupported = true;
+        alert('Your browser does not support the File System Access API.\nUse Chrome, Edge, Brave, or Opera.');
+        return;
+    }
+    try {
+        const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        state.rootHandle = handle;
+        document.getElementById('folderName').textContent = `📁 ${handle.name}`;
+        toast('Loading topics…', 'info');
+
+        state.topics = await discoverTopics(handle);
+
+        const count = Object.keys(state.topics).length;
+        toast(`Found ${count} topic${count === 1 ? '' : 's'}.`, 'success');
+        state.selectedNode = null;
+        renderTree();
+        renderMain();
+        document.getElementById('btnSaveAll').disabled = false;
+        document.getElementById('btnRevertAll').disabled = false;
+    } catch (e) {
+        if (e.name === 'AbortError') return;
+        console.error(e);
+        toast('Failed to open folder: ' + e.message, 'error');
+    }
+}
+
+document.getElementById('btnOpen').addEventListener('click', openFolder);
+document.getElementById('btnOpen2').addEventListener('click', openFolder);
+document.getElementById('btnToggleTheme').addEventListener('click', () => {
+    document.documentElement.classList.toggle('light');
+});
+
+document.getElementById('btnSaveAll').addEventListener('click', async () => {
+    // Every save is immediate in this editor, so "save all" is a convenience
+    // that re-saves the currently selected topic's files.
+    if (!state.selectedNode) { toast('Select a topic first.', 'info'); return; }
+    const topic = state.topics[state.selectedNode.topicId];
+    if (!topic) return;
+    try {
+        await saveTopicMeta(topic);
+        for (const sec of topic.sections) await writeFile(sec._fileHandle, serializeSection(sec));
+        for (const ill of topic.illustrations) await writeFile(ill._fileHandle, serializeIllustration(ill));
+        await saveSectionsIndex(topic);
+        toast('All files in this topic re-saved.', 'success');
+    } catch (e) {
+        console.error(e);
+        toast('Save failed: ' + e.message, 'error');
+    }
+});
+
+document.getElementById('btnRevertAll').addEventListener('click', () => {
+    if (!state.selectedNode) { toast('Select a topic first.', 'info'); return; }
+    if (!confirm('Reload all files for the selected topic from disk? Unsaved in-memory edits will be lost.')) return;
+    openFolder();
+});
+</script>
+</body>
+</html>
