@@ -34,6 +34,11 @@
         return App.topics._registry;
     }
 
+    /* Make registerTopic globally reachable BEFORE any topic is loaded,
+       so dynamically imported ES modules can call it by bare name. */
+    window.registerTopic = registerTopic;
+    window.TEMPLATE_TOPICS = App.topics._registry;
+
     /* ----------------------------------------------------------
        Loading
        ---------------------------------------------------------- */
@@ -52,26 +57,25 @@
     }
 
     function loadSingleTopic(path) {
-        return new Promise((resolve, reject) => {
-            if (/\.json(\?.*)?$/i.test(path)) {
-                fetch(path, { cache: 'no-store' })
-                    .then(r => {
-                        if (!r.ok) throw new Error('HTTP ' + r.status);
-                        return r.json();
-                    })
-                    .then(data => {
-                        registerTopic(data);
-                        resolve();
-                    })
-                    .catch(reject);
-            } else {
-                const s = document.createElement('script');
-                s.src = path;
-                s.onload = () => resolve();
-                s.onerror = () => reject(new Error('Failed: ' + path));
-                document.head.appendChild(s);
-            }
-        });
+        // JSON topic definitions stay on the fetch path.
+        if (/\.json(\?.*)?$/i.test(path)) {
+            return fetch(path, { cache: 'no-store' })
+                .then(r => {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(data => { registerTopic(data); });
+        }
+
+        // Everything else is loaded as an ES module via dynamic import().
+        // This supports both classic-script topics (no imports) and ESM topics.
+        const url = new URL(path, document.baseURI).href;
+        return import(/* webpackIgnore: true */ url)
+            .then(() => { /* module registered itself via registerTopic() */ })
+            .catch(err => {
+                console.error(`[topics] failed to import "${path}":`, err);
+                throw err;
+            });
     }
 
     async function loadAllTopics() {
@@ -515,7 +519,4 @@
     App.topics.renderAnimation = renderAnimation;
     App.topics.observeSections = observeSections;
     App.topics.ensureTopicRendered = ensureTopicRendered;
-    /* Back-compat shims for topic scripts that use the old global API. */
-    window.registerTopic = registerTopic;
-    window.TEMPLATE_TOPICS = App.topics._registry;
 })();
