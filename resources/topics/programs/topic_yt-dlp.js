@@ -1,19 +1,12 @@
-// resources/topics/programs/topic_ytdlp.js
-// Registers the yt-dlp reference topic. Loaded via <script> injection.
+// resources/topics/topic_yt-dlp.js
+// Registers the yt-dlp downloader reference topic. Loaded via <script> injection.
 
 /* ==================================================================
-   YT-DLP COMMAND GENERATOR CONTROLLER
-   ------------------------------------------------------------------
-   Live-generates a yt-dlp command from the inputs in the generator
-   panel. Because <script> tags inside injected innerHTML are not
-   executed, we wire everything via a top-level IIFE that scans the
-   DOM (incl. shadow roots) and attaches listeners once per instance.
-   Robust against re-renders: periodic scan + per-node flag.
+   YT-DLP CODE-BLOCK COPY CONTROLLER
    ================================================================== */
 (function () {
     'use strict';
 
-    /* ---------- deep query (shadow DOM + same-origin iframes) ---------- */
     function deepQueryAll(root, selector, out) {
         out = out || [];
         try {
@@ -36,145 +29,75 @@
         return docs;
     }
 
-    /* ---------- shared command builder ---------- */
-    function buildCommand(cfg) {
-        var cmd = 'yt-dlp';
-
-        // output folder (must come before the URL)
-        if (cfg.folder) {
-            // normalize: trim and strip trailing slash, then append OS-agnostic path separator
-            var folder = cfg.folder.replace(/[\/\\]+$/, '');
-            cmd += ' -P "' + folder + '"';
-        }
-
-        if (cfg.type === 'audio') {
-            cmd += ' -x --audio-format ' + cfg.audioFormat;
-            if (cfg.quality === 'best') cmd += ' --audio-quality 0';
-        } else {
-            if (cfg.quality === 'best') {
-                cmd += ' -f "bestvideo+bestaudio/best"';
-            } else if (cfg.quality === 'worst') {
-                cmd += ' -f "worst"';
-            } else {
-                cmd += ' -f "bestvideo[height<=' + cfg.quality + ']+bestaudio/best[height<=' + cfg.quality + ']"';
-            }
-            cmd += ' --merge-output-format mp4';
-        }
-
-        if (cfg.embedThumb) cmd += ' --embed-thumbnail';
-        if (cfg.addMeta)    cmd += ' --add-metadata';
-        if (cfg.subs)       cmd += ' --write-subs --sub-langs "en,de"';
-
-        cmd += ' "' + cfg.url + '"';
-        return cmd;
+    function flashButton(btn, ok) {
+        var original = btn.getAttribute('data-label') || 'Copy';
+        btn.textContent = ok ? '✓ Copied!' : '⚠ Failed';
+        btn.classList.add(ok ? 'is-copied' : 'is-failed');
+        setTimeout(function () {
+            btn.textContent = original;
+            btn.classList.remove('is-copied', 'is-failed');
+        }, 1500);
     }
 
-    function flashFeedback(node) {
-        if (!node) return;
-        node.classList.add('show');
-        setTimeout(function () { node.classList.remove('show'); }, 1600);
-    }
+    function attachCopyButton(block) {
+        if (!block || block.__jfWired) return;
+        block.__jfWired = true;
 
-    /* ---------- per-instance init ---------- */
-    function initGenerator(root, ids) {
-        if (!root || root.__ytdlpWired) return;
-        var el = {};
-        for (var k in ids) {
-            el[k] = root.querySelector('#' + ids[k]);
-            if (!el[k]) return;   // DOM not fully rendered yet — retry next scan
-        }
-        root.__ytdlpWired = true;
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'jf-copy-btn';
+        btn.setAttribute('data-label', 'Copy');
+        btn.textContent = 'Copy';
+        btn.setAttribute('aria-label', 'Copy code to clipboard');
+        block.appendChild(btn);
 
-        /* ---- helpers ---- */
-        function readConfig() {
-            return {
-                url:         (el.url.value || '').trim() || 'URL',
-                folder:      (el.folder.value || '').trim(),
-                type:        el.type.value,
-                quality:     el.quality.value,
-                audioFormat: el.audioFormat.value,
-                embedThumb:  el.embedThumb.checked,
-                addMeta:     el.addMeta.checked,
-                subs:        el.subs.checked
-            };
-        }
-        function update() {
-            el.output.value = buildCommand(readConfig());
-        }
-        function syncAudioVisibility() {
-            el.audioOpts.style.display = el.type.value === 'audio' ? 'block' : 'none';
-        }
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var target = block.querySelector('pre, code, .jf-code-inner');
+            var text = target ? (target.innerText || target.textContent || '') : '';
+            text = text.replace(/\s+$/, '');
 
-        /* ---- live regeneration on any input change ---- */
-        el.url.addEventListener('input', update);
-        el.folder.addEventListener('input', update);
-        el.type.addEventListener('change', function () { syncAudioVisibility(); update(); });
-        el.quality.addEventListener('change', update);
-        el.audioFormat.addEventListener('change', update);
-        el.embedThumb.addEventListener('change', update);
-        el.addMeta.addEventListener('change', update);
-        el.subs.addEventListener('change', update);
+            var done = function (ok) { flashButton(btn, ok); };
 
-        /* ---- copy to clipboard ---- */
-        el.copy.addEventListener('click', function () {
-            el.output.select();
-            el.output.setSelectionRange(0, 99999);
-            var ok = false;
-            try { ok = document.execCommand('copy'); } catch (_) {}
-            if (!ok && navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(el.output.value)
-                    .then(function () { flashFeedback(el.feedback); })
-                    .catch(function () { flashFeedback(el.feedback); });
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text)
+                    .then(function () { done(true); })
+                    .catch(function () { fallbackCopy(text, done); });
             } else {
-                flashFeedback(el.feedback);
+                fallbackCopy(text, done);
             }
         });
-
-        /* ---- initial render ---- */
-        syncAudioVisibility();
-        update();
     }
 
-    /* ---------- ID maps for both language instances ---------- */
-    var DE = {
-        url:         'ytdlp-url',
-        folder:      'ytdlp-folder',
-        type:        'ytdlp-type',
-        quality:     'ytdlp-quality',
-        audioOpts:   'ytdlp-audio-options',
-        audioFormat: 'ytdlp-audio-format',
-        embedThumb:  'ytdlp-embed-thumb',
-        addMeta:     'ytdlp-add-metadata',
-        subs:        'ytdlp-subtitles',
-        output:      'ytdlp-output',
-        copy:        'ytdlp-copy',
-        feedback:    'ytdlp-copy-feedback'
-    };
-    var EN = {
-        url:         'ytdlp-url-en',
-        folder:      'ytdlp-folder-en',
-        type:        'ytdlp-type-en',
-        quality:     'ytdlp-quality-en',
-        audioOpts:   'ytdlp-audio-options-en',
-        audioFormat: 'ytdlp-audio-format-en',
-        embedThumb:  'ytdlp-embed-thumb-en',
-        addMeta:     'ytdlp-add-metadata-en',
-        subs:        'ytdlp-subtitles-en',
-        output:      'ytdlp-output-en',
-        copy:        'ytdlp-copy-en',
-        feedback:    'ytdlp-copy-feedback-en'
-    };
+    function fallbackCopy(text, done) {
+        try {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            ta.setSelectionRange(0, 99999);
+            var ok = document.execCommand('copy');
+            document.body.removeChild(ta);
+            done(ok);
+        } catch (_) {
+            done(false);
+        }
+    }
 
     function scan() {
         allDocuments().forEach(function (doc) {
-            try { initGenerator(doc.getElementById('ytdlp-generator'),    DE); } catch (_) {}
-            try { initGenerator(doc.getElementById('ytdlp-generator-en'), EN); } catch (_) {}
+            try {
+                deepQueryAll(doc, '.jf-code').forEach(attachCopyButton);
+            } catch (_) {}
         });
     }
 
     function start() {
         scan();
-        setInterval(scan, 500);
+        setInterval(scan, 800);
     }
 
     if (document.readyState === 'loading') {
@@ -194,187 +117,51 @@ registerTopic({
     icon: 'fa-download',
     titleDe: 'YT-DLP',
     titleEn: 'YT-DLP',
-    descDe: 'Yt-dlp & FFmpeg',
-    descEn: 'Yt-dlp & FFmpeg',
+    descDe: 'Feature-reicher CLI Audio/Video Downloader',
+    descEn: 'Feature-Rich CLI Audio/Video Downloader',
 
     sidebarTitleDe: 'yt-dlp',
     sidebarTitleEn: 'yt-dlp',
-    sidebarSubtitleDe: 'Download-Tool & Referenz',
-    sidebarSubtitleEn: 'Download Tool & Reference',
-    sidebarVersion: 'v1.4',
+    sidebarSubtitleDe: 'Fork von youtube-dl',
+    sidebarSubtitleEn: 'Fork of youtube-dl',
+    sidebarVersion: 'v2026.07+',
 
     hero: {
-        titleDe: 'yt-dlp: Der ultimative Downloader',
-        titleEn: 'yt-dlp: The Ultimate Downloader',
-        introDe: 'yt-dlp ist ein leistungsstarkes Kommandozeilen-Tool zum Herunterladen von Videos und Audios von über 1.000 Websites (YouTube, Twitch, Twitter, TikTok und mehr). Es ist ein Fork von youtube-dl mit vielen zusätzlichen Features und wird aktiv weiterentwickelt. Diese Referenz deckt Installation, grundlegende Befehle, Format-Auswahl, ffmpeg-Integration und einen interaktiven Befehls-Generator ab. <a href="#section5">Zum Befehls-Generator</a>.',
-        introEn: 'yt-dlp is a powerful command-line tool for downloading videos and audio from over 1,000 websites (YouTube, Twitch, Twitter, TikTok, and more). It is a fork of youtube-dl with many additional features and is actively maintained. This reference covers installation, basic commands, format selection, ffmpeg integration, and an interactive command generator. <a href="#section5">Go to Command Generator</a>.'
+        titleDe: 'yt-dlp: Der moderne Video-Downloader',
+        titleEn: 'yt-dlp: The Modern Video Downloader',
+        introDe: '<a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="topic-link">yt-dlp</a> ist ein <strong>feature-reicher Kommandozeilen-Downloader für Audio und Video</strong> mit Unterstützung für tausende Websites. Das Projekt ist ein Fork von <a href="https://github.com/ytdl-org/youtube-dl" target="_blank" class="topic-link">youtube-dl</a> und basiert auf dem inzwischen inaktiven <a href="https://github.com/blackjack4494/yt-dlc" target="_blank" class="topic-link">youtube-dlc</a>. <a href="https://github.com/yt-dlp/yt-dlp/wiki" target="_blank" class="topic-link">Zur offiziellen Wiki</a>.',
+        introEn: '<a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="topic-link">yt-dlp</a> is a <strong>feature-rich command-line audio/video downloader</strong> with support for thousands of sites. The project is a fork of <a href="https://github.com/ytdl-org/youtube-dl" target="_blank" class="topic-link">youtube-dl</a> based on the now inactive <a href="https://github.com/blackjack4494/yt-dlc" target="_blank" class="topic-link">youtube-dlc</a>. <a href="https://github.com/yt-dlp/yt-dlp/wiki" target="_blank" class="topic-link">Visit the official Wiki</a>.'
     },
 
     quickLinks: [
-        { icon: 'fa-terminal',           href: '#section1', switchToDoc: true, labelDe: 'Grundlagen',           labelEn: 'Basics' },
-        { icon: 'fa-film',               href: '#section2', switchToDoc: true, labelDe: 'Formate & Qualität',   labelEn: 'Formats & Quality' },
-        { icon: 'fa-music',              href: '#section3', switchToDoc: true, labelDe: 'Audio-Extraktion',     labelEn: 'Audio Extraction' },
-        { icon: 'fa-cogs',               href: '#section4', switchToDoc: true, labelDe: 'ffmpeg-Integration',   labelEn: 'ffmpeg Integration' },
-        { icon: 'fa-magic',              href: '#section5', switchToDoc: true, labelDe: 'Befehls-Generator',    labelEn: 'Command Generator' },
-        { icon: 'fa-external-link-alt',  href: 'https://github.com/yt-dlp/yt-dlp', target: '_blank', labelDe: 'GitHub',  labelEn: 'GitHub' }
+        { icon: 'fa-info-circle',       href: '#section1', switchToDoc: true, labelDe: 'Überblick',      labelEn: 'Overview' },
+        { icon: 'fa-download',          href: '#section2', switchToDoc: true, labelDe: 'Installation',   labelEn: 'Installation' },
+        { icon: 'fa-list',              href: '#section3', switchToDoc: true, labelDe: 'Formate',        labelEn: 'Formats' },
+        { icon: 'fa-magic',             href: '#section4', switchToDoc: true, labelDe: 'Post-Processing', labelEn: 'Post-Processing' },
+        { icon: 'fa-cog',               href: '#section5', switchToDoc: true, labelDe: 'Konfiguration',  labelEn: 'Configuration' },
+        { icon: 'fa-file',              href: '#section6', switchToDoc: true, labelDe: 'Ausgabe',        labelEn: 'Output' },
+        { icon: 'fa-external-link-alt', href: 'https://github.com/yt-dlp/yt-dlp', target: '_blank', labelDe: 'GitHub Repository', labelEn: 'GitHub Repository' }
     ],
 
     sections: [
-        /* ============ 1. GRUNDLAGEN ============ */
+        /* ============ 1. ÜBERBLICK ============ */
         {
             id: 'section1',
-            titleDe: 'Grundlagen & Installation',
-            titleEn: 'Basics & Installation',
-            introDe: 'yt-dlp wird als einzelne ausführbare Datei verteilt und benötigt keine Installation. Für Windows gibt es eine standalone <code>yt-dlp.exe</code>.',
-            introEn: 'yt-dlp is distributed as a single executable file and requires no installation. For Windows, there is a standalone <code>yt-dlp.exe</code>.',
+            titleDe: '1. Überblick & Features',
+            titleEn: '1. Overview & Features',
+            introDe: '<a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="topic-link">yt-dlp</a> ist ein <strong>Kommandozeilen-Tool zum Herunterladen von Audio und Video</strong> von tausenden Websites. Es ist ein Fork von <a href="https://github.com/ytdl-org/youtube-dl" target="_blank" class="topic-link">youtube-dl</a> mit zusätzlichen Features und Fixes. Die wichtigsten Verbesserungen gegenüber <a href="https://github.com/ytdl-org/youtube-dl" target="_blank" class="topic-link">youtube-dl</a> sind schnellere Updates, bessere Format-Auswahl, mehr Extractors und <a href="https://sponsor.ajay.app/" target="_blank" class="topic-link">SponsorBlock</a>-Integration [citation:10].',
+            introEn: '<a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="topic-link">yt-dlp</a> is a <strong>command-line tool for downloading audio and video</strong> from thousands of sites. It is a fork of <a href="https://github.com/ytdl-org/youtube-dl" target="_blank" class="topic-link">youtube-dl</a> with additional features and fixes. The key improvements over <a href="https://github.com/ytdl-org/youtube-dl" target="_blank" class="topic-link">youtube-dl</a> are faster updates, better format selection, more extractors, and <a href="https://sponsor.ajay.app/" target="_blank" class="topic-link">SponsorBlock</a> integration [citation:10].',
             subtopics: [
                 {
                     id: 'subsection1_1',
-                    titleDe: 'Installation & Aktualisierung',
-                    titleEn: 'Installation & Updating',
-                    htmlDe: `
-                    <div class="overflow-x-auto w-full">
-                    <table class="wikitable">
-                    <tr><th class="w-1/3">Methode</th><th>Befehl / Hinweis</th></tr>
-                    <tr><td><strong>Windows Standalone</strong></td><td class="text-[var(--text-muted)]"><code>yt-dlp.exe</code> von GitHub herunterladen und in einen Ordner legen, der in der <code>PATH</code>-Umgebungsvariable enthalten ist.</td></tr>
-                    <tr><td><strong>Python / pip</strong></td><td class="text-[var(--text-muted)]"><code>pip install -U yt-dlp</code></td></tr>
-                    <tr><td><strong>winget</strong></td><td class="text-[var(--text-muted)]"><code>winget install yt-dlp.yt-dlp</code> (bei Problemen zuerst ffmpeg separat installieren)</td></tr>
-                    <tr><td><strong>Selbst-Update</strong></td><td class="text-[var(--text-muted)]"><code>yt-dlp -U</code> (funktioniert für Standalone-Binaries)</td></tr>
-                    <tr><td><strong>Nightly-Update</strong></td><td class="text-[var(--text-muted)]"><code>yt-dlp --update-to nightly</code> (für neueste Fixes bei YouTube-Änderungen)</td></tr>
-                    </table>
-                    </div>
-                    `,
-                    htmlEn: `
-                    <div class="overflow-x-auto w-full">
-                    <table class="wikitable">
-                    <tr><th class="w-1/3">Method</th><th>Command / Note</th></tr>
-                    <tr><td><strong>Windows Standalone</strong></td><td class="text-[var(--text-muted)]">Download <code>yt-dlp.exe</code> from GitHub and place it in a folder included in the <code>PATH</code> environment variable.</td></tr>
-                    <tr><td><strong>Python / pip</strong></td><td class="text-[var(--text-muted)]"><code>pip install -U yt-dlp</code></td></tr>
-                    <tr><td><strong>winget</strong></td><td class="text-[var(--text-muted)]"><code>winget install yt-dlp.yt-dlp</code> (if issues, install ffmpeg separately first)</td></tr>
-                    <tr><td><strong>Self-Update</strong></td><td class="text-[var(--text-muted)]"><code>yt-dlp -U</code> (works for standalone binaries)</td></tr>
-                    <tr><td><strong>Nightly Update</strong></td><td class="text-[var(--text-muted)]"><code>yt-dlp --update-to nightly</code> (for latest fixes when YouTube changes)</td></tr>
-                    </table>
-                    </div>
-                    `
-                },
-                {
-                    id: 'subsection1_2',
-                    titleDe: 'Grundlegende Befehle',
-                    titleEn: 'Basic Commands',
+                    titleDe: 'Was ist yt-dlp?',
+                    titleEn: 'What is yt-dlp?',
                     htmlDe: `
                     <style>
-                        /* ---------- scoped Jellyfin-style code block styles ---------- */
-                        /* Each command block is its own embedded terminal panel:  */
-                        /* darker background + its own border + rounded corners.  */
+                        /* ---------- scoped topic styles ---------- */
                         .jf-code {
                             position: relative;
-                            background: #06080b;                       /* very dark, per-command */
-                            border: 1px solid var(--border-color);
-                            border-radius: 0.45rem;
-                            margin: 0.55rem 0;
-                            overflow: hidden;
-                            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04),
-                                        0 1px 2px rgba(0,0,0,0.35);
-                        }
-                        .jf-code-inner {
-                            display: block;
-                            padding: 0.85rem 1rem;
-                            font-family: 'Courier New', Menlo, Consolas, monospace;
-                            font-size: 0.72rem;
-                            line-height: 1.55;
-                            color: var(--text-color);
-                            white-space: pre;                  /* preserve line breaks */
-                            overflow-x: auto;
-                            margin: 0;
-                            tab-size: 4;
-                            background: transparent;           /* let .jf-code bg show */
-                        }
-                        .jf-code-inner .cmd {
-                            display: block;
-                            padding: 0.05rem 0;
-                        }
-                        .jf-code-inner .cmt {
-                            display: block;
-                            color: var(--text-muted);
-                            opacity: 0.75;
-                            font-style: italic;
-                        }
-                        .jf-code-inner .blank {
-                            display: block;
-                            height: 0.6rem;
-                        }
-                        .jf-copy-btn {
-                            position: absolute;
-                            top: 0.5rem;
-                            right: 0.5rem;
-                            padding: 0.35rem 0.7rem;
-                            font-size: 0.62rem;
-                            font-weight: 800;
-                            letter-spacing: 0.03em;
-                            border-radius: 0.35rem;
-                            border: 1px solid var(--border-color);
-                            background: var(--panel-color);
-                            color: var(--text-color);
-                            cursor: pointer;
-                            opacity: 0;
-                            transform: translateY(-4px);
-                            transition: opacity 0.2s ease, transform 0.2s ease, background 0.15s ease, border-color 0.15s ease;
-                            z-index: 2;
-                            user-select: none;
-                            font-family: inherit;
-                        }
-                        .jf-code:hover .jf-copy-btn,
-                        .jf-copy-btn:focus {
-                            opacity: 1;
-                            transform: translateY(0);
-                        }
-                        .jf-copy-btn:hover {
-                            background: color-mix(in srgb, var(--link-color) 15%, var(--panel-color));
-                            border-color: var(--link-color);
-                        }
-                        .jf-copy-btn:active { transform: translateY(1px); }
-                        .jf-copy-btn.is-copied { background: #10b981; border-color: #10b981; color: #fff; }
-                        .jf-copy-btn.is-failed { background: #ef4444; border-color: #ef4444; color: #fff; }
-                        @media (max-width: 560px) {
-                            .jf-code-inner { font-size: 0.66rem; padding: 0.7rem 0.8rem; }
-                            .jf-copy-btn { opacity: 1; transform: translateY(0); }
-                        }
-                    </style>
-
-                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
-                    <ul class="list-disc pl-4 space-y-2">
-                    <li><strong>Einfacher Download (beste Qualität):</strong><br>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp "URL"</pre></div>
-                    </li>
-                    <li><strong>Als MP4 speichern:</strong><br>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]" "URL"</pre></div>
-                    </li>
-                    <li><strong>Verfügbare Formate anzeigen:</strong><br>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -F "URL"</pre></div>
-                    </li>
-                    <li><strong>Eigenen Dateinamen festlegen:</strong><br>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -o "%(title)s.%(ext)s" "URL"</pre></div>
-                    </li>
-                    <li><strong>Untertitel herunterladen:</strong><br>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp --write-subs --sub-langs "de,en" "URL"</pre></div>
-                    </li>
-                    <li><strong>Playlist herunterladen:</strong><br>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -o "%(playlist_index)s - %(title)s.%(ext)s" "PLAYLIST_URL"</pre></div>
-                    </li>
-                    <li><strong>Nur bestimmte Playlist-Einträge:</strong><br>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -I 1:3,7,-5::2 "PLAYLIST_URL"</pre></div>
-                    </li>
-                    </ul>
-                    </div>
-                    `,
-                    htmlEn: `
-                    <style>
-                        /* ---------- scoped Jellyfin-style code block styles ---------- */
-                        /* Each command block is its own embedded terminal panel:  */
-                        /* darker background + its own border + rounded corners.  */
-                        .jf-code {
-                            position: relative;
-                            background: #06080b;                       /* very dark, per-command */
+                            background: #06080b;
                             border: 1px solid var(--border-color);
                             border-radius: 0.45rem;
                             margin: 0.55rem 0;
@@ -395,20 +182,6 @@ registerTopic({
                             tab-size: 4;
                             background: transparent;
                         }
-                        .jf-code-inner .cmd {
-                            display: block;
-                            padding: 0.05rem 0;
-                        }
-                        .jf-code-inner .cmt {
-                            display: block;
-                            color: var(--text-muted);
-                            opacity: 0.75;
-                            font-style: italic;
-                        }
-                        .jf-code-inner .blank {
-                            display: block;
-                            height: 0.6rem;
-                        }
                         .jf-copy-btn {
                             position: absolute;
                             top: 0.5rem;
@@ -438,69 +211,245 @@ registerTopic({
                             background: color-mix(in srgb, var(--link-color) 15%, var(--panel-color));
                             border-color: var(--link-color);
                         }
-                        .jf-copy-btn:active { transform: translateY(1px); }
-                        .jf-copy-btn.is-copied { background: #10b981; border-color: #10b981; color: #fff; }
-                        .jf-copy-btn.is-failed { background: #ef4444; border-color: #ef4444; color: #fff; }
+                        .jf-copy-btn.is-copied {
+                            background: #10b981;
+                            border-color: #10b981;
+                            color: #fff;
+                        }
+                        .jf-copy-btn.is-failed {
+                            background: #ef4444;
+                            border-color: #ef4444;
+                            color: #fff;
+                        }
+
+                        /* ---------- HIGHLIGHTED HYPERLINKS ---------- */
+                        .wikitable a[href^="http"],
+                        .bg-\\[var\\(--panel-color\\)\\] a[href^="http"] {
+                            color: var(--link-color);
+                            text-decoration: underline;
+                            text-decoration-thickness: 2px;
+                            text-underline-offset: 2px;
+                            font-weight: 600;
+                            transition: color 0.15s ease, background 0.15s ease, text-decoration-color 0.15s ease;
+                            border-radius: 0.2rem;
+                            padding: 0.05rem 0.15rem;
+                        }
+                        .wikitable a[href^="http"]:hover,
+                        .bg-\\[var\\(--panel-color\\)\\] a[href^="http"]:hover {
+                            color: var(--link-hover-color, var(--link-color));
+                            background: color-mix(in srgb, var(--link-color) 18%, transparent);
+                            text-decoration-thickness: 3px;
+                        }
+                        .wikitable a[href^="http"]:visited,
+                        .bg-\\[var\\(--panel-color\\)\\] a[href^="http"]:visited {
+                            color: var(--link-color);
+                            opacity: 0.85;
+                        }
+
+                        /* External links get a small arrow */
+                        a[target="_blank"].topic-link::after,
+                        .wikitable a[target="_blank"]::after {
+                            content: "\\2197";              /* ↗ */
+                            display: inline-block;
+                            margin-left: 0.2em;
+                            font-size: 0.75em;
+                            opacity: 0.75;
+                            transition: transform 0.15s ease, opacity 0.15s ease;
+                        }
+                        a[target="_blank"].topic-link:hover::after,
+                        .wikitable a[target="_blank"]:hover::after {
+                            transform: translate(1px, -1px);
+                            opacity: 1;
+                        }
+
+                        /* Links inside <code> keep monospace but stay clickable */
+                        code a,
+                        .jf-code-inner a {
+                            font-family: inherit;
+                            color: var(--link-color);
+                            text-decoration: underline;
+                            text-underline-offset: 2px;
+                            font-weight: 600;
+                        }
+
+                        /* Neutralize navigation anchors */
+                        a[href^="#"] {
+                            text-decoration: none;
+                            background: none;
+                            padding: 0;
+                        }
+
                         @media (max-width: 560px) {
                             .jf-code-inner { font-size: 0.66rem; padding: 0.7rem 0.8rem; }
                             .jf-copy-btn { opacity: 1; transform: translateY(0); }
                         }
                     </style>
 
-                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
-                    <ul class="list-disc pl-4 space-y-2">
-                    <li><strong>Simple download (best quality):</strong><br>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp "URL"</pre></div>
-                    </li>
-                    <li><strong>Save as MP4:</strong><br>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]" "URL"</pre></div>
-                    </li>
-                    <li><strong>List available formats:</strong><br>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -F "URL"</pre></div>
-                    </li>
-                    <li><strong>Set custom filename:</strong><br>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -o "%(title)s.%(ext)s" "URL"</pre></div>
-                    </li>
-                    <li><strong>Download subtitles:</strong><br>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp --write-subs --sub-langs "en,de" "URL"</pre></div>
-                    </li>
-                    <li><strong>Download playlist:</strong><br>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -o "%(playlist_index)s - %(title)s.%(ext)s" "PLAYLIST_URL"</pre></div>
-                    </li>
-                    <li><strong>Only specific playlist items:</strong><br>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -I 1:3,7,-5::2 "PLAYLIST_URL"</pre></div>
-                    </li>
-                    </ul>
+                    <div class="overflow-x-auto w-full">
+                    <table class="wikitable">
+                    <tr><th class="w-1/4">Eigenschaft</th><th>Beschreibung</th></tr>
+                    <tr><td><strong>Typ</strong></td><td class="text-[var(--text-muted)]">Kommandozeilen Audio/Video Downloader.</td></tr>
+                    <tr><td><strong>Herkunft</strong></td><td class="text-[var(--text-muted)]">Fork von <a href="https://github.com/ytdl-org/youtube-dl" target="_blank" class="topic-link">youtube-dl</a>, basierend auf <a href="https://github.com/blackjack4494/yt-dlc" target="_blank" class="topic-link">youtube-dlc</a> [citation:11].</td></tr>
+                    <tr><td><strong>Lizenz</strong></td><td class="text-[var(--text-muted)]"><a href="https://github.com/yt-dlp/yt-dlp/blob/master/LICENSE" target="_blank" class="topic-link">Unlicense</a> – vollständig frei und quelloffen.</td></tr>
+                    <tr><td><strong>Plattformen</strong></td><td class="text-[var(--text-muted)]"><a href="https://www.microsoft.com/windows" target="_blank" class="topic-link">Windows</a>, <a href="https://www.linux.org/" target="_blank" class="topic-link">Linux</a>, <a href="https://www.apple.com/macos/" target="_blank" class="topic-link">macOS</a>, <a href="https://www.freebsd.org/" target="_blank" class="topic-link">FreeBSD</a> [citation:11].</td></tr>
+                    <tr><td><strong>Abhängigkeiten</strong></td><td class="text-[var(--text-muted)]"><a href="https://www.python.org/" target="_blank" class="topic-link">Python</a> 3.10+, <a href="https://ffmpeg.org/" target="_blank" class="topic-link">FFmpeg</a> (empfohlen), <a href="https://deno.land/" target="_blank" class="topic-link">Deno</a>/<a href="https://nodejs.org/" target="_blank" class="topic-link">Node.js</a> für YouTube [citation:1].</td></tr>
+                    <tr><td><strong>Kernfunktion</strong></td><td class="text-[var(--text-muted)]">Download von tausenden Websites, Format-Auswahl, Post-Processing, Metadaten.</td></tr>
+                    <tr><td><strong>Besonderheiten</strong></td><td class="text-[var(--text-muted)]"><a href="https://sponsor.ajay.app/" target="_blank" class="topic-link">SponsorBlock</a>, <a href="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp" target="_blank" class="topic-link">Browser-Cookies</a>, <a href="https://ffmpeg.org/" target="_blank" class="topic-link">FFmpeg</a>-Integration [citation:7].</td></tr>
+                    </table>
+                    </div>
+                    `,
+                    htmlEn: `
+                    <div class="overflow-x-auto w-full">
+                    <table class="wikitable">
+                    <tr><th class="w-1/4">Attribute</th><th>Description</th></tr>
+                    <tr><td><strong>Type</strong></td><td class="text-[var(--text-muted)]">Command-line audio/video downloader.</td></tr>
+                    <tr><td><strong>Origin</strong></td><td class="text-[var(--text-muted)]">Fork of <a href="https://github.com/ytdl-org/youtube-dl" target="_blank" class="topic-link">youtube-dl</a>, based on <a href="https://github.com/blackjack4494/yt-dlc" target="_blank" class="topic-link">youtube-dlc</a> [citation:11].</td></tr>
+                    <tr><td><strong>License</strong></td><td class="text-[var(--text-muted)]"><a href="https://github.com/yt-dlp/yt-dlp/blob/master/LICENSE" target="_blank" class="topic-link">Unlicense</a> – fully free and open source.</td></tr>
+                    <tr><td><strong>Platforms</strong></td><td class="text-[var(--text-muted)]"><a href="https://www.microsoft.com/windows" target="_blank" class="topic-link">Windows</a>, <a href="https://www.linux.org/" target="_blank" class="topic-link">Linux</a>, <a href="https://www.apple.com/macos/" target="_blank" class="topic-link">macOS</a>, <a href="https://www.freebsd.org/" target="_blank" class="topic-link">FreeBSD</a> [citation:11].</td></tr>
+                    <tr><td><strong>Dependencies</strong></td><td class="text-[var(--text-muted)]"><a href="https://www.python.org/" target="_blank" class="topic-link">Python</a> 3.10+, <a href="https://ffmpeg.org/" target="_blank" class="topic-link">FFmpeg</a> (recommended), <a href="https://deno.land/" target="_blank" class="topic-link">Deno</a>/<a href="https://nodejs.org/" target="_blank" class="topic-link">Node.js</a> for YouTube [citation:1].</td></tr>
+                    <tr><td><strong>Core function</strong></td><td class="text-[var(--text-muted)]">Download from thousands of sites, format selection, post-processing, metadata.</td></tr>
+                    <tr><td><strong>Specialties</strong></td><td class="text-[var(--text-muted)]"><a href="https://sponsor.ajay.app/" target="_blank" class="topic-link">SponsorBlock</a>, <a href="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp" target="_blank" class="topic-link">browser cookies</a>, <a href="https://ffmpeg.org/" target="_blank" class="topic-link">FFmpeg</a> integration [citation:7].</td></tr>
+                    </table>
+                    </div>
+                    `
+                },
+                {
+                    id: 'subsection1_2',
+                    titleDe: 'yt-dlp vs. youtube-dl',
+                    titleEn: 'yt-dlp vs. youtube-dl',
+                    htmlDe: `
+                    <div class="overflow-x-auto w-full">
+                    <table class="wikitable">
+                    <tr><th class="w-1/5">Merkmal</th><th class="w-1/3"><a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="topic-link">yt-dlp</a></th><th class="w-1/3"><a href="https://github.com/ytdl-org/youtube-dl" target="_blank" class="topic-link">youtube-dl</a></th></tr>
+                    <tr><td><strong>Entwicklung</strong></td><td class="text-[var(--text-muted)]">Aktiv, tägliche Updates [citation:10]</td><td class="text-[var(--text-muted)]">Langsamer, weniger Updates</td></tr>
+                    <tr><td><strong>Format-Auswahl</strong></td><td class="text-[var(--text-muted)]">Erweitert, <code>-S</code> Sorting [citation:4]</td><td class="text-[var(--text-muted)]">Basis</td></tr>
+                    <tr><td><strong>SponsorBlock</strong></td><td class="text-[var(--text-muted)]">Integriert [citation:5]</td><td class="text-[var(--text-muted)]">Nicht verfügbar</td></tr>
+                    <tr><td><strong>Extractors</strong></td><td class="text-[var(--text-muted)]">Mehr Sites, schnellere Fixes [citation:10]</td><td class="text-[var(--text-muted)]">Weniger</td></tr>
+                    <tr><td><strong>Playlists</strong></td><td class="text-[var(--text-muted)]">Besseres Handling [citation:10]</td><td class="text-[var(--text-muted)]">Grundlegend</td></tr>
+                    <tr><td><strong>Python</strong></td><td class="text-[var(--text-muted)]">3.10+ [citation:10]</td><td class="text-[var(--text-muted)]">2.7+</td></tr>
+                    </table>
+                    </div>
+                    `,
+                    htmlEn: `
+                    <div class="overflow-x-auto w-full">
+                    <table class="wikitable">
+                    <tr><th class="w-1/5">Feature</th><th class="w-1/3"><a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="topic-link">yt-dlp</a></th><th class="w-1/3"><a href="https://github.com/ytdl-org/youtube-dl" target="_blank" class="topic-link">youtube-dl</a></th></tr>
+                    <tr><td><strong>Development</strong></td><td class="text-[var(--text-muted)]">Active, daily updates [citation:10]</td><td class="text-[var(--text-muted)]">Slower, fewer updates</td></tr>
+                    <tr><td><strong>Format selection</strong></td><td class="text-[var(--text-muted)]">Advanced, <code>-S</code> sorting [citation:4]</td><td class="text-[var(--text-muted)]">Basic</td></tr>
+                    <tr><td><strong>SponsorBlock</strong></td><td class="text-[var(--text-muted)]">Integrated [citation:5]</td><td class="text-[var(--text-muted)]">Not available</td></tr>
+                    <tr><td><strong>Extractors</strong></td><td class="text-[var(--text-muted)]">More sites, faster fixes [citation:10]</td><td class="text-[var(--text-muted)]">Fewer</td></tr>
+                    <tr><td><strong>Playlists</strong></td><td class="text-[var(--text-muted)]">Better handling [citation:10]</td><td class="text-[var(--text-muted)]">Basic</td></tr>
+                    <tr><td><strong>Python</strong></td><td class="text-[var(--text-muted)]">3.10+ [citation:10]</td><td class="text-[var(--text-muted)]">2.7+</td></tr>
+                    </table>
                     </div>
                     `
                 }
             ]
         },
 
-        /* ============ 2. FORMATE & QUALITÄT ============ */
+        /* ============ 2. INSTALLATION ============ */
         {
             id: 'section2',
-            titleDe: 'Formate & Qualität',
-            titleEn: 'Formats & Quality',
-            introDe: 'yt-dlp bietet feingranulare Kontrolle über Formatwahl. Mit <code>-F</code> werden alle verfügbaren Formate aufgelistet, mit <code>-f</code> wird das gewünschte Format ausgewählt.',
-            introEn: 'yt-dlp offers fine-grained control over format selection. Use <code>-F</code> to list all available formats, and <code>-f</code> to select the desired format.',
+            titleDe: '2. Installation',
+            titleEn: '2. Installation',
+            introDe: '<a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="topic-link">yt-dlp</a> kann als Standalone-Binary, über <a href="https://pypi.org/project/yt-dlp/" target="_blank" class="topic-link">pip</a> oder Paketmanager installiert werden. Für <a href="https://www.linux.org/" target="_blank" class="topic-link">Linux</a> und <a href="https://www.apple.com/macos/" target="_blank" class="topic-link">macOS</a> wird das zipimport-Binary empfohlen, für <a href="https://www.microsoft.com/windows" target="_blank" class="topic-link">Windows</a> die .exe-Datei [citation:11].',
+            introEn: '<a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="topic-link">yt-dlp</a> can be installed as a standalone binary, via <a href="https://pypi.org/project/yt-dlp/" target="_blank" class="topic-link">pip</a>, or through package managers. For <a href="https://www.linux.org/" target="_blank" class="topic-link">Linux</a> and <a href="https://www.apple.com/macos/" target="_blank" class="topic-link">macOS</a>, the zipimport binary is recommended; for <a href="https://www.microsoft.com/windows" target="_blank" class="topic-link">Windows</a>, the .exe file [citation:11].',
             subtopics: [
                 {
                     id: 'subsection2_1',
+                    titleDe: 'Installationsmethoden',
+                    titleEn: 'Installation Methods',
+                    htmlDe: `
+                    <div class="overflow-x-auto w-full">
+                    <table class="wikitable">
+                    <tr><th class="w-1/4">Methode</th><th>Beschreibung</th></tr>
+                    <tr><td><strong><a href="https://github.com/yt-dlp/yt-dlp#release-files" target="_blank" class="topic-link">Standalone Binary</a></strong></td><td class="text-[var(--text-muted)]">Empfohlen für <a href="https://www.linux.org/" target="_blank" class="topic-link">Linux</a>/<a href="https://www.apple.com/macos/" target="_blank" class="topic-link">macOS</a> (zipimport) und <a href="https://www.microsoft.com/windows" target="_blank" class="topic-link">Windows</a> (.exe) [citation:11].</td></tr>
+                    <tr><td><strong><a href="https://pypi.org/project/yt-dlp/" target="_blank" class="topic-link">pip</a></strong></td><td class="text-[var(--text-muted)]"><code>pip install yt-dlp</code> – erfordert <a href="https://www.python.org/" target="_blank" class="topic-link">Python</a> 3.10+ [citation:10].</td></tr>
+                    <tr><td><strong><a href="https://github.com/yt-dlp/yt-dlp/wiki/Installation" target="_blank" class="topic-link">Paketmanager</a></strong></td><td class="text-[var(--text-muted)]"><a href="https://brew.sh/" target="_blank" class="topic-link">Homebrew</a>, <a href="https://scoop.sh/" target="_blank" class="topic-link">Scoop</a>, <a href="https://chocolatey.org/" target="_blank" class="topic-link">Chocolatey</a>, <a href="https://winget.run/" target="_blank" class="topic-link">winget</a> [citation:10].</td></tr>
+                    <tr><td><strong><a href="https://github.com/yt-dlp/yt-dlp#dependencies" target="_blank" class="topic-link">Abhängigkeiten</a></strong></td><td class="text-[var(--text-muted)]"><a href="https://ffmpeg.org/" target="_blank" class="topic-link">FFmpeg</a> für Merging/Post-Processing, <a href="https://deno.land/" target="_blank" class="topic-link">Deno</a> für YouTube [citation:1].</td></tr>
+                    </table>
+                    </div>
+                    `,
+                    htmlEn: `
+                    <div class="overflow-x-auto w-full">
+                    <table class="wikitable">
+                    <tr><th class="w-1/4">Method</th><th>Description</th></tr>
+                    <tr><td><strong><a href="https://github.com/yt-dlp/yt-dlp#release-files" target="_blank" class="topic-link">Standalone Binary</a></strong></td><td class="text-[var(--text-muted)]">Recommended for <a href="https://www.linux.org/" target="_blank" class="topic-link">Linux</a>/<a href="https://www.apple.com/macos/" target="_blank" class="topic-link">macOS</a> (zipimport) and <a href="https://www.microsoft.com/windows" target="_blank" class="topic-link">Windows</a> (.exe) [citation:11].</td></tr>
+                    <tr><td><strong><a href="https://pypi.org/project/yt-dlp/" target="_blank" class="topic-link">pip</a></strong></td><td class="text-[var(--text-muted)]"><code>pip install yt-dlp</code> – requires <a href="https://www.python.org/" target="_blank" class="topic-link">Python</a> 3.10+ [citation:10].</td></tr>
+                    <tr><td><strong><a href="https://github.com/yt-dlp/yt-dlp/wiki/Installation" target="_blank" class="topic-link">Package managers</a></strong></td><td class="text-[var(--text-muted)]"><a href="https://brew.sh/" target="_blank" class="topic-link">Homebrew</a>, <a href="https://scoop.sh/" target="_blank" class="topic-link">Scoop</a>, <a href="https://chocolatey.org/" target="_blank" class="topic-link">Chocolatey</a>, <a href="https://winget.run/" target="_blank" class="topic-link">winget</a> [citation:10].</td></tr>
+                    <tr><td><strong><a href="https://github.com/yt-dlp/yt-dlp#dependencies" target="_blank" class="topic-link">Dependencies</a></strong></td><td class="text-[var(--text-muted)]"><a href="https://ffmpeg.org/" target="_blank" class="topic-link">FFmpeg</a> for merging/post-processing, <a href="https://deno.land/" target="_blank" class="topic-link">Deno</a> for YouTube [citation:1].</td></tr>
+                    </table>
+                    </div>
+                    `
+                },
+                {
+                    id: 'subsection2_2',
+                    titleDe: 'Linux / macOS Installation',
+                    titleEn: 'Linux / macOS Installation',
+                    htmlDe: `
+                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
+                    <p class="mb-2"><strong>Standalone Binary installieren:</strong></p>
+                    <div class="jf-code">
+                        <pre class="jf-code-inner"># Linux/macOS (zipimport)
+sudo wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O /usr/local/bin/yt-dlp
+sudo chmod a+rx /usr/local/bin/yt-dlp</pre>
+                    </div>
+                    <p class="mb-2 mt-3"><strong>Aktualisieren:</strong></p>
+                    <div class="jf-code">
+                        <pre class="jf-code-inner"># Stable
+yt-dlp --update
+
+# Nightly (empfohlen für häufige Nutzung) [citation:10]
+yt-dlp --update-to nightly</pre>
+                    </div>
+                    <p class="mt-3">Nightly-Builds werden täglich aktualisiert und sind für häufig wechselnde Websites wie <a href="https://www.youtube.com/" target="_blank" class="topic-link">YouTube</a> zuverlässiger [citation:10].</p>
+                    </div>
+                    `,
+                    htmlEn: `
+                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
+                    <p class="mb-2"><strong>Install standalone binary:</strong></p>
+                    <div class="jf-code">
+                        <pre class="jf-code-inner"># Linux/macOS (zipimport)
+sudo wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O /usr/local/bin/yt-dlp
+sudo chmod a+rx /usr/local/bin/yt-dlp</pre>
+                    </div>
+                    <p class="mb-2 mt-3"><strong>Update:</strong></p>
+                    <div class="jf-code">
+                        <pre class="jf-code-inner"># Stable
+yt-dlp --update
+
+# Nightly (recommended for frequent use) [citation:10]
+yt-dlp --update-to nightly</pre>
+                    </div>
+                    <p class="mt-3">Nightly builds are updated daily and are more reliable for frequently changing sites like <a href="https://www.youtube.com/" target="_blank" class="topic-link">YouTube</a> [citation:10].</p>
+                    </div>
+                    `
+                }
+            ]
+        },
+
+        /* ============ 3. FORMATE ============ */
+        {
+            id: 'section3',
+            titleDe: '3. Format-Auswahl',
+            titleEn: '3. Format Selection',
+            introDe: 'Die Format-Auswahl ist eines der mächtigsten Features von <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="topic-link">yt-dlp</a>. Mit <code>-f</code> werden Formate nach Kriterien wie Qualität, Codec und Auflösung gefiltert; <code>-S</code> sortiert die verfügbaren Formate [citation:4].',
+            introEn: 'Format selection is one of <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="topic-link">yt-dlp</a>\'s most powerful features. Use <code>-f</code> to filter formats by criteria like quality, codec, and resolution; <code>-S</code> sorts the available formats [citation:4].',
+            subtopics: [
+                {
+                    id: 'subsection3_1',
                     titleDe: 'Format-Selektoren',
                     titleEn: 'Format Selectors',
                     htmlDe: `
                     <div class="overflow-x-auto w-full">
                     <table class="wikitable">
                     <tr><th class="w-1/4">Selektor</th><th>Bedeutung</th></tr>
-                    <tr><td><strong><code>best</code></strong></td><td class="text-[var(--text-muted)]">Bestes kombiniertes Format (Video + Audio in einer Datei).</td></tr>
-                    <tr><td><strong><code>bestvideo</code></strong></td><td class="text-[var(--text-muted)]">Bestes Video-only Format (benötigt Merge mit Audio).</td></tr>
-                    <tr><td><strong><code>bestaudio</code></strong></td><td class="text-[var(--text-muted)]">Bestes Audio-only Format.</td></tr>
-                    <tr><td><strong><code>bestvideo+bestaudio</code></strong></td><td class="text-[var(--text-muted)]">Bestes Video und Audio separat herunterladen und mit ffmpeg zusammenfügen.</td></tr>
-                    <tr><td><strong><code>bestvideo[height<=1080]+bestaudio</code></strong></td><td class="text-[var(--text-muted)]">Video auf maximal 1080p begrenzen.</td></tr>
-                    <tr><td><strong><code>bestvideo[ext=mp4]+bestaudio[ext=m4a]</code></strong></td><td class="text-[var(--text-muted)]">Bevorzugt MP4-Video und M4A-Audio.</td></tr>
-                    <tr><td><strong><code>worst</code></strong></td><td class="text-[var(--text-muted)]">Schlechteste Qualität (für Bandbreiten-Schonung).</td></tr>
-                    <tr><td><strong><code>22</code></strong></td><td class="text-[var(--text-muted)]">Spezifische Format-ID (aus <code>-F</code>-Ausgabe).</td></tr>
+                    <tr><td><code>bv</code></td><td class="text-[var(--text-muted)]">Best video-only format [citation:4].</td></tr>
+                    <tr><td><code>ba</code></td><td class="text-[var(--text-muted)]">Best audio-only format [citation:4].</td></tr>
+                    <tr><td><code>bv*+ba/b</code></td><td class="text-[var(--text-muted)]">Best video + best audio, or best combined [citation:4].</td></tr>
+                    <tr><td><code>bestvideo[ext=mp4]</code></td><td class="text-[var(--text-muted)]">Best video in MP4 container [citation:10].</td></tr>
+                    <tr><td><code>bv[height<=720]</code></td><td class="text-[var(--text-muted)]">Video bis max. 720p [citation:4].</td></tr>
+                    <tr><td><code>all[vcodec=none]</code></td><td class="text-[var(--text-muted)]">Alle audio-only Formate [citation:16].</td></tr>
                     </table>
                     </div>
                     `,
@@ -508,83 +457,12 @@ registerTopic({
                     <div class="overflow-x-auto w-full">
                     <table class="wikitable">
                     <tr><th class="w-1/4">Selector</th><th>Meaning</th></tr>
-                    <tr><td><strong><code>best</code></strong></td><td class="text-[var(--text-muted)]">Best combined format (video + audio in one file).</td></tr>
-                    <tr><td><strong><code>bestvideo</code></strong></td><td class="text-[var(--text-muted)]">Best video-only format (requires merge with audio).</td></tr>
-                    <tr><td><strong><code>bestaudio</code></strong></td><td class="text-[var(--text-muted)]">Best audio-only format.</td></tr>
-                    <tr><td><strong><code>bestvideo+bestaudio</code></strong></td><td class="text-[var(--text-muted)]">Download best video and audio separately, merge with ffmpeg.</td></tr>
-                    <tr><td><strong><code>bestvideo[height<=1080]+bestaudio</code></strong></td><td class="text-[var(--text-muted)]">Limit video to max 1080p.</td></tr>
-                    <tr><td><strong><code>bestvideo[ext=mp4]+bestaudio[ext=m4a]</code></strong></td><td class="text-[var(--text-muted)]">Prefer MP4 video and M4A audio.</td></tr>
-                    <tr><td><strong><code>worst</code></strong></td><td class="text-[var(--text-muted)]">Worst quality (for bandwidth saving).</td></tr>
-                    <tr><td><strong><code>22</code></strong></td><td class="text-[var(--text-muted)]">Specific format ID (from <code>-F</code> output).</td></tr>
-                    </table>
-                    </div>
-                    `
-                },
-                {
-                    id: 'subsection2_2',
-                    titleDe: 'Container-Formate',
-                    titleEn: 'Container Formats',
-                    htmlDe: `
-                    <p class="text-xs">Mit <code>--merge-output-format</code> kann der Container beim Zusammenfügen festgelegt werden:</p>
-                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
-                    <ul class="list-disc pl-4 space-y-1">
-                    <li><strong>mp4</strong> – Universell kompatibel, beste Wahl für die meisten Geräte.</li>
-                    <li><strong>mkv</strong> – Unterstützt fast alle Codecs, ideal für Archivierung.</li>
-                    <li><strong>webm</strong> – Offenes Format, oft für VP9/Opus.</li>
-                    <li><strong>avi</strong> – Älter, begrenzte Codec-Unterstützung.</li>
-                    </ul>
-                    </div>
-                    `,
-                    htmlEn: `
-                    <p class="text-xs">Use <code>--merge-output-format</code> to specify the container when merging:</p>
-                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
-                    <ul class="list-disc pl-4 space-y-1">
-                    <li><strong>mp4</strong> – Universally compatible, best choice for most devices.</li>
-                    <li><strong>mkv</strong> – Supports almost all codecs, ideal for archiving.</li>
-                    <li><strong>webm</strong> – Open format, often for VP9/Opus.</li>
-                    <li><strong>avi</strong> – Older, limited codec support.</li>
-                    </ul>
-                    </div>
-                    `
-                }
-            ]
-        },
-
-        /* ============ 3. AUDIO-EXTRAKTION ============ */
-        {
-            id: 'section3',
-            titleDe: 'Audio-Extraktion',
-            titleEn: 'Audio Extraction',
-            introDe: 'Mit <code>-x</code> (oder <code>--extract-audio</code>) wird nur die Audiospur heruntergeladen und in das gewünschte Format konvertiert. Dies erfordert ffmpeg und ffprobe im PATH.',
-            introEn: 'Use <code>-x</code> (or <code>--extract-audio</code>) to download only the audio track and convert it to the desired format. This requires ffmpeg and ffprobe in PATH.',
-            subtopics: [
-                {
-                    id: 'subsection3_1',
-                    titleDe: 'Audio-Formate & Qualität',
-                    titleEn: 'Audio Formats & Quality',
-                    htmlDe: `
-                    <div class="overflow-x-auto w-full">
-                    <table class="wikitable">
-                    <tr><th class="w-1/4">Option</th><th>Beschreibung</th></tr>
-                    <tr><td><strong><code>--audio-format mp3</code></strong></td><td class="text-[var(--text-muted)]">Konvertiert zu MP3. Unterstützt: best, aac, alac, flac, m4a, mp3, opus, vorbis, wav.</td></tr>
-                    <tr><td><strong><code>--audio-format m4a</code></strong></td><td class="text-[var(--text-muted)]">Behält AAC-Codec in M4A-Container (Verlustarm).</td></tr>
-                    <tr><td><strong><code>--audio-format flac</code></strong></td><td class="text-[var(--text-muted)]">Verlustfreie Kompression.</td></tr>
-                    <tr><td><strong><code>--audio-format opus</code></strong></td><td class="text-[var(--text-muted)]">Modernes, effizientes Format (kleine Dateien, hohe Qualität).</td></tr>
-                    <tr><td><strong><code>--audio-quality 0</code></strong></td><td class="text-[var(--text-muted)]">Beste Qualität (VBR). Skala: 0 (best) bis 10 (worst).</td></tr>
-                    <tr><td><strong><code>--audio-quality 128K</code></strong></td><td class="text-[var(--text-muted)]">Konstante Bitrate (CBR) von 128 kbit/s.</td></tr>
-                    </table>
-                    </div>
-                    `,
-                    htmlEn: `
-                    <div class="overflow-x-auto w-full">
-                    <table class="wikitable">
-                    <tr><th class="w-1/4">Option</th><th>Description</th></tr>
-                    <tr><td><strong><code>--audio-format mp3</code></strong></td><td class="text-[var(--text-muted)]">Converts to MP3. Supports: best, aac, alac, flac, m4a, mp3, opus, vorbis, wav.</td></tr>
-                    <tr><td><strong><code>--audio-format m4a</code></strong></td><td class="text-[var(--text-muted)]">Keeps AAC codec in M4A container (lossy).</td></tr>
-                    <tr><td><strong><code>--audio-format flac</code></strong></td><td class="text-[var(--text-muted)]">Lossless compression.</td></tr>
-                    <tr><td><strong><code>--audio-format opus</code></strong></td><td class="text-[var(--text-muted)]">Modern, efficient format (small files, high quality).</td></tr>
-                    <tr><td><strong><code>--audio-quality 0</code></strong></td><td class="text-[var(--text-muted)]">Best quality (VBR). Scale: 0 (best) to 10 (worst).</td></tr>
-                    <tr><td><strong><code>--audio-quality 128K</code></strong></td><td class="text-[var(--text-muted)]">Constant bitrate (CBR) of 128 kbit/s.</td></tr>
+                    <tr><td><code>bv</code></td><td class="text-[var(--text-muted)]">Best video-only format [citation:4].</td></tr>
+                    <tr><td><code>ba</code></td><td class="text-[var(--text-muted)]">Best audio-only format [citation:4].</td></tr>
+                    <tr><td><code>bv*+ba/b</code></td><td class="text-[var(--text-muted)]">Best video + best audio, or best combined [citation:4].</td></tr>
+                    <tr><td><code>bestvideo[ext=mp4]</code></td><td class="text-[var(--text-muted)]">Best video in MP4 container [citation:10].</td></tr>
+                    <tr><td><code>bv[height<=720]</code></td><td class="text-[var(--text-muted)]">Video up to 720p [citation:4].</td></tr>
+                    <tr><td><code>all[vcodec=none]</code></td><td class="text-[var(--text-muted)]">All audio-only formats [citation:16].</td></tr>
                     </table>
                     </div>
                     `
@@ -594,668 +472,320 @@ registerTopic({
                     titleDe: 'Praxis-Beispiele',
                     titleEn: 'Practical Examples',
                     htmlDe: `
-                    <style>
-                        /* ---------- scoped Jellyfin-style code block styles ---------- */
-                        .jf-code {
-                            position: relative;
-                            background: #06080b;
-                            border: 1px solid var(--border-color);
-                            border-radius: 0.45rem;
-                            margin: 0.55rem 0;
-                            overflow: hidden;
-                            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04),
-                                        0 1px 2px rgba(0,0,0,0.35);
-                        }
-                        .jf-code-inner {
-                            display: block;
-                            padding: 0.85rem 1rem;
-                            font-family: 'Courier New', Menlo, Consolas, monospace;
-                            font-size: 0.72rem;
-                            line-height: 1.55;
-                            color: var(--text-color);
-                            white-space: pre;
-                            overflow-x: auto;
-                            margin: 0;
-                            tab-size: 4;
-                            background: transparent;
-                        }
-                        .jf-copy-btn {
-                            position: absolute;
-                            top: 0.5rem;
-                            right: 0.5rem;
-                            padding: 0.35rem 0.7rem;
-                            font-size: 0.62rem;
-                            font-weight: 800;
-                            letter-spacing: 0.03em;
-                            border-radius: 0.35rem;
-                            border: 1px solid var(--border-color);
-                            background: var(--panel-color);
-                            color: var(--text-color);
-                            cursor: pointer;
-                            opacity: 0;
-                            transform: translateY(-4px);
-                            transition: opacity 0.2s ease, transform 0.2s ease, background 0.15s ease, border-color 0.15s ease;
-                            z-index: 2;
-                            user-select: none;
-                            font-family: inherit;
-                        }
-                        .jf-code:hover .jf-copy-btn,
-                        .jf-copy-btn:focus {
-                            opacity: 1;
-                            transform: translateY(0);
-                        }
-                        .jf-copy-btn:hover {
-                            background: color-mix(in srgb, var(--link-color) 15%, var(--panel-color));
-                            border-color: var(--link-color);
-                        }
-                        .jf-copy-btn:active { transform: translateY(1px); }
-                        .jf-copy-btn.is-copied { background: #10b981; border-color: #10b981; color: #fff; }
-                        .jf-copy-btn.is-failed { background: #ef4444; border-color: #ef4444; color: #fff; }
-                        @media (max-width: 560px) {
-                            .jf-code-inner { font-size: 0.66rem; padding: 0.7rem 0.8rem; }
-                            .jf-copy-btn { opacity: 1; transform: translateY(0); }
-                        }
-                    </style>
-
                     <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
-                    <ul class="list-disc pl-4 space-y-2">
-                    <li><strong>MP3 (beste Qualität):</strong>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -x --audio-format mp3 --audio-quality 0 "URL"</pre></div>
-                    </li>
-                    <li><strong>M4A (verlustarm):</strong>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -x --audio-format m4a "URL"</pre></div>
-                    </li>
-                    <li><strong>FLAC (verlustfrei):</strong>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -x --audio-format flac "URL"</pre></div>
-                    </li>
-                    <li><strong>Metadaten &amp; Cover einbetten:</strong>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -x --audio-format mp3 --embed-thumbnail --add-metadata "URL"</pre></div>
-                    </li>
-                    </ul>
+                    <p class="mb-2"><strong>Häufige Download-Szenarien:</strong></p>
+                    <div class="jf-code">
+                        <pre class="jf-code-inner"># Beste Qualität (Video+Audio merged) [citation:10]
+yt-dlp -f "bestvideo+bestaudio" URL
+
+# Bestes MP4 (kompatibel) [citation:10]
+yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" URL
+
+# Audio extrahieren als MP3 [citation:10]
+yt-dlp -x --audio-format mp3 URL
+
+# Max. 720p
+yt-dlp -f "bv[height<=720]+ba/b[height<=720]" URL
+
+# Playlist herunterladen [citation:10]
+yt-dlp PLAYLIST_URL</pre>
+                    </div>
+                    <p class="mt-3"><strong>Tipp:</strong> <code>yt-dlp -F URL</code> listet alle verfügbaren Formate mit ID, Auflösung und Codec auf [citation:8].</p>
                     </div>
                     `,
                     htmlEn: `
-                    <style>
-                        /* ---------- scoped Jellyfin-style code block styles ---------- */
-                        .jf-code {
-                            position: relative;
-                            background: #06080b;
-                            border: 1px solid var(--border-color);
-                            border-radius: 0.45rem;
-                            margin: 0.55rem 0;
-                            overflow: hidden;
-                            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04),
-                                        0 1px 2px rgba(0,0,0,0.35);
-                        }
-                        .jf-code-inner {
-                            display: block;
-                            padding: 0.85rem 1rem;
-                            font-family: 'Courier New', Menlo, Consolas, monospace;
-                            font-size: 0.72rem;
-                            line-height: 1.55;
-                            color: var(--text-color);
-                            white-space: pre;
-                            overflow-x: auto;
-                            margin: 0;
-                            tab-size: 4;
-                            background: transparent;
-                        }
-                        .jf-copy-btn {
-                            position: absolute;
-                            top: 0.5rem;
-                            right: 0.5rem;
-                            padding: 0.35rem 0.7rem;
-                            font-size: 0.62rem;
-                            font-weight: 800;
-                            letter-spacing: 0.03em;
-                            border-radius: 0.35rem;
-                            border: 1px solid var(--border-color);
-                            background: var(--panel-color);
-                            color: var(--text-color);
-                            cursor: pointer;
-                            opacity: 0;
-                            transform: translateY(-4px);
-                            transition: opacity 0.2s ease, transform 0.2s ease, background 0.15s ease, border-color 0.15s ease;
-                            z-index: 2;
-                            user-select: none;
-                            font-family: inherit;
-                        }
-                        .jf-code:hover .jf-copy-btn,
-                        .jf-copy-btn:focus {
-                            opacity: 1;
-                            transform: translateY(0);
-                        }
-                        .jf-copy-btn:hover {
-                            background: color-mix(in srgb, var(--link-color) 15%, var(--panel-color));
-                            border-color: var(--link-color);
-                        }
-                        .jf-copy-btn:active { transform: translateY(1px); }
-                        .jf-copy-btn.is-copied { background: #10b981; border-color: #10b981; color: #fff; }
-                        .jf-copy-btn.is-failed { background: #ef4444; border-color: #ef4444; color: #fff; }
-                        @media (max-width: 560px) {
-                            .jf-code-inner { font-size: 0.66rem; padding: 0.7rem 0.8rem; }
-                            .jf-copy-btn { opacity: 1; transform: translateY(0); }
-                        }
-                    </style>
-
                     <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
-                    <ul class="list-disc pl-4 space-y-2">
-                    <li><strong>MP3 (best quality):</strong>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -x --audio-format mp3 --audio-quality 0 "URL"</pre></div>
-                    </li>
-                    <li><strong>M4A (lossy):</strong>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -x --audio-format m4a "URL"</pre></div>
-                    </li>
-                    <li><strong>FLAC (lossless):</strong>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -x --audio-format flac "URL"</pre></div>
-                    </li>
-                    <li><strong>Embed metadata &amp; cover:</strong>
-                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -x --audio-format mp3 --embed-thumbnail --add-metadata "URL"</pre></div>
-                    </li>
-                    </ul>
+                    <p class="mb-2"><strong>Common download scenarios:</strong></p>
+                    <div class="jf-code">
+                        <pre class="jf-code-inner"># Best quality (video+audio merged) [citation:10]
+yt-dlp -f "bestvideo+bestaudio" URL
+
+# Best MP4 (compatible) [citation:10]
+yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" URL
+
+# Extract audio as MP3 [citation:10]
+yt-dlp -x --audio-format mp3 URL
+
+# Max 720p
+yt-dlp -f "bv[height<=720]+ba/b[height<=720]" URL
+
+# Download playlist [citation:10]
+yt-dlp PLAYLIST_URL</pre>
+                    </div>
+                    <p class="mt-3"><strong>Tip:</strong> <code>yt-dlp -F URL</code> lists all available formats with ID, resolution, and codec [citation:8].</p>
                     </div>
                     `
                 }
             ]
         },
 
-        /* ============ 4. FFMPEG-INTEGRATION ============ */
+        /* ============ 4. POST-PROCESSING ============ */
         {
             id: 'section4',
-            titleDe: 'ffmpeg-Integration',
-            titleEn: 'ffmpeg Integration',
-            introDe: 'ffmpeg ist ein externes Tool, das yt-dlp für viele Aufgaben benötigt: Zusammenfügen von Video+Audio, Konvertierung von Formaten, Einbetten von Metadaten und mehr. Es muss separat installiert werden.',
-            introEn: 'ffmpeg is an external tool that yt-dlp requires for many tasks: merging video+audio, format conversion, embedding metadata, and more. It must be installed separately.',
+            titleDe: '4. Post-Processing & SponsorBlock',
+            titleEn: '4. Post-Processing & SponsorBlock',
+            introDe: '<a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="topic-link">yt-dlp</a> bietet umfangreiche Post-Processing-Optionen über <a href="https://ffmpeg.org/" target="_blank" class="topic-link">FFmpeg</a>. Die <a href="https://sponsor.ajay.app/" target="_blank" class="topic-link">SponsorBlock</a>-Integration kann Sponsor-Segmente automatisch markieren oder entfernen [citation:5].',
+            introEn: '<a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="topic-link">yt-dlp</a> offers extensive post-processing options via <a href="https://ffmpeg.org/" target="_blank" class="topic-link">FFmpeg</a>. The <a href="https://sponsor.ajay.app/" target="_blank" class="topic-link">SponsorBlock</a> integration can automatically mark or remove sponsor segments [citation:5].',
             subtopics: [
                 {
                     id: 'subsection4_1',
-                    titleDe: 'Warum ffmpeg?',
-                    titleEn: 'Why ffmpeg?',
+                    titleDe: 'SponsorBlock',
+                    titleEn: 'SponsorBlock',
                     htmlDe: `
-                    <div class="overflow-x-auto w-full">
-                    <table class="wikitable">
-                    <tr><th class="w-1/3">Aufgabe</th><th>ffmpeg benötigt?</th></tr>
-                    <tr><td><strong>Bestes Video + Audio getrennt herunterladen</strong></td><td class="text-[var(--text-muted)]">Ja – zum Zusammenfügen (Muxing).</td></tr>
-                    <tr><td><strong>Audio-Extraktion (<code>-x</code>)</strong></td><td class="text-[var(--text-muted)]">Ja – zum Konvertieren.</td></tr>
-                    <tr><td><strong>Container wechseln (<code>--remux-video</code>)</strong></td><td class="text-[var(--text-muted)]">Ja – zum Umschreiben ohne Neukodierung.</td></tr>
-                    <tr><td><strong>Untertitel einbetten</strong></td><td class="text-[var(--text-muted)]">Ja.</td></tr>
-                    <tr><td><strong>Metadaten / Thumbnail einbetten</strong></td><td class="text-[var(--text-muted)]">Ja.</td></tr>
-                    <tr><td><strong>Einfacher Download (kombiniertes Format)</strong></td><td class="text-[var(--text-muted)]">Nein.</td></tr>
-                    </table>
+                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
+                    <p class="mb-2"><strong>Sponsor-Segmente markieren:</strong></p>
+                    <div class="jf-code">
+                        <pre class="jf-code-inner"># Sponsor-Segmente als Kapitel markieren [citation:5]
+yt-dlp --sponsorblock-mark sponsor URL
+
+# Intro und Outro ebenfalls markieren
+yt-dlp --sponsorblock-mark "sponsor,intro,outro" URL</pre>
+                    </div>
+                    <p class="mb-2 mt-3"><strong>Sponsor-Segmente entfernen:</strong></p>
+                    <div class="jf-code">
+                        <pre class="jf-code-inner"># Sponsor-Segmente aus dem Video schneiden [citation:5]
+yt-dlp --sponsorblock-remove sponsor URL
+
+# Sponsor und Intro entfernen
+yt-dlp --sponsorblock-remove "sponsor,intro" URL</pre>
+                    </div>
+                    <p class="mt-3"><strong>Verfügbare Kategorien:</strong> sponsor, intro, outro, selfpromo, preview, filler, interaction, music_offtopic, poi_highlight, chapter, all, default [citation:5].</p>
                     </div>
                     `,
                     htmlEn: `
-                    <div class="overflow-x-auto w-full">
-                    <table class="wikitable">
-                    <tr><th class="w-1/3">Task</th><th>ffmpeg needed?</th></tr>
-                    <tr><td><strong>Download best video + audio separately</strong></td><td class="text-[var(--text-muted)]">Yes – for merging (muxing).</td></tr>
-                    <tr><td><strong>Audio extraction (<code>-x</code>)</strong></td><td class="text-[var(--text-muted)]">Yes – for converting.</td></tr>
-                    <tr><td><strong>Change container (<code>--remux-video</code>)</strong></td><td class="text-[var(--text-muted)]">Yes – for rewriting without re-encoding.</td></tr>
-                    <tr><td><strong>Embed subtitles</strong></td><td class="text-[var(--text-muted)]">Yes.</td></tr>
-                    <tr><td><strong>Embed metadata / thumbnail</strong></td><td class="text-[var(--text-muted)]">Yes.</td></tr>
-                    <tr><td><strong>Simple download (combined format)</strong></td><td class="text-[var(--text-muted)]">No.</td></tr>
-                    </table>
+                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
+                    <p class="mb-2"><strong>Mark sponsor segments:</strong></p>
+                    <div class="jf-code">
+                        <pre class="jf-code-inner"># Mark sponsor segments as chapters [citation:5]
+yt-dlp --sponsorblock-mark sponsor URL
+
+# Also mark intro and outro
+yt-dlp --sponsorblock-mark "sponsor,intro,outro" URL</pre>
+                    </div>
+                    <p class="mb-2 mt-3"><strong>Remove sponsor segments:</strong></p>
+                    <div class="jf-code">
+                        <pre class="jf-code-inner"># Cut sponsor segments from video [citation:5]
+yt-dlp --sponsorblock-remove sponsor URL
+
+# Remove sponsor and intro
+yt-dlp --sponsorblock-remove "sponsor,intro" URL</pre>
+                    </div>
+                    <p class="mt-3"><strong>Available categories:</strong> sponsor, intro, outro, selfpromo, preview, filler, interaction, music_offtopic, poi_highlight, chapter, all, default [citation:5].</p>
                     </div>
                     `
                 },
                 {
                     id: 'subsection4_2',
-                    titleDe: 'ffmpeg installieren & finden',
-                    titleEn: 'Installing & Locating ffmpeg',
+                    titleDe: 'Remuxing & Re-Encoding',
+                    titleEn: 'Remuxing & Re-Encoding',
                     htmlDe: `
-                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
-                    <ul class="list-disc pl-4 space-y-2">
-                    <li><strong>Windows:</strong> Von <a href="https://www.gyan.dev/ffmpeg/builds/" target="_blank">gyan.dev</a> oder <a href="https://github.com/BtbN/FFmpeg-Builds/releases" target="_blank">BtbN</a> herunterladen, entpacken und den <code>bin</code>-Ordner zum PATH hinzufügen. Alternativ <code>winget install ffmpeg</code>.</li>
-                    <li><strong>Linux:</strong> <code>sudo apt install ffmpeg</code> (Debian/Ubuntu) oder <code>sudo dnf install ffmpeg</code> (Fedora).</li>
-                    <li><strong>macOS:</strong> <code>brew install ffmpeg</code></li>
-                    <li><strong>Pfad explizit angeben:</strong> <code>yt-dlp --ffmpeg-location "C:\\ffmpeg\\bin" "URL"</code></li>
-                    <li><strong>Prüfen ob erkannt:</strong> <code>yt-dlp --verbose "URL"</code> zeigt am Anfang die gefundenen Abhängigkeiten an.</li>
-                    </ul>
+                    <div class="overflow-x-auto w-full">
+                    <table class="wikitable">
+                    <tr><th class="w-1/4">Option</th><th>Beschreibung</th></tr>
+                    <tr><td><code>--remux-video mkv</code></td><td class="text-[var(--text-muted)]">Container in MKV ändern (verlustfrei, schnell) [citation:5].</td></tr>
+                    <tr><td><code>--remux-video mp4</code></td><td class="text-[var(--text-muted)]">Container in MP4 ändern [citation:5].</td></tr>
+                    <tr><td><code>--recode-video mp4</code></td><td class="text-[var(--text-muted)]">Video neu kodieren (langsamer, Codec-Änderung) [citation:5].</td></tr>
+                    <tr><td><code>--split-chapters</code></td><td class="text-[var(--text-muted)]">Video anhand Kapitel in separate Dateien aufteilen [citation:5].</td></tr>
+                    <tr><td><code>--embed-chapters</code></td><td class="text-[var(--text-muted)]">Kapitelmarker in die Datei einbetten [citation:5].</td></tr>
+                    <tr><td><code>--embed-thumbnail</code></td><td class="text-[var(--text-muted)]">Vorschaubild einbetten [citation:1].</td></tr>
+                    <tr><td><code>--embed-metadata</code></td><td class="text-[var(--text-muted)]">Metadaten (inkl. Kapitel) einbetten [citation:5].</td></tr>
+                    </table>
                     </div>
                     `,
                     htmlEn: `
-                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
-                    <ul class="list-disc pl-4 space-y-2">
-                    <li><strong>Windows:</strong> Download from <a href="https://www.gyan.dev/ffmpeg/builds/" target="_blank">gyan.dev</a> or <a href="https://github.com/BtbN/FFmpeg-Builds/releases" target="_blank">BtbN</a>, extract, and add the <code>bin</code> folder to PATH. Alternatively <code>winget install ffmpeg</code>.</li>
-                    <li><strong>Linux:</strong> <code>sudo apt install ffmpeg</code> (Debian/Ubuntu) or <code>sudo dnf install ffmpeg</code> (Fedora).</li>
-                    <li><strong>macOS:</strong> <code>brew install ffmpeg</code></li>
-                    <li><strong>Specify path explicitly:</strong> <code>yt-dlp --ffmpeg-location "C:\\ffmpeg\\bin" "URL"</code></li>
-                    <li><strong>Verify detection:</strong> <code>yt-dlp --verbose "URL"</code> shows found dependencies at the top.</li>
-                    </ul>
+                    <div class="overflow-x-auto w-full">
+                    <table class="wikitable">
+                    <tr><th class="w-1/4">Option</th><th>Description</th></tr>
+                    <tr><td><code>--remux-video mkv</code></td><td class="text-[var(--text-muted)]">Change container to MKV (lossless, fast) [citation:5].</td></tr>
+                    <tr><td><code>--remux-video mp4</code></td><td class="text-[var(--text-muted)]">Change container to MP4 [citation:5].</td></tr>
+                    <tr><td><code>--recode-video mp4</code></td><td class="text-[var(--text-muted)]">Re-encode video (slower, codec change) [citation:5].</td></tr>
+                    <tr><td><code>--split-chapters</code></td><td class="text-[var(--text-muted)]">Split video into separate files by chapters [citation:5].</td></tr>
+                    <tr><td><code>--embed-chapters</code></td><td class="text-[var(--text-muted)]">Embed chapter markers into the file [citation:5].</td></tr>
+                    <tr><td><code>--embed-thumbnail</code></td><td class="text-[var(--text-muted)]">Embed thumbnail [citation:1].</td></tr>
+                    <tr><td><code>--embed-metadata</code></td><td class="text-[var(--text-muted)]">Embed metadata (includes chapters by default) [citation:5].</td></tr>
+                    </table>
                     </div>
                     `
                 }
             ]
         },
 
-        /* ============ 5. BEFEHLS-GENERATOR ============ */
+        /* ============ 5. KONFIGURATION ============ */
         {
             id: 'section5',
-            titleDe: 'Befehls-Generator',
-            titleEn: 'Command Generator',
-            introDe: 'Der Befehl wird live aktualisiert, während Sie Eingaben machen. Füllen Sie die Felder aus und kopieren Sie den fertigen yt-dlp-Befehl in die Zwischenablage.',
-            introEn: 'The command is updated live as you make input. Fill in the fields and copy the finished yt-dlp command to your clipboard.',
+            titleDe: '5. Konfiguration & Cookies',
+            titleEn: '5. Configuration & Cookies',
+            introDe: '<a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="topic-link">yt-dlp</a> kann über eine Konfigurationsdatei (<code>yt-dlp.conf</code>) und <a href="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp" target="_blank" class="topic-link">Browser-Cookies</a> gesteuert werden. Cookies sind für altersbeschränkte oder private Inhalte erforderlich [citation:7].',
+            introEn: '<a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="topic-link">yt-dlp</a> can be controlled via a configuration file (<code>yt-dlp.conf</code>) and <a href="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp" target="_blank" class="topic-link">browser cookies</a>. Cookies are required for age-restricted or private content [citation:7].',
             subtopics: [
                 {
                     id: 'subsection5_1',
-                    titleDe: 'Interaktiver Generator',
-                    titleEn: 'Interactive Generator',
+                    titleDe: 'Cookies aus Browser',
+                    titleEn: 'Cookies from Browser',
                     htmlDe: `
-                    <style>
-                        /* ---------- scoped yt-dlp generator styles (DE) ---------- */
-                        .ytdlp-gen * { box-sizing: border-box; }
-                        .ytdlp-gen {
-                            background: var(--panel-color);
-                            border: 1px solid var(--panel-border);
-                            border-radius: 0.6rem;
-                            padding: 1rem;
-                            font-size: 0.72rem;
-                            box-shadow: var(--control-shadow);
-                        }
-                        .ytdlp-gen .row { margin-bottom: 0.85rem; }
-                        .ytdlp-gen .grid-2 {
-                            display: grid;
-                            grid-template-columns: 1fr 1fr;
-                            gap: 0.85rem;
-                            margin-bottom: 0.85rem;
-                        }
-                        @media (max-width: 560px) {
-                            .ytdlp-gen .grid-2 { grid-template-columns: 1fr; }
-                        }
-                        .ytdlp-gen label.lbl {
-                            display: block;
-                            font-weight: 700;
-                            color: var(--text-color);
-                            margin-bottom: 0.4rem;
-                            font-size: 0.7rem;
-                            letter-spacing: 0.01em;
-                        }
-                        .ytdlp-gen input[type="text"],
-                        .ytdlp-gen select,
-                        .ytdlp-gen textarea {
-                            width: 100%;
-                            padding: 0.65rem 0.9rem;
-                            border: 1px solid var(--border-color);
-                            border-radius: 0.45rem;
-                            background: var(--bg-color);
-                            color: var(--text-color);
-                            font-size: 0.72rem;
-                            font-family: inherit;
-                            line-height: 1.35;
-                            outline: none;
-                            transition: border-color .15s, box-shadow .15s;
-                        }
-                        .ytdlp-gen input[type="text"]:focus,
-                        .ytdlp-gen select:focus,
-                        .ytdlp-gen textarea:focus {
-                            border-color: var(--link-color);
-                            box-shadow: 0 0 0 3px color-mix(in srgb, var(--link-color) 25%, transparent);
-                        }
-                        .ytdlp-gen select {
-                            appearance: none;
-                            -webkit-appearance: none;
-                            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
-                            background-repeat: no-repeat;
-                            background-position: right 0.9rem center;
-                            padding-right: 2.2rem;
-                        }
-                        .ytdlp-gen textarea {
-                            min-height: 4rem;
-                            font-family: 'Courier New', Menlo, monospace;
-                            resize: vertical;
-                        }
-                        .ytdlp-gen .chk-row {
-                            display: flex;
-                            flex-wrap: wrap;
-                            align-items: center;
-                            gap: 0.5rem 1.5rem;
-                            margin-bottom: 0.85rem;
-                        }
-                        .ytdlp-gen .chk {
-                            display: inline-flex;
-                            align-items: center;
-                            gap: 0.5rem;
-                            font-weight: 600;
-                            color: var(--text-color);
-                            cursor: pointer;
-                            user-select: none;
-                            font-size: 0.72rem;
-                            white-space: nowrap;
-                        }
-                        .ytdlp-gen .chk input[type="checkbox"] {
-                            flex-shrink: 0;
-                            width: 15px;
-                            height: 15px;
-                            margin: 0;
-                            accent-color: var(--link-color);
-                            cursor: pointer;
-                        }
-                        .ytdlp-gen .chk span { line-height: 1.3; }
-                        .ytdlp-gen .btn {
-                            display: inline-flex;
-                            align-items: center;
-                            justify-content: center;
-                            gap: 0.55rem;
-                            padding: 0.7rem 1.25rem;
-                            border-radius: 0.45rem;
-                            font-weight: 800;
-                            font-size: 0.72rem;
-                            letter-spacing: 0.02em;
-                            cursor: pointer;
-                            user-select: none;
-                            transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease, background .15s ease;
-                            border: 1px solid transparent;
-                        }
-                        .ytdlp-gen .btn:active { transform: translateY(1px); }
-                        .ytdlp-gen .btn i { font-size: 0.78rem; }
-                        .ytdlp-gen .btn-secondary {
-                            background: var(--code-bg);
-                            color: var(--text-color);
-                            border-color: var(--border-color);
-                        }
-                        .ytdlp-gen .btn-secondary:hover {
-                            background: color-mix(in srgb, var(--link-color) 12%, var(--code-bg));
-                            border-color: var(--link-color);
-                            transform: translateY(-1px);
-                        }
-                        .ytdlp-gen .actions {
-                            display: flex;
-                            align-items: center;
-                            gap: 0.85rem;
-                            flex-wrap: wrap;
-                            margin-top: 0.3rem;
-                        }
-                        .ytdlp-gen .copy-feedback {
-                            display: none;
-                            align-items: center;
-                            gap: 0.35rem;
-                            font-size: 0.7rem;
-                            font-weight: 700;
-                            color: #10b981;
-                        }
-                        .ytdlp-gen .copy-feedback.show { display: inline-flex; }
-                    </style>
+                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
+                    <p class="mb-2"><strong>Cookies automatisch aus Browser extrahieren:</strong></p>
+                    <div class="jf-code">
+                        <pre class="jf-code-inner"># Cookies aus Chrome [citation:7]
+yt-dlp --cookies-from-browser chrome URL
 
-                    <div id="ytdlp-generator" class="ytdlp-gen">
-                        <div class="row">
-                            <label class="lbl">YouTube-URL / Video-URL</label>
-                            <input type="text" id="ytdlp-url" placeholder="https://www.youtube.com/watch?v=..." />
-                        </div>
+# Cookies aus Firefox
+yt-dlp --cookies-from-browser firefox URL
 
-                        <div class="row">
-                            <label class="lbl">Ausgabeordner (optional)</label>
-                            <input type="text" id="ytdlp-folder" placeholder="C:\Downloads\yt-dlp" />
-                        </div>
+# Mit spezifischem Profil
+yt-dlp --cookies-from-browser "chrome:Profile 1" URL
 
-                        <div class="grid-2">
-                            <div>
-                                <label class="lbl">Medientyp</label>
-                                <select id="ytdlp-type">
-                                    <option value="video">Video (MP4)</option>
-                                    <option value="audio">Audio</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="lbl">Qualität</label>
-                                <select id="ytdlp-quality">
-                                    <option value="best">Beste verfügbare</option>
-                                    <option value="1080">Max. 1080p (Full HD)</option>
-                                    <option value="720">Max. 720p (HD)</option>
-                                    <option value="480">Max. 480p</option>
-                                    <option value="worst">Geringste</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row" id="ytdlp-audio-options" style="display:none;">
-                            <label class="lbl">Audio-Format</label>
-                            <select id="ytdlp-audio-format">
-                                <option value="mp3">MP3</option>
-                                <option value="m4a">M4A (AAC)</option>
-                                <option value="flac">FLAC (verlustfrei)</option>
-                                <option value="opus">Opus</option>
-                                <option value="wav">WAV</option>
-                            </select>
-                        </div>
-
-                        <div class="chk-row">
-                            <label class="chk">
-                                <input type="checkbox" id="ytdlp-embed-thumb" />
-                                <span>Cover-Bild einbetten</span>
-                            </label>
-                            <label class="chk">
-                                <input type="checkbox" id="ytdlp-add-metadata" />
-                                <span>Metadaten hinzufügen</span>
-                            </label>
-                            <label class="chk">
-                                <input type="checkbox" id="ytdlp-subtitles" />
-                                <span>Untertitel herunterladen</span>
-                            </label>
-                        </div>
-
-                        <div class="row">
-                            <label class="lbl">Generierter Befehl <span style="font-weight:400; color:var(--text-muted);">(wird live aktualisiert)</span></label>
-                            <textarea id="ytdlp-output" rows="3" readonly placeholder="Befehl erscheint hier..."></textarea>
-                        </div>
-
-                        <div class="actions">
-                            <button id="ytdlp-copy" type="button" class="btn btn-secondary">
-                                <i class="fa-solid fa-copy"></i>
-                                <span>In Zwischenablage kopieren</span>
-                            </button>
-                            <span id="ytdlp-copy-feedback" class="copy-feedback">
-                                <i class="fa-solid fa-check"></i> Kopiert!
-                            </span>
-                        </div>
+# Cookies in Datei speichern (für spätere Nutzung)
+yt-dlp --cookies-from-browser chrome --cookies cookies.txt URL</pre>
+                    </div>
+                    <p class="mt-3">Unter <a href="https://www.linux.org/" target="_blank" class="topic-link">Linux</a> wird für <a href="https://www.gnome.org/" target="_blank" class="topic-link">Gnome</a>-Keyring <code>secretstorage</code> benötigt [citation:1].</p>
                     </div>
                     `,
                     htmlEn: `
-                    <style>
-                        /* ---------- scoped yt-dlp generator styles (EN) ---------- */
-                        .ytdlp-gen-en * { box-sizing: border-box; }
-                        .ytdlp-gen-en {
-                            background: var(--panel-color);
-                            border: 1px solid var(--panel-border);
-                            border-radius: 0.6rem;
-                            padding: 1rem;
-                            font-size: 0.72rem;
-                            box-shadow: var(--control-shadow);
-                        }
-                        .ytdlp-gen-en .row { margin-bottom: 0.85rem; }
-                        .ytdlp-gen-en .grid-2 {
-                            display: grid;
-                            grid-template-columns: 1fr 1fr;
-                            gap: 0.85rem;
-                            margin-bottom: 0.85rem;
-                        }
-                        @media (max-width: 560px) {
-                            .ytdlp-gen-en .grid-2 { grid-template-columns: 1fr; }
-                        }
-                        .ytdlp-gen-en label.lbl {
-                            display: block;
-                            font-weight: 700;
-                            color: var(--text-color);
-                            margin-bottom: 0.4rem;
-                            font-size: 0.7rem;
-                            letter-spacing: 0.01em;
-                        }
-                        .ytdlp-gen-en input[type="text"],
-                        .ytdlp-gen-en select,
-                        .ytdlp-gen-en textarea {
-                            width: 100%;
-                            padding: 0.65rem 0.9rem;
-                            border: 1px solid var(--border-color);
-                            border-radius: 0.45rem;
-                            background: var(--bg-color);
-                            color: var(--text-color);
-                            font-size: 0.72rem;
-                            font-family: inherit;
-                            line-height: 1.35;
-                            outline: none;
-                            transition: border-color .15s, box-shadow .15s;
-                        }
-                        .ytdlp-gen-en input[type="text"]:focus,
-                        .ytdlp-gen-en select:focus,
-                        .ytdlp-gen-en textarea:focus {
-                            border-color: var(--link-color);
-                            box-shadow: 0 0 0 3px color-mix(in srgb, var(--link-color) 25%, transparent);
-                        }
-                        .ytdlp-gen-en select {
-                            appearance: none;
-                            -webkit-appearance: none;
-                            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
-                            background-repeat: no-repeat;
-                            background-position: right 0.9rem center;
-                            padding-right: 2.2rem;
-                        }
-                        .ytdlp-gen-en textarea {
-                            min-height: 4rem;
-                            font-family: 'Courier New', Menlo, monospace;
-                            resize: vertical;
-                        }
-                        .ytdlp-gen-en .chk-row {
-                            display: flex;
-                            flex-wrap: wrap;
-                            align-items: center;
-                            gap: 0.5rem 1.5rem;
-                            margin-bottom: 0.85rem;
-                        }
-                        .ytdlp-gen-en .chk {
-                            display: inline-flex;
-                            align-items: center;
-                            gap: 0.5rem;
-                            font-weight: 600;
-                            color: var(--text-color);
-                            cursor: pointer;
-                            user-select: none;
-                            font-size: 0.72rem;
-                            white-space: nowrap;
-                        }
-                        .ytdlp-gen-en .chk input[type="checkbox"] {
-                            flex-shrink: 0;
-                            width: 15px;
-                            height: 15px;
-                            margin: 0;
-                            accent-color: var(--link-color);
-                            cursor: pointer;
-                        }
-                        .ytdlp-gen-en .chk span { line-height: 1.3; }
-                        .ytdlp-gen-en .btn {
-                            display: inline-flex;
-                            align-items: center;
-                            justify-content: center;
-                            gap: 0.55rem;
-                            padding: 0.7rem 1.25rem;
-                            border-radius: 0.45rem;
-                            font-weight: 800;
-                            font-size: 0.72rem;
-                            letter-spacing: 0.02em;
-                            cursor: pointer;
-                            user-select: none;
-                            transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease, background .15s ease;
-                            border: 1px solid transparent;
-                        }
-                        .ytdlp-gen-en .btn:active { transform: translateY(1px); }
-                        .ytdlp-gen-en .btn i { font-size: 0.78rem; }
-                        .ytdlp-gen-en .btn-secondary {
-                            background: var(--code-bg);
-                            color: var(--text-color);
-                            border-color: var(--border-color);
-                        }
-                        .ytdlp-gen-en .btn-secondary:hover {
-                            background: color-mix(in srgb, var(--link-color) 12%, var(--code-bg));
-                            border-color: var(--link-color);
-                            transform: translateY(-1px);
-                        }
-                        .ytdlp-gen-en .actions {
-                            display: flex;
-                            align-items: center;
-                            gap: 0.85rem;
-                            flex-wrap: wrap;
-                            margin-top: 0.3rem;
-                        }
-                        .ytdlp-gen-en .copy-feedback {
-                            display: none;
-                            align-items: center;
-                            gap: 0.35rem;
-                            font-size: 0.7rem;
-                            font-weight: 700;
-                            color: #10b981;
-                        }
-                        .ytdlp-gen-en .copy-feedback.show { display: inline-flex; }
-                    </style>
+                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
+                    <p class="mb-2"><strong>Extract cookies from browser automatically:</strong></p>
+                    <div class="jf-code">
+                        <pre class="jf-code-inner"># Cookies from Chrome [citation:7]
+yt-dlp --cookies-from-browser chrome URL
 
-                    <div id="ytdlp-generator-en" class="ytdlp-gen-en">
-                        <div class="row">
-                            <label class="lbl">YouTube URL / Video URL</label>
-                            <input type="text" id="ytdlp-url-en" placeholder="https://www.youtube.com/watch?v=..." />
-                        </div>
+# Cookies from Firefox
+yt-dlp --cookies-from-browser firefox URL
 
-                        <div class="row">
-                            <label class="lbl">Output Folder (optional)</label>
-                            <input type="text" id="ytdlp-folder-en" placeholder="C:\Downloads\yt-dlp" />
-                        </div>
+# With specific profile
+yt-dlp --cookies-from-browser "chrome:Profile 1" URL
 
-                        <div class="grid-2">
-                            <div>
-                                <label class="lbl">Media Type</label>
-                                <select id="ytdlp-type-en">
-                                    <option value="video">Video (MP4)</option>
-                                    <option value="audio">Audio</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="lbl">Quality</label>
-                                <select id="ytdlp-quality-en">
-                                    <option value="best">Best available</option>
-                                    <option value="1080">Max 1080p (Full HD)</option>
-                                    <option value="720">Max 720p (HD)</option>
-                                    <option value="480">Max 480p</option>
-                                    <option value="worst">Lowest</option>
-                                </select>
-                            </div>
-                        </div>
+# Save cookies to file (for later use)
+yt-dlp --cookies-from-browser chrome --cookies cookies.txt URL</pre>
+                    </div>
+                    <p class="mt-3">On <a href="https://www.linux.org/" target="_blank" class="topic-link">Linux</a>, <code>secretstorage</code> is required for <a href="https://www.gnome.org/" target="_blank" class="topic-link">Gnome</a> keyring [citation:1].</p>
+                    </div>
+                    `
+                },
+                {
+                    id: 'subsection5_2',
+                    titleDe: 'Konfigurationsdatei',
+                    titleEn: 'Configuration File',
+                    htmlDe: `
+                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
+                    <p class="mb-2"><strong>Speicherorte für yt-dlp.conf:</strong></p>
+                    <ul class="list-disc pl-4 space-y-1 mt-1">
+                    <li><a href="https://www.linux.org/" target="_blank" class="topic-link">Linux</a>/<a href="https://www.apple.com/macos/" target="_blank" class="topic-link">macOS</a>: <code>~/.config/yt-dlp/config</code></li>
+                    <li><a href="https://www.microsoft.com/windows" target="_blank" class="topic-link">Windows</a>: <code>%APPDATA%\\yt-dlp\\config.txt</code></li>
+                    </ul>
+                    <p class="mb-2 mt-3"><strong>Beispiel-Konfiguration:</strong></p>
+                    <div class="jf-code">
+                        <pre class="jf-code-inner"># Immer beste Qualität
+-f bestvideo+bestaudio/best
 
-                        <div class="row" id="ytdlp-audio-options-en" style="display:none;">
-                            <label class="lbl">Audio Format</label>
-                            <select id="ytdlp-audio-format-en">
-                                <option value="mp3">MP3</option>
-                                <option value="m4a">M4A (AAC)</option>
-                                <option value="flac">FLAC (lossless)</option>
-                                <option value="opus">Opus</option>
-                                <option value="wav">WAV</option>
-                            </select>
-                        </div>
+# SponsorBlock aktivieren
+--sponsorblock-remove sponsor
 
-                        <div class="chk-row">
-                            <label class="chk">
-                                <input type="checkbox" id="ytdlp-embed-thumb-en" />
-                                <span>Embed cover image</span>
-                            </label>
-                            <label class="chk">
-                                <input type="checkbox" id="ytdlp-add-metadata-en" />
-                                <span>Add metadata</span>
-                            </label>
-                            <label class="chk">
-                                <input type="checkbox" id="ytdlp-subtitles-en" />
-                                <span>Download subtitles</span>
-                            </label>
-                        </div>
+# Metadaten einbetten
+--embed-metadata
+--embed-thumbnail
 
-                        <div class="row">
-                            <label class="lbl">Generated Command <span style="font-weight:400; color:var(--text-muted);">(updated live)</span></label>
-                            <textarea id="ytdlp-output-en" rows="3" readonly placeholder="Command will appear here..."></textarea>
-                        </div>
+# Ausgabe-Template
+-o "%(title)s [%(id)s].%(ext)s"</pre>
+                    </div>
+                    <p class="mt-3">Optionen in der Konfigurationsdatei werden ohne das <code>--</code>-Präfix geschrieben.</p>
+                    </div>
+                    `,
+                    htmlEn: `
+                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
+                    <p class="mb-2"><strong>Locations for yt-dlp.conf:</strong></p>
+                    <ul class="list-disc pl-4 space-y-1 mt-1">
+                    <li><a href="https://www.linux.org/" target="_blank" class="topic-link">Linux</a>/<a href="https://www.apple.com/macos/" target="_blank" class="topic-link">macOS</a>: <code>~/.config/yt-dlp/config</code></li>
+                    <li><a href="https://www.microsoft.com/windows" target="_blank" class="topic-link">Windows</a>: <code>%APPDATA%\\yt-dlp\\config.txt</code></li>
+                    </ul>
+                    <p class="mb-2 mt-3"><strong>Example configuration:</strong></p>
+                    <div class="jf-code">
+                        <pre class="jf-code-inner"># Always best quality
+-f bestvideo+bestaudio/best
 
-                        <div class="actions">
-                            <button id="ytdlp-copy-en" type="button" class="btn btn-secondary">
-                                <i class="fa-solid fa-copy"></i>
-                                <span>Copy to Clipboard</span>
-                            </button>
-                            <span id="ytdlp-copy-feedback-en" class="copy-feedback">
-                                <i class="fa-solid fa-check"></i> Copied!
-                            </span>
-                        </div>
+# Enable SponsorBlock
+--sponsorblock-remove sponsor
+
+# Embed metadata
+--embed-metadata
+--embed-thumbnail
+
+# Output template
+-o "%(title)s [%(id)s].%(ext)s"</pre>
+                    </div>
+                    <p class="mt-3">Options in the config file are written without the <code>--</code> prefix.</p>
+                    </div>
+                    `
+                }
+            ]
+        },
+
+        /* ============ 6. AUSGABE ============ */
+        {
+            id: 'section6',
+            titleDe: '6. Ausgabe-Templates & Archiv',
+            titleEn: '6. Output Templates & Archive',
+            introDe: 'Mit <code>-o</code> kann der Dateiname über ein <a href="https://github.com/yt-dlp/yt-dlp#output-template" target="_blank" class="topic-link">Output-Template</a> gesteuert werden. Die <code>--download-archive</code>-Option verhindert das erneute Herunterladen bereits archivierter Videos [citation:17].',
+            introEn: 'Use <code>-o</code> to control the filename via an <a href="https://github.com/yt-dlp/yt-dlp#output-template" target="_blank" class="topic-link">output template</a>. The <code>--download-archive</code> option prevents re-downloading already archived videos [citation:17].',
+            subtopics: [
+                {
+                    id: 'subsection6_1',
+                    titleDe: 'Output-Template Variablen',
+                    titleEn: 'Output Template Variables',
+                    htmlDe: `
+                    <div class="overflow-x-auto w-full">
+                    <table class="wikitable">
+                    <tr><th class="w-1/4">Variable</th><th>Beschreibung</th></tr>
+                    <tr><td><code>%(title)s</code></td><td class="text-[var(--text-muted)]">Video-Titel.</td></tr>
+                    <tr><td><code>%(id)s</code></td><td class="text-[var(--text-muted)]">Video-ID.</td></tr>
+                    <tr><td><code>%(ext)s</code></td><td class="text-[var(--text-muted)]">Dateiendung.</td></tr>
+                    <tr><td><code>%(upload_date)s</code></td><td class="text-[var(--text-muted)]">Upload-Datum (YYYYMMDD).</td></tr>
+                    <tr><td><code>%(channel)s</code></td><td class="text-[var(--text-muted)]">Kanalname.</td></tr>
+                    <tr><td><code>%(resolution)s</code></td><td class="text-[var(--text-muted)]">Auflösung (z.B. 1920x1080).</td></tr>
+                    </table>
+                    </div>
+                    `,
+                    htmlEn: `
+                    <div class="overflow-x-auto w-full">
+                    <table class="wikitable">
+                    <tr><th class="w-1/4">Variable</th><th>Description</th></tr>
+                    <tr><td><code>%(title)s</code></td><td class="text-[var(--text-muted)]">Video title.</td></tr>
+                    <tr><td><code>%(id)s</code></td><td class="text-[var(--text-muted)]">Video ID.</td></tr>
+                    <tr><td><code>%(ext)s</code></td><td class="text-[var(--text-muted)]">File extension.</td></tr>
+                    <tr><td><code>%(upload_date)s</code></td><td class="text-[var(--text-muted)]">Upload date (YYYYMMDD).</td></tr>
+                    <tr><td><code>%(channel)s</code></td><td class="text-[var(--text-muted)]">Channel name.</td></tr>
+                    <tr><td><code>%(resolution)s</code></td><td class="text-[var(--text-muted)]">Resolution (e.g., 1920x1080).</td></tr>
+                    </table>
+                    </div>
+                    `
+                },
+                {
+                    id: 'subsection6_2',
+                    titleDe: 'Archiv & Batch-Downloads',
+                    titleEn: 'Archive & Batch Downloads',
+                    htmlDe: `
+                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
+                    <p class="mb-2"><strong>Download-Archiv verwenden:</strong></p>
+                    <div class="jf-code">
+                        <pre class="jf-code-inner"># Archivdatei anlegen (verhindert erneutes Herunterladen) [citation:17]
+yt-dlp --download-archive archive.txt PLAYLIST_URL
+
+# Kanal abonnieren (nur neue Videos) [citation:17]
+yt-dlp --download-archive archive.txt --output "%(upload_date)s - %(title)s.%(ext)s" CHANNEL_URL</pre>
+                    </div>
+                    <p class="mt-3"><strong>Tipp:</strong> Mit <code>--playlist-items 1-10</code> können nur bestimmte Einträge einer Playlist heruntergeladen werden [citation:2].</p>
+                    </div>
+                    `,
+                    htmlEn: `
+                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
+                    <p class="mb-2"><strong>Use download archive:</strong></p>
+                    <div class="jf-code">
+                        <pre class="jf-code-inner"># Create archive file (prevents re-downloading) [citation:17]
+yt-dlp --download-archive archive.txt PLAYLIST_URL
+
+# Subscribe to channel (new videos only) [citation:17]
+yt-dlp --download-archive archive.txt --output "%(upload_date)s - %(title)s.%(ext)s" CHANNEL_URL</pre>
+                    </div>
+                    <p class="mt-3"><strong>Tip:</strong> Use <code>--playlist-items 1-10</code> to download only specific items from a playlist [citation:2].</p>
                     </div>
                     `
                 }
@@ -1267,8 +797,8 @@ registerTopic({
             id: 'tldr-summary',
             titleDe: 'TLDR',
             titleEn: 'TLDR',
-            introDe: 'Die wichtigsten yt-dlp-Mechaniken auf einen Blick.',
-            introEn: 'The core yt-dlp mechanics at a glance.',
+            introDe: 'Die wichtigsten <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="topic-link">yt-dlp</a>-Aspekte auf einen Blick.',
+            introEn: 'The key <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="topic-link">yt-dlp</a> aspects at a glance.',
             subtopics: [
                 {
                     id: 'tldr-grid',
@@ -1277,80 +807,40 @@ registerTopic({
                     htmlDe: `
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 mt-2">
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
-                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm">
-                                <i class="fa-solid fa-terminal opacity-70"></i>
-                                <span>1. Grundbefehl</span>
-                            </div>
-                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">
-                                <code>yt-dlp "URL"</code> lädt das beste kombinierte Format herunter. Für spezifische Formate <code>-f</code> und <code>-F</code> verwenden.
-                            </p>
+                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-download opacity-70"></i><span>1. Feature-reich</span></div>
+                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">Tausende Websites, erweiterte Format-Auswahl, aktive Entwicklung. Fork von <a href="https://github.com/ytdl-org/youtube-dl" target="_blank" class="topic-link">youtube-dl</a> [citation:10].</p>
                         </div>
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
-                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm">
-                                <i class="fa-solid fa-film opacity-70"></i>
-                                <span>2. Video + Audio</span>
-                            </div>
-                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">
-                                <code>-f "bestvideo+bestaudio"</code> mit ffmpeg zum Zusammenfügen. <code>--merge-output-format mp4</code> für Kompatibilität.
-                            </p>
+                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-magic opacity-70"></i><span>2. SponsorBlock</span></div>
+                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">Sponsor-Segmente automatisch markieren oder entfernen. Unterstützt alle <a href="https://sponsor.ajay.app/" target="_blank" class="topic-link">SponsorBlock</a>-Kategorien [citation:5].</p>
                         </div>
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
-                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm">
-                                <i class="fa-solid fa-music opacity-70"></i>
-                                <span>3. Audio-Extraktion</span>
-                            </div>
-                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">
-                                <code>-x --audio-format mp3</code> extrahiert nur Audio. Erfordert ffmpeg. Qualität mit <code>--audio-quality 0</code> (best).
-                            </p>
+                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-cog opacity-70"></i><span>3. Post-Processing</span></div>
+                            <p class="text-xs text-[var(--text-muted)] leading-relaxed"><a href="https://ffmpeg.org/" target="_blank" class="topic-link">FFmpeg</a>-Integration: Remuxing, Re-Encoding, Metadaten, Thumbnails, Kapitel [citation:5].</p>
                         </div>
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
-                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm">
-                                <i class="fa-solid fa-cogs opacity-70"></i>
-                                <span>4. ffmpeg nötig</span>
-                            </div>
-                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">
-                                Für Audio-Konvertierung, Muxing, Metadaten und Untertitel muss ffmpeg im PATH sein. Mit <code>--verbose</code> prüfen.
-                            </p>
+                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-cookie opacity-70"></i><span>4. Browser-Cookies</span></div>
+                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">Cookies aus Chrome, Firefox, Edge automatisch extrahieren für altersbeschränkte Inhalte [citation:7].</p>
                         </div>
                     </div>
                     `,
                     htmlEn: `
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 mt-2">
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
-                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm">
-                                <i class="fa-solid fa-terminal opacity-70"></i>
-                                <span>1. Basic Command</span>
-                            </div>
-                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">
-                                <code>yt-dlp "URL"</code> downloads the best combined format. Use <code>-f</code> and <code>-F</code> for specific formats.
-                            </p>
+                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-download opacity-70"></i><span>1. Feature-rich</span></div>
+                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">Thousands of sites, advanced format selection, active development. Fork of <a href="https://github.com/ytdl-org/youtube-dl" target="_blank" class="topic-link">youtube-dl</a> [citation:10].</p>
                         </div>
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
-                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm">
-                                <i class="fa-solid fa-film opacity-70"></i>
-                                <span>2. Video + Audio</span>
-                            </div>
-                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">
-                                <code>-f "bestvideo+bestaudio"</code> with ffmpeg for merging. <code>--merge-output-format mp4</code> for compatibility.
-                            </p>
+                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-magic opacity-70"></i><span>2. SponsorBlock</span></div>
+                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">Automatically mark or remove sponsor segments. Supports all <a href="https://sponsor.ajay.app/" target="_blank" class="topic-link">SponsorBlock</a> categories [citation:5].</p>
                         </div>
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
-                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm">
-                                <i class="fa-solid fa-music opacity-70"></i>
-                                <span>3. Audio Extraction</span>
-                            </div>
-                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">
-                                <code>-x --audio-format mp3</code> extracts audio only. Requires ffmpeg. Quality via <code>--audio-quality 0</code> (best).
-                            </p>
+                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-cog opacity-70"></i><span>3. Post-Processing</span></div>
+                            <p class="text-xs text-[var(--text-muted)] leading-relaxed"><a href="https://ffmpeg.org/" target="_blank" class="topic-link">FFmpeg</a> integration: remuxing, re-encoding, metadata, thumbnails, chapters [citation:5].</p>
                         </div>
                         <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--bg-color)] shadow-sm">
-                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm">
-                                <i class="fa-solid fa-cogs opacity-70"></i>
-                                <span>4. ffmpeg Required</span>
-                            </div>
-                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">
-                                Audio conversion, muxing, metadata, and subtitles need ffmpeg in PATH. Verify with <code>--verbose</code>.
-                            </p>
+                            <div class="flex items-center gap-3 mb-3 font-semibold text-sm"><i class="fa-solid fa-cookie opacity-70"></i><span>4. Browser Cookies</span></div>
+                            <p class="text-xs text-[var(--text-muted)] leading-relaxed">Extract cookies from Chrome, Firefox, Edge automatically for age-restricted content [citation:7].</p>
                         </div>
                     </div>
                     `
@@ -1363,15 +853,16 @@ registerTopic({
         titleDe: 'Referenzen & Downloads',
         titleEn: 'References & Downloads',
         items: [
-            { icon: 'fa-github',        href: 'https://github.com/yt-dlp/yt-dlp', target: '_blank', labelDe: 'GitHub Repository', labelEn: 'GitHub Repository' },
-            { icon: 'fa-download',      href: 'https://github.com/yt-dlp/yt-dlp/releases/latest', target: '_blank', labelDe: 'Neueste Releases', labelEn: 'Latest Releases' },
-            { icon: 'fa-book',          href: 'https://github.com/yt-dlp/yt-dlp#readme', target: '_blank', labelDe: 'Offizielle README', labelEn: 'Official README' },
-            { icon: 'fa-video',         href: 'https://www.gyan.dev/ffmpeg/builds/', target: '_blank', labelDe: 'ffmpeg Windows Builds', labelEn: 'ffmpeg Windows Builds' }
+            { icon: 'fa-globe',    href: 'https://github.com/yt-dlp/yt-dlp',                target: '_blank', labelDe: 'GitHub Repository',         labelEn: 'GitHub Repository' },
+            { icon: 'fa-download', href: 'https://github.com/yt-dlp/yt-dlp/releases',       target: '_blank', labelDe: 'Downloads',                 labelEn: 'Downloads' },
+            { icon: 'fa-book',     href: 'https://github.com/yt-dlp/yt-dlp/wiki',          target: '_blank', labelDe: 'Offizielle Wiki',           labelEn: 'Official Wiki' },
+            { icon: 'fa-file-alt', href: 'https://github.com/yt-dlp/yt-dlp#readme',         target: '_blank', labelDe: 'README',                     labelEn: 'README' },
+            { icon: 'fa-comments', href: 'https://github.com/yt-dlp/yt-dlp/discussions',   target: '_blank', labelDe: 'Discussions',               labelEn: 'Discussions' }
         ]
     },
 
     footer: {
-        textDe: 'yt-dlp Referenz · v1.4 · Dual Lang',
-        textEn: 'yt-dlp Reference · v1.4 · Dual Lang'
+        textDe: 'yt-dlp Referenz · v1.0 · Dual Lang',
+        textEn: 'yt-dlp Reference · v1.0 · Dual Lang'
     }
 });

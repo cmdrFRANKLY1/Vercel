@@ -2,8 +2,12 @@
  * Color schemes: load from resources/colorSchemes.json, apply to :root,
  * toggle light/dark, render the themes modal grid.
  *
- * v3:
- *   - Themes modal splits schemes into Dark / Light / Custom sections.
+ * v6:
+ *   - Themes modal uses a 10-COLUMN × 10-ROW GRID per section.
+ *   - Dark and Light each get their own 10×10 grid (scrolls vertically
+ *     if there are more than 100 schemes in that group).
+ *   - Custom scheme is its own full-width grid below, same card style.
+ *   - Modal widens to min(1900px, 98vw) so 10 columns of ~150px cards fit.
  *   - "Edit colors" opens a SEPARATE popup (#customColorsModal).
  *   - That popup does NOT dim the background.
  *   - Color changes are previewed LIVE on the page.
@@ -101,6 +105,149 @@
     const appliedInlineVars = new Set();
     let customScheme = null;    // { id, name, dark, custom:true, colors:{...} }
     let editSnapshot = null;    // snapshot taken when the color editor opens
+
+    /* ----------------------------------------------------------
+       Grid styles — injected once
+       ---------------------------------------------------------- */
+    function ensureGridStyles() {
+        if (document.getElementById('themesGridStyles')) return;
+        const style = document.createElement('style');
+        style.id = 'themesGridStyles';
+        style.textContent = `
+            /* ---------- Widen the themes modal for a 10-col grid ---------- */
+            #themesModal .modal-content,
+            #themesModal > div {
+                max-width: min(1900px, 98vw) !important;
+                width: min(1900px, 98vw) !important;
+            }
+            #themesModal .modal-body,
+            #themesModal > div > div {
+                max-height: 82vh;
+                overflow-y: auto;
+            }
+
+            /* ---------- Themes grid container ---------- */
+            #themesGrid.themes-grid-10x10 {
+                display: block;
+                padding: 0.25rem 0;
+            }
+
+            /* ---------- Section (Dark / Light / Custom) ---------- */
+            .themes-section-grid {
+                background: var(--bg-color);
+                border: 1px solid var(--border-color);
+                border-radius: 0.5rem;
+                padding: 0.6rem 0.7rem 0.75rem;
+                margin-bottom: 0.75rem;
+            }
+            .themes-section-grid:last-child { margin-bottom: 0; }
+
+            .themes-section-head {
+                display: flex;
+                align-items: center;
+                gap: 0.45rem;
+                margin: 0 0 0.55rem;
+                padding-bottom: 0.35rem;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .themes-section-head i {
+                font-size: 0.8rem;
+                color: var(--link-color);
+                opacity: 0.85;
+            }
+            .themes-section-title {
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--heading-color);
+            }
+            .themes-section-count {
+                font-size: 0.58rem;
+                font-family: 'Fira Code', monospace;
+                color: var(--text-muted);
+                background: var(--code-bg);
+                border: 1px solid var(--border-color);
+                border-radius: 0.6rem;
+                padding: 0.02rem 0.4rem;
+                line-height: 1.35;
+                margin-left: auto;
+            }
+
+            /* ---------- 10 × 10 grid ---------- */
+            .themes-grid-10 {
+                display: grid;
+                grid-template-columns: repeat(10, minmax(0, 1fr));
+                grid-auto-rows: minmax(0, auto);
+                gap: 0.55rem;
+            }
+            /* Fallback: fewer columns on narrower screens */
+            @media (max-width: 1600px) { .themes-grid-10 { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
+            @media (max-width: 1200px) { .themes-grid-10 { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+            @media (max-width: 900px)  { .themes-grid-10 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+            @media (max-width: 600px)  { .themes-grid-10 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+            @media (max-width: 420px)  { .themes-grid-10 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+            /* Empty-state slot when a section has fewer than 10 columns */
+            .theme-card-empty {
+                visibility: hidden;
+                pointer-events: none;
+            }
+
+            /* ---------- Card ---------- */
+            .theme-card-grid {
+                background: var(--panel-color);
+                border: 1px solid var(--border-color);
+                border-radius: 0.4rem;
+                padding: 0.35rem;
+                cursor: pointer;
+                display: flex;
+                flex-direction: column;
+                gap: 0.3rem;
+                transition: border-color 0.15s ease, transform 0.1s ease;
+                min-width: 0;
+            }
+            .theme-card-grid:hover { border-color: var(--link-color); }
+            .theme-card-grid:active { transform: scale(0.97); }
+            .theme-card-grid.active {
+                border-color: var(--link-color);
+                box-shadow: 0 0 0 1px var(--link-color) inset;
+            }
+
+            .theme-card-edit {
+                align-items: center;
+                justify-content: center;
+                color: var(--link-color);
+                gap: 0.35rem;
+            }
+            .theme-card-edit i { font-size: 1.05rem; opacity: 0.85; }
+
+            .theme-swatches-grid {
+                display: flex;
+                height: 14px;
+                border-radius: 0.25rem;
+                overflow: hidden;
+                border: 1px solid var(--border-color);
+            }
+            .theme-swatches-grid span {
+                flex: 1;
+                display: block;
+            }
+            .theme-name-grid {
+                font-size: 0.6rem;
+                font-weight: 600;
+                color: var(--text-color);
+                line-height: 1.2;
+                text-align: center;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    ensureGridStyles();
 
     /* ----------------------------------------------------------
        Custom scheme persistence
@@ -286,21 +433,19 @@
     }
 
     /* ----------------------------------------------------------
-       Themes grid — Dark / Light / Custom sections
+       Themes grid — 10 × 10 grid per section
        ---------------------------------------------------------- */
     function renderThemesGrid() {
         const grid = document.getElementById('themesGrid');
         if (!grid) return;
         grid.innerHTML = '';
-        grid.className = 'themes-grid';
-        grid.style.display = 'block';
-        grid.style.gridTemplateColumns = '';
+        grid.className = 'themes-grid-10x10';
 
         const darkSchemes  = allSchemes.filter(s => s.dark);
         const lightSchemes = allSchemes.filter(s => !s.dark);
 
         grid.appendChild(buildSection('fa-solid fa-moon', 'Dark', 'Dunkel', darkSchemes));
-        grid.appendChild(buildSection('fa-solid fa-sun', 'Light', 'Hell', lightSchemes));
+        grid.appendChild(buildSection('fa-solid fa-sun',  'Light', 'Hell',  lightSchemes));
         grid.appendChild(buildCustomSection());
 
         if (App.i18n && typeof App.i18n.applyLangToDOM === 'function') {
@@ -310,30 +455,34 @@
 
     function buildSection(iconClass, labelEn, labelDe, schemes) {
         const wrap = document.createElement('div');
-        wrap.className = 'themes-section';
-        wrap.style.marginBottom = '1rem';
+        wrap.className = 'themes-section-grid';
 
         const head = document.createElement('div');
-        head.style.display = 'flex';
-        head.style.alignItems = 'center';
-        head.style.gap = '0.5rem';
-        head.style.margin = '0.25rem 0 0.6rem';
-        head.style.paddingBottom = '0.4rem';
-        head.style.borderBottom = '1px solid var(--border-color)';
+        head.className = 'themes-section-head';
         head.innerHTML =
-            `<i class="${iconClass}" style="font-size:0.8rem;color:var(--link-color);opacity:0.85;"></i>` +
-            `<span style="font-size:0.68rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--heading-color);" data-lang-de>${escapeHtml(labelDe)}</span>` +
-            `<span style="font-size:0.68rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--heading-color);display:none;" data-lang-en>${escapeHtml(labelEn)}</span>` +
-            `<span style="font-size:0.6rem;font-family:'Fira Code',monospace;color:var(--text-muted);background:var(--code-bg);border:1px solid var(--border-color);border-radius:0.6rem;padding:0.05rem 0.4rem;line-height:1.3;">${schemes.length}</span>`;
+            `<i class="${iconClass}"></i>` +
+            `<span class="themes-section-title" data-lang-de>${escapeHtml(labelDe)}</span>` +
+            `<span class="themes-section-title" data-lang-en style="display:none;">${escapeHtml(labelEn)}</span>` +
+            `<span class="themes-section-count">${schemes.length}</span>`;
         wrap.appendChild(head);
 
         const inner = document.createElement('div');
-        inner.style.display = 'grid';
-        inner.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
-        inner.style.gap = '0.6rem';
-        schemes.forEach(scheme => inner.appendChild(buildSchemeCard(scheme)));
-        wrap.appendChild(inner);
+        inner.className = 'themes-grid-10';
 
+        schemes.forEach(scheme => inner.appendChild(buildSchemeCard(scheme)));
+
+        // Pad the grid to a multiple of 10 so the layout stays perfectly
+        // rectangular. Empty cells are invisible placeholders.
+        const remainder = schemes.length % 10;
+        if (remainder !== 0) {
+            for (let i = 0; i < (10 - remainder); i++) {
+                const empty = document.createElement('div');
+                empty.className = 'theme-card-empty';
+                inner.appendChild(empty);
+            }
+        }
+
+        wrap.appendChild(inner);
         return wrap;
     }
 
@@ -357,16 +506,15 @@
         const nameDe = (scheme.name && scheme.name.de) || scheme.id;
         const nameEn = (scheme.name && scheme.name.en) || nameDe;
 
-        const tagDe = scheme.builtin ? 'Standard' : (scheme.dark ? 'Dunkel' : 'Hell');
-        const tagEn = scheme.builtin ? 'Built-in' : (scheme.dark ? 'Dark' : 'Light');
-
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'theme-card' + (scheme.id === state.activeSchemeId ? ' active' : '');
+        btn.className = 'theme-card-grid' + (scheme.id === state.activeSchemeId ? ' active' : '');
         btn.innerHTML =
-            `<div class="theme-swatches">${swatches}</div>` +
-            `<div class="theme-name"><span data-lang-de>${escapeHtml(nameDe)}</span><span data-lang-en style="display:none;">${escapeHtml(nameEn)}</span></div>` +
-            `<div class="theme-tag"><span data-lang-de>${escapeHtml(tagDe)}</span><span data-lang-en style="display:none;">${escapeHtml(tagEn)}</span></div>`;
+            `<div class="theme-swatches-grid">${swatches}</div>` +
+            `<div class="theme-name-grid">` +
+                `<span data-lang-de>${escapeHtml(nameDe)}</span>` +
+                `<span data-lang-en style="display:none;">${escapeHtml(nameEn)}</span>` +
+            `</div>`;
 
         btn.addEventListener('click', () => {
             applyColorScheme(scheme.id);
@@ -379,45 +527,47 @@
     }
 
     /* ----------------------------------------------------------
-       Custom section — Custom card + "Edit colors" button
+       Custom section — same 10-col grid
        ---------------------------------------------------------- */
     function buildCustomSection() {
         const wrap = document.createElement('div');
-        wrap.className = 'themes-section';
-        wrap.style.marginTop = '0.5rem';
+        wrap.className = 'themes-section-grid';
 
         const head = document.createElement('div');
-        head.style.display = 'flex';
-        head.style.alignItems = 'center';
-        head.style.gap = '0.5rem';
-        head.style.margin = '0.25rem 0 0.6rem';
-        head.style.paddingBottom = '0.4rem';
-        head.style.borderBottom = '1px solid var(--border-color)';
+        head.className = 'themes-section-head';
         head.innerHTML =
-            `<i class="fa-solid fa-sliders" style="font-size:0.8rem;color:var(--link-color);opacity:0.85;"></i>` +
-            `<span style="font-size:0.68rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--heading-color);" data-lang-de>Benutzerdefiniert</span>` +
-            `<span style="font-size:0.68rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--heading-color);display:none;" data-lang-en>Custom</span>`;
+            `<i class="fa-solid fa-sliders"></i>` +
+            `<span class="themes-section-title" data-lang-de>Benutzerdefiniert</span>` +
+            `<span class="themes-section-title" data-lang-en style="display:none;">Custom</span>`;
         wrap.appendChild(head);
 
-        const topRow = document.createElement('div');
-        topRow.style.display = 'grid';
-        topRow.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
-        topRow.style.gap = '0.6rem';
+        const inner = document.createElement('div');
+        inner.className = 'themes-grid-10';
 
-        topRow.appendChild(buildSchemeCard(customScheme));
+        // Custom card
+        inner.appendChild(buildSchemeCard(customScheme));
 
+        // Edit-colors card
         const editBtn = document.createElement('button');
         editBtn.type = 'button';
-        editBtn.className = 'theme-card';
-        editBtn.style.alignItems = 'center';
-        editBtn.style.justifyContent = 'center';
+        editBtn.className = 'theme-card-grid theme-card-edit';
         editBtn.innerHTML =
-            `<i class="fa-solid fa-pen-to-square" style="font-size:1.1rem;color:var(--link-color);opacity:0.85;"></i>` +
-            `<div class="theme-name" style="text-align:center;"><span data-lang-de>Farben bearbeiten</span><span data-lang-en style="display:none;">Edit colors</span></div>`;
+            `<i class="fa-solid fa-pen-to-square"></i>` +
+            `<div class="theme-name-grid" style="text-align:center;">` +
+                `<span data-lang-de>Farben bearbeiten</span>` +
+                `<span data-lang-en style="display:none;">Edit colors</span>` +
+            `</div>`;
         editBtn.addEventListener('click', () => openCustomColorsModal());
-        topRow.appendChild(editBtn);
+        inner.appendChild(editBtn);
 
-        wrap.appendChild(topRow);
+        // Pad the custom grid to a full 10-wide row for visual consistency.
+        for (let i = 0; i < 8; i++) {
+            const empty = document.createElement('div');
+            empty.className = 'theme-card-empty';
+            inner.appendChild(empty);
+        }
+
+        wrap.appendChild(inner);
         return wrap;
     }
 
@@ -611,7 +761,7 @@
         });
     }
 
-        /* ----------------------------------------------------------
+    /* ----------------------------------------------------------
        Live-poll a color swatch while the user is interacting with
        the native picker. Chrome/Edge fire `input` continuously;
        Firefox/Safari do not, so we also rAF-poll while focused.
@@ -639,7 +789,7 @@
         });
     }
 
-        /* ----------------------------------------------------------
+    /* ----------------------------------------------------------
        Color helpers for the custom inline picker
        ---------------------------------------------------------- */
     function hexToHsl(hex) {
@@ -700,9 +850,6 @@
             `<span data-lang-en style="display:none;">${escapeHtml(field.labelEn)}</span>`;
 
         // --- Preview swatch (not an <input type="color">, just a div) ---
-        // Rendering a div instead of an <input type="color"> guarantees the
-        // OS dialog never opens, so the only way to change the color is
-        // through the sliders below — which fire input events live.
         const swatch = document.createElement('div');
         swatch.style.width = '100%';
         swatch.style.height = '22px';
