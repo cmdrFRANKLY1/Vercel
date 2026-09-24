@@ -1187,8 +1187,8 @@ registerTopic({
 
                                 {
                     id: 'subsection10_keys',
-                    titleDe: 'SQL-Schlüssel (Babyleicht erklärt)',
-                    titleEn: 'SQL Keys (Idiot-Proof Explanation)',
+                    titleDe: 'SQL-Schlüssel',
+                    titleEn: 'SQL Keys',
                     htmlDe: `
                     <p class="text-xs mb-2">Datenbanken extrem einfach erklärt! Jeder Schlüssel hat eine feste Rolle. Folge der Geschichte von Tom und seinem Hund.</p>
                     <div class="pm-keys-story" style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;max-width:680px;margin:0 auto;">
