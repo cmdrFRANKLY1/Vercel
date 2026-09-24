@@ -8,8 +8,8 @@ registerTopic({
     // parentId: 'IT Basics', // Uncomment and set if you want to nest this under a parent topic.
 
     icon: 'fa-microchip',
-    titleDe: 'Computer & Hardware',
-    titleEn: 'Computer & Hardware',
+    titleDe: 'Computer Hardware',
+    titleEn: 'Computer Hardware',
     descDe: 'Computer-Hardware und Netzwerk-Hardware im Überblick.',
     descEn: 'An overview of computer hardware and network hardware.',
 
