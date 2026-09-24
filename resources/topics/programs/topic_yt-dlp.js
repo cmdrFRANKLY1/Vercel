@@ -262,28 +262,214 @@ registerTopic({
                     titleDe: 'Grundlegende Befehle',
                     titleEn: 'Basic Commands',
                     htmlDe: `
+                    <style>
+                        /* ---------- scoped Jellyfin-style code block styles ---------- */
+                        /* Each command block is its own embedded terminal panel:  */
+                        /* darker background + its own border + rounded corners.  */
+                        .jf-code {
+                            position: relative;
+                            background: #06080b;                       /* very dark, per-command */
+                            border: 1px solid var(--border-color);
+                            border-radius: 0.45rem;
+                            margin: 0.55rem 0;
+                            overflow: hidden;
+                            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04),
+                                        0 1px 2px rgba(0,0,0,0.35);
+                        }
+                        .jf-code-inner {
+                            display: block;
+                            padding: 0.85rem 1rem;
+                            font-family: 'Courier New', Menlo, Consolas, monospace;
+                            font-size: 0.72rem;
+                            line-height: 1.55;
+                            color: var(--text-color);
+                            white-space: pre;                  /* preserve line breaks */
+                            overflow-x: auto;
+                            margin: 0;
+                            tab-size: 4;
+                            background: transparent;           /* let .jf-code bg show */
+                        }
+                        .jf-code-inner .cmd {
+                            display: block;
+                            padding: 0.05rem 0;
+                        }
+                        .jf-code-inner .cmt {
+                            display: block;
+                            color: var(--text-muted);
+                            opacity: 0.75;
+                            font-style: italic;
+                        }
+                        .jf-code-inner .blank {
+                            display: block;
+                            height: 0.6rem;
+                        }
+                        .jf-copy-btn {
+                            position: absolute;
+                            top: 0.5rem;
+                            right: 0.5rem;
+                            padding: 0.35rem 0.7rem;
+                            font-size: 0.62rem;
+                            font-weight: 800;
+                            letter-spacing: 0.03em;
+                            border-radius: 0.35rem;
+                            border: 1px solid var(--border-color);
+                            background: var(--panel-color);
+                            color: var(--text-color);
+                            cursor: pointer;
+                            opacity: 0;
+                            transform: translateY(-4px);
+                            transition: opacity 0.2s ease, transform 0.2s ease, background 0.15s ease, border-color 0.15s ease;
+                            z-index: 2;
+                            user-select: none;
+                            font-family: inherit;
+                        }
+                        .jf-code:hover .jf-copy-btn,
+                        .jf-copy-btn:focus {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                        .jf-copy-btn:hover {
+                            background: color-mix(in srgb, var(--link-color) 15%, var(--panel-color));
+                            border-color: var(--link-color);
+                        }
+                        .jf-copy-btn:active { transform: translateY(1px); }
+                        .jf-copy-btn.is-copied { background: #10b981; border-color: #10b981; color: #fff; }
+                        .jf-copy-btn.is-failed { background: #ef4444; border-color: #ef4444; color: #fff; }
+                        @media (max-width: 560px) {
+                            .jf-code-inner { font-size: 0.66rem; padding: 0.7rem 0.8rem; }
+                            .jf-copy-btn { opacity: 1; transform: translateY(0); }
+                        }
+                    </style>
+
                     <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
                     <ul class="list-disc pl-4 space-y-2">
-                    <li><strong>Einfacher Download (beste Qualität):</strong><br><code>yt-dlp "URL"</code></li>
-                    <li><strong>Als MP4 speichern:</strong><br><code>yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]" "URL"</code></li>
-                    <li><strong>Verfügbare Formate anzeigen:</strong><br><code>yt-dlp -F "URL"</code></li>
-                    <li><strong>Eigenen Dateinamen festlegen:</strong><br><code>yt-dlp -o "%(title)s.%(ext)s" "URL"</code></li>
-                    <li><strong>Untertitel herunterladen:</strong><br><code>yt-dlp --write-subs --sub-langs "de,en" "URL"</code></li>
-                    <li><strong>Playlist herunterladen:</strong><br><code>yt-dlp -o "%(playlist_index)s - %(title)s.%(ext)s" "PLAYLIST_URL"</code></li>
-                    <li><strong>Nur bestimmte Playlist-Einträge:</strong><br><code>yt-dlp -I 1:3,7,-5::2 "PLAYLIST_URL"</code></li>
+                    <li><strong>Einfacher Download (beste Qualität):</strong><br>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp "URL"</pre></div>
+                    </li>
+                    <li><strong>Als MP4 speichern:</strong><br>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]" "URL"</pre></div>
+                    </li>
+                    <li><strong>Verfügbare Formate anzeigen:</strong><br>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -F "URL"</pre></div>
+                    </li>
+                    <li><strong>Eigenen Dateinamen festlegen:</strong><br>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -o "%(title)s.%(ext)s" "URL"</pre></div>
+                    </li>
+                    <li><strong>Untertitel herunterladen:</strong><br>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp --write-subs --sub-langs "de,en" "URL"</pre></div>
+                    </li>
+                    <li><strong>Playlist herunterladen:</strong><br>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -o "%(playlist_index)s - %(title)s.%(ext)s" "PLAYLIST_URL"</pre></div>
+                    </li>
+                    <li><strong>Nur bestimmte Playlist-Einträge:</strong><br>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -I 1:3,7,-5::2 "PLAYLIST_URL"</pre></div>
+                    </li>
                     </ul>
                     </div>
                     `,
                     htmlEn: `
+                    <style>
+                        /* ---------- scoped Jellyfin-style code block styles ---------- */
+                        /* Each command block is its own embedded terminal panel:  */
+                        /* darker background + its own border + rounded corners.  */
+                        .jf-code {
+                            position: relative;
+                            background: #06080b;                       /* very dark, per-command */
+                            border: 1px solid var(--border-color);
+                            border-radius: 0.45rem;
+                            margin: 0.55rem 0;
+                            overflow: hidden;
+                            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04),
+                                        0 1px 2px rgba(0,0,0,0.35);
+                        }
+                        .jf-code-inner {
+                            display: block;
+                            padding: 0.85rem 1rem;
+                            font-family: 'Courier New', Menlo, Consolas, monospace;
+                            font-size: 0.72rem;
+                            line-height: 1.55;
+                            color: var(--text-color);
+                            white-space: pre;
+                            overflow-x: auto;
+                            margin: 0;
+                            tab-size: 4;
+                            background: transparent;
+                        }
+                        .jf-code-inner .cmd {
+                            display: block;
+                            padding: 0.05rem 0;
+                        }
+                        .jf-code-inner .cmt {
+                            display: block;
+                            color: var(--text-muted);
+                            opacity: 0.75;
+                            font-style: italic;
+                        }
+                        .jf-code-inner .blank {
+                            display: block;
+                            height: 0.6rem;
+                        }
+                        .jf-copy-btn {
+                            position: absolute;
+                            top: 0.5rem;
+                            right: 0.5rem;
+                            padding: 0.35rem 0.7rem;
+                            font-size: 0.62rem;
+                            font-weight: 800;
+                            letter-spacing: 0.03em;
+                            border-radius: 0.35rem;
+                            border: 1px solid var(--border-color);
+                            background: var(--panel-color);
+                            color: var(--text-color);
+                            cursor: pointer;
+                            opacity: 0;
+                            transform: translateY(-4px);
+                            transition: opacity 0.2s ease, transform 0.2s ease, background 0.15s ease, border-color 0.15s ease;
+                            z-index: 2;
+                            user-select: none;
+                            font-family: inherit;
+                        }
+                        .jf-code:hover .jf-copy-btn,
+                        .jf-copy-btn:focus {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                        .jf-copy-btn:hover {
+                            background: color-mix(in srgb, var(--link-color) 15%, var(--panel-color));
+                            border-color: var(--link-color);
+                        }
+                        .jf-copy-btn:active { transform: translateY(1px); }
+                        .jf-copy-btn.is-copied { background: #10b981; border-color: #10b981; color: #fff; }
+                        .jf-copy-btn.is-failed { background: #ef4444; border-color: #ef4444; color: #fff; }
+                        @media (max-width: 560px) {
+                            .jf-code-inner { font-size: 0.66rem; padding: 0.7rem 0.8rem; }
+                            .jf-copy-btn { opacity: 1; transform: translateY(0); }
+                        }
+                    </style>
+
                     <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
                     <ul class="list-disc pl-4 space-y-2">
-                    <li><strong>Simple download (best quality):</strong><br><code>yt-dlp "URL"</code></li>
-                    <li><strong>Save as MP4:</strong><br><code>yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]" "URL"</code></li>
-                    <li><strong>List available formats:</strong><br><code>yt-dlp -F "URL"</code></li>
-                    <li><strong>Set custom filename:</strong><br><code>yt-dlp -o "%(title)s.%(ext)s" "URL"</code></li>
-                    <li><strong>Download subtitles:</strong><br><code>yt-dlp --write-subs --sub-langs "en,de" "URL"</code></li>
-                    <li><strong>Download playlist:</strong><br><code>yt-dlp -o "%(playlist_index)s - %(title)s.%(ext)s" "PLAYLIST_URL"</code></li>
-                    <li><strong>Only specific playlist items:</strong><br><code>yt-dlp -I 1:3,7,-5::2 "PLAYLIST_URL"</code></li>
+                    <li><strong>Simple download (best quality):</strong><br>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp "URL"</pre></div>
+                    </li>
+                    <li><strong>Save as MP4:</strong><br>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]" "URL"</pre></div>
+                    </li>
+                    <li><strong>List available formats:</strong><br>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -F "URL"</pre></div>
+                    </li>
+                    <li><strong>Set custom filename:</strong><br>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -o "%(title)s.%(ext)s" "URL"</pre></div>
+                    </li>
+                    <li><strong>Download subtitles:</strong><br>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp --write-subs --sub-langs "en,de" "URL"</pre></div>
+                    </li>
+                    <li><strong>Download playlist:</strong><br>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -o "%(playlist_index)s - %(title)s.%(ext)s" "PLAYLIST_URL"</pre></div>
+                    </li>
+                    <li><strong>Only specific playlist items:</strong><br>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -I 1:3,7,-5::2 "PLAYLIST_URL"</pre></div>
+                    </li>
                     </ul>
                     </div>
                     `
@@ -408,22 +594,164 @@ registerTopic({
                     titleDe: 'Praxis-Beispiele',
                     titleEn: 'Practical Examples',
                     htmlDe: `
+                    <style>
+                        /* ---------- scoped Jellyfin-style code block styles ---------- */
+                        .jf-code {
+                            position: relative;
+                            background: #06080b;
+                            border: 1px solid var(--border-color);
+                            border-radius: 0.45rem;
+                            margin: 0.55rem 0;
+                            overflow: hidden;
+                            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04),
+                                        0 1px 2px rgba(0,0,0,0.35);
+                        }
+                        .jf-code-inner {
+                            display: block;
+                            padding: 0.85rem 1rem;
+                            font-family: 'Courier New', Menlo, Consolas, monospace;
+                            font-size: 0.72rem;
+                            line-height: 1.55;
+                            color: var(--text-color);
+                            white-space: pre;
+                            overflow-x: auto;
+                            margin: 0;
+                            tab-size: 4;
+                            background: transparent;
+                        }
+                        .jf-copy-btn {
+                            position: absolute;
+                            top: 0.5rem;
+                            right: 0.5rem;
+                            padding: 0.35rem 0.7rem;
+                            font-size: 0.62rem;
+                            font-weight: 800;
+                            letter-spacing: 0.03em;
+                            border-radius: 0.35rem;
+                            border: 1px solid var(--border-color);
+                            background: var(--panel-color);
+                            color: var(--text-color);
+                            cursor: pointer;
+                            opacity: 0;
+                            transform: translateY(-4px);
+                            transition: opacity 0.2s ease, transform 0.2s ease, background 0.15s ease, border-color 0.15s ease;
+                            z-index: 2;
+                            user-select: none;
+                            font-family: inherit;
+                        }
+                        .jf-code:hover .jf-copy-btn,
+                        .jf-copy-btn:focus {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                        .jf-copy-btn:hover {
+                            background: color-mix(in srgb, var(--link-color) 15%, var(--panel-color));
+                            border-color: var(--link-color);
+                        }
+                        .jf-copy-btn:active { transform: translateY(1px); }
+                        .jf-copy-btn.is-copied { background: #10b981; border-color: #10b981; color: #fff; }
+                        .jf-copy-btn.is-failed { background: #ef4444; border-color: #ef4444; color: #fff; }
+                        @media (max-width: 560px) {
+                            .jf-code-inner { font-size: 0.66rem; padding: 0.7rem 0.8rem; }
+                            .jf-copy-btn { opacity: 1; transform: translateY(0); }
+                        }
+                    </style>
+
                     <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
                     <ul class="list-disc pl-4 space-y-2">
-                    <li><strong>MP3 (beste Qualität):</strong><br><code>yt-dlp -x --audio-format mp3 --audio-quality 0 "URL"</code></li>
-                    <li><strong>M4A (verlustarm):</strong><br><code>yt-dlp -x --audio-format m4a "URL"</code></li>
-                    <li><strong>FLAC (verlustfrei):</strong><br><code>yt-dlp -x --audio-format flac "URL"</code></li>
-                    <li><strong>Metadaten &amp; Cover einbetten:</strong><br><code>yt-dlp -x --audio-format mp3 --embed-thumbnail --add-metadata "URL"</code></li>
+                    <li><strong>MP3 (beste Qualität):</strong>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -x --audio-format mp3 --audio-quality 0 "URL"</pre></div>
+                    </li>
+                    <li><strong>M4A (verlustarm):</strong>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -x --audio-format m4a "URL"</pre></div>
+                    </li>
+                    <li><strong>FLAC (verlustfrei):</strong>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -x --audio-format flac "URL"</pre></div>
+                    </li>
+                    <li><strong>Metadaten &amp; Cover einbetten:</strong>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -x --audio-format mp3 --embed-thumbnail --add-metadata "URL"</pre></div>
+                    </li>
                     </ul>
                     </div>
                     `,
                     htmlEn: `
+                    <style>
+                        /* ---------- scoped Jellyfin-style code block styles ---------- */
+                        .jf-code {
+                            position: relative;
+                            background: #06080b;
+                            border: 1px solid var(--border-color);
+                            border-radius: 0.45rem;
+                            margin: 0.55rem 0;
+                            overflow: hidden;
+                            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04),
+                                        0 1px 2px rgba(0,0,0,0.35);
+                        }
+                        .jf-code-inner {
+                            display: block;
+                            padding: 0.85rem 1rem;
+                            font-family: 'Courier New', Menlo, Consolas, monospace;
+                            font-size: 0.72rem;
+                            line-height: 1.55;
+                            color: var(--text-color);
+                            white-space: pre;
+                            overflow-x: auto;
+                            margin: 0;
+                            tab-size: 4;
+                            background: transparent;
+                        }
+                        .jf-copy-btn {
+                            position: absolute;
+                            top: 0.5rem;
+                            right: 0.5rem;
+                            padding: 0.35rem 0.7rem;
+                            font-size: 0.62rem;
+                            font-weight: 800;
+                            letter-spacing: 0.03em;
+                            border-radius: 0.35rem;
+                            border: 1px solid var(--border-color);
+                            background: var(--panel-color);
+                            color: var(--text-color);
+                            cursor: pointer;
+                            opacity: 0;
+                            transform: translateY(-4px);
+                            transition: opacity 0.2s ease, transform 0.2s ease, background 0.15s ease, border-color 0.15s ease;
+                            z-index: 2;
+                            user-select: none;
+                            font-family: inherit;
+                        }
+                        .jf-code:hover .jf-copy-btn,
+                        .jf-copy-btn:focus {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                        .jf-copy-btn:hover {
+                            background: color-mix(in srgb, var(--link-color) 15%, var(--panel-color));
+                            border-color: var(--link-color);
+                        }
+                        .jf-copy-btn:active { transform: translateY(1px); }
+                        .jf-copy-btn.is-copied { background: #10b981; border-color: #10b981; color: #fff; }
+                        .jf-copy-btn.is-failed { background: #ef4444; border-color: #ef4444; color: #fff; }
+                        @media (max-width: 560px) {
+                            .jf-code-inner { font-size: 0.66rem; padding: 0.7rem 0.8rem; }
+                            .jf-copy-btn { opacity: 1; transform: translateY(0); }
+                        }
+                    </style>
+
                     <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)]" style="box-shadow: var(--control-shadow);">
                     <ul class="list-disc pl-4 space-y-2">
-                    <li><strong>MP3 (best quality):</strong><br><code>yt-dlp -x --audio-format mp3 --audio-quality 0 "URL"</code></li>
-                    <li><strong>M4A (lossy):</strong><br><code>yt-dlp -x --audio-format m4a "URL"</code></li>
-                    <li><strong>FLAC (lossless):</strong><br><code>yt-dlp -x --audio-format flac "URL"</code></li>
-                    <li><strong>Embed metadata &amp; cover:</strong><br><code>yt-dlp -x --audio-format mp3 --embed-thumbnail --add-metadata "URL"</code></li>
+                    <li><strong>MP3 (best quality):</strong>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -x --audio-format mp3 --audio-quality 0 "URL"</pre></div>
+                    </li>
+                    <li><strong>M4A (lossy):</strong>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -x --audio-format m4a "URL"</pre></div>
+                    </li>
+                    <li><strong>FLAC (lossless):</strong>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -x --audio-format flac "URL"</pre></div>
+                    </li>
+                    <li><strong>Embed metadata &amp; cover:</strong>
+                        <div class="jf-code"><pre class="jf-code-inner">yt-dlp -x --audio-format mp3 --embed-thumbnail --add-metadata "URL"</pre></div>
+                    </li>
                     </ul>
                     </div>
                     `
@@ -576,7 +904,6 @@ registerTopic({
                             font-family: 'Courier New', Menlo, monospace;
                             resize: vertical;
                         }
-                        /* ---------- horizontal checkbox row ---------- */
                         .ytdlp-gen .chk-row {
                             display: flex;
                             flex-wrap: wrap;
@@ -604,7 +931,6 @@ registerTopic({
                             cursor: pointer;
                         }
                         .ytdlp-gen .chk span { line-height: 1.3; }
-                        /* ---------- copy button ---------- */
                         .ytdlp-gen .btn {
                             display: inline-flex;
                             align-items: center;
