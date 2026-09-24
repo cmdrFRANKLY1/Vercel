@@ -1038,8 +1038,8 @@ registerTopic({
            ============================================================ */
         {
             id: 'tldr-summary',
-            titleDe: 'TLDR – Kurz Übersicht',
-            titleEn: 'TLDR – Quick Overview',
+            titleDe: 'TLDR',
+            titleEn: 'TLDR',
             introDe: 'Die wichtigsten Token-Kategorien auf einen Blick.',
             introEn: 'The most important token categories at a glance.',
             subtopics: [
