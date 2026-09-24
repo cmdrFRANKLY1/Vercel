@@ -4,6 +4,7 @@
 
 registerTopic({
     id: 'Hardware',
+    parentId: 'Computer',
     // parentId: 'IT Basics', // Uncomment and set if you want to nest this under a parent topic.
 
     icon: 'fa-microchip',

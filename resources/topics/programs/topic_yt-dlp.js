@@ -1,4 +1,4 @@
-// resources/topics/topic_ytdlp.js
+// resources/topics/programs/topic_ytdlp.js
 // Registers the yt-dlp reference topic. Loaded via <script> injection.
 
 /* ==================================================================
@@ -194,8 +194,8 @@ registerTopic({
     icon: 'fa-download',
     titleDe: 'YT-DLP',
     titleEn: 'YT-DLP',
-    descDe: 'Vollständige Referenz für yt-dlp.exe inklusive ffmpeg-Integration, Formaten, Optionen und interaktivem Befehls-Generator.',
-    descEn: 'Complete reference for yt-dlp.exe including ffmpeg integration, formats, options, and interactive command generator.',
+    descDe: 'Yt-dlp & FFmpeg',
+    descEn: 'Yt-dlp & FFmpeg',
 
     sidebarTitleDe: 'yt-dlp',
     sidebarTitleEn: 'yt-dlp',
