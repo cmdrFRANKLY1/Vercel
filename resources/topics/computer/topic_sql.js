@@ -1181,9 +1181,179 @@ registerTopic({
             id: 'section10',
             titleDe: 'Visualisierungen',
             titleEn: 'Visualizations',
-            introDe: 'Kurze CSS-Animationen, die die Kernkonzepte von SQL greifbar machen: Ausführungsreihenfolge, Join-Typen und ACID.',
-            introEn: 'Short CSS animations that make the core concepts of SQL tangible: execution order, join types, and ACID.',
+            introDe: 'Kurze CSS-Animationen, die die Kernkonzepte von SQL greifbar machen: Schlüssel, Ausführungsreihenfolge, Join-Typen und ACID.',
+            introEn: 'Short CSS animations that make the core concepts of SQL tangible: keys, execution order, join types, and ACID.',
             subtopics: [
+
+                                {
+                    id: 'subsection10_keys',
+                    titleDe: 'SQL-Schlüssel (Babyleicht erklärt)',
+                    titleEn: 'SQL Keys (Idiot-Proof Explanation)',
+                    htmlDe: `
+                    <p class="text-xs mb-2">Datenbanken extrem einfach erklärt! Jeder Schlüssel hat eine feste Rolle. Folge der Geschichte von Tom und seinem Hund.</p>
+                    <div class="pm-keys-story" style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;max-width:680px;margin:0 auto;">
+                        <style>
+                            .pm-keys-story .card { background:var(--panel-color); border:2px solid var(--border-color); border-radius:0.75rem; padding:1rem; position:relative; overflow:hidden; transition:transform 0.3s, border-color 0.3s; display:flex; flex-direction:column; }
+                            .pm-keys-story .card:hover { transform:translateY(-3px); }
+                            .pm-keys-story .card.step1:hover { border-color:#ef4444; box-shadow:0 8px 24px -8px rgba(239,68,68,0.4); }
+                            .pm-keys-story .card.step2:hover { border-color:#f59e0b; box-shadow:0 8px 24px -8px rgba(245,158,11,0.4); }
+                            .pm-keys-story .card.step3:hover { border-color:#3b82f6; box-shadow:0 8px 24px -8px rgba(59,130,246,0.4); }
+                            .pm-keys-story .card.step4:hover { border-color:#10b981; box-shadow:0 8px 24px -8px rgba(16,185,129,0.4); }
+                            .pm-keys-story .head { display:flex; align-items:center; gap:0.5rem; font-size:0.9rem; font-weight:800; color:var(--heading-color); margin-bottom:0.5rem; }
+                            .pm-keys-story .desc { font-size:0.72rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.4; flex-grow:1; }
+                            .pm-keys-story table { width:100%; border-collapse:collapse; font-size:0.72rem; background:var(--bg-color); border-radius:0.5rem; overflow:hidden; }
+                            .pm-keys-story th, .pm-keys-story td { padding:0.35rem 0.5rem; border:1px solid var(--panel-border); text-align:left; }
+                            .pm-keys-story th { background:rgba(255,255,255,0.03); color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.05em; font-size:0.6rem; }
+                            .pm-keys-story .err { background:rgba(239,68,68,0.15); color:#fca5a5; animation:pm-shake 2s infinite; }
+                            .pm-keys-story .pk { background:rgba(245,158,11,0.15); color:#fcd34d; font-weight:700; }
+                            .pm-keys-story .ck { background:rgba(59,130,246,0.15); color:#93c5fd; }
+                            .pm-keys-story .fk { background:rgba(16,185,129,0.15); color:#6ee7b7; font-weight:700; }
+                            .pm-keys-story .badge { display:inline-block; padding:2px 6px; border-radius:4px; font-size:0.5rem; font-weight:900; text-transform:uppercase; margin-left:4px; }
+                            .pm-keys-story .badge.pk { background:#f59e0b; color:#000; }
+                            .pm-keys-story .badge.ck { background:#3b82f6; color:#fff; }
+                            .pm-keys-story .badge.fk { background:#10b981; color:#000; }
+                            @keyframes pm-shake { 0%,100% { transform:translateX(0); } 10%,30%,50%,70%,90% { transform:translateX(-2px); } 20%,40%,60%,80% { transform:translateX(2px); } }
+                            .pm-keys-story .split-tables { display:flex; gap:0.35rem; align-items:center; }
+                            @media (max-width: 480px) { .pm-keys-story { grid-template-columns:1fr !important; } .pm-keys-story .split-tables { flex-direction:column; } .pm-keys-story .split-tables .link-arrow { transform:rotate(90deg); } }
+                        </style>
+
+                        <!-- Step 1 -->
+                        <div class="card step1">
+                            <div class="head">🤷‍♂️ 1. Das Chaos (Duplikate)</div>
+                            <div class="desc">Zwei Freunde heißen "Tom" und beide mögen Pizza. Wie weiß der Computer, wen wir meinen? Sie sehen für ihn exakt gleich aus!</div>
+                            <table>
+                                <tr><th>Name</th><th>Essen</th></tr>
+                                <tr><td>Tom</td><td>Pizza 🍕</td></tr>
+                                <tr class="err"><td>Tom</td><td>Pizza 🍕</td></tr>
+                            </table>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="card step2">
+                            <div class="head">👑 2. Der Boss (Primary Key)</div>
+                            <div class="desc">Wir verteilen eine einzigartige Nummer an jeden. Diese Nummer ist der "Primärschlüssel". Jede Nummer darf es in der Liste nur ein einziges Mal geben!</div>
+                            <table>
+                                <tr><th>ID <span class="badge pk">PK 👑</span></th><th>Name</th><th>Essen</th></tr>
+                                <tr><td class="pk">1</td><td>Tom</td><td>Pizza 🍕</td></tr>
+                                <tr><td class="pk">2</td><td>Tom</td><td>Pizza 🍕</td></tr>
+                            </table>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="card step3">
+                            <div class="head">🔵 3. Der Ersatz-Boss (Candidate Key)</div>
+                            <div class="desc">Toms E-Mail-Adresse ist auch einzigartig. Sie wäre ein super "Kandidat" für den Boss-Posten, aber der Datenbank-Bauer hat sich für die ID-Nummer entschieden.</div>
+                            <table>
+                                <tr><th>ID <span class="badge pk">PK</span></th><th>E-Mail <span class="badge ck">CK 🔵</span></th><th>Name</th></tr>
+                                <tr><td class="pk">1</td><td class="ck">tom1@mail.de</td><td>Tom</td></tr>
+                                <tr><td class="pk">2</td><td class="ck">tom2@mail.de</td><td>Tom</td></tr>
+                            </table>
+                        </div>
+
+                        <!-- Step 4 -->
+                        <div class="card step4">
+                            <div class="head">🔗 4. Der Wegweiser (Foreign Key)</div>
+                            <div class="desc">Tom (ID 1) kauft einen Hund! In der getrennten Hunde-Tabelle kleben wir einen grünen Pfeil (Fremdschlüssel) an den Hund, der genau auf Toms ID-Nummer zurückzeigt.</div>
+                            <div class="split-tables">
+                                <table style="flex:1;">
+                                    <tr><th colspan="2">👦 Menschen</th></tr>
+                                    <tr><th>ID <span class="badge pk">PK</span></th><th>Name</th></tr>
+                                    <tr><td class="pk">1</td><td>Tom</td></tr>
+                                </table>
+                                <div class="link-arrow" style="color:#10b981; font-weight:bold; font-size:1.1rem;">←</div>
+                                <table style="flex:1.4;">
+                                    <tr><th colspan="2">🐶 Hunde</th></tr>
+                                    <tr><th>Hund</th><th>Besitzer-ID <span class="badge fk">FK</span></th></tr>
+                                    <tr><td>Bello 🐕</td><td class="fk">1</td></tr>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                    `,
+                    htmlEn: `
+                    <p class="text-xs mb-2">Databases explained for kids! Every key has a fixed role. Follow the story of Tom and his dog.</p>
+                    <div class="pm-keys-story" style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;max-width:680px;margin:0 auto;">
+                        <style>
+                            .pm-keys-story .card { background:var(--panel-color); border:2px solid var(--border-color); border-radius:0.75rem; padding:1rem; position:relative; overflow:hidden; transition:transform 0.3s, border-color 0.3s; display:flex; flex-direction:column; }
+                            .pm-keys-story .card:hover { transform:translateY(-3px); }
+                            .pm-keys-story .card.step1:hover { border-color:#ef4444; box-shadow:0 8px 24px -8px rgba(239,68,68,0.4); }
+                            .pm-keys-story .card.step2:hover { border-color:#f59e0b; box-shadow:0 8px 24px -8px rgba(245,158,11,0.4); }
+                            .pm-keys-story .card.step3:hover { border-color:#3b82f6; box-shadow:0 8px 24px -8px rgba(59,130,246,0.4); }
+                            .pm-keys-story .card.step4:hover { border-color:#10b981; box-shadow:0 8px 24px -8px rgba(16,185,129,0.4); }
+                            .pm-keys-story .head { display:flex; align-items:center; gap:0.5rem; font-size:0.9rem; font-weight:800; color:var(--heading-color); margin-bottom:0.5rem; }
+                            .pm-keys-story .desc { font-size:0.72rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.4; flex-grow:1; }
+                            .pm-keys-story table { width:100%; border-collapse:collapse; font-size:0.72rem; background:var(--bg-color); border-radius:0.5rem; overflow:hidden; }
+                            .pm-keys-story th, .pm-keys-story td { padding:0.35rem 0.5rem; border:1px solid var(--panel-border); text-align:left; }
+                            .pm-keys-story th { background:rgba(255,255,255,0.03); color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.05em; font-size:0.6rem; }
+                            .pm-keys-story .err { background:rgba(239,68,68,0.15); color:#fca5a5; animation:pm-shake 2s infinite; }
+                            .pm-keys-story .pk { background:rgba(245,158,11,0.15); color:#fcd34d; font-weight:700; }
+                            .pm-keys-story .ck { background:rgba(59,130,246,0.15); color:#93c5fd; }
+                            .pm-keys-story .fk { background:rgba(16,185,129,0.15); color:#6ee7b7; font-weight:700; }
+                            .pm-keys-story .badge { display:inline-block; padding:2px 6px; border-radius:4px; font-size:0.5rem; font-weight:900; text-transform:uppercase; margin-left:4px; }
+                            .pm-keys-story .badge.pk { background:#f59e0b; color:#000; }
+                            .pm-keys-story .badge.ck { background:#3b82f6; color:#fff; }
+                            .pm-keys-story .badge.fk { background:#10b981; color:#000; }
+                            @keyframes pm-shake { 0%,100% { transform:translateX(0); } 10%,30%,50%,70%,90% { transform:translateX(-2px); } 20%,40%,60%,80% { transform:translateX(2px); } }
+                            .pm-keys-story .split-tables { display:flex; gap:0.35rem; align-items:center; }
+                            @media (max-width: 480px) { .pm-keys-story { grid-template-columns:1fr !important; } .pm-keys-story .split-tables { flex-direction:column; } .pm-keys-story .split-tables .link-arrow { transform:rotate(90deg); } }
+                        </style>
+
+                        <!-- Step 1 -->
+                        <div class="card step1">
+                            <div class="head">🤷‍♂️ 1. The Chaos (Duplicates)</div>
+                            <div class="desc">Two friends are named "Tom" and both love pizza. How does the computer know who we mean? They look exactly the same to it!</div>
+                            <table>
+                                <tr><th>Name</th><th>Food</th></tr>
+                                <tr><td>Tom</td><td>Pizza 🍕</td></tr>
+                                <tr class="err"><td>Tom</td><td>Pizza 🍕</td></tr>
+                            </table>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="card step2">
+                            <div class="head">👑 2. The Boss (Primary Key)</div>
+                            <div class="desc">We hand out a unique ID number to everyone. This number is the "Primary Key". Every number can only exist once in the list!</div>
+                            <table>
+                                <tr><th>ID <span class="badge pk">PK 👑</span></th><th>Name</th><th>Food</th></tr>
+                                <tr><td class="pk">1</td><td>Tom</td><td>Pizza 🍕</td></tr>
+                                <tr><td class="pk">2</td><td>Tom</td><td>Pizza 🍕</td></tr>
+                            </table>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="card step3">
+                            <div class="head">🔵 3. The Backup Boss (Candidate Key)</div>
+                            <div class="desc">Tom's email address is also unique. It would be a great "Candidate" to be the boss, but the database builder chose the ID number instead.</div>
+                            <table>
+                                <tr><th>ID <span class="badge pk">PK</span></th><th>Email <span class="badge ck">CK 🔵</span></th><th>Name</th></tr>
+                                <tr><td class="pk">1</td><td class="ck">tom1@mail.com</td><td>Tom</td></tr>
+                                <tr><td class="pk">2</td><td class="ck">tom2@mail.com</td><td>Tom</td></tr>
+                            </table>
+                        </div>
+
+                        <!-- Step 4 -->
+                        <div class="card step4">
+                            <div class="head">🔗 4. The Signpost (Foreign Key)</div>
+                            <div class="desc">Tom (ID 1) buys a dog! In the separate dog list, we stick a green arrow (Foreign Key) onto the dog that points directly back to Tom's ID number.</div>
+                            <div class="split-tables">
+                                <table style="flex:1;">
+                                    <tr><th colspan="2">👦 Humans</th></tr>
+                                    <tr><th>ID <span class="badge pk">PK</span></th><th>Name</th></tr>
+                                    <tr><td class="pk">1</td><td>Tom</td></tr>
+                                </table>
+                                <div class="link-arrow" style="color:#10b981; font-weight:bold; font-size:1.1rem;">←</div>
+                                <table style="flex:1.4;">
+                                    <tr><th colspan="2">🐶 Dogs</th></tr>
+                                    <tr><th>Dog</th><th>Owner-ID <span class="badge fk">FK</span></th></tr>
+                                    <tr><td>Buster 🐕</td><td class="fk">1</td></tr>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                    `
+                },
 
                 {
                     id: 'subsection10_1',

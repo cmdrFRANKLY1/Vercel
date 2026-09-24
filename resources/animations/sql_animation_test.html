@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Datenbanken visuell – Keys & Normalformen</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b1220;
+  --bg-soft: #0f172a;
+  --panel: #1e293b;
+  --panel-2: #334155;
+  --border: #334155;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --c-candidate: #3b82f6;
+  --c-primary: #f59e0b;
+  --c-foreign: #10b981;
+  --c-problem: #ef4444;
+  --c-normal: #06b6d4;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: radial-gradient(ellipse at top, #16223b 0%, var(--bg) 60%);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+code, .mono { font-family: 'Fira Code', monospace; }
+
+.app { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
+
+.hero { text-align: center; margin-bottom: 28px; }
+.hero h1 {
+  font-size: clamp(1.6rem, 3.6vw, 2.4rem);
+  font-weight: 800; margin: 0 0 10px; letter-spacing: -.02em;
+  background: linear-gradient(90deg, #93c5fd 0%, #fcd34d 50%, #6ee7b7 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero p { color: var(--muted); font-size: .95rem; margin: 0 auto; max-width: 640px; line-height: 1.55; }
+
+.legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 20px auto 0; max-width: 720px; }
+.legend .chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px; border-radius: 8px;
+  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+  font-size: .78rem; font-weight: 600;
+}
+.legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+.scene-nav { display: flex; justify-content: center; gap: 6px; margin: 26px 0 20px; flex-wrap: wrap; }
+.scene-btn {
+  padding: 10px 16px; border-radius: 10px;
+  background: var(--panel); border: 1px solid var(--border);
+  color: var(--muted); font-size: .8rem; font-weight: 700;
+  cursor: pointer; transition: all .2s ease;
+  font-family: inherit; white-space: nowrap;
+}
+.scene-btn:hover { border-color: #475569; color: var(--text); }
+.scene-btn.active {
+  background: linear-gradient(135deg, #1e40af, #1e3a8a);
+  border-color: #3b82f6; color: #fff;
+  box-shadow: 0 4px 18px -4px #3b82f6;
+}
+
+.stage {
+  position: relative; min-height: 480px;
+  background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: 16px; padding: 28px 24px; overflow: hidden;
+}
+
+.scene { display: none; animation: sceneIn .6s cubic-bezier(.4,0,.2,1); }
+.scene.active { display: block; }
+@keyframes sceneIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.scene-title { display: flex; align-items: center; gap: 12px; font-size: 1.15rem; font-weight: 800; margin: 0 0 6px; color: #fff; }
+.scene-title .badge { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .85rem; font-weight: 800; color: #0f172a; }
+.scene-sub { color: var(--muted); font-size: .88rem; margin: 0 0 26px; line-height: 1.5; max-width: 720px; }
+
+.tables-row { display: flex; gap: 28px; justify-content: center; align-items: flex-start; flex-wrap: wrap; margin-top: 8px; }
+.table-block { flex: 1 1 340px; max-width: 440px; min-width: 280px; }
+.table-label { font-size: .82rem; font-weight: 700; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.table-label .num { width: 20px; height: 20px; background: var(--panel-2); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: .7rem; color: #cbd5e1; }
+
+table.data { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .82rem; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+table.data th { background: #1e293b; padding: 10px 12px; text-align: left; font-weight: 700; font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border-bottom: 1px solid var(--border); }
+table.data td { padding: 10px 12px; border-bottom: 1px solid rgba(51,65,85,.5); transition: all .5s ease; }
+table.data tr:last-child td { border-bottom: none; }
+table.data tr:nth-child(even) td { background: rgba(30,41,59,.5); }
+
+.cell-pk { background: rgba(245,158,11,.14) !important; color: #fcd34d !important; font-weight: 700; box-shadow: inset 3px 0 0 var(--c-primary); }
+.cell-fk { background: rgba(16,185,129,.14) !important; color: #6ee7b7 !important; font-weight: 700; box-shadow: inset 3px 0 0 var(--c-foreign); }
+.cell-ck { background: rgba(59,130,246,.14) !important; color: #93c5fd !important; box-shadow: inset 3px 0 0 var(--c-candidate); }
+.cell-dup { animation: pulseRed 2s infinite; }
+@keyframes pulseRed { 0%,100% { background: rgba(239,68,68,.14); } 50% { background: rgba(239,68,68,.42); } }
+.cell-bad { background: rgba(239,68,68,.14) !important; color: #fca5a5 !important; box-shadow: inset 3px 0 0 var(--c-problem); }
+.cell-pop { animation: popIn .5s cubic-bezier(.34,1.56,.64,1); }
+@keyframes popIn { 0% { transform: scale(.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+.tag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px; font-size: .55rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; vertical-align: middle; }
+.tag.pk { background: rgba(245,158,11,.25); color: #fcd34d; }
+.tag.fk { background: rgba(16,185,129,.25); color: #6ee7b7; }
+.tag.ck { background: rgba(59,130,246,.25); color: #93c5fd; }
+
+.svg-layer { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: visible; }
+.arrow-line { fill: none; stroke: var(--c-foreign); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 10 8; animation: dashMove 1.4s linear infinite; filter: drop-shadow(0 0 6px rgba(16,185,129,.7)); }
+@keyframes dashMove { to { stroke-dashoffset: -18; } }
+.flow-dot { fill: #6ee7b7; filter: drop-shadow(0 0 6px #10b981); }
+
+.problem-callout {
+  display: flex; align-items: flex-start; gap: 12px;
+  margin-top: 20px; padding: 14px 18px; border-radius: 12px;
+  background: rgba(239,68,68,.08); border-left: 4px solid var(--c-problem);
+  font-size: .85rem; line-height: 1.55; color: #fecaca;
+  max-width: 720px; margin-left: auto; margin-right: auto;
+}
+.problem-callout .ico { font-size: 1.1rem; flex-shrink: 0; line-height: 1.2; }
+
+.key-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 22px; }
+.key-card { padding: 18px; border-radius: 12px; background: var(--panel); border: 1px solid var(--border); border-top: 3px solid var(--muted); transition: transform .3s ease, box-shadow .3s ease; }
+.key-card:hover { transform: translateY(-3px); }
+.key-card.ck { border-top-color: var(--c-candidate); box-shadow: 0 0 24px -10px var(--c-candidate); }
+.key-card.pk { border-top-color: var(--c-primary); box-shadow: 0 0 24px -10px var(--c-primary); }
+.key-card.fk { border-top-color: var(--c-foreign); box-shadow: 0 0 24px -10px var(--c-foreign); }
+.key-card .k-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: .9rem; font-weight: 800; margin-bottom: 10px; color: #0f172a; }
+.key-card.ck .k-icon { background: var(--c-candidate); }
+.key-card.pk .k-icon { background: var(--c-primary); }
+.key-card.fk .k-icon { background: var(--c-foreign); }
+.key-card h4 { font-size: .9rem; margin: 0 0 6px; font-weight: 800; color: #fff; }
+.key-card p { font-size: .78rem; color: var(--muted); margin: 0; line-height: 1.5; }
+
+.connection-row { display: flex; gap: 100px; justify-content: center; align-items: flex-start; margin-top: 10px; position: relative; }
+@media (max-width: 780px) { .connection-row { flex-direction: column; gap: 60px; align-items: center; } }
+
+.nf-stage { display: flex; flex-direction: column; align-items: center; gap: 22px; margin-top: 10px; }
+.nf-box { width: 100%; max-width: 640px; padding: 18px 20px; border-radius: 12px; background: var(--panel); border: 1px solid var(--border); position: relative; }
+.nf-box::before { content: attr(data-label); position: absolute; top: -10px; left: 16px; background: var(--bg-soft); padding: 0 10px; font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.nf-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .8rem; }
+.nf-table th { padding: 8px 10px; text-align: left; font-size: .65rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border-bottom: 1px solid var(--border); background: #1e293b; }
+.nf-table td { padding: 8px 10px; border-bottom: 1px solid rgba(51,65,85,.4); }
+.nf-table tr:last-child td { border-bottom: none; }
+
+.arrow-down { font-size: 1.6rem; color: var(--c-normal); animation: bounceDown 1.6s ease-in-out infinite; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.arrow-down .lbl { font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--c-normal); }
+@keyframes bounceDown { 0%,100% { transform: translateY(0); opacity: .7; } 50% { transform: translateY(4px); opacity: 1; } }
+
+.split-tables { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; max-width: 640px; }
+@media (max-width: 560px) { .split-tables { grid-template-columns: 1fr; } }
+
+.highlight-cell { background: rgba(239,68,68,.15) !important; color: #fca5a5 !important; font-weight: 700; }
+.highlight-cell.good { background: rgba(16,185,129,.15) !important; color: #6ee7b7 !important; }
+.highlight-cell.blue { background: rgba(59,130,246,.15) !important; color: #93c5fd !important; font-weight: 700; }
+.highlight-cell.gold { background: rgba(245,158,11,.15) !important; color: #fcd34d !important; font-weight: 700; }
+
+.transitive-chain { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.chain-node { padding: 6px 12px; border-radius: 8px; background: var(--panel-2); font-family: 'Fira Code', monospace; font-size: .78rem; font-weight: 600; border: 1px solid var(--border); }
+.chain-node.a { border-color: var(--c-primary); color: #fcd34d; }
+.chain-node.b { border-color: var(--c-problem); color: #fca5a5; }
+.chain-arrow { color: var(--muted); font-size: 1.1rem; animation: chainPulse 1.8s ease-in-out infinite; }
+@keyframes chainPulse { 0%,100% { opacity: .5; transform: translateX(0); } 50% { opacity: 1; transform: translateX(3px); } }
+
+.autoplay-bar { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+.ctrl-btn { padding: 10px 18px; border-radius: 10px; background: var(--panel); border: 1px solid var(--border); color: var(--text); font-size: .85rem; font-weight: 700; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; transition: all .2s ease; }
+.ctrl-btn:hover { background: var(--panel-2); border-color: #475569; }
+.ctrl-btn.primary { background: linear-gradient(135deg, #06b6d4, #0891b2); border-color: #06b6d4; color: #0f172a; box-shadow: 0 4px 20px -6px #06b6d4; }
+.ctrl-btn.primary:hover { background: #22d3ee; transform: translateY(-1px); }
+.ctrl-btn:disabled { opacity: .35; cursor: not-allowed; }
+.timer-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c-normal); box-shadow: 0 0 10px var(--c-normal); animation: pulseDot 1.6s ease-in-out infinite; }
+@keyframes pulseDot { 0%,100% { transform: scale(1); opacity: .6; } 50% { transform: scale(1.4); opacity: 1; } }
+
+.foot { text-align: center; color: var(--muted); font-size: .75rem; margin-top: 36px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="hero">
+    <h1>Datenbanken, Keys &amp; Normalformen</h1>
+    <p>Sechs animierte Szenen. Kein Text zum Lesen – nur Bilder zum Anschauen. Jede Farbe hat eine feste Bedeutung.</p>
+    <div class="legend">
+      <span class="chip"><span class="dot" style="background:var(--c-candidate)"></span>Kandidatenschlüssel</span>
+      <span class="chip"><span class="dot" style="background:var(--c-primary)"></span>Primärschlüssel (PK)</span>
+      <span class="chip"><span class="dot" style="background:var(--c-foreign)"></span>Fremdschlüssel (FK)</span>
+      <span class="chip"><span class="dot" style="background:var(--c-problem)"></span>Anomalie</span>
+      <span class="chip"><span class="dot" style="background:var(--c-normal)"></span>Normalisierung</span>
+    </div>
+  </header>
+
+  <nav class="scene-nav" id="sceneNav">
+    <button class="scene-btn active" data-scene="0">1 · Duplikate</button>
+    <button class="scene-btn" data-scene="1">2 · Keys</button>
+    <button class="scene-btn" data-scene="2">3 · Verbindung</button>
+    <button class="scene-btn" data-scene="3">4 · 1NF &amp; 2NF</button>
+    <button class="scene-btn" data-scene="4">5 · 3NF</button>
+    <button class="scene-btn" data-scene="5">6 · Ergebnis</button>
+  </nav>
+
+  <main class="stage" id="stage">
+
+    <!-- ============ SCENE 1 ============ -->
+    <section class="scene active" data-scene="0">
+      <h2 class="scene-title">
+        <span class="badge" style="background:var(--c-problem)">1</span>
+        Das Duplikat-Problem
+      </h2>
+      <p class="scene-sub">Zwei Zeilen mit „Anna Schmidt". Ohne eindeutige ID kann die Datenbank nicht sagen, welche gemeint ist.</p>
+      <div class="tables-row" style="justify-content:center">
+        <div class="table-block">
+          <div class="table-label"><span class="num">1</span> Kunden (roh, ohne Schlüssel)</div>
+          <table class="data">
+            <thead><tr><th>Name</th><th>Stadt</th></tr></thead>
+            <tbody>
+              <tr><td>Anna Schmidt</td><td>Berlin</td></tr>
+              <tr><td>Tom Weber</td><td>Hamburg</td></tr>
+              <tr class="cell-dup"><td>Anna Schmidt</td><td>Berlin</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="problem-callout">
+        <span class="ico">⚠</span>
+        <div><strong style="color:#fca5a5">Frage:</strong> Wenn wir Annas Adresse ändern wollen – welche der beiden Zeilen sollen wir treffen? Genau hier entstehen Datenchaos und Anomalien.</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 2 ============ -->
+    <section class="scene" data-scene="1">
+      <h2 class="scene-title">
+        <span class="badge" style="background:var(--c-candidate)">2</span>
+        Die drei Schlüsselarten
+      </h2>
+      <p class="scene-sub">Datenbanken lösen das Duplikat-Problem mit Schlüsseln. Jeder hat eine eigene Farbe.</p>
+
+      <div class="key-cards">
+        <div class="key-card ck">
+          <div class="k-icon">K</div>
+          <h4>Kandidatenschlüssel</h4>
+          <p>Jede Spalte, die einen eindeutigen Wert pro Zeile hätte. Zwei Kandidaten konkurrieren – hier ID und E-Mail.</p>
+        </div>
+        <div class="key-card pk">
+          <div class="k-icon">PK</div>
+          <h4>Primärschlüssel</h4>
+          <p>Der gewählte, offizielle Ausweis einer Zeile. Er darf nie NULL und nie doppelt sein.</p>
+        </div>
+        <div class="key-card fk">
+          <div class="k-icon">FK</div>
+          <h4>Fremdschlüssel</h4>
+          <p>Ein Verweis in einer anderen Tabelle. Er zeigt auf den Primärschlüssel und stellt die Verbindung her.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:28px" class="tables-row">
+        <div class="table-block">
+          <div class="table-label"><span class="num">1</span> Kunden – mit Kandidaten und gewähltem PK</div>
+          <table class="data">
+            <thead>
+              <tr>
+                <th>ID <span class="tag pk">PK</span></th>
+                <th>E-Mail <span class="tag ck">Kandidat</span></th>
+                <th>Name</th>
+                <th>Stadt</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="cell-pk">1</td><td class="cell-ck">anna.s@web.de</td><td>Anna Schmidt</td><td>Berlin</td></tr>
+              <tr><td class="cell-pk">2</td><td class="cell-ck">tom99@gmx.de</td><td>Tom Weber</td><td>Hamburg</td></tr>
+              <tr><td class="cell-pk">3</td><td class="cell-ck">anna.schmidt@berlin.de</td><td>Anna Schmidt</td><td>Berlin</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 3 ============ -->
+    <section class="scene" data-scene="2">
+      <h2 class="scene-title">
+        <span class="badge" style="background:var(--c-foreign)">3</span>
+        Fremdschlüssel verbindet Tabellen
+      </h2>
+      <p class="scene-sub">Die Bestellung trägt eine <span style="color:var(--c-foreign);font-weight:700">Kunden-ID</span>. Eine grüne Linie zeigt: Diese ID verweist auf den <span style="color:var(--c-primary);font-weight:700">Primärschlüssel</span> in Kunden.</p>
+
+      <div class="connection-row" id="connectionRow">
+        <svg id="connSvg" class="svg-layer" style="position:absolute;inset:0;">
+          <path id="connPath" class="arrow-line" d=""></path>
+          <circle id="connDot" class="flow-dot" r="6" cx="0" cy="0"></circle>
+        </svg>
+
+        <div class="table-block" style="flex:1 1 320px;max-width:420px">
+          <div class="table-label"><span class="num">1</span> Kunden</div>
+          <table class="data">
+            <thead><tr><th>ID <span class="tag pk">PK</span></th><th>Name</th></tr></thead>
+            <tbody>
+              <tr><td class="cell-pk" id="scene3-pk">1</td><td>Anna Schmidt</td></tr>
+              <tr><td class="cell-pk">2</td><td>Tom Weber</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-block" style="flex:1 1 320px;max-width:420px">
+          <div class="table-label"><span class="num">2</span> Bestellungen</div>
+          <table class="data">
+            <thead>
+              <tr><th>Bestell-Nr.</th><th>Produkt</th><th>Kunden-ID <span class="tag fk">FK</span></th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="mono">#A100</td><td>Laptop Pro</td><td class="cell-fk" id="scene3-fk">1</td></tr>
+              <tr><td class="mono">#A101</td><td>Mauspad</td><td class="cell-fk">2</td></tr>
+              <tr><td class="mono">#A102</td><td>Kaffeetasse</td><td class="cell-fk">1</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 4 ============ -->
+    <section class="scene" data-scene="3">
+      <h2 class="scene-title">
+        <span class="badge" style="background:var(--c-normal)">4</span>
+        1NF &amp; 2NF
+      </h2>
+      <p class="scene-sub">Erst wird jede Zelle atomar (1NF), dann werden Attribute, die nur vom halben Schlüssel abhängen, in eine eigene Tabelle ausgelagert (2NF).</p>
+
+      <div class="nf-stage">
+        <div class="nf-box" data-label="0NF – unnormalisiert">
+          <table class="nf-table">
+            <thead>
+              <tr><th>Bestell-Nr</th><th>Artikel</th><th>Preis</th><th>Kunde</th><th>Kunden-Adresse</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>#A100</td>
+                <td class="highlight-cell">Laptop, Mauspad</td>
+                <td>899,00</td>
+                <td>Anna Schmidt</td>
+                <td class="highlight-cell">Musterstr. 1, 10115 Berlin</td>
+              </tr>
+              <tr>
+                <td>#A101</td>
+                <td class="highlight-cell">Kaffeetasse</td>
+                <td>12,90</td>
+                <td class="highlight-cell">Anna Schmidt</td>
+                <td class="highlight-cell">Musterstr. 1, 10115 Berlin</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="arrow-down">↓ <span class="lbl">1NF</span></div>
+
+        <div class="nf-box" data-label="1NF – jede Zelle atomar">
+          <table class="nf-table">
+            <thead>
+              <tr><th>Bestell-Nr</th><th>Artikel</th><th>Preis</th><th>Name</th><th>Vorname</th><th>Straße</th><th>Nr</th><th>PLZ</th><th>Ort</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>#A100</td>
+                <td class="highlight-cell good">Laptop</td>
+                <td>899,00</td>
+                <td class="highlight-cell good">Schmidt</td><td>Anna</td>
+                <td>Musterstr.</td><td>1</td><td>10115</td><td>Berlin</td>
+              </tr>
+              <tr>
+                <td>#A100</td>
+                <td class="highlight-cell good">Mauspad</td>
+                <td>19,90</td>
+                <td>Schmidt</td><td>Anna</td>
+                <td>Musterstr.</td><td>1</td><td>10115</td><td>Berlin</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="arrow-down">↓ <span class="lbl">2NF</span></div>
+
+        <div class="split-tables">
+          <div class="nf-box" data-label="Artikel – hängt nur von Artikel-Nr ab">
+            <table class="nf-table">
+              <thead><tr><th>Artikel-Nr</th><th>Name</th><th>Preis</th></tr></thead>
+              <tbody>
+                <tr><td>310</td><td class="highlight-cell good">Laptop</td><td>899,00</td></tr>
+                <tr><td>455</td><td class="highlight-cell good">Mauspad</td><td>19,90</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="nf-box" data-label="Rechnungsposition">
+            <table class="nf-table">
+              <thead><tr><th>Bestell-Nr</th><th>Artikel-Nr <span class="tag fk">FK</span></th><th>Anzahl</th></tr></thead>
+              <tbody>
+                <tr><td>#A100</td><td class="cell-fk">310</td><td>1</td></tr>
+                <tr><td>#A100</td><td class="cell-fk">455</td><td>2</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 5 ============ -->
+    <section class="scene" data-scene="4">
+      <h2 class="scene-title">
+        <span class="badge" style="background:var(--c-normal)">5</span>
+        3NF – keine transitiven Abhängigkeiten
+      </h2>
+      <p class="scene-sub">Der Ort hängt nicht am Kunden, sondern an der PLZ. Diese Kette muss aufgelöst werden.</p>
+
+      <div class="nf-stage">
+        <div class="nf-box" data-label="2NF – aber noch transitive Abhängigkeit">
+          <table class="nf-table">
+            <thead><tr><th>Kunden-ID <span class="tag pk">PK</span></th><th>Name</th><th>PLZ</th><th>Ort</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="cell-pk">1</td><td>Anna Schmidt</td>
+                <td class="highlight-cell blue">10115</td>
+                <td class="highlight-cell">Berlin</td>
+              </tr>
+              <tr>
+                <td class="cell-pk">2</td><td>Tom Weber</td>
+                <td class="highlight-cell blue">20095</td>
+                <td class="highlight-cell">Hamburg</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="transitive-chain">
+            <span class="chain-node a">Kunden-ID</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-node a">PLZ</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-node b">Ort</span>
+          </div>
+        </div>
+
+        <div class="arrow-down">↓ <span class="lbl">3NF</span></div>
+
+        <div class="split-tables">
+          <div class="nf-box" data-label="Kunden – ohne Ort">
+            <table class="nf-table">
+              <thead><tr><th>Kunden-ID <span class="tag pk">PK</span></th><th>Name</th><th>PLZ <span class="tag fk">FK</span></th></tr></thead>
+              <tbody>
+                <tr><td class="cell-pk">1</td><td>Anna Schmidt</td><td class="cell-fk">10115</td></tr>
+                <tr><td class="cell-pk">2</td><td>Tom Weber</td><td class="cell-fk">20095</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="nf-box" data-label="PLZ – Ort hängt an der PLZ">
+            <table class="nf-table">
+              <thead><tr><th>PLZ <span class="tag pk">PK</span></th><th>Ort</th></tr></thead>
+              <tbody>
+                <tr><td class="cell-pk">10115</td><td class="highlight-cell good">Berlin</td></tr>
+                <tr><td class="cell-pk">20095</td><td class="highlight-cell good">Hamburg</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 6 ============ -->
+    <section class="scene" data-scene="5">
+      <h2 class="scene-title">
+        <span class="badge" style="background:var(--c-foreign)">6</span>
+        Ergebnis: Sauberes Schema
+      </h2>
+      <p class="scene-sub">Alle Tabellen sind jetzt normalisiert. Farben zeigen die Verbindungen.</p>
+
+      <div class="nf-stage">
+        <div class="split-tables" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));max-width:900px">
+          <div class="nf-box" data-label="Kunden">
+            <table class="nf-table">
+              <thead><tr><th>ID <span class="tag pk">PK</span></th><th>Name</th><th>PLZ <span class="tag fk">FK</span></th></tr></thead>
+              <tbody>
+                <tr><td class="cell-pk">1</td><td>Schmidt</td><td class="cell-fk">10115</td></tr>
+                <tr><td class="cell-pk">2</td><td>Weber</td><td class="cell-fk">20095</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="nf-box" data-label="Bestellungen">
+            <table class="nf-table">
+              <thead><tr><th>Nr <span class="tag pk">PK</span></th><th>Kunde-ID <span class="tag fk">FK</span></th></tr></thead>
+              <tbody>
+                <tr><td class="cell-pk">#A100</td><td class="cell-fk">1</td></tr>
+                <tr><td class="cell-pk">#A101</td><td class="cell-fk">2</td></tr>
+                <tr><td class="cell-pk">#A102</td><td class="cell-fk">1</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="nf-box" data-label="Artikel">
+            <table class="nf-table">
+              <thead><tr><th>Art-Nr <span class="tag pk">PK</span></th><th>Name</th><th>Preis</th></tr></thead>
+              <tbody>
+                <tr><td class="cell-pk">310</td><td>Laptop</td><td>899,00</td></tr>
+                <tr><td class="cell-pk">455</td><td>Mauspad</td><td>19,90</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="nf-box" data-label="PLZ">
+            <table class="nf-table">
+              <thead><tr><th>PLZ <span class="tag pk">PK</span></th><th>Ort</th></tr></thead>
+              <tbody>
+                <tr><td class="cell-pk">10115</td><td>Berlin</td></tr>
+                <tr><td class="cell-pk">20095</td><td>Hamburg</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="autoplay-bar">
+    <button class="ctrl-btn" id="btnPrev">← Zurück</button>
+    <button class="ctrl-btn primary" id="btnPlay">
+      <span class="timer-dot" id="playDot" style="display:none"></span>
+      <span id="playLabel">▶ Autoplay starten</span>
+    </button>
+    <button class="ctrl-btn" id="btnNext">Weiter →</button>
+    <button class="ctrl-btn" id="btnReset">↻ Von vorn</button>
+  </div>
+
+  <div class="foot">Datenbanken visuell · Keys &amp; Normalformen · 2026</div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const scenes = Array.from(document.querySelectorAll('.scene'));
+  const navBtns = Array.from(document.querySelectorAll('.scene-btn'));
+  const btnPrev = document.getElementById('btnPrev');
+  const btnNext = document.getElementById('btnNext');
+  const btnPlay = document.getElementById('btnPlay');
+  const btnReset = document.getElementById('btnReset');
+  const playLabel = document.getElementById('playLabel');
+  const playDot = document.getElementById('playDot');
+
+  let current = 0;
+  let autoplayOn = false;
+  let autoplayTimer = null;
+  let dotRafId = null;
+
+  const AUTOPLAY_MS = 5000;
+
+  /* ---------- SCENE SWITCH ---------- */
+  function showScene(index) {
+    if (index < 0) index = 0;
+    if (index >= scenes.length) index = scenes.length - 1;
+    current = index;
+
+    scenes.forEach((s, i) => s.classList.toggle('active', i === index));
+    navBtns.forEach((b, i) => b.classList.toggle('active', i === index));
+
+    btnPrev.disabled = index === 0;
+    btnNext.disabled = index === scenes.length - 1;
+
+    // Re-run scene-specific animations
+    if (index === 2) drawConnection();
+    else stopConnectionDot();
+  }
+
+  /* ---------- NAV ---------- */
+  navBtns.forEach(b => b.addEventListener('click', () => {
+    showScene(parseInt(b.dataset.scene, 10));
+  }));
+  btnPrev.addEventListener('click', () => showScene(current - 1));
+  btnNext.addEventListener('click', () => showScene(current + 1));
+  btnReset.addEventListener('click', () => { stopAutoplay(); showScene(0); });
+
+  /* ---------- AUTOPLAY ---------- */
+  function startAutoplay() {
+    autoplayOn = true;
+    playLabel.textContent = '⏸ Autoplay stoppen';
+    playDot.style.display = 'inline-block';
+    scheduleNext();
+  }
+  function stopAutoplay() {
+    autoplayOn = false;
+    playLabel.textContent = '▶ Autoplay starten';
+    playDot.style.display = 'none';
+    if (autoplayTimer) { clearTimeout(autoplayTimer); autoplayTimer = null; }
+  }
+  function scheduleNext() {
+    if (autoplayTimer) clearTimeout(autoplayTimer);
+    autoplayTimer = setTimeout(() => {
+      if (!autoplayOn) return;
+      if (current < scenes.length - 1) {
+        showScene(current + 1);
+        scheduleNext();
+      } else {
+        stopAutoplay();
+      }
+    }, AUTOPLAY_MS);
+  }
+  btnPlay.addEventListener('click', () => {
+    autoplayOn ? stopAutoplay() : startAutoplay();
+  });
+
+  /* ---------- KEYBOARD ---------- */
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') { stopAutoplay(); showScene(current + 1); }
+    if (e.key === 'ArrowLeft')  { stopAutoplay(); showScene(current - 1); }
+    if (e.key === ' ') { e.preventDefault(); autoplayOn ? stopAutoplay() : startAutoplay(); }
+  });
+
+  /* ---------- SCENE 3: FK CONNECTION ARROW ---------- */
+  const connSvg  = document.getElementById('connSvg');
+  const connPath = document.getElementById('connPath');
+  const connDot  = document.getElementById('connDot');
+  let connRafId = null;
+
+  function drawConnection() {
+    const stage = document.getElementById('stage');
+    const pkEl  = document.getElementById('scene3-pk');
+    const fkEl  = document.getElementById('scene3-fk');
+    if (!stage || !pkEl || !fkEl) return;
+
+    const stageRect = stage.getBoundingClientRect();
+    const pkRect    = pkEl.getBoundingClientRect();
+    const fkRect    = fkEl.getBoundingClientRect();
+
+    const isHorizontal = window.innerWidth >= 780;
+
+    let startX, startY, endX, endY, cp1X, cp1Y, cp2X, cp2Y;
+
+    if (isHorizontal) {
+      // Connection row: Kunden on left, Bestellungen on right.
+      // FK is in the right table, PK is in the left table.
+      startX = fkRect.left   - stageRect.left;
+      startY = fkRect.top    - stageRect.top + fkRect.height / 2;
+      endX   = pkRect.right  - stageRect.left;
+      endY   = pkRect.top    - stageRect.top + pkRect.height / 2;
+      cp1X = startX - 60;  cp1Y = startY;
+      cp2X = endX + 160;   cp2Y = endY;
+    } else {
+      startX = fkRect.left - stageRect.left + fkRect.width / 2;
+      startY = fkRect.top  - stageRect.top;
+      endX   = pkRect.left - stageRect.left + pkRect.width / 2;
+      endY   = pkRect.bottom - stageRect.top;
+      cp1X = startX; cp1Y = startY - 60;
+      cp2X = endX;   cp2Y = endY + 120;
+    }
+
+    const d = `M ${startX} ${startY} C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`;
+    connPath.setAttribute('d', d);
+
+    // Animate a dot along the path
+    const len = connPath.getTotalLength();
+    const t0 = performance.now();
+    function animateDot(now) {
+      const t = ((now - t0) % 1600) / 1600;
+      const pt = connPath.getPointAtLength(t * len);
+      connDot.setAttribute('cx', pt.x);
+      connDot.setAttribute('cy', pt.y);
+      connRafId = requestAnimationFrame(animateDot);
+    }
+    stopConnectionDot();
+    connRafId = requestAnimationFrame(animateDot);
+  }
+
+  function stopConnectionDot() {
+    if (connRafId) { cancelAnimationFrame(connRafId); connRafId = null; }
+  }
+
+  /* ---------- RESIZE ---------- */
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (current === 2) drawConnection();
+    }, 120);
+  });
+
+  /* ---------- BOOT ---------- */
+  showScene(0);
+  setTimeout(startAutoplay, 300);
+})();
+</script>
+</body>
+</html>
