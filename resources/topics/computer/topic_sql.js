@@ -10,8 +10,8 @@ registerTopic({
     // ────────────────────────────────────────────────────────────
 
     icon: 'fa-database',
-    titleDe: 'SQL & Datenbanken',
-    titleEn: 'SQL & Databases',
+    titleDe: 'SQL',
+    titleEn: 'SQL',
     descDe: 'Relationale Datenbanken, SQL-Syntax, Joins, Aggregation, Normalisierung und Transaktionen.',
     descEn: 'Relational databases, SQL syntax, joins, aggregation, normalization, and transactions.',
 
