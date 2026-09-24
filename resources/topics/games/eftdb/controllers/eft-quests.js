@@ -1,11 +1,24 @@
 // resources/topics/games/eftdb/controllers/eft-quest.js
 
-import { QUESTS_QUERY } from '../data/queries.js';
 import { queryTarkovAPI } from '../services/tarkov-api.js';
 import { isGerman, loadingHtml, errorHtml, escapeHtml } from './_shared.js';
 
 (function () {
     'use strict';
+
+    const QUESTS_QUERY = `
+        query {
+            tasks {
+                id
+                name
+                minPlayerLevel
+                kappaRequired
+                wikiLink
+                trader { name }
+                map { name }
+            }
+        }
+    `;
 
     let allTasks = [];
     let activeTrader = '__all__';
