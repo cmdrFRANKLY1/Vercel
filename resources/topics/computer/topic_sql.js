@@ -622,7 +622,7 @@ registerTopic({
         },
 
         /* ============================================================
-           SECTION 7 — ANOMALIES (NEW)
+           SECTION 7 — ANOMALIES
            ============================================================ */
         {
             id: 'section7',
@@ -769,7 +769,7 @@ registerTopic({
         },
 
         /* ============================================================
-           SECTION 8 — NORMAL FORMS (NEW)
+           SECTION 8 — NORMAL FORMS
            ============================================================ */
         {
             id: 'section8',
@@ -778,6 +778,290 @@ registerTopic({
             introDe: 'Normalisierung ist die Aufteilung von Attributen in mehrere Relationen nach festen Regeln, sodass am Ende keine vermeidbaren Redundanzen mehr übrig bleiben. Jede Stufe baut auf der vorherigen auf.',
             introEn: 'Normalization is the process of splitting attributes into several relations according to fixed rules, so that no avoidable redundancy remains. Each stage builds on the previous one.',
             subtopics: [
+
+                {
+                    id: 'subsection8_walkthrough',
+                    titleDe: 'Schritt-für-Schritt: Von 0NF zur 3NF',
+                    titleEn: 'Step by Step: From 0NF to 3NF',
+                    htmlDe: `
+                    <p class="text-xs mb-3">Dieser Leitfaden führt an <strong>einem einzigen Beispiel</strong> durch alle Stufen — von der unstrukturierten Ausgangstabelle bis zur vollständig normalisierten 3NF. Jede Stufe wird zuerst <em>erklärt</em>, dann am Beispiel <em>durchgeführt</em>, dann das <em>Ergebnis</em> gezeigt.</p>
+
+                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)] mb-4 shadow-[var(--control-shadow)]">
+                        <strong class="text-[var(--text-color)]">Ausgangslage — die „Bestellzettel-Datenbank":</strong> Ein kleiner Versandhandel führt alle Daten in <em>einer einzigen</em> Tabelle. Kunde, Adresse, Bestellung und Artikel stehen in derselben Zeile. Genau so entstehen die Anomalien aus <a href="#section7" class="underline">Abschnitt 7</a>.
+                    </div>
+
+                    <div class="overflow-x-auto w-full mb-4">
+                    <table class="wikitable">
+                    <tr><th>Bestell-Nr</th><th>Kunde</th><th>Adresse</th><th>Artikel</th><th>Menge</th><th>Einzelpreis</th></tr>
+                    <tr style="background: rgba(239,68,68,0.10)"><td>1001</td><td>Meier GmbH</td><td>Musterstr. 1, 80331 München</td><td>Laptop</td><td>1</td><td>899.00</td></tr>
+                    <tr style="background: rgba(239,68,68,0.10)"><td>1001</td><td>Meier GmbH</td><td>Musterstr. 1, 80331 München</td><td>Maus</td><td>2</td><td>19.90</td></tr>
+                    <tr style="background: rgba(245,158,11,0.10)"><td>1002</td><td>Schmidt AG</td><td>Bahnhofstr. 5, 10115 Berlin</td><td>Monitor</td><td>1</td><td>249.00</td></tr>
+                    <tr style="background: rgba(245,158,11,0.10)"><td>1002</td><td>Schmidt AG</td><td>Bahnhofstr. 5, 10115 Berlin</td><td>Kabel</td><td>3</td><td>5.50</td></tr>
+                    </table>
+                    </div>
+                    <p class="text-xs text-[var(--text-muted)] mb-6">Rot = doppelte Kundendaten, gelb = doppelte Bestelldaten. Beide sind Redundanz.</p>
+
+                    <!-- ═══════════════ 0NF ═══════════════ -->
+                    <div class="mb-6 p-4 border-2 border-[#ef4444] rounded-lg bg-[rgba(239,68,68,0.05)]">
+                        <div class="font-bold text-sm mb-2" style="color:#ef4444;">Stufe 0 — Unnormalisierte Form (0NF)</div>
+                        <p class="text-xs mb-2"><strong>Regel:</strong> Keine. Alle Daten stehen in einer Tabelle, oft mit Wiederholungsgruppen und mehreren Informationen pro Zelle.</p>
+                        <p class="text-xs mb-2"><strong>Problem im Beispiel:</strong> Die Adresse <code>„Musterstr. 1, 80331 München"</code> enthält <em>drei</em> Informationen (Straße, PLZ, Ort) in <em>einer</em> Zelle. Bestell-Nr 1001 wiederholt sich zweimal, weil zwei Artikel dazugehören.</p>
+                        <p class="text-xs mb-2"><strong>Ziel der 1NF:</strong> Jede Zelle atomar machen und Wiederholungsgruppen auflösen.</p>
+                    </div>
+
+                    <!-- ═══════════════ 1NF ═══════════════ -->
+                    <div class="mb-6 p-4 border-2 border-[#f59e0b] rounded-lg bg-[rgba(245,158,11,0.05)]">
+                        <div class="font-bold text-sm mb-2" style="color:#f59e0b;">Stufe 1 — Erste Normalform (1NF)</div>
+                        <p class="text-xs mb-2"><strong>Regel:</strong> Alle Attributwerte sind <em>atomar</em>. Keine Zelle enthält mehrere Informationen, keine Wiederholungsgruppen.</p>
+                        <p class="text-xs mb-2"><strong>Durchführung:</strong></p>
+                        <ul class="text-xs text-[var(--text-muted)] mb-2 list-disc list-inside">
+                            <li><code>Adresse</code> aufteilen in <code>Strasse</code>, <code>PLZ</code>, <code>Ort</code></li>
+                            <li><code>Kunde</code> aufteilen in <code>Kunden-Nr</code> (Schlüssel!) und <code>Kundenname</code></li>
+                            <li>Artikel-Nr als eigenen Schlüssel einführen</li>
+                        </ul>
+                        <p class="text-xs mb-2"><strong>Ergebnis — 1NF-Tabelle <code>Bestellung</code>:</strong></p>
+                        <div class="overflow-x-auto w-full">
+                        <table class="wikitable">
+                        <tr><th>Bestell-Nr</th><th>Kunden-Nr</th><th>Kundenname</th><th>Strasse</th><th>PLZ</th><th>Ort</th><th>Artikel-Nr</th><th>Artikel</th><th>Menge</th><th>Einzelpreis</th></tr>
+                        <tr><td>1001</td><td>K1</td><td>Meier GmbH</td><td>Musterstr. 1</td><td>80331</td><td>München</td><td>A1</td><td>Laptop</td><td>1</td><td>899.00</td></tr>
+                        <tr><td>1001</td><td>K1</td><td>Meier GmbH</td><td>Musterstr. 1</td><td>80331</td><td>München</td><td>A2</td><td>Maus</td><td>2</td><td>19.90</td></tr>
+                        <tr><td>1002</td><td>K2</td><td>Schmidt AG</td><td>Bahnhofstr. 5</td><td>10115</td><td>Berlin</td><td>A3</td><td>Monitor</td><td>1</td><td>249.00</td></tr>
+                        <tr><td>1002</td><td>K2</td><td>Schmidt AG</td><td>Bahnhofstr. 5</td><td>10115</td><td>Berlin</td><td>A4</td><td>Kabel</td><td>3</td><td>5.50</td></tr>
+                        </table>
+                        </div>
+                        <div class="bg-[var(--panel-color)] p-2 rounded text-xs text-[var(--text-muted)] mt-2">
+                            <strong class="text-[var(--text-color)]">Noch offen:</strong> Kunden- und Artikeldaten wiederholen sich weiterhin — z.B. „Meier GmbH" zweimal, „Musterstr. 1" zweimal. Redundanz ist noch da.
+                        </div>
+                    </div>
+
+                    <!-- ═══════════════ 2NF ═══════════════ -->
+                    <div class="mb-6 p-4 border-2 border-[#3b82f6] rounded-lg bg-[rgba(59,130,246,0.05)]">
+                        <div class="font-bold text-sm mb-2" style="color:#3b82f6;">Stufe 2 — Zweite Normalform (2NF)</div>
+                        <p class="text-xs mb-2"><strong>Regel:</strong> 1NF <em>und</em> jedes Nicht-Schlüssel-Attribut hängt vom <strong>gesamten</strong> Primärschlüssel ab — nicht nur von einem Teil.</p>
+                        <p class="text-xs mb-2"><strong>Analyse:</strong> Der Primärschlüssel ist zusammengesetzt: <code>(Bestell-Nr, Artikel-Nr)</code>. Prüfen wir die Abhängigkeiten:</p>
+                        <div class="overflow-x-auto w-full mb-2">
+                        <table class="wikitable">
+                        <tr><th>Attribut</th><th>Hängt ab von</th><th>2NF-Verstoß?</th></tr>
+                        <tr><td><code>Menge</code></td><td class="text-[var(--text-muted)]">(Bestell-Nr, Artikel-Nr) — vollständig</td><td style="color:#10b981;">✔ ok</td></tr>
+                        <tr style="background: rgba(239,68,68,0.10)"><td><code>Kunden-Nr</code>, <code>Kundenname</code>, <code>Strasse</code>, <code>PLZ</code>, <code>Ort</code></td><td class="text-[var(--text-muted)]">nur <code>Bestell-Nr</code></td><td style="color:#ef4444;">✘ partiell</td></tr>
+                        <tr style="background: rgba(239,68,68,0.10)"><td><code>Artikel</code>, <code>Einzelpreis</code></td><td class="text-[var(--text-muted)]">nur <code>Artikel-Nr</code></td><td style="color:#ef4444;">✘ partiell</td></tr>
+                        </table>
+                        </div>
+                        <p class="text-xs mb-2"><strong>Durchführung:</strong> Partiell abhängige Attribute in eigene Tabellen auslagern, verknüpft über den Schlüssel.</p>
+                        <p class="text-xs mb-2"><strong>Ergebnis — drei Tabellen:</strong></p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
+                            <div class="p-2 border border-[#3b82f6] rounded bg-[rgba(59,130,246,0.08)]">
+                                <div class="font-bold text-xs mb-1" style="color:#3b82f6;">BESTELLUNG</div>
+                                <div class="text-[10px] font-mono text-[var(--text-muted)]">Bestell-Nr (PK)<br>Kunden-Nr (FK)<br>Datum</div>
+                            </div>
+                            <div class="p-2 border border-[#3b82f6] rounded bg-[rgba(59,130,246,0.08)]">
+                                <div class="font-bold text-xs mb-1" style="color:#3b82f6;">KUNDE</div>
+                                <div class="text-[10px] font-mono text-[var(--text-muted)]">Kunden-Nr (PK)<br>Kundenname<br>Strasse<br>PLZ<br>Ort</div>
+                            </div>
+                            <div class="p-2 border border-[#3b82f6] rounded bg-[rgba(59,130,246,0.08)]">
+                                <div class="font-bold text-xs mb-1" style="color:#3b82f6;">ARTIKEL</div>
+                                <div class="text-[10px] font-mono text-[var(--text-muted)]">Artikel-Nr (PK)<br>Artikel<br>Einzelpreis</div>
+                            </div>
+                        </div>
+                        <p class="text-xs mb-1"><strong>Bestellposition</strong> (die eigentliche Beziehungstabelle):</p>
+                        <div class="overflow-x-auto w-full mb-2">
+                        <table class="wikitable">
+                        <tr><th>Bestell-Nr (PK, FK)</th><th>Artikel-Nr (PK, FK)</th><th>Menge</th></tr>
+                        <tr><td>1001</td><td>A1</td><td>1</td></tr>
+                        <tr><td>1001</td><td>A2</td><td>2</td></tr>
+                        <tr><td>1002</td><td>A3</td><td>1</td></tr>
+                        <tr><td>1002</td><td>A4</td><td>3</td></tr>
+                        </table>
+                        </div>
+                        <div class="bg-[var(--panel-color)] p-2 rounded text-xs text-[var(--text-muted)]">
+                            <strong class="text-[var(--text-color)]">Noch offen:</strong> In <code>KUNDE</code> hängt <code>Ort</code> von <code>PLZ</code> ab, nicht direkt vom Schlüssel <code>Kunden-Nr</code>. Das ist eine transitive Abhängigkeit.
+                        </div>
+                    </div>
+
+                    <!-- ═══════════════ 3NF ═══════════════ -->
+                    <div class="mb-6 p-4 border-2 border-[#10b981] rounded-lg bg-[rgba(16,185,129,0.05)]">
+                        <div class="font-bold text-sm mb-2" style="color:#10b981;">Stufe 3 — Dritte Normalform (3NF)</div>
+                        <p class="text-xs mb-2"><strong>Regel:</strong> 2NF <em>und</em> keine transitiven Abhängigkeiten zwischen Nicht-Schlüssel-Attributen.</p>
+                        <p class="text-xs mb-2"><strong>Analyse in <code>KUNDE</code>:</strong> Kette <code>Kunden-Nr → PLZ → Ort</code>. Der Ort hängt nicht direkt vom Schlüssel ab, sondern über die PLZ. → 3NF-Verstoß.</p>
+                        <p class="text-xs mb-2"><strong>Durchführung:</strong> <code>PLZ</code> und <code>Ort</code> in eine eigene Tabelle auslagern; in <code>KUNDE</code> bleibt nur die <code>PLZ</code> als Fremdschlüssel.</p>
+                        <p class="text-xs mb-2"><strong>Ergebnis — finale 3NF-Struktur:</strong></p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                            <div class="p-2 border border-[#10b981] rounded bg-[rgba(16,185,129,0.08)]">
+                                <div class="font-bold text-xs mb-1" style="color:#10b981;">KUNDE</div>
+                                <div class="text-[10px] font-mono text-[var(--text-muted)]">Kunden-Nr (PK)<br>Kundenname<br>Strasse<br>PLZ (FK)</div>
+                            </div>
+                            <div class="p-2 border border-[#10b981] rounded bg-[rgba(16,185,129,0.08)]">
+                                <div class="font-bold text-xs mb-1" style="color:#10b981;">PLZ_ORT</div>
+                                <div class="text-[10px] font-mono text-[var(--text-muted)]">PLZ (PK)<br>Ort</div>
+                            </div>
+                        </div>
+                        <p class="text-xs mb-1">Die vollständige 3NF-Struktur umfasst nun <strong>fünf Tabellen</strong>:</p>
+                        <div class="text-[11px] font-mono text-[var(--text-muted)] p-3 bg-[var(--code-bg)] rounded border border-[var(--panel-border)] leading-relaxed">
+                            KUNDE (Kunden-Nr, Kundenname, Strasse, PLZ)<br>
+                            PLZ_ORT (PLZ, Ort)<br>
+                            BESTELLUNG (Bestell-Nr, Kunden-Nr, Datum)<br>
+                            BESTELLPOSITION (Bestell-Nr, Artikel-Nr, Menge)<br>
+                            ARTIKEL (Artikel-Nr, Artikel, Einzelpreis)
+                        </div>
+                    </div>
+
+                    <!-- ═══════════════ ZUSAMMENFASSUNG ═══════════════ -->
+                    <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--panel-color)]">
+                        <div class="font-bold text-sm mb-3 text-[var(--heading-color)]">Zusammenfassung: Was jede Stufe geleistet hat</div>
+                        <div class="overflow-x-auto w-full">
+                        <table class="wikitable">
+                        <tr><th>Stufe</th><th>Regel</th><th>Was getan wurde</th><th>Was noch fehlt</th></tr>
+                        <tr><td><strong>0NF</strong></td><td class="text-[var(--text-muted)]">keine</td><td class="text-[var(--text-muted)]">Ausgangszustand</td><td class="text-[var(--text-muted)]">alles</td></tr>
+                        <tr><td><strong>1NF</strong></td><td class="text-[var(--text-muted)]">Atomarität</td><td class="text-[var(--text-muted)]">Adresse aufgeteilt, Schlüssel eingeführt</td><td class="text-[var(--text-muted)]">partielle Abhängigkeiten</td></tr>
+                        <tr><td><strong>2NF</strong></td><td class="text-[var(--text-muted)]">volle Schlüsselabhängigkeit</td><td class="text-[var(--text-muted)]">Kunde, Artikel, Bestellung getrennt</td><td class="text-[var(--text-muted)]">transitive Abhängigkeiten</td></tr>
+                        <tr><td><strong>3NF</strong></td><td class="text-[var(--text-muted)]">keine Transitivität</td><td class="text-[var(--text-muted)]">PLZ/Ort ausgelagert</td><td class="text-[var(--text-muted)]">— (Ziel erreicht)</td></tr>
+                        </table>
+                        </div>
+                        <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)] mt-3 shadow-[var(--control-shadow)]">
+                            <strong class="text-[var(--text-color)]">Prüffrage am Ende jeder Stufe:</strong> Gibt es noch eine Stelle, an der dieselbe Information mehr als einmal gespeichert ist? Wenn nein → Ziel erreicht. Wenn ja → nächste Stufe prüfen.
+                        </div>
+                    </div>
+                    `,
+                    htmlEn: `
+                    <p class="text-xs mb-3">This guide walks through all stages using <strong>a single example</strong> — from the unstructured source table to the fully normalized 3NF. Each stage is first <em>explained</em>, then <em>performed</em> on the example, then the <em>result</em> is shown.</p>
+
+                    <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)] mb-4 shadow-[var(--control-shadow)]">
+                        <strong class="text-[var(--text-color)]">Starting point — the "order slip database":</strong> A small mail-order business keeps all data in <em>a single</em> table. Customer, address, order, and item sit in the same row. This is exactly how the anomalies from <a href="#section7" class="underline">section 7</a> arise.
+                    </div>
+
+                    <div class="overflow-x-auto w-full mb-4">
+                    <table class="wikitable">
+                    <tr><th>Order No</th><th>Customer</th><th>Address</th><th>Item</th><th>Qty</th><th>Unit Price</th></tr>
+                    <tr style="background: rgba(239,68,68,0.10)"><td>1001</td><td>Meier GmbH</td><td>Musterstr. 1, 80331 Munich</td><td>Laptop</td><td>1</td><td>899.00</td></tr>
+                    <tr style="background: rgba(239,68,68,0.10)"><td>1001</td><td>Meier GmbH</td><td>Musterstr. 1, 80331 Munich</td><td>Mouse</td><td>2</td><td>19.90</td></tr>
+                    <tr style="background: rgba(245,158,11,0.10)"><td>1002</td><td>Schmidt AG</td><td>Bahnhofstr. 5, 10115 Berlin</td><td>Monitor</td><td>1</td><td>249.00</td></tr>
+                    <tr style="background: rgba(245,158,11,0.10)"><td>1002</td><td>Schmidt AG</td><td>Bahnhofstr. 5, 10115 Berlin</td><td>Cable</td><td>3</td><td>5.50</td></tr>
+                    </table>
+                    </div>
+                    <p class="text-xs text-[var(--text-muted)] mb-6">Red = duplicated customer data, yellow = duplicated order data. Both are redundancy.</p>
+
+                    <!-- ═══════════════ 0NF ═══════════════ -->
+                    <div class="mb-6 p-4 border-2 border-[#ef4444] rounded-lg bg-[rgba(239,68,68,0.05)]">
+                        <div class="font-bold text-sm mb-2" style="color:#ef4444;">Stage 0 — Unnormalized Form (0NF)</div>
+                        <p class="text-xs mb-2"><strong>Rule:</strong> None. All data sits in one table, often with repeating groups and multiple pieces of information per cell.</p>
+                        <p class="text-xs mb-2"><strong>Problem in the example:</strong> The address <code>"Musterstr. 1, 80331 Munich"</code> contains <em>three</em> pieces of information (street, zip, city) in <em>one</em> cell. Order No 1001 repeats twice because two items belong to it.</p>
+                        <p class="text-xs mb-2"><strong>Goal of 1NF:</strong> Make each cell atomic and resolve repeating groups.</p>
+                    </div>
+
+                    <!-- ═══════════════ 1NF ═══════════════ -->
+                    <div class="mb-6 p-4 border-2 border-[#f59e0b] rounded-lg bg-[rgba(245,158,11,0.05)]">
+                        <div class="font-bold text-sm mb-2" style="color:#f59e0b;">Stage 1 — First Normal Form (1NF)</div>
+                        <p class="text-xs mb-2"><strong>Rule:</strong> All attribute values are <em>atomic</em>. No cell contains multiple pieces of information, no repeating groups.</p>
+                        <p class="text-xs mb-2"><strong>How to do it:</strong></p>
+                        <ul class="text-xs text-[var(--text-muted)] mb-2 list-disc list-inside">
+                            <li>Split <code>Address</code> into <code>Street</code>, <code>Zip</code>, <code>City</code></li>
+                            <li>Split <code>Customer</code> into <code>Customer No</code> (key!) and <code>Customer Name</code></li>
+                            <li>Introduce an Item No as its own key</li>
+                        </ul>
+                        <p class="text-xs mb-2"><strong>Result — 1NF table <code>Order</code>:</strong></p>
+                        <div class="overflow-x-auto w-full">
+                        <table class="wikitable">
+                        <tr><th>Order No</th><th>Customer No</th><th>Customer Name</th><th>Street</th><th>Zip</th><th>City</th><th>Item No</th><th>Item</th><th>Qty</th><th>Unit Price</th></tr>
+                        <tr><td>1001</td><td>K1</td><td>Meier GmbH</td><td>Musterstr. 1</td><td>80331</td><td>Munich</td><td>A1</td><td>Laptop</td><td>1</td><td>899.00</td></tr>
+                        <tr><td>1001</td><td>K1</td><td>Meier GmbH</td><td>Musterstr. 1</td><td>80331</td><td>Munich</td><td>A2</td><td>Mouse</td><td>2</td><td>19.90</td></tr>
+                        <tr><td>1002</td><td>K2</td><td>Schmidt AG</td><td>Bahnhofstr. 5</td><td>10115</td><td>Berlin</td><td>A3</td><td>Monitor</td><td>1</td><td>249.00</td></tr>
+                        <tr><td>1002</td><td>K2</td><td>Schmidt AG</td><td>Bahnhofstr. 5</td><td>10115</td><td>Berlin</td><td>A4</td><td>Cable</td><td>3</td><td>5.50</td></tr>
+                        </table>
+                        </div>
+                        <div class="bg-[var(--panel-color)] p-2 rounded text-xs text-[var(--text-muted)] mt-2">
+                            <strong class="text-[var(--text-color)]">Still open:</strong> Customer and item data still repeat — e.g. "Meier GmbH" twice, "Musterstr. 1" twice. Redundancy is still there.
+                        </div>
+                    </div>
+
+                    <!-- ═══════════════ 2NF ═══════════════ -->
+                    <div class="mb-6 p-4 border-2 border-[#3b82f6] rounded-lg bg-[rgba(59,130,246,0.05)]">
+                        <div class="font-bold text-sm mb-2" style="color:#3b82f6;">Stage 2 — Second Normal Form (2NF)</div>
+                        <p class="text-xs mb-2"><strong>Rule:</strong> 1NF <em>and</em> every non-key attribute depends on the <strong>entire</strong> primary key — not just part of it.</p>
+                        <p class="text-xs mb-2"><strong>Analysis:</strong> The primary key is composite: <code>(Order No, Item No)</code>. Let's check the dependencies:</p>
+                        <div class="overflow-x-auto w-full mb-2">
+                        <table class="wikitable">
+                        <tr><th>Attribute</th><th>Depends on</th><th>2NF violation?</th></tr>
+                        <tr><td><code>Qty</code></td><td class="text-[var(--text-muted)]">(Order No, Item No) — fully</td><td style="color:#10b981;">✔ ok</td></tr>
+                        <tr style="background: rgba(239,68,68,0.10)"><td><code>Customer No</code>, <code>Customer Name</code>, <code>Street</code>, <code>Zip</code>, <code>City</code></td><td class="text-[var(--text-muted)]">only <code>Order No</code></td><td style="color:#ef4444;">✘ partial</td></tr>
+                        <tr style="background: rgba(239,68,68,0.10)"><td><code>Item</code>, <code>Unit Price</code></td><td class="text-[var(--text-muted)]">only <code>Item No</code></td><td style="color:#ef4444;">✘ partial</td></tr>
+                        </table>
+                        </div>
+                        <p class="text-xs mb-2"><strong>How to do it:</strong> Move partially dependent attributes into their own tables, linked via the key.</p>
+                        <p class="text-xs mb-2"><strong>Result — three tables:</strong></p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
+                            <div class="p-2 border border-[#3b82f6] rounded bg-[rgba(59,130,246,0.08)]">
+                                <div class="font-bold text-xs mb-1" style="color:#3b82f6;">ORDER</div>
+                                <div class="text-[10px] font-mono text-[var(--text-muted)]">Order No (PK)<br>Customer No (FK)<br>Date</div>
+                            </div>
+                            <div class="p-2 border border-[#3b82f6] rounded bg-[rgba(59,130,246,0.08)]">
+                                <div class="font-bold text-xs mb-1" style="color:#3b82f6;">CUSTOMER</div>
+                                <div class="text-[10px] font-mono text-[var(--text-muted)]">Customer No (PK)<br>Customer Name<br>Street<br>Zip<br>City</div>
+                            </div>
+                            <div class="p-2 border border-[#3b82f6] rounded bg-[rgba(59,130,246,0.08)]">
+                                <div class="font-bold text-xs mb-1" style="color:#3b82f6;">ITEM</div>
+                                <div class="text-[10px] font-mono text-[var(--text-muted)]">Item No (PK)<br>Item<br>Unit Price</div>
+                            </div>
+                        </div>
+                        <p class="text-xs mb-1"><strong>OrderLine</strong> (the actual relationship table):</p>
+                        <div class="overflow-x-auto w-full mb-2">
+                        <table class="wikitable">
+                        <tr><th>Order No (PK, FK)</th><th>Item No (PK, FK)</th><th>Qty</th></tr>
+                        <tr><td>1001</td><td>A1</td><td>1</td></tr>
+                        <tr><td>1001</td><td>A2</td><td>2</td></tr>
+                        <tr><td>1002</td><td>A3</td><td>1</td></tr>
+                        <tr><td>1002</td><td>A4</td><td>3</td></tr>
+                        </table>
+                        </div>
+                        <div class="bg-[var(--panel-color)] p-2 rounded text-xs text-[var(--text-muted)]">
+                            <strong class="text-[var(--text-color)]">Still open:</strong> In <code>CUSTOMER</code>, <code>City</code> depends on <code>Zip</code>, not directly on the key <code>Customer No</code>. That is a transitive dependency.
+                        </div>
+                    </div>
+
+                    <!-- ═══════════════ 3NF ═══════════════ -->
+                    <div class="mb-6 p-4 border-2 border-[#10b981] rounded-lg bg-[rgba(16,185,129,0.05)]">
+                        <div class="font-bold text-sm mb-2" style="color:#10b981;">Stage 3 — Third Normal Form (3NF)</div>
+                        <p class="text-xs mb-2"><strong>Rule:</strong> 2NF <em>and</em> no transitive dependencies between non-key attributes.</p>
+                        <p class="text-xs mb-2"><strong>Analysis in <code>CUSTOMER</code>:</strong> chain <code>Customer No → Zip → City</code>. The city doesn't depend directly on the key, but via the zip. → 3NF violation.</p>
+                        <p class="text-xs mb-2"><strong>How to do it:</strong> Move <code>Zip</code> and <code>City</code> into their own table; in <code>CUSTOMER</code>, only <code>Zip</code> remains as a foreign key.</p>
+                        <p class="text-xs mb-2"><strong>Result — final 3NF structure:</strong></p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                            <div class="p-2 border border-[#10b981] rounded bg-[rgba(16,185,129,0.08)]">
+                                <div class="font-bold text-xs mb-1" style="color:#10b981;">CUSTOMER</div>
+                                <div class="text-[10px] font-mono text-[var(--text-muted)]">Customer No (PK)<br>Customer Name<br>Street<br>Zip (FK)</div>
+                            </div>
+                            <div class="p-2 border border-[#10b981] rounded bg-[rgba(16,185,129,0.08)]">
+                                <div class="font-bold text-xs mb-1" style="color:#10b981;">ZIP_CITY</div>
+                                <div class="text-[10px] font-mono text-[var(--text-muted)]">Zip (PK)<br>City</div>
+                            </div>
+                        </div>
+                        <p class="text-xs mb-1">The full 3NF structure now comprises <strong>five tables</strong>:</p>
+                        <div class="text-[11px] font-mono text-[var(--text-muted)] p-3 bg-[var(--code-bg)] rounded border border-[var(--panel-border)] leading-relaxed">
+                            CUSTOMER (Customer No, Customer Name, Street, Zip)<br>
+                            ZIP_CITY (Zip, City)<br>
+                            ORDER (Order No, Customer No, Date)<br>
+                            ORDERLINE (Order No, Item No, Qty)<br>
+                            ITEM (Item No, Item, Unit Price)
+                        </div>
+                    </div>
+
+                    <!-- ═══════════════ SUMMARY ═══════════════ -->
+                    <div class="p-4 border border-[var(--panel-border)] rounded-lg bg-[var(--panel-color)]">
+                        <div class="font-bold text-sm mb-3 text-[var(--heading-color)]">Summary: What each stage accomplished</div>
+                        <div class="overflow-x-auto w-full">
+                        <table class="wikitable">
+                        <tr><th>Stage</th><th>Rule</th><th>What was done</th><th>What's still missing</th></tr>
+                        <tr><td><strong>0NF</strong></td><td class="text-[var(--text-muted)]">none</td><td class="text-[var(--text-muted)]">Initial state</td><td class="text-[var(--text-muted)]">everything</td></tr>
+                        <tr><td><strong>1NF</strong></td><td class="text-[var(--text-muted)]">atomicity</td><td class="text-[var(--text-muted)]">Address split, keys introduced</td><td class="text-[var(--text-muted)]">partial dependencies</td></tr>
+                        <tr><td><strong>2NF</strong></td><td class="text-[var(--text-muted)]">full key dependency</td><td class="text-[var(--text-muted)]">Customer, item, order separated</td><td class="text-[var(--text-muted)]">transitive dependencies</td></tr>
+                        <tr><td><strong>3NF</strong></td><td class="text-[var(--text-muted)]">no transitivity</td><td class="text-[var(--text-muted)]">Zip/city moved out</td><td class="text-[var(--text-muted)]">— (goal reached)</td></tr>
+                        </table>
+                        </div>
+                        <div class="bg-[var(--panel-color)] p-3 border border-[var(--panel-border)] rounded text-xs text-[var(--text-muted)] mt-3 shadow-[var(--control-shadow)]">
+                            <strong class="text-[var(--text-color)]">Check question at the end of each stage:</strong> Is there still a place where the same information is stored more than once? If no → goal reached. If yes → check the next stage.
+                        </div>
+                    </div>
+                    `
+                },
 
                 {
                     id: 'subsection8_overview',
@@ -1185,7 +1469,7 @@ registerTopic({
             introEn: 'Short CSS animations that make the core concepts of SQL tangible: keys, execution order, join types, and ACID.',
             subtopics: [
 
-                                {
+                {
                     id: 'subsection10_keys',
                     titleDe: 'SQL-Schlüssel',
                     titleEn: 'SQL Keys',
