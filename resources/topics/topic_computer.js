@@ -2,22 +2,22 @@
 // Parent topic: groups hardware, networks, and general PC references.
 
 registerTopic({
-    id: 'Computer',
+    id: 'Informatik',
     icon: 'fa-desktop',
-    titleDe: 'Computer',
-    titleEn: 'Computer',
+    titleDe: 'Informatik',
+    titleEn: 'Informatik',
     descDe: 'Hardware, Netzwerke und allgemeine PC-Referenzen.',
     descEn: 'Hardware, networks, and general PC references.',
 
-    sidebarTitleDe: 'Computer',
-    sidebarTitleEn: 'Computer',
+    sidebarTitleDe: 'Informatik',
+    sidebarTitleEn: 'Informatik',
     sidebarSubtitleDe: 'Hardware-Referenzen',
     sidebarSubtitleEn: 'Hardware references',
     sidebarVersion: '2026',
 
     hero: {
-        titleDe: 'Computer',
-        titleEn: 'Computer',
+        titleDe: 'Informatik',
+        titleEn: 'Informatik',
         introDe: 'Sammlung von Referenzen, Anleitungen und Informationen rund um PC-Hardware, Netzwerke und IT-Infrastruktur.',
         introEn: 'Collection of references, guides, and information regarding PC hardware, networks, and IT infrastructure.'
     },

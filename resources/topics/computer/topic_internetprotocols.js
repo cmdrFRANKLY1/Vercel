@@ -4,7 +4,7 @@ registerTopic({
     id: 'Internet Protocols',
 
     // ── SUB-CATEGORY ────────────────────────────────────────────
-    parentId: 'Computer',
+    parentId: 'Informatik',
     // ────────────────────────────────────────────────────────────
 
     icon: 'fa-network-wired',

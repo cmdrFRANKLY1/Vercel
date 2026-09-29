@@ -6,7 +6,7 @@ registerTopic({
     id: 'SQL',
 
     // ── SUB-CATEGORY ────────────────────────────────────────────
-    parentId: 'Computer',
+    parentId: 'Informatik',
     // ────────────────────────────────────────────────────────────
 
     icon: 'fa-database',
