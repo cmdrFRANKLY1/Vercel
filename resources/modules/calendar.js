@@ -1,6 +1,6 @@
 /* resources/modules/calendar.js
- * Self-contained calendar: builds its own modal, grid, side list, and day popup.
- * Renders Ausbildungsnachweise per day (supports single entry OR array per day).
+ * Renders into the existing #calendarModal DOM from index.html.
+ * Matches calendar.css exactly — no injected styles, no blue.
  *
  * Depends on:
  *   state.js → App.state.isGerman, calYear, calMonth,
@@ -31,11 +31,7 @@
     const REGION_RANK_DEFAULT = 3;
     const REGION_LABEL = { both: 'DE·US', de: 'DE', us: 'US' };
 
-    /** How many report lines to draw inside one day cell before "+N more". */
     const MAX_VISIBLE_REPORTS = 3;
-
-    /** Every cell is one of these; used only as a marker for the CSS. */
-    const CAL_ROOT_ID = 'appCalendar';
 
     const holidayCache = {};
     const easterCache = {};
@@ -130,13 +126,34 @@
     }
 
     /* =========================================================
-       Report lookup — single object OR array per day
+       Report lookup
        ========================================================= */
     function getReportsForDay(key) {
         if (!state.workReportsLoaded) return [];
         const raw = state.workReportEntries?.[key];
         if (!raw) return [];
         return Array.isArray(raw) ? raw.filter(Boolean) : [raw];
+    }
+
+    /** Collect all report entries within the currently viewed month. */
+    function getReportsForMonth() {
+        if (!state.workReportsLoaded) return [];
+        ensureMonthSet();
+        const year = state.calYear;
+        const month = state.calMonth;
+        const prefix = `${year}-${pad2(month + 1)}-`;
+        const out = [];
+        const entries = state.workReportEntries || {};
+        for (const key of Object.keys(entries)) {
+            if (!key.startsWith(prefix)) continue;
+            const raw = entries[key];
+            const list = Array.isArray(raw) ? raw.filter(Boolean) : [raw];
+            list.forEach((entry, idx) => {
+                if (entry) out.push({ date: key, index: idx, entry });
+            });
+        }
+        out.sort((a, b) => a.date.localeCompare(b.date) || a.index - b.index);
+        return out;
     }
 
     /* =========================================================
@@ -166,175 +183,62 @@
     }
 
     /* =========================================================
-       Root scaffold — built once, reused forever
+       DOM refs — from index.html
        ========================================================= */
-    let root = null;
-
-    function buildRoot() {
-        if (root && document.body.contains(root)) return root;
-
-        root = document.createElement('div');
-        root.id = CAL_ROOT_ID;
-        root.className = 'cal-root';
-        root.hidden = true;
-
-        // backdrop
-        const backdrop = document.createElement('div');
-        backdrop.className = 'cal-backdrop';
-        backdrop.dataset.calClose = '';
-        root.appendChild(backdrop);
-
-        // panel
-        const panel = document.createElement('div');
-        panel.className = 'cal-panel';
-        panel.setAttribute('role', 'dialog');
-        panel.setAttribute('aria-modal', 'true');
-        panel.setAttribute('aria-label', 'Kalender');
-        root.appendChild(panel);
-
-        // header
-        const header = document.createElement('div');
-        header.className = 'cal-header';
-
-        const prev = document.createElement('button');
-        prev.type = 'button';
-        prev.className = 'cal-nav cal-nav-prev';
-        prev.setAttribute('aria-label', 'Vorheriger Monat');
-        prev.textContent = '‹';
-        prev.addEventListener('click', () => shift(-1));
-
-        const next = document.createElement('button');
-        next.type = 'button';
-        next.className = 'cal-nav cal-nav-next';
-        next.setAttribute('aria-label', 'Nächster Monat');
-        next.textContent = '›';
-        next.addEventListener('click', () => shift(+1));
-
-        const label = document.createElement('h2');
-        label.className = 'cal-label';
-        label.setAttribute('aria-live', 'polite');
-
-        const todayBtn = document.createElement('button');
-        todayBtn.type = 'button';
-        todayBtn.className = 'cal-today-btn';
-        todayBtn.textContent = 'Heute';
-        todayBtn.addEventListener('click', goToday);
-
-        const spacer = document.createElement('div');
-        spacer.className = 'cal-header-spacer';
-
-        const legend = document.createElement('div');
-        legend.className = 'cal-legend';
-        legend.innerHTML =
-            '<span class="cal-legend-item"><i class="dot de"></i>Deutschland</span>' +
-            '<span class="cal-legend-item"><i class="dot us"></i>USA</span>' +
-            '<span class="cal-legend-item"><i class="dot both"></i>Beide</span>';
-
-        const closeBtn = document.createElement('button');
-        closeBtn.type = 'button';
-        closeBtn.className = 'cal-close';
-        closeBtn.setAttribute('aria-label', 'Schließen');
-        closeBtn.textContent = '×';
-        closeBtn.addEventListener('click', close);
-
-        header.append(prev, label, next, todayBtn, spacer, legend, closeBtn);
-        panel.appendChild(header);
-
-        // body: weekdays | grid | side list
-        const body = document.createElement('div');
-        body.className = 'cal-body';
-
-        const weekdays = document.createElement('div');
-        weekdays.className = 'cal-weekdays';
-
-        const grid = document.createElement('div');
-        grid.className = 'cal-grid';
-
-        const side = document.createElement('aside');
-        side.className = 'cal-side';
-
-        const sideTitle = document.createElement('h3');
-        sideTitle.className = 'cal-side-title';
-        sideTitle.textContent = 'Besondere Tage';
-        const sideList = document.createElement('ul');
-        sideList.className = 'cal-side-list';
-        side.append(sideTitle, sideList);
-
-        body.append(weekdays, grid, side);
-        panel.appendChild(body);
-
-        // day popup
-        const popup = document.createElement('div');
-        popup.className = 'cal-popup';
-        popup.hidden = true;
-        popup.innerHTML =
-            '<div class="cal-popup-backdrop" data-cal-close></div>' +
-            '<div class="cal-popup-panel" role="document">' +
-              '<header class="cal-popup-header">' +
-                '<h3 class="cal-popup-title"></h3>' +
-                '<div class="cal-popup-actions">' +
-                  '<button type="button" class="cal-popup-copy" data-cal-copy>' +
-                    '<i class="fa-regular fa-copy"></i><span class="cal-popup-copy-label">Kopieren</span>' +
-                  '</button>' +
-                  '<button type="button" class="cal-popup-close" data-cal-close aria-label="Schließen">×</button>' +
-                '</div>' +
-              '</header>' +
-              '<div class="cal-popup-body"></div>' +
-            '</div>';
-        panel.appendChild(popup);
-
-        root._refs = { label, weekdays, grid, sideList, popup };
-
-        // Global close handlers
-        root.addEventListener('click', (ev) => {
-            if (ev.target.closest('[data-cal-close]')) {
-                if (popup.hidden) close();
-                else closePopup();
-            }
-        });
-        document.addEventListener('keydown', (ev) => {
-            if (ev.key !== 'Escape') return;
-            if (!popup.hidden) closePopup();
-            else if (!root.hidden) close();
-        });
-
-        document.body.appendChild(root);
-        return root;
+    function getRefs() {
+        return {
+            modal:          document.getElementById('calendarModal'),
+            monthLabel:     document.getElementById('calMonthLabelModal'),
+            weekdays:       document.getElementById('calWeekdaysModal'),
+            grid:           document.getElementById('calendarGridModal'),
+            sideList:       document.getElementById('calMonthListModal'),
+            sideReports:    document.getElementById('calMonthReportsModal'),
+            popup:          document.getElementById('calPopup'),
+            popupTitle:     document.getElementById('calPopupTitle'),
+            popupBody:      document.getElementById('calPopupBody'),
+            popupCopy:      document.getElementById('calPopupCopy'),
+            popupCopyLabel: document.getElementById('calPopupCopyLabel')
+        };
     }
 
     /* =========================================================
        Render
        ========================================================= */
     function render() {
-        const r = buildRoot();
-        const { label, weekdays, grid, sideList } = r._refs;
+        const refs = getRefs();
+        if (!refs.grid) return;
 
         ensureMonthSet();
         const isGerman = state.isGerman;
         const lang = isGerman ? 'de' : 'en';
 
-        label.textContent = `${MONTHS[lang][state.calMonth]} ${state.calYear}`;
-        weekdays.replaceChildren(...WEEKDAYS[lang].map((name) => {
-            const el = document.createElement('div');
-            el.className = 'cal-weekday';
-            el.textContent = name;
-            return el;
-        }));
+        if (refs.monthLabel) {
+            refs.monthLabel.textContent = `${MONTHS[lang][state.calMonth]} ${state.calYear}`;
+        }
 
-        grid.replaceChildren();
+        if (refs.weekdays) {
+            refs.weekdays.replaceChildren(...WEEKDAYS[lang].map((name) => {
+                const el = document.createElement('div');
+                el.className = 'cal-weekday';
+                el.textContent = name;
+                return el;
+            }));
+        }
+
+        refs.grid.replaceChildren();
         const first = new Date(state.calYear, state.calMonth, 1);
         const startOffset = (first.getDay() + 6) % 7;
         const todayKey = ymd(new Date());
         const monthHolidays = [];
 
-        // Always 42 cells = 6 rows, so height never jumps between months.
         for (let i = 0; i < 42; i++) {
             const d = new Date(state.calYear, state.calMonth, 1 - startOffset + i);
             const inMonth = d.getMonth() === state.calMonth;
-            grid.appendChild(renderCell(d, inMonth, todayKey, isGerman, monthHolidays));
+            refs.grid.appendChild(renderCell(d, inMonth, todayKey, isGerman, monthHolidays));
         }
 
-        renderSideList(sideList, monthHolidays, isGerman);
+        if (refs.sideList) renderSideList(refs.sideList, monthHolidays, isGerman);
+        if (refs.sideReports) renderSideReports(refs.sideReports, isGerman);
     }
 
     function renderCell(date, inMonth, todayKey, isGerman, monthHolidays) {
@@ -443,7 +347,6 @@
         );
         if (entry.reportName) line.title = entry.reportName;
 
-        // Click → popup focused on this entry
         line.addEventListener('click', (ev) => {
             ev.stopPropagation();
             openPopup(key, idx);
@@ -487,30 +390,104 @@
     }
 
     /* =========================================================
-       Cell click → popup (wired by delegation once)
+       Side panel: reports for the current month
+       (rendered below "Besondere Tage")
        ========================================================= */
-    function wireCellDelegation() {
-        const r = root;
-        const grid = r._refs.grid;
+    function renderSideReports(list, isGerman) {
+        list.replaceChildren();
+        const monthReports = getReportsForMonth();
 
-        grid.addEventListener('pointerdown', (ev) => {
+        if (!monthReports.length) {
+            const li = document.createElement('li');
+            li.className = 'cal-empty';
+            li.textContent = isGerman
+                ? 'Keine Ausbildungsnachweise in diesem Monat.'
+                : 'No reports in this month.';
+            list.appendChild(li);
+            return;
+        }
+
+        for (const { date, index, entry } of monthReports) {
+            const li = document.createElement('li');
+            li.className = 'cal-list-item cal-list-report';
+            if (entry.isHO) li.classList.add('is-ho');
+
+            // date badge
+            const dateEl = document.createElement('span');
+            dateEl.className = 'cal-list-date';
+            const [y, m, d] = date.split('-');
+            dateEl.textContent = `${d}.${m}.`;
+            li.appendChild(dateEl);
+
+            // clickable body — opens the day popup
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'cal-list-report-btn';
+            btn.dataset.date = date;
+            btn.dataset.reportIndex = String(index);
+
+            const body = document.createElement('span');
+            body.className = 'cal-list-body';
+
+            if (entry.reportName) {
+                const name = document.createElement('span');
+                name.className = 'cal-list-name';
+                name.textContent = entry.reportName;
+                body.appendChild(name);
+            }
+
+            const snippet = document.createElement('span');
+            snippet.className = 'cal-list-alt';
+            const raw = (entry.content || '').replace(/\s+/g, ' ').trim();
+            snippet.textContent = raw ? (raw.length > 90 ? raw.slice(0, 90) + '…' : raw) : '—';
+            body.appendChild(snippet);
+
+            if (entry.isHO) {
+                const tag = document.createElement('span');
+                tag.className = 'cal-list-tag';
+                tag.textContent = 'HO';
+                body.appendChild(tag);
+            }
+
+            btn.appendChild(body);
+            btn.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                openPopup(date, index);
+            });
+
+            li.appendChild(btn);
+            list.appendChild(li);
+        }
+    }
+
+    /* =========================================================
+       Cell click delegation (wired once)
+       ========================================================= */
+    let delegationWired = false;
+    function wireCellDelegation() {
+        if (delegationWired) return;
+        const refs = getRefs();
+        if (!refs.grid) return;
+        delegationWired = true;
+
+        refs.grid.addEventListener('pointerdown', (ev) => {
             const cell = ev.target.closest('.cal-cell.has-reports');
             if (cell) cell._scrollTopAtDown = cell.scrollTop;
         });
 
-        grid.addEventListener('click', (ev) => {
+        refs.grid.addEventListener('click', (ev) => {
             const more = ev.target.closest('.cal-report-more');
             if (more) { openPopup(more.dataset.date, MAX_VISIBLE_REPORTS); return; }
 
-            if (ev.target.closest('.cal-report-line')) return; // handled per-line
+            if (ev.target.closest('.cal-report-line')) return;
 
             const cell = ev.target.closest('.cal-cell.has-reports');
             if (!cell) return;
-            if (cell.scrollTop !== cell._scrollTopAtDown) return; // scrolled, not clicked
+            if (cell.scrollTop !== cell._scrollTopAtDown) return;
             openPopup(cell.dataset.date);
         });
 
-        grid.addEventListener('keydown', (ev) => {
+        refs.grid.addEventListener('keydown', (ev) => {
             if (ev.key !== 'Enter' && ev.key !== ' ') return;
             const cell = ev.target.closest('.cal-cell.has-reports');
             if (!cell || ev.target !== cell) return;
@@ -526,11 +503,11 @@
     let lastFocused = null;
 
     function openPopup(key, focusIndex = 0) {
-        const r = buildRoot();
-        const popup = r._refs.popup;
-        const title = popup.querySelector('.cal-popup-title');
-        const body = popup.querySelector('.cal-popup-body');
-        const copyLabel = popup.querySelector('.cal-popup-copy-label');
+        const refs = getRefs();
+        if (!refs.popup) {
+            if (App.reports?.openByKey) App.reports.openByKey(key, focusIndex);
+            return;
+        }
 
         const reports = getReportsForDay(key);
         const isGerman = state.isGerman;
@@ -540,10 +517,10 @@
             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
         });
 
-        title.textContent = dateStr;
-        if (copyLabel) copyLabel.textContent = isGerman ? 'Kopieren' : 'Copy';
+        if (refs.popupTitle) refs.popupTitle.textContent = dateStr;
+        if (refs.popupCopyLabel) refs.popupCopyLabel.textContent = isGerman ? 'Kopieren' : 'Copy';
 
-        body.replaceChildren();
+        refs.popupBody.replaceChildren();
         const parts = [];
 
         if (!reports.length) {
@@ -552,11 +529,11 @@
             empty.textContent = isGerman
                 ? 'Kein Ausbildungsnachweis für diesen Tag.'
                 : 'No report for this day.';
-            body.appendChild(empty);
+            refs.popupBody.appendChild(empty);
             lastPopupText = '';
         } else {
             reports.forEach((entry, idx) => {
-                body.appendChild(renderPopupEntry(entry, idx));
+                refs.popupBody.appendChild(renderPopupEntry(entry, idx));
                 const head =
                     `#${idx + 1}` +
                     (entry.reportName ? ` — ${entry.reportName}` : '') +
@@ -566,11 +543,11 @@
             lastPopupText = `${dateStr}\n\n${parts.join('\n\n')}`;
         }
 
-        popup.hidden = false;
+        refs.popup.hidden = false;
         lastFocused = document.activeElement;
 
-        const entries = body.querySelectorAll('.cal-popup-entry');
-        const target = entries[Math.min(focusIndex, entries.length - 1)] || body.firstElementChild;
+        const entries = refs.popupBody.querySelectorAll('.cal-popup-entry');
+        const target = entries[Math.min(focusIndex, entries.length - 1)] || refs.popupBody.firstElementChild;
         if (target) {
             if (!target.hasAttribute('tabindex')) target.tabIndex = -1;
             target.focus({ preventScroll: false });
@@ -613,16 +590,16 @@
     }
 
     function closePopup() {
-        const r = root; if (!r) return;
-        const popup = r._refs.popup;
-        if (popup.hidden) return;
-        popup.hidden = true;
+        const refs = getRefs();
+        if (!refs.popup || refs.popup.hidden) return;
+        refs.popup.hidden = true;
         if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
         lastFocused = null;
     }
 
     async function copyPopup() {
-        const label = root?._refs.popup.querySelector('.cal-popup-copy-label');
+        const refs = getRefs();
+        const label = refs.popupCopyLabel;
         const isGerman = state.isGerman;
         const original = label ? label.textContent : (isGerman ? 'Kopieren' : 'Copy');
         try {
@@ -639,154 +616,45 @@
        Open / close
        ========================================================= */
     function open() {
-        const r = buildRoot();
-        r.hidden = false;
+        const refs = getRefs();
+        if (!refs.modal) { console.error('[calendar] #calendarModal not found'); return; }
+        refs.modal.classList.add('open');
         document.body.classList.add('cal-open');
         render();
-        wireCellDelegationOnce();
-        // focus close button for accessibility
-        const cb = r.querySelector('.cal-close');
+        wireCellDelegation();
+        wirePopupOnce();
+        const cb = refs.modal.querySelector('.ctrl-btn');
         if (cb) cb.focus({ preventScroll: true });
     }
 
     function close() {
-        const r = root; if (!r) return;
-        r.hidden = true;
+        const refs = getRefs();
+        if (!refs.modal) return;
+        refs.modal.classList.remove('open');
         document.body.classList.remove('cal-open');
         closePopup();
     }
 
-    let delegationWired = false;
-    function wireCellDelegationOnce() {
-        if (delegationWired) return;
-        wireCellDelegation();
-        delegationWired = true;
-    }
+    let popupWired = false;
+    function wirePopupOnce() {
+        if (popupWired) return;
+        popupWired = true;
 
-    /* Copy button is wired once when root is built */
-    const _origBuild = buildRoot;
-    buildRoot = function () {
-        const r = _origBuild();
-        const copyBtn = r._refs.popup.querySelector('[data-cal-copy]');
-        if (copyBtn && !copyBtn._wired) {
-            copyBtn.addEventListener('click', copyPopup);
-            copyBtn._wired = true;
+        const refs = getRefs();
+        if (refs.popupCopy) {
+            refs.popupCopy.addEventListener('click', copyPopup);
         }
-        return r;
-    };
-
-    /* =========================================================
-       Fallback styles (only if no external CSS is loaded)
-       Injected on first open so it can't fight your stylesheet.
-       ========================================================= */
-    function injectFallbackStyles() {
-        if (document.getElementById('cal-fallback-css')) return;
-        const style = document.createElement('style');
-        style.id = 'cal-fallback-css';
-        style.textContent = `
-            .cal-root { position: fixed; inset: 0; z-index: 900; display: grid; place-items: center; }
-            .cal-root[hidden] { display: none; }
-            .cal-backdrop { position: absolute; inset: 0; background: rgba(15,23,42,.55); }
-            .cal-panel { position: relative; width: min(1100px, 94vw); height: min(820px, 90vh);
-                display: flex; flex-direction: column; background: #0f172a; color: #e2e8f0;
-                border-radius: 12px; box-shadow: 0 24px 64px rgba(0,0,0,.5); overflow: hidden; }
-            .cal-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px;
-                border-bottom: 1px solid rgba(148,163,184,.18); flex: 0 0 auto; }
-            .cal-label { margin: 0; font-size: 16px; font-weight: 600; }
-            .cal-nav, .cal-today-btn, .cal-close { font: inherit; background: transparent; color: inherit;
-                border: 1px solid rgba(148,163,184,.3); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
-            .cal-close { margin-left: 0; font-size: 18px; line-height: 1; padding: 2px 9px; }
-            .cal-header-spacer { flex: 1 1 auto; }
-            .cal-legend { display: flex; gap: 10px; font-size: 11px; opacity: .8; }
-            .cal-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
-            .cal-legend .dot.de { background: #3b82f6; } .cal-legend .dot.us { background: #ef4444; }
-            .cal-legend .dot.both { background: #8b5cf6; }
-            .cal-body { flex: 1 1 auto; min-height: 0; display: grid;
-                grid-template-columns: minmax(0,1fr) minmax(200px,280px);
-                grid-template-rows: auto minmax(0,1fr); gap: 10px; padding: 10px 14px 14px; box-sizing: border-box; }
-            .cal-weekdays { grid-column: 1; grid-row: 1; display: grid;
-                grid-template-columns: repeat(7,minmax(0,1fr)); gap: 4px; font-size: 11px;
-                text-transform: uppercase; letter-spacing: .05em; color: rgba(148,163,184,.85); }
-            .cal-weekday { text-align: center; padding: 2px 0; }
-            .cal-grid { grid-column: 1; grid-row: 2; display: grid;
-                grid-template-columns: repeat(7,minmax(0,1fr));
-                grid-template-rows: repeat(6,minmax(0,1fr)); gap: 4px; min-height: 0; height: 100%; }
-            .cal-cell { position: relative; display: flex; flex-direction: column; gap: 2px;
-                padding: 4px 6px; border-radius: 6px; background: rgba(148,163,184,.06);
-                border: 1px solid rgba(148,163,184,.15); overflow: hidden; min-width: 0; min-height: 0; font-size: 12px; }
-            .cal-cell.is-outside { opacity: .4; } .cal-cell.is-weekend { background: rgba(148,163,184,.10); }
-            .cal-cell.is-today { outline: 2px solid #2563eb; outline-offset: -2px; }
-            .cal-cell.has-reports { cursor: pointer; overflow-y: auto; }
-            .cal-cell.has-reports:hover { background: rgba(59,130,246,.10); border-color: rgba(59,130,246,.35); }
-            .cal-daynum { flex: 0 0 auto; font-size: 11px; font-weight: 600; color: rgba(226,232,240,.65); line-height: 1; }
-            .cal-chip { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; font-size: 10px;
-                line-height: 1.15; padding: 1px 4px; border-radius: 4px; background: rgba(148,163,184,.18);
-                white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-            .cal-chip.region-de { background: rgba(59,130,246,.18); }
-            .cal-chip.region-us { background: rgba(239,68,68,.18); }
-            .cal-chip.region-both { background: rgba(139,92,246,.18); }
-            .cal-tag { flex: 0 0 auto; font-size: 9px; font-weight: 700; opacity: .75; }
-            .cal-chip-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-            .cal-report-line { flex: 0 0 auto; display: flex; align-items: flex-start; gap: 4px; width: 100%;
-                max-height: 2.6em; font: inherit; font-size: 10.5px; line-height: 1.25;
-                background: rgba(59,130,246,.10); border: 1px solid rgba(59,130,246,.30); color: inherit;
-                padding: 1px 4px; border-radius: 4px; cursor: pointer; text-align: left; overflow: hidden; box-sizing: border-box; }
-            .cal-report-line.is-ho { background: rgba(16,185,129,.12); border-color: rgba(16,185,129,.38); }
-            .cal-report-line i { flex: 0 0 auto; font-size: 9px; margin-top: 2px; opacity: .8; }
-            .cal-report-line .cal-report-text { flex: 1 1 auto; min-width: 0; display: -webkit-box;
-                -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
-            .cal-report-more { flex: 0 0 auto; font: inherit; font-size: 10px; font-weight: 600;
-                background: none; border: none; color: #60a5fa; cursor: pointer; padding: 0; text-align: left; }
-            .cal-side { grid-column: 2; grid-row: 2; min-height: 0; overflow: auto; }
-            .cal-side-title { margin: 0 0 6px; font-size: 13px; font-weight: 600; }
-            .cal-side-list { list-style: none; margin: 0; padding: 0; }
-            .cal-list-item { display: flex; gap: 8px; padding: 6px 8px; border-left: 3px solid transparent;
-                background: rgba(148,163,184,.08); border-radius: 4px; margin-bottom: 4px; font-size: 12px; line-height: 1.3; }
-            .cal-list-item.region-de { border-left-color: #3b82f6; }
-            .cal-list-item.region-us { border-left-color: #ef4444; }
-            .cal-list-item.region-both { border-left-color: #8b5cf6; }
-            .cal-list-date { flex: 0 0 auto; font-variant-numeric: tabular-nums; opacity: .8; min-width: 40px; }
-            .cal-list-body { display: flex; flex-direction: column; min-width: 0; }
-            .cal-list-name { font-weight: 500; } .cal-list-alt { font-size: 11px; opacity: .6; font-style: italic; }
-            .cal-empty { list-style: none; padding: 16px 8px; text-align: center; opacity: .55; font-size: 12px; }
-            .cal-popup[hidden] { display: none; }
-            .cal-popup { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
-            .cal-popup-backdrop { position: absolute; inset: 0; background: rgba(15,23,42,.65); }
-            .cal-popup-panel { position: relative; width: min(720px, 92vw); max-height: min(80vh, 720px);
-                display: flex; flex-direction: column; background: #1e293b; color: #e2e8f0;
-                border-radius: 10px; box-shadow: 0 24px 64px rgba(0,0,0,.55); overflow: hidden; }
-            .cal-popup-header { display: flex; align-items: center; justify-content: space-between; gap: 12px;
-                padding: 10px 14px; border-bottom: 1px solid rgba(148,163,184,.18);
-                background: rgba(148,163,184,.06); flex: 0 0 auto; }
-            .cal-popup-title { margin: 0; font-size: 15px; font-weight: 600; }
-            .cal-popup-actions { display: flex; gap: 6px; align-items: center; }
-            .cal-popup-copy, .cal-popup-close { font: inherit; display: inline-flex; align-items: center; gap: 6px;
-                background: transparent; color: inherit; border: 1px solid rgba(148,163,184,.3);
-                border-radius: 6px; padding: 4px 10px; cursor: pointer; }
-            .cal-popup-close { font-size: 18px; line-height: 1; padding: 2px 9px; }
-            .cal-popup-body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 12px 14px;
-                display: flex; flex-direction: column; gap: 12px; }
-            .cal-popup-entry { border: 1px solid rgba(148,163,184,.22); border-radius: 8px;
-                overflow: hidden; background: rgba(15,23,42,.35); }
-            .cal-popup-entry-header { display: flex; align-items: center; gap: 8px; padding: 6px 10px;
-                background: rgba(148,163,184,.10); font-size: 12px; border-bottom: 1px solid rgba(148,163,184,.18); }
-            .cal-popup-entry-index { color: rgba(148,163,184,.9); }
-            .cal-popup-entry-name { font-weight: 600; }
-            .cal-popup-entry-tag { background: #10b981; color: #062e22; border-radius: 4px; padding: 0 6px;
-                font-size: 10px; font-weight: 700; }
-            .cal-popup-entry-content { margin: 0; padding: 10px 12px;
-                font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-                font-size: 12.5px; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
-                user-select: text; background: transparent; color: inherit; }
-            .cal-popup-empty { color: rgba(148,163,184,.8); padding: 24px 12px; text-align: center; font-size: 13px; }
-            @media (max-width: 900px) {
-                .cal-panel { width: 96vw; height: 94vh; }
-                .cal-body { grid-template-columns: 1fr; grid-template-rows: auto minmax(0,1fr) auto; }
-                .cal-weekdays, .cal-grid, .cal-side { grid-column: 1; }
-                .cal-weekdays { grid-row: 1; } .cal-grid { grid-row: 2; } .cal-side { grid-row: 3; max-height: 22vh; }
-            }
-        `;
-        document.head.appendChild(style);
+        if (refs.popup) {
+            refs.popup.addEventListener('click', (ev) => {
+                if (ev.target.closest('[data-cal-close]')) closePopup();
+            });
+        }
+        document.addEventListener('keydown', (ev) => {
+            if (ev.key !== 'Escape') return;
+            const r = getRefs();
+            if (r.popup && !r.popup.hidden) closePopup();
+            else if (r.modal && r.modal.classList.contains('open')) close();
+        });
     }
 
     /* =========================================================
@@ -804,11 +672,6 @@
         buildHolidays,
         easterSunday
     };
-
-    // Inject fallback styles on first call to open()
-    const _open = open;
-    App.calendar.open = function () { injectFallbackStyles(); _open(); };
-    open = App.calendar.open;
 
     console.log('[calendar] ready. Call App.calendar.open() to show it.');
 })();
