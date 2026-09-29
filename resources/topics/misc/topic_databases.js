@@ -706,22 +706,16 @@ registerTopic({
                 `
             },
 
-            /* 3 — ER MODEL SYMBOLS */
+                        /* 3 — ER MODEL: CARDINALITIES */
             {
                 id: 'vis-er-symbols',
-                titleDe: 'ER-Modell: Symbole und Kardinalitäten',
-                titleEn: 'ER Model: Symbols and Cardinalities',
-                descDe: 'Entitätstyp (Rechteck), Attribut (Ellipse), Beziehung (Raute) und die Kardinalitäten 1:1, 1:n, m:n.',
-                descEn: 'Entity type (rectangle), attribute (ellipse), relationship (diamond), and the cardinalities 1:1, 1:n, m:n.',
+                titleDe: 'ER-Modell: Kardinalitäten',
+                titleEn: 'ER Model: Cardinalities',
+                descDe: 'Die drei Kardinalitätstypen 1:1, 1:n und m:n — mit Beispielen aus der Praxis.',
+                descEn: 'The three cardinality types 1:1, 1:n and m:n — with real-world examples.',
                 html: `
                 <style>
                     .pm-er-stage { max-width: 560px; margin: 0 auto; padding: 1rem 0.5rem; font-family: 'Inter', sans-serif; }
-                    .pm-er-legend { display: flex; justify-content: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; font-family: 'Inter', sans-serif; }
-                    .pm-er-legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.65rem; font-weight: 600; color: var(--text-muted); font-family: 'Inter', sans-serif; }
-                    .pm-er-shape { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.6rem; }
-                    .pm-er-shape.entity { background: #3b82f6; border-radius: 2px; }
-                    .pm-er-shape.attr { background: #10b981; border-radius: 50%; }
-                    .pm-er-shape.rel { background: #f59e0b; transform: rotate(45deg); width: 14px; height: 14px; }
                     .pm-er-card { display: flex; flex-direction: column; gap: 0.5rem; }
                     .pm-er-row {
                         display: flex; align-items: center; gap: 0.6rem;
@@ -739,6 +733,16 @@ registerTopic({
                         padding: 0.1rem 0.4rem; border-radius: 0.25rem;
                         background: var(--code-bg); color: var(--link-color);
                     }
+                    /* Linke Markierung: zeigt den Kardinalitätstyp per Farbe */
+                    .pm-er-row .pm-er-tag {
+                        flex-shrink: 0;
+                        width: 3px; align-self: stretch;
+                        border-radius: 2px;
+                        background: var(--border-color);
+                    }
+                    .pm-er-row.c11   .pm-er-tag { background: #3b82f6; }
+                    .pm-er-row.c1n   .pm-er-tag { background: #10b981; }
+                    .pm-er-row.cmn   .pm-er-tag { background: #f59e0b; }
                     .pm-er-row:nth-child(1) { animation: pm-er-pulse 6s ease-in-out infinite; animation-delay: 0s; }
                     .pm-er-row:nth-child(2) { animation: pm-er-pulse 6s ease-in-out infinite; animation-delay: 1.0s; }
                     .pm-er-row:nth-child(3) { animation: pm-er-pulse 6s ease-in-out infinite; animation-delay: 2.0s; }
@@ -749,54 +753,64 @@ registerTopic({
                         6%, 18% { transform: translateX(6px); border-color: #3b82f6; box-shadow: 0 0 16px -6px #3b82f6; }
                         30% { transform: translateX(0); border-color: var(--border-color); box-shadow: none; }
                     }
+                    .pm-er-summary {
+                        display: flex; flex-wrap: wrap; gap: 0.4rem 1rem;
+                        justify-content: center; margin-top: 0.75rem;
+                        font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em;
+                        font-family: 'Fira Code', monospace;
+                    }
+                    .pm-er-summary span { display: inline-flex; align-items: center; gap: 0.35rem; }
+                    .pm-er-summary i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+                    .pm-er-summary .s11 i { background: #3b82f6; }
+                    .pm-er-summary .s1n i { background: #10b981; }
+                    .pm-er-summary .smn i { background: #f59e0b; }
+                    .pm-er-summary .s11 { color: #3b82f6; }
+                    .pm-er-summary .s1n { color: #10b981; }
+                    .pm-er-summary .smn { color: #f59e0b; }
                     @media (prefers-reduced-motion: reduce) { .pm-er-row { animation: none !important; } }
                 </style>
                 <div class="pm-er-stage">
-                    <div class="pm-er-legend">
-                        <div class="pm-er-legend-item">
-                            <span class="pm-er-shape entity"></span>
-                            <span data-lang-de>Entitätstyp</span><span data-lang-en style="display:none;">Entity type</span>
-                        </div>
-                        <div class="pm-er-legend-item">
-                            <span class="pm-er-shape attr"></span>
-                            <span data-lang-de>Attribut</span><span data-lang-en style="display:none;">Attribute</span>
-                        </div>
-                        <div class="pm-er-legend-item">
-                            <span class="pm-er-shape rel"></span>
-                            <span data-lang-de>Beziehung</span><span data-lang-en style="display:none;">Relationship</span>
-                        </div>
-                    </div>
                     <div class="pm-er-card">
-                        <div class="pm-er-row">
+                        <div class="pm-er-row c11">
+                            <span class="pm-er-tag"></span>
                             <i class="fa-solid fa-user"></i>
                             <span data-lang-de><strong>Mitarbeiter</strong> — <strong>Personalakte</strong></span>
                             <span data-lang-en style="display:none;"><strong>Employee</strong> — <strong>Personnel file</strong></span>
                             <span class="pm-er-card-badge">1:1</span>
                         </div>
-                        <div class="pm-er-row">
+                        <div class="pm-er-row c1n">
+                            <span class="pm-er-tag"></span>
                             <i class="fa-solid fa-building"></i>
                             <span data-lang-de><strong>Gebäude</strong> — <strong>Raum</strong></span>
                             <span data-lang-en style="display:none;"><strong>Building</strong> — <strong>Room</strong></span>
                             <span class="pm-er-card-badge">1:n</span>
                         </div>
-                        <div class="pm-er-row">
+                        <div class="pm-er-row cmn">
+                            <span class="pm-er-tag"></span>
                             <i class="fa-solid fa-cart-shopping"></i>
                             <span data-lang-de><strong>Kunde</strong> — <strong>Artikel</strong></span>
                             <span data-lang-en style="display:none;"><strong>Customer</strong> — <strong>Article</strong></span>
                             <span class="pm-er-card-badge">m:n</span>
                         </div>
-                        <div class="pm-er-row">
+                        <div class="pm-er-row c1n">
+                            <span class="pm-er-tag"></span>
                             <i class="fa-solid fa-file-invoice"></i>
                             <span data-lang-de><strong>Kunde</strong> — <strong>Rechnung</strong></span>
                             <span data-lang-en style="display:none;"><strong>Customer</strong> — <strong>Invoice</strong></span>
                             <span class="pm-er-card-badge">1:n</span>
                         </div>
-                        <div class="pm-er-row">
+                        <div class="pm-er-row cmn">
+                            <span class="pm-er-tag"></span>
                             <i class="fa-solid fa-boxes-stacked"></i>
                             <span data-lang-de><strong>Rechnung</strong> — <strong>Artikel</strong></span>
                             <span data-lang-en style="display:none;"><strong>Invoice</strong> — <strong>Article</strong></span>
                             <span class="pm-er-card-badge">m:n</span>
                         </div>
+                    </div>
+                    <div class="pm-er-summary">
+                        <span class="s11"><i></i>1:1</span>
+                        <span class="s1n"><i></i>1:n</span>
+                        <span class="smn"><i></i>m:n</span>
                     </div>
                 </div>
                 `
