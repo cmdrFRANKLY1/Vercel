@@ -2,7 +2,7 @@
 
 export const meta = {
     id: 'datenschutz',
-
+    parentId: 'Datenschutz',
     // ── SUB-CATEGORY (OPTIONAL) ─────────────────────────────────
     // Set `parentId` to the `id` of another registered topic to nest
     // this topic as a child inside that parent's dashboard card.
