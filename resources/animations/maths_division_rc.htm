@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schriftliches Dividieren — interaktiv</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'hand': ['Caveat', 'cursive'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Clean Dark Card */
+        .clean-bg {
+            background-color: #18181b;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            border: 1px solid #27272a;
+        }
+
+        /* Custom Scrollbar for Erklärungen */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #3f3f46;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #52525b;
+        }
+
+        /* Text animation base classes */
+        .anim-element {
+            clip-path: inset(0 100% 0 0);
+            display: inline-block;
+            white-space: nowrap;
+            opacity: 0;
+        }
+        .anim-element.revealed {
+            opacity: 1;
+            clip-path: inset(0 0 0 0);
+            transition: clip-path 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .anim-element.fast.revealed {
+            transition: clip-path 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .anim-wrap {
+            display: block;
+        }
+
+        /* Sync Highlight applied dynamically during animation step */
+        .hl-text-active {
+            background-color: rgba(59, 130, 246, 0.25); /* blue-500 tint */
+            border-radius: 0.25rem;
+        }
+
+        /* Auto-Animation Highlights (Solid Backgrounds in Grid) */
+        .highlight-cell-active {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 0.5rem;
+            transition: background-color 0.15s ease;
+        }
+
+        /* Mouse-Hover Highlights (Yellow Borders via inset box-shadow) */
+        .hover-highlight-cell {
+            box-shadow: inset 0 0 0 2px rgba(234, 179, 8, 0.9) !important; /* Tailwind yellow-500 */
+            border-radius: 0.5rem;
+            transition: box-shadow 0.15s ease;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased bg-zinc-950 text-zinc-200 min-h-screen flex justify-center items-center p-2 sm:p-4 selection:bg-blue-500/30">
+
+    <div class="max-w-6xl w-full flex flex-col gap-4">
+
+        <!-- Controls Header -->
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-3 shadow-lg flex flex-wrap justify-between items-center z-50 sticky top-2 gap-2">
+            <h1 class="font-bold text-base sm:text-lg text-white hidden md:block tracking-wide">Schriftliches Dividieren</h1>
+            <div class="flex gap-2 w-full md:w-auto justify-end items-center flex-grow">
+                <button onclick="initProblem()" class="px-3 py-1.5 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-white rounded-lg transition shadow-sm font-semibold text-sm text-zinc-300">
+                    Neue Zahlen
+                </button>
+
+                <div class="h-6 border-l border-zinc-700 mx-1"></div>
+
+                <!-- AUTOSTART BUTTON -->
+                <button id="btn-auto" onclick="toggleAutoplay()" class="px-3 py-1.5 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-white rounded-lg transition shadow-sm font-semibold text-sm text-zinc-300 flex items-center gap-1 w-20 justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Auto-Play</span>
+                </button>
+
+                <div class="h-6 border-l border-zinc-700 mx-1"></div>
+
+                <!-- ZURÜCK BUTTON -->
+                <button id="btn-prev" onclick="prevStep()" class="px-3 py-1.5 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-white rounded-lg transition shadow-sm font-semibold text-sm text-zinc-300 flex items-center gap-1 opacity-50 cursor-not-allowed" disabled>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    <span>Zurück</span>
+                </button>
+
+                <!-- WEITER/START BUTTON -->
+                <button id="btn-next" onclick="nextStep()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition shadow-sm font-semibold text-sm flex items-center gap-2 w-28 justify-center">
+                    <span>Start</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Two Panels Layout -->
+        <div class="flex flex-col lg:flex-row gap-4 w-full h-[520px]">
+
+            <!-- LEFT PANEL: Explanations -->
+            <div class="clean-bg w-full lg:w-1/2 rounded-xl h-full p-6 pt-4 overflow-y-auto custom-scrollbar font-hand text-xl leading-[40px] text-zinc-100 relative">
+                <div class="sticky top-0 -ml-2 mb-2 text-xs font-sans font-bold text-zinc-500 uppercase tracking-widest bg-[#18181b]/95 w-fit px-2 py-1 rounded z-10 backdrop-blur-sm">
+                    Erklärungen
+                </div>
+                <div id="explanations-container" class="pb-10"></div>
+            </div>
+
+            <!-- RIGHT PANEL: Calculations -->
+            <div class="clean-bg w-full lg:w-1/2 rounded-xl h-full p-4 sm:p-6 pt-6 font-hand text-xl leading-[40px] text-zinc-100 relative overflow-y-auto custom-scrollbar flex flex-col">
+                <div class="absolute top-3 left-4 text-xs font-sans font-bold text-zinc-500 uppercase tracking-widest mt-1">
+                    Rechnung
+                </div>
+
+                <div class="flex-grow flex items-center justify-center mt-2 min-h-max">
+                    <div id="math-grid" class="font-hand text-4xl sm:text-5xl grid relative font-semibold tracking-wider p-2 w-full max-w-full overflow-x-auto justify-center">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let currentStep = -1;
+        let steps = [];
+        let gridData = [];
+        let totalCols = 0;
+        let isAnimating = false;
+        let isAutoPlaying = false;
+        let autoPlayTimeout = null;
+
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        window.onload = initProblem;
+
+        // --- Mouse Hover Highlight Logic ---
+        function enter(ids, isAnim = false) {
+            let cls = isAnim ? 'highlight-cell-active' : 'hover-highlight-cell';
+            if (ids) {
+                ids.split(',').forEach(id => document.getElementById(id)?.classList.add(cls));
+            }
+        }
+        function leave(ids, isAnim = false) {
+            let cls = isAnim ? 'highlight-cell-active' : 'hover-highlight-cell';
+            if (ids) {
+                ids.split(',').forEach(id => document.getElementById(id)?.classList.remove(cls));
+            }
+        }
+
+        // --- Autoplay Logic ---
+        function toggleAutoplay() {
+            isAutoPlaying = !isAutoPlaying;
+            updateAutoButton();
+
+            if (isAutoPlaying) {
+                if (!isAnimating) {
+                    if (currentStep >= steps.length) {
+                        initProblem();
+                        setTimeout(() => { if(isAutoPlaying) nextStep(true); }, 800);
+                    } else {
+                        nextStep(true);
+                    }
+                }
+            } else {
+                clearTimeout(autoPlayTimeout);
+            }
+        }
+
+        function stopAutoplay() {
+            isAutoPlaying = false;
+            clearTimeout(autoPlayTimeout);
+            updateAutoButton();
+        }
+
+        function updateAutoButton() {
+            const btn = document.getElementById('btn-auto');
+            if (isAutoPlaying) {
+                btn.classList.add('bg-yellow-600/20', 'border-yellow-500', 'text-yellow-400');
+                btn.classList.remove('bg-zinc-800', 'border-zinc-700', 'text-zinc-300');
+            } else {
+                btn.classList.remove('bg-yellow-600/20', 'border-yellow-500', 'text-yellow-400');
+                btn.classList.add('bg-zinc-800', 'border-zinc-700', 'text-zinc-300');
+            }
+        }
+
+        // --- Initialization & Setup ---
+        function initProblem() {
+            if(isAnimating && !isAutoPlaying) return;
+            if (!isAutoPlaying) stopAutoplay();
+
+            // Generate clean division problem
+            let divisor = Math.floor(Math.random() * 8) + 2; // 2 to 9
+            let quotient = Math.floor(Math.random() * 899) + 100; // 100 to 999
+            let dividend = divisor * quotient;
+
+            let divStr = dividend.toString();
+            let diviStr = divisor.toString();
+            let qStr = quotient.toString();
+
+            totalCols = divStr.length + 1 + diviStr.length + 1 + qStr.length;
+            let qStartCol = divStr.length + 2 + diviStr.length;
+
+            // Text Span Helpers
+            const TEXT = (text, ids, colorClass, animClass = "fast", clear = true) =>
+                `<span class="anim-element ${animClass} px-1 my-0.5 transition-colors duration-300 inline-block" data-hl-clear="${clear}" data-hl-ids="${ids}">
+                    <span class="cursor-help border-b border-dashed border-zinc-600 hover:border-yellow-400 ${colorClass} transition-colors" onmouseenter="enter('${ids}')" onmouseleave="leave('${ids}')">${text}</span>
+                </span>`;
+            const PLAIN = (text, animClass = "fast", clear = true) =>
+                `<span class="anim-element ${animClass} px-1 my-0.5 text-zinc-400 inline-block" data-hl-clear="${clear}">${text}</span>`;
+
+            gridData = [];
+            steps = [];
+
+            // Row 0: Equation Setup (Visible from Step 0)
+            gridData[0] = Array(totalCols).fill(null);
+            for(let i=0; i<divStr.length; i++) gridData[0][i] = {val: divStr[i], type: 'dividend', showOnStep: 0};
+            gridData[0][divStr.length] = {val: ':', type: 'op', showOnStep: 0};
+            for(let i=0; i<diviStr.length; i++) gridData[0][divStr.length+1+i] = {val: diviStr[i], type: 'divisor', showOnStep: 0};
+            gridData[0][divStr.length+1+diviStr.length] = {val: '=', type: 'op', showOnStep: 0};
+            // Quotient cells will be revealed step-by-step
+            for(let i=0; i<qStr.length; i++) gridData[0][qStartCol+i] = {val: qStr[i], type: 'quotient', showOnStep: 999};
+
+            let diviCols = Array.from({length: diviStr.length}, (_, i) => `cell-0-${divStr.length + 1 + i}`).join(',');
+
+            let currentRow = 1;
+            let curValStr = "";
+            let qIndex = 0;
+            let stepIdCounter = 1;
+
+            // Step 0 Intro Text
+            steps.push({
+                id: 0,
+                html: `<div class="step-container hidden mb-6" id="step-desc-0">
+                          <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100">Aufgabe</div>
+                          <div class="mt-1 leading-relaxed whitespace-nowrap flex flex-wrap items-center">
+                              ${PLAIN("Teile", "slow")}
+                              ${TEXT(dividend, Array.from({length: divStr.length}, (_, i) => `cell-0-${i}`).join(','), 'text-white font-bold', 'slow')}
+                              ${PLAIN("durch", "slow")}
+                              ${TEXT(divisor, diviCols, 'text-white font-bold', 'slow')}
+                          </div>
+                      </div>`
+            });
+
+            // Iterate Division Algorithm
+            for(let i = 0; i < divStr.length; i++) {
+                curValStr += divStr[i];
+                let val = parseInt(curValStr);
+
+                // Need two digits to start if first digit is too small
+                if(i === 0 && val < divisor && divStr.length > 1) {
+                    continue;
+                }
+
+                let qDigit = Math.floor(val / divisor);
+                let prod = qDigit * divisor;
+                let rem = val - prod;
+
+                let endCol = i;
+                let valLength = curValStr.length;
+                let startCol = endCol - valLength + 1;
+                let divideSourceRow = (currentRow === 1) ? 0 : currentRow - 1;
+
+                // --- DIVIDE ---
+                let valIds = Array.from({length: valLength}, (_, idx) => `cell-${divideSourceRow}-${startCol + idx}`).join(',');
+                let qId = `cell-0-${qStartCol + qIndex}`;
+
+                gridData[0][qStartCol + qIndex].showOnStep = stepIdCounter; // Reveal quotient digit
+
+                let divHtml = `
+                    <div class="step-container hidden mb-6" id="step-desc-${stepIdCounter}">
+                        <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100">Dividieren</div>
+                        <div class="mt-1 leading-relaxed flex flex-wrap items-center">
+                            ${PLAIN("Wie oft passt die")} ${TEXT(divisor, diviCols, 'text-white')}
+                            ${PLAIN("in die")} ${TEXT(val, valIds, 'text-white')} ${PLAIN("?")}
+                        </div>
+                        <div class="mt-2 text-blue-300 flex items-center">
+                            ${PLAIN("Schreibe")} ${TEXT(qDigit, qId, 'text-green-400 font-bold')} ${PLAIN("ins Ergebnis.")}
+                        </div>
+                    </div>`;
+                steps.push({ id: stepIdCounter, html: divHtml });
+                stepIdCounter++;
+
+                // --- MULTIPLY ---
+                let prodStr = prod.toString();
+                let pStart = endCol - prodStr.length + 1;
+                let prodIds = Array.from({length: prodStr.length}, (_, idx) => `cell-${currentRow}-${pStart + idx}`).join(',');
+
+                if(!gridData[currentRow]) gridData[currentRow] = Array(totalCols).fill(null);
+
+                for(let p = 0; p < prodStr.length; p++) {
+                    gridData[currentRow][pStart + p] = {val: prodStr[p], type: 'product', showOnStep: stepIdCounter};
+                }
+                for(let p = startCol; p <= endCol; p++) { // Underline
+                    if(!gridData[currentRow][p]) gridData[currentRow][p] = {val: '', type: 'empty'};
+                    gridData[currentRow][p].underline = true;
+                    gridData[currentRow][p].showOnStep = stepIdCounter;
+                }
+
+                let multHtml = `
+                    <div class="step-container hidden mb-6" id="step-desc-${stepIdCounter}">
+                        <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100">Multiplizieren</div>
+                        <div class="mt-1 leading-relaxed flex flex-wrap items-center">
+                            ${PLAIN("Rechne zurück:")} ${TEXT(qDigit, qId, 'text-green-400 font-bold')}
+                            ${PLAIN("×")} ${TEXT(divisor, diviCols, 'text-white')}
+                            ${PLAIN("=")} ${TEXT(prod, prodIds, 'text-red-400')}
+                        </div>
+                        <div class="mt-2 text-blue-300 flex items-center">
+                            ${PLAIN("Schreibe")} ${TEXT(prod, prodIds, 'text-red-400')} ${PLAIN("darunter.")}
+                        </div>
+                    </div>`;
+                steps.push({ id: stepIdCounter, html: multHtml });
+                currentRow++;
+                stepIdCounter++;
+
+                // --- SUBTRACT ---
+                let remStr = rem.toString();
+                let rStartCol = endCol - remStr.length + 1;
+                let remIds = Array.from({length: remStr.length}, (_, idx) => `cell-${currentRow}-${rStartCol + idx}`).join(',');
+
+                if(!gridData[currentRow]) gridData[currentRow] = Array(totalCols).fill(null);
+
+                for(let r = 0; r < remStr.length; r++) {
+                    gridData[currentRow][rStartCol + r] = {val: remStr[r], type: 'remainder', showOnStep: stepIdCounter};
+                }
+
+                let subHtml = `
+                    <div class="step-container hidden mb-6" id="step-desc-${stepIdCounter}">
+                        <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100">Subtrahieren</div>
+                        <div class="mt-1 leading-relaxed flex flex-wrap items-center">
+                            ${PLAIN("Minus:")} ${TEXT(val, valIds, 'text-white')}
+                            ${PLAIN("-")} ${TEXT(prod, prodIds, 'text-red-400')}
+                            ${PLAIN("=")} ${TEXT(rem, remIds, 'text-blue-400 font-bold')}
+                        </div>
+                        <div class="mt-2 text-blue-300 flex items-center">
+                            ${PLAIN("Bleibt Rest")} ${TEXT(rem, remIds, 'text-blue-400 font-bold')} ${PLAIN(".")}
+                        </div>
+                    </div>`;
+                steps.push({ id: stepIdCounter, html: subHtml });
+                stepIdCounter++;
+
+                // --- PULLDOWN (if not done) ---
+                curValStr = rem === 0 ? "" : rem.toString();
+                qIndex++;
+
+                if(i < divStr.length - 1) {
+                    let nextDigit = divStr[i+1];
+                    let pullId = `cell-${currentRow}-${i+1}`;
+                    let newValIds = Array.from({length: curValStr.length + 1}, (_, idx) => `cell-${currentRow}-${rStartCol + idx}`).join(',');
+
+                    gridData[currentRow][i+1] = {val: nextDigit, type: 'pulldown', showOnStep: stepIdCounter};
+
+                    let pullHtml = `
+                        <div class="step-container hidden mb-6" id="step-desc-${stepIdCounter}">
+                            <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100">Herunterziehen</div>
+                            <div class="mt-1 leading-relaxed flex flex-wrap items-center">
+                                ${PLAIN("Ziehe die")} ${TEXT(nextDigit, pullId, 'text-zinc-100')} ${PLAIN("herunter.")}
+                            </div>
+                            <div class="mt-2 text-blue-300 flex items-center">
+                                ${PLAIN("Neue Zahl:")} ${TEXT(curValStr + nextDigit, newValIds, 'text-white font-bold')}
+                            </div>
+                        </div>`;
+                    steps.push({ id: stepIdCounter, html: pullHtml });
+                    stepIdCounter++;
+                } else {
+                    // --- DONE ---
+                    let doneHtml = `
+                        <div class="step-container hidden mb-6" id="step-desc-${stepIdCounter}">
+                            <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100">Fertig! 🎉</div>
+                            <div class="mt-1 leading-relaxed flex flex-wrap items-center">
+                                ${PLAIN("Das Ergebnis ist")}
+                                ${TEXT(quotient, Array.from({length: qStr.length}, (_, idx) => `cell-0-${qStartCol + idx}`).join(','), 'text-green-400 font-bold')}
+                            </div>
+                        </div>`;
+                    steps.push({ id: stepIdCounter, html: doneHtml });
+                }
+                currentRow++;
+            }
+
+            renderGrid();
+            renderExplanations();
+
+            currentStep = 0; // Starts at 0 (Intro step)
+            resetGridState(0);
+
+            // Show first intro step immediately without waiting for Next
+            document.getElementById(`step-desc-0`).classList.remove('hidden');
+            document.querySelectorAll('#step-desc-0 .anim-element').forEach(el => el.classList.add('revealed'));
+
+            updateButtons();
+        }
+
+        function renderGrid() {
+            let grid = document.getElementById('math-grid');
+            grid.innerHTML = '';
+            // CSS Grid setup for precise alignment
+            grid.style.gridTemplateColumns = `repeat(${totalCols}, minmax(1.8rem, 2.5rem))`;
+
+            for(let r=0; r<gridData.length; r++) {
+                if(!gridData[r]) continue;
+                for(let c=0; c<totalCols; c++) {
+                    let cell = gridData[r][c];
+                    let id = `cell-${r}-${c}`;
+
+                    if(!cell) {
+                        grid.innerHTML += `<div id="${id}" class="h-[44px]"></div>`;
+                        continue;
+                    }
+
+                    let colorClass = "text-zinc-100";
+                    if(cell.type === 'quotient') colorClass = "text-green-400 font-bold";
+                    if(cell.type === 'product') colorClass = "text-red-400";
+                    if(cell.type === 'remainder') colorClass = "text-blue-400 font-bold";
+                    if(cell.type === 'op') colorClass = "text-zinc-500";
+
+                    let borderClass = cell.underline ? "border-b-[3px] border-zinc-200/50 pb-1" : "";
+
+                    grid.innerHTML += `
+                        <div id="${id}" data-step="${cell.showOnStep}" class="h-[44px] flex items-center justify-center transition-all duration-300 ${borderClass} ${colorClass}">
+                            <span>${cell.val}</span>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function renderExplanations() {
+            const container = document.getElementById('explanations-container');
+            container.innerHTML = '';
+            steps.forEach(step => {
+                container.innerHTML += step.html;
+            });
+        }
+
+        // --- Core UI Navigation ---
+        function updateButtons() {
+            const btnNext = document.getElementById('btn-next');
+            const btnPrev = document.getElementById('btn-prev');
+
+            if (currentStep <= 0) {
+                btnPrev.disabled = true;
+                btnPrev.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                btnPrev.disabled = false;
+                btnPrev.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+
+            if (currentStep >= steps.length - 1) {
+                btnNext.innerHTML = `<span>Neustart</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>`;
+            } else {
+                btnNext.innerHTML = `<span>Weiter</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`;
+            }
+        }
+
+        function resetGridState(targetStepIndex) {
+            let maxStepId = steps[targetStepIndex].id;
+            document.querySelectorAll('#math-grid > div[data-step]').forEach(el => {
+                let stepVal = parseInt(el.dataset.step);
+                if(stepVal > maxStepId) {
+                    el.classList.add('opacity-0', 'translate-y-2');
+                } else {
+                    el.classList.remove('opacity-0', 'translate-y-2');
+                }
+            });
+        }
+
+        function prevStep() {
+            if (isAutoPlaying) stopAutoplay();
+            if (isAnimating || currentStep <= 0) return;
+
+            // Verstecke aktuellen Schritt
+            let container = document.getElementById(`step-desc-${steps[currentStep].id}`);
+            container.classList.add('hidden');
+            container.querySelectorAll('.anim-element').forEach(el => el.classList.remove('revealed'));
+
+            currentStep--;
+
+            // Grid Status sofort hart zurücksetzen auf den vorherigen Schritt
+            document.querySelectorAll('.highlight-cell-active, .hl-text-active').forEach(e => {
+                e.classList.remove('highlight-cell-active', 'hl-text-active');
+            });
+            resetGridState(currentStep);
+
+            // Scrolle zur neuen aktiven Position
+            if (currentStep > 0) {
+                document.getElementById(`step-desc-${steps[currentStep].id}`).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                document.getElementById(`explanations-container`).scrollTo({top: 0, behavior: 'smooth'});
+            }
+
+            updateButtons();
+        }
+
+        function nextStep(fromAuto = false) {
+            if (!fromAuto && isAutoPlaying) stopAutoplay();
+            if (isAnimating) return;
+            if (currentStep >= steps.length - 1) {
+                initProblem();
+                return;
+            }
+            currentStep++;
+            animateStep(currentStep);
+        }
+
+        async function animateStep(stepIndex) {
+            isAnimating = true;
+            document.getElementById('btn-next').disabled = true;
+            document.getElementById('btn-prev').disabled = true;
+
+            // Cleanup highlights from previous step
+            document.querySelectorAll('.highlight-cell-active, .hl-text-active').forEach(e => {
+                e.classList.remove('highlight-cell-active', 'hl-text-active');
+            });
+
+            let logicalStepId = steps[stepIndex].id;
+            const container = document.getElementById(`step-desc-${logicalStepId}`);
+            container.classList.remove('hidden');
+
+            const elements = Array.from(container.querySelectorAll('.anim-element'));
+
+            for (let i = 0; i < elements.length; i++) {
+                const el = elements[i];
+                el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                el.classList.add('revealed');
+
+                // Clear old highlights if requested
+                if (el.dataset.hlClear === "true") {
+                    document.querySelectorAll('.highlight-cell-active').forEach(e => e.classList.remove('highlight-cell-active'));
+                    document.querySelectorAll('.hl-text-active').forEach(e => e.classList.remove('hl-text-active'));
+                }
+
+                // Set new highlights
+                if (el.dataset.hlIds) {
+                    el.classList.add('hl-text-active');
+                    enter(el.dataset.hlIds, true);
+                }
+
+                // Autoplay ist langsamer, damit man mitlesen kann (1000ms pro Stück)
+                let delay = isAutoPlaying ? 1000 : (el.classList.contains('fast') ? 300 : 400);
+                await sleep(delay);
+            }
+
+            // Grid Elemente einblenden
+            resetGridState(stepIndex);
+
+            // Kleiner Puffer nach dem Einblenden
+            await sleep(isAutoPlaying ? 500 : 200);
+
+            isAnimating = false;
+            document.getElementById('btn-next').disabled = false;
+            updateButtons();
+
+            // Wenn Auto Play aktiv ist, geht es direkt weiter
+            if (isAutoPlaying) {
+                if (currentStep < steps.length - 1) {
+                    autoPlayTimeout = setTimeout(() => {
+                        if (isAutoPlaying) nextStep(true);
+                    }, 1000); // 1s Denkpause nach einem Schritt
+                } else {
+                    stopAutoplay();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schriftliches Addieren — interaktiv</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Handwriting Font (Caveat) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'hand': ['Caveat', 'cursive'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Dark Mode Lined Paper Effect matching standard h-12 (48px) rows */
+        .paper-bg {
+            background-color: #18181b; /* zinc-900 */
+            background-image: linear-gradient(#3f3f46 1px, transparent 1px);
+            background-size: 100% 48px;
+            background-position: 0 47px;
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.5), inset 0 0 0 1px #27272a;
+        }
+
+        /* Smooth fade for text */
+        .fade-text {
+            transition: opacity 0.4s ease-in-out;
+        }
+
+        .highlight-col {
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen flex flex-col justify-center items-center p-2 sm:p-4 selection:bg-blue-500/30">
+
+    <div class="max-w-2xl w-full flex flex-col gap-6">
+
+        <!-- Controls Header -->
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-lg flex justify-between items-center z-50">
+            <h1 class="font-bold text-lg md:text-xl text-white tracking-wide">Schriftliches Addieren</h1>
+            <div class="flex gap-2 sm:gap-4">
+                <button onclick="initProblem()" class="px-3 sm:px-4 py-2 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-white rounded-lg transition shadow-sm font-semibold text-sm text-zinc-300">
+                    Neue Zahlen
+                </button>
+                <button id="btn-next" onclick="nextStep()" class="px-4 sm:px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition shadow-sm font-semibold text-sm flex items-center gap-2 w-28 justify-center">
+                    Start
+                </button>
+            </div>
+        </div>
+
+        <!-- The Paper Area -->
+        <div class="paper-bg rounded-xl min-h-[550px] w-full p-6 sm:p-10 flex flex-col items-center relative overflow-hidden shadow-2xl">
+
+            <!-- Dynamic Math Grid -->
+            <!-- The rows are strictly h-12 (48px) to lock perfectly into the background lines -->
+            <div id="math-grid" class="font-hand text-5xl sm:text-6xl grid gap-x-2 sm:gap-x-4 mt-8 relative font-semibold tracking-wider">
+                <!-- JavaScript will inject the numbers here -->
+            </div>
+
+            <!-- Spacer to push explanation to the bottom -->
+            <div class="flex-grow"></div>
+
+            <!-- Explanation Text Box -->
+            <div class="mt-12 bg-zinc-900/90 backdrop-blur-sm border border-zinc-700/80 p-5 sm:p-6 rounded-xl w-full text-center shadow-xl mb-2">
+                <p id="explanation-text" class="text-xl sm:text-3xl font-hand text-blue-300 leading-relaxed fade-text min-h-[4rem] flex items-center justify-center">
+                    Klicke auf Start, um zu beginnen!
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let currentStep = -1;
+        let steps = [];
+        let num1, num2;
+        let cols;
+
+        // Setup initial problem on load
+        window.onload = initProblem;
+
+        function initProblem() {
+            // Generate two random numbers (e.g. 100-9999)
+            num1 = Math.floor(Math.random() * 8999) + 100;
+            num2 = Math.floor(Math.random() * 8999) + 100;
+
+            const aStr = num1.toString();
+            const bStr = num2.toString();
+            const maxLen = Math.max(aStr.length, bStr.length);
+
+            // Total columns: max length + 1 (for the plus sign and potential carry overflow)
+            cols = maxLen + 1;
+
+            // Pad arrays with spaces to fit grid
+            let aArr = aStr.padStart(cols, ' ').split('');
+            let bArr = bStr.padStart(cols - 1, ' ').split('');
+            bArr.unshift('+'); // Add plus sign to the far left
+
+            // Build calculation steps
+            steps = [];
+            let carry = 0;
+
+            // Calculate right to left
+            for(let c = cols - 1; c > 0; c--) {
+                let digitA = parseInt(aArr[c]) || 0;
+                let digitB = parseInt(bArr[c] === ' ' || bArr[c] === '+' ? 0 : bArr[c]);
+                let sum = digitA + digitB + carry;
+                let resDigit = sum % 10;
+                let nextCarry = Math.floor(sum / 10);
+
+                let expText = `${digitA} + ${digitB}`;
+                if(carry > 0) expText += ` + ${carry} (Übertrag)`;
+                expText += ` = ${sum}.`;
+
+                if(nextCarry > 0) {
+                    expText += ` Schreibe ${resDigit}, merke ${nextCarry}.`;
+                } else {
+                    expText += ` Schreibe ${resDigit}.`;
+                }
+
+                steps.push({
+                    col: c,
+                    resDigit: resDigit,
+                    carryDigit: nextCarry,
+                    targetCarryCol: c - 1,
+                    expText: expText
+                });
+
+                carry = nextCarry;
+            }
+
+            // Final overflow carry if exists
+            if(carry > 0) {
+                steps.push({
+                    col: 0,
+                    resDigit: carry,
+                    carryDigit: 0,
+                    targetCarryCol: -1,
+                    expText: `Der letzte Übertrag ist ${carry}. Schreibe ${carry}.`
+                });
+            }
+
+            steps.push({
+                col: -1, // -1 means no specific column
+                expText: `Fertig! Das Ergebnis ist ${num1 + num2}.`,
+                isDone: true
+            });
+
+            renderGrid(aArr, bArr);
+
+            // Reset UI State
+            currentStep = -1;
+            document.getElementById('btn-next').innerText = "Start";
+            document.getElementById('btn-next').disabled = false;
+            document.getElementById('btn-next').classList.remove('opacity-50', 'cursor-not-allowed');
+            setExplanation("Klicke auf Start, um zu beginnen!");
+        }
+
+        function renderGrid(aArr, bArr) {
+            let grid = document.getElementById('math-grid');
+            grid.innerHTML = '';
+            grid.style.gridTemplateColumns = `repeat(${cols}, minmax(2.5rem, 4rem))`;
+
+            // Row 0: First Number
+            for(let i = 0; i < cols; i++) {
+                grid.innerHTML += `<div class="h-12 flex items-center justify-center transition-colors duration-300 rounded-t-lg" id="col-${i}-r0">${aArr[i] === ' ' ? '&nbsp;' : aArr[i]}</div>`;
+            }
+
+            // Row 1: Plus Sign & Second Number
+            for(let i = 0; i < cols; i++) {
+                let content = bArr[i] === ' ' ? '&nbsp;' : bArr[i];
+                let color = content === '+' ? 'text-blue-400' : 'text-white';
+                grid.innerHTML += `<div class="h-12 flex items-center justify-center transition-colors duration-300 ${color}" id="col-${i}-r1">${content}</div>`;
+            }
+
+            // Row 2: Carries (Übertrag) & The thick Sum Line
+            for(let i = 0; i < cols; i++) {
+                grid.innerHTML += `
+                    <div class="h-12 flex items-end justify-center pb-1 border-b-[3px] border-white transition-colors duration-300" id="col-${i}-carry-wrap">
+                        <span class="text-3xl sm:text-4xl text-red-400 font-bold opacity-0 transition-all duration-500 transform translate-y-3" id="col-${i}-carry"></span>
+                    </div>`;
+            }
+
+            // Row 3: Result
+            for(let i = 0; i < cols; i++) {
+                grid.innerHTML += `<div class="h-12 flex items-center justify-center text-green-400 opacity-0 transition-all duration-500 transform translate-y-3 rounded-b-lg font-bold" id="col-${i}-res"></div>`;
+            }
+        }
+
+        function nextStep() {
+            let btn = document.getElementById('btn-next');
+
+            // Handle Start
+            if(currentStep === -1) {
+                btn.innerText = "Weiter";
+                setExplanation("Wir beginnen rechts bei den Einern und addieren spaltenweise.");
+                currentStep++;
+                return;
+            }
+
+            if(currentStep >= steps.length) return;
+
+            let step = steps[currentStep];
+
+            // Reset all column highlights
+            for(let i = 0; i < cols; i++) {
+                document.getElementById(`col-${i}-r0`).classList.remove('highlight-col');
+                document.getElementById(`col-${i}-r1`).classList.remove('highlight-col');
+                document.getElementById(`col-${i}-carry-wrap`).classList.remove('highlight-col');
+                document.getElementById(`col-${i}-res`).classList.remove('highlight-col');
+            }
+
+            // Handle Completion Step
+            if(step.isDone) {
+                setExplanation(step.expText);
+                btn.innerText = "Neustart";
+                btn.onclick = initProblem; // Override onclick to generate new problem
+                currentStep++;
+                return;
+            }
+
+            // Highlight current column
+            let c = step.col;
+            document.getElementById(`col-${c}-r0`).classList.add('highlight-col');
+            document.getElementById(`col-${c}-r1`).classList.add('highlight-col');
+            document.getElementById(`col-${c}-carry-wrap`).classList.add('highlight-col');
+            document.getElementById(`col-${c}-res`).classList.add('highlight-col');
+
+            // Reveal Result Digit
+            let resCell = document.getElementById(`col-${c}-res`);
+            resCell.innerText = step.resDigit;
+            resCell.classList.remove('opacity-0', 'translate-y-3');
+            resCell.classList.add('opacity-100', 'translate-y-0');
+
+            // Reveal Carry Digit in the NEXT column (if applicable)
+            if(step.carryDigit > 0 && step.targetCarryCol >= 0) {
+                let carryCell = document.getElementById(`col-${step.targetCarryCol}-carry`);
+                carryCell.innerText = step.carryDigit;
+                carryCell.classList.remove('opacity-0', 'translate-y-3');
+                carryCell.classList.add('opacity-100', 'translate-y-0');
+            }
+
+            setExplanation(step.expText);
+
+            currentStep++;
+
+            // Pre-emptively update button text if next click is the end
+            if(currentStep >= steps.length) {
+                 btn.innerText = "Fertig";
+            }
+        }
+
+        function setExplanation(text) {
+            const el = document.getElementById('explanation-text');
+            el.style.opacity = 0;
+            setTimeout(() => {
+                el.innerText = text;
+                el.style.opacity = 1;
+            }, 250); // Matches halfway through the CSS transition
+        }
+    </script>
+</body>
+</html>

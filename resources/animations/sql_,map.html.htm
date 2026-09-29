@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>SQL Schlüssel · ganz einfach</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0e17;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh;
+    font-family: 'Inter', system-ui, sans-serif;
+    padding: 20px;
+  }
+  canvas {
+    border-radius: 20px;
+    background: #0e1422;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+    cursor: pointer;
+    max-width: 100%;
+    height: auto;
+  }
+</style>
+</head>
+<body>
+<canvas id="c" width="1000" height="600"></canvas>
+<script>
+(function() {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+
+  // ---- Farben ----
+  const C = {
+    bg: '#0e1422',
+    panel: '#141c2e',
+    panelBorder: '#232f47',
+    row: '#1a2338',
+    rowAlt: '#161e30',
+    text: '#eef3ff',
+    textDim: '#7d8ba8',
+    pk: '#FFB347',
+    fk: '#5D9BFF',
+    unique: '#51CF66',
+    comp: '#B47AFF',
+    white: '#ffffff'
+  };
+
+  // ---- Aktueller Schritt ----
+  let step = 0;
+  const totalSteps = 5;
+
+  // ---- Hover ----
+  let mx = -1, my = -1;
+  let hoverRow = -1;
+  let hoverTable = null;
+
+  // ---- Tabellen-Daten ----
+  const tables = {
+    students: {
+      x: 70, y: 130, w: 260, h: 240,
+      title: 'STUDENTEN',
+      rows: [
+        { label: 'student_id', value: '1, 2, 3…', key: 'pk' },
+        { label: 'name', value: 'Anna, Ben…', key: null },
+        { label: 'email', value: 'anna@mail.de', key: 'unique' },
+        { label: 'alter', value: '20, 22…', key: null }
+      ]
+    },
+    courses: {
+      x: 370, y: 130, w: 260, h: 200,
+      title: 'KURSE',
+      rows: [
+        { label: 'kurs_id', value: '101, 102…', key: 'pk' },
+        { label: 'kurs_name', value: 'Mathe, Bio…', key: null },
+        { label: 'punkte', value: '3, 4…', key: null }
+      ]
+    },
+    enroll: {
+      x: 670, y: 130, w: 260, h: 240,
+      title: 'EINSCHREIBUNGEN',
+      rows: [
+        { label: 'student_id', value: '→ 1, 2…', key: 'fk' },
+        { label: 'kurs_id', value: '→ 101, 102…', key: 'fk' },
+        { label: 'note', value: 'A, B…', key: null },
+        { label: 'datum', value: '2025-01-01', key: null }
+      ]
+    }
+  };
+
+  // ---- Maus-Events ----
+  canvas.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    mx = (e.clientX - r.left) * (canvas.width / r.width);
+    my = (e.clientY - r.top) * (canvas.height / r.height);
+
+    hoverTable = null; hoverRow = -1;
+    for (const id in tables) {
+      const t = tables[id];
+      if (mx > t.x && mx < t.x + t.w && my > t.y && my < t.y + t.h) {
+        hoverTable = id;
+        const headerH = 44;
+        if (my > t.y + headerH) {
+          const idx = Math.floor((my - t.y - headerH) / 40);
+          if (idx >= 0 && idx < t.rows.length) hoverRow = idx;
+        }
+      }
+    }
+    draw();
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    mx = my = -1; hoverTable = null; hoverRow = -1;
+    draw();
+  });
+
+  canvas.addEventListener('click', () => {
+    step = (step + 1) % totalSteps;
+    draw();
+  });
+
+  // ---- Zeichen-Helfer ----
+  function rr(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  // ---- Tabelle zeichnen ----
+  function drawTable(t, highlight) {
+    const headerH = 44;
+    const rowH = 40;
+
+    // Panel
+    ctx.fillStyle = C.panel;
+    rr(t.x, t.y, t.w, t.h, 14);
+    ctx.fill();
+    ctx.strokeStyle = highlight ? C.white : C.panelBorder;
+    ctx.lineWidth = highlight ? 2 : 1.5;
+    ctx.stroke();
+
+    // Header
+    ctx.fillStyle = '#1c2540';
+    rr(t.x, t.y, t.w, headerH, 14);
+    ctx.fill();
+    ctx.fillRect(t.x, t.y + headerH - 14, t.w, 14);
+
+    ctx.fillStyle = C.text;
+    ctx.font = '600 15px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(t.title, t.x + t.w/2, t.y + headerH/2);
+
+    // Trennlinie
+    ctx.strokeStyle = C.panelBorder;
+    ctx.beginPath();
+    ctx.moveTo(t.x, t.y + headerH);
+    ctx.lineTo(t.x + t.w, t.y + headerH);
+    ctx.stroke();
+
+    // Zeilen
+    for (let i = 0; i < t.rows.length; i++) {
+      const r = t.rows[i];
+      const ry = t.y + headerH + i * rowH;
+      const isHover = (highlight && hoverRow === i);
+
+      // Zeilen-Hintergrund
+      ctx.fillStyle = i % 2 === 0 ? C.row : C.rowAlt;
+      if (isHover) ctx.fillStyle = '#243052';
+      ctx.fillRect(t.x, ry, t.w, rowH);
+
+      // Farbiger Punkt links
+      if (r.key) {
+        const col = C[r.key];
+        ctx.beginPath();
+        ctx.arc(t.x + 22, ry + rowH/2, isHover ? 9 : 7, 0, Math.PI*2);
+        ctx.fillStyle = col;
+        ctx.shadowColor = col;
+        ctx.shadowBlur = isHover ? 14 : 8;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      // Text
+      ctx.fillStyle = C.text;
+      ctx.font = '500 14px Inter, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(r.label, t.x + 44, ry + rowH/2);
+
+      ctx.fillStyle = C.textDim;
+      ctx.font = '400 13px Inter, sans-serif';
+      ctx.fillText(r.value, t.x + 140, ry + rowH/2);
+    }
+  }
+
+  // ---- Verbindungslinien ----
+  function drawLine(x1, y1, x2, y2, color) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([7, 6]);
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+
+    // Pfeilspitze
+    ctx.setLineDash([]);
+    const ang = Math.atan2(y2 - y1, x2 - x1);
+    const ax = x2 - 10 * Math.cos(ang);
+    const ay = y2 - 10 * Math.sin(ang);
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(ax - 6 * Math.sin(ang), ay + 6 * Math.cos(ang));
+    ctx.lineTo(ax + 6 * Math.sin(ang), ay - 6 * Math.cos(ang));
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // ---- Erklärungs-Panel unten ----
+  function drawExplanation(title, lines, color, x, y, w) {
+    ctx.fillStyle = color;
+    ctx.font = '700 16px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(title, x, y);
+
+    ctx.fillStyle = C.text;
+    ctx.font = '400 14px Inter, sans-serif';
+    for (let i = 0; i < lines.length; i++) {
+      ctx.fillText(lines[i], x, y + 30 + i * 24);
+    }
+  }
+
+  // ---- Haupt-Draw ----
+  function draw() {
+    // Hintergrund
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Titel
+    ctx.fillStyle = C.white;
+    ctx.font = '700 32px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('SQL SCHLÜSSEL', canvas.width/2, 50);
+
+    ctx.fillStyle = C.textDim;
+    ctx.font = '400 15px Inter, sans-serif';
+    ctx.fillText('Klick = weiter  ·  Maus über eine Zeile = Info', canvas.width/2, 88);
+
+    // Schritt-Anzeige
+    const stepNames = ['1 · Primärschlüssel', '2 · Fremdschlüssel', '3 · Unique', '4 · Zusammengesetzt', '5 · Alles zusammen'];
+    ctx.fillStyle = C.textDim;
+    ctx.font = '600 13px Inter, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(stepNames[step], canvas.width - 30, 50);
+
+    // Tabellen
+    const s = tables.students, k = tables.courses, e = tables.enroll;
+
+    drawTable(s, hoverTable === 'students');
+    drawTable(k, hoverTable === 'courses');
+    drawTable(e, hoverTable === 'enroll');
+
+    // ---- Schritt-abhängige Elemente ----
+
+    // Schritt 1: Primärschlüssel hervorheben
+    if (step === 0 || step === 4) {
+      // Gelbe Ringe um PK-Zeilen
+      ctx.strokeStyle = C.pk;
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = C.pk;
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.arc(s.x + 22, s.y + 44 + 20, 11, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(k.x + 22, k.y + 44 + 20, 11, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // Schritt 2: Fremdschlüssel
+    if (step === 1 || step === 4) {
+      drawLine(s.x + s.w, s.y + 44 + 20, e.x, e.y + 44 + 20, C.fk);
+      drawLine(k.x + k.w, k.y + 44 + 20, e.x, e.y + 44 + 60, C.fk);
+    }
+
+    // Schritt 3: Unique
+    if (step === 2 || step === 4) {
+      ctx.strokeStyle = C.unique;
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = C.unique;
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.arc(s.x + 22, s.y + 44 + 80, 11, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // Schritt 4: Zusammengesetzt
+    if (step === 3 || step === 4) {
+      ctx.strokeStyle = C.comp;
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = C.comp;
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.arc(e.x + 22, e.y + 44 + 20, 11, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(e.x + 22, e.y + 44 + 60, 11, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Klammer um die zwei Zeilen
+      ctx.strokeStyle = C.comp;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(e.x - 12, e.y + 44 + 10);
+      ctx.lineTo(e.x - 20, e.y + 44 + 10);
+      ctx.lineTo(e.x - 20, e.y + 44 + 70);
+      ctx.lineTo(e.x - 12, e.y + 44 + 70);
+      ctx.stroke();
+    }
+
+    // ---- Untere Erklärungen (immer sichtbar, aber Schritt betont) ----
+    const baseY = 410;
+
+    // Schritt 1: Primär
+    if (step === 0 || step === 4) {
+      drawExplanation('🔑 PRIMÄRSCHLÜSSEL', [
+        'Eine eindeutige Nummer für jede Zeile.',
+        'Nie doppelt, nie leer.',
+        'Beispiel: student_id'
+      ], C.pk, 70, baseY, 280);
+    }
+
+    // Schritt 2: Fremd
+    if (step === 1 || step === 4) {
+      drawExplanation('🔗 FREMDschlüssel', [
+        'Ein Verweis auf eine andere Tabelle.',
+        'Zeigt: „Diese Zeile gehört zu jener.“',
+        'Beispiel: student_id in EINSCHREIBUNGEN'
+      ], C.fk, 370, baseY, 280);
+    }
+
+    // Schritt 3: Unique
+    if (step === 2 || step === 4) {
+      drawExplanation('✓ UNIQUE', [
+        'Keine zwei Zeilen dürfen',
+        'denselben Wert haben.',
+        'Beispiel: email'
+      ], C.unique, 670, baseY, 280);
+    }
+
+    // Schritt 4: Zusammengesetzt
+    if (step === 3) {
+      drawExplanation('⋈ ZUSAMMENGESETZT', [
+        'Zwei Spalten zusammen = der Schlüssel.',
+        'In EINSCHREIBUNGEN:',
+        'student_id + kurs_id',
+        '→ Man kann denselben Kurs nicht zweimal belegen.'
+      ], C.comp, 370, baseY, 400);
+    }
+
+    // Schritt 5: Alles zusammen — kurze Übersicht
+    if (step === 4) {
+      ctx.fillStyle = C.textDim;
+      ctx.font = '400 13px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Primär = die ID  ·  Fremd = der Link  ·  Unique = keine Wiederholung  ·  Zusammengesetzt = zwei Spalten zusammen', canvas.width/2, 560);
+    }
+
+    // Hover-Tooltip
+    if (hoverTable && hoverRow >= 0) {
+      const t = tables[hoverTable];
+      const r = t.rows[hoverRow];
+      if (r.key) {
+        const names = { pk: 'Primärschlüssel', fk: 'Fremdschlüssel', unique: 'Unique', comp: 'Zusammengesetzt' };
+        const colors = { pk: C.pk, fk: C.fk, unique: C.unique, comp: C.comp };
+        const text = names[r.key];
+
+        ctx.font = '600 14px Inter, sans-serif';
+        const tw = ctx.measureText(text).width + 30;
+
+        ctx.fillStyle = '#1c2540';
+        rr(canvas.width/2 - tw/2, 105, tw, 32, 8);
+        ctx.fill();
+        ctx.strokeStyle = colors[r.key];
+        ctx.lineWidth = 1.5;
+        rr(canvas.width/2 - tw/2, 105, tw, 32, 8);
+        ctx.stroke();
+
+        ctx.fillStyle = colors[r.key];
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, canvas.width/2, 121);
+      }
+    }
+  }
+
+  draw();
+})();
+</script>
+</body>
+</html>

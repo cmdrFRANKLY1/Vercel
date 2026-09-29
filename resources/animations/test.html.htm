@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Handschriftliche Addition</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #2a2a2a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Segoe UI', sans-serif;
+    padding: 20px;
+  }
+  .paper {
+    background: #fdfcf7;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, #d4d0c4 39px, #d4d0c4 40px);
+    border-radius: 4px;
+    box-shadow:
+      0 20px 60px rgba(0,0,0,0.5),
+      0 0 0 1px rgba(0,0,0,0.1),
+      inset 0 0 80px rgba(200, 190, 160, 0.15);
+    padding: 30px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .paper::before {
+    content: '';
+    position: absolute;
+    left: 60px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: #e8a0a0;
+    opacity: 0.6;
+  }
+  canvas {
+    display: block;
+    position: relative;
+    z-index: 2;
+  }
+  .controls {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  button {
+    background: #2a2a2a;
+    color: #fdfcf7;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    box-shadow: 0 2px 0 #000;
+  }
+  button:hover {
+    background: #3a3a3a;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 0 #000;
+  }
+  button:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 0 #000;
+  }
+  button.reset {
+    background: #8b3a3a;
+    box-shadow: 0 2px 0 #4a1a1a;
+  }
+  button.reset:hover {
+    background: #a04a4a;
+  }
+  .info {
+    text-align: center;
+    color: #888;
+    font-size: 13px;
+    margin-top: 12px;
+    font-family: 'Segoe UI', sans-serif;
+  }
+</style>
+</head>
+<body>
+<div>
+  <div class="paper">
+    <canvas id="c" width="700" height="480"></canvas>
+  </div>
+  <div class="controls">
+    <button id="btnStep">▶ Nächster Schritt</button>
+    <button id="btnAuto">⏵ Automatisch</button>
+    <button id="btnReset" class="reset">↺ Neu</button>
+  </div>
+  <div class="info">Handschriftliche Addition · 347 + 285 = 632</div>
+</div>
+<script>
+(function() {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+
+  // Zahlen
+  const a = [3, 4, 7];  // 347 (Hunderter, Zehner, Einer)
+  const b = [2, 8, 5];  // 285
+  const result = [6, 3, 2]; // 632
+  const carries = [0, 1, 1]; // Übertrag: Einer->Zehner: 7+5=12 → 1, Zehner->Hunderter: 4+8+1=13 → 1, Hunderter: 3+2+1=6
+
+  // Layout
+  const colX = [280, 380, 480]; // Positionen für Einer, Zehner, Hunderter (rechts nach links)
+  // colX[0] = Einer, colX[1] = Zehner, colX[2] = Hunderter
+  const rowY = {
+    a: 140,        // erste Zahl
+    b: 220,        // zweite Zahl
+    line: 270,     // Strich
+    result: 350,   // Ergebnis
+    carry: 90      // Überträge
+  };
+
+  // Animation State
+  let step = 0;
+  const totalSteps = 7;
+  // 0: Zahlen sichtbar
+  // 1: Einer addieren (7+5=12)
+  // 2: Übertrag 1 notieren
+  // 3: Zehner addieren (4+8+1=13)
+  // 4: Übertrag 1 notieren
+  // 5: Hunderter addieren (3+2+1=6)
+  // 6: Ergebnis fertig
+
+  let autoTimer = null;
+  let animProgress = {}; // für sanftes Einblenden
+
+  // ---- Schriftarten ----
+  function setHandwriting(size, weight) {
+    ctx.font = `${weight || ''} ${size}px "Comic Sans MS", "Segoe Print", "Bradley Hand", cursive`;
+  }
+
+  // ---- Handschriftliche Ziffer mit leichter Rotation ----
+  function drawDigit(digit, x, y, size, color, alpha, rotation) {
+    ctx.save();
+    ctx.globalAlpha = alpha || 1;
+    ctx.translate(x, y);
+    ctx.rotate((rotation || 0) * Math.PI / 180);
+    setHandwriting(size, 'bold');
+    ctx.fillStyle = color || '#1a1a3a';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(digit, 0, 0);
+    ctx.restore();
+  }
+
+  // ---- Handschriftlicher Text ----
+  function drawText(text, x, y, size, color, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha || 1;
+    setHandwriting(size, 'bold');
+    ctx.fillStyle = color || '#1a1a3a';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+
+  // ---- Handschriftliche Linie ----
+  function drawLine(x1, y1, x2, y2, color, width, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha || 1;
+    ctx.strokeStyle = color || '#1a1a3a';
+    ctx.lineWidth = width || 3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    // leicht gewellte Linie für Handschrift-Effekt
+    const steps = 12;
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const px = x1 + (x2 - x1) * t;
+      const py = y1 + (y2 - y1) * t + Math.sin(t * Math.PI * 3) * 1.2;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ---- Sanftes Einblenden basierend auf Schritt ----
+  function getAlpha(itemStep, fadeDuration) {
+    // itemStep = bei welchem Schritt soll es erscheinen
+    // fadeDuration = wie viele Schritte zum Einblenden
+    const diff = step - itemStep;
+    if (diff < 0) return 0;
+    if (diff >= (fadeDuration || 1)) return 1;
+    return diff / (fadeDuration || 1);
+  }
+
+  // ---- Zeichnen ----
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Papier-Textur (leicht)
+    ctx.fillStyle = 'rgba(255, 250, 235, 0.3)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // ---- Zahlen a und b ----
+    const alphaBase = 1; // immer sichtbar
+
+    // Erste Zahl (347)
+    for (let i = 0; i < 3; i++) {
+      // i=0: Einer (7), i=1: Zehner (4), i=2: Hunderter (3)
+      const digit = a[2 - i]; // a[2]=3 → Hunderter, a[1]=4 → Zehner, a[0]=7 → Einer
+      const x = colX[i]; // colX[0]=Einer, colX[1]=Zehner, colX[2]=Hunderter
+      const rot = (i === 0 ? -2 : i === 1 ? 1.5 : -1) + (Math.random() * 0.5);
+      drawDigit(digit, x, rowY.a, 52, '#1a1a3a', 1, rot);
+    }
+
+    // Zweite Zahl (285)
+    for (let i = 0; i < 3; i++) {
+      const digit = b[2 - i];
+      const x = colX[i];
+      const rot = (i === 0 ? 2 : i === 1 ? -1.5 : 2) + (Math.random() * 0.5);
+      drawDigit(digit, x, rowY.b, 52, '#1a1a3a', 1, rot);
+    }
+
+    // Plus-Zeichen
+    drawText('+', 200, (rowY.a + rowY.b) / 2 + 5, 56, '#1a1a3a', 1);
+
+    // ---- Strich ----
+    if (step >= 0) {
+      const lineAlpha = getAlpha(0, 1);
+      drawLine(160, rowY.line, 560, rowY.line, '#1a1a3a', 4, lineAlpha);
+    }
+
+    // ---- Überträge ----
+    // Überträge erscheinen bei Schritt 2 und 4
+
+    // Übertrag Einer → Zehner (Schritt 2)
+    if (step >= 2) {
+      const alpha = getAlpha(2, 1);
+      // kleiner Übertrag über der Zehner-Spalte
+      drawDigit('1', colX[1] + 5, rowY.carry, 28, '#c0392b', alpha, -5);
+      // kleine Linie / Pfeil
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.5;
+      ctx.strokeStyle = '#c0392b';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(colX[0], rowY.carry + 10);
+      ctx.lineTo(colX[1] - 5, rowY.carry + 10);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Übertrag Zehner → Hunderter (Schritt 4)
+    if (step >= 4) {
+      const alpha = getAlpha(4, 1);
+      drawDigit('1', colX[2] + 5, rowY.carry, 28, '#c0392b', alpha, 5);
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.5;
+      ctx.strokeStyle = '#c0392b';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(colX[1], rowY.carry + 10);
+      ctx.lineTo(colX[2] - 5, rowY.carry + 10);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // ---- Zwischenschritte / Erklärungen ----
+    // Schritt 1: 7+5=12 (Einer)
+    if (step === 1) {
+      const alpha = getAlpha(1, 0.5);
+      drawText('7 + 5 = 12', canvas.width / 2, 430, 22, '#2c3e50', alpha * 0.8);
+      drawText('↓', canvas.width / 2, 455, 20, '#2c3e50', alpha * 0.6);
+    }
+
+    // Schritt 2: Übertrag 1, 2 bleibt
+    if (step === 2) {
+      const alpha = getAlpha(2, 0.5);
+      drawText('7 + 5 = 12 → schreibe 2, übertrage 1', canvas.width / 2, 430, 20, '#2c3e50', alpha * 0.8);
+    }
+
+    // Schritt 3: 4+8+1=13 (Zehner)
+    if (step === 3) {
+      const alpha = getAlpha(3, 0.5);
+      drawText('4 + 8 + 1 = 13', canvas.width / 2, 430, 22, '#2c3e50', alpha * 0.8);
+    }
+
+    // Schritt 4: Übertrag 1, 3 bleibt
+    if (step === 4) {
+      const alpha = getAlpha(4, 0.5);
+      drawText('4 + 8 + 1 = 13 → schreibe 3, übertrage 1', canvas.width / 2, 430, 20, '#2c3e50', alpha * 0.8);
+    }
+
+    // Schritt 5: 3+2+1=6 (Hunderter)
+    if (step === 5) {
+      const alpha = getAlpha(5, 0.5);
+      drawText('3 + 2 + 1 = 6', canvas.width / 2, 430, 22, '#2c3e50', alpha * 0.8);
+    }
+
+    // ---- Ergebnisziffern (erscheinen schrittweise) ----
+    // Einer-Ergebnis (2) erscheint nach Schritt 2
+    if (step >= 2) {
+      const alpha = getAlpha(2, 1);
+      drawDigit('2', colX[0], rowY.result, 52, '#1a6b3a', alpha, -1);
+    }
+
+    // Zehner-Ergebnis (3) erscheint nach Schritt 4
+    if (step >= 4) {
+      const alpha = getAlpha(4, 1);
+      drawDigit('3', colX[1], rowY.result, 52, '#1a6b3a', alpha, 1);
+    }
+
+    // Hunderter-Ergebnis (6) erscheint nach Schritt 5
+    if (step >= 5) {
+      const alpha = getAlpha(5, 1);
+      drawDigit('6', colX[2], rowY.result, 52, '#1a6b3a', alpha, -1);
+    }
+
+    // ---- Abschluss-Effekt ----
+    if (step >= 6) {
+      const alpha = getAlpha(6, 1);
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.9;
+      ctx.strokeStyle = '#1a6b3a';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      // Kreis um das Ergebnis
+      const cx = (colX[0] + colX[2]) / 2;
+      const cy = rowY.result;
+      ctx.ellipse(cx, cy, 140, 45, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // Text
+      drawText('347 + 285 = 632', canvas.width / 2, 440, 26, '#1a6b3a', alpha);
+    }
+
+    // ---- Fortschrittsanzeige ----
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    ctx.fillRect(0, canvas.height - 8, canvas.width, 8);
+    ctx.fillStyle = '#1a6b3a';
+    ctx.fillRect(0, canvas.height - 8, canvas.width * (step / totalSteps), 8);
+  }
+
+  // ---- Steuerung ----
+  function nextStep() {
+    if (step < totalSteps) {
+      step++;
+      draw();
+    } else {
+      // Am Ende: nichts
+    }
+  }
+
+  function reset() {
+    step = 0;
+    stopAuto();
+    draw();
+  }
+
+  function startAuto() {
+    if (autoTimer) {
+      stopAuto();
+      return;
+    }
+    if (step >= totalSteps) step = 0;
+    draw();
+    autoTimer = setInterval(() => {
+      if (step < totalSteps) {
+        step++;
+        draw();
+      } else {
+        stopAuto();
+      }
+    }, 1200);
+  }
+
+  function stopAuto() {
+    if (autoTimer) {
+      clearInterval(autoTimer);
+      autoTimer = null;
+    }
+  }
+
+  // ---- Events ----
+  document.getElementById('btnStep').addEventListener('click', () => {
+    stopAuto();
+    nextStep();
+  });
+  document.getElementById('btnAuto').addEventListener('click', startAuto);
+  document.getElementById('btnReset').addEventListener('click', reset);
+
+  // Tastatur
+  window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') {
+      e.preventDefault();
+      stopAuto();
+      nextStep();
+    }
+    if (e.key === 'r' || e.key === 'R') reset();
+  });
+
+  // Start
+  draw();
+})();
+</script>
+</body>
+</html>

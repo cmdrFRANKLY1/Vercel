@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schriftliches Addieren — interaktiv</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'hand': ['Caveat', 'cursive'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Dark Mode Lined Paper Effect with red margin */
+        .paper-bg {
+            background-color: #18181b;
+            background-image: linear-gradient(#3f3f46 1px, transparent 1px);
+            background-size: 100% 48px;
+            background-position: 0 47px;
+            box-shadow:
+                0 10px 25px -3px rgba(0, 0, 0, 0.5),
+                inset 40px 0 0 0 rgba(248, 113, 113, 0.15);
+            padding-left: 50px;
+        }
+
+        /* Text animation base classes */
+        .anim-element {
+            clip-path: inset(0 100% 0 0);
+            display: inline-block;
+            white-space: nowrap;
+            opacity: 0;
+        }
+
+        .anim-element.revealed {
+            opacity: 1;
+            clip-path: inset(0 0 0 0);
+            transition: clip-path 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .anim-wrap {
+            display: block;
+        }
+
+        /* Column Highlight for standard calculation */
+        .highlight-col {
+            background-color: rgba(255, 255, 255, 0.08);
+            border-radius: 0.5rem;
+        }
+
+        /* Specific Highlight for the Carry (Übertrag) */
+        .highlight-carry {
+            background-color: rgba(248, 113, 113, 0.15); /* Soft red tint */
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased bg-zinc-950 text-zinc-200 min-h-screen flex justify-center p-2 sm:p-4 selection:bg-blue-500/30">
+
+    <div class="max-w-7xl w-full flex flex-col gap-4">
+
+        <!-- Controls Header -->
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-lg flex justify-between items-center z-50 sticky top-2 sm:top-4">
+            <h1 class="font-bold text-lg text-white hidden md:block tracking-wide">Schriftliches Addieren — interaktiv</h1>
+            <div class="flex gap-2 sm:gap-4 w-full md:w-auto justify-between md:justify-end items-center">
+                <button onclick="initProblem()" class="px-4 py-2 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-white rounded-lg transition shadow-sm font-semibold text-sm text-zinc-300">
+                    Neue Zahlen
+                </button>
+                <button id="btn-next" class="px-4 sm:px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition shadow-sm font-semibold text-sm flex items-center gap-2 w-32 justify-center" onclick="nextStep()">
+                    <span>Start</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Two Papers Layout -->
+        <div class="flex flex-col lg:flex-row gap-6 w-full">
+
+            <!-- LEFT PAPER: Explanations -->
+            <div class="paper-bg w-full lg:w-1/2 rounded-xl min-h-[600px] p-6 pt-8 font-hand text-2xl leading-[48px] text-zinc-100 relative overflow-hidden flex-1 shadow-2xl">
+                <div class="absolute top-2 left-14 text-sm font-sans font-bold text-zinc-600 uppercase tracking-widest mt-1">
+                    Erklärungen
+                </div>
+                <!-- Dynamic Explanations will be injected here -->
+                <div id="explanations-container" class="mt-4"></div>
+            </div>
+
+            <!-- RIGHT PAPER: Calculations -->
+            <div class="paper-bg w-full lg:w-1/2 rounded-xl min-h-[600px] p-6 pt-8 font-hand text-2xl leading-[48px] text-zinc-100 relative overflow-hidden flex-1 shadow-2xl flex flex-col">
+                <div class="absolute top-2 left-14 text-sm font-sans font-bold text-zinc-600 uppercase tracking-widest mt-1">
+                    Rechnung
+                </div>
+
+                <div class="flex-grow flex items-center justify-center mt-4">
+                    <!-- Dynamic Math Grid will be injected here -->
+                    <div id="math-grid" class="font-hand text-5xl sm:text-6xl grid gap-x-2 relative font-semibold tracking-wider">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let currentStep = -1;
+        let steps = [];
+        let isAnimating = false;
+        let num1, num2;
+        let cols;
+
+        const placeNames = ["Einer", "Zehner", "Hunderter", "Tausender", "Zehntausender", "Hunderttausender"];
+
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        window.onload = initProblem;
+
+        function initProblem() {
+            if(isAnimating) return;
+
+            // Generate two random numbers (100 to 9999)
+            num1 = Math.floor(Math.random() * 8999) + 100;
+            num2 = Math.floor(Math.random() * 8999) + 100;
+
+            const aStr = num1.toString();
+            const bStr = num2.toString();
+            const maxLen = Math.max(aStr.length, bStr.length);
+
+            // +1 for the plus sign and potential carry
+            cols = maxLen + 1;
+
+            let aArr = aStr.padStart(cols, ' ').split('');
+            let bArr = bStr.padStart(cols - 1, ' ').split('');
+            bArr.unshift('+');
+
+            steps = [];
+            let carry = 0;
+            let stepIdx = 1;
+
+            // Pre-build logic & texts
+            for(let c = cols - 1; c > 0; c--) {
+                let digitA = parseInt(aArr[c]) || 0;
+                let digitB = parseInt(bArr[c] === ' ' || bArr[c] === '+' ? 0 : bArr[c]);
+                let sum = digitA + digitB + carry;
+                let resDigit = sum % 10;
+                let nextCarry = Math.floor(sum / 10);
+
+                let placeName = placeNames[(cols - 1) - c] || "nächste Stelle";
+
+                // Construct formula text
+                let expText = `${digitA} + ${digitB}`;
+                if(carry > 0) expText += ` + <span class="text-red-400">${carry} (Ü)</span>`;
+                expText += ` = <span class="font-bold text-blue-400">${sum}</span>.`;
+
+                // STEP A: Write the Result Digit
+                steps.push({
+                    type: 'calc_res',
+                    col: c,
+                    resDigit: resDigit,
+                    expTitle: `Schritt ${stepIdx}: ${placeName}`,
+                    expText: expText,
+                    expAction: `Schreibe <span class="text-green-400">${resDigit}</span> unten hin.`
+                });
+                stepIdx++;
+
+                // STEP B: The Carry (if necessary)
+                if(nextCarry > 0) {
+                    steps.push({
+                        type: 'calc_carry',
+                        targetCarryCol: c - 1,
+                        carryDigit: nextCarry,
+                        expTitle: `Schritt ${stepIdx}: Übertrag`,
+                        expText: `Die <span class="font-bold text-blue-400">${sum}</span> hat eine Zehnerstelle.`,
+                        expAction: `Schreibe <span class="text-red-400">${nextCarry}</span> als Übertrag (Ü) in die nächste Spalte!`
+                    });
+                    stepIdx++;
+                }
+
+                carry = nextCarry;
+            }
+
+            // Final Carry Dropdown
+            if(carry > 0) {
+                steps.push({
+                    type: 'calc_final',
+                    col: 0,
+                    resDigit: carry,
+                    expTitle: `Schritt ${stepIdx}: Letzter Übertrag`,
+                    expText: `Wir haben noch einen Übertrag von <span class="text-red-400">${carry}</span> übrig.`,
+                    expAction: `Da keine Zahlen mehr kommen, schreibe <span class="text-green-400">${carry}</span> direkt ins Ergebnis.`
+                });
+                stepIdx++;
+            }
+
+            steps.push({
+                type: 'done',
+                expTitle: `Fertig! 🎉`,
+                expText: `Das Ergebnis ist <span class="font-bold text-green-400">${num1 + num2}</span>.`,
+                expAction: `Sehr gut gemacht!`
+            });
+
+            renderGrid(aArr, bArr);
+            renderExplanations();
+
+            // Reset state
+            currentStep = -1;
+            const btnNext = document.getElementById('btn-next');
+            btnNext.innerHTML = `<span>Start</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`;
+            btnNext.disabled = false;
+            btnNext.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        function renderGrid(aArr, bArr) {
+            let grid = document.getElementById('math-grid');
+            grid.innerHTML = '';
+            grid.style.gridTemplateColumns = `repeat(${cols}, minmax(3rem, 4.5rem))`;
+
+            // First Number
+            for(let i = 0; i < cols; i++) {
+                grid.innerHTML += `<div class="h-[48px] flex items-center justify-center transition-colors duration-300" id="col-${i}-r0">${aArr[i] === ' ' ? '&nbsp;' : aArr[i]}</div>`;
+            }
+
+            // Plus Sign & Second Number
+            for(let i = 0; i < cols; i++) {
+                let content = bArr[i] === ' ' ? '&nbsp;' : bArr[i];
+                let color = content === '+' ? 'text-blue-400' : 'text-zinc-100';
+                grid.innerHTML += `<div class="h-[48px] flex items-center justify-center transition-colors duration-300 ${color}" id="col-${i}-r1">${content}</div>`;
+            }
+
+            // Carries (Übertrag) & Sum Line
+            for(let i = 0; i < cols; i++) {
+                grid.innerHTML += `
+                    <div class="h-[48px] flex items-end justify-center pb-2 border-b-[3px] border-zinc-100 transition-colors duration-300" id="col-${i}-carry-wrap">
+                        <span class="text-2xl sm:text-3xl text-red-400 font-bold opacity-0 transition-all duration-500 transform translate-y-3" id="col-${i}-carry"></span>
+                    </div>`;
+            }
+
+            // Result Row
+            for(let i = 0; i < cols; i++) {
+                grid.innerHTML += `<div class="h-[48px] flex items-center justify-center text-green-400 opacity-0 transition-all duration-500 transform translate-y-3 font-bold" id="col-${i}-res"></div>`;
+            }
+        }
+
+        function renderExplanations() {
+            const container = document.getElementById('explanations-container');
+            container.innerHTML = '';
+
+            // Step 0: Intro
+            container.innerHTML += `
+                <div class="step-container hidden mb-12" id="step-desc-0">
+                    <div class="anim-element anim-wrap font-bold text-3xl sm:text-4xl mb-2 text-zinc-100">Aufgabe</div>
+                    <div class="anim-element anim-wrap text-blue-300">Addiere <span class="font-bold">${num1}</span> und <span class="font-bold">${num2}</span>.</div>
+                    <div class="anim-element anim-wrap text-zinc-400 mt-2">Wir beginnen immer ganz rechts! 👉</div>
+                </div>
+            `;
+
+            // Dynamic Steps
+            steps.forEach((step, index) => {
+                let stepId = index + 1;
+                container.innerHTML += `
+                    <div class="step-container hidden mb-12" id="step-desc-${stepId}">
+                        <div class="anim-element anim-wrap font-bold text-3xl sm:text-4xl mb-2 text-zinc-100">${step.expTitle}</div>
+                        <div class="anim-element anim-wrap text-zinc-300">${step.expText}</div>
+                        <div class="anim-element anim-wrap text-blue-300 mt-2">${step.expAction}</div>
+                    </div>
+                `;
+            });
+        }
+
+        async function animateStep(stepIndex) {
+            isAnimating = true;
+            const btnNext = document.getElementById('btn-next');
+            btnNext.disabled = true;
+            btnNext.classList.add('opacity-50', 'cursor-not-allowed');
+
+            // Reveal explanation text on the left
+            const container = document.getElementById(`step-desc-${stepIndex}`);
+            container.classList.remove('hidden');
+
+            const elements = Array.from(container.querySelectorAll('.anim-element'));
+            for (let i = 0; i < elements.length; i++) {
+                const el = elements[i];
+                el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                el.classList.add('revealed');
+                await sleep(400);
+            }
+
+            // Perform Math Grid logic on the right
+            if(stepIndex > 0) {
+                let logicalStep = steps[stepIndex - 1]; // stepIndex 0 is the intro
+
+                // Clear all previous highlights
+                for(let i = 0; i < cols; i++) {
+                    document.getElementById(`col-${i}-r0`).classList.remove('highlight-col', 'highlight-carry');
+                    document.getElementById(`col-${i}-r1`).classList.remove('highlight-col', 'highlight-carry');
+                    document.getElementById(`col-${i}-carry-wrap`).classList.remove('highlight-col', 'highlight-carry');
+                    document.getElementById(`col-${i}-res`).classList.remove('highlight-col', 'highlight-carry');
+                }
+
+                if(logicalStep.type === 'calc_res' || logicalStep.type === 'calc_final') {
+                    let c = logicalStep.col;
+                    // Highlight the whole active column
+                    document.getElementById(`col-${c}-r0`).classList.add('highlight-col');
+                    document.getElementById(`col-${c}-r1`).classList.add('highlight-col');
+                    document.getElementById(`col-${c}-carry-wrap`).classList.add('highlight-col');
+                    document.getElementById(`col-${c}-res`).classList.add('highlight-col');
+
+                    await sleep(300);
+
+                    // Reveal Result Digit
+                    let resCell = document.getElementById(`col-${c}-res`);
+                    resCell.innerText = logicalStep.resDigit;
+                    resCell.classList.remove('opacity-0', 'translate-y-3');
+                    resCell.classList.add('opacity-100', 'translate-y-0');
+
+                } else if(logicalStep.type === 'calc_carry') {
+                    let tc = logicalStep.targetCarryCol;
+                    // Highlight ONLY the target carry box with the reddish tint
+                    document.getElementById(`col-${tc}-carry-wrap`).classList.add('highlight-carry');
+
+                    await sleep(300);
+
+                    // Reveal Carry Digit
+                    let carryCell = document.getElementById(`col-${tc}-carry`);
+                    carryCell.innerText = logicalStep.carryDigit;
+                    carryCell.classList.remove('opacity-0', 'translate-y-3');
+                    carryCell.classList.add('opacity-100', 'translate-y-0');
+                }
+            }
+
+            isAnimating = false;
+            btnNext.disabled = false;
+            btnNext.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            // Update button text
+            if (currentStep >= steps.length) {
+                btnNext.innerHTML = `<span>Neustart</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>`;
+            } else {
+                btnNext.innerHTML = `<span>Weiter</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`;
+            }
+        }
+
+        function nextStep() {
+            if (isAnimating) return;
+
+            if (currentStep >= steps.length) {
+                initProblem();
+                return;
+            }
+
+            currentStep++;
+            animateStep(currentStep);
+        }
+    </script>
+</body>
+</html>

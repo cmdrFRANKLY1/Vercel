@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bruchrechnen Subtraktion — interaktiv</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'hand': ['Caveat', 'cursive'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .clean-bg {
+            background-color: #18181b; 
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            border: 1px solid #27272a;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #3f3f46; 
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #52525b; 
+        }
+
+        .anim-element {
+            clip-path: inset(0 100% 0 0);
+            display: inline-block;
+            white-space: nowrap;
+            opacity: 0;
+        }
+        .anim-element.revealed {
+            opacity: 1;
+            clip-path: inset(0 0 0 0);
+            transition: clip-path 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .anim-element.fast.revealed {
+            transition: clip-path 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .hl-text-active {
+            background-color: rgba(59, 130, 246, 0.25); 
+            border-radius: 0.25rem;
+        }
+
+        .highlight-cell-active {
+            background-color: rgba(255, 255, 255, 0.15); 
+            border-radius: 0.5rem;
+            transition: background-color 0.15s ease;
+        }
+
+        .hover-highlight-cell {
+            box-shadow: inset 0 0 0 2px rgba(234, 179, 8, 0.9) !important; 
+            border-radius: 0.5rem;
+            transition: box-shadow 0.15s ease;
+        }
+
+        /* Fraction CSS Styling */
+        .frac {
+            display: inline-flex;
+            flex-direction: column;
+            vertical-align: middle;
+            text-align: center;
+            padding: 0 0.2em;
+        }
+        .frac > span {
+            display: block;
+            padding: 0 0.15em;
+        }
+        .frac span.num {
+            border-bottom: 2px solid currentColor;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased bg-zinc-950 text-zinc-200 min-h-screen flex justify-center items-center p-2 sm:p-4 selection:bg-blue-500/30">
+
+    <div class="max-w-6xl w-full flex flex-col gap-4"> 
+
+        <!-- Controls Header -->
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-3 shadow-lg flex flex-wrap justify-between items-center z-50 sticky top-2 gap-2">
+            <h1 class="font-bold text-base sm:text-lg text-white hidden md:block tracking-wide">Bruchrechnen Subtraktion — interaktiv</h1>
+            <div class="flex gap-2 w-full md:w-auto justify-end items-center flex-grow">
+                <button onclick="initProblem()" class="px-3 py-1.5 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-white rounded-lg transition shadow-sm font-semibold text-sm text-zinc-300">
+                    Neue Brüche
+                </button>
+                
+                <div class="h-6 border-l border-zinc-700 mx-1"></div>
+                
+                <button id="btn-auto" onclick="toggleAutoplay()" class="px-3 py-1.5 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-white rounded-lg transition shadow-sm font-semibold text-sm text-zinc-300 flex items-center gap-1 w-20 justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Auto</span>
+                </button>
+
+                <div class="h-6 border-l border-zinc-700 mx-1"></div>
+                
+                <button id="btn-prev" onclick="prevStep()" class="px-3 py-1.5 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-white rounded-lg transition shadow-sm font-semibold text-sm text-zinc-300 flex items-center gap-1 opacity-50 cursor-not-allowed" disabled>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    <span>Zurück</span>
+                </button>
+                
+                <button id="btn-next" onclick="nextStep()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition shadow-sm font-semibold text-sm flex items-center gap-2 w-28 justify-center">
+                    <span>Start</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Two Panels Layout -->
+        <div class="flex flex-col lg:flex-row gap-4 w-full h-[520px]">
+
+            <!-- LEFT PANEL: Explanations -->
+            <div class="clean-bg w-full lg:w-1/2 rounded-xl h-full p-6 pt-4 overflow-y-auto custom-scrollbar font-hand text-xl leading-[40px] text-zinc-100 relative">
+                <div class="sticky top-0 -ml-2 mb-2 text-xs font-sans font-bold text-zinc-500 uppercase tracking-widest bg-[#18181b]/95 w-fit px-2 py-1 rounded z-10 backdrop-blur-sm">
+                    Schritt-für-Schritt Erklärung
+                </div>
+                <div id="explanations-container" class="pb-10"></div>
+            </div>
+
+            <!-- RIGHT PANEL: Visual Card / Cheat Sheet -->
+            <div class="clean-bg w-full lg:w-1/2 rounded-xl h-full p-4 sm:p-6 pt-6 font-sans text-base text-zinc-100 relative overflow-y-auto custom-scrollbar flex flex-col">
+                <div class="absolute top-3 left-4 text-xs font-sans font-bold text-zinc-500 uppercase tracking-widest mt-1">
+                    Aktuelle Rechnung & Brüche
+                </div>
+                
+                <div class="flex-grow flex items-center justify-center mt-6 w-full">
+                    <div class="relative w-full max-w-md p-6 bg-zinc-900/80 border border-zinc-800 rounded-xl shadow-inner flex flex-col items-center justify-center gap-4 font-mono text-xl">
+                        
+                        <!-- Big Visual Fraction Equation Display -->
+                        <div class="flex items-center gap-3 text-2xl">
+                            <!-- Fraction 1 -->
+                            <div id="card-f1" class="p-2 rounded-lg transition-colors duration-300 flex items-center">
+                                <div class="frac">
+                                    <span class="num" id="card-n1">--</span>
+                                    <span class="den" id="card-d1">--</span>
+                                </div>
+                            </div>
+                            
+                            <span class="text-zinc-400">−</span>
+
+                            <!-- Fraction 2 -->
+                            <div id="card-f2" class="p-2 rounded-lg transition-colors duration-300 flex items-center">
+                                <div class="frac">
+                                    <span class="num" id="card-n2">--</span>
+                                    <span class="den" id="card-d2">--</span>
+                                </div>
+                            </div>
+
+                            <span class="text-zinc-400">=</span>
+
+                            <!-- Result Fraction -->
+                            <div id="card-fres" class="p-2 rounded-lg transition-colors duration-300 flex items-center opacity-0 transform translate-y-2 transition-all duration-300">
+                                <div class="frac">
+                                    <span class="num text-green-400" id="card-nres">--</span>
+                                    <span class="den text-green-400" id="card-dres">--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="card-info" class="text-xs text-zinc-400 text-center mt-2 opacity-0 transform translate-y-2 transition-all duration-300">
+                            Hauptnenner: <span id="card-hn" class="text-yellow-400 font-bold">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let currentStep = -1;
+        let steps = [];
+        let isAnimating = false;
+        let isAutoPlaying = false;
+        let autoPlayTimeout = null;
+        
+        let n1, d1, n2, d2, hn, n1_exp, n2_exp, nResUnsimplified, nRes, dRes;
+        
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        window.onload = initProblem;
+
+        function gcd(a, b) {
+            return b === 0 ? a : gcd(b, a % b);
+        }
+
+        function lcm(a, b) {
+            return (a * b) / gcd(a, b);
+        }
+
+        function enter(ids, isAnim = false) {
+            let cls = isAnim ? 'highlight-cell-active' : 'hover-highlight-cell';
+            if (ids) {
+                ids.split(',').forEach(id => {
+                    let el = document.getElementById(id);
+                    if (el) el.classList.add(cls);
+                });
+            }
+        }
+        function leave(ids, isAnim = false) {
+            let cls = isAnim ? 'highlight-cell-active' : 'hover-highlight-cell';
+            if (ids) {
+                ids.split(',').forEach(id => {
+                    let el = document.getElementById(id);
+                    if (el) el.classList.remove(cls);
+                });
+            }
+        }
+
+        function toggleAutoplay() {
+            isAutoPlaying = !isAutoPlaying;
+            updateAutoButton();
+            
+            if (isAutoPlaying) {
+                if (!isAnimating) {
+                    if (currentStep >= steps.length - 1) {
+                        initProblem(); 
+                        setTimeout(() => { if(isAutoPlaying) nextStep(true); }, 800);
+                    } else {
+                        nextStep(true);
+                    }
+                }
+            } else {
+                clearTimeout(autoPlayTimeout);
+            }
+        }
+
+        function stopAutoplay() {
+            isAutoPlaying = false;
+            clearTimeout(autoPlayTimeout);
+            updateAutoButton();
+        }
+
+        function updateAutoButton() {
+            const btn = document.getElementById('btn-auto');
+            if (isAutoPlaying) {
+                btn.classList.add('bg-yellow-600/20', 'border-yellow-500', 'text-yellow-400');
+                btn.classList.remove('bg-zinc-800', 'border-zinc-700', 'text-zinc-300');
+            } else {
+                btn.classList.remove('bg-yellow-600/20', 'border-yellow-500', 'text-yellow-400');
+                btn.classList.add('bg-zinc-800', 'border-zinc-700', 'text-zinc-300');
+            }
+        }
+
+        function initProblem() {
+            if (isAnimating && !isAutoPlaying) return;
+            if (!isAutoPlaying) stopAutoplay(); 
+
+            // Valid fraction subtraction pairs where first fraction is strictly larger than second
+            const pairs = [
+                {n1: 3, d1: 4, n2: 1, d2: 4},
+                {n1: 5, d1: 6, n2: 1, d2: 3},
+                {n1: 3, d1: 5, n2: 1, d2: 3},
+                {n1: 7, d1: 8, n2: 1, d2: 4},
+                {n1: 4, d1: 5, n2: 1, d2: 2}
+            ];
+            let selected = pairs[Math.floor(Math.random() * pairs.length)];
+            n1 = selected.n1;
+            d1 = selected.d1;
+            n2 = selected.n2;
+            d2 = selected.d2;
+
+            hn = lcm(d1, d2);
+            let mult1 = hn / d1;
+            let mult2 = hn / d2;
+            n1_exp = n1 * mult1;
+            n2_exp = n2 * mult2;
+            nResUnsimplified = n1_exp - n2_exp;
+            dRes = hn;
+
+            let commonDiv = gcd(Math.abs(nResUnsimplified), dRes);
+            nRes = nResUnsimplified / commonDiv;
+            dRes = dRes / commonDiv;
+
+            steps = [];
+            let stepId = 1;
+
+            const TEXT = (text, ids, colorClass, animClass = "fast", clear = true) =>
+                `<span class="anim-element ${animClass} px-1 my-0.5 transition-colors duration-300 inline-block" data-hl-clear="${clear}" data-hl-ids="${ids}">
+                    <span class="cursor-help border-b border-dashed border-zinc-600 hover:border-yellow-400 ${colorClass} transition-colors" onmouseenter="enter('${ids}')" onmouseleave="leave('${ids}')">${text}</span>
+                </span>`;
+            const PLAIN = (text, animClass = "fast", clear = true) =>
+                `<span class="anim-element ${animClass} px-1 my-0.5 text-zinc-400 inline-block" data-hl-clear="${clear}">${text}</span>`;
+
+            // Step 0: Intro
+            steps.push({
+                id: 0,
+                html: `<div class="step-container hidden mb-6" id="step-desc-0">
+                          <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100">Aufgabe</div>
+                          <div class="mt-1 leading-relaxed whitespace-nowrap flex flex-wrap items-center">
+                              ${PLAIN("Subtrahiere", "slow")} 
+                              <span class="inline-flex items-center mx-1"><span class="frac"><span class="num">${n2}</span><span class="den">${d2}</span></span></span>
+                              ${PLAIN("von", "slow")} 
+                              <span class="inline-flex items-center mx-1"><span class="frac"><span class="num">${n1}</span><span class="den">${d1}</span></span></span>.
+                          </div>
+                      </div>`
+            });
+
+            // Step 1: Hauptnenner finden
+            steps.push({
+                id: stepId,
+                targetCardId: "card-info",
+                html: `<div class="step-container hidden mb-6" id="step-desc-${stepId}">
+                          <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100">1. Hauptnenner finden</div>
+                          <div class="mt-1 leading-relaxed flex flex-wrap items-center">
+                              ${PLAIN("Die Nenner sind")} ${TEXT(d1, "card-d1", 'text-white')} ${PLAIN("und")} ${TEXT(d2, "card-d2", 'text-white')}. ${PLAIN("Der kleinste gemeinsame Nenner (Hauptnenner) ist")} ${TEXT(hn, "card-hn", 'text-yellow-400 font-bold')}.
+                          </div>
+                      </div>`
+            });
+            stepId++;
+
+            // Step 2: Brüche erweitern
+            steps.push({
+                id: stepId,
+                targetCardId: "card-f1",
+                html: `<div class="step-container hidden mb-6" id="step-desc-${stepId}">
+                          <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100">2. Brüche erweitern</div>
+                          <div class="mt-1 leading-relaxed flex flex-wrap items-center">
+                              ${PLAIN("Erweitere den ersten Bruch mit")} ${mult1} (${TEXT(n1_exp + "/" + hn, "card-f1", 'text-blue-400 font-bold')}) ${PLAIN("und den zweiten mit")} ${mult2} (${TEXT(n2_exp + "/" + hn, "card-f2", 'text-blue-400 font-bold')}).
+                          </div>
+                      </div>`
+            });
+            stepId++;
+
+            // Step 3: Zähler subtrahieren
+            steps.push({
+                id: stepId,
+                targetCardId: "card-fres",
+                html: `<div class="step-container hidden mb-6" id="step-desc-${stepId}">
+                          <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100">3. Zähler zusammenfassen</div>
+                          <div class="mt-1 leading-relaxed flex flex-wrap items-center">
+                              ${PLAIN("Subtrahiere die Zähler auf dem gemeinsamen Nenner:")} (${n1_exp} − ${n2_exp}) / ${hn} = ${TEXT(nResUnsimplified + "/" + hn, "card-fres", 'text-green-400 font-bold')}.
+                          </div>
+                      </div>`
+            });
+            stepId++;
+
+            // Step 4: Fertig
+            let simplifyText = commonDiv > 1 ? `Gekürzt mit ${commonDiv} ergibt das:` : `Das Ergebnis ist bereits vollständig gekürzt:`;
+            steps.push({
+                id: stepId,
+                targetCardId: "card-fres",
+                html: `<div class="step-container hidden mb-6" id="step-desc-${stepId}">
+                          <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100">Fertig! 🎉</div>
+                          <div class="mt-1 leading-relaxed flex flex-wrap items-center">
+                              ${PLAIN(simplifyText)} 
+                              <span class="inline-flex items-center mx-1"><span class="frac"><span class="num text-green-400 font-bold">${nRes}</span><span class="den text-green-400 font-bold">${dRes}</span></span></span>.
+                          </div>
+                      </div>`
+            });
+
+            renderCard();
+            renderExplanations();
+            
+            currentStep = 0; 
+            resetCardState(0); 
+            
+            const firstContainer = document.getElementById('step-desc-0');
+            if (firstContainer) {
+                firstContainer.classList.remove('hidden');
+                firstContainer.querySelectorAll('.anim-element').forEach(el => el.classList.add('revealed'));
+            }
+            
+            updateButtons();
+        }
+
+        function renderCard() {
+            document.getElementById('card-n1').innerText = n1;
+            document.getElementById('card-d1').innerText = d1;
+            document.getElementById('card-n2').innerText = n2;
+            document.getElementById('card-d2').innerText = d2;
+            document.getElementById('card-nres').innerText = nRes;
+            document.getElementById('card-dres').innerText = dRes;
+            document.getElementById('card-hn').innerText = hn;
+        }
+
+        function renderExplanations() {
+            const container = document.getElementById('explanations-container');
+            if (!container) return;
+            container.innerHTML = '';
+            steps.forEach(step => {
+                container.innerHTML += step.html;
+            });
+        }
+
+        function updateButtons() {
+            const btnNext = document.getElementById('btn-next');
+            const btnPrev = document.getElementById('btn-prev');
+            if (!btnNext || !btnPrev) return;
+            
+            if (currentStep <= 0) {
+                btnPrev.disabled = true;
+                btnPrev.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                btnPrev.disabled = false;
+                btnPrev.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+
+            if (currentStep >= steps.length - 1) {
+                btnNext.innerHTML = '<span>Neustart</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>';
+            } else {
+                btnNext.innerHTML = '<span>Weiter</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
+            }
+        }
+
+        function resetCardState(targetStepIndex) {
+            const infoEl = document.getElementById('card-info');
+            const resEl = document.getElementById('card-fres');
+
+            if (targetStepIndex >= 1) {
+                infoEl.classList.remove('opacity-0', 'translate-y-2');
+            } else {
+                infoEl.classList.add('opacity-0', 'translate-y-2');
+            }
+
+            if (targetStepIndex >= 3) {
+                resEl.classList.remove('opacity-0', 'translate-y-2');
+            } else {
+                resEl.classList.add('opacity-0', 'translate-y-2');
+            }
+        }
+
+        function prevStep() {
+            if (isAutoPlaying) stopAutoplay();
+            if (isAnimating || currentStep <= 0) return;
+
+            let prevStepObj = steps[currentStep];
+            if (prevStepObj) {
+                let container = document.getElementById(`step-desc-${prevStepObj.id}`);
+                if (container) {
+                    container.classList.add('hidden');
+                    container.querySelectorAll('.anim-element').forEach(el => el.classList.remove('revealed'));
+                }
+            }
+            
+            currentStep--;
+            
+            document.querySelectorAll('.highlight-cell-active, .hl-text-active').forEach(e => {
+                e.classList.remove('highlight-cell-active', 'hl-text-active');
+            });
+            
+            resetCardState(currentStep);
+            
+            if (currentStep > 0) {
+                let currStepObj = steps[currentStep];
+                if (currStepObj) {
+                    document.getElementById(`step-desc-${currStepObj.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            } else {
+                document.getElementById(`explanations-container`)?.scrollTo({top: 0, behavior: 'smooth'});
+            }
+
+            updateButtons();
+        }
+
+        function nextStep(fromAuto = false) {
+            if (!fromAuto && isAutoPlaying) stopAutoplay();
+            if (isAnimating) return;
+            if (currentStep >= steps.length - 1) {
+                initProblem();
+                return;
+            }
+            currentStep++;
+            animateStep(currentStep);
+        }
+
+        async function animateStep(stepIndex) {
+            isAnimating = true;
+            const btnNext = document.getElementById('btn-next');
+            const btnPrev = document.getElementById('btn-prev');
+            if (btnNext) btnNext.disabled = true;
+            if (btnPrev) btnPrev.disabled = true;
+            
+            document.querySelectorAll('.highlight-cell-active, .hl-text-active').forEach(e => {
+                e.classList.remove('highlight-cell-active', 'hl-text-active');
+            });
+
+            let logicalStepId = steps[stepIndex].id;
+            const container = document.getElementById(`step-desc-${logicalStepId}`);
+            if (container) {
+                container.classList.remove('hidden');
+                
+                const elements = Array.from(container.querySelectorAll('.anim-element'));
+                
+                for (let i = 0; i < elements.length; i++) {
+                    const el = elements[i];
+                    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    el.classList.add('revealed');
+                    
+                    if (el.dataset.hlClear === "true") {
+                        document.querySelectorAll('.highlight-cell-active').forEach(e => e.classList.remove('highlight-cell-active'));
+                        document.querySelectorAll('.hl-text-active').forEach(e => e.classList.remove('hl-text-active'));
+                    }
+                    
+                    if (el.dataset.hlIds) {
+                        el.classList.add('hl-text-active');
+                        enter(el.dataset.hlIds, true);
+                    }
+
+                    let delay = isAutoPlaying ? 1000 : (el.classList.contains('fast') ? 300 : 400);
+                    await sleep(delay); 
+                }
+            }
+
+            let stepObj = steps[stepIndex];
+            if (stepObj && stepObj.targetCardId) {
+                let cardRow = document.getElementById(stepObj.targetCardId);
+                if (cardRow) {
+                    cardRow.classList.remove('opacity-0', 'translate-y-2');
+                    cardRow.classList.add('highlight-cell-active');
+                    await sleep(400);
+                    cardRow.classList.remove('highlight-cell-active');
+                }
+            }
+
+            resetCardState(stepIndex);
+            
+            await sleep(isAutoPlaying ? 500 : 200);
+
+            isAnimating = false;
+            if (btnNext) btnNext.disabled = false;
+            updateButtons();
+            
+            if (isAutoPlaying) {
+                if (currentStep < steps.length - 1) {
+                    autoPlayTimeout = setTimeout(() => {
+                        if (isAutoPlaying) nextStep(true);
+                    }, 1000); 
+                } else {
+                    stopAutoplay();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

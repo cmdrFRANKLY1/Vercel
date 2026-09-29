@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schriftliches Subtrahieren — interaktiv</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'hand': ['Caveat', 'cursive'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .clean-bg {
+            background-color: #18181b;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            border: 1px solid #27272a;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #3f3f46;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #52525b;
+        }
+
+        .anim-element {
+            clip-path: inset(0 100% 0 0);
+            display: inline-block;
+            white-space: nowrap;
+            opacity: 0;
+        }
+        .anim-element.revealed {
+            opacity: 1;
+            clip-path: inset(0 0 0 0);
+            transition: clip-path 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .anim-element.fast.revealed {
+            transition: clip-path 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .anim-wrap {
+            display: block;
+        }
+
+        .hl-text-active {
+            background-color: rgba(59, 130, 246, 0.25);
+            border-radius: 0.25rem;
+        }
+
+        .highlight-cell-active {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 0.5rem;
+            transition: background-color 0.15s ease;
+        }
+
+        .highlight-col {
+            background-color: rgba(255, 255, 255, 0.08);
+            border-radius: 0.5rem;
+        }
+
+        .highlight-carry {
+            background-color: rgba(248, 113, 113, 0.15);
+            border-radius: 0.5rem;
+        }
+
+        .hover-highlight-cell {
+            box-shadow: inset 0 0 0 2px rgba(234, 179, 8, 0.9) !important;
+            border-radius: 0.5rem;
+            transition: box-shadow 0.15s ease;
+        }
+
+        .hover-highlight-col {
+            box-shadow: inset 0 0 0 2px rgba(234, 179, 8, 0.4) !important;
+            border-radius: 0.5rem;
+            transition: box-shadow 0.15s ease;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased bg-zinc-950 text-zinc-200 min-h-screen flex justify-center items-center p-2 sm:p-4 selection:bg-blue-500/30">
+
+    <div class="max-w-6xl w-full flex flex-col gap-4">
+
+        <!-- Controls Header -->
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-3 shadow-lg flex flex-wrap justify-between items-center z-50 sticky top-2 gap-2">
+            <h1 class="font-bold text-base sm:text-lg text-white hidden md:block tracking-wide">Schriftliches Subtrahieren</h1>
+            <div class="flex gap-2 w-full md:w-auto justify-end items-center flex-grow">
+                <button onclick="initProblem()" class="px-3 py-1.5 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-white rounded-lg transition shadow-sm font-semibold text-sm text-zinc-300">
+                    Neue Zahlen
+                </button>
+
+                <div class="h-6 border-l border-zinc-700 mx-1"></div>
+
+                <button id="btn-auto" onclick="toggleAutoplay()" class="px-3 py-1.5 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-white rounded-lg transition shadow-sm font-semibold text-sm text-zinc-300 flex items-center gap-1 w-20 justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Auto</span>
+                </button>
+
+                <div class="h-6 border-l border-zinc-700 mx-1"></div>
+
+                <button id="btn-prev" onclick="prevStep()" class="px-3 py-1.5 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-white rounded-lg transition shadow-sm font-semibold text-sm text-zinc-300 flex items-center gap-1 opacity-50 cursor-not-allowed" disabled>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    <span>Zurück</span>
+                </button>
+
+                <button id="btn-next" onclick="nextStep()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition shadow-sm font-semibold text-sm flex items-center gap-2 w-28 justify-center">
+                    <span>Start</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Two Panels Layout -->
+        <div class="flex flex-col lg:flex-row gap-4 w-full h-[520px]">
+
+            <!-- LEFT PANEL: Explanations -->
+            <div class="clean-bg w-full lg:w-1/2 rounded-xl h-full p-6 pt-4 overflow-y-auto custom-scrollbar font-hand text-xl leading-[40px] text-zinc-100 relative">
+                <div class="sticky top-0 -ml-2 mb-2 text-xs font-sans font-bold text-zinc-500 uppercase tracking-widest bg-[#18181b]/95 w-fit px-2 py-1 rounded z-10 backdrop-blur-sm">
+                    Erklärungen
+                </div>
+                <div id="explanations-container" class="pb-10"></div>
+            </div>
+
+            <!-- RIGHT PANEL: Calculations -->
+            <div class="clean-bg w-full lg:w-1/2 rounded-xl h-full p-4 sm:p-6 pt-6 font-hand text-xl leading-[40px] text-zinc-100 relative overflow-y-auto custom-scrollbar flex flex-col">
+                <div class="absolute top-3 left-4 text-xs font-sans font-bold text-zinc-500 uppercase tracking-widest mt-1">
+                    Rechnung
+                </div>
+
+                <div class="flex-grow flex items-center justify-center mt-2 min-h-max w-full max-w-full overflow-x-auto">
+                    <div class="relative inline-block min-w-max p-2 mt-4">
+                        <svg id="arrow-svg" class="absolute top-0 left-0 w-full h-full pointer-events-none z-50">
+                            <defs>
+                                <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                    <polygon points="0 0, 8 3, 0 6" fill="rgba(234, 179, 8, 0.9)" />
+                                </marker>
+                            </defs>
+                            <g id="arrow-paths"></g>
+                        </svg>
+
+                        <div id="math-grid" class="font-hand text-4xl sm:text-5xl grid relative font-semibold tracking-wider">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let currentStep = -1;
+        let steps = [];
+        let gridData = [];
+        let totalCols = 0;
+        let isAnimating = false;
+        let isAutoPlaying = false;
+        let autoPlayTimeout = null;
+        let num1, num2;
+
+        const placeNames = ["Einer", "Zehner", "Hunderter", "Tausender", "Zehntausender", "Hunderttausender"];
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        window.onload = initProblem;
+
+        function drawArrows(pathStr) {
+            if (!pathStr || pathStr.indexOf('->') === -1) return;
+            let paths = '';
+            let nodes = pathStr.split('->');
+            for (let i = 0; i < nodes.length - 1; i++) {
+                let el1 = document.getElementById(nodes[i]);
+                let el2 = document.getElementById(nodes[i+1]);
+                if (!el1 || !el2) continue;
+
+                let x1 = el1.offsetLeft + el1.offsetWidth / 2;
+                let y1 = el1.offsetTop + el1.offsetHeight / 2;
+                let x2 = el2.offsetLeft + el2.offsetWidth / 2;
+                let y2 = el2.offsetTop + el2.offsetHeight / 2;
+
+                let dx = x2 - x1;
+                let dy = y2 - y1;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+
+                let offset = 14;
+                let angle = Math.atan2(dy, dx);
+
+                if (dist > offset * 2) {
+                    x1 += Math.cos(angle) * offset;
+                    y1 += Math.sin(angle) * offset;
+                    x2 -= Math.cos(angle) * (offset + 4);
+
+                    let ndx = x2 - x1;
+                    let ndy = y2 - y1;
+                    let nDist = Math.sqrt(ndx*ndx + ndy*ndy);
+
+                    let nx = -ndy / nDist;
+                    let ny = ndx / nDist;
+
+                    let cx = x1 + ndx/2 + nx * 20;
+                    let cy = y1 + ndy/2 + ny * 20;
+
+                    paths += `<path d="M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}" fill="none" stroke="rgba(234, 179, 8, 0.9)" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrowhead)" />`;
+                }
+            }
+            document.getElementById('arrow-paths').innerHTML = paths;
+        }
+
+        function enterCol(col) {
+            document.getElementById(`cell-0-${col}`)?.classList.add('hover-highlight-col');
+            document.getElementById(`cell-1-${col}`)?.classList.add('hover-highlight-col');
+
+            let carryCell = document.getElementById(`cell-2-${col}`);
+            if (carryCell && carryCell.innerText.trim() !== '') {
+                carryCell.classList.add('hover-highlight-col');
+            }
+            document.getElementById(`cell-3-${col}`)?.classList.add('hover-highlight-col');
+        }
+        function leaveCol(col) {
+            document.getElementById(`cell-0-${col}`)?.classList.remove('hover-highlight-col');
+            document.getElementById(`cell-1-${col}`)?.classList.remove('hover-highlight-col');
+            document.getElementById(`cell-2-${col}`)?.classList.remove('hover-highlight-col');
+            document.getElementById(`cell-3-${col}`)?.classList.remove('hover-highlight-col');
+        }
+        function enterCarryWrap(col) {
+            let carryCell = document.getElementById(`cell-2-${col}`);
+            if(carryCell) carryCell.classList.add('hover-highlight-carry');
+        }
+        function leaveCarryWrap(col) {
+            let carryCell = document.getElementById(`cell-2-${col}`);
+            if(carryCell) carryCell.classList.remove('hover-highlight-carry');
+        }
+        function enter(ids, isAnim = false, arrowPath = "") {
+            let cls = isAnim ? 'highlight-cell-active' : 'hover-highlight-cell';
+            if (ids) {
+                ids.split(',').forEach(id => {
+                    let el = document.getElementById(id);
+                    if (el && el.innerText.trim() !== '') el.classList.add(cls);
+                });
+            }
+            if (!isAnim && arrowPath) {
+                drawArrows(arrowPath);
+            }
+        }
+        function leave(ids, isAnim = false) {
+            let cls = isAnim ? 'highlight-cell-active' : 'hover-highlight-cell';
+            if (ids) {
+                ids.split(',').forEach(id => {
+                    let el = document.getElementById(id);
+                    if (el) el.classList.remove(cls);
+                });
+            }
+            if (!isAnim) {
+                document.getElementById('arrow-paths').innerHTML = '';
+            }
+        }
+
+        function toggleAutoplay() {
+            isAutoPlaying = !isAutoPlaying;
+            updateAutoButton();
+
+            if (isAutoPlaying) {
+                if (!isAnimating) {
+                    if (currentStep >= steps.length - 1) {
+                        initProblem();
+                        setTimeout(() => { if(isAutoPlaying) nextStep(true); }, 800);
+                    } else {
+                        nextStep(true);
+                    }
+                }
+            } else {
+                clearTimeout(autoPlayTimeout);
+            }
+        }
+
+        function stopAutoplay() {
+            isAutoPlaying = false;
+            clearTimeout(autoPlayTimeout);
+            updateAutoButton();
+        }
+
+        function updateAutoButton() {
+            const btn = document.getElementById('btn-auto');
+            if (isAutoPlaying) {
+                btn.classList.add('bg-yellow-600/20', 'border-yellow-500', 'text-yellow-400');
+                btn.classList.remove('bg-zinc-800', 'border-zinc-700', 'text-zinc-300');
+            } else {
+                btn.classList.remove('bg-yellow-600/20', 'border-yellow-500', 'text-yellow-400');
+                btn.classList.add('bg-zinc-800', 'border-zinc-700', 'text-zinc-300');
+            }
+        }
+
+        function initProblem() {
+            if(isAnimating && !isAutoPlaying) return;
+            if (!isAutoPlaying) stopAutoplay();
+            document.getElementById('arrow-paths').innerHTML = '';
+
+            num1 = Math.floor(Math.random() * 8999) + 1000;
+            num2 = Math.floor(Math.random() * (num1 - 100)) + 10;
+
+            let n1Str = num1.toString();
+            let n2Str = num2.toString();
+
+            totalCols = Math.max(n1Str.length, n2Str.length) + 1;
+
+            let aArr = n1Str.padStart(totalCols, ' ').split('');
+            let bArr = n2Str.padStart(totalCols - 1, ' ').split('');
+            bArr.unshift('-');
+
+            gridData = Array.from({length: 4}, () => Array(totalCols).fill(null));
+            steps = [];
+            let stepCounter = 1;
+
+            for(let i = 0; i < totalCols; i++) {
+                gridData[0][i] = {val: aArr[i], type: 'n1', showOnStep: 0};
+                let bVal = bArr[i] === ' ' ? '' : bArr[i];
+                let bType = bVal === '-' ? 'op' : 'n2';
+                gridData[1][i] = {val: bVal, type: bType, showOnStep: 0};
+                gridData[2][i] = {val: '', type: 'carry', showOnStep: 0};
+                gridData[3][i] = {val: '', type: 'res', showOnStep: 999};
+            }
+
+            const TEXT = (text, ids, colorClass, animClass = "fast", clear = true, arrowPath = "") =>
+                `<span class="anim-element ${animClass} px-1 my-0.5 transition-colors duration-300 inline-block" data-hl-clear="${clear}" data-hl-ids="${ids}">
+                    <span class="cursor-help border-b border-dashed border-zinc-600 hover:border-yellow-400 ${colorClass} transition-colors" onmouseenter="enter('${ids}', false, '${arrowPath}')" onmouseleave="leave('${ids}')">${text}</span>
+                </span>`;
+            const PLAIN = (text, animClass = "fast", clear = true) =>
+                `<span class="anim-element ${animClass} px-1 my-0.5 text-zinc-400 inline-block" data-hl-clear="${clear}">${text}</span>`;
+            const COL_TITLE = (text, col, colorClass) =>
+                `<span class="cursor-pointer border-b-2 border-dashed border-zinc-500 hover:border-yellow-400 ${colorClass} transition-colors" onmouseenter="enterCol(${col})" onmouseleave="leaveCol(${col})">${text}</span>`;
+
+            steps.push({
+                id: 0,
+                html: `<div class="step-container hidden mb-6" id="step-desc-0">
+                          <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100">Aufgabe</div>
+                          <div class="mt-1 leading-relaxed whitespace-nowrap flex flex-wrap items-center">
+                              ${PLAIN("Subtrahiere", "slow")}
+                              ${TEXT(num2, Array.from({length: n2Str.length}, (_, i) => `cell-1-${totalCols - n2Str.length + i}`).join(','), 'text-white font-bold', 'slow')}
+                              ${PLAIN("von", "slow")}
+                              ${TEXT(num1, Array.from({length: n1Str.length}, (_, i) => `cell-0-${totalCols - n1Str.length + i}`).join(','), 'text-white font-bold', 'slow')}
+                          </div>
+                          <div class="anim-element anim-wrap text-zinc-400 mt-2">Wir ergänzen von unten nach oben! 👉</div>
+                      </div>`
+            });
+
+            let carry = 0;
+            for(let c = totalCols - 1; c >= 0; c--) {
+                let d1 = aArr[c] === ' ' || aArr[c] === '' ? 0 : parseInt(aArr[c]);
+                let d2 = (bArr[c] === ' ' || bArr[c] === '-' || bArr[c] === '') ? 0 : parseInt(bArr[c]);
+
+                if (aArr[c] === ' ' && bArr[c] === ' ' && carry === 0) continue;
+                if (aArr[c] === ' ' && bArr[c] === '-' && carry === 0) break;
+
+                let subVal = d2 + carry;
+                let borrow = 0;
+                let nextCarry = 0;
+                let d1Calc = d1;
+
+                if (d1 < subVal) {
+                    borrow = 10;
+                    nextCarry = 1;
+                    d1Calc = d1 + 10;
+                }
+
+                let resDigit = d1Calc - subVal;
+
+                gridData[3][c].val = resDigit.toString();
+                gridData[3][c].showOnStep = stepCounter;
+
+                let placeName = placeNames[(totalCols - 1) - c] || "nächste Stelle";
+                let placeTitle = COL_TITLE(placeName, c, 'text-blue-300 hover:text-blue-200');
+
+                let id1 = `cell-0-${c}`;
+                let id2 = (bArr[c] === ' ' || bArr[c] === '-') ? null : `cell-1-${c}`;
+                let idC = carry > 0 ? `cell-2-${c}` : null;
+                let idRes = `cell-3-${c}`;
+                let idNextC = nextCarry > 0 ? `cell-2-${c-1}` : null;
+
+                if (idNextC) {
+                    gridData[2][c-1] = {val: nextCarry.toString(), type: 'carry', showOnStep: stepCounter};
+                }
+
+                let arrPath = id2 ? `${id2}->${id1}->${idRes}` : `${id1}->${idRes}`;
+
+                let expText = `<div class="step-container hidden mb-4" id="step-desc-${stepCounter}">`;
+                expText += `<div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100">Schritt ${stepCounter}: ${placeTitle}</div>`;
+                expText += `<div class="leading-relaxed flex flex-wrap items-center mt-2">`;
+
+                if (carry > 0) {
+                    expText += PLAIN("Zuerst:", "fast", false);
+                    if (id2) {
+                        expText += TEXT(d2, id2, 'text-white', 'fast', false);
+                        expText += PLAIN("+", "fast", false);
+                    }
+                    expText += TEXT(carry + " (Ü)", idC, 'text-red-400', 'fast', false);
+                    expText += PLAIN("=", "fast", false);
+                    expText += TEXT(subVal, id2 ? `${id2},${idC}` : idC, 'text-blue-300 font-bold', 'fast', false);
+                    expText += PLAIN("Dann:", "fast", false);
+                }
+
+                expText += PLAIN("Von", "fast", false);
+                let baseId = id2 ? (carry > 0 ? `${id2},${idC}` : id2) : idC;
+                expText += TEXT(subVal, baseId, 'text-blue-300 font-bold', 'fast', false, arrPath);
+                expText += PLAIN("bis", "fast", false);
+                expText += TEXT(d1Calc, id1, 'text-white font-bold', 'fast', false, arrPath);
+
+                if (borrow > 0) {
+                    expText += PLAIN(`(${d1} geht nicht, also bis ${d1Calc})`, "fast", false);
+                }
+
+                expText += PLAIN("sind", "fast", false);
+                expText += TEXT(resDigit, idRes, 'text-green-400 font-bold', 'fast', false, arrPath);
+                expText += `</div>`;
+
+                expText += `<div class="mt-1 text-blue-300 flex items-center text-lg">`;
+                expText += PLAIN("Schreibe", "fast", false);
+                expText += TEXT(resDigit, idRes, 'text-green-400 font-bold', 'fast', false, arrPath);
+                if (nextCarry > 0) {
+                    expText += PLAIN(", Übertrag", "fast", false);
+                    expText += TEXT(nextCarry, idNextC, 'text-red-400 font-bold', 'fast', false);
+                }
+                expText += `</div></div>`;
+
+                steps.push({ id: stepCounter, html: expText });
+
+                carry = nextCarry;
+                stepCounter++;
+            }
+
+            let finalResStr = (num1 - num2).toString();
+            let finalResIds = Array.from({length: finalResStr.length}, (_, i) => `cell-3-${totalCols - finalResStr.length + i}`).join(',');
+
+            steps.push({
+                id: stepCounter,
+                html: `
+                    <div class="step-container hidden mb-6" id="step-desc-${stepCounter}">
+                        <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100 border-t border-zinc-700 pt-4 mt-2">Fertig! 🎉</div>
+                        <div class="mt-1 leading-relaxed flex flex-wrap items-center">
+                            ${PLAIN("Die Differenz ist")}
+                            ${TEXT(finalResStr, finalResIds, 'text-green-400 font-bold')}
+                        </div>
+                    </div>`
+            });
+
+            renderGrid();
+            renderExplanations();
+
+            currentStep = 0;
+            resetGridState(0);
+
+            document.getElementById(`step-desc-0`).classList.remove('hidden');
+            document.querySelectorAll('#step-desc-0 .anim-element').forEach(el => el.classList.add('revealed'));
+
+            updateButtons();
+        }
+
+        function renderGrid() {
+            let grid = document.getElementById('math-grid');
+            grid.innerHTML = '';
+            grid.style.gridTemplateColumns = `repeat(${totalCols}, minmax(1.8rem, 2.5rem))`;
+
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < totalCols; c++) {
+                    let cell = gridData[r][c];
+                    let id = `cell-${r}-${c}`;
+
+                    // Carry row (r === 2): render digit if present, but NO bottom line.
+                    if (r === 2) {
+                        let colorClass = "text-red-400 text-2xl";
+
+                        if (!cell || cell.val === '' || cell.val === null) {
+                            grid.innerHTML += `<div id="${id}" class="h-[44px] flex items-end justify-center"></div>`;
+                        } else {
+                            grid.innerHTML += `
+                                <div id="${id}" data-step="${cell.showOnStep}" class="h-[44px] flex items-end justify-center transition-all duration-300 opacity-0 transform translate-y-2">
+                                    <span class="${colorClass}">${cell.val}</span>
+                                </div>
+                            `;
+                        }
+                        continue;
+                    }
+
+                    if (!cell || cell.val === '' || cell.val === null) {
+                        grid.innerHTML += `<div id="${id}" class="h-[44px]"></div>`;
+                        continue;
+                    }
+
+                    let colorClass = "text-zinc-100";
+                    if (cell.type === 'res') colorClass = "text-green-400 font-bold";
+                    if (cell.type === 'op') colorClass = "text-zinc-500";
+
+                    grid.innerHTML += `
+                        <div id="${id}" data-step="${cell.showOnStep}" class="h-[44px] flex items-center justify-center transition-all duration-300 ${colorClass} opacity-0 transform translate-y-2">
+                            <span>${cell.val}</span>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function renderExplanations() {
+            const container = document.getElementById('explanations-container');
+            container.innerHTML = '';
+            steps.forEach(step => {
+                container.innerHTML += step.html;
+            });
+        }
+
+        function updateButtons() {
+            const btnNext = document.getElementById('btn-next');
+            const btnPrev = document.getElementById('btn-prev');
+
+            if (currentStep <= 0) {
+                btnPrev.disabled = true;
+                btnPrev.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                btnPrev.disabled = false;
+                btnPrev.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+
+            if (currentStep >= steps.length - 1) {
+                btnNext.innerHTML = `<span>Neustart</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>`;
+            } else {
+                btnNext.innerHTML = `<span>Weiter</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`;
+            }
+        }
+
+        function resetGridState(targetStepIndex) {
+            let maxStepId = steps[targetStepIndex].id;
+            document.querySelectorAll('#math-grid > div[data-step]').forEach(el => {
+                let stepVal = parseInt(el.dataset.step);
+                if(stepVal > maxStepId) {
+                    el.classList.add('opacity-0', 'translate-y-2');
+                    el.classList.remove('opacity-100', 'translate-y-0');
+                } else {
+                    el.classList.remove('opacity-0', 'translate-y-2');
+                    el.classList.add('opacity-100', 'translate-y-0');
+                }
+            });
+        }
+
+        function prevStep() {
+            if (isAutoPlaying) stopAutoplay();
+            if (isAnimating || currentStep <= 0) return;
+
+            let container = document.getElementById(`step-desc-${steps[currentStep].id}`);
+            container.classList.add('hidden');
+            container.querySelectorAll('.anim-element').forEach(el => el.classList.remove('revealed'));
+
+            currentStep--;
+
+            document.querySelectorAll('.highlight-cell-active, .hl-text-active, .highlight-col, .highlight-carry').forEach(e => {
+                e.classList.remove('highlight-cell-active', 'hl-text-active', 'highlight-col', 'highlight-carry');
+            });
+            document.getElementById('arrow-paths').innerHTML = '';
+
+            resetGridState(currentStep);
+
+            if (currentStep > 0) {
+                document.getElementById(`step-desc-${steps[currentStep].id}`).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                document.getElementById(`explanations-container`).scrollTo({top: 0, behavior: 'smooth'});
+            }
+
+            updateButtons();
+        }
+
+        function nextStep(fromAuto = false) {
+            if (!fromAuto && isAutoPlaying) stopAutoplay();
+            if (isAnimating) return;
+            if (currentStep >= steps.length - 1) {
+                initProblem();
+                return;
+            }
+            currentStep++;
+            animateStep(currentStep);
+        }
+
+        async function animateStep(stepIndex) {
+            isAnimating = true;
+            document.getElementById('btn-next').disabled = true;
+            document.getElementById('btn-prev').disabled = true;
+
+            document.querySelectorAll('.highlight-cell-active, .hl-text-active, .highlight-col, .highlight-carry').forEach(e => {
+                e.classList.remove('highlight-cell-active', 'hl-text-active', 'highlight-col', 'highlight-carry');
+            });
+            document.getElementById('arrow-paths').innerHTML = '';
+
+            let logicalStepId = steps[stepIndex].id;
+            const container = document.getElementById(`step-desc-${logicalStepId}`);
+            container.classList.remove('hidden');
+
+            const elements = Array.from(container.querySelectorAll('.anim-element'));
+
+            for (let i = 0; i < elements.length; i++) {
+                const el = elements[i];
+                el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                el.classList.add('revealed');
+
+                if (el.dataset.hlClear === "true") {
+                    document.querySelectorAll('.highlight-cell-active').forEach(e => e.classList.remove('highlight-cell-active'));
+                    document.querySelectorAll('.hl-text-active').forEach(e => e.classList.remove('hl-text-active'));
+                }
+
+                if (el.dataset.hlIds) {
+                    el.classList.add('hl-text-active');
+                    enter(el.dataset.hlIds, true);
+                }
+
+                let delay = isAutoPlaying ? 1000 : (el.classList.contains('fast') ? 300 : 400);
+                await sleep(delay);
+            }
+
+            if (stepIndex > 0 && stepIndex < steps.length - 1) {
+                let c = totalCols - stepIndex;
+                if (c > 0) {
+                    document.getElementById(`cell-0-${c}`)?.classList.add('highlight-col');
+                    document.getElementById(`cell-1-${c}`)?.classList.add('highlight-col');
+                    let carryCell = document.getElementById(`cell-2-${c}`);
+                    if(carryCell && carryCell.innerText.trim() !== '') {
+                        carryCell.classList.add('highlight-col');
+                    }
+                    document.getElementById(`cell-3-${c}`)?.classList.add('highlight-col');
+                    await sleep(200);
+                }
+            }
+
+            resetGridState(stepIndex);
+
+            await sleep(isAutoPlaying ? 500 : 200);
+
+            isAnimating = false;
+            document.getElementById('btn-next').disabled = false;
+            updateButtons();
+
+            if (isAutoPlaying) {
+                if (currentStep < steps.length - 1) {
+                    autoPlayTimeout = setTimeout(() => {
+                        if (isAutoPlaying) nextStep(true);
+                    }, 1000);
+                } else {
+                    stopAutoplay();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

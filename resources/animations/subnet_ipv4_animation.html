@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="de" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPv4 Subnetting — interaktiv</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'hand': ['Caveat', 'cursive'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Lined paper effect (Light Mode) */
+        .paper-bg {
+            background-color: #fdfcf8;
+            background-image: linear-gradient(#93c5fd 1px, transparent 1px);
+            background-size: 100% 32px;
+            background-position: 0 4px;
+            box-shadow:
+                0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05),
+                inset 40px 0 0 0 rgba(220, 38, 38, 0.15);
+            padding-left: 50px;
+            transition: background-color 0.3s, background-image 0.3s, box-shadow 0.3s;
+        }
+
+        /* Lined paper effect (Dark Mode) */
+        .dark .paper-bg {
+            background-color: #18181b;
+            background-image: linear-gradient(#3f3f46 1px, transparent 1px);
+            box-shadow:
+                0 10px 25px -3px rgba(0, 0, 0, 0.5),
+                inset 40px 0 0 0 rgba(248, 113, 113, 0.15);
+        }
+
+        /* Text animation base classes */
+        .anim-element {
+            clip-path: inset(0 100% 0 0);
+            display: inline-block;
+            white-space: nowrap;
+            opacity: 0;
+        }
+
+        .anim-element.revealed {
+            opacity: 1;
+            clip-path: inset(0 0 0 0);
+            transition: clip-path 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .anim-element.fast.revealed {
+            transition-duration: 0.8s;
+        }
+
+        /* SVG drawing animation */
+        svg.anim-element path, svg.anim-element line, svg.anim-element polyline {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+        }
+
+        svg.anim-element.revealed path, svg.anim-element.revealed line, svg.anim-element.revealed polyline {
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1.5s ease-in-out;
+        }
+
+        /* Highlighting effect */
+        .highlight-light {
+            background: linear-gradient(104deg, rgba(253,230,138,0) 0.9%, rgba(253,230,138,0.8) 2.4%, rgba(253,230,138,0.5) 5.8%, rgba(253,230,138,0.1) 93%, rgba(253,230,138,0) 96%);
+            border-radius: 1em 0;
+        }
+        .dark .highlight-light {
+            background: linear-gradient(104deg, rgba(253,224,71,0) 0.9%, rgba(253,224,71,0.2) 2.4%, rgba(253,224,71,0.1) 5.8%, rgba(253,224,71,0.05) 93%, rgba(253,224,71,0) 96%);
+        }
+    </style>
+</head>
+<body class="font-sans antialiased bg-gray-200 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex justify-center p-2 sm:p-4 transition-colors duration-300">
+
+    <div class="max-w-7xl w-full flex flex-col gap-4">
+
+        <!-- Controls Header -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 flex justify-between items-center z-50 sticky top-2 sm:top-4 transition-colors duration-300">
+            <h1 class="font-bold text-lg text-gray-700 dark:text-gray-200 hidden md:block" data-lang-de>IPv4 Subnetting — interaktiv</h1>
+            <h1 class="font-bold text-lg text-gray-700 dark:text-gray-200 hidden md:block" data-lang-en style="display:none;">IPv4 Subnetting — interactive</h1>
+            <div class="flex gap-2 sm:gap-4 w-full md:w-auto justify-between md:justify-end items-center">
+
+                <!-- Language Toggle -->
+                <button id="btn-lang" class="p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition shadow-sm font-semibold text-sm" onclick="toggleLang()" title="DE/EN">
+                    <span id="lang-label">EN</span>
+                </button>
+
+                <!-- Dark Mode Toggle -->
+                <button id="btn-theme" class="p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition shadow-sm" onclick="toggleTheme()" title="Dark/Light Mode">
+                    <svg id="theme-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                    </svg>
+                </button>
+
+                <button id="btn-reset" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition shadow-sm font-semibold text-sm" onclick="resetAnimation()">
+                    <span data-lang-de>Neustart</span>
+                    <span data-lang-en style="display:none;">Restart</span>
+                </button>
+                <button id="btn-next" class="px-4 sm:px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-sm font-semibold text-sm flex items-center gap-2" onclick="nextStep()">
+                    <span data-lang-de>Weiter</span>
+                    <span data-lang-en style="display:none;">Next</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Two Papers Layout -->
+        <div class="flex flex-col lg:flex-row gap-6 w-full">
+
+            <!-- LEFT PAPER: Explanations -->
+            <div class="paper-bg w-full lg:w-1/2 rounded-lg min-h-[700px] p-6 pt-8 font-hand text-2xl leading-[32px] text-gray-900 dark:text-gray-100 relative overflow-hidden flex-1 shadow-lg">
+                <div class="absolute top-2 left-14 text-sm font-sans font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest">
+                    <span data-lang-de>Erklärungen</span>
+                    <span data-lang-en style="display:none;">Explanations</span>
+                </div>
+                <div class="mt-4">
+
+                    <!-- Left Step 0 -->
+                    <div class="step-container hidden mb-8" data-step-container="0">
+                        <div class="anim-element block font-bold text-3xl mb-4" data-step="0" data-order="1">
+                            <span data-lang-de>Aufgabe: Berechne das Subnetz</span>
+                            <span data-lang-en style="display:none;">Task: Calculate the subnet</span>
+                        </div>
+                        <div class="anim-element block text-blue-800 dark:text-blue-400" data-step="0" data-order="2">
+                            <span data-lang-de>Gegeben ist die IP-Adresse drüben. 👉</span>
+                            <span data-lang-en style="display:none;">The IP address is given over there. 👉</span>
+                        </div>
+                        <div class="anim-element block mt-2" data-step="0" data-order="4">
+                            <span data-lang-de>Wir suchen die <span class="highlight-light">Subnetzmaske, Netz-ID und Broadcast!</span></span>
+                            <span data-lang-en style="display:none;">We are looking for the <span class="highlight-light">subnet mask, network ID and broadcast!</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Left Step 1 -->
+                    <div class="step-container hidden mb-8" data-step-container="1">
+                        <div class="anim-element block font-bold text-3xl mt-4" data-step="1" data-order="1">
+                            <span data-lang-de>Schritt 1: Was bedeutet die /27?</span>
+                            <span data-lang-en style="display:none;">Step 1: What does the /27 mean?</span>
+                        </div>
+                        <div class="anim-element block" data-step="1" data-order="2">
+                            <span data-lang-de>Das ist die sogenannte CIDR-Notation.</span>
+                            <span data-lang-en style="display:none;">This is the so-called CIDR notation.</span>
+                        </div>
+                        <div class="anim-element block text-blue-800 dark:text-blue-400" data-step="1" data-order="3">
+                            <span data-lang-de>Sie verrät uns, dass die Maske aus exakt 27 Einsen besteht.</span>
+                            <span data-lang-en style="display:none;">It tells us that the mask consists of exactly 27 ones.</span>
+                        </div>
+                    </div>
+
+                    <!-- Left Step 2 -->
+                    <div class="step-container hidden mb-8" data-step-container="2">
+                        <div class="anim-element block font-bold text-3xl mt-4" data-step="2" data-order="1">
+                            <span data-lang-de>Schritt 2: Binär in Dezimal</span>
+                            <span data-lang-en style="display:none;">Step 2: Binary to decimal</span>
+                        </div>
+                        <div class="anim-element block" data-step="2" data-order="2">
+                            <span data-lang-de>Wir wandeln die 8er-Blöcke nun in dezimale Zahlen um.</span>
+                            <span data-lang-en style="display:none;">We now convert the 8-bit blocks into decimal numbers.</span>
+                        </div>
+                        <div class="anim-element block text-sm mt-2 text-gray-600 dark:text-gray-400 fast" data-step="2" data-order="5">
+                            <span data-lang-de>(128 + 64 + 32 = 224)</span>
+                            <span data-lang-en style="display:none;">(128 + 64 + 32 = 224)</span>
+                        </div>
+                    </div>
+
+                    <!-- Left Step 3 -->
+                    <div class="step-container hidden mb-8" data-step-container="3">
+                        <div class="anim-element block font-bold text-3xl mt-4" data-step="3" data-order="1">
+                            <span data-lang-de>Schritt 3: Blockgröße berechnen</span>
+                            <span data-lang-en style="display:none;">Step 3: Calculate block size</span>
+                        </div>
+                        <div class="anim-element block" data-step="3" data-order="2">
+                            <span data-lang-de>Wir nehmen das "interessante" Oktett, also den Wert, der weder 255 noch 0 ist.</span>
+                            <span data-lang-en style="display:none;">We take the "interesting" octet, the value that is neither 255 nor 0.</span>
+                        </div>
+                        <div class="anim-element block text-blue-800 dark:text-blue-400 mt-2" data-step="3" data-order="3">
+                            <span data-lang-de>Diesen ziehen wir pauschal von 256 ab.</span>
+                            <span data-lang-en style="display:none;">We subtract this from 256.</span>
+                        </div>
+                    </div>
+
+                    <!-- Left Step 4 -->
+                    <div class="step-container hidden mb-12" data-step-container="4">
+                        <div class="anim-element block font-bold text-3xl mt-4" data-step="4" data-order="1">
+                            <span data-lang-de>Schritt 4: Netz und Broadcast</span>
+                            <span data-lang-en style="display:none;">Step 4: Network and broadcast</span>
+                        </div>
+                        <div class="anim-element block" data-step="4" data-order="2">
+                            <span data-lang-de>Das Netz wächst also in 32er Schritten.</span>
+                            <span data-lang-en style="display:none;">So the network grows in steps of 32.</span>
+                        </div>
+                        <div class="anim-element block text-blue-800 dark:text-blue-400 mt-2" data-step="4" data-order="4">
+                            <span data-lang-de>Unsere ursprüngliche IP endet auf <span class="font-bold">.45</span>.</span>
+                            <span data-lang-en style="display:none;">Our original IP ends in <span class="font-bold">.45</span>.</span>
+                        </div>
+                        <div class="anim-element block highlight-light" data-step="4" data-order="5">
+                            <span data-lang-de>Die 45 passt genau in den Block von 32 bis 63!</span>
+                            <span data-lang-en style="display:none;">The 45 fits exactly into the block from 32 to 63!</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- RIGHT PAPER: Calculations -->
+            <div class="paper-bg w-full lg:w-1/2 rounded-lg min-h-[700px] p-6 pt-8 font-hand text-2xl leading-[32px] text-gray-900 dark:text-gray-100 relative overflow-hidden flex-1 shadow-lg">
+                <div class="absolute top-2 left-14 text-sm font-sans font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest">
+                    <span data-lang-de>Rechnungen</span>
+                    <span data-lang-en style="display:none;">Calculations</span>
+                </div>
+                <div class="mt-4">
+
+                    <!-- Right Step 0 -->
+                    <div class="step-container hidden mb-8" data-step-container="0">
+                        <div class="anim-element block text-4xl font-bold mt-8 p-4 border-2 border-dashed border-gray-400 dark:border-gray-600 rounded-xl bg-white/50 dark:bg-gray-800/50 w-fit transform rotate-1 shadow-sm" data-step="0" data-order="3">
+                            192.168.10.45 <span class="text-red-600 dark:text-red-400">/27</span>
+                        </div>
+                    </div>
+
+                    <!-- Right Step 1 -->
+                    <div class="step-container hidden mb-8" data-step-container="1">
+                        <div class="anim-element block text-gray-500 dark:text-gray-400 mt-12" data-step="1" data-order="4">
+                            <span data-lang-de>Subnetzmaske (binär):</span>
+                            <span data-lang-en style="display:none;">Subnet mask (binary):</span>
+                        </div>
+                        <div class="anim-element block tracking-widest font-bold mt-1" data-step="1" data-order="5">
+                            11111111 . 11111111 . 11111111 . <span class="text-red-600 dark:text-red-400">111</span>00000
+                        </div>
+                    </div>
+
+                    <!-- Right Step 2 -->
+                    <div class="step-container hidden mb-8 relative" data-step-container="2">
+
+                        <svg width="60" height="60" class="anim-element fast absolute -top-8 left-10" data-step="2" data-order="3">
+                            <path d="M 30,0 L 30,40" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400 dark:text-gray-500" stroke-linecap="round"/>
+                            <polyline points="20,30 30,40 40,30" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400 dark:text-gray-500" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+
+                        <div class="anim-element block text-gray-500 dark:text-gray-400 mt-8" data-step="2" data-order="4">
+                            <span data-lang-de>Subnetzmaske (dezimal):</span>
+                            <span data-lang-en style="display:none;">Subnet mask (decimal):</span>
+                        </div>
+                        <div class="anim-element block tracking-widest font-bold mt-1 p-2 bg-blue-100/50 dark:bg-blue-900/30 rounded w-fit" data-step="2" data-order="4">
+                            255 . 255 . 255 . <span class="text-red-600 dark:text-red-400">224</span>
+                        </div>
+                    </div>
+
+                    <!-- Right Step 3 -->
+                    <div class="step-container hidden mb-8 mt-12" data-step-container="3">
+                        <div class="anim-element block text-3xl font-bold text-center" data-step="3" data-order="4">
+                            256 - <span class="text-red-600 dark:text-red-400">224</span> = <span class="text-green-600 dark:text-green-400 border-b-4 border-green-600 dark:border-green-400 pb-1">32</span>
+                        </div>
+                        <div class="anim-element block text-center text-gray-500 dark:text-gray-400 text-lg mt-2 fast" data-step="3" data-order="5">
+                            <span data-lang-de>(Blockgröße)</span>
+                            <span data-lang-en style="display:none;">(block size)</span>
+                        </div>
+                    </div>
+
+                    <!-- Right Step 4 -->
+                    <div class="step-container hidden mb-12 mt-12" data-step-container="4">
+                        <div class="anim-element block font-bold text-gray-500 dark:text-gray-400 text-center w-full border-b border-gray-300 dark:border-gray-700 pb-2 mb-4" data-step="4" data-order="3">
+                            0 ... 32 ... 64 ... 96
+                        </div>
+
+                        <div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 ml-4">
+                            <div class="anim-element block font-bold text-right" data-step="4" data-order="6">
+                                <span data-lang-de>Netz-ID:</span>
+                                <span data-lang-en style="display:none;">Network ID:</span>
+                            </div>
+                            <div class="anim-element block font-bold text-blue-700 dark:text-blue-400" data-step="4" data-order="6">192.168.10.32</div>
+
+                            <div class="anim-element block font-bold text-right text-gray-500 dark:text-gray-400" data-step="4" data-order="7">
+                                <span data-lang-de>Erste IP:</span>
+                                <span data-lang-en style="display:none;">First IP:</span>
+                            </div>
+                            <div class="anim-element block text-gray-600 dark:text-gray-300" data-step="4" data-order="7">192.168.10.33</div>
+
+                            <div class="anim-element block font-bold text-right text-gray-500 dark:text-gray-400" data-step="4" data-order="8">
+                                <span data-lang-de>Letzte IP:</span>
+                                <span data-lang-en style="display:none;">Last IP:</span>
+                            </div>
+                            <div class="anim-element block text-gray-600 dark:text-gray-300" data-step="4" data-order="8">192.168.10.62</div>
+
+                            <div class="anim-element block font-bold text-right" data-step="4" data-order="9">
+                                <span data-lang-de>Broadcast:</span>
+                                <span data-lang-en style="display:none;">Broadcast:</span>
+                            </div>
+                            <div class="anim-element block font-bold text-green-700 dark:text-green-400" data-step="4" data-order="9">192.168.10.63</div>
+                        </div>
+
+                        <div class="anim-element block mt-12 text-center w-full text-5xl font-bold transform -rotate-6 text-red-600 dark:text-red-400" data-step="4" data-order="10">
+                            <span data-lang-de>Fertig! 🎉</span>
+                            <span data-lang-en style="display:none;">Done! 🎉</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 0;
+        const totalSteps = 5;
+        let isAnimating = false;
+        let currentLang = 'de';
+
+        // Language Toggle Logic
+        function toggleLang() {
+            currentLang = currentLang === 'de' ? 'en' : 'de';
+            document.getElementById('lang-label').textContent = currentLang === 'de' ? 'EN' : 'DE';
+
+            // Toggle all data-lang-de and data-lang-en elements
+            document.querySelectorAll('[data-lang-de]').forEach(el => {
+                el.style.display = currentLang === 'de' ? '' : 'none';
+            });
+            document.querySelectorAll('[data-lang-en]').forEach(el => {
+                el.style.display = currentLang === 'en' ? '' : 'none';
+            });
+
+            // Update button labels
+            updateNextButton();
+        }
+
+        // Theme Toggle Logic
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>';
+            } else {
+                html.classList.add('dark');
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>';
+            }
+        }
+
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        window.onload = () => {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                toggleTheme();
+            }
+            // Set initial language display
+            toggleLang();
+            toggleLang(); // Toggle back to DE (initial state)
+            resetAnimation();
+        };
+
+        function updateNextButton() {
+            const btnNext = document.getElementById('btn-next');
+            if (currentStep >= totalSteps - 1) {
+                btnNext.innerHTML = `
+                    <span data-lang-de>Ende erreicht</span>
+                    <span data-lang-en style="display:none;">End reached</span>
+                `;
+                // Re-apply language visibility
+                btnNext.querySelectorAll('[data-lang-de]').forEach(el => {
+                    el.style.display = currentLang === 'de' ? '' : 'none';
+                });
+                btnNext.querySelectorAll('[data-lang-en]').forEach(el => {
+                    el.style.display = currentLang === 'en' ? '' : 'none';
+                });
+            } else {
+                btnNext.innerHTML = `
+                    <span data-lang-de>Weiter</span>
+                    <span data-lang-en style="display:none;">Next</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                `;
+                btnNext.querySelectorAll('[data-lang-de]').forEach(el => {
+                    el.style.display = currentLang === 'de' ? '' : 'none';
+                });
+                btnNext.querySelectorAll('[data-lang-en]').forEach(el => {
+                    el.style.display = currentLang === 'en' ? '' : 'none';
+                });
+            }
+        }
+
+        async function animateStep(stepIndex) {
+            isAnimating = true;
+
+            const btnNext = document.getElementById('btn-next');
+            btnNext.disabled = true;
+            btnNext.classList.add('opacity-50', 'cursor-not-allowed');
+
+            const containers = document.querySelectorAll(`[data-step-container="${stepIndex}"]`);
+            containers.forEach(c => c.classList.remove('hidden'));
+
+            const elements = Array.from(document.querySelectorAll(`[data-step="${stepIndex}"]`));
+            elements.sort((a, b) => parseInt(a.dataset.order) - parseInt(b.dataset.order));
+
+            for (let i = 0; i < elements.length; i++) {
+                const el = elements[i];
+
+                el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                el.classList.add('revealed');
+
+                let delay = 900;
+                if (el.classList.contains('fast')) delay = 500;
+                if (el.tagName.toLowerCase() === 'svg') delay = 500;
+
+                if (i < elements.length - 1) {
+                    await sleep(delay);
+                }
+            }
+
+            isAnimating = false;
+
+            if (currentStep < totalSteps - 1) {
+                btnNext.disabled = false;
+                btnNext.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            updateNextButton();
+        }
+
+        function nextStep() {
+            if (isAnimating) return;
+            if (currentStep >= totalSteps - 1) return;
+
+            currentStep++;
+            animateStep(currentStep);
+        }
+
+        function resetAnimation() {
+            if (isAnimating) return;
+
+            currentStep = 0;
+
+            const allContainers = document.querySelectorAll('.step-container');
+            allContainers.forEach(el => el.classList.add('hidden'));
+
+            const anims = document.querySelectorAll('.anim-element');
+            anims.forEach(el => el.classList.remove('revealed'));
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            const btnNext = document.getElementById('btn-next');
+            btnNext.innerHTML = `
+                <span data-lang-de>Starten</span>
+                <span data-lang-en style="display:none;">Start</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            `;
+            btnNext.querySelectorAll('[data-lang-de]').forEach(el => {
+                el.style.display = currentLang === 'de' ? '' : 'none';
+            });
+            btnNext.querySelectorAll('[data-lang-en]').forEach(el => {
+                el.style.display = currentLang === 'en' ? '' : 'none';
+            });
+            btnNext.disabled = false;
+            btnNext.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            setTimeout(() => {
+                animateStep(0);
+            }, 300);
+        }
+    </script>
+</body>
+</html>
