@@ -258,10 +258,8 @@ App.sql = (function() {
             return;
         }
 
-        // Strip quotes and trailing semicolons for the explanation
         const cleanQuery = query.replace(/['"]/g, '').replace(/;/g, '');
 
-        // Safe humanizer that skips HTML tags
         const humanizeOperators = (str) => {
             const tags = [];
             let safeStr = str.replace(/<[^>]+>/g, (match) => {
@@ -318,7 +316,6 @@ App.sql = (function() {
             });
         };
 
-        // Helper to make columns sound natural
         const describeColumns = (colsStr) => {
             if (colsStr === '*') return 'alle Spalten';
             const parts = colsStr.split(',').map(s => s.trim());
@@ -801,7 +798,7 @@ App.sql = (function() {
                         <!-- Customers Table -->
                         <div style="flex: 1; display: flex; flex-direction: column; background: var(--panel-color); border: 1px solid var(--panel-border); border-radius: 0.5rem; overflow: hidden; box-shadow: var(--control-shadow); min-height: 0;">
                             <div style="padding: 0.5rem 1rem; border-bottom: 1px solid var(--border-color); background: var(--info-box); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-                                <div style="font-size: 0.75rem; font-weight: 700; color: ${COLORS.customers}; letter-spacing: 0.05em; text-transform: uppercase;"><i class="fa-solid fa-users" style="margin-right: 0.4rem; opacity: 0.7;"></i> Customers</div>
+                                <div style="font-size: 0.75rem; font-weight: 700; color: ${COLORS.customers}; letter-spacing: 0.05em;"><i class="fa-solid fa-users" style="margin-right: 0.4rem; opacity: 0.7;"></i> Customers</div>
                             </div>
                             <div id="schema-table-customers" style="flex: 1; min-height: 0; overflow-y: auto; background: var(--bg-color);"></div>
                         </div>
@@ -809,7 +806,7 @@ App.sql = (function() {
                         <!-- Products Table -->
                         <div style="flex: 1; display: flex; flex-direction: column; background: var(--panel-color); border: 1px solid var(--panel-border); border-radius: 0.5rem; overflow: hidden; box-shadow: var(--control-shadow); min-height: 0;">
                             <div style="padding: 0.5rem 1rem; border-bottom: 1px solid var(--border-color); background: var(--info-box); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-                                <div style="font-size: 0.75rem; font-weight: 700; color: ${COLORS.products}; letter-spacing: 0.05em; text-transform: uppercase;"><i class="fa-solid fa-box" style="margin-right: 0.4rem; opacity: 0.7;"></i> Products</div>
+                                <div style="font-size: 0.75rem; font-weight: 700; color: ${COLORS.products}; letter-spacing: 0.05em;"><i class="fa-solid fa-box" style="margin-right: 0.4rem; opacity: 0.7;"></i> Products</div>
                             </div>
                             <div id="schema-table-products" style="flex: 1; min-height: 0; overflow-y: auto; background: var(--bg-color);"></div>
                         </div>
@@ -817,7 +814,7 @@ App.sql = (function() {
                         <!-- Orders Table -->
                         <div style="flex: 1; display: flex; flex-direction: column; background: var(--panel-color); border: 1px solid var(--panel-border); border-radius: 0.5rem; overflow: hidden; box-shadow: var(--control-shadow); min-height: 0;">
                             <div style="padding: 0.5rem 1rem; border-bottom: 1px solid var(--border-color); background: var(--info-box); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-                                <div style="font-size: 0.75rem; font-weight: 700; color: ${COLORS.orders}; letter-spacing: 0.05em; text-transform: uppercase;"><i class="fa-solid fa-cart-shopping" style="margin-right: 0.4rem; opacity: 0.7;"></i> Orders</div>
+                                <div style="font-size: 0.75rem; font-weight: 700; color: ${COLORS.orders}; letter-spacing: 0.05em;"><i class="fa-solid fa-cart-shopping" style="margin-right: 0.4rem; opacity: 0.7;"></i> Orders</div>
                             </div>
                             <div id="schema-table-orders" style="flex: 1; min-height: 0; overflow-y: auto; background: var(--bg-color);"></div>
                         </div>
