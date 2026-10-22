@@ -4,6 +4,7 @@
 
 registerTopic({
     id: 'PAT',
+    parentId: 'Networks',
     // parentId: 'NAT', // Uncomment and set to nest under the NAT topic
 
     icon: 'fa-shuffle',

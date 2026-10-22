@@ -4,7 +4,7 @@
 
 registerTopic({
     id: 'NAT',
-    parentid: 'Networks',
+    parentId: 'Networks',
     // parentId: 'Networking', // Uncomment and set to nest under a parent topic
 
     icon: 'fa-right-left',
