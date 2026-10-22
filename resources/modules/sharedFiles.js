@@ -1,13 +1,8 @@
 /* resources/modules/sharedFiles.js
- * Shared Files viewer: fetch folder listings from GitHub, render file list,
- * preview PDFs (pdf.js), PPTX (JSZip), HTML (iframe), DOCX (mammoth).
- * Depends on: util.js (escapeHtml, ghFetch, fetchRawBuffer)
- *             state.js (App.state.sharedFilesInitialized, App.state.currentSharedType,
- *                       App.state.sharedSearchQuery, App.state.currentSharedPdfDoc,
- *                       App.state.sharedPdfScale)
- *             constants on App: App.constants.SHARED_ROOT, App.constants.SHARED_SUBFOLDERS
- *             global libs: JSZip, pdfjsLib, mammoth (loaded via CDN in index.html)
+ * Shared Files viewer: recursively fetch folder listings from GitHub by TOPIC.
+ * Provides a split-view layout: list on the left, dynamic preview on the right.
  */
+
 (function () {
     'use strict';
 
@@ -21,54 +16,20 @@
     const { escapeHtml, ghFetch, fetchRawBuffer } = util;
 
     const SHARED_ROOT = constants.SHARED_ROOT;
-    const SHARED_SUBFOLDERS = constants.SHARED_SUBFOLDERS;
+    // Make sure these match the exact case of your GitHub folders!
+    const TOPICS = ['BGP-DS', 'BGP-MuKb', 'BGP-WiSo', 'BQSM-PrjktMngt', 'ITT_Spech'];
 
-    /* Local cache mirrors the original module-level object. We keep it here
-       rather than in state.js because it's an implementation detail of this
-       module and never read by others. */
-    const sharedFilesCache = {
-        all: null,
-        pdf: null,
-        ppt: null,
-        html: null,
-        doc: null,
-        xls: null
-    };
+    const sharedFilesCache = {};
 
-    /* ----------------------------------------------------------
-       Bootstrap: fetch all five subfolders, then render "all".
-       ---------------------------------------------------------- */
     async function bootstrap() {
         const listEl = document.getElementById('sharedFileList');
         if (listEl) {
-            listEl.innerHTML =
-                '<div class="p-4 text-center text-[var(--text-muted)] text-sm animate-pulse">Loading repository…</div>';
+            listEl.innerHTML = '<div class="p-4 text-center text-[var(--text-muted)] text-sm animate-pulse">Loading repository…</div>';
         }
 
-        await Promise.all(['pdf', 'ppt', 'html', 'doc', 'xls'].map(fetchSharedFilesForType));
+        await Promise.all(TOPICS.map(fetchFilesForTopic));
         updateSharedTabCounts();
         renderSharedFileList('all');
-    }
-
-    /* ----------------------------------------------------------
-       Folder / extension mappings
-       ---------------------------------------------------------- */
-    function folderForType(type) {
-        if (type === 'pdf')  return SHARED_SUBFOLDERS.pdf;
-        if (type === 'ppt')  return SHARED_SUBFOLDERS.ppt;
-        if (type === 'html') return SHARED_SUBFOLDERS.html;
-        if (type === 'doc')  return SHARED_SUBFOLDERS.doc;
-        if (type === 'xls')  return SHARED_SUBFOLDERS.xls;
-        return SHARED_ROOT;
-    }
-
-    function extsForType(type) {
-        if (type === 'pdf')  return ['.pdf'];
-        if (type === 'ppt')  return ['.ppt', '.pptx'];
-        if (type === 'html') return ['.html', '.htm'];
-        if (type === 'doc')  return ['.doc', '.docx'];
-        if (type === 'xls')  return ['.xls', '.xlsx', '.csv'];
-        return null;
     }
 
     function iconForFile(name) {
@@ -79,75 +40,77 @@
         if (n.endsWith('.doc') || n.endsWith('.docx')) return '<i class="fa-solid fa-file-word text-blue-600"></i>';
         if (n.endsWith('.xls') || n.endsWith('.xlsx') || n.endsWith('.csv')) return '<i class="fa-solid fa-file-excel text-green-500"></i>';
         if (/\.(png|jpe?g|gif|svg|webp|bmp|ico)$/i.test(n)) return '<i class="fa-solid fa-image text-emerald-400"></i>';
+        if (n.endsWith('.md') || n.endsWith('.txt')) return '<i class="fa-solid fa-file-lines text-gray-400"></i>';
         return '<i class="fa-solid fa-file text-[var(--text-muted)]"></i>';
     }
 
-    function categoryForFile(name) {
-        const n = name.toLowerCase();
-        if (n.endsWith('.pdf')) return 'pdf';
-        if (n.endsWith('.ppt') || n.endsWith('.pptx')) return 'ppt';
-        if (n.endsWith('.html') || n.endsWith('.htm')) return 'html';
-        if (n.endsWith('.doc') || n.endsWith('.docx')) return 'doc';
-        if (n.endsWith('.xls') || n.endsWith('.xlsx') || n.endsWith('.csv')) return 'xls';
-        return 'other';
-    }
+    async function fetchFilesForTopic(topic) {
+        if (sharedFilesCache[topic]) return sharedFilesCache[topic];
 
-    /* ----------------------------------------------------------
-       Fetch a folder listing from GitHub
-       ---------------------------------------------------------- */
-    async function fetchSharedFilesForType(type) {
-        if (sharedFilesCache[type]) return sharedFilesCache[type];
+        const rootFolder = `${SHARED_ROOT}/${topic}`;
+        let allFiles = [];
 
-        const folder = folderForType(type);
-        const exts = extsForType(type);
-        let files = [];
+        async function fetchFolderRecursive(folderPath) {
+            try {
+                // Log the exact URL to the console for debugging
+                const apiUrl = `${constants.GH_API}/contents/${folderPath}?ref=${constants.GH_BRANCH || 'main'}`;
+                console.log(`[SharedFiles] Fetching: ${apiUrl}`);
+                
+                const data = await ghFetch(folderPath);
+                
+                if (!Array.isArray(data)) {
+                    console.warn(`[SharedFiles] API did not return an array for ${folderPath}. Response:`, data);
+                    return;
+                }
 
-        try {
-            const data = await ghFetch(folder);
-            if (Array.isArray(data)) {
-                files = data
-                    .filter(i => i.type === 'file')
-                    .filter(i => !exts || exts.some(ext => i.name.toLowerCase().endsWith(ext)))
-                    .map(item => ({
-                        name: item.name,
-                        path: item.path,
-                        folder: folder,
-                        size: item.size || 0,
-                        url: `${constants.GH_RAW}/${item.path.split('/').map(encodeURIComponent).join('/')}`,
-                        htmlUrl: item.html_url
-                    }));
+                const fetchPromises = [];
+
+                for (const item of data) {
+                    if (item.type === 'file') {
+                        allFiles.push({
+                            name: item.name,
+                            path: item.path,
+                            topic: topic,
+                            folder: folderPath.replace(`${SHARED_ROOT}/`, ''),
+                            size: item.size || 0,
+                            url: `${constants.GH_RAW}/${item.path.split('/').map(encodeURIComponent).join('/')}`,
+                            htmlUrl: item.html_url
+                        });
+                    } else if (item.type === 'dir') {
+                        fetchPromises.push(fetchFolderRecursive(item.path));
+                    }
+                }
+                await Promise.all(fetchPromises);
+            } catch (e) {
+                console.warn(`[SharedFiles] Fetch failed for ${folderPath}:`, e);
             }
-        } catch (e) {
-            console.warn('Shared folder fetch failed:', folder, e);
         }
 
-        sharedFilesCache[type] = files;
-        return files;
+        await fetchFolderRecursive(rootFolder);
+        allFiles.sort((a, b) => a.name.localeCompare(b.name));
+        
+        console.log(`[SharedFiles] Total files found for ${topic}:`, allFiles.length);
+        sharedFilesCache[topic] = allFiles;
+        return allFiles;
     }
 
-    /* ----------------------------------------------------------
-       Aggregated listing for the "All" tab
-       ---------------------------------------------------------- */
     function getAllSharedFiles() {
         const seen = new Set();
         const out = [];
-        ['pdf', 'ppt', 'html', 'doc', 'xls'].forEach(type => {
-            (sharedFilesCache[type] || []).forEach(f => {
+        TOPICS.forEach(topic => {
+            (sharedFilesCache[topic] || []).forEach(f => {
                 if (seen.has(f.path)) return;
                 seen.add(f.path);
                 out.push(f);
             });
         });
         out.sort((a, b) => {
-            if (a.folder !== b.folder) return a.folder.localeCompare(b.folder);
+            if (a.topic !== b.topic) return a.topic.localeCompare(b.topic);
             return a.name.localeCompare(b.name);
         });
         return out;
     }
 
-    /* ----------------------------------------------------------
-       Tab counts
-       ---------------------------------------------------------- */
     function updateSharedTabCounts() {
         document.querySelectorAll('.tab-count').forEach(el => {
             const key = el.dataset.count;
@@ -156,91 +119,59 @@
         });
     }
 
-    /* ----------------------------------------------------------
-       Tab switching
-       ---------------------------------------------------------- */
     function switchTab(type) {
         state.currentSharedType = type;
-
         document.querySelectorAll('.shared-tab').forEach(t => {
             t.classList.toggle('active', t.dataset.sharedType === type);
         });
-
-        const pdfControls = document.getElementById('sharedPdfControls');
-        if (pdfControls) pdfControls.classList.add('hidden');
-
-        const previewEl = document.getElementById('sharedPreviewContent');
-        if (previewEl) {
-            previewEl.innerHTML = `
-                <div class="mt-8 text-center text-[var(--text-muted)]">
-                    <i class="fa-regular fa-folder-open text-5xl mb-4 opacity-50"></i>
-                    <div class="text-lg"><span data-lang-de>Datei auswählen</span><span data-lang-en style="display:none;">Select a file</span></div>
-                </div>`;
-        }
-
         renderSharedFileList(type);
+        clearPreview();
         if (App.i18n && typeof App.i18n.applyLangToDOM === 'function') {
             App.i18n.applyLangToDOM();
         }
     }
 
-    /* ----------------------------------------------------------
-       Search
-       ---------------------------------------------------------- */
     function onSearch(val) {
         state.sharedSearchQuery = (val || '').trim().toLowerCase();
         renderSharedFileList(state.currentSharedType);
     }
 
-    /* ----------------------------------------------------------
-       File list rendering
-       ---------------------------------------------------------- */
     function renderSharedFileList(type) {
         const listEl = document.getElementById('sharedFileList');
         if (!listEl) return;
         listEl.innerHTML = '';
 
-        let files = type === 'all'
-            ? getAllSharedFiles()
-            : (sharedFilesCache[type] || []);
+        let files = type === 'all' ? getAllSharedFiles() : (sharedFilesCache[type] || []);
 
         if (state.sharedSearchQuery) {
             files = files.filter(f => {
-                const hay = (f.name + ' ' + f.folder).toLowerCase();
+                const hay = (f.name + ' ' + f.topic + ' ' + f.folder).toLowerCase();
                 return hay.includes(state.sharedSearchQuery);
             });
         }
 
         if (!files.length) {
             const msg = state.sharedSearchQuery
-                ? '<span data-lang-de>Keine Treffer für „' + escapeHtml(state.sharedSearchQuery) + '“.</span><span data-lang-en style="display:none;">No matches for "' + escapeHtml(state.sharedSearchQuery) + '".</span>'
+                ? `<span data-lang-de>Keine Treffer für „${escapeHtml(state.sharedSearchQuery)}“.</span><span data-lang-en style="display:none;">No matches for "${escapeHtml(state.sharedSearchQuery)}".</span>`
                 : '<span data-lang-de>Keine Dateien gefunden.</span><span data-lang-en style="display:none;">No files found.</span>';
             listEl.innerHTML = '<div class="p-4 text-[var(--text-muted)] text-sm">' + msg + '</div>';
-            if (App.i18n && typeof App.i18n.applyLangToDOM === 'function') {
-                App.i18n.applyLangToDOM();
-            }
+            if (App.i18n && typeof App.i18n.applyLangToDOM === 'function') App.i18n.applyLangToDOM();
             return;
         }
 
-        if (type === 'all') {
-            const groups = {};
-            files.forEach(f => {
-                const key = f.folder.replace(`${SHARED_ROOT}/`, '');
-                if (!groups[key]) groups[key] = [];
-                groups[key].push(f);
-            });
-            Object.keys(groups).sort().forEach(folderName => {
-                const header = document.createElement('div');
-                header.className = 'file-tree-group';
-                header.innerHTML =
-                    `<i class="fa-solid fa-folder"></i> ${escapeHtml(folderName)} ` +
-                    `<span class="opacity-60">(${groups[folderName].length})</span>`;
-                listEl.appendChild(header);
-                groups[folderName].forEach(file => listEl.appendChild(buildSharedFileItem(file)));
-            });
-        } else {
-            files.forEach(file => listEl.appendChild(buildSharedFileItem(file)));
-        }
+        const groups = {};
+        files.forEach(f => {
+            if (!groups[f.folder]) groups[f.folder] = [];
+            groups[f.folder].push(f);
+        });
+
+        Object.keys(groups).sort().forEach(folderName => {
+            const header = document.createElement('div');
+            header.className = 'file-tree-group';
+            header.innerHTML = `<i class="fa-solid fa-folder"></i> ${escapeHtml(folderName)} <span class="opacity-60">(${groups[folderName].length})</span>`;
+            listEl.appendChild(header);
+            groups[folderName].forEach(file => listEl.appendChild(buildSharedFileItem(file)));
+        });
     }
 
     function buildSharedFileItem(file) {
@@ -252,17 +183,17 @@
             <div class="file-icon">${iconForFile(file.name)}</div>
             <div class="file-info">
                 <div class="file-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div>
-                <div class="file-path">${escapeHtml(file.folder.replace(`${SHARED_ROOT}/`, ''))} · ${sizeStr}</div>
+                <div class="file-path">${escapeHtml(file.topic)} · ${sizeStr}</div>
             </div>
             <div class="file-actions">
-                <a class="file-action-btn" href="${file.htmlUrl}" target="_blank" title="GitHub" onclick="event.stopPropagation();"><i class="fa-brands fa-github"></i></a>
                 <a class="file-action-btn" href="${file.url}" download title="Download" onclick="event.stopPropagation();"><i class="fa-solid fa-download"></i></a>
+                <a class="file-action-btn" href="${file.htmlUrl}" target="_blank" title="GitHub" onclick="event.stopPropagation();"><i class="fa-brands fa-github"></i></a>
             </div>`;
 
         item.addEventListener('click', () => {
             document.querySelectorAll('.shared-file-item').forEach(el => el.classList.remove('active'));
             item.classList.add('active');
-            loadSharedFileContent(categoryForFile(file.name), file);
+            loadPreview(file);
         });
 
         return item;
@@ -276,199 +207,138 @@
     }
 
     /* ----------------------------------------------------------
-       Content dispatch
+       PREVIEW WRAPPER
        ---------------------------------------------------------- */
-    async function loadSharedFileContent(type, file) {
-        const previewEl = document.getElementById('sharedPreviewContent');
-        const pdfControls = document.getElementById('sharedPdfControls');
-        if (!previewEl) return;
+    function clearPreview() {
+        const header = document.getElementById('sharedPreviewHeader');
+        const content = document.getElementById('sharedPreviewContent');
+        if (header) header.style.display = 'none';
+        if (content) {
+            content.innerHTML = `
+                <div class="mt-8 text-center text-[var(--text-muted)] h-full flex flex-col justify-center items-center">
+                    <i class="fa-regular fa-folder-open text-5xl mb-4 opacity-50"></i>
+                    <div class="text-lg"><span data-lang-de>Datei auswählen</span><span data-lang-en style="display:none;">Select a file</span></div>
+                </div>`;
+        }
+        if (App.i18n && typeof App.i18n.applyLangToDOM === 'function') App.i18n.applyLangToDOM();
+    }
 
-        previewEl.innerHTML =
-            `<div class="mt-8 animate-pulse text-[var(--text-muted)]">` +
-            `<i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading ${escapeHtml(file.name)}…` +
-            `</div>`;
-        if (pdfControls) pdfControls.classList.add('hidden');
+    async function loadPreview(file) {
+        const header = document.getElementById('sharedPreviewHeader');
+        const title = document.getElementById('sharedPreviewTitle');
+        const dlBtn = document.getElementById('sharedPreviewDownload');
+        const content = document.getElementById('sharedPreviewContent');
 
-        state.currentSharedPdfDoc = null;
+        if (!header || !content) return;
+
+        header.style.display = 'flex';
+        title.textContent = file.name;
+        dlBtn.href = file.url;
+        dlBtn.setAttribute('download', file.name);
+        
+        content.innerHTML = `<div class="p-8 text-center text-[var(--text-muted)] animate-pulse"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading preview…</div>`;
+
+        const ext = file.name.split('.').pop().toLowerCase();
 
         try {
-            if (type === 'pdf')       await renderSharedPDF(file.url);
-            else if (type === 'ppt')  await renderSharedPPTX(file.url);
-            else if (type === 'html') renderSharedHTML(file.url);
-            else if (type === 'doc')  await renderSharedDOCX(file.url);
-            else                      renderDownloadCard(file);
-        } catch (err) {
-            console.error('Preview error', err);
-            previewEl.innerHTML =
-                `<div class="mt-8 text-red-500 border border-red-500/30 bg-red-500/10 p-4 rounded">` +
-                `<i class="fa-solid fa-triangle-exclamation mr-2"></i> Failed to render preview.` +
-                `<br><span class="text-xs opacity-70 mt-2 block">${escapeHtml(err.message)}</span></div>`;
-        }
-    }
+            if (ext === 'html' || ext === 'htm') {
+                const htmlText = await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('GET', file.url, true);
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4) {
+                            if (xhr.status === 200) resolve(xhr.responseText);
+                            else reject(new Error('Failed to fetch HTML: ' + xhr.status));
+                        }
+                    };
+                    xhr.send();
+                });
 
-    /* ----------------------------------------------------------
-       Fallback: download card
-       ---------------------------------------------------------- */
-    function renderDownloadCard(file) {
-        const previewEl = document.getElementById('sharedPreviewContent');
-        if (!previewEl) return;
-        previewEl.innerHTML = `
-            <div class="shared-download-card">
-                <div class="dl-icon">${iconForFile(file.name)}</div>
-                <div class="dl-name">${escapeHtml(file.name)}</div>
-                <div class="dl-meta">${escapeHtml(file.folder)} · ${formatSize(file.size)}</div>
-                <a class="dl-btn" href="${file.url}" download><i class="fa-solid fa-download"></i> Download</a>
-            </div>`;
-    }
+                const baseUrl = file.url.substring(0, file.url.lastIndexOf('/') + 1);
+                const injectedHtml = htmlText.replace(/<head>/i, `<head><base href="${baseUrl}">`);
 
-    /* ----------------------------------------------------------
-       PDF renderer (pdf.js)
-       ---------------------------------------------------------- */
-    async function renderSharedPDF(url) {
-        if (!window.pdfjsLib) throw new Error('PDF.js not loaded');
+                content.innerHTML = `<iframe style="width: 100%; height: 100%; border: none; background: white;"></iframe>`;
+                content.querySelector('iframe').srcdoc = injectedHtml;
+            } 
+            else if (ext === 'pdf') {
+                if (!window.pdfjsLib) throw new Error('PDF engine missing');
+                content.innerHTML = ''; 
+                const canvasContainer = document.createElement('div');
+                canvasContainer.style.display = 'flex';
+                canvasContainer.style.flexDirection = 'column';
+                canvasContainer.style.alignItems = 'center';
+                canvasContainer.style.gap = '1rem';
+                canvasContainer.style.padding = '1rem';
+                content.appendChild(canvasContainer);
 
-        const pdfControls = document.getElementById('sharedPdfControls');
-        const loadingTask = pdfjsLib.getDocument(url);
-        state.currentSharedPdfDoc = await loadingTask.promise;
-
-        const pageCountEl = document.getElementById('sharedPageCount');
-        if (pageCountEl) pageCountEl.textContent = `${state.currentSharedPdfDoc.numPages} Pages`;
-
-        if (pdfControls) {
-            pdfControls.classList.remove('hidden');
-            pdfControls.classList.add('flex');
-        }
-
-        await drawAllSharedPdfPages();
-    }
-
-    async function drawAllSharedPdfPages() {
-        const doc = state.currentSharedPdfDoc;
-        if (!doc) return;
-
-        const previewEl = document.getElementById('sharedPreviewContent');
-        const areaEl = document.getElementById('sharedPreviewArea');
-        if (!previewEl || !areaEl) return;
-
-        previewEl.innerHTML = '';
-
-        const containerWidth = areaEl.clientWidth - 40;
-
-        for (let i = 1; i <= doc.numPages; i++) {
-            const canvas = document.createElement('canvas');
-            canvas.className = 'shared-pdf-page rounded';
-            previewEl.appendChild(canvas);
-
-            const page = await doc.getPage(i);
-            const baseViewport = page.getViewport({ scale: 1 });
-
-            let pageScale = state.sharedPdfScale;
-            if (baseViewport.width * pageScale > containerWidth && containerWidth > 0) {
-                pageScale = containerWidth / baseViewport.width;
+                const pdf = await pdfjsLib.getDocument(file.url).promise;
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    const canvas = document.createElement('canvas');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    canvas.style.maxWidth = '100%';
+                    canvas.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
+                    canvasContainer.appendChild(canvas);
+                    const ctx = canvas.getContext('2d');
+                    await page.render({ canvasContext: ctx, viewport }).promise;
+                }
+            } 
+            else if (ext === 'docx') {
+                if (!window.mammoth) throw new Error('Mammoth engine missing');
+                const arrayBuffer = await fetchRawBuffer(file.url);
+                const result = await window.mammoth.convertToHtml({ arrayBuffer });
+                content.innerHTML = `<div class="p-8" style="background: white; color: black; border-radius: 0.5rem; min-height: 100%;">${result.value || '<p style="font-style: italic; color: #666;">[Empty Document]</p>'}</div>`;
+            } 
+            else if (ext === 'pptx') {
+                if (!window.JSZip) throw new Error('JSZip engine missing');
+                const arrayBuffer = await fetchRawBuffer(file.url);
+                const zip = await JSZip.loadAsync(arrayBuffer);
+                let slideFiles = Object.keys(zip.files).filter(f => f.match(/^ppt\/slides\/slide\d+\.xml$/));
+                slideFiles.sort((a, b) => parseInt(a.match(/slide(\d+)/)[1]) - parseInt(b.match(/slide(\d+)/)[1]));
+                
+                content.innerHTML = '';
+                if (!slideFiles.length) {
+                    content.innerHTML = '<div class="p-8 text-center text-[var(--text-muted)] italic">No text slides found.</div>';
+                } else {
+                    for (let i = 0; i < slideFiles.length; i++) {
+                        const slideXml = await zip.files[slideFiles[i]].async('string');
+                        const texts = (slideXml.match(/<a:t[^>]*>([^<]*)<\/a:t>/g) || []).map(t => t.replace(/<[^>]*>/g, '')).filter(Boolean);
+                        const slideDiv = document.createElement('div');
+                        slideDiv.className = 'p-6 mb-4 rounded bg-[var(--panel-color)] border border-[var(--panel-border)]';
+                        slideDiv.innerHTML = `
+                            <div class="text-xs font-bold text-orange-500 mb-2 uppercase tracking-widest border-b border-[var(--border-color)] pb-2">Slide ${i+1}</div>
+                            ${texts.length ? texts.map(t => `<p class="mb-2 text-sm text-[var(--text-color)]">${escapeHtml(t)}</p>`).join('') : '<span class="text-[var(--text-muted)] italic">[Graphical slide]</span>'}
+                        `;
+                        content.appendChild(slideDiv);
+                    }
+                }
+            } 
+            else if (/\.(png|jpe?g|gif|svg|webp|bmp|ico)$/i.test(ext)) {
+                content.innerHTML = `<div class="flex items-center justify-center h-full p-4"><img src="${file.url}" style="max-width: 100%; max-height: 100%; object-fit: contain;"></div>`;
             }
-
-            const viewport = page.getViewport({ scale: pageScale });
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-            canvas.style.width = viewport.width + 'px';
-            canvas.style.maxWidth = '100%';
-            canvas.style.height = 'auto';
-
-            const ctx = canvas.getContext('2d');
-            await page.render({ canvasContext: ctx, viewport }).promise;
+            else {
+                content.innerHTML = `
+                    <div class="p-8 flex flex-col items-center justify-center text-center h-full">
+                        <div class="text-6xl mb-4 opacity-50">${iconForFile(file.name)}</div>
+                        <div class="text-lg font-bold mb-2">${escapeHtml(file.name)}</div>
+                        <div class="text-sm text-[var(--text-muted)] mb-6">Preview not supported for this file type.</div>
+                        <a href="${file.url}" download class="ctrl-btn px-6 py-2 bg-[var(--info-box)] border border-[var(--border-color)] rounded text-sm"><i class="fa-solid fa-download"></i> Download File</a>
+                    </div>
+                `;
+            }
+        } catch (err) {
+            console.error(err);
+            content.innerHTML = `<div class="p-8 text-center text-red-500"><i class="fa-solid fa-triangle-exclamation text-2xl mb-2"></i><br>Failed to load preview.<br><span class="text-xs">${escapeHtml(err.message)}</span></div>`;
         }
     }
 
-    /* ----------------------------------------------------------
-       PPTX renderer (JSZip, text-only slides)
-       ---------------------------------------------------------- */
-    async function renderSharedPPTX(url) {
-        const previewEl = document.getElementById('sharedPreviewContent');
-        if (!previewEl) return;
-
-        const arrayBuffer = await fetchRawBuffer(url);
-        const zip = await JSZip.loadAsync(arrayBuffer);
-
-        let slideFiles = Object.keys(zip.files).filter(f => f.match(/^ppt\/slides\/slide\d+\.xml$/));
-        slideFiles.sort((a, b) =>
-            parseInt(a.match(/slide(\d+)/)[1]) - parseInt(b.match(/slide(\d+)/)[1])
-        );
-
-        previewEl.innerHTML = '';
-
-        if (!slideFiles.length) {
-            previewEl.innerHTML = '<div class="mt-8 text-[var(--text-muted)] italic">No text slides found.</div>';
-            return;
-        }
-
-        for (let i = 0; i < slideFiles.length; i++) {
-            const slideXml = await zip.files[slideFiles[i]].async('string');
-            const textMatches = slideXml.match(/<a:t[^>]*>([^<]*)<\/a:t>/g) || [];
-            const slideTexts = textMatches.map(t => t.replace(/<[^>]*>/g, '')).filter(Boolean);
-
-            const slideCard = document.createElement('div');
-            slideCard.className = 'shared-pptx-slide';
-
-            const contentHTML = slideTexts.length > 0
-                ? slideTexts.map(txt => `<p class="mb-2">${escapeHtml(txt)}</p>`).join('')
-                : '<span class="text-[var(--text-muted)] italic">[Graphical slide]</span>';
-
-            slideCard.innerHTML = `
-                <div class="font-bold text-xs text-orange-500 mb-3 uppercase tracking-widest border-b border-[var(--panel-border)] pb-2">SLIDE ${i + 1} / ${slideFiles.length}</div>
-                <div class="text-[var(--text-color)] opacity-90">${contentHTML}</div>`;
-            previewEl.appendChild(slideCard);
-        }
-    }
-
-    /* ----------------------------------------------------------
-       HTML renderer (sandboxed iframe)
-       ---------------------------------------------------------- */
-    function renderSharedHTML(url) {
-        const previewEl = document.getElementById('sharedPreviewContent');
-        if (!previewEl) return;
-
-        previewEl.innerHTML = '';
-        previewEl.style.flex = '1';
-        previewEl.style.minHeight = '0';
-
-        const iframe = document.createElement('iframe');
-        iframe.className = 'shared-html-frame';
-        iframe.sandbox = 'allow-scripts allow-same-origin allow-forms';
-        iframe.src = url;
-        previewEl.appendChild(iframe);
-    }
-
-    /* ----------------------------------------------------------
-       DOCX renderer (mammoth)
-       ---------------------------------------------------------- */
-    async function renderSharedDOCX(url) {
-        if (!window.mammoth) throw new Error('Mammoth.js not loaded');
-
-        const previewEl = document.getElementById('sharedPreviewContent');
-        if (!previewEl) return;
-
-        const arrayBuffer = await fetchRawBuffer(url);
-        const result = await window.mammoth.convertToHtml({ arrayBuffer });
-
-        const wrapper = document.createElement('div');
-        wrapper.className = 'shared-doc-wrapper';
-        wrapper.innerHTML = result.value || '<p style="color:#666;font-style:italic;">[Empty document]</p>';
-
-        previewEl.innerHTML = '';
-        previewEl.appendChild(wrapper);
-    }
-
-    /* ----------------------------------------------------------
-       Refresh (clears caches, re-fetches)
-       ---------------------------------------------------------- */
     function refresh() {
-        Object.keys(sharedFilesCache).forEach(k => { sharedFilesCache[k] = null; });
+        Object.keys(sharedFilesCache).forEach(k => { delete sharedFilesCache[k]; });
         bootstrap();
     }
 
-    /* ----------------------------------------------------------
-       Modal controls
-       ---------------------------------------------------------- */
     function open() {
         const m = document.getElementById('sharedFilesModal');
         if (!m) return;
@@ -485,45 +355,9 @@
     function close() {
         const m = document.getElementById('sharedFilesModal');
         if (m) m.classList.remove('open');
+        clearPreview();
     }
 
-    /* ----------------------------------------------------------
-       Zoom controls (wired on module load; the buttons exist
-       in index.html regardless of whether the modal is open).
-       ---------------------------------------------------------- */
-    function wireZoomControls() {
-        const zoomIn  = document.getElementById('sharedBtnZoomIn');
-        const zoomOut = document.getElementById('sharedBtnZoomOut');
-
-        if (zoomIn) {
-            zoomIn.addEventListener('click', () => {
-                if (state.currentSharedPdfDoc) {
-                    state.sharedPdfScale = Math.min(state.sharedPdfScale * 1.25, 3.0);
-                    drawAllSharedPdfPages();
-                }
-            });
-        }
-
-        if (zoomOut) {
-            zoomOut.addEventListener('click', () => {
-                if (state.currentSharedPdfDoc) {
-                    state.sharedPdfScale = Math.max(state.sharedPdfScale / 1.25, 0.5);
-                    drawAllSharedPdfPages();
-                }
-            });
-        }
-    }
-
-    let sharedResizeTimer = null;
-    window.addEventListener('resize', () => {
-        if (!state.currentSharedPdfDoc) return;
-        clearTimeout(sharedResizeTimer);
-        sharedResizeTimer = setTimeout(() => drawAllSharedPdfPages(), 200);
-    });
-
-    /* ----------------------------------------------------------
-       Public API
-       ---------------------------------------------------------- */
     App.sharedFiles = {
         open,
         close,
@@ -532,15 +366,8 @@
         switchTab,
         onSearch,
         renderSharedFileList,
-        loadSharedFileContent,
+        loadPreview,
+        clearPreview,
         getAllSharedFiles
     };
-
-    /* Wire zoom controls as soon as the DOM is ready (index.html loads
-       this script at the end of <body>, so the buttons already exist). */
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', wireZoomControls);
-    } else {
-        wireZoomControls();
-    }
 })();
