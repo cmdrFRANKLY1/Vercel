@@ -367,6 +367,10 @@
        Navigation
        ---------------------------------------------------------- */
     function showDocView(topicId) {
+        // Hide SQL view if it's open
+        const sqlView = document.getElementById('sql-view');
+        if (sqlView) sqlView.style.display = 'none';
+
         // If switching topics, let the old one clean up.
         if (topicId && state.currentTopicId && topicId !== state.currentTopicId) {
             const old = getTopic(state.currentTopicId);
@@ -390,6 +394,10 @@
     }
 
     function showHomeView() {
+        // Hide SQL view if it's open
+        const sqlView = document.getElementById('sql-view');
+        if (sqlView) sqlView.style.display = 'none';
+
         const homeView = document.getElementById('home-view');
         const docView = document.getElementById('doc-view');
         if (homeView) homeView.style.display = 'flex';
