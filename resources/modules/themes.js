@@ -352,6 +352,18 @@
         appliedInlineVars.clear();
     }
 
+    function syncFrame(frame) {
+        if (!frame?.contentWindow || !frame.hasAttribute('data-global-theme-sync')) return;
+        frame.contentWindow.postMessage({
+            type: 'app-theme',
+            dark: !document.documentElement.classList.contains('light')
+        }, '*');
+    }
+
+    function syncFrames() {
+        document.querySelectorAll('iframe[data-global-theme-sync]').forEach(syncFrame);
+    }
+
     function applyColorScheme(id) {
         const scheme = getSchemeById(id);
         if (!scheme) return;
@@ -377,6 +389,7 @@
 
         updateThemeToggleIcon(scheme.dark);
         renderThemesGrid();
+        syncFrames();
     }
 
     /* ----------------------------------------------------------
@@ -749,6 +762,7 @@
             document.documentElement.style.setProperty('--' + k, String(v));
             appliedInlineVars.add(k);
         });
+        syncFrames();
     }
 
     function renderCustomColorFields() {
@@ -945,6 +959,7 @@
         openModal,
         closeModal,
         renderThemesGrid,
+        syncFrame,
         getSchemeById,
         getAllSchemes: () => allSchemes.slice(),
         openCustomColorsModal,

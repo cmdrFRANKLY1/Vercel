@@ -52,14 +52,25 @@
             display: inline-block;
             white-space: nowrap;
             opacity: 0;
+            transform: translateY(0.15em) rotate(-1deg);
+            transition: opacity 0.18s ease, transform 0.35s ease;
+            will-change: clip-path, opacity, transform;
         }
         .anim-element.revealed {
             opacity: 1;
             clip-path: inset(0 0 0 0);
-            transition: clip-path 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: none;
+            transition: clip-path 0.7s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.18s ease, transform 0.35s ease;
         }
         .anim-element.fast.revealed {
-            transition: clip-path 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: clip-path 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.18s ease, transform 0.25s ease;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .anim-element,
+            .anim-element.revealed {
+                transition: none;
+                transform: none;
+            }
         }
         .anim-wrap {
             display: block;
@@ -85,6 +96,8 @@
             transition: box-shadow 0.15s ease;
         }
     </style>
+    <link rel="stylesheet" href="global-theme.css">
+    <script src="global-theme-sync.js"></script>
 </head>
 <body class="font-sans antialiased bg-zinc-950 text-zinc-200 min-h-screen flex justify-center items-center p-2 sm:p-4 selection:bg-blue-500/30">
 
@@ -92,10 +105,13 @@
 
         <!-- Controls Header -->
         <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-3 shadow-lg flex flex-wrap justify-between items-center z-50 sticky top-2 gap-2">
-            <h1 class="font-bold text-base sm:text-lg text-white hidden md:block tracking-wide">Schriftliches Multiplizieren</h1>
+            <h1 class="font-bold text-base sm:text-lg text-white hidden md:block tracking-wide">
+                <span data-lang-de>Schriftliches Multiplizieren</span>
+                <span data-lang-en style="display:none;">Written Multiplication</span>
+            </h1>
             <div class="flex gap-2 w-full md:w-auto justify-end items-center flex-grow">
                 <button onclick="initProblem()" class="px-3 py-1.5 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-white rounded-lg transition shadow-sm font-semibold text-sm text-zinc-300">
-                    Neue Zahlen
+                    <span data-lang-de>Neue Zahlen</span><span data-lang-en style="display:none;">New Numbers</span>
                 </button>
 
                 <div class="h-6 border-l border-zinc-700 mx-1"></div>
@@ -111,32 +127,32 @@
                 <!-- ZURÜCK BUTTON -->
                 <button id="btn-prev" onclick="prevStep()" class="px-3 py-1.5 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-white rounded-lg transition shadow-sm font-semibold text-sm text-zinc-300 flex items-center gap-1 opacity-50 cursor-not-allowed" disabled>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                    <span>Zurück</span>
+                    <span data-lang-de>Zurück</span><span data-lang-en style="display:none;">Previous</span>
                 </button>
 
                 <!-- WEITER/START BUTTON -->
                 <button id="btn-next" onclick="nextStep()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition shadow-sm font-semibold text-sm flex items-center gap-2 w-28 justify-center">
-                    <span>Start</span>
+                    <span data-lang-de>Start</span><span data-lang-en style="display:none;">Start</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                 </button>
             </div>
         </div>
 
         <!-- Two Panels Layout -->
-        <div class="flex flex-col lg:flex-row gap-4 w-full h-[520px]">
+        <div class="flex flex-col lg:flex-row gap-4 w-full h-[calc(100vh-7rem)] min-h-[360px]">
 
             <!-- LEFT PANEL: Explanations -->
-            <div class="clean-bg w-full lg:w-1/2 rounded-xl h-full p-6 pt-4 overflow-y-auto custom-scrollbar font-hand text-xl leading-[40px] text-zinc-100 relative">
+            <div class="clean-bg w-full lg:w-1/2 rounded-xl h-full min-h-0 p-6 pt-4 overflow-y-auto custom-scrollbar font-hand text-xl leading-[40px] text-zinc-100 relative">
                 <div class="sticky top-0 -ml-2 mb-2 text-xs font-sans font-bold text-zinc-500 uppercase tracking-widest bg-[#18181b]/95 w-fit px-2 py-1 rounded z-10 backdrop-blur-sm">
-                    Erklärungen
+                    <span data-lang-de>Erklärungen</span><span data-lang-en style="display:none;">Explanations</span>
                 </div>
                 <div id="explanations-container" class="pb-10"></div>
             </div>
 
             <!-- RIGHT PANEL: Calculations -->
-            <div class="clean-bg w-full lg:w-1/2 rounded-xl h-full p-4 sm:p-6 pt-6 font-hand text-xl leading-[40px] text-zinc-100 relative overflow-y-auto custom-scrollbar flex flex-col">
+            <div class="clean-bg w-full lg:w-1/2 rounded-xl h-full min-h-0 p-4 sm:p-6 pt-6 font-hand text-xl leading-[40px] text-zinc-100 relative overflow-y-auto custom-scrollbar flex flex-col">
                 <div class="absolute top-3 left-4 text-xs font-sans font-bold text-zinc-500 uppercase tracking-widest mt-1">
-                    Rechnung
+                    <span data-lang-de>Rechnung</span><span data-lang-en style="display:none;">Calculation</span>
                 </div>
 
                 <div class="flex-grow flex items-center justify-center mt-2 min-h-max w-full max-w-full overflow-x-auto">
@@ -171,10 +187,47 @@
         let isAutoPlaying = false;
         let autoPlayTimeout = null;
         let num1, num2;
+        const animationLanguage = new URLSearchParams(window.location.search).get('lang') === 'en' ? 'en' : 'de';
 
         const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-        window.onload = initProblem;
+        function applyAnimationLanguage() {
+            document.documentElement.lang = animationLanguage;
+            document.title = animationLanguage === 'en'
+                ? 'Written Multiplication — interactive'
+                : 'Schriftliches Multiplizieren — interaktiv';
+            document.querySelectorAll('[data-lang-de]').forEach(el => {
+                el.style.display = animationLanguage === 'de' ? '' : 'none';
+            });
+            document.querySelectorAll('[data-lang-en]').forEach(el => {
+                el.style.display = animationLanguage === 'en' ? '' : 'none';
+            });
+        }
+
+        function localizePlainText(text) {
+            if (animationLanguage !== 'en') return text;
+            const translations = {
+                'Multipliziere': 'Multiply',
+                'mit': 'by',
+                'Schreibe': 'Write',
+                'Das Ergebnis ist': 'The result is',
+                ', Übertrag': ', carry',
+                'Addition': 'Addition'
+            };
+            return translations[text] || text
+                .replace(/, merke (\d+)\./, ', carry $1.')
+                .replace(', Übertrag', ', carry')
+                .replace(/ ?\(Ü\)/g, ' (carry)');
+        }
+
+        function localizeMathText(text) {
+            return animationLanguage === 'en' ? text.replace(/ ?\(Ü\)/g, ' (carry)') : text;
+        }
+
+        window.onload = () => {
+            applyAnimationLanguage();
+            initProblem();
+        };
 
         // --- Drawing Arrows Logic ---
         function drawArrows(pathStr) {
@@ -307,15 +360,15 @@
 
             const TEXT = (text, ids, colorClass, animClass = "fast", clear = true, arrowPath = "") =>
                 `<span class="anim-element ${animClass} px-1 my-0.5 transition-colors duration-300 inline-block" data-hl-clear="${clear}" data-hl-ids="${ids}">
-                    <span class="cursor-help border-b border-dashed border-zinc-600 hover:border-yellow-400 ${colorClass} transition-colors" onmouseenter="enter('${ids}', false, '${arrowPath}')" onmouseleave="leave('${ids}')">${text}</span>
+                    <span class="cursor-help border-b border-dashed border-zinc-600 hover:border-yellow-400 ${colorClass} transition-colors" onmouseenter="enter('${ids}', false, '${arrowPath}')" onmouseleave="leave('${ids}')">${localizeMathText(String(text))}</span>
                 </span>`;
             const PLAIN = (text, animClass = "fast", clear = true) =>
-                `<span class="anim-element ${animClass} px-1 my-0.5 text-zinc-400 inline-block" data-hl-clear="${clear}">${text}</span>`;
+                `<span class="anim-element ${animClass} px-1 my-0.5 text-zinc-400 inline-block" data-hl-clear="${clear}">${localizePlainText(text)}</span>`;
 
             steps.push({
                 id: 0,
                 html: `<div class="step-container hidden mb-6" id="step-desc-0">
-                          <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100">Aufgabe</div>
+                          <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100"><span data-lang-de>Aufgabe</span><span data-lang-en style="display:none;">Task</span></div>
                           <div class="mt-1 leading-relaxed whitespace-nowrap flex flex-wrap items-center">
                               ${PLAIN("Multipliziere", "slow")}
                               ${TEXT(num1, "cell-0-1,cell-0-2,cell-0-3", 'text-white font-bold', 'slow')}
@@ -335,7 +388,7 @@
 
                 let introHtml = `
                     <div class="step-container hidden mb-4" id="step-desc-${stepCounter}">
-                        <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100">Rechne mit Ziffer ${TEXT(n2Digit, `cell-0-${n2Col}`, 'text-blue-300')}</div>
+                        <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100"><span data-lang-de>Rechne mit Ziffer</span><span data-lang-en style="display:none;">Calculate with digit</span> ${TEXT(n2Digit, `cell-0-${n2Col}`, 'text-blue-300')}</div>
                     </div>`;
                 steps.push({ id: stepCounter, html: introHtml });
                 stepCounter++;
@@ -422,8 +475,8 @@
 
             let addIntroHtml = `
                 <div class="step-container hidden mb-6" id="step-desc-${stepCounter}">
-                    <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100 border-t border-zinc-700 pt-4 mt-2">Addition</div>
-                    <div class="mt-1 leading-relaxed text-zinc-400">Addiere nun die Zwischenergebnisse spaltenweise.</div>
+                    <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100 border-t border-zinc-700 pt-4 mt-2"><span data-lang-de>Addition</span><span data-lang-en style="display:none;">Addition</span></div>
+                    <div class="mt-1 leading-relaxed text-zinc-400"><span data-lang-de>Addiere nun die Zwischenergebnisse spaltenweise.</span><span data-lang-en style="display:none;">Now add the partial products column by column.</span></div>
                 </div>`;
             steps.push({ id: stepCounter, html: addIntroHtml });
             stepCounter++;
@@ -504,7 +557,7 @@
                 id: stepCounter,
                 html: `
                     <div class="step-container hidden mb-6" id="step-desc-${stepCounter}">
-                        <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100 border-t border-zinc-700 pt-4 mt-2">Fertig! 🎉</div>
+                        <div class="anim-element font-bold text-2xl sm:text-3xl mb-1 text-zinc-100 border-t border-zinc-700 pt-4 mt-2"><span data-lang-de>Fertig! 🎉</span><span data-lang-en style="display:none;">Done! 🎉</span></div>
                         <div class="mt-1 leading-relaxed flex flex-wrap items-center">
                             ${PLAIN("Das Ergebnis ist")}
                             ${TEXT(finalResStr, finalResIds, 'text-green-400 font-bold')}
@@ -514,6 +567,7 @@
 
             renderGrid();
             renderExplanations();
+            applyAnimationLanguage();
 
             currentStep = 0;
             resetGridState(0);
@@ -594,9 +648,9 @@
             }
 
             if (currentStep >= steps.length - 1) {
-                btnNext.innerHTML = `<span>Neustart</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>`;
+                btnNext.innerHTML = `<span>${animationLanguage === 'en' ? 'Restart' : 'Neustart'}</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>`;
             } else {
-                btnNext.innerHTML = `<span>Weiter</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`;
+                btnNext.innerHTML = `<span>${animationLanguage === 'en' ? 'Next' : 'Weiter'}</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`;
             }
         }
 

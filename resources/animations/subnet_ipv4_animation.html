@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de" class="light">
+<html lang="de" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,27 +28,12 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* Lined paper effect (Light Mode) */
         .paper-bg {
-            background-color: #fdfcf8;
-            background-image: linear-gradient(#93c5fd 1px, transparent 1px);
-            background-size: 100% 32px;
-            background-position: 0 4px;
-            box-shadow:
-                0 10px 15px -3px rgba(0, 0, 0, 0.1),
-                0 4px 6px -2px rgba(0, 0, 0, 0.05),
-                inset 40px 0 0 0 rgba(220, 38, 38, 0.15);
-            padding-left: 50px;
-            transition: background-color 0.3s, background-image 0.3s, box-shadow 0.3s;
-        }
-
-        /* Lined paper effect (Dark Mode) */
-        .dark .paper-bg {
             background-color: #18181b;
-            background-image: linear-gradient(#3f3f46 1px, transparent 1px);
             box-shadow:
-                0 10px 25px -3px rgba(0, 0, 0, 0.5),
-                inset 40px 0 0 0 rgba(248, 113, 113, 0.15);
+                0 10px 25px -5px rgba(0, 0, 0, 0.5),
+                0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            border: 1px solid #27272a;
         }
 
         /* Text animation base classes */
@@ -57,16 +42,28 @@
             display: inline-block;
             white-space: nowrap;
             opacity: 0;
+            transform: translateY(0.15em) rotate(-1deg);
+            transition: opacity 0.18s ease, transform 0.35s ease;
+            will-change: clip-path, opacity, transform;
         }
 
         .anim-element.revealed {
             opacity: 1;
             clip-path: inset(0 0 0 0);
-            transition: clip-path 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: none;
+            transition: clip-path 0.7s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.18s ease, transform 0.35s ease;
         }
 
         .anim-element.fast.revealed {
-            transition-duration: 0.8s;
+            transition: clip-path 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.18s ease, transform 0.25s ease;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .anim-element,
+            .anim-element.revealed {
+                transition: none;
+                transform: none;
+            }
         }
 
         /* SVG drawing animation */
@@ -82,41 +79,33 @@
 
         /* Highlighting effect */
         .highlight-light {
-            background: linear-gradient(104deg, rgba(253,230,138,0) 0.9%, rgba(253,230,138,0.8) 2.4%, rgba(253,230,138,0.5) 5.8%, rgba(253,230,138,0.1) 93%, rgba(253,230,138,0) 96%);
+            background: rgba(59, 130, 246, 0.25);
             border-radius: 1em 0;
         }
-        .dark .highlight-light {
-            background: linear-gradient(104deg, rgba(253,224,71,0) 0.9%, rgba(253,224,71,0.2) 2.4%, rgba(253,224,71,0.1) 5.8%, rgba(253,224,71,0.05) 93%, rgba(253,224,71,0) 96%);
-        }
     </style>
+    <link rel="stylesheet" href="global-theme.css">
+    <script src="global-theme-sync.js"></script>
 </head>
-<body class="font-sans antialiased bg-gray-200 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex justify-center p-2 sm:p-4 transition-colors duration-300">
+<body class="font-sans antialiased bg-zinc-950 text-zinc-200 min-h-screen flex justify-center p-2 sm:p-4 selection:bg-blue-500/30">
 
-    <div class="max-w-7xl w-full flex flex-col gap-4">
+    <div class="max-w-6xl w-full flex flex-col gap-4">
 
         <!-- Controls Header -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 flex justify-between items-center z-50 sticky top-2 sm:top-4 transition-colors duration-300">
-            <h1 class="font-bold text-lg text-gray-700 dark:text-gray-200 hidden md:block" data-lang-de>IPv4 Subnetting — interaktiv</h1>
-            <h1 class="font-bold text-lg text-gray-700 dark:text-gray-200 hidden md:block" data-lang-en style="display:none;">IPv4 Subnetting — interactive</h1>
-            <div class="flex gap-2 sm:gap-4 w-full md:w-auto justify-between md:justify-end items-center">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-3 shadow-lg flex flex-wrap justify-between items-center z-50 sticky top-2 gap-2">
+            <h1 class="font-bold text-base sm:text-lg text-white hidden md:block tracking-wide" data-lang-de>IPv4 Subnetting — interaktiv</h1>
+            <h1 class="font-bold text-base sm:text-lg text-white hidden md:block tracking-wide" data-lang-en style="display:none;">IPv4 Subnetting — interactive</h1>
+            <div class="flex gap-2 w-full md:w-auto justify-end items-center flex-grow">
 
-                <!-- Language Toggle -->
-                <button id="btn-lang" class="p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition shadow-sm font-semibold text-sm" onclick="toggleLang()" title="DE/EN">
-                    <span id="lang-label">EN</span>
-                </button>
-
-                <!-- Dark Mode Toggle -->
-                <button id="btn-theme" class="p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition shadow-sm" onclick="toggleTheme()" title="Dark/Light Mode">
-                    <svg id="theme-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-                    </svg>
-                </button>
-
-                <button id="btn-reset" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition shadow-sm font-semibold text-sm" onclick="resetAnimation()">
+                <button id="btn-reset" class="px-3 py-1.5 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-white text-zinc-300 rounded-lg transition shadow-sm font-semibold text-sm" onclick="resetAnimation()">
                     <span data-lang-de>Neustart</span>
                     <span data-lang-en style="display:none;">Restart</span>
                 </button>
-                <button id="btn-next" class="px-4 sm:px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-sm font-semibold text-sm flex items-center gap-2" onclick="nextStep()">
+
+                <button id="btn-auto" class="px-3 py-1.5 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-white text-zinc-300 rounded-lg transition shadow-sm font-semibold text-sm" onclick="toggleAutoplay()">▶ Auto</button>
+                <button id="btn-prev" class="px-3 py-1.5 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-white text-zinc-300 rounded-lg transition shadow-sm font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed" onclick="prevStep()" disabled>
+                    <span data-lang-de>Zurück</span><span data-lang-en style="display:none;">Previous</span>
+                </button>
+                <button id="btn-next" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition shadow-sm font-semibold text-sm flex items-center gap-2" onclick="nextStep()">
                     <span data-lang-de>Weiter</span>
                     <span data-lang-en style="display:none;">Next</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
@@ -125,11 +114,11 @@
         </div>
 
         <!-- Two Papers Layout -->
-        <div class="flex flex-col lg:flex-row gap-6 w-full">
+        <div class="flex flex-col lg:flex-row gap-4 w-full h-[calc(100vh-7rem)] min-h-[360px]">
 
             <!-- LEFT PAPER: Explanations -->
-            <div class="paper-bg w-full lg:w-1/2 rounded-lg min-h-[700px] p-6 pt-8 font-hand text-2xl leading-[32px] text-gray-900 dark:text-gray-100 relative overflow-hidden flex-1 shadow-lg">
-                <div class="absolute top-2 left-14 text-sm font-sans font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest">
+            <div class="paper-bg w-full lg:w-1/2 rounded-xl h-full min-h-0 p-6 pt-8 font-hand text-2xl leading-[32px] text-zinc-100 relative overflow-y-auto custom-scrollbar flex-1">
+                <div class="sticky top-0 mb-2 text-xs font-sans font-bold text-zinc-500 uppercase tracking-widest bg-[#18181b]/95 w-fit px-2 py-1 rounded z-10 backdrop-blur-sm">
                     <span data-lang-de>Erklärungen</span>
                     <span data-lang-en style="display:none;">Explanations</span>
                 </div>
@@ -223,7 +212,7 @@
             </div>
 
             <!-- RIGHT PAPER: Calculations -->
-            <div class="paper-bg w-full lg:w-1/2 rounded-lg min-h-[700px] p-6 pt-8 font-hand text-2xl leading-[32px] text-gray-900 dark:text-gray-100 relative overflow-hidden flex-1 shadow-lg">
+            <div class="paper-bg w-full lg:w-1/2 rounded-xl h-full min-h-0 p-6 pt-8 font-hand text-2xl leading-[32px] text-zinc-100 relative overflow-y-auto custom-scrollbar flex-1">
                 <div class="absolute top-2 left-14 text-sm font-sans font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest">
                     <span data-lang-de>Rechnungen</span>
                     <span data-lang-en style="display:none;">Calculations</span>
@@ -324,14 +313,15 @@
         let currentStep = 0;
         const totalSteps = 5;
         let isAnimating = false;
-        let currentLang = 'de';
+        let currentLang = new URLSearchParams(window.location.search).get('lang') === 'en' ? 'en' : 'de';
+        let isAutoPlaying = false;
+        let autoPlayTimeout;
 
-        // Language Toggle Logic
-        function toggleLang() {
-            currentLang = currentLang === 'de' ? 'en' : 'de';
-            document.getElementById('lang-label').textContent = currentLang === 'de' ? 'EN' : 'DE';
-
-            // Toggle all data-lang-de and data-lang-en elements
+        function applyLanguage() {
+            document.documentElement.lang = currentLang;
+            document.title = currentLang === 'en'
+                ? 'IPv4 Subnetting — interactive'
+                : 'IPv4 Subnetting — interaktiv';
             document.querySelectorAll('[data-lang-de]').forEach(el => {
                 el.style.display = currentLang === 'de' ? '' : 'none';
             });
@@ -339,71 +329,58 @@
                 el.style.display = currentLang === 'en' ? '' : 'none';
             });
 
-            // Update button labels
-            updateNextButton();
-        }
-
-        // Theme Toggle Logic
-        function toggleTheme() {
-            const html = document.documentElement;
-            const icon = document.getElementById('theme-icon');
-
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>';
-            } else {
-                html.classList.add('dark');
-                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>';
-            }
         }
 
         const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
         window.onload = () => {
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                toggleTheme();
-            }
-            // Set initial language display
-            toggleLang();
-            toggleLang(); // Toggle back to DE (initial state)
-            resetAnimation();
+            applyLanguage();
+            initializeAnimation();
         };
 
-        function updateNextButton() {
-            const btnNext = document.getElementById('btn-next');
-            if (currentStep >= totalSteps - 1) {
-                btnNext.innerHTML = `
-                    <span data-lang-de>Ende erreicht</span>
-                    <span data-lang-en style="display:none;">End reached</span>
-                `;
-                // Re-apply language visibility
-                btnNext.querySelectorAll('[data-lang-de]').forEach(el => {
-                    el.style.display = currentLang === 'de' ? '' : 'none';
-                });
-                btnNext.querySelectorAll('[data-lang-en]').forEach(el => {
-                    el.style.display = currentLang === 'en' ? '' : 'none';
-                });
-            } else {
-                btnNext.innerHTML = `
-                    <span data-lang-de>Weiter</span>
-                    <span data-lang-en style="display:none;">Next</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                `;
-                btnNext.querySelectorAll('[data-lang-de]').forEach(el => {
-                    el.style.display = currentLang === 'de' ? '' : 'none';
-                });
-                btnNext.querySelectorAll('[data-lang-en]').forEach(el => {
-                    el.style.display = currentLang === 'en' ? '' : 'none';
-                });
+        function updateButtons() {
+            document.getElementById('btn-prev').disabled = currentStep <= 0 || isAnimating;
+            document.getElementById('btn-next').disabled = currentStep >= totalSteps - 1 || isAnimating;
+            updateAutoButton();
+        }
+
+        function updateAutoButton() {
+            const button = document.getElementById('btn-auto');
+            button.textContent = isAutoPlaying ? '❚❚ Auto' : '▶ Auto';
+            button.classList.toggle('bg-yellow-600/20', isAutoPlaying);
+            button.classList.toggle('border-yellow-500', isAutoPlaying);
+            button.classList.toggle('text-yellow-400', isAutoPlaying);
+        }
+
+        function stopAutoplay() {
+            isAutoPlaying = false;
+            clearTimeout(autoPlayTimeout);
+            updateAutoButton();
+        }
+
+        function toggleAutoplay() {
+            if (isAutoPlaying) {
+                stopAutoplay();
+                return;
             }
+            if (currentStep >= totalSteps - 1) return;
+            isAutoPlaying = true;
+            updateAutoButton();
+            nextStep(true);
+        }
+
+        function initializeAnimation() {
+            document.querySelectorAll('.step-container').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('[data-step-container="0"]').forEach(el => el.classList.remove('hidden'));
+            document.querySelectorAll('[data-step="0"]').forEach(el => el.classList.add('revealed'));
+            currentStep = 0;
+            updateButtons();
         }
 
         async function animateStep(stepIndex) {
             isAnimating = true;
 
-            const btnNext = document.getElementById('btn-next');
-            btnNext.disabled = true;
-            btnNext.classList.add('opacity-50', 'cursor-not-allowed');
+            updateButtons();
 
             const containers = document.querySelectorAll(`[data-step-container="${stepIndex}"]`);
             containers.forEach(c => c.classList.remove('hidden'));
@@ -428,14 +405,20 @@
 
             isAnimating = false;
 
-            if (currentStep < totalSteps - 1) {
-                btnNext.disabled = false;
-                btnNext.classList.remove('opacity-50', 'cursor-not-allowed');
+            updateButtons();
+            if (isAutoPlaying) {
+                if (currentStep < totalSteps - 1) {
+                    autoPlayTimeout = setTimeout(() => {
+                        if (isAutoPlaying) nextStep(true);
+                    }, 800);
+                } else {
+                    stopAutoplay();
+                }
             }
-            updateNextButton();
         }
 
-        function nextStep() {
+        function nextStep(fromAuto = false) {
+            if (!fromAuto && isAutoPlaying) stopAutoplay();
             if (isAnimating) return;
             if (currentStep >= totalSteps - 1) return;
 
@@ -443,7 +426,19 @@
             animateStep(currentStep);
         }
 
+        function prevStep() {
+            if (isAutoPlaying) stopAutoplay();
+            if (isAnimating || currentStep <= 0) return;
+            document.querySelectorAll(`[data-step-container="${currentStep}"]`).forEach(container => {
+                container.classList.add('hidden');
+                container.querySelectorAll('.anim-element').forEach(el => el.classList.remove('revealed'));
+            });
+            currentStep--;
+            updateButtons();
+        }
+
         function resetAnimation() {
+            stopAutoplay();
             if (isAnimating) return;
 
             currentStep = 0;
@@ -453,27 +448,11 @@
 
             const anims = document.querySelectorAll('.anim-element');
             anims.forEach(el => el.classList.remove('revealed'));
+            document.querySelectorAll('[data-step-container="0"]').forEach(el => el.classList.remove('hidden'));
+            document.querySelectorAll('[data-step="0"]').forEach(el => el.classList.add('revealed'));
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
-
-            const btnNext = document.getElementById('btn-next');
-            btnNext.innerHTML = `
-                <span data-lang-de>Starten</span>
-                <span data-lang-en style="display:none;">Start</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            `;
-            btnNext.querySelectorAll('[data-lang-de]').forEach(el => {
-                el.style.display = currentLang === 'de' ? '' : 'none';
-            });
-            btnNext.querySelectorAll('[data-lang-en]').forEach(el => {
-                el.style.display = currentLang === 'en' ? '' : 'none';
-            });
-            btnNext.disabled = false;
-            btnNext.classList.remove('opacity-50', 'cursor-not-allowed');
-
-            setTimeout(() => {
-                animateStep(0);
-            }, 300);
+            updateButtons();
         }
     </script>
 </body>

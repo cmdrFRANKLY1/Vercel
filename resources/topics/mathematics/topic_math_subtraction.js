@@ -674,11 +674,17 @@ registerTopic({
                             display: grid;
                             grid-template-columns: 1fr 1fr;
                             gap: 0.75rem;
-                            height: 520px;
+                            height: min(70vh, 720px);
+                            min-height: 360px;
                         }
+                        .maths-sub-app .panels > div { min-height: 0; }
                         @media (max-width: 720px) {
-                            .maths-sub-app .panels { grid-template-columns: 1fr; height: auto; }
-                            .maths-sub-app .panels > div { height: 520px; }
+                            .maths-sub-app .panels {
+                                grid-template-columns: 1fr;
+                                grid-template-rows: repeat(2, minmax(0, 1fr));
+                                height: max(480px, 80vh);
+                            }
+                            .maths-sub-app .panels > div { min-height: 0; }
                         }
 
                         .maths-sub-app .card {
@@ -786,13 +792,21 @@ registerTopic({
                             opacity: 0;
                             clip-path: inset(0 100% 0 0);
                             white-space: nowrap;
+                            transform: translateY(0.15em) rotate(-1deg);
+                            transition: opacity 0.18s ease, transform 0.35s ease;
+                            will-change: clip-path, opacity, transform;
                         }
                         .maths-sub-app .anim-el.revealed {
                             opacity: 1;
                             clip-path: inset(0 0 0 0);
-                            transition: clip-path 0.6s cubic-bezier(0.4,0,0.2,1);
+                            transform: none;
+                            transition: clip-path 0.6s cubic-bezier(0.4,0,0.2,1), opacity 0.18s ease, transform 0.35s ease;
                         }
-                        .maths-sub-app .anim-el.fast.revealed { transition-duration: 0.3s; }
+                        .maths-sub-app .anim-el.fast.revealed { transition: clip-path 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.18s ease, transform 0.25s ease; }
+                        @media (prefers-reduced-motion: reduce) {
+                            .maths-sub-app .anim-el,
+                            .maths-sub-app .anim-el.revealed { transition: none; transform: none; }
+                        }
                         .maths-sub-app .hl-text {
                             background: rgba(59,130,246,0.22);
                             border-radius: 0.25rem;
@@ -920,11 +934,17 @@ registerTopic({
                             display: grid;
                             grid-template-columns: 1fr 1fr;
                             gap: 0.75rem;
-                            height: 520px;
+                            height: min(70vh, 720px);
+                            min-height: 360px;
                         }
+                        .maths-sub-app .panels > div { min-height: 0; }
                         @media (max-width: 720px) {
-                            .maths-sub-app .panels { grid-template-columns: 1fr; height: auto; }
-                            .maths-sub-app .panels > div { height: 520px; }
+                            .maths-sub-app .panels {
+                                grid-template-columns: 1fr;
+                                grid-template-rows: repeat(2, minmax(0, 1fr));
+                                height: max(480px, 80vh);
+                            }
+                            .maths-sub-app .panels > div { min-height: 0; }
                         }
 
                         .maths-sub-app .card {
@@ -1030,13 +1050,21 @@ registerTopic({
                             opacity: 0;
                             clip-path: inset(0 100% 0 0);
                             white-space: nowrap;
+                            transform: translateY(0.15em) rotate(-1deg);
+                            transition: opacity 0.18s ease, transform 0.35s ease;
+                            will-change: clip-path, opacity, transform;
                         }
                         .maths-sub-app .anim-el.revealed {
                             opacity: 1;
                             clip-path: inset(0 0 0 0);
-                            transition: clip-path 0.6s cubic-bezier(0.4,0,0.2,1);
+                            transform: none;
+                            transition: clip-path 0.6s cubic-bezier(0.4,0,0.2,1), opacity 0.18s ease, transform 0.35s ease;
                         }
-                        .maths-sub-app .anim-el.fast.revealed { transition-duration: 0.3s; }
+                        .maths-sub-app .anim-el.fast.revealed { transition: clip-path 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.18s ease, transform 0.25s ease; }
+                        @media (prefers-reduced-motion: reduce) {
+                            .maths-sub-app .anim-el,
+                            .maths-sub-app .anim-el.revealed { transition: none; transform: none; }
+                        }
                         .maths-sub-app .hl-text {
                             background: rgba(59,130,246,0.22);
                             border-radius: 0.25rem;
