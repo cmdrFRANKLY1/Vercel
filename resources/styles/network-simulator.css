@@ -1,0 +1,193 @@
+#networkSimulatorModal {
+    display: none; position: fixed; inset: 0; z-index: 700;
+    align-items: center; justify-content: center;
+    padding: 1rem; background: rgba(0,0,0,0.72);
+}
+#networkSimulatorModal.open { display: flex; }
+.network-simulator-shell {
+    width: min(1500px, 98vw); height: min(900px, 96vh); min-height: 34rem;
+    display: flex; flex-direction: column; overflow: hidden;
+    background: var(--bg-color); border: 1px solid var(--panel-border);
+    border-radius: 0.8rem; box-shadow: var(--card-shadow-hover);
+}
+.network-simulator-head {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; padding: 0.85rem 1rem; background: var(--panel-color);
+    border-bottom: 1px solid var(--border-color);
+}
+.network-simulator-heading { display: flex; align-items: center; gap: 0.8rem; min-width: 0; }
+.network-simulator-heading > i { color: var(--link-color); font-size: 1.25rem; }
+.network-simulator-heading h2 { margin: 0; color: var(--heading-color); font-size: 1rem; font-weight: 700; }
+.network-simulator-heading p { margin: 0.2rem 0 0; color: var(--text-muted); font-size: 0.72rem; }
+.network-close-btn { flex: 0 0 auto; padding: 0.4rem 0.55rem; }
+.network-simulator-toolbar {
+    display: flex; align-items: end; gap: 0.55rem; flex-wrap: wrap;
+    padding: 0.65rem 0.9rem; background: var(--panel-color);
+    border-bottom: 1px solid var(--border-color);
+}
+.network-tool-field, .network-side-panel label {
+    display: flex; flex-direction: column; gap: 0.3rem; min-width: 8rem;
+    color: var(--text-muted); font-size: 0.68rem; font-weight: 600;
+}
+.network-tool-field select, .network-side-panel select,
+.network-device-config input {
+    min-width: 0; padding: 0.45rem 0.55rem; color: var(--text-color);
+    background: var(--bg-color); border: 1px solid var(--border-color);
+    border-radius: 0.35rem; font: inherit;
+}
+.network-action-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+    min-height: 2rem; padding: 0.42rem 0.65rem; color: var(--text-color);
+    background: var(--bg-color); border: 1px solid var(--border-color);
+    border-radius: 0.4rem; font-size: 0.72rem; font-weight: 600; cursor: pointer;
+}
+.network-action-btn:hover, .network-action-btn.active {
+    color: var(--link-color); border-color: var(--link-color); background: var(--code-bg);
+}
+.network-action-btn:focus-visible, .network-device-node:focus-visible {
+    outline: 2px solid var(--link-color); outline-offset: 2px;
+}
+.network-reset-btn { margin-left: auto; }
+.network-toolbar-hint { align-self: center; color: var(--link-color); font-size: 0.68rem; }
+.network-simulator-workspace {
+    flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 19rem;
+    grid-template-rows: minmax(0, 1fr); gap: 0.8rem;
+    padding: 0.8rem; overflow: hidden;
+}
+.network-canvas-panel, .network-config-card, .network-console-card, .network-packet-card, .network-hops-card {
+    background: var(--panel-color); border: 1px solid var(--panel-border);
+    border-radius: 0.6rem; box-shadow: var(--control-shadow);
+}
+.network-canvas-panel { min-width: 0; min-height: 25rem; display: flex; flex-direction: column; overflow: hidden; }
+.network-canvas-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+    padding: 0.65rem 0.8rem; color: var(--heading-color); font-size: 0.75rem; font-weight: 700;
+    border-bottom: 1px solid var(--border-color);
+}
+.network-canvas-header i { color: var(--link-color); margin-right: 0.3rem; }
+.network-count { color: var(--text-muted); font: 0.65rem 'Fira Code', monospace; }
+.network-topology {
+    flex: 1; width: 100%; min-height: 0; background-color: var(--bg-color);
+    background-image: radial-gradient(var(--border-color) 0.8px, transparent 0.8px);
+    background-size: 20px 20px; touch-action: none;
+}
+.network-link { stroke-width: 3; stroke-linecap: round; opacity: 0.88; }
+.network-link.active {
+    stroke-width: 5; stroke-dasharray: 9 7; opacity: 1;
+}
+.network-packet {
+    fill: #facc15; stroke: #111827; stroke-width: 2;
+    filter: drop-shadow(0 0 5px rgba(250,204,21,.85));
+    pointer-events: none;
+}
+.network-device-node { cursor: grab; }
+.network-device-node:active { cursor: grabbing; }
+.network-device-node circle {
+    fill: var(--panel-color); stroke: var(--device-color); stroke-width: 3;
+    filter: drop-shadow(0 3px 4px rgba(0,0,0,.18));
+}
+.network-device-node.selected circle {
+    stroke-width: 5; filter: drop-shadow(0 0 7px var(--device-color));
+}
+.network-device-node.connecting circle {
+    stroke-width: 5; stroke-dasharray: 4 3;
+}
+.network-device-node text { pointer-events: none; text-anchor: middle; }
+.network-node-mark { fill: var(--device-color); font: 700 15px Inter, sans-serif; }
+.network-node-name { fill: var(--heading-color); font: 600 13px Inter, sans-serif; }
+.network-node-ip { fill: var(--text-muted); font: 11px 'Fira Code', monospace; }
+.network-status {
+    flex-shrink: 0; min-height: 2rem; padding: 0.55rem 0.75rem;
+    color: var(--text-muted); border-top: 1px solid var(--border-color); font-size: 0.7rem;
+}
+.network-status.error { color: var(--danger-color, #ef4444); }
+.network-side-panel {
+    display: flex; flex-direction: column; gap: 0.65rem; min-width: 0; min-height: 0;
+    overflow-y: auto; padding-right: 0.2rem;
+}
+.network-config-card, .network-console-card, .network-packet-card, .network-hops-card { padding: 0.75rem; }
+.network-side-panel h3 {
+    display: flex; align-items: center; gap: 0.45rem; margin: 0 0 0.65rem;
+    color: var(--heading-color); font-size: 0.74rem; font-weight: 700;
+}
+.network-side-panel h3 i { color: var(--link-color); font-size: 0.72rem; }
+.network-device-config { display: flex; flex-direction: column; gap: 0.55rem; }
+.network-basic-config {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem;
+}
+.network-basic-config > label:first-child,
+.network-basic-config > label:nth-child(6),
+.network-basic-config > .network-muted { grid-column: 1 / -1; }
+.network-device-config label, .network-packet-card label { min-width: 0; }
+.network-device-config input, .network-side-panel select { width: 100%; font-size: 0.72rem; }
+.network-device-config textarea {
+    width: 100%; min-width: 0; resize: vertical; padding: 0.45rem 0.55rem;
+    color: var(--text-color); background: var(--bg-color);
+    border: 1px solid var(--border-color); border-radius: 0.35rem;
+    font: 0.68rem 'Fira Code', monospace;
+}
+.network-device-config input:disabled { opacity: 0.58; cursor: not-allowed; }
+.network-service-config {
+    display: flex; flex-direction: column; gap: 0.45rem;
+    padding: 0.55rem 0; border-top: 1px solid var(--border-color);
+}
+.network-side-panel label.network-check-label {
+    flex-direction: row; align-items: center; gap: 0.45rem; min-width: 0;
+    color: var(--text-color); font-weight: 500;
+}
+.network-check-label input[type="checkbox"] { width: auto; margin: 0; accent-color: var(--link-color); }
+.network-inline-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.45rem; }
+.network-inline-fields label { min-width: 0; }
+.network-device-config .network-save-btn { width: 100%; }
+.network-remove-btn { color: var(--danger-color, #ef4444); }
+.network-console-output {
+    height: 9rem; max-height: 12rem; overflow: auto; margin: 0 0 0.5rem; padding: 0.6rem;
+    color: #d1fae5; background: #101820; border: 1px solid #27333d; border-radius: 0.4rem;
+    font: 0.65rem/1.55 'Fira Code', monospace; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.network-console-entry { display: flex; gap: 0.4rem; }
+.network-console-entry input {
+    flex: 1; min-width: 0; padding: 0.45rem 0.55rem; color: var(--text-color);
+    background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 0.35rem;
+    font: 0.68rem 'Fira Code', monospace;
+}
+.network-console-entry .network-action-btn { flex: 0 0 auto; }
+.network-console-help { margin-top: 0.4rem; color: var(--text-muted); font-size: 0.59rem; line-height: 1.5; }
+.network-packet-card label { margin-top: 0.55rem; }
+.network-packet-actions { display: flex; gap: 0.45rem; margin-top: 0.65rem; }
+.network-packet-actions .network-action-btn { flex: 1; }
+.network-trace-btn { color: var(--link-color); }
+.network-hops-list { display: flex; flex-direction: column; gap: 0.4rem; }
+.network-hop {
+    display: grid; grid-template-columns: 1.5rem minmax(0, 1fr) auto; align-items: center; gap: 0.45rem;
+    padding: 0.4rem; background: var(--bg-color); border: 1px solid var(--border-color);
+    border-radius: 0.35rem; font-size: 0.66rem;
+}
+.network-hop-index { color: var(--link-color); font: 0.65rem 'Fira Code', monospace; }
+.network-hop-name { overflow: hidden; color: var(--text-color); text-overflow: ellipsis; white-space: nowrap; }
+.network-hop-ip { color: var(--text-muted); font: 0.6rem 'Fira Code', monospace; }
+.network-muted { color: var(--text-muted); font-size: 0.68rem; }
+.network-local-note {
+    margin: auto 0 0; padding: 0.65rem; color: var(--text-muted);
+    background: var(--code-bg); border-radius: 0.4rem; font-size: 0.63rem; line-height: 1.5;
+}
+.network-local-note i { margin-right: 0.25rem; color: var(--link-color); }
+@media (max-width: 900px) {
+    .network-simulator-shell { height: 96vh; }
+    .network-simulator-workspace { grid-template-columns: minmax(0, 1fr) 16rem; }
+}
+@media (max-width: 680px) {
+    #networkSimulatorModal { padding: 0; }
+    .network-simulator-shell { width: 100vw; height: 100dvh; min-height: 0; border-radius: 0; }
+    .network-simulator-workspace { grid-template-columns: minmax(0, 1fr); overflow: auto; }
+    .network-canvas-panel { min-height: 24rem; }
+    .network-side-panel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; overflow: visible; }
+    .network-local-note { grid-column: 1 / -1; }
+    .network-reset-btn { margin-left: 0; }
+}
+@media (max-width: 420px) {
+    .network-side-panel { grid-template-columns: minmax(0, 1fr); }
+    .network-local-note { grid-column: auto; }
+    .network-simulator-toolbar { align-items: stretch; }
+    .network-tool-field { flex: 1 1 100%; }
+}

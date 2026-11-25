@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="resources/styles/tour.css">
     <link rel="stylesheet" href="resources/styles/shared-files.css">
     <link rel="stylesheet" href="resources/styles/viona-timeline.css">
+    <link rel="stylesheet" href="resources/styles/network-simulator.css">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
@@ -44,6 +45,13 @@
             <button type="button" onclick="App.sql.open()" class="ctrl-btn w-full" data-title-de="SQL Sandbox" data-title-en="SQL TryIt">
                 <i class="fa-solid fa-database"></i>
                 <span class="sidebar-btn-label">SQL Sandbox</span>
+            </button>
+        </div>
+        <div class="sidebar-bottom-panel mb-3 flex items-center justify-center" style="flex-shrink: 0;">
+            <button type="button" onclick="App.networkSimulator.open()" class="ctrl-btn w-full" data-title-de="Netzwerk-Simulator" data-title-en="Network Simulator">
+                <i class="fa-solid fa-diagram-project"></i>
+                <span class="sidebar-btn-label" data-lang-de>Netzwerk-Simulator</span>
+                <span class="sidebar-btn-label" data-lang-en style="display:none;">Network Simulator</span>
             </button>
         </div>
 
@@ -318,6 +326,79 @@
         </div>
     </div>
 
+    <!-- Network Simulator -->
+    <div id="networkSimulatorModal" role="dialog" aria-modal="true" aria-labelledby="networkSimulatorTitle">
+        <div class="network-simulator-shell">
+            <header class="network-simulator-head">
+                <div class="network-simulator-heading">
+                    <i class="fa-solid fa-diagram-project"></i>
+                    <div>
+                        <h2 id="networkSimulatorTitle"><span data-lang-de>Netzwerk-Simulator</span><span data-lang-en style="display:none;">Network Simulator</span></h2>
+                        <p><span data-lang-de>Topologien entwerfen und Pakete lokal simulieren</span><span data-lang-en style="display:none;">Build topologies and simulate packets locally</span></p>
+                    </div>
+                </div>
+                <button type="button" class="ctrl-btn network-close-btn" onclick="App.networkSimulator.close()" aria-label="Close network simulator"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <div class="network-simulator-toolbar">
+                <label class="network-tool-field">
+                    <span data-lang-de>Gerät hinzufügen</span><span data-lang-en style="display:none;">Add device</span>
+                    <select id="networkDeviceType" aria-label="Device type">
+                        <option value="pc">PC</option>
+                        <option value="router">Router</option>
+                        <option value="switch">Switch</option>
+                        <option value="server">Server</option>
+                        <option value="firewall">Firewall</option>
+                    </select>
+                </label>
+                <button type="button" class="network-action-btn" onclick="App.networkSimulator.addDevice()"><i class="fa-solid fa-plus"></i> <span data-lang-de>Gerät hinzufügen</span><span data-lang-en style="display:none;">Add device</span></button>
+                <button type="button" id="networkConnectBtn" class="network-action-btn" onclick="App.networkSimulator.toggleConnectMode()"><i class="fa-solid fa-link"></i> <span data-lang-de>Verbinden</span><span data-lang-en style="display:none;">Connect</span></button>
+                <span id="networkConnectHint" class="network-toolbar-hint" aria-live="polite"></span>
+                <button type="button" class="network-action-btn network-reset-btn" onclick="App.networkSimulator.reset()"><i class="fa-solid fa-rotate-left"></i> <span data-lang-de>Beispiel laden</span><span data-lang-en style="display:none;">Load example</span></button>
+            </div>
+            <div class="network-simulator-workspace">
+                <section class="network-canvas-panel" aria-label="Network topology">
+                    <div class="network-canvas-header">
+                        <div><i class="fa-solid fa-share-nodes"></i> <span data-lang-de>Topologie</span><span data-lang-en style="display:none;">Topology</span></div>
+                        <span id="networkDeviceCount" class="network-count"></span>
+                    </div>
+                    <svg id="networkTopology" class="network-topology" viewBox="0 0 1000 560" role="group" aria-label="Interactive network topology"></svg>
+                    <div id="networkStatus" class="network-status" aria-live="polite"></div>
+                </section>
+                <aside class="network-side-panel">
+                    <section class="network-config-card">
+                        <h3><i class="fa-solid fa-sliders"></i> <span data-lang-de>Gerätekonfiguration</span><span data-lang-en style="display:none;">Device configuration</span></h3>
+                        <div id="networkDeviceConfig" class="network-device-config"></div>
+                    </section>
+                    <section class="network-console-card">
+                        <h3><i class="fa-solid fa-terminal"></i> <span data-lang-de>Virtuelle Konsole</span><span data-lang-en style="display:none;">Virtual console</span></h3>
+                        <pre id="networkConsoleOutput" class="network-console-output" role="log" aria-live="polite"></pre>
+                        <div class="network-console-entry">
+                            <input id="networkConsoleInput" type="text" autocomplete="off" spellcheck="false"
+                                   placeholder="help" aria-label="Console command"
+                                   onkeydown="if(event.key==='Enter'){event.preventDefault();App.networkSimulator.executeConsole();}">
+                            <button type="button" class="network-action-btn" onclick="App.networkSimulator.executeConsole()" aria-label="Run console command"><i class="fa-solid fa-play"></i></button>
+                        </div>
+                        <div class="network-console-help"><span data-lang-de>help · show ip · dhcp request · nslookup · ping · traceroute</span><span data-lang-en style="display:none;">help · show ip · dhcp request · nslookup · ping · traceroute</span></div>
+                    </section>
+                    <section class="network-packet-card">
+                        <h3><i class="fa-solid fa-paper-plane"></i> <span data-lang-de>Paket simulieren</span><span data-lang-en style="display:none;">Simulate packet</span></h3>
+                        <label><span data-lang-de>Quelle</span><span data-lang-en style="display:none;">Source</span><select id="networkSource" aria-label="Packet source"></select></label>
+                        <label><span data-lang-de>Ziel</span><span data-lang-en style="display:none;">Destination</span><select id="networkDestination" aria-label="Packet destination"></select></label>
+                        <div class="network-packet-actions">
+                            <button type="button" class="network-action-btn" onclick="App.networkSimulator.ping()"><i class="fa-solid fa-bolt"></i> Ping</button>
+                            <button type="button" class="network-action-btn network-trace-btn" onclick="App.networkSimulator.trace()"><i class="fa-solid fa-route"></i> Traceroute</button>
+                        </div>
+                    </section>
+                    <section class="network-hops-card">
+                        <h3><i class="fa-solid fa-list-ol"></i> <span data-lang-de>Letzter Pfad</span><span data-lang-en style="display:none;">Last route</span></h3>
+                        <div id="networkHops" class="network-hops-list"><span class="network-muted"><span data-lang-de>Noch keine Simulation ausgeführt.</span><span data-lang-en style="display:none;">No simulation has been run yet.</span></span></div>
+                    </section>
+                    <p class="network-local-note"><i class="fa-solid fa-shield-halved"></i> <span data-lang-de>Simulation im Browser – es wird kein echter Netzwerkverkehr erzeugt.</span><span data-lang-en style="display:none;">Browser-only simulation — no real network traffic is generated.</span></p>
+                </aside>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating Search -->
     <div id="floatingSearch" class="fixed hidden z-50 bg-[var(--panel-color)] border border-[var(--panel-border)] rounded-[0.5rem] shadow-[var(--sidebar-shadow)] p-1.5 w-64">
         <div class="relative flex items-center">
@@ -376,6 +457,7 @@
     <script src="resources/modules/settings.js"></script>
     <script src="resources/modules/sql/sql_cmd.js"></script>
     <script src="resources/modules/sql/sql.js"></script>
+    <script src="resources/modules/networkSimulator.js"></script>
     <script src="resources/modules/init.js"></script>
 </body>
 </html>

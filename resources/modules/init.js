@@ -95,6 +95,7 @@
             ['calendarModal',    () => App.calendar.close()],
             ['dashboardModal',   () => App.dashboard.closeModal()],
             ['sharedFilesModal', () => App.sharedFiles.close()],
+            ['networkSimulatorModal', () => App.networkSimulator.close()],
             ['reportModal',      () => App.reports.closeModal()]
         ];
 
@@ -128,6 +129,7 @@
             App.calendar.close();
             App.dashboard.closeModal();
             App.sharedFiles.close();
+            App.networkSimulator.close();
             App.reports.closeModal();
 
             const fs = document.getElementById('floatingSearch');
